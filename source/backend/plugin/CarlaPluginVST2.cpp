@@ -1355,7 +1355,7 @@ public:
                             CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
 
                             ctrlEvent.handled = true;
-                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
                             setParameterValueRT(k, value, true);
                             continue;
                         }
@@ -1366,19 +1366,19 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 ctrlEvent.handled = true;
-                                value = ctrlEvent.value;
+                                value = ctrlEvent.normalizedValue;
                                 setDryWetRT(value, true);
                             }
                             else if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 ctrlEvent.handled = true;
-                                value = ctrlEvent.value*127.0f/100.0f;
+                                value = ctrlEvent.normalizedValue*127.0f/100.0f;
                                 setVolumeRT(value, true);
                             }
                             else if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
-                                value = ctrlEvent.value/0.5f - 1.0f;
+                                value = ctrlEvent.normalizedValue/0.5f - 1.0f;
 
                                 if (value < 0.0f)
                                 {
@@ -1416,7 +1416,7 @@ public:
                                 continue;
 
                             ctrlEvent.handled = true;
-                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
                             setParameterValueRT(k, value, true);
                         }
 
@@ -1433,7 +1433,7 @@ public:
                             vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
                             vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             vstMidiEvent.midiData[1] = char(ctrlEvent.param);
-                            vstMidiEvent.midiData[2] = char(ctrlEvent.value*127.0f);
+                            vstMidiEvent.midiData[2] = char(ctrlEvent.normalizedValue*127.0f);
                         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH

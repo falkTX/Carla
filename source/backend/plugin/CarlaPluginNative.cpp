@@ -98,7 +98,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 static const CustomData  kCustomDataFallback = { nullptr, nullptr, nullptr };
 static EngineEvent kNullEngineEvent = {
-    kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f, true }}
+    kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, -1, 0.0f, true }}
 };
 
 // -----------------------------------------------------------------------
@@ -1979,7 +1979,7 @@ public:
                             CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
 
                             ctrlEvent.handled = true;
-                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
                             setParameterValueRT(k, value, true);
                             continue;
                         }
@@ -1990,19 +1990,19 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 ctrlEvent.handled = true;
-                                value = ctrlEvent.value;
+                                value = ctrlEvent.normalizedValue;
                                 setDryWetRT(value, true);
                             }
                             else if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 ctrlEvent.handled = true;
-                                value = ctrlEvent.value*127.0f/100.0f;
+                                value = ctrlEvent.normalizedValue*127.0f/100.0f;
                                 setVolumeRT(value, true);
                             }
                             else if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) > 0)
                             {
                                 float left, right;
-                                value = ctrlEvent.value/0.5f - 1.0f;
+                                value = ctrlEvent.normalizedValue/0.5f - 1.0f;
 
                                 if (value < 0.0f)
                                 {
@@ -2039,7 +2039,7 @@ public:
                                 continue;
 
                             ctrlEvent.handled = true;
-                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
                             setParameterValueRT(k, value, true);
                         }
 
@@ -2054,7 +2054,7 @@ public:
                             nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = uint8_t(ctrlEvent.param);
-                            nativeEvent.data[2] = uint8_t(ctrlEvent.value*127.0f);
+                            nativeEvent.data[2] = uint8_t(ctrlEvent.normalizedValue*127.0f);
                             nativeEvent.size    = 3;
                         }
 
@@ -2277,6 +2277,7 @@ public:
                                                             pData->param.data[k].midiChannel,
                                                             kEngineControlEventTypeParameter,
                                                             static_cast<uint16_t>(pData->param.data[k].mappedControlIndex),
+                                                            -1,
                                                             value);
                 }
             }

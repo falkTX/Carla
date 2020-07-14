@@ -177,7 +177,8 @@ static const uint8_t kEngineEventNonMidiChannel = 0x30;
 struct CARLA_API EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
-    float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
+    int8_t   midiValue;          //!< Raw midi value, >= 0 if applicable, -1 otherwise.
+    float    normalizedValue;    //!< Parameter value, normalized to 0.0f<->1.0f.
     bool     handled;            //!< Indicates that event was handled/received at least once.
 
     /*!
@@ -594,7 +595,8 @@ public:
      * Arguments are the same as in the EngineControlEvent struct.
      * @note You must only call this for output ports.
      */
-    virtual bool writeControlEvent(uint32_t time, uint8_t channel, EngineControlEventType type, uint16_t param, float value = 0.0f) noexcept;
+    virtual bool writeControlEvent(uint32_t time, uint8_t channel, EngineControlEventType type,
+                                   uint16_t param, int8_t midiValue, float normalizedValue) noexcept;
 
     /*!
      * Write a MIDI event into the buffer.

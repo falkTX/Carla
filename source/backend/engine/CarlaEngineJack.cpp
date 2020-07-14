@@ -140,7 +140,7 @@ static const PortNameToId   kPortNameToIdFallback    = { 0, 0, { '\0' }, { '\0' 
 static const ConnectionToId kConnectionToIdFallback  = { 0, 0, 0, 0, 0 };
 #endif
 static EngineEvent kFallbackJackEngineEvent = {
-    kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f, true }}
+    kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, -1, 0.0f, true }}
 };
 
 // -----------------------------------------------------------------------
@@ -528,10 +528,14 @@ public:
         return fRetEvent;
     }
 
-    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) noexcept override
+    bool writeControlEvent(const uint32_t time, const uint8_t channel,
+                           const EngineControlEventType type,
+                           const uint16_t param,
+                           const int8_t midiValue,
+                           const float value) noexcept override
     {
         if (fJackPort == nullptr)
-            return CarlaEngineEventPort::writeControlEvent(time, channel, type, param, value);
+            return CarlaEngineEventPort::writeControlEvent(time, channel, type, param, midiValue, value);
 
         CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, false);
@@ -546,7 +550,7 @@ public:
 
         uint8_t data[3] = { 0, 0, 0 };
 
-        EngineControlEvent ctrlEvent = { type, param, value, false };
+        EngineControlEvent ctrlEvent = { type, param, midiValue, value, false };
         const uint8_t size = ctrlEvent.convertToMidiData(channel, data);
 
         if (size == 0)
@@ -733,9 +737,10 @@ public:
                 event.time    = 0;
                 event.channel = kEngineEventNonMidiChannel;
 
-                event.ctrl.type  = kEngineControlEventTypeParameter;
-                event.ctrl.param = static_cast<uint16_t>(ecv.indexOffset);
-                event.ctrl.value = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
+                event.ctrl.type            = kEngineControlEventTypeParameter;
+                event.ctrl.param           = static_cast<uint16_t>(ecv.indexOffset);
+                event.ctrl.midiValue       = -1;
+                event.ctrl.normalizedValue = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
             }
 
             ecv.previousValue = previousValue;

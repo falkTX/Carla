@@ -1089,20 +1089,20 @@ public:
 
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
-                                value = ctrlEvent.value;
+                                value = ctrlEvent.normalizedValue;
                                 setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
-                                value = ctrlEvent.value*127.0f/100.0f;
+                                value = ctrlEvent.normalizedValue*127.0f/100.0f;
                                 setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
-                                value = ctrlEvent.value/0.5f - 1.0f;
+                                value = ctrlEvent.normalizedValue/0.5f - 1.0f;
 
                                 if (value < 0.0f)
                                 {
@@ -1133,7 +1133,7 @@ public:
                             fShmRtClientControl.writeByte(3); // size
                             fShmRtClientControl.writeByte(uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT)));
                             fShmRtClientControl.writeByte(uint8_t(ctrlEvent.param));
-                            fShmRtClientControl.writeByte(uint8_t(ctrlEvent.value*127.0f));
+                            fShmRtClientControl.writeByte(uint8_t(ctrlEvent.normalizedValue*127.0f));
                         }
                         break;
 

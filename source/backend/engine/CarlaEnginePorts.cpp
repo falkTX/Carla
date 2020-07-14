@@ -32,7 +32,7 @@ CARLA_BACKEND_START_NAMESPACE
 // Fallback data
 
 static EngineEvent kFallbackEngineEvent = {
-    kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, 0.0f, true }}
+    kEngineEventTypeNull, 0, 0, {{ kEngineControlEventTypeNull, 0, -1, 0.0f, true }}
 };
 
 // -----------------------------------------------------------------------
@@ -187,17 +187,21 @@ EngineEvent& CarlaEngineEventPort::getEventUnchecked(const uint32_t index) const
 
 bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl) noexcept
 {
-    return writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.value);
+    return writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.midiValue, ctrl.normalizedValue);
 }
 
-bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) noexcept
+bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel,
+                                             const EngineControlEventType type,
+                                             const uint16_t param,
+                                             const int8_t midiValue,
+                                             const float normalizedValue) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
     CARLA_SAFE_ASSERT_RETURN(kProcessMode != ENGINE_PROCESS_MODE_SINGLE_CLIENT && kProcessMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS, false);
     CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull, false);
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
-    CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
+    CARLA_SAFE_ASSERT(normalizedValue >= 0.0f && normalizedValue <= 1.0f);
 
     if (type == kEngineControlEventTypeParameter) {
         CARLA_SAFE_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
@@ -214,9 +218,10 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
         event.time    = time;
         event.channel = channel;
 
-        event.ctrl.type  = type;
-        event.ctrl.param = param;
-        event.ctrl.value = carla_fixedValue<float>(0.0f, 1.0f, value);
+        event.ctrl.type            = type;
+        event.ctrl.param           = param;
+        event.ctrl.midiValue       = midiValue;
+        event.ctrl.normalizedValue = carla_fixedValue<float>(0.0f, 1.0f, normalizedValue);
 
         return true;
     }
@@ -266,24 +271,30 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
             case MIDI_CONTROL_BANK_SELECT:
             case MIDI_CONTROL_BANK_SELECT__LSB:
                 CARLA_SAFE_ASSERT_RETURN(size >= 3, true);
-                event.type       = kEngineEventTypeControl;
-                event.ctrl.type  = kEngineControlEventTypeMidiBank;
-                event.ctrl.param = data[2];
-                event.ctrl.value = 0.0f;
+                event.type                 = kEngineEventTypeControl;
+                event.ctrl.type            = kEngineControlEventTypeMidiBank;
+                event.ctrl.param           = data[2];
+                event.ctrl.midiValue       = -1;
+                event.ctrl.normalizedValue = 0.0f;
+                event.ctrl.handled         = true;
                 return true;
 
             case MIDI_CONTROL_ALL_SOUND_OFF:
-                event.type       = kEngineEventTypeControl;
-                event.ctrl.type  = kEngineControlEventTypeAllSoundOff;
-                event.ctrl.param = 0;
-                event.ctrl.value = 0.0f;
+                event.type                 = kEngineEventTypeControl;
+                event.ctrl.type            = kEngineControlEventTypeAllSoundOff;
+                event.ctrl.param           = 0;
+                event.ctrl.midiValue       = -1;
+                event.ctrl.normalizedValue = 0.0f;
+                event.ctrl.handled         = true;
                 return true;
 
             case MIDI_CONTROL_ALL_NOTES_OFF:
-                event.type       = kEngineEventTypeControl;
-                event.ctrl.type  = kEngineControlEventTypeAllNotesOff;
-                event.ctrl.param = 0;
-                event.ctrl.value = 0.0f;
+                event.type                 = kEngineEventTypeControl;
+                event.ctrl.type            = kEngineControlEventTypeAllNotesOff;
+                event.ctrl.param           = 0;
+                event.ctrl.midiValue       = -1;
+                event.ctrl.normalizedValue = 0.0f;
+                event.ctrl.handled         = true;
                 return true;
             }
         }
@@ -292,10 +303,12 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
         {
             CARLA_SAFE_ASSERT_RETURN(size >= 2, true);
 
-            event.type       = kEngineEventTypeControl;
-            event.ctrl.type  = kEngineControlEventTypeMidiProgram;
-            event.ctrl.param = data[1];
-            event.ctrl.value = 0.0f;
+            event.type                 = kEngineEventTypeControl;
+            event.ctrl.type            = kEngineControlEventTypeMidiProgram;
+            event.ctrl.param           = data[1];
+            event.ctrl.midiValue       = -1;
+            event.ctrl.normalizedValue = 0.0f;
+            event.ctrl.handled         = true;
             return true;
         }
 
@@ -455,9 +468,10 @@ void CarlaEngineCVSourcePorts::initPortBuffers(const float* const* const buffers
                 event.time    = eventFrame;
                 event.channel = kEngineEventNonMidiChannel;
 
-                event.ctrl.type  = kEngineControlEventTypeParameter;
-                event.ctrl.param = static_cast<uint16_t>(ecv.indexOffset);
-                event.ctrl.value = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
+                event.ctrl.type            = kEngineControlEventTypeParameter;
+                event.ctrl.param           = static_cast<uint16_t>(ecv.indexOffset);
+                event.ctrl.midiValue       = -1;
+                event.ctrl.normalizedValue = carla_fixedValue(0.0f, 1.0f, (v - min) / (max - min));
             }
 
             ecv.previousValue = previousValue;

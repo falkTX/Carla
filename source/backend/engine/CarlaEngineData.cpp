@@ -39,12 +39,18 @@ uint8_t EngineControlEvent::convertToMidiData(const uint8_t channel, uint8_t dat
         if (MIDI_IS_CONTROL_BANK_SELECT(param))
         {
             data[1] = MIDI_CONTROL_BANK_SELECT;
-            data[2] = uint8_t(carla_fixedValue<float>(0.0f, static_cast<float>(MAX_MIDI_VALUE-1), value));
+            if (midiValue >= 0)
+                data[2] = uint8_t(midiValue);
+            else
+                data[2] = uint8_t(carla_fixedValue<float>(0.0f, static_cast<float>(MAX_MIDI_VALUE-1), normalizedValue));
         }
         else
         {
             data[1] = static_cast<uint8_t>(param);
-            data[2] = uint8_t(carla_fixedValue<float>(0.0f, 1.0f, value) * static_cast<float>(MAX_MIDI_VALUE-1));
+            if (midiValue >= 0)
+                data[2] = uint8_t(midiValue);
+            else
+                data[2] = uint8_t(carla_fixedValue<float>(0.0f, 1.0f, normalizedValue) * static_cast<float>(MAX_MIDI_VALUE-1));
         }
         return 3;
 
@@ -105,35 +111,40 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
 
             const uint8_t midiBank(data[2]);
 
-            ctrl.type  = kEngineControlEventTypeMidiBank;
-            ctrl.param = midiBank;
-            ctrl.value = 0.0f;
-            ctrl.handled = true;
+            ctrl.type            = kEngineControlEventTypeMidiBank;
+            ctrl.param           = midiBank;
+            ctrl.midiValue       = -1;
+            ctrl.normalizedValue = 0.0f;
+            ctrl.handled         = true;
         }
         else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
         {
-            ctrl.type  = kEngineControlEventTypeAllSoundOff;
-            ctrl.param = 0;
-            ctrl.value = 0.0f;
-            ctrl.handled = true;
+            ctrl.type            = kEngineControlEventTypeAllSoundOff;
+            ctrl.param           = 0;
+            ctrl.midiValue       = -1;
+            ctrl.normalizedValue = 0.0f;
+            ctrl.handled         = true;
         }
         else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
         {
-            ctrl.type  = kEngineControlEventTypeAllNotesOff;
-            ctrl.param = 0;
-            ctrl.value = 0.0f;
-            ctrl.handled = true;
+            ctrl.type            = kEngineControlEventTypeAllNotesOff;
+            ctrl.param           = 0;
+            ctrl.midiValue       = -1;
+            ctrl.normalizedValue = 0.0f;
+            ctrl.handled         = true;
         }
         else
         {
             CARLA_SAFE_ASSERT_RETURN(size >= 3,);
 
-            const uint8_t midiValue = carla_fixedValue<uint8_t>(0, 127, data[2]); // ensures 0.0<->1.0 value range
+            // ensures 0.0<->1.0 value range
+            const int8_t midiValue = static_cast<int8_t>(carla_fixedValue<uint8_t>(0, 127, data[2]));
 
-            ctrl.type  = kEngineControlEventTypeParameter;
-            ctrl.param = midiControl;
-            ctrl.value = float(midiValue)/127.0f;
-            ctrl.handled = false;
+            ctrl.type            = kEngineControlEventTypeParameter;
+            ctrl.param           = midiControl;
+            ctrl.midiValue       = midiValue;
+            ctrl.normalizedValue = float(midiValue)/127.0f;
+            ctrl.handled         = false;
         }
     }
     else if (midiStatus == MIDI_STATUS_PROGRAM_CHANGE)
@@ -144,10 +155,11 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
 
         const uint8_t midiProgram(data[1]);
 
-        ctrl.type  = kEngineControlEventTypeMidiProgram;
-        ctrl.param = midiProgram;
-        ctrl.value = 0.0f;
-        ctrl.handled = true;
+        ctrl.type            = kEngineControlEventTypeMidiProgram;
+        ctrl.param           = midiProgram;
+        ctrl.midiValue       = -1;
+        ctrl.normalizedValue = 0.0f;
+        ctrl.handled         = true;
     }
     else
     {

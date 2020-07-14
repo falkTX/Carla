@@ -416,20 +416,20 @@ public:
                         {
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
-                                value = ctrlEvent.value;
+                                value = ctrlEvent.normalizedValue;
                                 setDryWetRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
-                                value = ctrlEvent.value*127.0f/100.0f;
+                                value = ctrlEvent.normalizedValue*127.0f/100.0f;
                                 setVolumeRT(value, true);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
-                                value = ctrlEvent.value/0.5f - 1.0f;
+                                value = ctrlEvent.normalizedValue/0.5f - 1.0f;
 
                                 if (value < 0.0f)
                                 {
@@ -464,13 +464,13 @@ public:
                             if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
-                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
                             setParameterValueRT(k, value, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
                         {
-                            fSynth.handleController(event.channel+1, ctrlEvent.param, int(ctrlEvent.value*127.0f));
+                            fSynth.handleController(event.channel+1, ctrlEvent.param, int(ctrlEvent.normalizedValue*127.0f));
                         }
 
                         break;

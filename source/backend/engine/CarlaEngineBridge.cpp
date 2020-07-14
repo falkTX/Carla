@@ -1196,6 +1196,7 @@ protected:
                     offlineModeChanged(fIsOffline);
                     break;
 
+                // NOTE this is never used
                 case kPluginBridgeRtClientControlEventParameter: {
                     const uint32_t time(fShmRtClientControl.readUInt());
                     const uint8_t  channel(fShmRtClientControl.readByte());
@@ -1204,12 +1205,14 @@ protected:
 
                     if (EngineEvent* const event = getNextFreeInputEvent())
                     {
-                        event->type    = kEngineEventTypeControl;
-                        event->time    = time;
-                        event->channel = channel;
-                        event->ctrl.type  = kEngineControlEventTypeParameter;
-                        event->ctrl.param = param;
-                        event->ctrl.value = value;
+                        event->type                 = kEngineEventTypeControl;
+                        event->time                 = time;
+                        event->channel              = channel;
+                        event->ctrl.type            = kEngineControlEventTypeParameter;
+                        event->ctrl.param           = param;
+                        event->ctrl.midiValue       = -1;
+                        event->ctrl.normalizedValue = value;
+                        event->ctrl.handled         = true;
                     }
                     break;
                 }
@@ -1221,12 +1224,14 @@ protected:
 
                     if (EngineEvent* const event = getNextFreeInputEvent())
                     {
-                        event->type    = kEngineEventTypeControl;
-                        event->time    = time;
-                        event->channel = channel;
-                        event->ctrl.type  = kEngineControlEventTypeMidiBank;
-                        event->ctrl.param = index;
-                        event->ctrl.value = 0.0f;
+                        event->type                 = kEngineEventTypeControl;
+                        event->time                 = time;
+                        event->channel              = channel;
+                        event->ctrl.type            = kEngineControlEventTypeMidiBank;
+                        event->ctrl.param           = index;
+                        event->ctrl.midiValue       = -1;
+                        event->ctrl.normalizedValue = 0.0f;
+                        event->ctrl.handled         = true;
                     }
                     break;
                 }
@@ -1238,12 +1243,14 @@ protected:
 
                     if (EngineEvent* const event = getNextFreeInputEvent())
                     {
-                        event->type    = kEngineEventTypeControl;
-                        event->time    = time;
-                        event->channel = channel;
-                        event->ctrl.type  = kEngineControlEventTypeMidiProgram;
-                        event->ctrl.param = index;
-                        event->ctrl.value = 0.0f;
+                        event->type                 = kEngineEventTypeControl;
+                        event->time                 = time;
+                        event->channel              = channel;
+                        event->ctrl.type            = kEngineControlEventTypeMidiProgram;
+                        event->ctrl.param           = index;
+                        event->ctrl.midiValue       = -1;
+                        event->ctrl.normalizedValue = 0.0f;
+                        event->ctrl.handled         = true;
                     }
                     break;
                 }
@@ -1254,12 +1261,14 @@ protected:
 
                     if (EngineEvent* const event = getNextFreeInputEvent())
                     {
-                        event->type    = kEngineEventTypeControl;
-                        event->time    = time;
-                        event->channel = channel;
-                        event->ctrl.type  = kEngineControlEventTypeAllSoundOff;
-                        event->ctrl.param = 0;
-                        event->ctrl.value = 0.0f;
+                        event->type                 = kEngineEventTypeControl;
+                        event->time                 = time;
+                        event->channel              = channel;
+                        event->ctrl.type            = kEngineControlEventTypeAllSoundOff;
+                        event->ctrl.param           = 0;
+                        event->ctrl.midiValue       = -1;
+                        event->ctrl.normalizedValue = 0.0f;
+                        event->ctrl.handled         = true;
                     }
                 }   break;
 
@@ -1269,12 +1278,14 @@ protected:
 
                     if (EngineEvent* const event = getNextFreeInputEvent())
                     {
-                        event->type    = kEngineEventTypeControl;
-                        event->time    = time;
-                        event->channel = channel;
-                        event->ctrl.type  = kEngineControlEventTypeAllNotesOff;
-                        event->ctrl.param = 0;
-                        event->ctrl.value = 0.0f;
+                        event->type                 = kEngineEventTypeControl;
+                        event->time                 = time;
+                        event->channel              = channel;
+                        event->ctrl.type            = kEngineControlEventTypeAllNotesOff;
+                        event->ctrl.param           = 0;
+                        event->ctrl.midiValue       = -1;
+                        event->ctrl.normalizedValue = 0.0f;
+                        event->ctrl.handled         = true;
                     }
                 }   break;
 

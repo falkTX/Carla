@@ -3839,7 +3839,7 @@ public:
                             CARLA_SAFE_ASSERT_CONTINUE(k < pData->param.count);
 
                             ctrlEvent.handled = true;
-                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
                             setParameterValueRT(k, value, true);
                             continue;
                         }
@@ -3850,19 +3850,19 @@ public:
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 ctrlEvent.handled = true;
-                                value = ctrlEvent.value;
+                                value = ctrlEvent.normalizedValue;
                                 setDryWetRT(value, true);
                             }
                             else if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 ctrlEvent.handled = true;
-                                value = ctrlEvent.value*127.0f/100.0f;
+                                value = ctrlEvent.normalizedValue*127.0f/100.0f;
                                 setVolumeRT(value, true);
                             }
                             else if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
-                                value = ctrlEvent.value/0.5f - 1.0f;
+                                value = ctrlEvent.normalizedValue/0.5f - 1.0f;
 
                                 if (value < 0.0f)
                                 {
@@ -3900,7 +3900,7 @@ public:
                                 continue;
 
                             ctrlEvent.handled = true;
-                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.value);
+                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
                             setParameterValueRT(k, value, true);
                         }
 
@@ -3909,7 +3909,7 @@ public:
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = uint8_t(ctrlEvent.param);
-                            midiData[2] = uint8_t(ctrlEvent.value*127.0f);
+                            midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f);
 
                             const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
@@ -4249,7 +4249,8 @@ public:
                     channel = pData->param.data[k].midiChannel;
                     param   = static_cast<uint16_t>(pData->param.data[k].mappedControlIndex);
                     value   = pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]);
-                    pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
+                    pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter,
+                                                            param, -1, value);
                 }
             }
         } // End of Control Output
