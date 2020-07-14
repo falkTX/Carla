@@ -3901,7 +3901,12 @@ public:
                                 continue;
 
                             ctrlEvent.handled = true;
-                            value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
+
+                            if (pData->param.data[k].mappedFlags & PARAMETER_MAPPING_MIDI_DELTA)
+                                value = pData->param.getFinalValueWithMidiDelta(k, fParamBuffers[k], ctrlEvent.midiValue);
+                            else
+                                value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
+
                             setParameterValueRT(k, value, true);
                         }
 

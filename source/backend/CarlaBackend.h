@@ -344,6 +344,25 @@ static const uint PARAMETER_CAN_BE_CV_CONTROLLED = 0x800;
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------
+ * Mapped Parameter Flags */
+
+/*!
+ * @defgroup MappedParameterFlags Mapped Parameter Flags
+ *
+ * Various flags for parameter mappings.
+ * @see ParameterData::mappedFlags
+ * @{
+ */
+
+/*!
+ * Parameter mapping uses delta value instead of full scale.
+ * Only relevant for MIDI CC mappings.
+ */
+static const uint PARAMETER_MAPPING_MIDI_DELTA = 0x001;
+
+/** @} */
+
+/* ------------------------------------------------------------------------------------------------------------
  * Patchbay Port Hints */
 
 /*!
@@ -1668,6 +1687,12 @@ typedef struct {
      * Maximum value that this parameter maps to.
      */
     float mappedMaximum;
+
+    /*!
+     * Flags related to the current mapping of this parameter.
+     * @see MappedParameterFlags
+     */
+    uint mappedFlags;
 
 } ParameterData;
 

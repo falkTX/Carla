@@ -322,6 +322,13 @@ PARAMETER_USES_CUSTOM_TEXT = 0x400
 PARAMETER_CAN_BE_CV_CONTROLLED = 0x800
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Mapped Parameter Flags
+# Various flags for parameter mappings.
+# @see ParameterData::mappedFlags
+
+PARAMETER_MAPPING_MIDI_DELTA = 0x001
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Patchbay Port Hints
 # Various patchbay port hints.
 
@@ -1159,7 +1166,11 @@ class ParameterData(Structure):
         ("mappedMinimum", c_float),
 
         # Maximum value that this parameter maps to.
-        ("mappedMaximum", c_float)
+        ("mappedMaximum", c_float),
+
+        # Flags related to the current mapping of this parameter.
+        # @see MappedParameterFlags
+        ("mappedFlags", c_uint)
     ]
 
 # Parameter ranges.
@@ -1241,6 +1252,7 @@ PyParameterData = {
     'mappedControlIndex': CONTROL_INDEX_NONE,
     'mappedMinimum': 0.0,
     'mappedMaximum': 0.0,
+    'mappedFlags': 0x0,
 }
 
 # @see ParameterRanges

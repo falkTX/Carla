@@ -46,7 +46,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------------------------------------------------------
 // Fallback data
 
-static const ParameterData   kParameterDataNull   = { PARAMETER_UNKNOWN, 0x0, PARAMETER_NULL, -1, 0, CONTROL_INDEX_NONE, 0.0f, 1.0f };
+static const ParameterData   kParameterDataNull   = { PARAMETER_UNKNOWN, 0x0, PARAMETER_NULL, -1, 0, CONTROL_INDEX_NONE, 0.0f, 1.0f, 0x0 };
 static const ParameterRanges kParameterRangesNull = { 0.0f, 0.0f, 1.0f, 0.01f, 0.0001f, 0.1f };
 static const MidiProgramData kMidiProgramDataNull = { 0, 0, nullptr };
 
