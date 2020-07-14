@@ -175,6 +175,10 @@ public:
 
         carla_copy<uint8_t>(rawEvent->data, data, size);
 
+        // Fix zero-velocity note-ons
+        if (MIDI_IS_STATUS_NOTE_ON(data[0]) && data[2] == 0)
+            rawEvent->data[0] = MIDI_STATUS_NOTE_OFF;
+
         appendSorted(rawEvent);
     }
 
