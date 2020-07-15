@@ -297,12 +297,9 @@ class RackListWidget(QListWidget):
             self.setCurrentRow(-1)
 
     def dragLeaveEvent(self, event):
-        if not self.fWasLastDragValid:
-            QListWidget.dragLeaveEvent(self, event)
-            return
-
-        event.acceptProposedAction()
-        self.fWasLastDragValid = False
+        if self.fWasLastDragValid:
+            self.fWasLastDragValid = False
+        QListWidget.dragLeaveEvent(self, event)
 
     # --------------------------------------------------------------------------------------------------------
 
