@@ -264,6 +264,7 @@ public:
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+            options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
         }
 
         return options;
@@ -1553,6 +1554,8 @@ public:
 
                     uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
 
+                    if ((status == MIDI_STATUS_NOTE_OFF || status == MIDI_STATUS_NOTE_ON) && (pData->options & PLUGIN_OPTION_SKIP_SENDING_NOTES))
+                        continue;
                     if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
                     if (status == MIDI_STATUS_CONTROL_CHANGE && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
@@ -2641,6 +2644,8 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
                 pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
+                pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
         }
 
         if (fEffect->numPrograms > 1 && (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0)

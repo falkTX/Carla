@@ -60,6 +60,7 @@ from carla_backend import (
     PLUGIN_OPTION_SEND_PITCHBEND,
     PLUGIN_OPTION_SEND_ALL_SOUND_OFF,
     PLUGIN_OPTION_SEND_PROGRAM_CHANGES,
+    PLUGIN_OPTION_SKIP_SENDING_NOTES,
     PARAMETER_DRYWET,
     PARAMETER_VOLUME,
     PARAMETER_BALANCE_LEFT,
@@ -748,6 +749,7 @@ class PluginEdit(QDialog):
         self.ui.ch_force_stereo.clicked.connect(self.slot_optionChanged)
         self.ui.ch_map_program_changes.clicked.connect(self.slot_optionChanged)
         self.ui.ch_use_chunks.clicked.connect(self.slot_optionChanged)
+        self.ui.ch_send_notes.clicked.connect(self.slot_optionChanged)
         self.ui.ch_send_program_changes.clicked.connect(self.slot_optionChanged)
         self.ui.ch_send_control_changes.clicked.connect(self.slot_optionChanged)
         self.ui.ch_send_channel_pressure.clicked.connect(self.slot_optionChanged)
@@ -974,6 +976,9 @@ class PluginEdit(QDialog):
         self.ui.ch_force_stereo.setChecked(optsEnabled & PLUGIN_OPTION_FORCE_STEREO)
         self.ui.ch_map_program_changes.setEnabled(optsAvailable & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
         self.ui.ch_map_program_changes.setChecked(optsEnabled & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+        self.ui.ch_send_notes.setEnabled(optsAvailable & PLUGIN_OPTION_SKIP_SENDING_NOTES)
+        self.ui.ch_send_notes.setChecked((self.ui.ch_send_notes.isEnabled() and
+                                          (optsEnabled & PLUGIN_OPTION_SKIP_SENDING_NOTES) == 0x0))
         self.ui.ch_send_control_changes.setEnabled(optsAvailable & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
         self.ui.ch_send_control_changes.setChecked(optsEnabled & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
         self.ui.ch_send_channel_pressure.setEnabled(optsAvailable & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
@@ -1251,6 +1256,9 @@ class PluginEdit(QDialog):
             widget = self.ui.ch_force_stereo
         elif option == PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
             widget = self.ui.ch_map_program_changes
+        elif option == PLUGIN_OPTION_SKIP_SENDING_NOTES:
+            widget = self.ui.ch_send_notes
+            yesNo = not yesNo
         elif option == PLUGIN_OPTION_SEND_PROGRAM_CHANGES:
             widget = self.ui.ch_send_program_changes
         elif option == PLUGIN_OPTION_SEND_CONTROL_CHANGES:
@@ -1439,6 +1447,9 @@ class PluginEdit(QDialog):
             option = PLUGIN_OPTION_FORCE_STEREO
         elif sender == self.ui.ch_map_program_changes:
             option = PLUGIN_OPTION_MAP_PROGRAM_CHANGES
+        elif sender == self.ui.ch_send_notes:
+            option = PLUGIN_OPTION_SKIP_SENDING_NOTES
+            clicked = not clicked
         elif sender == self.ui.ch_send_program_changes:
             option = PLUGIN_OPTION_SEND_PROGRAM_CHANGES
         elif sender == self.ui.ch_send_control_changes:

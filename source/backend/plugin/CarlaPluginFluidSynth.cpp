@@ -193,6 +193,7 @@ public:
         options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
         options |= PLUGIN_OPTION_SEND_PITCHBEND;
         options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
 
         return options;
     }
@@ -1381,24 +1382,28 @@ public:
 
                     switch (status)
                     {
-                    case MIDI_STATUS_NOTE_OFF: {
-                        const uint8_t note = midiEvent.data[1];
+                    case MIDI_STATUS_NOTE_OFF:
+                        if ((pData->options & PLUGIN_OPTION_SKIP_SENDING_NOTES) == 0x0)
+                        {
+                            const uint8_t note = midiEvent.data[1];
 
-                        fluid_synth_noteoff(fSynth, event.channel, note);
+                            fluid_synth_noteoff(fSynth, event.channel, note);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, true, event.channel, note, 0, 0.0f);
+                            pData->postponeRtEvent(kPluginPostRtEventNoteOff, true, event.channel, note, 0, 0.0f);
+                        }
                         break;
-                    }
 
-                    case MIDI_STATUS_NOTE_ON: {
-                        const uint8_t note = midiEvent.data[1];
-                        const uint8_t velo = midiEvent.data[2];
+                    case MIDI_STATUS_NOTE_ON:
+                        if ((pData->options & PLUGIN_OPTION_SKIP_SENDING_NOTES) == 0x0)
+                        {
+                            const uint8_t note = midiEvent.data[1];
+                            const uint8_t velo = midiEvent.data[2];
 
-                        fluid_synth_noteon(fSynth, event.channel, note, velo);
+                            fluid_synth_noteon(fSynth, event.channel, note, velo);
 
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, true, event.channel, note, velo, 0.0f);
+                            pData->postponeRtEvent(kPluginPostRtEventNoteOn, true, event.channel, note, velo, 0.0f);
+                        }
                         break;
-                    }
 
                     case MIDI_STATUS_POLYPHONIC_AFTERTOUCH:
                         if (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
@@ -1749,6 +1754,8 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
+            pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
 
         return true;
     }

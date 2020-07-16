@@ -273,6 +273,11 @@ PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100
 # @note: This option conflicts with PLUGIN_OPTION_MAP_PROGRAM_CHANGES and cannot be used at the same time.
 PLUGIN_OPTION_SEND_PROGRAM_CHANGES = 0x200
 
+# SSkip sending MIDI note events.
+# This if off-by-default as a way to keep backwards compatibility.
+# We always want notes enabled by default, not the contrary.
+PLUGIN_OPTION_SKIP_SENDING_NOTES = 0x400
+
 # Special flag to indicate that plugin options are not yet set.
 # This flag exists because 0x0 as an option value is a valid one, so we need something else to indicate "null-ness".
 PLUGIN_OPTIONS_NULL = 0x10000

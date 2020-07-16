@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>537</width>
-    <height>535</height>
+    <height>525</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -402,6 +402,13 @@
            <widget class="QCheckBox" name="ch_map_program_changes">
             <property name="text">
              <string>Map Program Changes</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="ch_send_notes">
+            <property name="text">
+             <string>Send Notes</string>
             </property>
            </widget>
           </item>
