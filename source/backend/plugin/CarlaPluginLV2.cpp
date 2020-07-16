@@ -4608,11 +4608,20 @@ public:
 
             if (fExt.options != nullptr && fExt.options->set != nullptr)
             {
-                fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::MaxBlockLenth]);
-                fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::NominalBlockLenth]);
+                LV2_Options_Option options[2];
+                carla_zeroStructs(options, 2);
+
+                carla_copyStruct(options[0], fLv2Options.opts[CarlaPluginLV2Options::MaxBlockLenth]);
+                fExt.options->set(fHandle, options);
+
+                carla_copyStruct(options[0], fLv2Options.opts[CarlaPluginLV2Options::NominalBlockLenth]);
+                fExt.options->set(fHandle, options);
 
                 if (fLv2Options.minBufferSize != 1)
-                    fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::MinBlockLenth]);
+                {
+                    carla_copyStruct(options[0], fLv2Options.opts[CarlaPluginLV2Options::MinBlockLenth]);
+                    fExt.options->set(fHandle, options);
+                }
             }
         }
 
