@@ -177,7 +177,7 @@ public:
 
         // Fix zero-velocity note-ons
         if (MIDI_IS_STATUS_NOTE_ON(data[0]) && data[2] == 0)
-            rawEvent->data[0] = MIDI_STATUS_NOTE_OFF;
+            rawEvent->data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (data[0] & MIDI_CHANNEL_BIT));
 
         appendSorted(rawEvent);
     }
