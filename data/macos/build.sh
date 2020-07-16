@@ -5,6 +5,9 @@
 
 set -e
 
+VERSION="2.2-RC1"
+PKG_FOLDER="Carla_${VERSION}-macos"
+
 # ------------------------------------------------------------------------------------
 # cd to correct path
 
@@ -15,8 +18,6 @@ fi
 # ---------------------------------------------------------------------------------------------------------------------
 # set variables
 
-PKG_FOLDER="Carla_2.2b-macos"
-
 source data/macos/common.env
 
 if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 11 ]; then
@@ -26,7 +27,11 @@ else
 fi
 
 export MACOS="true"
-export USING_JUCE="true"
+if [ "${MACOS_VERSION_MIN}" == "10.12" ]; then
+    export USING_JUCE="true"
+else
+    export USING_JUCE="false"
+fi
 
 export CC=clang
 export CXX=clang++
@@ -47,7 +52,7 @@ export MOC_QT5=moc
 export RCC_QT5=rcc
 export UIC_QT5=uic
 
-make USING_JUCE=${USING_JUCE} ${MAKE_ARGS}
+make USING_JUCE=${USING_JUCE} USING_JUCE_AUDIO_DEVICES=${USING_JUCE} ${MAKE_ARGS}
 
 ##############################################################################################
 # Build 32bit bridges
