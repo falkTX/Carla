@@ -16,6 +16,8 @@ if [ x"${ARCH}" = x"32nosse" ]; then
   MAKE_ARGS="NOOPT=true"
 fi
 
+VERSION="2.2-RC1"
+
 # ---------------------------------------------------------------------------------------------------------------------
 # stop on error
 
@@ -33,7 +35,7 @@ fi
 
 source data/windows/common.env
 
-PKG_FOLDER="Carla_2.1-win${ARCH}"
+PKG_FOLDER="Carla_${VERSION}-win${ARCH}"
 
 export WIN32=true
 
@@ -239,10 +241,10 @@ make -C unzipfx-carla-control -f Makefile.win32 ${MAKE_ARGS}
 
 # Create zip of Carla and CarlaControl
 rm -f Carla.zip CarlaControl.zip
-mv Carla Carla-2.1
-mv CarlaControl CarlaControl-2.1
-zip -r -9 Carla.zip Carla-2.1
-zip -r -9 CarlaControl.zip CarlaControl-2.1
+mv Carla Carla-${VERSION}
+mv CarlaControl CarlaControl-${VERSION}
+zip -r -9 Carla.zip Carla-${VERSION}
+zip -r -9 CarlaControl.zip CarlaControl-${VERSION}
 
 # Create static builds
 rm -f Carla.exe
@@ -255,7 +257,7 @@ chmod +x CarlaControl.exe
 
 # Cleanup
 rm -f Carla.zip CarlaControl.zip
-rm -rf Carla-2.1 CarlaControl-2.1
+rm -rf Carla-${VERSION} CarlaControl-${VERSION}
 
 # Create release zip
 rm -rf ${PKG_FOLDER}
