@@ -115,7 +115,7 @@
 #include "misc/juce_PushNotifications.h"
 #include "misc/juce_RecentlyOpenedFilesList.h"
 #include "misc/juce_SplashScreen.h"
-#if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_8
+#if !JUCE_MAC || MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_8
 #include "misc/juce_SystemTrayIconComponent.h"
 #endif
 #include "misc/juce_WebBrowserComponent.h"
