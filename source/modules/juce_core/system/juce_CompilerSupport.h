@@ -92,7 +92,7 @@
 
 //==============================================================================
 // C++ library
-#if (defined (__GLIBCXX__) && __GLIBCXX__ < 20130322) || (defined(_LIBCPP_VERSION) && (_LIBCPP_VERSION < 3700))
+#if (defined (__GLIBCXX__) && __GLIBCXX__ < 20130322)
  #error "JUCE requires a C++ library containing std::atomic"
 #endif
 

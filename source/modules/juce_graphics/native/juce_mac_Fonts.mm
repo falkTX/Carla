@@ -362,20 +362,20 @@ namespace CoreTextTypeLayout
 
         auto verticalJustification = text.getJustification().getOnlyVerticalFlags();
 
-        auto ctFrameArea = [area, minCTFrameHeight, verticalJustification]
+        const Rectangle<float> ctFrameArea = [area, minCTFrameHeight, verticalJustification]
         {
             if (minCTFrameHeight < area.getHeight())
-                return area;
+                return Rectangle<float> (area);
 
             if (verticalJustification == Justification::verticallyCentred)
                 return area.withSizeKeepingCentre (area.getWidth(), minCTFrameHeight);
 
-            auto frameArea = area.withHeight (minCTFrameHeight);
+            const Rectangle<float> frameArea = area.withHeight (minCTFrameHeight);
 
             if (verticalJustification == Justification::bottom)
                 return frameArea.withBottomY (area.getBottom());
 
-            return frameArea;
+            return Rectangle<float> (frameArea);
         }();
 
         auto frame = createCTFrame (framesetter, CGRectMake ((CGFloat) ctFrameArea.getX(), flipHeight - (CGFloat) ctFrameArea.getBottom(),

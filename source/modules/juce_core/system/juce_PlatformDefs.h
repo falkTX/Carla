@@ -99,11 +99,7 @@ namespace juce
     deliberately and want to ignore the warning.
 */
 #if JUCE_CLANG
- #if __has_cpp_attribute(clang::fallthrough)
-  #define JUCE_FALLTHROUGH [[clang::fallthrough]];
- #else
-  #define JUCE_FALLTHROUGH
- #endif
+ #define JUCE_FALLTHROUGH [[clang::fallthrough]];
 #elif JUCE_GCC
  #if __GNUC__ >= 7
   #define JUCE_FALLTHROUGH [[gnu::fallthrough]];

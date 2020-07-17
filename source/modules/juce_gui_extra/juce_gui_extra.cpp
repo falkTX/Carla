@@ -142,7 +142,9 @@
 #include "misc/juce_PushNotifications.cpp"
 #include "misc/juce_RecentlyOpenedFilesList.cpp"
 #include "misc/juce_SplashScreen.cpp"
+#if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_8
 #include "misc/juce_SystemTrayIconComponent.cpp"
+#endif
 #include "misc/juce_LiveConstantEditor.cpp"
 #include "misc/juce_AnimatedAppComponent.cpp"
 
@@ -154,7 +156,9 @@
  #if JUCE_MAC
   #include "native/juce_mac_NSViewComponent.mm"
   #include "native/juce_mac_AppleRemote.mm"
+ #if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_8
   #include "native/juce_mac_SystemTrayIcon.cpp"
+ #endif
  #endif
 
  #if JUCE_IOS

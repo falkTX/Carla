@@ -1528,17 +1528,21 @@ private:
             case NSEventTypeSystemDefined:
             case NSEventTypeApplicationDefined:
             case NSEventTypePeriodic:
+           #if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_8
             case NSEventTypeGesture:
+           #endif
             case NSEventTypeMagnify:
             case NSEventTypeSwipe:
             case NSEventTypeRotate:
             case NSEventTypeBeginGesture:
             case NSEventTypeEndGesture:
             case NSEventTypeQuickLook:
-           #if JUCE_64BIT
+          #if JUCE_64BIT
             case NSEventTypeSmartMagnify:
+           #if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_8
             case NSEventTypePressure:
            #endif
+          #endif
           #if defined (MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_12
            #if JUCE_64BIT
             case NSEventTypeDirectTouch:

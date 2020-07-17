@@ -157,7 +157,7 @@ void RecentlyOpenedFilesList::forgetRecentFileNatively (const File& file)
         // from the recent list, so we clear them all and add them back excluding
         // the specified file
 
-        auto sharedDocController = [NSDocumentController sharedDocumentController];
+        NSDocumentController* sharedDocController = [NSDocumentController sharedDocumentController];
         auto recentDocumentURLs  = [sharedDocController recentDocumentURLs];
 
         [sharedDocController clearRecentDocuments: nil];

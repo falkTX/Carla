@@ -26,6 +26,10 @@
 namespace juce
 {
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED <= MAC_OS_X_VERSION_10_8
+ #define __nullable
+#endif
+
 //==============================================================================
 // This class has been renamed from CoreGraphicsImage to avoid a symbol
 // collision in Pro Tools 2019.12 and possibly 2020 depending on the Pro Tools

@@ -58,7 +58,11 @@
 #endif
 
 #ifdef CARLA_OS_MAC
+# define Component CocoaComponent
+# define Point CocoaPoint
 # import <Foundation/Foundation.h>
+# undef Component
+# undef Point
 #endif
 
 #ifdef CARLA_OS_WIN

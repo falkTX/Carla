@@ -309,7 +309,7 @@ bool DragAndDropContainer::performExternalDragDropOfFiles (const StringArray& fi
                 for (auto& filename : files)
                 {
                     auto* nsFilename = juceStringToNS (filename);
-                    auto fileURL = [NSURL fileURLWithPath: nsFilename];
+                    NSURL* fileURL = [NSURL fileURLWithPath: nsFilename];
                     auto dragItem = [[NSDraggingItem alloc] initWithPasteboardWriter: fileURL];
 
                     auto eventPos = [event locationInWindow];

@@ -58,6 +58,10 @@
 namespace juce
 {
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED <= MAC_OS_X_VERSION_10_8
+static const uint32 kAudioUnitType_MIDIProcessor = 'aumi';
+#endif
+
 // Change this to disable logging of various activities
 #ifndef AU_LOGGING
  #define AU_LOGGING 1

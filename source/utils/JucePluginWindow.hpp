@@ -26,7 +26,11 @@
 #if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
 # include <X11/Xlib.h>
 #elif defined(CARLA_OS_MAC)
+# define Component CocoaComponent
+# define Point CocoaPoint
 # import <Cocoa/Cocoa.h>
+# undef Component
+# undef Point
 #endif
 
 // -----------------------------------------------------------------------
