@@ -38,7 +38,7 @@ unset CPPFLAGS
 # Complete 64bit build
 
 export CFLAGS="-I${TARGETDIR}/carla64/include -m64 -mmacosx-version-min=${MACOS_VERSION_MIN}"
-export CXXFLAGS="${CFLAGS} -stdlib=libc++ -Wno-unused-private-field -Werror=auto-var-id"
+export CXXFLAGS="${CFLAGS} -stdlib=libc++ -Wno-unknown-pragmas -Wno-unused-private-field -Werror=auto-var-id"
 export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64 -mmacosx-version-min=${MACOS_VERSION_MIN} -stdlib=libc++"
 
 export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
@@ -48,7 +48,7 @@ export MOC_QT5=moc
 export RCC_QT5=rcc
 export UIC_QT5=uic
 
-make USING_JUCE=${USING_JUCE} USING_JUCE_AUDIO_DEVICES=${USING_JUCE} ${MAKE_ARGS} -j 1
+make USING_JUCE=${USING_JUCE} USING_JUCE_AUDIO_DEVICES=${USING_JUCE} ${MAKE_ARGS}
 
 ##############################################################################################
 # Build 32bit bridges
@@ -56,7 +56,7 @@ make USING_JUCE=${USING_JUCE} USING_JUCE_AUDIO_DEVICES=${USING_JUCE} ${MAKE_ARGS
 if [ "${MACOS_VERSION_MIN}" != "10.12" ]; then
 
 export CFLAGS="-I${TARGETDIR}/carla32/include -m32 -mmacosx-version-min=${MACOS_VERSION_MIN}"
-export CXXFLAGS="${CFLAGS} -stdlib=libc++"
+export CXXFLAGS="${CFLAGS} -stdlib=libc++ -Wno-unknown-pragmas -Wno-unused-private-field -Werror=auto-var-id"
 export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32 -mmacosx-version-min=${MACOS_VERSION_MIN} -stdlib=libc++"
 
 export PATH=${TARGETDIR}/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin

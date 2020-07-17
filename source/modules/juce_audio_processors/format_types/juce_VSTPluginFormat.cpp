@@ -3326,8 +3326,8 @@ private:
               if (owner.isOpen)
               {
                   owner.isOpen = false;
-                  owner.dispatch (Vst2::effEditClose, 0, 0, 0, 0);
-                  owner.dispatch (Vst2::effEditSleep, 0, 0, 0, 0);
+                  owner.dispatch (Vst2::plugInOpcodeCloseEditor, 0, 0, 0, 0);
+                  owner.dispatch (Vst2::plugInOpcodeSleepEditor, 0, 0, 0, 0);
               }
           }
 
@@ -3335,8 +3335,8 @@ private:
           {
               Vst2::VstEditorBounds* rect = nullptr;
               owner.dispatch (Vst2::plugInOpcodeGetEditorBounds, 0, 0, &rect, 0);
-              w = rect->right - rect->left;
-              h = rect->bottom - rect->top;
+              w = rect->rightmost - rect->leftmost;
+              h = rect->lower - rect->upper;
               return true;
           }
 
@@ -3346,7 +3346,7 @@ private:
               {
                   alreadyInside = true;
                   getTopLevelComponent()->toFront (true);
-                  owner.dispatch (Vst2::effEditMouse, x, y, 0, 0);
+                  owner.dispatch (Vst2::plugInOpcodeGetMouse, x, y, 0, 0);
                   alreadyInside = false;
               }
               else
@@ -3361,12 +3361,12 @@ private:
               {
                   auto pos = peer->globalToLocal (getScreenPosition());
                   Vst2::VstEditorBounds r;
-                  r.left   = (int16) pos.getX();
-                  r.top    = (int16) pos.getY();
-                  r.right  = (int16) (r.left + getWidth());
-                  r.bottom = (int16) (r.top + getHeight());
+                  r.leftmost  = (int16) pos.getX();
+                  r.upper     = (int16) pos.getY();
+                  r.rightmost = (int16) (r.leftmost + getWidth());
+                  r.lower     = (int16) (r.upper + getHeight());
 
-                  owner.dispatch (Vst2::effEditDraw, 0, 0, &r, 0);
+                  owner.dispatch (Vst2::plugInOpcodeDrawEditor, 0, 0, &r, 0);
               }
           }
 

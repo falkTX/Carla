@@ -27,9 +27,11 @@
 # include <X11/Xlib.h>
 #elif defined(CARLA_OS_MAC)
 # define Component CocoaComponent
+# define MemoryBlock CocoaMemoryBlock
 # define Point CocoaPoint
 # import <Cocoa/Cocoa.h>
 # undef Component
+# undef MemoryBlock
 # undef Point
 #endif
 

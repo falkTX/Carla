@@ -59,9 +59,11 @@
 
 #ifdef CARLA_OS_MAC
 # define Component CocoaComponent
+# define MemoryBlock CocoaMemoryBlock
 # define Point CocoaPoint
 # import <Foundation/Foundation.h>
 # undef Component
+# undef MemoryBlock
 # undef Point
 #endif
 
