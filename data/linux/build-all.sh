@@ -1,5 +1,7 @@
 #!/bin/bash
 
+VERSION="2.2-RC1"
+
 # ---------------------------------------------------------------------------------------------------------------------
 # check dependencies
 
@@ -28,8 +30,8 @@ source common.env
 CHROOT_CARLA_DIR="/tmp/carla-src"
 
 # used for downloading packages from kxstudio repos, in order to get lv2-gtk3 and windows bridges
-CARLA_GIT_VER="2.1~rc1+git20200331"
-PKGS_NUM="20200331"
+CARLA_GIT_VER="2.2~rc1+git20200717"
+PKGS_NUM="20200717"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
@@ -271,7 +273,6 @@ download_carla_extras()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-CARLA_GIT_VER="2.1~rc1+git20200331"
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
@@ -475,17 +476,17 @@ ln -s carla-plugin build-vst/carla.vst/resources/carla-plugin-patchbay
 rm build-{lv2,vst}/carla.*/carla-bridge-lv2-modgui
 rm build-{lv2,vst}/carla.*/libcarla_native-plugin.so
 
-mv build-carla carla-2.1
-zip --symlinks -r -9 carla.zip carla-2.1
+mv build-carla carla-${VERSION}
+zip --symlinks -r -9 carla.zip carla-${VERSION}
 cat data/windows/unzipfx-carla/unzipfx2cat carla.zip > Carla
 chmod +x Carla
-rm -rf carla carla-2.1 carla.zip
+rm -rf carla carla-${VERSION} carla.zip
 
-mv build-carla-control carla-control-2.1
-zip --symlinks -r -9 carla-control.zip carla-control-2.1
+mv build-carla-control carla-control-${VERSION}
+zip --symlinks -r -9 carla-control.zip carla-control-${VERSION}
 cat data/windows/unzipfx-carla-control/unzipfx2cat carla-control.zip > CarlaControl
 chmod +x CarlaControl
-rm -rf carla-control carla-control-2.1 carla-control.zip
+rm -rf carla-control carla-control-${VERSION} carla-control.zip
 
 rm -rf ${PKG_FOLDER}${ARCH}
 mkdir ${PKG_FOLDER}${ARCH}
@@ -504,7 +505,7 @@ EOF
 
 if [ -z "${SOURCED_BY_DOCKER}" ]; then
     # name of final dir and xz file, needed only by chroot_pack_carla
-    export PKG_FOLDER="Carla_2.1-linux"
+    export PKG_FOLDER="Carla_${VERSION}-linux"
 
     # cleanup
     prepare
