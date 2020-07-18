@@ -3022,7 +3022,7 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         if (fDescriptor->midiIns > 0)
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
+            if (isPluginOptionInverseEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
                 pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
 
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES)

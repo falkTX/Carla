@@ -744,6 +744,16 @@ bool isPluginOptionEnabled(const uint options, const uint option)
     return false;
 }
 
+static inline
+bool isPluginOptionInverseEnabled(const uint options, const uint option)
+{
+    if (options == PLUGIN_OPTIONS_NULL)
+        return false;
+    if (options & option)
+        return true;
+    return false;
+}
+
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
