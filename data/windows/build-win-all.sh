@@ -15,6 +15,19 @@ if [ ! -f Makefile ]; then
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
+# cleanup
+
+if [ ! -f Makefile ] || [ ! -f source/frontend/carla ]; then
+    echo "wrong dir"
+    exit 1
+fi
+
+rm -rf data/windows/*.exe
+rm -rf data/windows/*.lv2
+rm -rf data/windows/*.vst
+rm -rf data/windows/*.zip
+
+# ---------------------------------------------------------------------------------------------------------------------
 # start
 
 make distclean
