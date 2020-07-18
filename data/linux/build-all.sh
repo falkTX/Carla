@@ -30,8 +30,8 @@ source common.env
 CHROOT_CARLA_DIR="/tmp/carla-src"
 
 # used for downloading packages from kxstudio repos, in order to get lv2-gtk3 and windows bridges
-CARLA_GIT_VER="2.2~rc1+git20200717"
-PKGS_NUM="20200717"
+CARLA_GIT_VER="2.2~rc1+git20200718"
+PKGS_NUM="20200718"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
