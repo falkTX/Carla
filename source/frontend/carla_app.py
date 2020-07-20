@@ -30,7 +30,7 @@ from ctypes import CDLL, RTLD_GLOBAL
 # ------------------------------------------------------------------------------------------------------------
 # Imports (PyQt5)
 
-from PyQt5.QtCore import QT_VERSION, Qt, QCoreApplication, QLibraryInfo, QLocale, QSettings, QTranslator
+from PyQt5.QtCore import QT_VERSION, Qt, QCoreApplication, QLibraryInfo, QLocale, QTranslator
 from PyQt5.QtGui import QColor, QIcon, QPalette
 from PyQt5.QtWidgets import QApplication
 
