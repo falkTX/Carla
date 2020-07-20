@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # A piano roll viewer/editor
-# Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
 # Copyright (C) 2014-2015 Perry Nguyen
 #
 # This program is free software; you can redistribute it and/or
@@ -69,6 +69,7 @@ class MidiPatternW(ExternalUI, QMainWindow):
         self.ui.act_edit_select_all.triggered.connect(self.slot_editSelectAll)
 
         self.ui.piano.midievent.connect(self.sendMsg)
+        self.ui.piano.noteclicked.connect(self.sendTemporaryNote)
         self.ui.piano.measureupdate.connect(self.updateMeasureBox)
         self.ui.piano.modeupdate.connect(self.ui.modeIndicator.changeMode)
         self.ui.piano.modeupdate.connect(self.slot_modeChanged)
@@ -237,6 +238,9 @@ class MidiPatternW(ExternalUI, QMainWindow):
             self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
             self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
 
+    def sendTemporaryNote(self, note, on):
+        self.send(["midi-note", note, on])
+
     def msgCallback(self, msg):
         msg = charPtrToString(msg)
 
@@ -246,15 +250,15 @@ class MidiPatternW(ExternalUI, QMainWindow):
 
         elif msg == "midievent-add":
             # adds single midi event
-            time = int(self.readlineblock())
-            size = int(self.readlineblock())
-            data = tuple(int(self.readlineblock()) for x in range(size))
+            time = self.readlineblock_int()
+            size = self.readlineblock_int()
+            data = tuple(self.readlineblock_int() for x in range(size))
 
             self.handleMidiEvent(time, size, data)
 
         elif msg == "transport":
             playing, frame, bar, beat, tick = tuple(int(i) for i in self.readlineblock().split(":"))
-            bpm = float(self.readlineblock())
+            bpm = self.readlineblock_float()
             playing = bool(int(playing))
 
             old_frame = self.fTransportInfo['frame']
@@ -326,7 +330,7 @@ class MidiPatternW(ExternalUI, QMainWindow):
 if __name__ == '__main__':
     import resources_rc
 
-    pathBinaries, pathResources = getPaths()
+    pathBinaries, _ = getPaths()
     gCarla.utils = CarlaUtils(os.path.join(pathBinaries, "libcarla_utils." + DLL_EXTENSION))
     gCarla.utils.set_process_name("MidiPattern")
 

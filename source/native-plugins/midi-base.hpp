@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -59,9 +59,18 @@ public:
           fStartTime(0),
           fReadMutex(),
           fWriteMutex(),
-          fData()
+          fData(),
+          fTemporary()
     {
         CARLA_SAFE_ASSERT(kPlayer != nullptr);
+
+        carla_zeroStructs(fTemporary, 2);
+
+        fTemporary[0].data[0] = MIDI_STATUS_NOTE_OFF;
+        fTemporary[1].data[0] = MIDI_STATUS_NOTE_ON;
+        fTemporary[1].data[2] = 100;
+
+        fTemporary[0].size = fTemporary[1].size = 3;
     }
 
     ~MidiPattern() noexcept
@@ -183,6 +192,12 @@ public:
         appendSorted(rawEvent);
     }
 
+    void flagTemporaryNote(const uint8_t note, const bool on)
+    {
+        fTemporary[on ? 1 : 0].time    = 1;
+        fTemporary[on ? 1 : 0].data[1] = note;
+    }
+
     // -------------------------------------------------------------------
     // remove data
 
@@ -240,6 +255,8 @@ public:
     {
         long double ldtime;
 
+        playTemporary();
+
         const CarlaMutexTryLocker cmtl(fReadMutex);
 
         if (cmtl.wasNotLocked())
@@ -264,6 +281,21 @@ public:
         }
 
         return true;
+    }
+
+    void playTemporary()
+    {
+        if (fTemporary[0].time != 0)
+        {
+            fTemporary[0].time = 0;
+            kPlayer->writeMidiEvent(fMidiPort, 0.0, &fTemporary[0]);
+        }
+
+        if (fTemporary[1].time != 0)
+        {
+            fTemporary[1].time = 0;
+            kPlayer->writeMidiEvent(fMidiPort, 0.0, &fTemporary[1]);
+        }
     }
 
     // -------------------------------------------------------------------
@@ -303,11 +335,14 @@ public:
 
         const CarlaMutexLocker cmlw(fWriteMutex);
 
-        if (fData.count() == 0)
-            return nullptr;
-
-        char* const data((char*)std::calloc(1, fData.count()*maxMsgSize+1));
+        char* const data((char*)std::calloc(1, fData.count() * maxMsgSize + 1));
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
+
+        if (fData.count() == 0)
+        {
+            *data = '\0';
+            return data;
+        }
 
         char* dataWrtn = data;
         int wrtn;
@@ -452,6 +487,8 @@ private:
     CarlaMutex fReadMutex;
     CarlaMutex fWriteMutex;
     LinkedList<const RawMidiEvent*> fData;
+
+    RawMidiEvent fTemporary[2];
 
     void appendSorted(const RawMidiEvent* const event)
     {
