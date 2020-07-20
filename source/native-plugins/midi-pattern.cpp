@@ -263,8 +263,9 @@ protected:
                 }
                 else
                 {
-                    fMidiOut.play(loopedPlayPos, fMaxTicks-loopedPlayPos);
-                    fMidiOut.play(0.0, loopedEndPos);
+                    const double diff = fMaxTicks - loopedPlayPos;
+                    fMidiOut.play(loopedPlayPos, diff);
+                    fMidiOut.play(0.0, loopedEndPos, diff);
                 }
             }
         }
@@ -353,7 +354,8 @@ protected:
         midiEvent.size    = event->size;
 
 #ifdef DEBUG
-        carla_stdout("Playing at %f :: %03X:%03i:%03i",
+        carla_stdout("Playing at %f|%u :: %03X:%03i:%03i",
+                     midiEvent.time,
                      static_cast<double>(midiEvent.time)*fTicksPerFrame,
                      midiEvent.data[0], midiEvent.data[1], midiEvent.data[2]);
 #endif
