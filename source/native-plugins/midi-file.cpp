@@ -106,7 +106,8 @@ protected:
         }
 
         if (fWasPlayingBefore)
-            fMidiOut.play(timePos->frame, frames);
+            if (! fMidiOut.play(timePos->frame, frames))
+                fNeedsAllNotesOff = true;
     }
 
     // -------------------------------------------------------------------
