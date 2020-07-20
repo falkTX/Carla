@@ -1409,6 +1409,7 @@ class PluginDatabaseW(QDialog):
 
         self.ui.b_add.setEnabled(False)
         self.addAction(self.ui.act_focus_search)
+        self.ui.act_focus_search.triggered.connect(self.slot_focusSearchFieldAndSelectAll)
 
         if BINARY_NATIVE in (BINARY_POSIX32, BINARY_WIN32):
             self.ui.ch_bridged.setText(self.tr("Bridged (64bit)"))
@@ -1505,7 +1506,7 @@ class PluginDatabaseW(QDialog):
         # Post-connect setup
 
         self._reAddPlugins()
-        self.ui.lineEdit.setFocus()
+        self.slot_focusSearchFieldAndSelectAll()
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -1531,6 +1532,11 @@ class PluginDatabaseW(QDialog):
     def slot_cellDoubleClicked(self, row, column):
         if column != self.TABLEWIDGET_ITEM_FAVORITE:
             self.slot_addPlugin()
+
+    @pyqtSlot()
+    def slot_focusSearchFieldAndSelectAll(self):
+        self.ui.lineEdit.setFocus()
+        self.ui.lineEdit.selectAll()
 
     @pyqtSlot()
     def slot_addPlugin(self):
@@ -2201,7 +2207,7 @@ class PluginDatabaseW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     def showEvent(self, event):
-        self.ui.lineEdit.setFocus()
+        self.slot_focusSearchFieldAndSelectAll()
         QDialog.showEvent(self, event)
 
 # ---------------------------------------------------------------------------------------------------------------------
