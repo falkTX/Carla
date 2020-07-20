@@ -277,6 +277,13 @@ public:
             if (ldtime > timePosFrame + frames)
                 break;
 
+            if (carla_isEqual(ldtime, timePosFrame + frames))
+            {
+                // only allow a few events to pass through in this special case
+                if (! MIDI_IS_STATUS_NOTE_OFF(rawMidiEvent->data[0]))
+                    continue;
+            }
+
             kPlayer->writeMidiEvent(fMidiPort, ldtime + offset - timePosFrame, rawMidiEvent);
         }
 
