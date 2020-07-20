@@ -266,13 +266,15 @@ protected:
 
                 if (loopedEndPos >= loopedPlayPos)
                 {
-                    fMidiOut.play(loopedPlayPos, loopedEndPos-loopedPlayPos);
+                    if (! fMidiOut.play(loopedPlayPos, loopedEndPos-loopedPlayPos))
+                        fNeedsAllNotesOff = true;
                 }
                 else
                 {
                     const double diff = fMaxTicks - loopedPlayPos;
-                    fMidiOut.play(loopedPlayPos, diff);
-                    fMidiOut.play(0.0, loopedEndPos, diff);
+
+                    if (! (fMidiOut.play(loopedPlayPos, diff) && fMidiOut.play(0.0, loopedEndPos, diff)))
+                        fNeedsAllNotesOff = true;
                 }
             }
 
@@ -458,7 +460,7 @@ private:
         carla_zeroChars(strBuf, 0xff);
 
         const CarlaMutexLocker cml1(getPipeLock());
-        const CarlaMutexLocker cml2(fMidiOut.getLock());
+        const CarlaMutexLocker cml2(fMidiOut.getWriteMutex());
 
         writeMessage("midi-clear-all\n", 15);
 
