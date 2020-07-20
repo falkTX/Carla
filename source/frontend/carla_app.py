@@ -54,7 +54,7 @@ from carla_shared import (
 
 class CarlaApplication():
     def __init__(self, appName = "Carla2", libPrefix = None):
-        pathBinaries, _ = getPaths(libPrefix)
+        pathBinaries, pathResources = getPaths(libPrefix)
 
         # Needed for MacOS and Windows
         if os.path.exists(CWD) and (MACOS or WINDOWS):
