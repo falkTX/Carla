@@ -560,7 +560,7 @@ class PianoRoll(QGraphicsScene):
                             note.moveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        QGraphicsScene.mouseReleaseEvent
+        QGraphicsScene.mouseReleaseEvent(self, event)
 
         if self.last_piano_note is not None:
             self.noteclicked.emit(self.last_piano_note, False)
