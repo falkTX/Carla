@@ -42,6 +42,8 @@ public:
           fNeedsAllNotesOff(false),
           fWasPlayingBefore(false),
           fTimeSigNum(4),
+          fLastPosition(0.0f),
+          fLastFrame(0),
           fTicksPerFrame(0.0),
           fMaxTicks(0.0),
           fMidiOut(this),
@@ -208,6 +210,8 @@ protected:
 
         if (fWasPlayingBefore != fTimeInfo.playing)
         {
+            fLastFrame = 0;
+            fLastPosition = 0.0f;
             fNeedsAllNotesOff = true;
             fWasPlayingBefore = fTimeInfo.playing;
         }
@@ -240,18 +244,21 @@ protected:
 
             fTicksPerFrame = TICKS_PER_BEAT / (60.0 / fTimeInfo.bbt.beatsPerMinute * getSampleRate());
 
-            /* */ double playPos = fTicksPerFrame*static_cast<double>(fTimeInfo.frame);
-            const double endPos  = playPos + fTicksPerFrame*static_cast<double>(frames);
+            double playPos;
 
-            const double loopedEndPos = std::fmod(endPos, fMaxTicks);
-
-            /*
-            for (uint32_t i=0; i<midiEventCount; ++i)
+            if (fLastFrame + frames == fTimeInfo.frame)
             {
-                uint32_t pos = static_cast<uint32_t>(std::fmod(fTicksPerFrame * static_cast<double>(fTimeInfo.frame + midiEvents[i].time), fMaxTicks));
-                fMidiOut.addRaw(pos, midiEvents[i].data, midiEvents[i].size);
+                // continuous playback
+                playPos = static_cast<double>(fLastPosition) + fTicksPerFrame * static_cast<double>(frames);
             }
-            */
+            else
+            {
+                // non-continuous, reset playPos
+                playPos = fTicksPerFrame * static_cast<double>(fTimeInfo.frame);
+            }
+
+            const double endPos       = playPos + fTicksPerFrame * static_cast<double>(frames);
+            const double loopedEndPos = std::fmod(endPos, fMaxTicks);
 
             for (; playPos < endPos; playPos += fMaxTicks)
             {
@@ -268,6 +275,9 @@ protected:
                     fMidiOut.play(0.0, loopedEndPos, diff);
                 }
             }
+
+            fLastFrame = fTimeInfo.frame;
+            fLastPosition = static_cast<float>(playPos);
         }
     }
 
@@ -296,8 +306,7 @@ protected:
             const double beatsPerMinute = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatsPerMinute : 120.0;
 
             const double ticksPerBeat  = TICKS_PER_BEAT;
-            const double ticksPerFrame = ticksPerBeat / (60.0 / beatsPerMinute * getSampleRate());
-            const double fullTicks     = static_cast<double>(ticksPerFrame * static_cast<long double>(fTimeInfo.frame));
+            const double fullTicks     = fLastPosition;
             const double fullBeats     = fullTicks / ticksPerBeat;
 
             const uint32_t tick = static_cast<uint32_t>(std::floor(std::fmod(fullTicks, ticksPerBeat)));
@@ -431,6 +440,9 @@ private:
     bool fNeedsAllNotesOff;
     bool fWasPlayingBefore;
     int  fTimeSigNum;
+
+    float    fLastPosition;
+    uint64_t fLastFrame;
 
     double fTicksPerFrame;
     double fMaxTicks;
