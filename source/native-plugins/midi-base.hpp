@@ -233,6 +233,8 @@ public:
 
     void play(long double timePosFrame, const double frames, const double offset = 0.0)
     {
+        long double ldtime;
+
         if (! fMutex.tryLock())
             return;
 
@@ -244,14 +246,14 @@ public:
             const RawMidiEvent* const rawMidiEvent(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(rawMidiEvent != nullptr);
 
-            if (rawMidiEvent->time < timePosFrame)
+            ldtime = static_cast<long double>(rawMidiEvent->time);
+
+            if (ldtime < timePosFrame)
                 continue;
-            if (static_cast<long double>(rawMidiEvent->time) > timePosFrame + frames)
+            if (ldtime > timePosFrame + frames)
                 break;
 
-            kPlayer->writeMidiEvent(fMidiPort,
-                                    static_cast<long double>(rawMidiEvent->time) - timePosFrame + offset,
-                                    rawMidiEvent);
+            kPlayer->writeMidiEvent(fMidiPort, ldtime + offset - timePosFrame, rawMidiEvent);
         }
 
         fMutex.unlock();
