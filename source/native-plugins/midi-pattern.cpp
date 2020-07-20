@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -281,6 +281,10 @@ protected:
             fLastFrame = fTimeInfo.frame;
             fLastPosition = static_cast<float>(playPos);
         }
+        else
+        {
+            fMidiOut.playTemporary();
+        }
     }
 
     // -------------------------------------------------------------------
@@ -389,6 +393,17 @@ protected:
             return true;
         }
 
+        if (std::strcmp(msg, "midi-note") == 0)
+        {
+            uint8_t note;
+            bool on;
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsByte(note), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(on), true);
+
+            fMidiOut.flagTemporaryNote(note, on);
+            return true;
+        }
+
         if (std::strcmp(msg, "midievent-add") == 0)
         {
             uint64_t time;
@@ -406,8 +421,7 @@ protected:
                 data[i] = dvalue;
             }
 
-            fMidiOut.addRaw(time /* * TICKS_PER_BEAT */, data, size);
-
+            fMidiOut.addRaw(time, data, size);
             return true;
         }
 
@@ -428,8 +442,7 @@ protected:
                 data[i] = dvalue;
             }
 
-            fMidiOut.removeRaw(time /* * TICKS_PER_BEAT */, data, size);
-
+            fMidiOut.removeRaw(time, data, size);
             return true;
         }
 
