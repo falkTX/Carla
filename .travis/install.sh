@@ -20,7 +20,7 @@ if [ "${TARGET}" = "linux" ]; then
         libx11-dev \
         libx11-6:i386 \
         liblo-static \
-        fluidsynth-static \
+        fluidsynth2-static \
         mingw32-x-gcc \
         mingw32-x-pkgconfig \
         mingw64-x-gcc \
@@ -49,7 +49,7 @@ elif [ "${TARGET}" = "linux-strict" ]; then
         libx11-dev \
         libx11-6:i386 \
         liblo-static \
-        fluidsynth-static
+        fluidsynth2-static
 
     # Fix for 32bit bridge link
     sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
@@ -77,7 +77,7 @@ elif [ "${TARGET}" = "linux-juce-strict" ]; then
         libxext6:i386 \
         libfreetype6:i386 \
         liblo-static \
-        fluidsynth-static
+        fluidsynth2-static
 
     # Fix for 32bit bridge links
     sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
