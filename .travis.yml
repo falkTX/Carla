@@ -48,7 +48,6 @@ jobs:
     # linux with default, tests python code
     - os: linux
       compiler: gcc
-      dist: bionic
       env:
         - TARGET="pylint"
 

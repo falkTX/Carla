@@ -21,19 +21,21 @@ if [ "${TARGET}" = "linux" ]; then
         libx11-6:i386 \
         liblo-static \
         fluidsynth2-static \
-        mingw32-x-gcc \
-        mingw32-x-pkgconfig \
-        mingw64-x-gcc \
-        mingw64-x-pkgconfig \
-        wine-rt-dev
+        mingw-w64 \
+        binutils-mingw-w64-i686 \
+        binutils-mingw-w64-x86-64 \
+        g++-mingw-w64-i686 \
+        g++-mingw-w64-x86-64 \
+        libwine-development-dev \
+        wine64-development-tools
 
     # Fix for 32bit bridge link
     sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
 
 elif [ "${TARGET}" = "linux-strict" ]; then
     sudo apt-get install -y \
-        g++-8 \
-        g++-8-multilib \
+        g++-10 \
+        g++-10-multilib \
         pkg-config \
         pyqt5-dev-tools \
         python3-pyqt5.qtsvg \
@@ -56,8 +58,8 @@ elif [ "${TARGET}" = "linux-strict" ]; then
 
 elif [ "${TARGET}" = "linux-juce-strict" ]; then
     sudo apt-get install -y \
-        g++-8 \
-        g++-8-multilib \
+        g++-10 \
+        g++-10-multilib \
         pkg-config \
         pyqt5-dev-tools \
         python3-pyqt5.qtsvg \

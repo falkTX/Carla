@@ -3,8 +3,8 @@
 set -e
 
 # Preparation
-export CC=gcc-8
-export CXX=g++-8
+export CC=gcc-10
+export CXX=g++-10
 export PKG_CONFIG_PATH=/opt/kxstudio/lib/pkgconfig:${PKG_CONFIG_PATH}
 unset CFLAGS
 unset CXXFLAGS
