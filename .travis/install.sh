@@ -28,7 +28,7 @@ if [ "${TARGET}" = "linux" ]; then
         g++-mingw-w64-x86-64 \
         libwine-development-dev \
         wine64-development-tools \
-        wine
+        wine-development
 
     # Fix for 32bit bridge link
     sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
