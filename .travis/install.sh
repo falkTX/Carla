@@ -26,9 +26,8 @@ if [ "${TARGET}" = "linux" ]; then
         binutils-mingw-w64-x86-64 \
         g++-mingw-w64-i686 \
         g++-mingw-w64-x86-64 \
-        libwine-development-dev \
-        wine64-development-tools \
-        wine-development
+        wine-stable \
+        wine-stable-dev
 
     # Fix for 32bit bridge link
     sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
