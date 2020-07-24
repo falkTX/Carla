@@ -191,10 +191,12 @@ public:
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
         options |= PLUGIN_OPTION_SEND_PITCHBEND;
         options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+        options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+#endif
 
         return options;
     }
@@ -1406,6 +1408,7 @@ public:
                         }
                         break;
 
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
                     case MIDI_STATUS_POLYPHONIC_AFTERTOUCH:
                         if (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
                         {
@@ -1415,6 +1418,7 @@ public:
                             fluid_synth_key_pressure(fSynth, event.channel, note, pressure);
                         }
                         break;
+#endif
 
                     case MIDI_STATUS_CONTROL_CHANGE:
                         if (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
@@ -1749,8 +1753,6 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
-            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
         if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
         if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
@@ -1759,6 +1761,10 @@ public:
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         if (isPluginOptionInverseEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
             pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
+#if FLUIDSYNTH_VERSION_MAJOR >= 2
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+#endif
 
         return true;
     }
