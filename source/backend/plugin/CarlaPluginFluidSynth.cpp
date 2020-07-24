@@ -191,6 +191,7 @@ public:
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
         options |= PLUGIN_OPTION_SEND_PITCHBEND;
         options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
@@ -1408,10 +1409,10 @@ public:
                     case MIDI_STATUS_POLYPHONIC_AFTERTOUCH:
                         if (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
                         {
-                            //const uint8_t note     = midiEvent.data[1];
-                            //const uint8_t pressure = midiEvent.data[2];
+                            const uint8_t note     = midiEvent.data[1];
+                            const uint8_t pressure = midiEvent.data[2];
 
-                            // not in fluidsynth API
+                            fluid_synth_key_pressure(fSynth, event.channel, note, pressure);
                         }
                         break;
 
@@ -1748,6 +1749,8 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+            pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
         if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
         if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
