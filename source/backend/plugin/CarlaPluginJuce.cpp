@@ -40,7 +40,6 @@
 #define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
 #include "AppConfig.h"
 #include "juce_audio_processors/juce_audio_processors.h"
-#include "juce_audio_processors/format_types/juce_VSTInterface.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
@@ -55,6 +54,38 @@ CARLA_BACKEND_START_NAMESPACE
 // Fallback data
 
 static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
+
+// -------------------------------------------------------------------------------------------------------------------
+// find all available plugin audio ports
+
+static void findMaxTotalChannels(juce::AudioProcessor* const filter, uint32_t& maxTotalIns, uint32_t& maxTotalOuts)
+{
+    filter->enableAllBuses();
+
+    const int numInputBuses  = filter->getBusCount(true);
+    const int numOutputBuses = filter->getBusCount(false);
+
+    if (numInputBuses > 1 || numOutputBuses > 1)
+    {
+        maxTotalIns = maxTotalOuts = 0;
+
+        for (int i = 0; i < numInputBuses; ++i)
+            maxTotalIns += static_cast<uint32_t>(juce::jmax(0, filter->getChannelCountOfBus(true, i)));
+
+        for (int i = 0; i < numOutputBuses; ++i)
+            maxTotalOuts += static_cast<uint32_t>(juce::jmax(0, filter->getChannelCountOfBus(false, i)));
+    }
+    else
+    {
+        maxTotalIns  = numInputBuses  > 0
+                     ? static_cast<uint32_t>(juce::jmax(0, filter->getBus(true, 0)->getMaxSupportedChannels(64)))
+                     : 0;
+
+        maxTotalOuts = numOutputBuses > 0
+                     ? static_cast<uint32_t>(juce::jmax(0, filter->getBus(false, 0)->getMaxSupportedChannels(64)))
+                     : 0;
+    }
+}
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -466,28 +497,16 @@ public:
 
         clearBuffers();
 
-        fInstance->enableAllBuses();
-        fInstance->refreshParameterList();
-
         uint32_t aIns, aOuts, mIns, mOuts, params;
         mIns = mOuts = 0;
 
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        aIns   = static_cast<uint32_t>(std::max(fInstance->getTotalNumInputChannels(), 0));
-        aOuts  = static_cast<uint32_t>(std::max(fInstance->getTotalNumOutputChannels(), 0));
-        params = static_cast<uint32_t>(std::max(fInstance->getNumParameters(), 0));
+        findMaxTotalChannels(fInstance.get(), aIns, aOuts);
+        fInstance->refreshParameterList();
 
-        if (getType() == PLUGIN_VST2)
-        {
-            if (VstEffectInterface* const vst
-                = reinterpret_cast<VstEffectInterface*>(fInstance->getPlatformSpecificData()))
-            {
-                aIns  = std::max(aIns, static_cast<uint32_t>(std::max(vst->numInputChannels, 0)));
-                aOuts = std::max(aOuts, static_cast<uint32_t>(std::max(vst->numOutputChannels, 0)));
-            }
-        }
+        params = static_cast<uint32_t>(std::max(fInstance->getNumParameters(), 0));
 
         if (fInstance->acceptsMidi())
         {

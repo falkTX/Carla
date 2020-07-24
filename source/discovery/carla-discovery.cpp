@@ -51,9 +51,7 @@
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaLv2Utils.hpp"
 
-#ifdef USING_JUCE_FOR_VST2
-# include "juce_audio_processors/format_types/juce_VSTInterface.h"
-#else
+#ifndef USING_JUCE_FOR_VST2
 # include "CarlaVstUtils.hpp"
 #endif
 
@@ -96,7 +94,7 @@ using water::StringArray;
 
 CARLA_BACKEND_USE_NAMESPACE
 
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 // Dummy values to test plugins with
 
 static const uint32_t kBufferSize  = 512;
@@ -104,7 +102,7 @@ static const double   kSampleRate  = 44100.0;
 static const int32_t  kSampleRatei = 44100;
 static const float    kSampleRatef = 44100.0f;
 
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 // Don't print ELF/EXE related errors since discovery can find multi-architecture binaries
 
 static void print_lib_error(const char* const filename)
@@ -810,7 +808,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 #endif
 
 #ifndef USING_JUCE_FOR_VST2
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 // VST stuff
 
 // Check if plugin is currently processing
@@ -1383,6 +1381,35 @@ static void do_vst_check(lib_t& libHandle, const char* const filename, const boo
 #endif // ! USING_JUCE_FOR_VST2
 
 #ifdef USING_JUCE
+// -------------------------------------------------------------------------------------------------------------------
+// find all available plugin audio ports
+
+static void findMaxTotalChannels(juce::AudioProcessor* const filter, int& maxTotalIns, int& maxTotalOuts)
+{
+    filter->enableAllBuses();
+
+    int numInputBuses  = filter->getBusCount(true);
+    int numOutputBuses = filter->getBusCount(false);
+
+    if (numInputBuses > 1 || numOutputBuses > 1)
+    {
+        maxTotalIns = maxTotalOuts = 0;
+
+        for (int i = 0; i < numInputBuses; ++i)
+            maxTotalIns += filter->getChannelCountOfBus(true, i);
+
+        for (int i = 0; i < numOutputBuses; ++i)
+            maxTotalOuts += filter->getChannelCountOfBus(false, i);
+    }
+    else
+    {
+        maxTotalIns  = numInputBuses  > 0 ? filter->getBus(true,  0)->getMaxSupportedChannels(64) : 0;
+        maxTotalOuts = numOutputBuses > 0 ? filter->getBus(false, 0)->getMaxSupportedChannels(64) : 0;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 static void do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
 {
     CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0,) // FIXME
@@ -1475,23 +1502,8 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
             {
                 carla_juce_idle();
 
-                instance->enableAllBuses();
+                findMaxTotalChannels(instance.get(), audioIns, audioOuts);
                 instance->refreshParameterList();
-
-                audioIns = instance->getTotalNumInputChannels();
-                audioOuts = instance->getTotalNumOutputChannels();
-
-#if JUCE_PLUGINHOST_VST
-                if (std::strcmp(stype, "VST2") == 0)
-                {
-                    if (VstEffectInterface* const vst
-                        = reinterpret_cast<VstEffectInterface*>(instance->getPlatformSpecificData()))
-                    {
-                        audioIns = std::max(audioIns, std::max(vst->numInputChannels, 0));
-                        audioOuts = std::max(audioOuts, std::max(vst->numOutputChannels, 0));
-                    }
-                }
-#endif
 
                 parameters = instance->getParameters().size();
 
@@ -1675,7 +1687,7 @@ int main(int argc, char* argv[])
         openLib = false;
 #endif
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------
     // Initialize OS features
 
     // we want stuff in English so we can parse error messages
@@ -1694,7 +1706,7 @@ int main(int argc, char* argv[])
 # endif
 #endif
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------
 
     if (openLib)
     {
@@ -1713,7 +1725,7 @@ int main(int argc, char* argv[])
     if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS") != nullptr)
         doInit = false;
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------
 
     if (doInit && openLib && handle != nullptr)
     {
@@ -1794,7 +1806,7 @@ int main(int argc, char* argv[])
     if (openLib && handle != nullptr)
         lib_close(handle);
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------
 
 #ifdef CARLA_OS_WIN
 #ifndef __WINPTHREADS_VERSION
@@ -1808,4 +1820,4 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-// --------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
