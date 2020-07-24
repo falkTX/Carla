@@ -27,14 +27,15 @@ if [ "${TARGET}" = "linux" ]; then
         g++-mingw-w64-i686 \
         g++-mingw-w64-x86-64 \
         libwine-development-dev \
-        wine64-development-tools
+        wine64-development-tools \
+        wine
 
     # Fix for 32bit bridge link
     sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
 
 elif [ "${TARGET}" = "linux-strict" ]; then
     sudo apt-get install -y \
-        g++-10 \
+        g++-multilib \
         g++-10-multilib \
         pkg-config \
         pyqt5-dev-tools \
@@ -58,7 +59,7 @@ elif [ "${TARGET}" = "linux-strict" ]; then
 
 elif [ "${TARGET}" = "linux-juce-strict" ]; then
     sudo apt-get install -y \
-        g++-10 \
+        g++-multilib \
         g++-10-multilib \
         pkg-config \
         pyqt5-dev-tools \
