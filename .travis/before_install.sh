@@ -12,7 +12,7 @@ sudo add-apt-repository -y ppa:kxstudio-debian/toolchain
 
 if [ "${TARGET}" = "linux-strict" ] || [ "${TARGET}" = "linux-juce-strict" ]; then
     sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-elif [ "${TARGET}" = "win32" ] || [ "${TARGET}" = "win64" ]; then
+elif [ "${TARGET}" = "linux" ] || [ "${TARGET}" = "win32" ] || [ "${TARGET}" = "win64" ]; then
     wget -qO- https://dl.winehq.org/wine-builds/winehq.key | sudo apt-key add -
     sudo apt-add-repository 'deb https://dl.winehq.org/wine-builds/ubuntu/ bionic main'
 fi
