@@ -36,7 +36,7 @@
 // Fix OpenGL includes for Windows, based on glfw code
 
 #ifndef APIENTRY
-# define APIENTRY __stdcall
+# define APIENTRY WINAPI
 #endif // APIENTRY
 
 /* We need WINGDIAPI defined */
