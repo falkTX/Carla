@@ -2,7 +2,7 @@
 
 set -e
 
-if [ "${TARGET}" = "win32" ]; then
+if [ "${TARGET}" = "linux" ] || [ "${TARGET}" = "win32" ]; then
     sudo dpkg --add-architecture i386
 fi
 
