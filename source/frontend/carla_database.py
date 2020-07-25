@@ -351,7 +351,7 @@ def checkPluginCached(desc, ptype):
     pinfo['parameters.outs'] = desc['parameterOuts']
 
     if ptype == PLUGIN_LV2:
-        pinfo['filename'], pinfo['label'] = pinfo['label'].split('/',1)
+        pinfo['filename'], pinfo['label'] = pinfo['label'].split(os.path.sep,1)
 
     elif ptype == PLUGIN_SFZ:
         pinfo['filename'] = pinfo['label']
