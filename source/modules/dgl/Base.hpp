@@ -36,7 +36,8 @@
 // Fix OpenGL includes for Windows, based on glfw code
 
 #ifndef APIENTRY
-# define APIENTRY WINAPI
+# define APIENTRY __stdcall
+# define DGL_APIENTRY_DEFINED
 #endif // APIENTRY
 
 /* We need WINGDIAPI defined */
@@ -101,6 +102,11 @@
 #ifdef DISTRHO_OS_WINDOWS
 // -----------------------------------------------------------------------
 // Fix OpenGL includes for Windows, based on glfw code
+
+#ifdef DGL_APIENTRY_DEFINED
+# undef APIENTRY
+# undef DGL_APIENTRY_DEFINED
+#endif
 
 #ifdef DGL_WINGDIAPI_DEFINED
 # undef WINGDIAPI
