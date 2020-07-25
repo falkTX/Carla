@@ -2,7 +2,7 @@ language: cpp
 
 os: linux
 
-dist: focal
+dist: bionic
 
 jobs:
   include:

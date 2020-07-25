@@ -26,8 +26,7 @@ if [ "${TARGET}" = "linux" ]; then
         binutils-mingw-w64-x86-64 \
         g++-mingw-w64-i686 \
         g++-mingw-w64-x86-64 \
-        wine-stable \
-        wine-stable-dev
+        wine-stable
 
     # Fix for 32bit bridge link
     sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
@@ -35,7 +34,7 @@ if [ "${TARGET}" = "linux" ]; then
 elif [ "${TARGET}" = "linux-strict" ]; then
     sudo apt-get install -y \
         g++-multilib \
-        g++-10-multilib \
+        g++-9-multilib \
         pkg-config \
         pyqt5-dev-tools \
         python3-pyqt5.qtsvg \
@@ -59,7 +58,7 @@ elif [ "${TARGET}" = "linux-strict" ]; then
 elif [ "${TARGET}" = "linux-juce-strict" ]; then
     sudo apt-get install -y \
         g++-multilib \
-        g++-10-multilib \
+        g++-9-multilib \
         pkg-config \
         pyqt5-dev-tools \
         python3-pyqt5.qtsvg \
