@@ -231,12 +231,12 @@ $(OBJDIR)/%.cpp.win64.o: %.cpp
 $(OBJDIR)/%.cpp.wine32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (wine32)"
-	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.wine64.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (wine64)"
-	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_64BIT_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
