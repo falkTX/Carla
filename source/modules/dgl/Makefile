@@ -12,6 +12,12 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(DGL_FLAGS) -Isrc
 
+ifneq ($(MACOS),true)
+WINE_FLAGS  = -I/usr/include/wine/wine/windows
+WINE_FLAGS += -I/usr/include/wine-development/windows
+WINE_FLAGS += -I/opt/wine-devel/include/wine/windows
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 OBJS = \
@@ -75,7 +81,7 @@ $(OBJDIR)/%.cpp.o: src/%.cpp
 $(OBJDIR)/%.cpp-wine.o: src/%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Wine)"
-	@$(WINECC) $< $(BUILD_CXX_FLAGS) -c -o $@
+	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_FLAGS) -c -o $@
 
 $(OBJDIR)/Window.mm.o: src/Window.cpp
 	-@mkdir -p $(OBJDIR)
