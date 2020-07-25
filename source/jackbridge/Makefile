@@ -28,6 +28,8 @@ WINE_32BIT_FLAGS += -I/usr/include/wine-development/windows
 WINE_32BIT_FLAGS += -L/usr/lib32/wine
 WINE_32BIT_FLAGS += -L/usr/lib/i386-linux-gnu/wine
 WINE_32BIT_FLAGS += -L/usr/lib/i386-linux-gnu/wine-development
+WINE_32BIT_FLAGS += -L/opt/wine-stable/lib
+WINE_32BIT_FLAGS += -L/opt/wine-stable/lib/wine
 WINE_32BIT_FLAGS += -L/opt/wine-staging/lib
 WINE_32BIT_FLAGS += -L/opt/wine-staging/lib/wine
 
@@ -36,6 +38,8 @@ WINE_64BIT_FLAGS += -I/usr/include/wine-development/windows
 WINE_64BIT_FLAGS += -L/usr/lib64/wine
 WINE_64BIT_FLAGS += -L/usr/lib/x86_64-linux-gnu/wine
 WINE_64BIT_FLAGS += -L/usr/lib/x86_64-linux-gnu/wine-development
+WINE_64BIT_FLAGS += -L/opt/wine-stable/lib64
+WINE_64BIT_FLAGS += -L/opt/wine-stable/lib64/wine
 WINE_64BIT_FLAGS += -L/opt/wine-staging/lib64
 WINE_64BIT_FLAGS += -L/opt/wine-staging/lib64/wine
 

@@ -26,6 +26,7 @@ if [ "${TARGET}" = "linux" ]; then
         binutils-mingw-w64-x86-64 \
         g++-mingw-w64-i686 \
         g++-mingw-w64-x86-64 \
+        wine-devel-dev \
         winehq-stable
 
     # Fix for 32bit bridge link
