@@ -211,7 +211,7 @@ class ScalableDial(QDial):
 
     def setImage(self, imageId):
         self.fImageNum = "%02i" % imageId
-        if imageId in (6,7,8,9,10,11,12,13):
+        if imageId in (2,6,7,8,9,10,11,12,13):
             img = ":/bitmaps/dial_%s%s.png" % (self.fImageNum, "" if self.isEnabled() else "d")
         else:
             img = ":/scalable/dial_%s%s.svg" % (self.fImageNum, "" if self.isEnabled() else "d")
