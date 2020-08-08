@@ -47,7 +47,8 @@ OBJS = \
 	$(OBJDIR)/bigmeter.cpp.o \
 	$(OBJDIR)/midi-file.cpp.o \
 	$(OBJDIR)/midi-pattern.cpp.o \
-	$(OBJDIR)/notes.cpp.o
+	$(OBJDIR)/notes.cpp.o \
+	$(OBJDIR)/xycontroller.cpp.o
 
 OBJS_audiogain = \
 	$(OBJDIR)/audio-gain.c.o

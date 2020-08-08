@@ -556,6 +556,23 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS_WITHOUTCV
 },
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
+    /* audioIns  */ 0,
+    /* audioOuts */ 0,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 2,
+    /* paramOuts */ 2,
+    /* name      */ "XY Controller",
+    /* label     */ "xycontroller",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS_WITHOUTCV
+}
 #endif
 
 #ifdef HAVE_EXTERNAL_PLUGINS
