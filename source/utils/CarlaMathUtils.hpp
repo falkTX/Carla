@@ -189,6 +189,26 @@ void carla_copyFloats(float dest[], const float src[], const std::size_t count) 
 }
 
 /*
+ * Fill a float array with a single float value.
+ */
+static inline
+void carla_fillFloatsWithSingleValue(float data[], const float& value, const std::size_t count) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
+
+    if (carla_isZero(value))
+    {
+        std::memset(data, 0, count*sizeof(float));
+    }
+    else
+    {
+        for (std::size_t i=0; i<count; ++i)
+            *data++ = value;
+    }
+}
+
+/*
  * Clear a float array.
  */
 static inline
@@ -198,6 +218,18 @@ void carla_zeroFloats(float floats[], const std::size_t count) noexcept
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     std::memset(floats, 0, count*sizeof(float));
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+/*
+ * Fill an array with a fixed value, floating-point version.
+ */
+template <>
+inline
+void carla_fill<float>(float data[], const float& value, const std::size_t count) noexcept
+{
+    carla_fillFloatsWithSingleValue(data, value, count);
 }
 
 /*
