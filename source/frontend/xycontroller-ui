@@ -1,0 +1,554 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# XY Controller UI, taken from Cadence
+# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Global)
+
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QPointF, QRectF, QSize, QTimer
+from PyQt5.QtGui import QColor, QPainter, QPen
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent, QMainWindow
+
+# -----------------------------------------------------------------------
+# Imports (Custom)
+
+from carla_shared import *
+from carla_utils import *
+
+import ui_xycontroller
+
+# -----------------------------------------------------------------------
+# Imports (ExternalUI)
+
+from carla_app import CarlaApplication
+from externalui import ExternalUI
+from widgets.paramspinbox import ParamSpinBox
+
+# ------------------------------------------------------------------------------------------------------------
+
+class XYGraphicsScene(QGraphicsScene):
+    # signals
+    cursorMoved = pyqtSignal(float,float)
+
+    def __init__(self, parent):
+        QGraphicsScene.__init__(self, parent)
+
+        self.cc_x = 1
+        self.cc_y = 2
+
+        self.m_channels  = []
+        self.m_mouseLock = False
+        self.m_smooth    = False
+        self.m_smooth_x  = 0.0
+        self.m_smooth_y  = 0.0
+
+        self.setBackgroundBrush(Qt.black)
+
+        cursorPen = QPen(QColor(255, 255, 255), 2)
+        cursorBrush = QColor(255, 255, 255, 50)
+        self.m_cursor = self.addEllipse(QRectF(-10, -10, 20, 20), cursorPen, cursorBrush)
+
+        linePen = QPen(QColor(200, 200, 200, 100), 1, Qt.DashLine)
+        self.m_lineH = self.addLine(-9999, 0, 9999, 0, linePen)
+        self.m_lineV = self.addLine(0, -9999, 0, 9999, linePen)
+
+        self.p_size = QRectF(-100, -100, 100, 100)
+
+    # -------------------------------------------------------------------
+
+    def setControlX(self, x: int):
+        self.cc_x = x
+
+    def setControlY(self, y: int):
+        self.cc_y = y
+
+    def setChannels(self, channels):
+        self.m_channels = channels
+
+    def setPosX(self, x: float, forward: bool = True):
+        if self.m_mouseLock:
+            return
+
+        posX = x * (self.p_size.x() + self.p_size.width())
+        self.m_cursor.setPos(posX, self.m_cursor.y())
+        self.m_lineV.setX(posX)
+
+        if forward:
+            value = posX / (self.p_size.x() + self.p_size.width());
+            self.sendMIDI(value, None)
+        else:
+            self.m_smooth_x = posX;
+
+    def setPosY(self, y: float, forward: bool = True):
+        if self.m_mouseLock:
+            return;
+
+        posY = y * (self.p_size.y() + self.p_size.height())
+        self.m_cursor.setPos(self.m_cursor.x(), posY)
+        self.m_lineH.setY(posY)
+
+        if forward:
+            value = posY / (self.p_size.y() + self.p_size.height())
+            self.sendMIDI(None, value)
+        else:
+            self.m_smooth_y = posY
+
+    def setSmooth(self, smooth: bool):
+        self.m_smooth = smooth
+
+    def setSmoothValues(self, x: float, y: float):
+        self.m_smooth_x = x * (self.p_size.x() + self.p_size.width());
+        self.m_smooth_y = y * (self.p_size.y() + self.p_size.height());
+
+    # -------------------------------------------------------------------
+
+    def updateSize(self, size: QSize):
+        self.p_size.setRect(-(float(size.width())/2),
+                            -(float(size.height())/2),
+                            size.width(),
+                            size.height());
+
+    def updateSmooth(self):
+        if not self.m_smooth:
+            return
+
+        if self.m_cursor.x() == self.m_smooth_x and self.m_cursor.y() == self.m_smooth_y:
+            return
+
+        if abs(self.m_cursor.x() - self.m_smooth_x) <= 0.0005:
+            self.m_smooth_x = self.m_cursor.x()
+        if abs(self.m_cursor.y() - self.m_smooth_y) <= 0.0005:
+            self.m_smooth_y = self.m_cursor.y()
+
+        if self.m_cursor.x() == self.m_smooth_x and self.m_cursor.y() == self.m_smooth_y:
+            return;
+
+        newX = float(self.m_smooth_x + self.m_cursor.x()*7) / 8
+        newY = float(self.m_smooth_y + self.m_cursor.y()*7) / 8
+        pos  = QPointF(newX, newY)
+
+        self.m_cursor.setPos(pos)
+        self.m_lineH.setY(pos.y())
+        self.m_lineV.setX(pos.x())
+
+        xp = pos.x() / (self.p_size.x() + self.p_size.width())
+        yp = pos.y() / (self.p_size.y() + self.p_size.height())
+
+        self.sendMIDI(xp, yp)
+        self.cursorMoved.emit(xp, yp)
+
+    # -------------------------------------------------------------------
+
+    def handleMousePos(self, pos: QPointF):
+        if not self.p_size.contains(pos):
+            if pos.x() < self.p_size.x():
+                pos.setX(self.p_size.x())
+            elif pos.x() > (self.p_size.x() + self.p_size.width()):
+                pos.setX(self.p_size.x() + self.p_size.width());
+
+            if pos.y() < self.p_size.y():
+                pos.setY(self.p_size.y())
+            elif pos.y() > (self.p_size.y() + self.p_size.height()):
+                pos.setY(self.p_size.y() + self.p_size.height())
+
+        m_smooth_x = pos.x()
+        m_smooth_y = pos.y()
+
+        if not self.m_smooth:
+            self.m_cursor.setPos(pos)
+            self.m_lineH.setY(pos.y())
+            self.m_lineV.setX(pos.x())
+
+            xp = pos.x() / (self.p_size.x() + self.p_size.width());
+            yp = pos.y() / (self.p_size.y() + self.p_size.height());
+
+            self.sendMIDI(xp, yp)
+            self.cursorMoved.emit(xp, yp)
+
+    def sendMIDI(self, xp, yp):
+        rate = float(0xff) / 4;
+
+        if xp is not None:
+            value = xp * rate + rate
+            #foreach (const int& channel, m_channels)
+                #qMidiOutData.put(0xB0 + channel - 1, cc_x, value);
+
+        if yp is not None:
+            value = yp * rate + rate
+            #foreach (const int& channel, m_channels)
+                #qMidiOutData.put(0xB0 + channel - 1, cc_y, value);
+
+    # -------------------------------------------------------------------
+
+    def keyPressEvent(self, event): # QKeyEvent
+        event.accept()
+
+    def wheelEvent(self, event): # QGraphicsSceneWheelEvent
+        event.accept()
+
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
+        m_mouseLock = True
+        self.handleMousePos(event.scenePos())
+        self.parent().setCursor(Qt.CrossCursor)
+        QGraphicsScene.mousePressEvent(self, event);
+
+    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
+        self.handleMousePos(event.scenePos())
+        QGraphicsScene.mouseMoveEvent(self, event);
+
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
+        m_mouseLock = False
+        self.parent().setCursor(Qt.ArrowCursor)
+        QGraphicsScene.mouseReleaseEvent(self, event)
+
+# -----------------------------------------------------------------------
+# External UI
+
+class XYControllerUI(ExternalUI, QMainWindow):
+    def __init__(self):
+        ExternalUI.__init__(self)
+        QMainWindow.__init__(self)
+        self.ui = ui_xycontroller.Ui_XYControllerW()
+        self.ui.setupUi(self)
+
+        self.fSaveSizeNowChecker = -1
+
+        # ---------------------------------------------------------------
+        # Internal stuff
+
+        self.cc_x = 1
+        self.cc_y = 2
+        self.m_channels = []
+
+        # ---------------------------------------------------------------
+        # Set-up GUI stuff
+
+        self.scene = XYGraphicsScene(self)
+
+        self.ui.dial_x.setImage(2)
+        self.ui.dial_y.setImage(2)
+        self.ui.dial_x.setLabel("X")
+        self.ui.dial_y.setLabel("Y")
+        self.ui.keyboard.setOctaves(10)
+
+        self.ui.graphicsView.setScene(self.scene)
+        self.ui.graphicsView.setRenderHints(QPainter.Antialiasing)
+
+        for MIDI_CC in MIDI_CC_LIST:
+            self.ui.cb_control_x.addItem(MIDI_CC)
+            self.ui.cb_control_y.addItem(MIDI_CC)
+
+        # ---------------------------------------------------------------
+        # Connect actions to functions
+
+        self.scene.cursorMoved.connect(self.slot_sceneCursorMoved)
+
+        self.ui.keyboard.noteOn.connect(self.slot_noteOn)
+        self.ui.keyboard.noteOff.connect(self.slot_noteOff)
+
+        self.ui.cb_smooth.clicked.connect(self.slot_setSmooth)
+
+        self.ui.dial_x.valueChanged.connect(self.slot_updateSceneX)
+        self.ui.dial_y.valueChanged.connect(self.slot_updateSceneY)
+
+        self.ui.cb_control_x.currentIndexChanged[str].connect(self.slot_checkCC_X)
+        self.ui.cb_control_y.currentIndexChanged[str].connect(self.slot_checkCC_Y)
+
+        self.ui.act_ch_01.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_02.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_03.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_04.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_05.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_06.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_07.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_08.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_09.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_10.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_11.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_12.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_13.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_14.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_15.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_16.triggered.connect(self.slot_checkChannel)
+        self.ui.act_ch_all.triggered.connect(self.slot_checkChannel_all)
+        self.ui.act_ch_none.triggered.connect(self.slot_checkChannel_none)
+
+        self.ui.act_show_keyboard.triggered.connect(self.slot_showKeyboard)
+
+        # ---------------------------------------------------------------
+        # Final stuff
+
+        self.fIdleTimer = self.startTimer(50)
+        self.setWindowTitle(self.fUiName)
+        self.ready()
+
+        QTimer.singleShot(0, self.slot_updateScreen)
+
+    # -------------------------------------------------------------------
+
+    @pyqtSlot(bool)
+    def slot_buttonClicked(self, click):
+        smooth = not click
+        self.sendConfigure("smooth", "yes" if smooth else "no")
+
+    @pyqtSlot()
+    def slot_updateScreen(self):
+        self.scene.updateSize(self.ui.graphicsView.size())
+        self.ui.graphicsView.centerOn(0, 0)
+
+        dial_x = self.ui.dial_x.value()
+        dial_y = self.ui.dial_y.value()
+        self.slot_updateSceneX(dial_x)
+        self.slot_updateSceneY(dial_y)
+        self.scene.setSmoothValues(float(dial_x) / 100, float(dial_y) / 100)
+
+    @pyqtSlot(int)
+    def slot_noteOn(self, note):
+        pass
+        #foreach (const int& channel, m_channels)
+            #qMidiOutData.put(0x90 + channel - 1, note, 100);
+
+    @pyqtSlot(int)
+    def slot_noteOff(self, note):
+        pass
+        #foreach (const int& channel, m_channels)
+            #qMidiOutData.put(0x80 + channel - 1, note, 0);
+
+    @pyqtSlot(int)
+    def slot_updateSceneX(self, x):
+        self.scene.setSmoothValues(float(x) / 100, float(self.ui.dial_y.value()) / 100)
+        self.scene.setPosX(float(x) / 100, bool(self.sender()))
+
+    @pyqtSlot(int)
+    def slot_updateSceneY(self, y):
+        self.scene.setSmoothValues(float(self.ui.dial_x.value()) / 100, float(y) / 100)
+        self.scene.setPosY(float(y) / 100, bool(self.sender()))
+
+    @pyqtSlot(str)
+    def slot_checkCC_X(self, text):
+        if not text:
+            return
+
+        #bool ok;
+        #int tmp_cc_x = text.split(" ").at(0).toInt(&ok, 16);
+
+        #if (ok)
+        #{
+            #cc_x = tmp_cc_x;
+            #scene.setControlX(cc_x);
+        #}
+
+    @pyqtSlot(str)
+    def slot_checkCC_Y(self, text):
+        if not text:
+            return
+
+        #bool ok;
+        #int tmp_cc_y = text.split(" ").at(0).toInt(&ok, 16);
+
+        #if (ok)
+        #{
+            #cc_y = tmp_cc_y;
+            #scene.setControlY(cc_y);
+        #}
+
+    @pyqtSlot(bool)
+    def slot_checkChannel(self, clicked):
+        if not self.sender():
+            return
+
+        #bool ok;
+        #int channel = ((QAction*)sender()).text().toInt(&ok);
+
+        #if (ok)
+        #{
+            #if (clicked && ! m_channels.contains(channel))
+                #m_channels.append(channel);
+            #else if ((! clicked) && m_channels.contains(channel))
+                #m_channels.removeOne(channel);
+            #scene.setChannels(m_channels);
+        #}
+
+    @pyqtSlot()
+    def slot_checkChannel_all(self):
+        self.ui.act_ch_01.setChecked(True)
+        self.ui.act_ch_02.setChecked(True)
+        self.ui.act_ch_03.setChecked(True)
+        self.ui.act_ch_04.setChecked(True)
+        self.ui.act_ch_05.setChecked(True)
+        self.ui.act_ch_06.setChecked(True)
+        self.ui.act_ch_07.setChecked(True)
+        self.ui.act_ch_08.setChecked(True)
+        self.ui.act_ch_09.setChecked(True)
+        self.ui.act_ch_10.setChecked(True)
+        self.ui.act_ch_11.setChecked(True)
+        self.ui.act_ch_12.setChecked(True)
+        self.ui.act_ch_13.setChecked(True)
+        self.ui.act_ch_14.setChecked(True)
+        self.ui.act_ch_15.setChecked(True)
+        self.ui.act_ch_16.setChecked(True)
+
+        self.m_channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        self.scene.setChannels(self.m_channels)
+
+    @pyqtSlot()
+    def slot_checkChannel_none(self):
+        self.ui.act_ch_01.setChecked(False)
+        self.ui.act_ch_02.setChecked(False)
+        self.ui.act_ch_03.setChecked(False)
+        self.ui.act_ch_04.setChecked(False)
+        self.ui.act_ch_05.setChecked(False)
+        self.ui.act_ch_06.setChecked(False)
+        self.ui.act_ch_07.setChecked(False)
+        self.ui.act_ch_08.setChecked(False)
+        self.ui.act_ch_09.setChecked(False)
+        self.ui.act_ch_10.setChecked(False)
+        self.ui.act_ch_11.setChecked(False)
+        self.ui.act_ch_12.setChecked(False)
+        self.ui.act_ch_13.setChecked(False)
+        self.ui.act_ch_14.setChecked(False)
+        self.ui.act_ch_15.setChecked(False)
+        self.ui.act_ch_16.setChecked(False)
+
+        self.m_channels = []
+        self.scene.setChannels(self.m_channels)
+
+    @pyqtSlot(bool)
+    def slot_setSmooth(self, yesno):
+        self.scene.setSmooth(yesno)
+
+    @pyqtSlot(float, float)
+    def slot_sceneCursorMoved(self, xp, yp):
+        self.ui.dial_x.blockSignals(True)
+        self.ui.dial_y.blockSignals(True)
+
+        self.ui.dial_x.setValue(xp * 100)
+        self.ui.dial_y.setValue(yp * 100)
+
+        self.ui.dial_x.blockSignals(False)
+        self.ui.dial_y.blockSignals(False)
+
+    @pyqtSlot(bool)
+    def slot_showKeyboard(self, yesno):
+        self.ui.scrollArea.setVisible(yesno)
+        QTimer.singleShot(0, self.slot_updateScreen)
+
+    # -------------------------------------------------------------------
+    # DSP Callbacks
+
+    def dspParameterChanged(self, index, value):
+        if index != 0:
+            return
+
+        #nextCurPage = int(value)
+
+        #if nextCurPage != self.fCurPage and nextCurPage >= 1 and nextCurPage <= 100:
+            #self.saveCurrentTextState()
+            #self.fCurPage = nextCurPage
+
+            #self.fTextEdit.setPlainText(self.fNotes[self.fCurPage-1])
+            #self.fProgressBar.setValue(self.fCurPage)
+            #self.fProgressBar.update()
+
+    def dspStateChanged(self, key, value):
+        if key == "guiWidth":
+            try:
+                width = int(value)
+            except:
+                width = 0
+
+            if width > 0:
+                self.resize(width, self.height())
+
+        elif key == "guiHeight":
+            try:
+                height = int(value)
+            except:
+                height = 0
+
+            if height > 0:
+                self.resize(self.width(), height)
+
+        elif key == "smooth":
+            smooth = (value == "yes")
+            # TODO
+            #self.fButton.setChecked(not readOnly)
+
+    # -------------------------------------------------------------------
+    # ExternalUI Callbacks
+
+    def uiShow(self):
+        self.show()
+
+    def uiFocus(self):
+        self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+        self.show()
+
+        self.raise_()
+        self.activateWindow()
+
+    def uiHide(self):
+        self.hide()
+
+    def uiQuit(self):
+        self.closeExternalUI()
+        self.close()
+        app.quit()
+
+    def uiTitleChanged(self, uiTitle):
+        self.setWindowTitle(uiTitle)
+
+    # -------------------------------------------------------------------
+    # Qt events
+
+    def resizeEvent(self, event):
+        self.fSaveSizeNowChecker = 0
+        self.slot_updateScreen()
+        QMainWindow.resizeEvent(self, event)
+
+    def timerEvent(self, event):
+        if event.timerId() == self.fIdleTimer:
+            self.idleExternalUI()
+            self.scene.updateSmooth()
+
+            if self.fSaveSizeNowChecker == 11:
+                self.sendConfigure("guiWidth", str(self.width()))
+                self.sendConfigure("guiHeight", str(self.height()))
+                self.fSaveSizeNowChecker = -1
+            elif self.fSaveSizeNowChecker >= 0:
+                self.fSaveSizeNowChecker += 1
+
+        QMainWindow.timerEvent(self, event)
+
+    def closeEvent(self, event):
+        self.closeExternalUI()
+        QMainWindow.closeEvent(self, event)
+
+        # there might be other qt windows open which will block the UI from quitting
+        app.quit()
+
+#--------------- main ------------------
+if __name__ == '__main__':
+    import resources_rc
+
+    pathBinaries, _ = getPaths()
+    gCarla.utils = CarlaUtils(os.path.join(pathBinaries, "libcarla_utils." + DLL_EXTENSION))
+    gCarla.utils.set_process_name("XYController")
+
+    app = CarlaApplication("XYController")
+    gui = XYControllerUI()
+    app.exit_exec()

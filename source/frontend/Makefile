@@ -44,6 +44,7 @@ RES = \
 	$(BINDIR)/resources/externalui.py \
 	$(BINDIR)/resources/midipattern-ui \
 	$(BINDIR)/resources/notes-ui \
+	$(BINDIR)/resources/xycontroller-ui \
 	$(BINDIR)/resources/resources_rc.py \
 	$(BINDIR)/resources/ui_carla_about.py \
 	$(BINDIR)/resources/ui_carla_about_juce.py \
@@ -62,7 +63,8 @@ RES = \
 	$(BINDIR)/resources/ui_carla_settings.py \
 	$(BINDIR)/resources/ui_carla_settings_driver.py \
 	$(BINDIR)/resources/ui_inputdialog_value.py \
-	$(BINDIR)/resources/ui_midipattern.py
+	$(BINDIR)/resources/ui_midipattern.py \
+	$(BINDIR)/resources/ui_xycontroller.py
 
 ifneq ($(SKIP_ZYN_SYNTH),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
@@ -93,7 +95,8 @@ UIs = \
 	ui_carla_settings.py \
 	ui_carla_settings_driver.py \
 	ui_inputdialog_value.py \
-	ui_midipattern.py
+	ui_midipattern.py \
+	ui_xycontroller.py
 
 # ---------------------------------------------------------------------------------------------------------------------
 
