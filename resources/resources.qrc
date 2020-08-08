@@ -97,6 +97,8 @@
         <file>scalable/button_off.svg</file>
         <file>scalable/button_on.svg</file>
 
+        <file>bitmaps/dial_02.png</file>
+        <file>bitmaps/dial_02d.png</file>
         <file>scalable/dial_03.svg</file>
         <file>scalable/dial_03d.svg</file>
         <file>scalable/dial_04.svg</file>
