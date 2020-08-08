@@ -572,7 +572,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS_WITHOUTCV
-}
+},
 #endif
 
 #ifdef HAVE_EXTERNAL_PLUGINS
