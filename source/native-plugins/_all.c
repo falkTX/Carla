@@ -48,6 +48,7 @@ extern void carla_register_native_plugin_carla(void);
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
 extern void carla_register_native_plugin_notes(void);
+extern void carla_register_native_plugin_xycontroller(void);
 
 #ifdef HAVE_EXTERNAL_PLUGINS
 void carla_register_all_native_external_plugins(void);
@@ -88,6 +89,7 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_bigmeter();
     carla_register_native_plugin_midipattern();
     carla_register_native_plugin_notes();
+    carla_register_native_plugin_xycontroller();
 #endif // HAVE_PYQT
 
 #ifdef HAVE_EXTERNAL_PLUGINS
