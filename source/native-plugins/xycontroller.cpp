@@ -36,7 +36,7 @@ public:
         : NativePluginAndUiClass(host, "xycontroller-ui"),
           fParams()
     {
-        carla_fill(fParams, 50.0f, kParamCount);
+        carla_zeroStruct(fParams);
     }
 
 protected:
@@ -58,8 +58,8 @@ protected:
 
         param.name = nullptr;
         param.unit = "%";
-        param.ranges.def       = 50.0f;
-        param.ranges.min       = 0.0f;
+        param.ranges.def       = 0.0f;
+        param.ranges.min       = -100.0f;
         param.ranges.max       = 100.0f;
         param.ranges.step      = 1.0f;
         param.ranges.stepSmall = 0.01f;
