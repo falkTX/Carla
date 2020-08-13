@@ -1209,8 +1209,14 @@ const char* CarlaPipeCommon::_readline(const bool allocReturn, const uint16_t si
     #endif
             } CARLA_SAFE_EXCEPTION_BREAK("CarlaPipeCommon::readline() - read");
 
-            if (ret != 1 || c == '\n')
+            if (ret != 1)
                 break;
+
+            if (c == '\n')
+            {
+                *ptr = '\0';
+                break;
+            }
 
             if (c == '\r')
                 c = '\n';
