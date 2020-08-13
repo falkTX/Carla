@@ -2645,7 +2645,18 @@ public:
         if (! fIsUiVisible)
             return;
 
-        // TODO
+        if (fDescriptor->dispatcher != nullptr)
+        {
+            uint8_t data[3] = {
+                uint8_t(MIDI_STATUS_NOTE_ON | (channel & MIDI_CHANNEL_BIT)),
+                note,
+                velo
+            };
+            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_UI_MIDI_EVENT,
+                                    3, 0,
+                                    data,
+                                    0.0f);
+        }
     }
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
@@ -2660,7 +2671,18 @@ public:
         if (fDescriptor == nullptr || fHandle == nullptr)
             return;
 
-        // TODO
+        if (fDescriptor->dispatcher != nullptr)
+        {
+            uint8_t data[3] = {
+                uint8_t(MIDI_STATUS_NOTE_OFF | (channel & MIDI_CHANNEL_BIT)),
+                note,
+                0
+            };
+            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_UI_MIDI_EVENT,
+                                    3, 0,
+                                    data,
+                                    0.0f);
+        }
     }
 
     // -------------------------------------------------------------------

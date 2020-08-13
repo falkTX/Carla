@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API (C++)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,7 @@
 
 #include "CarlaNative.hpp"
 #include "CarlaExternalUI.hpp"
+#include "CarlaMIDI.h"
 
 /*!
  * @defgroup CarlaNativeAPI Carla Native API
@@ -136,6 +137,22 @@ protected:
         flushMessages();
     }
 
+    bool uiMIDIEvent(const uint8_t size, const uint8_t data[]) override
+    {
+        if (size != 3)
+            return false;
+
+        const uint8_t status = MIDI_GET_STATUS_FROM_DATA(data);
+
+        if (! (MIDI_IS_STATUS_NOTE_ON(status) || MIDI_IS_STATUS_NOTE_OFF(status)))
+            return false;
+
+        writeMidiNoteMessage(MIDI_IS_STATUS_NOTE_ON(status),
+                             MIDI_GET_CHANNEL_FROM_DATA(data),
+                             data[1], data[2]);
+        return true;
+    }
+
     // -------------------------------------------------------------------
     // Pipe Server calls
 
@@ -161,9 +178,10 @@ protected:
 
         if (std::strcmp(msg, "program") == 0)
         {
-            uint32_t channel, bank, program;
+            uint8_t channel;
+            uint32_t bank, program;
 
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(channel), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsByte(channel), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(bank), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(program), true);
             CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, true);

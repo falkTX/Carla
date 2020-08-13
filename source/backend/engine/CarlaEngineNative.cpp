@@ -1661,7 +1661,8 @@ public:
     }
 
     static intptr_t _dispatcher(NativePluginHandle handle,
-                                NativePluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+                                NativePluginDispatcherOpcode opcode,
+                                int32_t index, intptr_t value, void* ptr, float opt)
     {
         switch(opcode)
         {
@@ -1687,6 +1688,8 @@ public:
         }
         case NATIVE_PLUGIN_OPCODE_IDLE:
             //handlePtr->idle();
+            return 0;
+        case NATIVE_PLUGIN_OPCODE_UI_MIDI_EVENT:
             return 0;
         }
 
