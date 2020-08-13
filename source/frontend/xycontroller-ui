@@ -54,6 +54,7 @@ class XYGraphicsScene(QGraphicsScene):
 
         self.cc_x = 1
         self.cc_y = 2
+        self.rparent = parent
 
         self.m_channels  = []
         self.m_mouseLock = False
@@ -189,17 +190,18 @@ class XYGraphicsScene(QGraphicsScene):
             self.cursorMoved.emit(xp, yp)
 
     def sendMIDI(self, xp, yp):
-        rate = float(0xff) / 4;
+        rate = float(0xff) / 4
+        msgd = ["cc2" if xp is not None and yp is not None else "cc"]
 
         if xp is not None:
-            value = xp * rate + rate
-            #foreach (const int& channel, m_channels)
-                #qMidiOutData.put(0xB0 + channel - 1, cc_x, value);
+            msgd.append(self.cc_x)
+            msgd.append(int(xp * rate + rate))
 
-        if yp is not None:
-            value = yp * rate + rate
-            #foreach (const int& channel, m_channels)
-                #qMidiOutData.put(0xB0 + channel - 1, cc_y, value);
+        elif yp is not None:
+            msgd.append(self.cc_y)
+            msgd.append(int(yp * rate + rate))
+
+        self.rparent.send(msgd)
 
     # -------------------------------------------------------------------
 
@@ -212,7 +214,7 @@ class XYGraphicsScene(QGraphicsScene):
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
         self.m_mouseLock = True
         self.handleMousePos(event.scenePos())
-        self.parent().setCursor(Qt.CrossCursor)
+        self.rparent.setCursor(Qt.CrossCursor)
         QGraphicsScene.mousePressEvent(self, event);
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
@@ -221,7 +223,7 @@ class XYGraphicsScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         self.m_mouseLock = False
-        self.parent().setCursor(Qt.ArrowCursor)
+        self.rparent.setCursor(Qt.ArrowCursor)
         QGraphicsScene.mouseReleaseEvent(self, event)
 
 # -----------------------------------------------------------------------
@@ -235,13 +237,6 @@ class XYControllerUI(ExternalUI, QMainWindow):
         self.ui.setupUi(self)
 
         self.fSaveSizeNowChecker = -1
-
-        # ---------------------------------------------------------------
-        # Internal stuff
-
-        self.cc_x = 1
-        self.cc_y = 2
-        self.m_channels = []
 
         # ---------------------------------------------------------------
         # Set-up GUI stuff
@@ -261,7 +256,14 @@ class XYControllerUI(ExternalUI, QMainWindow):
             self.ui.cb_control_x.addItem(MIDI_CC)
             self.ui.cb_control_y.addItem(MIDI_CC)
 
-        self.ui.graphicsView.centerOn(0, 0)
+        # ---------------------------------------------------------------
+        # Initial state
+
+        self.m_channels = [1]
+
+        self.ui.act_ch_01.setChecked(True)
+        self.ui.act_show_keyboard.setChecked(True)
+        self.ui.cb_control_y.setCurrentIndex(1)
 
         # ---------------------------------------------------------------
         # Connect actions to functions
@@ -307,12 +309,11 @@ class XYControllerUI(ExternalUI, QMainWindow):
         self.setWindowTitle(self.fUiName)
         self.ready()
 
-        QTimer.singleShot(0, self.slot_updateScreen)
-
     # -------------------------------------------------------------------
 
     @pyqtSlot()
     def slot_updateScreen(self):
+        self.ui.graphicsView.centerOn(0, 0)
         self.scene.updateSize(self.ui.graphicsView.size())
 
         dial_x = self.ui.dial_x.rvalue()
@@ -323,15 +324,11 @@ class XYControllerUI(ExternalUI, QMainWindow):
 
     @pyqtSlot(int)
     def slot_noteOn(self, note):
-        pass
-        #foreach (const int& channel, m_channels)
-            #qMidiOutData.put(0x90 + channel - 1, note, 100);
+        self.send(["note", True, note])
 
     @pyqtSlot(int)
     def slot_noteOff(self, note):
-        pass
-        #foreach (const int& channel, m_channels)
-            #qMidiOutData.put(0x80 + channel - 1, note, 0);
+        self.send(["note", False, note])
 
     @pyqtSlot(float)
     def slot_knobValueChangedX(self, x: float):
@@ -346,24 +343,24 @@ class XYControllerUI(ExternalUI, QMainWindow):
         self.scene.setSmoothValues(self.ui.dial_x.rvalue() / 100, y / 100)
 
     @pyqtSlot(str)
-    def slot_checkCC_X(self, text):
+    def slot_checkCC_X(self, text: str):
         if not text:
             return
 
-        tmp_cc_x = int(text.split(" ",1)[0], 16)
+        cc_x = int(text.split(" ",1)[0])
 
-        self.cc_x = tmp_cc_x;
-        self.scene.setControlX(self.cc_x);
+        self.scene.setControlX(cc_x)
+        self.sendConfigure("cc_x", str(cc_x))
 
     @pyqtSlot(str)
-    def slot_checkCC_Y(self, text):
+    def slot_checkCC_Y(self, text: str):
         if not text:
             return
 
-        tmp_cc_y = int(text.split(" ",1)[0], 16)
+        cc_y = int(text.split(" ",1)[0])
 
-        self.cc_y = tmp_cc_y;
-        self.scene.setControlY(self.cc_y);
+        self.scene.setControlY(cc_y)
+        self.sendConfigure("cc_y", str(cc_y))
 
     @pyqtSlot(bool)
     def slot_checkChannel(self, clicked):
@@ -375,9 +372,10 @@ class XYControllerUI(ExternalUI, QMainWindow):
         if clicked and channel not in self.m_channels:
             self.m_channels.append(channel)
         elif not clicked and channel in self.m_channels:
-            self.m_channels.remove(channel);
+            self.m_channels.remove(channel)
 
-        self.scene.setChannels(self.m_channels);
+        self.scene.setChannels(self.m_channels)
+        self.sendConfigure("channels", ",".join(str(c) for c in self.m_channels))
 
     @pyqtSlot()
     def slot_checkChannel_all(self):
@@ -400,6 +398,7 @@ class XYControllerUI(ExternalUI, QMainWindow):
 
         self.m_channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
         self.scene.setChannels(self.m_channels)
+        self.sendConfigure("channels", ",".join(str(c) for c in self.m_channels))
 
     @pyqtSlot()
     def slot_checkChannel_none(self):
@@ -422,11 +421,12 @@ class XYControllerUI(ExternalUI, QMainWindow):
 
         self.m_channels = []
         self.scene.setChannels(self.m_channels)
+        self.sendConfigure("channels", "")
 
     @pyqtSlot(bool)
     def slot_setSmooth(self, smooth):
-        self.sendConfigure("smooth", "yes" if smooth else "no")
         self.scene.setSmooth(smooth)
+        self.sendConfigure("smooth", "yes" if smooth else "no")
 
         if smooth:
             dial_x = self.ui.dial_x.rvalue()
@@ -434,22 +434,22 @@ class XYControllerUI(ExternalUI, QMainWindow):
             self.scene.setSmoothValues(dial_x / 100, dial_y / 100)
 
     @pyqtSlot(float, float)
-    def slot_sceneCursorMoved(self, xp, yp):
-        self.sendControl(XYCONTROLLER_PARAMETER_X, xp * 100)
-        self.sendControl(XYCONTROLLER_PARAMETER_Y, yp * 100)
-
+    def slot_sceneCursorMoved(self, xp: float, yp: float):
         self.ui.dial_x.setValue(xp * 100, False)
         self.ui.dial_y.setValue(yp * 100, False)
+        self.sendControl(XYCONTROLLER_PARAMETER_X, xp * 100)
+        self.sendControl(XYCONTROLLER_PARAMETER_Y, yp * 100)
 
     @pyqtSlot(bool)
     def slot_showKeyboard(self, yesno):
         self.ui.scrollArea.setVisible(yesno)
+        self.sendConfigure("show-midi-keyboard", "yes" if yesno else "no")
         QTimer.singleShot(0, self.slot_updateScreen)
 
     # -------------------------------------------------------------------
     # DSP Callbacks
 
-    def dspParameterChanged(self, index, value):
+    def dspParameterChanged(self, index: int, value: float):
         if index == XYCONTROLLER_PARAMETER_X:
             self.ui.dial_x.setValue(value, False)
             self.scene.setPosX(value / 100, False)
@@ -462,9 +462,7 @@ class XYControllerUI(ExternalUI, QMainWindow):
         self.scene.setSmoothValues(self.ui.dial_x.rvalue() / 100,
                                    self.ui.dial_y.rvalue() / 100)
 
-    def dspStateChanged(self, key, value):
-        print("dspStateChanged", key, value)
-
+    def dspStateChanged(self, key: str, value: str):
         if key == "guiWidth":
             try:
                 width = int(value)
@@ -494,6 +492,66 @@ class XYControllerUI(ExternalUI, QMainWindow):
                 dial_x = self.ui.dial_x.rvalue()
                 dial_y = self.ui.dial_y.rvalue()
                 self.scene.setSmoothValues(dial_x / 100, dial_y / 100)
+
+        elif key == "show-midi-keyboard":
+            show = (value == "yes")
+            self.ui.act_show_keyboard.blockSignals(True)
+            self.ui.act_show_keyboard.setChecked(show)
+            self.ui.act_show_keyboard.blockSignals(False)
+            self.ui.scrollArea.setVisible(show)
+
+        elif key == "channels":
+            if value:
+                self.m_channels = [int(c) for c in value.split(",")]
+            else:
+                self.m_channels = []
+            self.scene.setChannels(self.m_channels)
+            self.ui.act_ch_01.setChecked(bool(1 in self.m_channels))
+            self.ui.act_ch_02.setChecked(bool(2 in self.m_channels))
+            self.ui.act_ch_03.setChecked(bool(3 in self.m_channels))
+            self.ui.act_ch_04.setChecked(bool(4 in self.m_channels))
+            self.ui.act_ch_05.setChecked(bool(5 in self.m_channels))
+            self.ui.act_ch_06.setChecked(bool(6 in self.m_channels))
+            self.ui.act_ch_07.setChecked(bool(7 in self.m_channels))
+            self.ui.act_ch_08.setChecked(bool(8 in self.m_channels))
+            self.ui.act_ch_09.setChecked(bool(9 in self.m_channels))
+            self.ui.act_ch_10.setChecked(bool(10 in self.m_channels))
+            self.ui.act_ch_11.setChecked(bool(11 in self.m_channels))
+            self.ui.act_ch_12.setChecked(bool(12 in self.m_channels))
+            self.ui.act_ch_13.setChecked(bool(13 in self.m_channels))
+            self.ui.act_ch_14.setChecked(bool(14 in self.m_channels))
+            self.ui.act_ch_15.setChecked(bool(15 in self.m_channels))
+            self.ui.act_ch_16.setChecked(bool(16 in self.m_channels))
+
+        elif key == "cc_x":
+            cc_x = int(value)
+            self.scene.setControlX(cc_x)
+
+            for cc_index in range(len(MIDI_CC_LIST)):
+                if cc_x == int(MIDI_CC_LIST[cc_index].split(" ",1)[0]):
+                    self.ui.cb_control_x.blockSignals(True)
+                    self.ui.cb_control_x.setCurrentIndex(cc_index)
+                    self.ui.cb_control_x.blockSignals(False)
+                    break
+
+        elif key == "cc_y":
+            cc_y = int(value)
+            self.scene.setControlY(cc_y)
+
+            for cc_index in range(len(MIDI_CC_LIST)):
+                if cc_y == int(MIDI_CC_LIST[cc_index].split(" ",1)[0]):
+                    self.ui.cb_control_y.blockSignals(True)
+                    self.ui.cb_control_y.setCurrentIndex(cc_index)
+                    self.ui.cb_control_y.blockSignals(False)
+                    break
+
+    def dspNoteReceived(self, onOff, channel, note, velocity):
+        if channel+1 not in self.m_channels:
+            return
+        if onOff:
+            self.ui.keyboard.sendNoteOn(note, False)
+        else:
+            self.ui.keyboard.sendNoteOff(note, False)
 
     # -------------------------------------------------------------------
     # ExternalUI Callbacks

@@ -83,9 +83,6 @@ class ExternalUI(object):
     def sendConfigure(self, key, value):
         self.send(["configure", key, value])
 
-    def sendNote(self, onOff, channel, note, velocity):
-        self.send(["note", onOff, channel, note, velocity])
-
     # -------------------------------------------------------------------
     # DSP Callbacks
 

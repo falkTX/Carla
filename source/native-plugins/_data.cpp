@@ -563,7 +563,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,
     /* audioOuts */ 0,
-    /* midiIns   */ 0,
+    /* midiIns   */ 1,
     /* midiOuts  */ 1,
     /* paramIns  */ 2,
     /* paramOuts */ 2,
