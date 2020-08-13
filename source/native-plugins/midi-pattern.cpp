@@ -19,6 +19,7 @@
 #include "RtLinkedList.hpp"
 
 #include "midi-base.hpp"
+#include "midi-queue.hpp"
 
 // matches UI side
 #define TICKS_PER_BEAT 48
@@ -47,7 +48,9 @@ public:
           fTicksPerFrame(0.0),
           fMaxTicks(0.0),
           fMidiOut(this),
-          fTimeInfo()
+          fTimeInfo(),
+          fMidiQueue(),
+          fMidiQueueRT()
     {
         carla_zeroStruct(fTimeInfo);
 
@@ -237,6 +240,20 @@ protected:
             fNeedsAllNotesOff = false;
         }
 
+        if (fMidiQueue.isNotEmpty() && fMidiQueueRT.tryToCopyDataFrom(fMidiQueue))
+        {
+            uint8_t d1, d2, d3;
+            NativeMidiEvent ev = { 0, 0, 3, { 0, 0, 0, 0 } };
+
+            while (fMidiQueueRT.get(d1, d2, d3))
+            {
+                ev.data[0] = d1;
+                ev.data[1] = d2;
+                ev.data[2] = d3;
+                NativePluginAndUiClass::writeMidiEvent(&ev);
+            }
+        }
+
         if (fTimeInfo.playing)
         {
             if (! fTimeInfo.bbt.valid)
@@ -280,10 +297,6 @@ protected:
 
             fLastFrame = fTimeInfo.frame;
             fLastPosition = static_cast<float>(playPos);
-        }
-        else
-        {
-            fMidiOut.playTemporary();
         }
     }
 
@@ -400,7 +413,12 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsByte(note), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(on), true);
 
-            fMidiOut.flagTemporaryNote(note, on);
+            const uint8_t status   = on ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
+            const uint8_t velocity = on ? 100 : 0;
+
+            const CarlaMutexLocker cml(fMidiQueue.getMutex());
+
+            fMidiQueue.put(status, note, velocity);
             return true;
         }
 
@@ -464,6 +482,8 @@ private:
 
     MidiPattern    fMidiOut;
     NativeTimeInfo fTimeInfo;
+
+    MIDIEventQueue<32> fMidiQueue, fMidiQueueRT;
 
     float fParameters[kParameterCount];
 
