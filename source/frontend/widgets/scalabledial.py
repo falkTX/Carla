@@ -258,6 +258,9 @@ class ScalableDial(QDial):
     def setMaximum(self, value):
         self.fMaximum = value
 
+    def rvalue(self):
+        return self.fRealValue
+
     def setValue(self, value, emitSignal=False):
         if self.fRealValue == value or isnan(value):
             return
