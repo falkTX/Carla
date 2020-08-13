@@ -131,9 +131,9 @@ protected:
 
             carla_zeroStruct(channels);
 
-            for (const water::String chan : chans)
+            for (const water::String *it=chans.begin(), *end=chans.end(); it != end; ++it)
             {
-                const int ichan = std::atoi(chan.toRawUTF8());
+                const int ichan = std::atoi((*it).toRawUTF8());
                 CARLA_SAFE_ASSERT_INT_CONTINUE(ichan >= 1 && ichan <= 16, ichan);
 
                 channels[ichan-1] = true;
