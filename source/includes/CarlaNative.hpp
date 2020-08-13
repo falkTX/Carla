@@ -405,6 +405,15 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(uiName != nullptr && uiName[0] != '\0',);
     }
 
+    virtual bool uiMIDIEvent(uint8_t size, const uint8_t data[])
+    {
+        return false;
+
+        // unused
+        (void)size;
+        (void)data;
+    }
+
     virtual const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t width, const uint32_t height)
     {
         CARLA_SAFE_ASSERT_RETURN(width > 0 && height > 0, nullptr);
@@ -545,6 +554,11 @@ public:
         case NATIVE_PLUGIN_OPCODE_IDLE:
             handlePtr->idle();
             return 0;
+        case NATIVE_PLUGIN_OPCODE_UI_MIDI_EVENT:
+            CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < UINT8_MAX, 0);
+            CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
+            return handlePtr->uiMIDIEvent(static_cast<uint8_t>(index),
+                                          static_cast<uint8_t*>(ptr));
         }
 
         return 0;
