@@ -59,18 +59,9 @@ public:
           fStartTime(0),
           fReadMutex(),
           fWriteMutex(),
-          fData(),
-          fTemporary()
+          fData()
     {
         CARLA_SAFE_ASSERT(kPlayer != nullptr);
-
-        carla_zeroStructs(fTemporary, 2);
-
-        fTemporary[0].data[0] = MIDI_STATUS_NOTE_OFF;
-        fTemporary[1].data[0] = MIDI_STATUS_NOTE_ON;
-        fTemporary[1].data[2] = 100;
-
-        fTemporary[0].size = fTemporary[1].size = 3;
     }
 
     ~MidiPattern() noexcept
@@ -192,12 +183,6 @@ public:
         appendSorted(rawEvent);
     }
 
-    void flagTemporaryNote(const uint8_t note, const bool on)
-    {
-        fTemporary[on ? 1 : 0].time    = 1;
-        fTemporary[on ? 1 : 0].data[1] = note;
-    }
-
     // -------------------------------------------------------------------
     // remove data
 
@@ -255,8 +240,6 @@ public:
     {
         long double ldtime;
 
-        playTemporary();
-
         const CarlaMutexTryLocker cmtl(fReadMutex);
 
         if (cmtl.wasNotLocked())
@@ -288,21 +271,6 @@ public:
         }
 
         return true;
-    }
-
-    void playTemporary()
-    {
-        if (fTemporary[0].time != 0)
-        {
-            fTemporary[0].time = 0;
-            kPlayer->writeMidiEvent(fMidiPort, 0.0, &fTemporary[0]);
-        }
-
-        if (fTemporary[1].time != 0)
-        {
-            fTemporary[1].time = 0;
-            kPlayer->writeMidiEvent(fMidiPort, 0.0, &fTemporary[1]);
-        }
     }
 
     // -------------------------------------------------------------------
@@ -494,8 +462,6 @@ private:
     CarlaMutex fReadMutex;
     CarlaMutex fWriteMutex;
     LinkedList<const RawMidiEvent*> fData;
-
-    RawMidiEvent fTemporary[2];
 
     void appendSorted(const RawMidiEvent* const event)
     {
