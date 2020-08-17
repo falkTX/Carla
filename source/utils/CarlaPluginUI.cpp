@@ -187,7 +187,7 @@ public:
         fFirstShow = false;
 
         XMapRaised(fDisplay, fHostWindow);
-        XFlush(fDisplay);
+        XSync(fDisplay, False);
     }
 
     void hide() override
@@ -299,7 +299,7 @@ public:
         {
             XRaiseWindow(fDisplay, fHostWindow);
             XSetInputFocus(fDisplay, fHostWindow, RevertToPointerRoot, CurrentTime);
-            XFlush(fDisplay);
+            XSync(fDisplay, False);
         }
     }
 
@@ -331,7 +331,7 @@ public:
         }
 
         if (forceUpdate)
-            XFlush(fDisplay);
+            XSync(fDisplay, False);
     }
 
     void setTitle(const char* const title) override
