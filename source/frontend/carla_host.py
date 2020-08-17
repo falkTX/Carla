@@ -37,9 +37,15 @@ try:
 except ImportError:
     PYQT_VERSION = 0x50600
 
-from PyQt5.QtCore import QT_VERSION, qCritical, QEventLoop, QFileInfo, QModelIndex, QPointF, QTimer, QEvent
-from PyQt5.QtGui import QImage, QImageWriter, QPainter, QPalette, QBrush
-from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QGraphicsView, QMainWindow
+from PyQt5.QtCore import (
+    QT_VERSION, qCritical, QBuffer, QEventLoop, QFileInfo, QIODevice, QMimeData, QModelIndex, QPointF, QTimer, QEvent
+)
+from PyQt5.QtGui import (
+    QImage, QImageWriter, QPainter, QPalette, QBrush
+)
+from PyQt5.QtWidgets import (
+    QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QGraphicsView, QMainWindow
+)
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -1570,6 +1576,24 @@ class HostWindow(QMainWindow):
     def slot_canvasZoomReset(self):
         self.scene.zoom_reset()
 
+    def _canvasImageRender(self, zoom = 1.0):
+        image   = QImage(self.scene.width()*zoom, self.scene.height()*zoom, QImage.Format_RGB32)
+        painter = QPainter(image)
+        painter.save()
+        painter.setRenderHints(painter.renderHints() | QPainter.Antialiasing | QPainter.TextAntialiasing)
+        self.scene.clearSelection()
+        self.scene.render(painter)
+        painter.restore()
+        del painter
+        return image
+
+    def _canvasImageWrite(self, iw: QImageWriter, imgFormat: bytes, image: QImage):
+        iw.setFormat(imgFormat)
+        iw.setCompression(-1)
+        if QT_VERSION >= 0x50500:
+            iw.setOptimizedWrite(True)
+        iw.write(image)
+
     @pyqtSlot()
     def slot_canvasSaveImage(self):
         if self.fProjectFilename:
@@ -1617,36 +1641,25 @@ class HostWindow(QMainWindow):
         else:
             zoom = 1.0
 
-        image   = QImage(self.scene.width()*zoom, self.scene.height()*zoom, QImage.Format_RGB32)
-        painter = QPainter(image)
-        painter.save()
-        painter.setRenderHints(painter.renderHints() | QPainter.Antialiasing | QPainter.TextAntialiasing)
-        self.scene.clearSelection()
-        self.scene.render(painter)
-        painter.restore()
-        del painter
-
+        image = self._canvasImageRender(zoom)
         iw = QImageWriter(newPath)
-        iw.setFormat(imgFormat)
-        iw.setCompression(-1)
-
-        if QT_VERSION >= 0x50500:
-            iw.setOptimizedWrite(True)
-
-        iw.write(image)
+        self._canvasImageWrite(iw, imgFormat, image)
 
     @pyqtSlot()
     def slot_canvasCopyToClipboard(self):
-        image   = QImage(self.scene.width(), self.scene.height(), QImage.Format_RGB32)
-        painter = QPainter(image)
-        painter.save()
-        painter.setRenderHints(painter.renderHints() | QPainter.Antialiasing | QPainter.TextAntialiasing)
-        self.scene.clearSelection()
-        self.scene.render(painter)
-        painter.restore()
-        del painter
+        buffer = QBuffer()
+        buffer.open(QIODevice.WriteOnly)
 
-        QApplication.clipboard().setImage(image)
+        image = self._canvasImageRender()
+        iw = QImageWriter(buffer, b"PNG")
+        self._canvasImageWrite(iw, b"PNG", image)
+
+        buffer.close()
+
+        mimeData = QMimeData()
+        mimeData.setData("image/png", buffer.buffer());
+
+        QApplication.clipboard().setMimeData(mimeData)
 
     # --------------------------------------------------------------------------------------------------------
     # Canvas (canvas callbacks)
