@@ -229,16 +229,25 @@ public:
 
                         if (fChildWindow != 0)
                         {
-                            XSizeHints sizeHints;
-                            carla_zeroStruct(sizeHints);
-
-                            if (!fChildWindowConfigured && XGetNormalHints(fDisplay, fChildWindow, &sizeHints))
+                            if (! fChildWindowConfigured)
                             {
+                                gErrorTriggered = false;
+                                const XErrorHandler oldErrorHandler = XSetErrorHandler(temporaryErrorHandler);
+
+                                XSizeHints sizeHints;
+                                carla_zeroStruct(sizeHints);
+
+                                if (XGetNormalHints(fDisplay, fChildWindow, &sizeHints) && !gErrorTriggered)
+                                    XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
+                                else
+                                    fChildWindow = 0;
+
                                 fChildWindowConfigured = true;
-                                XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
+                                XSetErrorHandler(oldErrorHandler);
                             }
 
-                            XResizeWindow(fDisplay, fChildWindow, width, height);
+                            if (fChildWindow != 0)
+                                XResizeWindow(fDisplay, fChildWindow, width, height);
                         }
 
                         fCallback->handlePluginUIResized(width, height);
