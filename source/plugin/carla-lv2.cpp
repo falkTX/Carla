@@ -23,22 +23,6 @@
 #include "CarlaPipeUtils.hpp"
 #include "CarlaString.hpp"
 
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-# endif
-# include "AppConfig.h"
-# include "juce_events/juce_events.h"
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
-#endif
-
 #include "water/files/File.h"
 
 static const char* const kPathForCarlaFiles = "carlafiles";
@@ -71,9 +55,6 @@ public:
 #endif
           kIgnoreParameters(std::strncmp(desc->label, "carla", 5) == 0),
           fMidiEventCount(0),
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-          fJuceInitialiser(),
-#endif
           fLastProjectPath(),
           fLoadedFile(),
           fWorkerUISignal(0)
@@ -852,11 +833,13 @@ protected:
         case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
         case NATIVE_HOST_OPCODE_RELOAD_ALL:
         case NATIVE_HOST_OPCODE_HOST_IDLE:
-        case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
         case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
         case NATIVE_HOST_OPCODE_REQUEST_IDLE:
             // nothing
             break;
+
+        case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
+            return 1;
 
         case NATIVE_HOST_OPCODE_GET_FILE_PATH:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
@@ -919,10 +902,6 @@ private:
 
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
-
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
-#endif
 
     CarlaString fLastProjectPath;
     CarlaString fLoadedFile;
