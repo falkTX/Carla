@@ -42,22 +42,6 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaVstUtils.hpp"
 
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-# endif
-# include "AppConfig.h"
-# include "juce_events/juce_events.h"
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
-#endif
-
 static uint32_t d_lastBufferSize = 0;
 static double   d_lastSampleRate = 0.0;
 
@@ -98,9 +82,6 @@ public:
           fUiLauncher(nullptr),
           fHostType(kHostTypeNull),
           fMidiOutEvents(),
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-          fJuceInitialiser(),
-#endif
           fStateChunk(nullptr)
     {
         fHost.handle      = this;
@@ -879,10 +860,6 @@ private:
 
         CARLA_DECLARE_NON_COPY_STRUCT(FixedVstEvents);
     } fMidiOutEvents;
-
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
-#endif
 
     char* fStateChunk;
 

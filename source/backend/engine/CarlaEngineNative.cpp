@@ -47,7 +47,7 @@
 # endif
 # include "AppConfig.h"
 # include "juce_events/juce_events.h"
-# define USE_JUCE_MESSAGE_THREAD
+# define USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
 # if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #  pragma GCC diagnostic pop
 # endif
@@ -74,33 +74,27 @@ static const uint16_t kUiHeight = 712;
 
 // -----------------------------------------------------------------------
 
-#ifdef USE_JUCE_MESSAGE_THREAD
+#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
 static int numScopedInitInstances = 0;
 
-class SharedJuceMessageThread : public juce::Thread
+struct ReferenceCountedJuceMessageMessager
 {
-public:
-    SharedJuceMessageThread()
-      : juce::Thread ("SharedJuceMessageThread"),
-        initialised (false) {}
-
-    ~SharedJuceMessageThread()
+    ReferenceCountedJuceMessageMessager()
     {
         CARLA_SAFE_ASSERT(numScopedInitInstances == 0);
+    }
 
-        // in case something fails
-        juce::MessageManager::getInstance()->stopDispatchLoop();
-        waitForThreadToExit (5000);
+    ~ReferenceCountedJuceMessageMessager()
+    {
+        CARLA_SAFE_ASSERT(numScopedInitInstances == 0);
     }
 
     void incRef()
     {
         if (numScopedInitInstances++ == 0)
         {
-            startThread (7);
-
-            while (! initialised)
-                juce::Thread::sleep (1);
+            juce::initialiseJuce_GUI();
+            juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
         }
     }
 
@@ -108,26 +102,9 @@ public:
     {
         if (--numScopedInitInstances == 0)
         {
-            juce::MessageManager::getInstance()->stopDispatchLoop();
-            waitForThreadToExit (5000);
+            juce::shutdownJuce_GUI();
         }
     }
-
-protected:
-    void run() override
-    {
-        const juce::ScopedJuceInitialiser_GUI juceInitialiser;
-
-        juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
-        initialised = true;
-
-        juce::MessageManager::getInstance()->runDispatchLoop();
-    }
-
-private:
-    volatile bool initialised;
-
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SharedJuceMessageThread);
 };
 #endif
 
@@ -172,11 +149,11 @@ public:
                       const uint32_t cvIns = 0, const uint32_t cvOuts = 0)
         : CarlaEngine(),
           pHost(host),
-#ifdef USE_JUCE_MESSAGE_THREAD
+#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
           // if not running inside Carla, we will have to run event loop ourselves
-          kNeedsJuceMsgThread(host->dispatcher(pHost->handle,
-                                               NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0),
-          fJuceMsgThread(),
+          kNeedsJuceEvents(host->dispatcher(pHost->handle,
+                                            NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0),
+          fJuceMsgMgr(),
 #endif
           kIsPatchbay(isPatchbay),
           kHasMidiOut(withMidiOut),
@@ -192,9 +169,9 @@ public:
 
         carla_zeroFloats(fParameters, kNumInParams+kNumOutParams);
 
-#ifdef USE_JUCE_MESSAGE_THREAD
-        if (kNeedsJuceMsgThread)
-            fJuceMsgThread->incRef();
+#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
+        if (kNeedsJuceEvents)
+            fJuceMsgMgr->incRef();
 #endif
 
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
@@ -258,9 +235,9 @@ public:
 
         pData->graph.destroy();
 
-#ifdef USE_JUCE_MESSAGE_THREAD
-        if (kNeedsJuceMsgThread)
-            fJuceMsgThread->decRef();
+#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
+        if (kNeedsJuceEvents)
+            fJuceMsgMgr->decRef();
 #endif
 
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
@@ -1342,6 +1319,16 @@ protected:
 
     void uiIdle()
     {
+#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
+        if (kNeedsJuceEvents)
+        {
+            const juce::MessageManagerLock mml;
+
+            if (const juce::MessageManager* const msgMgr = juce::MessageManager::getInstanceWithoutCreating())
+                for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
+        }
+#endif
+
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
             if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
@@ -1707,9 +1694,9 @@ public:
 private:
     const NativeHostDescriptor* const pHost;
 
-#ifdef USE_JUCE_MESSAGE_THREAD
-    const bool kNeedsJuceMsgThread;
-    const juce::SharedResourcePointer<SharedJuceMessageThread> fJuceMsgThread;
+#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
+    const bool kNeedsJuceEvents;
+    const juce::SharedResourcePointer<ReferenceCountedJuceMessageMessager> fJuceMsgMgr;
 #endif
 
     const bool kIsPatchbay; // rack if false
