@@ -418,6 +418,7 @@ public:
     void showCustomUI(const bool yesNo) override
     {
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        carla_debug("CarlaPluginJuce::showCustomUI(%s)", bool2str(yesNo));
 
         if (yesNo)
         {
@@ -450,9 +451,6 @@ public:
         }
         else
         {
-            if (fWindow != nullptr)
-                fWindow->hide();
-
             if (juce::AudioProcessorEditor* const editor = fInstance->getActiveEditor())
                 delete editor;
 
