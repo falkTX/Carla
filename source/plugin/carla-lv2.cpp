@@ -819,8 +819,13 @@ protected:
 
     intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
-        carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)",
-                    opcode, index, value, ptr, static_cast<double>(opt));
+#ifdef DEBUG
+        if (opcode != NATIVE_HOST_OPCODE_GET_FILE_PATH)
+        {
+            carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)",
+                        opcode, index, value, ptr, static_cast<double>(opt));
+        }
+#endif
 
         intptr_t ret = 0;
 
@@ -833,13 +838,11 @@ protected:
         case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
         case NATIVE_HOST_OPCODE_RELOAD_ALL:
         case NATIVE_HOST_OPCODE_HOST_IDLE:
+        case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
         case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
         case NATIVE_HOST_OPCODE_REQUEST_IDLE:
             // nothing
             break;
-
-        case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
-            return 1;
 
         case NATIVE_HOST_OPCODE_GET_FILE_PATH:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
@@ -1168,7 +1171,7 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, cons
 
 static void lv2ui_port_event(LV2UI_Handle ui, uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
 {
-    carla_debug("lv2ui_port_eventxx(%p, %i, %i, %i, %p)", ui, portIndex, bufferSize, format, buffer);
+    carla_debug("lv2ui_port_event(%p, %i, %i, %i, %p)", ui, portIndex, bufferSize, format, buffer);
     uiPtr->lv2ui_port_event(portIndex, bufferSize, format, buffer);
 }
 
