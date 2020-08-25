@@ -458,7 +458,7 @@ fi
 # sip
 
 if [ ! -d sip-${SIP_VERSION} ]; then
-  /opt/local/bin/aria2c https://www.riverbankcomputing.com/static/Downloads/sip/${SIP_VERSION}/sip-${SIP_VERSION}.tar.gz
+  /opt/local/bin/aria2c https://files.kde.org/krita/build/dependencies/sip-${SIP_VERSION}.tar.gz
   tar -xf sip-${SIP_VERSION}.tar.gz
 fi
 
@@ -475,7 +475,7 @@ fi
 # pyqt5
 
 if [ ! -d PyQt5_gpl-${PYQT5_VERSION} ]; then
-  /opt/local/bin/aria2c https://www.riverbankcomputing.com/static/Downloads/PyQt5/${PYQT5_VERSION}/PyQt5_gpl-${PYQT5_VERSION}.tar.gz
+  /opt/local/bin/aria2c https://files.kde.org/krita/build/dependencies/PyQt5_gpl-${PYQT5_VERSION}.tar.gz
   tar -xf PyQt5_gpl-${PYQT5_VERSION}.tar.gz
 fi
 
