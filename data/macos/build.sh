@@ -269,3 +269,39 @@ mv build/Carla.app   ${PKG_FOLDER}/
 mv build/Carla-Control.app ${PKG_FOLDER}/
 
 ##############################################################################################
+# Build Mac plugin installer
+
+pkgbuild \
+    --identifier "studio.kx.carla.lv2" \
+    --install-location "/Library/Audio/Plug-Ins/LV2/carla.lv2/" \
+    --root "${PKG_FOLDER}/carla.lv2/" \
+    "${PKG_FOLDER}/carla-lv2.pkg"
+
+pkgbuild \
+    --identifier "studio.kx.carla.vst2fx" \
+    --install-location "/Library/Audio/Plug-Ins/VST/carlafx.vst/" \
+    --root "${PKG_FOLDER}/carlafx.vst/" \
+    "${PKG_FOLDER}/carla-vst2fx.pkg"
+
+pkgbuild \
+    --identifier "studio.kx.carla.vst2syn" \
+    --install-location "/Library/Audio/Plug-Ins/VST/carla.vst/" \
+    --root "${PKG_FOLDER}/carla.vst/" \
+    "${PKG_FOLDER}/carla-vst2syn.pkg"
+
+productbuild \
+    --distribution data/macos/package.xml \
+    --identifier studio.kx.carla \
+    --package-path "${PKG_FOLDER}" \
+    --version ${VERSION} \
+    "${PKG_FOLDER}/Carla-Plugins.pkg"
+
+rm -r ${PKG_FOLDER}/carla.lv2
+rm -r ${PKG_FOLDER}/carla.vst
+rm -r ${PKG_FOLDER}/carlafx.vst
+
+rm ${PKG_FOLDER}/carla-lv2.pkg
+rm ${PKG_FOLDER}/carla-vst2fx.pkg
+rm ${PKG_FOLDER}/carla-vst2syn.pkg
+
+##############################################################################################

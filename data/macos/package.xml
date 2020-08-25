@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Carla Plugin</title>
+    <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true" />
+    <options customize="always" hostArchitectures="x86_64" require-scripts="false" rootVolumeOnly="true" />
+    <pkg-ref id="studio.kx.carla" />
+    <choice id="studio.kx.carla.lv2" title="LV2 plugin" visible="true">
+        <pkg-ref id="studio.kx.carla.lv2" version="0">carla-lv2.pkg</pkg-ref>
+    </choice>
+    <choice id="studio.kx.carla.vst2" title="VST2 plugin" visible="true">
+        <pkg-ref id="studio.kx.carla.vst2fx" version="0">carla-vst2fx.pkg</pkg-ref>
+        <pkg-ref id="studio.kx.carla.vst2syn" version="0">carla-vst2syn.pkg</pkg-ref>
+    </choice>
+    <choices-outline>
+       <line choice="studio.kx.carla.lv2"/>
+       <line choice="studio.kx.carla.vst2"/>
+    </choices-outline>
+</installer-gui-script>
