@@ -24,6 +24,7 @@ if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 11 ]; 
   export MACOS_VERSION_MIN="10.8"
 else
   export MACOS_VERSION_MIN="10.12"
+  PKG_FOLDER="${PKG_FOLDER}-10.12"
 fi
 
 export MACOS="true"
