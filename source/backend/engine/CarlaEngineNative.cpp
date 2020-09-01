@@ -154,6 +154,7 @@ public:
           kNeedsJuceEvents(host->dispatcher(pHost->handle,
                                             NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0),
           fJuceMsgMgr(),
+          fJuceMsgMutex(),
 #endif
           kIsPatchbay(isPatchbay),
           kHasMidiOut(withMidiOut),
@@ -229,11 +230,16 @@ public:
         pData->aboutToClose = true;
         fIsRunning = false;
 
-        removeAllPlugins();
-        //runPendingRtEvents();
-        close();
+        {
+#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
+            const ScopedJuceMessageThreadRunner sjmtr(*this, true);
+#endif
+            removeAllPlugins();
+            //runPendingRtEvents();
+            close();
 
-        pData->graph.destroy();
+            pData->graph.destroy();
+        }
 
 #ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
         if (kNeedsJuceEvents)
@@ -1320,13 +1326,10 @@ protected:
     void uiIdle()
     {
 #ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-        if (kNeedsJuceEvents)
-        {
-            const juce::MessageManagerLock mml;
+        const ScopedJuceMessageThreadRunner sjmtr(*this, false);
 
-            if (const juce::MessageManager* const msgMgr = juce::MessageManager::getInstanceWithoutCreating())
-                for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
-        }
+        if (kNeedsJuceEvents && ! sjmtr.wasLocked)
+            return;
 #endif
 
         for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1508,6 +1511,10 @@ protected:
 
     void setState(const char* const data)
     {
+#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
+        const ScopedJuceMessageThreadRunner sjmtr(*this, true);
+#endif
+
         // remove all plugins from UI side
         for (uint i=0, count=pData->curPluginCount; i < count; ++i)
             CarlaEngine::callback(true, true, ENGINE_CALLBACK_PLUGIN_REMOVED, count-i-1, 0, 0, 0, 0.0f, nullptr);
@@ -1697,6 +1704,46 @@ private:
 #ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
     const bool kNeedsJuceEvents;
     const juce::SharedResourcePointer<ReferenceCountedJuceMessageMessager> fJuceMsgMgr;
+    CarlaMutex fJuceMsgMutex;
+
+    struct ScopedJuceMessageThreadRunner {
+        const CarlaMutexTryLocker cmtl;
+        const bool wasLocked;
+        juce::MessageManager* msgMgr;
+
+        ScopedJuceMessageThreadRunner(CarlaEngineNative& self, const bool forceLock) noexcept
+            : cmtl(self.fJuceMsgMutex, forceLock),
+              wasLocked(cmtl.wasLocked()),
+              msgMgr(nullptr)
+        {
+            if (! self.kNeedsJuceEvents)
+                return;
+            if (! wasLocked)
+                return;
+
+            juce::MessageManager* const msgMgr2 = juce::MessageManager::getInstanceWithoutCreating();
+            CARLA_SAFE_ASSERT_RETURN(msgMgr2 != nullptr,);
+
+            if (! msgMgr2->isThisTheMessageThread())
+            {
+                try {
+                    msgMgr2->setCurrentThreadAsMessageThread();
+                } CARLA_SAFE_EXCEPTION_RETURN("setCurrentThreadAsMessageThread",);
+            }
+
+            msgMgr = msgMgr2;
+        }
+
+        ~ScopedJuceMessageThreadRunner()
+        {
+            if (msgMgr == nullptr)
+                return;
+
+            const juce::MessageManagerLock mml;
+
+            for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
+        }
+    };
 #endif
 
     const bool kIsPatchbay; // rack if false
