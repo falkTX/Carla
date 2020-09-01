@@ -1743,6 +1743,8 @@ private:
 
             for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
         }
+
+        CARLA_DECLARE_NON_COPY_STRUCT(ScopedJuceMessageThreadRunner)
     };
 #endif
 
