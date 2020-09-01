@@ -451,22 +451,22 @@ $(OBJDIR)/carla-vst.cpp.shellfx.o: carla-vst.cpp
 	@echo "Compiling $< (VstShell)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL -DCARLA_PLUGIN_SYNTH=0 -c -o $@
 
-$(OBJDIR)/carla-vst-export-bridged.cpp.fx.o: carla-vst-export-bridged.cpp
+$(OBJDIR)/carla-vst-export-bridged.cpp.fx.o: carla-vst-export-bridged.cpp $(LIBS)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_SYNTH=0 -c -o $@
 
-$(OBJDIR)/carla-vst-export-bridged.cpp.synth.o: carla-vst-export-bridged.cpp
+$(OBJDIR)/carla-vst-export-bridged.cpp.synth.o: carla-vst-export-bridged.cpp $(LIBS)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_SYNTH=1 -c -o $@
 
-$(OBJDIR)/carla-vst-export.cpp.o: carla-vst-export.cpp
+$(OBJDIR)/carla-vst-export.cpp.o: carla-vst-export.cpp $(LIBS)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(OBJDIR)/carla-vst-export.cpp.dll.o: carla-vst-export.cpp
+$(OBJDIR)/carla-vst-export.cpp.dll.o: carla-vst-export.cpp $(LIBS)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Wine)"
 	@$(WINECC) $< $(BUILD_CXX_FLAGS) -c -o $@
