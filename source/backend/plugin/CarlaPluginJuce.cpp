@@ -447,6 +447,7 @@ public:
                 }
 
                 fWindow->show(editor);
+                fWindow->toFront(true);
             }
         }
         else
