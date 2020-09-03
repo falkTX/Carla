@@ -865,7 +865,9 @@ def removePort(group_id, port_id):
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
             item = port.widget
-            item.parentItem().removePortFromGroup(port_id)
+            pitem = item.parentItem()
+            if pitem:
+                pitem.removePortFromGroup(port_id)
             canvas.scene.removeItem(item)
             canvas.port_list.remove(port)
             del item
@@ -997,8 +999,12 @@ def disconnectPorts(connection_id):
         qCritical("PatchCanvas::disconnectPorts(%i) - unable to find input port" % connection_id)
         return
 
-    item1.parentItem().removeLineFromGroup(connection_id)
-    item2.parentItem().removeLineFromGroup(connection_id)
+    item1p = item1.parentItem()
+    item2p = item2.parentItem()
+    if item1p:
+        item1p.removeLineFromGroup(connection_id)
+    if item2p:
+        item2p.removeLineFromGroup(connection_id)
 
     if options.eyecandy == EYECANDY_FULL:
         CanvasItemFX(line, False, True)
