@@ -197,7 +197,7 @@ class XYGraphicsScene(QGraphicsScene):
             msgd.append(self.cc_x)
             msgd.append(int(xp * rate + rate))
 
-        elif yp is not None:
+        if yp is not None:
             msgd.append(self.cc_y)
             msgd.append(int(yp * rate + rate))
 
@@ -305,7 +305,7 @@ class XYControllerUI(ExternalUI, QMainWindow):
         # ---------------------------------------------------------------
         # Final stuff
 
-        self.fIdleTimer = self.startTimer(50)
+        self.fIdleTimer = self.startTimer(60)
         self.setWindowTitle(self.fUiName)
         self.ready()
 
