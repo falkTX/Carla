@@ -121,6 +121,8 @@ TARGET_NAME="midipattern-ui" ${PYTHON_EXE} ./app-plugin-ui.py build_exe
 mv Carla/resources/lib/library.zip Carla/resources/lib/library-midipattern.zip
 TARGET_NAME="notes-ui" ${PYTHON_EXE} ./app-plugin-ui.py build_exe
 mv Carla/resources/lib/library.zip Carla/resources/lib/library-notes.zip
+TARGET_NAME="xycontroller-ui" ${PYTHON_EXE} ./app-plugin-ui.py build_exe
+mv Carla/resources/lib/library.zip Carla/resources/lib/library-xycontroller.zip
 TARGET_NAME="carla-plugin" ${PYTHON_EXE} ./app-plugin-ui.py build_exe
 mv Carla/resources/lib/library.zip Carla/resources/lib/library-carla1.zip
 TARGET_NAME="carla-plugin-patchbay" ${PYTHON_EXE} ./app-plugin-ui.py build_exe
@@ -131,6 +133,7 @@ pushd Carla/resources/lib/_lib
 unzip -o ../library-bigmeter.zip
 unzip -o ../library-midipattern.zip
 unzip -o ../library-notes.zip
+unzip -o ../library-xycontroller.zip
 unzip -o ../library-carla1.zip
 unzip -o ../library-carla2.zip
 zip -r -9 ../library.zip *
@@ -173,11 +176,7 @@ find Carla CarlaControl -name "*.pyi" -delete
 # ---------------------------------------------------------------------------------------------------------------------
 # copy relevant files to binary dir
 
-cp ../../bin/libcarla_standalone2.dll Carla/
-cp ../../bin/libcarla_utils.dll       Carla/
-cp ../../bin/carla-bridge-lv2.dll     Carla/
-cp ../../bin/carla-bridge-*.exe       Carla/
-cp ../../bin/carla-discovery-win*.exe Carla/
+cp ../../bin/libcarla_utils.dll Carla/
 
 mkdir -p Carla/imageformats
 cp ${MSYS2_PREFIX}/share/qt5/plugins/imageformats/qsvg.dll Carla/imageformats/
@@ -188,10 +187,35 @@ cp ${MSYS2_PREFIX}/share/qt5/plugins/platforms/qwindows.dll Carla/platforms/
 mkdir -p Carla/styles
 cp ../../bin/styles/carlastyle.dll Carla/styles/
 
+cp ${MSYS2_PREFIX}/bin/Qt5{Core,Gui,OpenGL,Svg,Widgets}.dll Carla/
+
+cp ${MSYS2_PREFIX}/bin/libbz2-1.dll             Carla/
+cp ${MSYS2_PREFIX}/bin/libcrypto-1_1-x64.dll    Carla/
+cp ${MSYS2_PREFIX}/bin/libdouble-conversion.dll Carla/
+cp ${MSYS2_PREFIX}/bin/libffi-6.dll             Carla/
+cp ${MSYS2_PREFIX}/bin/libfreetype-6.dll        Carla/
+cp ${MSYS2_PREFIX}/bin/libgcc_s_seh-1.dll       Carla/
+cp ${MSYS2_PREFIX}/bin/libglib-2.0-0.dll        Carla/
+cp ${MSYS2_PREFIX}/bin/libgraphite2.dll         Carla/
+cp ${MSYS2_PREFIX}/bin/libharfbuzz-0.dll        Carla/
+cp ${MSYS2_PREFIX}/bin/libiconv-2.dll           Carla/
+cp ${MSYS2_PREFIX}/bin/libicudt64.dll           Carla/
+cp ${MSYS2_PREFIX}/bin/libicuin64.dll           Carla/
+cp ${MSYS2_PREFIX}/bin/libicuuc64.dll           Carla/
+cp ${MSYS2_PREFIX}/bin/libintl-8.dll            Carla/
+cp ${MSYS2_PREFIX}/bin/libpcre-1.dll            Carla/
+cp ${MSYS2_PREFIX}/bin/libpcre2-16-0.dll        Carla/
+cp ${MSYS2_PREFIX}/bin/libpng16-16.dll          Carla/
+cp ${MSYS2_PREFIX}/bin/libpython3.7m.dll        Carla/
+cp ${MSYS2_PREFIX}/bin/libstdc++-6.dll          Carla/
+cp ${MSYS2_PREFIX}/bin/libwinpthread-1.dll      Carla/
+cp ${MSYS2_PREFIX}/bin/libzstd.dll              Carla/
+cp ${MSYS2_PREFIX}/bin/zlib1.dll                Carla/
+
 # ---------------------------------------------------------------------------------------------------------------------
 # also for CarlaControl
 
-cp ../../bin/libcarla_utils.dll CarlaControl/
+cp Carla/*.dll CarlaControl/
 
 mkdir -p CarlaControl/imageformats
 cp ${MSYS2_PREFIX}/share/qt5/plugins/imageformats/qsvg.dll CarlaControl/imageformats/
@@ -203,14 +227,26 @@ mkdir -p CarlaControl/styles
 cp ../../bin/styles/carlastyle.dll CarlaControl/styles/
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Carla standalone specifics
+
+cp ../../bin/libcarla_standalone2.dll Carla/
+cp ../../bin/carla-bridge-lv2.dll     Carla/
+cp ../../bin/carla-bridge-*.exe       Carla/
+cp ../../bin/carla-discovery-win*.exe Carla/
+
+# ---------------------------------------------------------------------------------------------------------------------
 # prepare lv2 bundle
 
 mkdir -p Carla.lv2
 cp -r Carla/*                Carla.lv2/
 cp ../../bin/carla.lv2/*.dll Carla.lv2/
 cp ../../bin/carla.lv2/*.ttl Carla.lv2/
+mv Carla.lv2/{Qt5,lib,zlib}*.dll Carla.lv2/resources/
+mv Carla.lv2/resources/libcarla_utils.dll Carla.lv2/
 rm Carla.lv2/Carla.exe
 rm Carla.lv2/CarlaDebug.exe
+rm Carla.lv2/resources/libcarla_standalone2.dll
+rm -r Carla.lv2/lib
 
 # ---------------------------------------------------------------------------------------------------------------------
 # copy relevant files to binary dir
@@ -218,8 +254,12 @@ rm Carla.lv2/CarlaDebug.exe
 mkdir -p Carla.vst
 cp -r Carla/*              Carla.vst/
 cp ../../bin/CarlaVst*.dll Carla.vst/
+mv Carla.vst/{Qt5,lib,zlib}*.dll Carla.vst/resources/
+mv Carla.vst/resources/libcarla_utils.dll Carla.vst/
 rm Carla.vst/Carla.exe
 rm Carla.vst/CarlaDebug.exe
+rm Carla.vst/resources/libcarla_standalone2.dll
+rm -r Carla.vst/lib
 
 # ---------------------------------------------------------------------------------------------------------------------
 # stop here for development
