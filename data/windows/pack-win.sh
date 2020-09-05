@@ -190,11 +190,11 @@ cp ../../bin/styles/carlastyle.dll Carla/styles/
 cp ${MSYS2_PREFIX}/bin/Qt5{Core,Gui,OpenGL,Svg,Widgets}.dll Carla/
 
 cp ${MSYS2_PREFIX}/bin/libbz2-1.dll             Carla/
-cp ${MSYS2_PREFIX}/bin/libcrypto-1_1-x64.dll    Carla/
+cp ${MSYS2_PREFIX}/bin/libcrypto-1_*.dll        Carla/
 cp ${MSYS2_PREFIX}/bin/libdouble-conversion.dll Carla/
 cp ${MSYS2_PREFIX}/bin/libffi-6.dll             Carla/
 cp ${MSYS2_PREFIX}/bin/libfreetype-6.dll        Carla/
-cp ${MSYS2_PREFIX}/bin/libgcc_s_seh-1.dll       Carla/
+cp ${MSYS2_PREFIX}/bin/libgcc_s_*.dll           Carla/
 cp ${MSYS2_PREFIX}/bin/libglib-2.0-0.dll        Carla/
 cp ${MSYS2_PREFIX}/bin/libgraphite2.dll         Carla/
 cp ${MSYS2_PREFIX}/bin/libharfbuzz-0.dll        Carla/
