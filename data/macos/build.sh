@@ -85,18 +85,20 @@ rm -rf ./build/exe.*
 rm -rf ./build/*.lv2
 rm -rf ./build/*.vst
 
-cp ./source/frontend/carla          ./source/frontend/Carla.pyw
-cp ./source/frontend/carla-control  ./source/frontend/Carla-Control.pyw
-cp ./source/frontend/carla-plugin   ./source/frontend/carla-plugin.pyw
-cp ./source/frontend/bigmeter-ui    ./source/frontend/bigmeter-ui.pyw
-cp ./source/frontend/midipattern-ui ./source/frontend/midipattern-ui.pyw
-cp ./source/frontend/notes-ui       ./source/frontend/notes-ui.pyw
-env SCRIPT_NAME=Carla          python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
-env SCRIPT_NAME=Carla-Control  python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla-Control
-env SCRIPT_NAME=carla-plugin   python3 ./data/macos/bundle.py bdist_mac --bundle-name=carla-plugin
-env SCRIPT_NAME=bigmeter-ui    python3 ./data/macos/bundle.py bdist_mac --bundle-name=bigmeter-ui
-env SCRIPT_NAME=midipattern-ui python3 ./data/macos/bundle.py bdist_mac --bundle-name=midipattern-ui
-env SCRIPT_NAME=notes-ui       python3 ./data/macos/bundle.py bdist_mac --bundle-name=notes-ui
+cp ./source/frontend/carla           ./source/frontend/Carla.pyw
+cp ./source/frontend/carla-control   ./source/frontend/Carla-Control.pyw
+cp ./source/frontend/carla-plugin    ./source/frontend/carla-plugin.pyw
+cp ./source/frontend/bigmeter-ui     ./source/frontend/bigmeter-ui.pyw
+cp ./source/frontend/midipattern-ui  ./source/frontend/midipattern-ui.pyw
+cp ./source/frontend/notes-ui        ./source/frontend/notes-ui.pyw
+cp ./source/frontend/xycontroller-ui ./source/frontend/xycontroller-ui.pyw
+env SCRIPT_NAME=Carla           python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
+env SCRIPT_NAME=Carla-Control   python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla-Control
+env SCRIPT_NAME=carla-plugin    python3 ./data/macos/bundle.py bdist_mac --bundle-name=carla-plugin
+env SCRIPT_NAME=bigmeter-ui     python3 ./data/macos/bundle.py bdist_mac --bundle-name=bigmeter-ui
+env SCRIPT_NAME=midipattern-ui  python3 ./data/macos/bundle.py bdist_mac --bundle-name=midipattern-ui
+env SCRIPT_NAME=notes-ui        python3 ./data/macos/bundle.py bdist_mac --bundle-name=notes-ui
+env SCRIPT_NAME=xycontroller-ui python3 ./data/macos/bundle.py bdist_mac --bundle-name=xycontroller-ui
 rm ./source/frontend/*.pyw
 
 mkdir -p build/Carla.app/Contents/MacOS/resources
@@ -188,29 +190,36 @@ cp ${TARGETDIR}/carla/lib/QtMacExtras.framework/Versions/5/QtMacExtras .
 fi
 cd ../../../..
 
-mv build/carla-plugin.app/Contents/MacOS/carla-plugin     build/Carla.app/Contents/MacOS/resources/
-mv build/bigmeter-ui.app/Contents/MacOS/bigmeter-ui       build/Carla.app/Contents/MacOS/resources/
-mv build/midipattern-ui.app/Contents/MacOS/midipattern-ui build/Carla.app/Contents/MacOS/resources/
-mv build/notes-ui.app/Contents/MacOS/notes-ui             build/Carla.app/Contents/MacOS/resources/
+mv build/carla-plugin.app/Contents/MacOS/carla-plugin       build/Carla.app/Contents/MacOS/resources/
+mv build/bigmeter-ui.app/Contents/MacOS/bigmeter-ui         build/Carla.app/Contents/MacOS/resources/
+mv build/midipattern-ui.app/Contents/MacOS/midipattern-ui   build/Carla.app/Contents/MacOS/resources/
+mv build/notes-ui.app/Contents/MacOS/notes-ui               build/Carla.app/Contents/MacOS/resources/
+mv build/xycontroller-ui.app/Contents/MacOS/xycontroller-ui build/Carla.app/Contents/MacOS/resources/
 
-mv build/Carla.app/Contents/MacOS/lib/library.zip          build/Carla.app/Contents/MacOS/lib/library-carla1.zip
-mv build/carla-plugin.app/Contents/MacOS/lib/library.zip   build/Carla.app/Contents/MacOS/lib/library-carla2.zip
-mv build/bigmeter-ui.app/Contents/MacOS/lib/library.zip    build/Carla.app/Contents/MacOS/lib/library-bigmeter.zip
-mv build/midipattern-ui.app/Contents/MacOS/lib/library.zip build/Carla.app/Contents/MacOS/lib/library-midipattern.zip
-mv build/notes-ui.app/Contents/MacOS/lib/library.zip       build/Carla.app/Contents/MacOS/lib/library-notes.zip
+mv build/Carla.app/Contents/MacOS/lib/library.zip           build/Carla.app/Contents/MacOS/lib/library-carla1.zip
+mv build/carla-plugin.app/Contents/MacOS/lib/library.zip    build/Carla.app/Contents/MacOS/lib/library-carla2.zip
+mv build/bigmeter-ui.app/Contents/MacOS/lib/library.zip     build/Carla.app/Contents/MacOS/lib/library-bigmeter.zip
+mv build/midipattern-ui.app/Contents/MacOS/lib/library.zip  build/Carla.app/Contents/MacOS/lib/library-midipattern.zip
+mv build/notes-ui.app/Contents/MacOS/lib/library.zip        build/Carla.app/Contents/MacOS/lib/library-notes.zip
+mv build/xycontroller-ui.app/Contents/MacOS/lib/library.zip build/Carla.app/Contents/MacOS/lib/library-xycontroller.zip
 
 mkdir build/Carla.app/Contents/MacOS/lib/_lib
 pushd build/Carla.app/Contents/MacOS/lib/_lib
 unzip -o ../library-bigmeter.zip
 unzip -o ../library-midipattern.zip
 unzip -o ../library-notes.zip
+unzip -o ../library-xycontroller.zip
 unzip -o ../library-carla2.zip
 unzip -o ../library-carla1.zip
 zip -r -9 ../library.zip *
 popd
 rm -r build/Carla.app/Contents/MacOS/lib/_lib build/Carla.app/Contents/MacOS/lib/library-*.zip
 
-rm -rf build/carla-plugin.app build/bigmeter-ui.app build/midipattern-ui.app build/notes-ui.app
+rm -rf build/carla-plugin.app
+rm -rf build/bigmeter-ui.app 
+rm -rf build/midipattern-ui.app 
+rm -rf build/notes-ui.app
+rm -rf build/xycontroller-ui.app
 
 cd build/Carla.app/Contents/MacOS/resources/
 ln -sf ../Qt* ../lib ../iconengines ../imageformats ../platforms ../styles .
