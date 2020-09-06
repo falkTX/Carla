@@ -1761,6 +1761,24 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
     if (portNameSize < STR_MAX)
         strBuf[portNameSize] = '\0';
 
+    // was learning something else before, stop that first
+    if (pData->midiLearnParameterIndex >= 0 && pData->midiLearnParameterIndex != static_cast<int32_t>(parameterId))
+    {
+        const int32_t oldParameterId = pData->midiLearnParameterIndex;
+        pData->midiLearnParameterIndex = -1;
+
+        CARLA_SAFE_ASSERT_RETURN(oldParameterId < static_cast<int32_t>(pData->param.count),);
+
+        pData->param.data[oldParameterId].mappedControlIndex = CONTROL_INDEX_NONE;
+        pData->engine->callback(true, true,
+                                ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED,
+                                pData->id,
+                                oldParameterId,
+                                CONTROL_INDEX_NONE,
+                                0, 0.0f, nullptr);
+    }
+
+    // mapping new parameter to CV
     if (index == CONTROL_INDEX_CV)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
@@ -1772,6 +1790,7 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
         cvPort->setRange(paramData.mappedMinimum, paramData.mappedMaximum);
         pData->event.cvSourcePorts->addCVSource(cvPort, parameterId, reconfigureNow);
     }
+    // unmapping from CV
     else if (paramData.mappedControlIndex == CONTROL_INDEX_CV)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->event.cvSourcePorts != nullptr,);
@@ -1779,6 +1798,7 @@ void CarlaPlugin::setParameterMappedControlIndex(const uint32_t parameterId, con
         CARLA_SAFE_ASSERT(pData->client->removePort(kEnginePortTypeCV, strBuf, true));
         CARLA_SAFE_ASSERT(pData->event.cvSourcePorts->removeCVSource(parameterId));
     }
+    // mapping to something new
     else if (paramData.mappedControlIndex == CONTROL_INDEX_NONE)
     {
         // when doing MIDI CC mapping, ensure ranges are within bounds
@@ -2277,7 +2297,7 @@ void CarlaPlugin::idle()
             {
                 const int32_t parameterId = event.value1;
                 const int32_t midiCC      = event.value2;
-                const int32_t midiChannel = event.value2;
+                const int32_t midiChannel = event.value3;
 
                 pData->engine->callback(true, true,
                                         ENGINE_CALLBACK_PARAMETER_MAPPED_CONTROL_INDEX_CHANGED,
