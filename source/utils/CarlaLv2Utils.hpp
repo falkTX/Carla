@@ -1015,12 +1015,12 @@ public:
 
                 const double rest  = std::fmod(fLastPositionData.barBeat, 1.0f);
                 fTimeInfo.bbt.beat = static_cast<int32_t>(static_cast<double>(fLastPositionData.barBeat)-rest+1.0);
-                fTimeInfo.bbt.tick = static_cast<int32_t>(rest*fTimeInfo.bbt.ticksPerBeat+0.5);
+                fTimeInfo.bbt.tick = rest * fTimeInfo.bbt.ticksPerBeat;
 
                 if (fLastPositionData.bar_f >= 0.0f)
                 {
                     fLastPositionData.bar_f += std::floor((fLastPositionData.barBeat+static_cast<float>(addedBarBeats))/
-                                                            fLastPositionData.beatsPerBar);
+                                                           fLastPositionData.beatsPerBar);
 
                     if (fLastPositionData.bar_f <= 0.0f)
                     {
