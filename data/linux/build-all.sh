@@ -396,6 +396,9 @@ mv build-carla/lib/library.zip build-carla/lib/library-midipattern.zip
 TARGET_NAME="notes-ui" python3 ./data/linux/app-plugin.py build_exe
 mv build-carla/lib/library.zip build-carla/lib/library-notes.zip
 
+TARGET_NAME="xycontroller-ui" python3 ./data/linux/app-plugin.py build_exe
+mv build-carla/lib/library.zip build-carla/lib/library-xycontroller.zip
+
 TARGET_NAME="carla-plugin" python3 ./data/linux/app-plugin.py build_exe
 mv build-carla/lib/library.zip build-carla/lib/library-carla-p1.zip
 
@@ -411,6 +414,7 @@ pushd build-carla/lib/_lib
 unzip -o ../library-bigmeter.zip
 unzip -o ../library-midipattern.zip
 unzip -o ../library-notes.zip
+unzip -o ../library-xycontroller.zip
 unzip -o ../library-carla-p1.zip
 unzip -o ../library-carla-p2.zip
 unzip -o ../library-carla.zip
@@ -419,7 +423,7 @@ popd
 rm -r build-carla/lib/_lib build-carla/lib/library-*.zip
 
 # move resource binaries into right dir
-mv build-carla/{bigmeter-ui,midipattern-ui,notes-ui,carla-plugin} build-carla/resources/
+mv build-carla/{bigmeter-ui,midipattern-ui,notes-ui,xycontroller-ui,carla-plugin} build-carla/resources/
 rm build-carla/carla-plugin-patchbay
 
 # symlink for carla-plugin-patchbay, lib and styles
