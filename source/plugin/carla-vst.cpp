@@ -620,7 +620,7 @@ public:
 
         if (const VstTimeInfo* const vstTimeInfo = (const VstTimeInfo*)hostCallback(audioMasterGetTime, 0, kWantVstTimeFlags))
         {
-            fTimeInfo.frame     = static_cast<uint64_t>(vstTimeInfo->samplePos);
+            fTimeInfo.frame     = static_cast<uint64_t>(std::max(0.0, vstTimeInfo->samplePos));
             fTimeInfo.playing   =  (vstTimeInfo->flags & kVstTransportPlaying);
             fTimeInfo.bbt.valid = ((vstTimeInfo->flags & kVstTempoValid) != 0 || (vstTimeInfo->flags & kVstTimeSigValid) != 0);
 
@@ -632,7 +632,7 @@ public:
             else
                 fTimeInfo.bbt.beatsPerMinute = 120.0;
 
-            if (vstTimeInfo->flags & (kVstPpqPosValid|kVstTimeSigValid))
+            if ((vstTimeInfo->flags & kVstPpqPosValid) != 0 && (vstTimeInfo->flags & kVstTimeSigValid) != 0)
             {
                 const double ppqPos    = std::abs(vstTimeInfo->ppqPos);
                 const int    ppqPerBar = vstTimeInfo->timeSigNumerator * 4 / vstTimeInfo->timeSigDenominator;
@@ -641,25 +641,37 @@ public:
 
                 fTimeInfo.bbt.bar         = static_cast<int32_t>(ppqPos) / ppqPerBar + 1;
                 fTimeInfo.bbt.beat        = static_cast<int32_t>(barBeats - rest + 0.5) + 1;
-                fTimeInfo.bbt.tick        = static_cast<int32_t>(rest * fTimeInfo.bbt.ticksPerBeat + 0.5);
+                fTimeInfo.bbt.tick        = rest * fTimeInfo.bbt.ticksPerBeat;
                 fTimeInfo.bbt.beatsPerBar = static_cast<float>(vstTimeInfo->timeSigNumerator);
                 fTimeInfo.bbt.beatType    = static_cast<float>(vstTimeInfo->timeSigDenominator);
 
                 if (vstTimeInfo->ppqPos < 0.0)
                 {
-                    --fTimeInfo.bbt.bar;
-                    fTimeInfo.bbt.beat = vstTimeInfo->timeSigNumerator - fTimeInfo.bbt.beat + 1;
-                    fTimeInfo.bbt.tick = fTimeInfo.bbt.ticksPerBeat - fTimeInfo.bbt.tick - 1;
+                    fTimeInfo.bbt.bar  = std::max(1, fTimeInfo.bbt.bar-1);
+                    fTimeInfo.bbt.beat = std::max(1, vstTimeInfo->timeSigNumerator - fTimeInfo.bbt.beat + 1);
+                    fTimeInfo.bbt.tick = std::max(0.0, fTimeInfo.bbt.ticksPerBeat - fTimeInfo.bbt.tick - 1);
                 }
             }
             else
             {
                 fTimeInfo.bbt.bar         = 1;
                 fTimeInfo.bbt.beat        = 1;
-                fTimeInfo.bbt.tick        = 0;
+                fTimeInfo.bbt.tick        = 0.0;
                 fTimeInfo.bbt.beatsPerBar = 4.0f;
                 fTimeInfo.bbt.beatType    = 4.0f;
             }
+
+#if 0
+            // for testing bad host values
+            static double last = -99999.0;
+            if (carla_isNotEqual(vstTimeInfo->samplePos, last))
+            {
+                last = vstTimeInfo->samplePos;
+                carla_stdout("time info %f %f %lu | %i %i",
+                             vstTimeInfo->samplePos, vstTimeInfo->ppqPos, fTimeInfo.frame,
+                             vstTimeInfo->timeSigNumerator, vstTimeInfo->timeSigDenominator);
+            }
+#endif
 
             fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat *
                                          static_cast<double>(fTimeInfo.bbt.beatsPerBar) *
