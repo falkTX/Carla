@@ -968,9 +968,12 @@ class HostWindow(QMainWindow):
 
         if self.fCustomStopAction == self.CUSTOM_ACTION_PROJECT_LOAD:
             self.removeAllPlugins()
-        elif self.fPluginCount != 0:
-            self.fCurrentlyRemovingAllPlugins = True
-            self.projectLoadingStarted()
+        else:
+            self.fProjectFilename = ""
+            self.setProperWindowTitle()
+            if self.fPluginCount != 0:
+                self.fCurrentlyRemovingAllPlugins = True
+                self.projectLoadingStarted()
 
         if self.host.is_engine_running() and not self.host.remove_all_plugins():
             self.ui.text_logs.appendPlainText("Failed to remove all plugins, error was:")
