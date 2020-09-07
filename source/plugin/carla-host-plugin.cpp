@@ -15,7 +15,19 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "water/files/File.h"
+#include "CarlaHost.h"
+#include "CarlaUtils.h"
+
+#define CARLA_PLUGIN_EXPORT
+
+// -------------------------------------------------------------------------------------------------------------------
+// Include utils code first
+
+#include "utils/CachedPlugins.cpp"
+#include "utils/Information.cpp"
+#include "utils/PipeClient.cpp"
+#include "utils/System.cpp"
+#include "utils/Windows.cpp"
 
 // -------------------------------------------------------------------------------------------------------------------
 // Always return a valid string ptr
@@ -31,7 +43,6 @@ static void checkStringPtr(const char*& charPtr) noexcept
 // -------------------------------------------------------------------------------------------------------------------
 // Include all standalone code
 
-#define CARLA_PLUGIN_EXPORT
 #include "CarlaStandalone.cpp"
 
 // -------------------------------------------------------------------------------------------------------------------

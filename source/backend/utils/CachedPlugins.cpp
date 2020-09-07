@@ -34,7 +34,7 @@ namespace CB = CarlaBackend;
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static const char* const gNullCharPtr = "";
+static const char* const gCachedPluginsNullCharPtr = "";
 
 static bool isCachedPluginType(const CB::PluginType ptype)
 {
@@ -64,10 +64,10 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
       midiOuts(0),
       parameterIns(0),
       parameterOuts(0),
-      name(gNullCharPtr),
-      label(gNullCharPtr),
-      maker(gNullCharPtr),
-      copyright(gNullCharPtr) {}
+      name(gCachedPluginsNullCharPtr),
+      label(gCachedPluginsNullCharPtr),
+      maker(gCachedPluginsNullCharPtr),
+      copyright(gCachedPluginsNullCharPtr) {}
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -566,7 +566,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String plug
     info.name      = sname;
     info.label     = slabel;
     info.maker     = smaker;
-    info.copyright = gNullCharPtr;
+    info.copyright = gCachedPluginsNullCharPtr;
 
     return &info;
 }
@@ -601,8 +601,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& fil
 
     info.name      = name.buffer();
     info.label     = filename.buffer();
-    info.maker     = gNullCharPtr;
-    info.copyright = gNullCharPtr;
+    info.maker     = gCachedPluginsNullCharPtr;
+    info.copyright = gCachedPluginsNullCharPtr;
     return &info;
 }
 
@@ -694,6 +694,8 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#include "../native-plugins/_data.cpp"
+#ifndef CARLA_PLUGIN_EXPORT
+# include "../native-plugins/_data.cpp"
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------

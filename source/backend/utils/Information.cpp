@@ -221,7 +221,7 @@ const char* const* carla_get_supported_features()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#ifndef CARLA_SKIP_HOST_COMMON
+#ifndef CARLA_PLUGIN_EXPORT
 # include "../CarlaHostCommon.cpp"
 #endif
 
