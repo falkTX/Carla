@@ -45,9 +45,11 @@
 // --------------------------------------------------------------------------------------------------------------------
 // API
 
-#define CARLA_COMMON_NEED_CHECKSTRINGPTR
-#include "CarlaHostCommon.cpp"
-#undef CARLA_COMMON_NEED_CHECKSTRINGPTR
+#ifndef CARLA_PLUGIN_EXPORT
+# define CARLA_COMMON_NEED_CHECKSTRINGPTR
+# include "CarlaHostCommon.cpp"
+# undef CARLA_COMMON_NEED_CHECKSTRINGPTR
+#endif
 
 #ifdef USING_JUCE
 static void carla_juce_init();
@@ -2267,15 +2269,16 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-#define CARLA_PLUGIN_UI_CLASS_PREFIX Standalone
-#include "CarlaPluginUI.cpp"
-#undef CARLA_PLUGIN_UI_CLASS_PREFIX
-
-#include "CarlaDssiUtils.cpp"
-#include "CarlaMacUtils.cpp"
-#include "CarlaPatchbayUtils.cpp"
-#include "CarlaPipeUtils.cpp"
-#include "CarlaProcessUtils.cpp"
-#include "CarlaStateUtils.cpp"
+#ifndef CARLA_PLUGIN_EXPORT
+# define CARLA_PLUGIN_UI_CLASS_PREFIX Standalone
+# include "CarlaPluginUI.cpp"
+# undef CARLA_PLUGIN_UI_CLASS_PREFIX
+# include "CarlaDssiUtils.cpp"
+# include "CarlaMacUtils.cpp"
+# include "CarlaPatchbayUtils.cpp"
+# include "CarlaPipeUtils.cpp"
+# include "CarlaProcessUtils.cpp"
+# include "CarlaStateUtils.cpp"
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -495,16 +495,19 @@ endif
 
 	# Adjust PREFIX, LIBDIR and INCLUDEDIR in pkg-config files
 	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
 	sed $(SED_ARGS) 's?X-LIBDIR-X?$(LIBDIR)?' \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
 	sed $(SED_ARGS) 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
@@ -775,6 +778,7 @@ install: install_main install_external_plugins
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/carla*
+	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc
 	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc
 	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc
 	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc

@@ -176,6 +176,7 @@ WINE_LINK_FLAGS += -Wl,-rpath,/usr/lib/carla
 # ---------------------------------------------------------------------------------------------------------------------
 
 TARGETS = \
+	$(BINDIR)/libcarla_host-plugin$(LIB_EXT) \
 	$(BINDIR)/libcarla_native-plugin$(LIB_EXT)
 
 # sometimes needed for testing:
@@ -251,6 +252,13 @@ clean:
 
 debug:
 	$(MAKE) DEBUG=true
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+$(BINDIR)/libcarla_host-plugin$(LIB_EXT): $(OBJDIR)/carla-host-plugin.cpp.o $(OBJDIR)/carla-native-plugin.cpp.o $(LIBS)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking libcarla-host-plugin$(LIB_EXT)"
+	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -370,7 +378,7 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/carla-native-plugin.cpp.o: carla-native-plugin.cpp
+$(OBJDIR)/carla-%-plugin.cpp.o: carla-%-plugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
@@ -498,6 +506,7 @@ $(OBJDIR)/carla-lv2-export.cpp.o: carla-lv2-export.cpp
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+-include $(OBJDIR)/carla-host-plugin.cpp.d
 -include $(OBJDIR)/carla-native-plugin.cpp.d
 -include $(OBJDIR)/carla-lv2.cpp.d
 -include $(OBJDIR)/carla-lv2-export.cpp.d
