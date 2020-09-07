@@ -258,7 +258,8 @@ debug:
 $(BINDIR)/libcarla_host-plugin$(LIB_EXT): $(OBJDIR)/carla-host-plugin.cpp.o $(OBJDIR)/carla-native-plugin.cpp.o $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla-host-plugin$(LIB_EXT)"
-	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $(OBJDIR)/carla-host-plugin.cpp.o $(OBJDIR)/carla-native-plugin.cpp.o \
+		$(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
