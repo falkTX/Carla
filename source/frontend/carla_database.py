@@ -280,6 +280,8 @@ def runCarlaDiscovery(itype, stype, filename, tool, wineSettings=None):
                 pinfo['name'] = value if value else fakeLabel
             elif prop == "label":
                 pinfo['label'] = value if value else fakeLabel
+            elif prop == "filename":
+                pinfo['filename'] = value
             elif prop == "maker":
                 pinfo['maker'] = value
             elif prop == "category":
@@ -351,7 +353,7 @@ def checkPluginCached(desc, ptype):
     pinfo['parameters.outs'] = desc['parameterOuts']
 
     if ptype == PLUGIN_LV2:
-        pinfo['filename'], pinfo['label'] = pinfo['label'].split(os.path.sep,1)
+        pinfo['filename'], pinfo['label'] = pinfo['label'].split('\\' if WINDOWS else '/',1)
 
     elif ptype == PLUGIN_SFZ:
         pinfo['filename'] = pinfo['label']

@@ -4,15 +4,15 @@
 # Created by falkTX
 #
 
+CWD=..
+MODULENAME=carla-discovery
+include $(CWD)/Makefile.mk
+
 ifeq ($(WIN64),true)
 winv=64
 else
 winv=32
 endif
-
-CWD=..
-MODULENAME=carla-discovery
-include $(CWD)/Makefile.mk
 
 # Workaround GCC bug
 ifeq ($(TESTBUILD),true)

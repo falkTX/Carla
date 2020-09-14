@@ -207,6 +207,19 @@ theme: libs
 	@$(MAKE) -C source/theme
 
 # ---------------------------------------------------------------------------------------------------------------------
+# hacks
+
+msys2fix:
+	rm -rf source/includes/serd
+	rm -rf source/includes/sord
+	rm -rf source/includes/sratom
+	rm -rf source/includes/lilv
+	cp -r source/modules/lilv/serd-0.24.0/serd source/includes/serd
+	cp -r source/modules/lilv/sord-0.16.0/sord source/includes/sord
+	cp -r source/modules/lilv/sratom-0.6.0/sratom source/includes/sratom
+	cp -r source/modules/lilv/lilv-0.24.0/lilv source/includes/lilv
+
+# ---------------------------------------------------------------------------------------------------------------------
 # nuitka
 
 nuitka: bin/carla bin/carla-rack bin/carla-plugin

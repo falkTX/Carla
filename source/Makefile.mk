@@ -42,6 +42,12 @@ MACOS=true
 endif
 ifneq (,$(findstring mingw,$(TARGET_MACHINE)))
 WIN32=true
+ifneq (,$(findstring x86_64,$(TARGET_MACHINE)))
+WIN64=true
+endif
+endif
+ifneq (,$(findstring msys,$(TARGET_MACHINE)))
+WIN32=true
 endif
 
 endif # WIN32
