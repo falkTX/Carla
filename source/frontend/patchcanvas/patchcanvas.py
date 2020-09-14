@@ -865,8 +865,11 @@ def removePort(group_id, port_id):
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
             item = port.widget
-            pitem = item.parentItem()
-            if pitem:
+            try:
+                pitem = item.parentItem()
+            except RuntimeError:
+                pass
+            else:
                 pitem.removePortFromGroup(port_id)
             canvas.scene.removeItem(item)
             canvas.port_list.remove(port)
