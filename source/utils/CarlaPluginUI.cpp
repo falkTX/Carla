@@ -750,10 +750,10 @@ public:
             // winFlags |= WS_SIZEBOX;
         }
 
-        fWindow = CreateWindowEx(WS_EX_TOPMOST,
+        fWindow = CreateWindowEx(WS_EX_TOOLWINDOW,
                                  classNameBuf, "Carla Plugin UI", winFlags,
                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                 nullptr, nullptr, hInstance, nullptr);
+                                 (HWND)parentId, nullptr, hInstance, nullptr);
 
         if (fWindow == nullptr) {
             const DWORD errorCode = ::GetLastError();
