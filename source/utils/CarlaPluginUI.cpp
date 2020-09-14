@@ -750,10 +750,19 @@ public:
             // winFlags |= WS_SIZEBOX;
         }
 
-        fWindow = CreateWindowEx(WS_EX_TOOLWINDOW,
+#ifdef BUILDING_CARLA_FOR_WINDOWS
+        const uint winType = WS_EX_TOOLWINDOW;
+        const HWND parent  = (HWND)parentId;
+#else
+        const uint winType = WS_EX_DLGMODALFRAME;
+        const HWND parent  = nullptr;
+#endif
+
+        fWindow = CreateWindowEx(winType,
                                  classNameBuf, "Carla Plugin UI", winFlags,
                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                 (HWND)parentId, nullptr, hInstance, nullptr);
+                                 parent, nullptr,
+                                 hInstance, nullptr);
 
         if (fWindow == nullptr) {
             const DWORD errorCode = ::GetLastError();
@@ -766,8 +775,14 @@ public:
 
         SetWindowLongPtr(fWindow, GWLP_USERDATA, (LONG_PTR)this);
 
+#ifdef BUILDING_CARLA_FOR_WINDOWS
         if (parentId != 0)
             setTransientWinId(parentId);
+#else
+        return;
+        // unused
+        (void)parentId;
+#endif
      }
 
     ~WindowsPluginUI() override
