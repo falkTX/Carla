@@ -245,9 +245,13 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
     carla_zeroStruct(startupInfo);
     startupInfo.cb = sizeof(startupInfo);
 
-    return ::CreateProcess(nullptr, const_cast<LPSTR>(command.toRawUTF8()),
-                           nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
-                           nullptr, nullptr, &startupInfo, processInfo) != FALSE;
+    if (::CreateProcessA(nullptr, const_cast<LPSTR>(command.toRawUTF8()),
+                         nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                         nullptr, nullptr, &startupInfo, processInfo) != FALSE)
+        return true;
+
+    carla_stderr2("startProcess failed, error was: %u", ::GetLastError());
+    return false;
 }
 
 static inline
@@ -1610,7 +1614,6 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
         pData->processInfo.hThread  = INVALID_HANDLE_VALUE;
         try { ::CloseHandle(pipe1); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe1)");
         try { ::CloseHandle(pipe2); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe2)");
-        fail("startProcess() failed");
         return false;
     }
 
