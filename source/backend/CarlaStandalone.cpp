@@ -2230,7 +2230,7 @@ const char* carla_get_host_osc_url_tcp(CarlaHostHandle handle)
     static const char* const notAvailable = "(OSC TCP port not available)";
     return notAvailable;
 #else
-    return gNullCharPtr;
+    return "(OSC support not available in this build)";
 
     // unused
     (void)handle;
@@ -2258,7 +2258,7 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
     static const char* const notAvailable = "(OSC UDP port not available)";
     return notAvailable;
 #else
-    return gNullCharPtr;
+    return "(OSC support not available in this build)";
 
     // unused
     (void)handle;
