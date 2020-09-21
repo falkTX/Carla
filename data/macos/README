@@ -23,11 +23,7 @@ In experimental phase / work in progress:
 * Plugin bridge support (such as running 32bit plugins on a 64bit Carla, or Windows plugins on Linux)
 
 Carla is also available as an LV2 and VST2 plugin for macOS.
-For the LV2 plugin, create the /Library/Audio/Plug-Ins/LV2 folder (if it does not exist yet), then copy carla.lv2 into it and restart your LV2 host.
-For the VST2 plugin, create the /Library/Audio/Plug-Ins/VST folder (if it does not exist yet), then copy carla.vst  and carlafx.vst into it and restart your VST2 host.
+They are packaged as Carla-Plugins.pkg, in where you can choose which plugin formats to install.
 
 For a complete and updated description of Carla, please check:
 https://kx.studio/carla
-
-NOTE!
-Carla's LV2 and VST2 plugins are not notarized, so they will not run in macOS 10.15 (Catalina) or higher.
