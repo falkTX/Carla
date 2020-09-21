@@ -58,9 +58,17 @@ static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 // -------------------------------------------------------------------------------------------------------------------
 // find all available plugin audio ports
 
-static void findMaxTotalChannels(juce::AudioProcessor* const filter, uint32_t& maxTotalIns, uint32_t& maxTotalOuts)
+static void findMaxTotalChannels(juce::AudioProcessor* const filter,
+                                 const bool isAU, uint32_t& maxTotalIns, uint32_t& maxTotalOuts)
 {
     filter->enableAllBuses();
+
+    if (isAU)
+    {
+        maxTotalIns = filter->getTotalNumInputChannels();
+        maxTotalOuts = filter->getTotalNumOutputChannels();
+        return;
+    }
 
     const int numInputBuses  = filter->getBusCount(true);
     const int numOutputBuses = filter->getBusCount(false);
@@ -502,7 +510,8 @@ public:
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        findMaxTotalChannels(fInstance.get(), aIns, aOuts);
+        const bool isAU = fDesc.pluginFormatName == "AU" || fDesc.pluginFormatName == "AudioUnit";
+        findMaxTotalChannels(fInstance.get(), isAU, aIns, aOuts);
         fInstance->refreshParameterList();
 
         params = static_cast<uint32_t>(std::max(fInstance->getNumParameters(), 0));
