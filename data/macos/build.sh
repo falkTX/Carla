@@ -20,7 +20,7 @@ fi
 
 source data/macos/common.env
 
-if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 11 ]; then
+if [ $(uname -r | cut -d '.' -f 1) -lt 16 ]; then
   export MACOS_VERSION_MIN="10.8"
 else
   export MACOS_VERSION_MIN="10.12"
@@ -54,7 +54,7 @@ make USING_JUCE=${USING_JUCE} USING_JUCE_AUDIO_DEVICES=${USING_JUCE} ${MAKE_ARGS
 ##############################################################################################
 # Build 32bit bridges
 
-if [ "${MACOS_VERSION_MIN}" != "10.12" ]; then
+if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 11 ]; then
 
 export CFLAGS="-I${TARGETDIR}/carla32/include -m32 -mmacosx-version-min=${MACOS_VERSION_MIN}"
 export CXXFLAGS="${CFLAGS} -stdlib=libc++ -Wno-unknown-pragmas -Wno-unused-private-field -Werror=auto-var-id"
