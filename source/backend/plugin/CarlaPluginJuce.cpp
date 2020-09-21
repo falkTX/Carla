@@ -65,8 +65,8 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter,
 
     if (isAU)
     {
-        maxTotalIns = filter->getTotalNumInputChannels();
-        maxTotalOuts = filter->getTotalNumOutputChannels();
+        maxTotalIns  = static_cast<uint32_t>(juce::jmax(0, filter->getTotalNumInputChannels()));
+        maxTotalOuts = static_cast<uint32_t>(juce::jmax(0, filter->getTotalNumOutputChannels()));
         return;
     }
 
