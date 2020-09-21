@@ -5,7 +5,7 @@
 
 source data/macos/common.env
 
-if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 11 ]; then
+if [ $(uname -r | cut -d '.' -f 1) -lt 16 ]; then
   export MACOS_VERSION_MIN="10.8"
 else
   export MACOS_VERSION_MIN="10.12"
