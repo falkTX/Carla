@@ -337,6 +337,11 @@ fi
 
 # cleanup
 
+if [ $(clang -v  2>&1 | grep version | cut -d' ' -f4 | cut -d'.' -f1) -lt 11 ]; then
+  export ARCH=32
+  build_base
+fi
+
 export ARCH=64
 build_base
 
