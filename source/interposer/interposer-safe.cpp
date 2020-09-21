@@ -67,6 +67,15 @@ int posix_spawnp(pid_t*, const char*, const posix_spawn_file_actions_t*, const p
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
+void exit(int status)
+{
+    carla_stderr2("Carla prevented a plugin from calling 'exit', redirecting to '_exit' instead, bad plugin!");
+    _exit(status);
+}
+
+// -----------------------------------------------------------------------
+
+CARLA_EXPORT
 void gtk_init(int*, char***)
 {
     PREVENTED_FUNC_MSG;
