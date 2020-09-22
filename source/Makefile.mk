@@ -297,8 +297,12 @@ endif
 
 ifneq ($(WIN32),true)
 
-# libmagic doesn't have a pkg-config file, so we need to call the compiler to test it
-HAVE_LIBMAGIC = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o .libmagic-tmp 2>/dev/null && echo true)
+ifeq ($(shell $(PKG_CONFIG) --exists libmagic && echo true),true)
+HAVE_LIBMAGIC = true
+else
+# old libmagic versions don't have a pkg-config file, so we need to call the compiler to test it
+HAVE_LIBMAGIC = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o /dev/null 2>/dev/null && echo true)
+endif
 
 endif
 
