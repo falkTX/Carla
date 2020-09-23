@@ -992,7 +992,7 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     const ScopedThreadStopper sts(this);
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.replacePlugin(pluginA, pluginB);
+        pData->graph.switchPlugins(pluginA, pluginB);
 
     const ScopedActionLock sal(this, kEnginePostActionSwitchPlugins, idA, idB);
 

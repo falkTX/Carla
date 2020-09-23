@@ -193,6 +193,7 @@ public:
     void addPlugin(CarlaPluginPtr plugin);
     void replacePlugin(CarlaPluginPtr oldPlugin, CarlaPluginPtr newPlugin);
     void renamePlugin(CarlaPluginPtr plugin, const char* newName);
+    void switchPlugins(CarlaPluginPtr pluginA, CarlaPluginPtr pluginB);
     void reconfigureForCV(CarlaPluginPtr plugin, const uint portIndex, bool added);
     void reconfigurePlugin(CarlaPluginPtr plugin, bool portsAdded);
     void removePlugin(CarlaPluginPtr plugin);

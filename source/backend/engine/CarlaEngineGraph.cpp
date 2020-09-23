@@ -1932,6 +1932,23 @@ void PatchbayGraph::renamePlugin(const CarlaPluginPtr plugin, const char* const 
                       newName);
 }
 
+void PatchbayGraph::switchPlugins(CarlaPluginPtr pluginA, CarlaPluginPtr pluginB)
+{
+    CARLA_SAFE_ASSERT_RETURN(pluginA.get() != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginB.get() != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(pluginA != pluginB,);
+    CARLA_SAFE_ASSERT_RETURN(pluginA->getId() != pluginB->getId(),);
+
+    AudioProcessorGraph::Node* const nodeA(graph.getNodeForId(pluginA->getPatchbayNodeId()));
+    CARLA_SAFE_ASSERT_RETURN(nodeA != nullptr,);
+
+    AudioProcessorGraph::Node* const nodeB(graph.getNodeForId(pluginB->getPatchbayNodeId()));
+    CARLA_SAFE_ASSERT_RETURN(nodeB != nullptr,);
+
+    nodeA->properties.set("pluginId", static_cast<int>(pluginB->getId()));
+    nodeB->properties.set("pluginId", static_cast<int>(pluginA->getId()));
+}
+
 void PatchbayGraph::reconfigureForCV(const CarlaPluginPtr plugin, const uint portIndex, bool added)
 {
     CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr,);
@@ -2731,6 +2748,12 @@ void EngineInternalGraph::renamePlugin(const CarlaPluginPtr plugin, const char* 
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
     fPatchbay->renamePlugin(plugin, newName);
+}
+
+void EngineInternalGraph::switchPlugins(CarlaPluginPtr pluginA, CarlaPluginPtr pluginB)
+{
+    CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+    fPatchbay->switchPlugins(pluginA, pluginB);
 }
 
 void EngineInternalGraph::removePlugin(const CarlaPluginPtr plugin)
