@@ -2099,6 +2099,9 @@ public:
         if (! CarlaEngine::removePlugin(id))
             return false;
 
+        if (pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+            return true;
+
         const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
         for (uint i=id; i < pData->curPluginCount; ++i)
@@ -2119,6 +2122,9 @@ public:
     {
         if (! CarlaEngine::switchPlugins(idA, idB))
             return false;
+
+        if (pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+            return true;
 
         CarlaPluginPtr newPluginA = pData->plugins[idA].plugin;
         CARLA_SAFE_ASSERT_RETURN(newPluginA.get() != nullptr, true);
