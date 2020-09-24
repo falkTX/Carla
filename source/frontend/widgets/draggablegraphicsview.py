@@ -36,7 +36,6 @@ class DraggableGraphicsView(QGraphicsView):
         QGraphicsView.__init__(self, parent)
 
         self.fPanning = False
-        self.fCtrlDown = False
 
         try:
             self.fMiddleButton = Qt.MiddleButton
@@ -73,7 +72,6 @@ class DraggableGraphicsView(QGraphicsView):
 
     def dragEnterEvent(self, event):
         urls = event.mimeData().urls()
-        print(urls)
 
         for url in urls:
             if self.isDragUrlValid(url.toLocalFile()):
@@ -116,7 +114,7 @@ class DraggableGraphicsView(QGraphicsView):
     # --------------------------------------------------------------------------------------------------------
 
     def mousePressEvent(self, event):
-        if event.button() == self.fMiddleButton and not self.fCtrlDown:
+        if event.button() == self.fMiddleButton and not (event.modifiers() & Qt.ControlModifier):
             buttons  = event.buttons()
             buttons &= ~self.fMiddleButton
             buttons |= Qt.LeftButton
@@ -154,13 +152,3 @@ class DraggableGraphicsView(QGraphicsView):
         QGraphicsView.wheelEvent(self, event)
 
     # --------------------------------------------------------------------------------------------------------
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Control:
-            self.fCtrlDown = True
-        QGraphicsView.keyPressEvent(self, event)
-
-    def keyReleaseEvent(self, event):
-        if event.key() == Qt.Key_Control:
-            self.fCtrlDown = False
-        QGraphicsView.keyReleaseEvent(self, event)
