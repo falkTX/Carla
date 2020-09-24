@@ -273,7 +273,8 @@ class CanvasPort(QGraphicsItem):
         self.m_cursor_moving = False
 
     def mouseReleaseEvent(self, event):
-        self.handleMouseRelease()
+        if event.button() == Qt.LeftButton:
+            self.handleMouseRelease()
         QGraphicsItem.mouseReleaseEvent(self, event)
 
     def contextMenuEvent(self, event):
