@@ -1,6 +1,6 @@
 /*
  * Carla Bridge definitions
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
 #define CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM 6
 
 // current API version, bumped when something is added
-#define CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT 7
+#define CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT 8
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -77,6 +77,8 @@ enum PluginBridgeNonRtClientOpcode {
     // stuff added in API 7
     kPluginBridgeNonRtClientSetParameterMappedRange,        // uint, float, float
     kPluginBridgeNonRtClientSetOptions,                     // uint
+    // stuff added in API 8
+    kPluginBridgeNonRtClientSetWindowTitle,                 // uint/size, str[]
 };
 
 // Client sends these to server during non-RT

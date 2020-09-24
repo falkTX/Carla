@@ -1194,6 +1194,7 @@ bool CarlaJackAppClient::handleNonRtData()
         case kPluginBridgeNonRtClientSetMidiProgram:
         case kPluginBridgeNonRtClientSetCustomData:
         case kPluginBridgeNonRtClientSetChunkDataFile:
+        case kPluginBridgeNonRtClientSetWindowTitle:
             break;
 
         case kPluginBridgeNonRtClientSetOption:
