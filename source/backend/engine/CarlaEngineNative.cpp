@@ -1851,6 +1851,8 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         try {
             ok = fEngine->loadFile(filename);
         } CARLA_SAFE_EXCEPTION("loadFile");
+
+        fEngine->reloadFromUI();
     }
     else if (std::strcmp(msg, "load_project") == 0)
     {
@@ -1861,6 +1863,8 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         try {
             ok = fEngine->loadProject(filename, true);
         } CARLA_SAFE_EXCEPTION("loadProject");
+
+        fEngine->reloadFromUI();
     }
     else if (std::strcmp(msg, "save_project") == 0)
     {
@@ -2023,6 +2027,7 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
 
         ok = fEngine->clonePlugin(pluginId);
+        fEngine->reloadFromUI();
     }
     else if (std::strcmp(msg, "replace_plugin") == 0)
     {
