@@ -3,7 +3,7 @@
 What is Carla?
 ---------------
 
-Carla is a fully-featured audio plugin host, with support for many audio drivers and plugin formats.<br>
+Carla is a fully-featured audio plugin host, with support for many audio drivers and plugin formats.
 It's open source and licensed under the GNU General Public License, version 2 or later.
 
 Features
