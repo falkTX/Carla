@@ -125,6 +125,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientSetParameterMappedRange";
     case kPluginBridgeNonRtClientSetOptions:
         return "kPluginBridgeNonRtClientSetOptions";
+    case kPluginBridgeNonRtClientSetWindowTitle:
+        return "kPluginBridgeNonRtClientSetWindowTitle";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtClientOpcode2str(%i) - invalid opcode", opcode);

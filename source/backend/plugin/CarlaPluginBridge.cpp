@@ -708,6 +708,14 @@ public:
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
     }
 
+    void setName(const char* const newName) override
+    {
+        CarlaPlugin::setName(newName);
+
+        if (pData->uiTitle.isEmpty() && fBridgeVersion >= 8)
+            _setUiTitleFromName();
+    }
+
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
@@ -955,8 +963,30 @@ public:
     // -------------------------------------------------------------------
     // Set ui stuff
 
+    void setCustomUITitle(const char* const title) noexcept override
+    {
+        carla_debug("CarlaPluginBridge::setCustomUITitle(%s)", title);
+
+        if (fBridgeVersion >= 8)
+        {
+            const uint32_t size = static_cast<uint32_t>(std::strlen(title));
+
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetWindowTitle);
+            fShmNonRtClientControl.writeUInt(size);
+            fShmNonRtClientControl.writeCustomData(title, size);
+            fShmNonRtClientControl.commitWrite();
+        }
+
+        CarlaPlugin::setCustomUITitle(title);
+    }
+
     void showCustomUI(const bool yesNo) override
     {
+        if (yesNo && pData->uiTitle.isEmpty() && fBridgeVersion >= 8)
+            _setUiTitleFromName();
+
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
@@ -3088,6 +3118,21 @@ private:
         }
 
         return true;
+    }
+
+    void _setUiTitleFromName()
+    {
+        CarlaString uiName(pData->name);
+        uiName += " (GUI)";
+
+        const uint32_t size = static_cast<uint32_t>(uiName.length());
+
+        const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetWindowTitle);
+        fShmNonRtClientControl.writeUInt(size);
+        fShmNonRtClientControl.writeCustomData(uiName.buffer(), size);
+        fShmNonRtClientControl.commitWrite();
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginBridge)

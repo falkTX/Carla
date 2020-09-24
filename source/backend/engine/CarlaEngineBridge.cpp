@@ -945,6 +945,18 @@ public:
                 break;
             }
 
+            case kPluginBridgeNonRtClientSetWindowTitle: {
+                const uint32_t size = fShmNonRtClientControl.readUInt();
+                CARLA_SAFE_ASSERT_BREAK(size > 0);
+
+                char title[size+1];
+                carla_zeroChars(title, size+1);
+                fShmNonRtClientControl.readCustomData(title, size);
+
+                plugin->setCustomUITitle(title);
+                break;
+            }
+
             case kPluginBridgeNonRtClientGetParameterText: {
                 const int32_t index = fShmNonRtClientControl.readInt();
 
