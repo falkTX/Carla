@@ -653,6 +653,9 @@ def handleInitialCommandLineArguments(file):
         elif arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui"):
             gCarla.nogui = True
 
+        elif MACOS and arg.startswith("-psn_"):
+            pass
+
         elif arg in ("-h", "--h", "-help", "--help"):
             print("Usage: %s [OPTION]... [FILE|URL]" % initName)
             print("")
@@ -712,6 +715,8 @@ def getInitialProjectFile(skipExistCheck = False):
             readPrefixNext = True
             continue
         if arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui", "--gdb"):
+            continue
+        if MACOS and arg.startswith("-psn_"):
             continue
         arg = os.path.expanduser(arg)
         if skipExistCheck or os.path.exists(arg):
