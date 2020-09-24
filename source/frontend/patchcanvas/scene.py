@@ -280,6 +280,10 @@ class PatchScene(QGraphicsScene):
         )
         self.m_mouse_rubberband = False
 
+        # FIXME stop using self.m_ctrl_down
+        if event.modifiers() & Qt.ControlModifier:
+            self.m_ctrl_down = True
+
         if event.button() == Qt.MidButton and self.m_ctrl_down:
             self.m_mid_button_down = True
             self.startConnectionCut()
