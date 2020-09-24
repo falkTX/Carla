@@ -11,6 +11,8 @@
 	<key>CFBundleIdentifier</key>
 	<string>CarlaControl</string>
 	<key>NSHighResolutionCapable</key>
-    <true/>
+	<true/>
+	<key>NSRequiresAquaSystemAppearance</key>
+	<false/>
 </dict>
 </plist>
