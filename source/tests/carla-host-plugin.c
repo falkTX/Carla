@@ -18,6 +18,7 @@
 #include "CarlaNativePlugin.h"
 
 #include <assert.h>
+#include <stdio.h>
 
 static uint32_t get_buffer_size(NativeHostHandle h)
 {
@@ -78,8 +79,8 @@ int main(void)
 
     const char* const utils_folder = carla_utils_get_library_folder();
     assert(utils_folder != NULL && utils_folder[0] != '\0');
-/*
-    carla_juce_init();*/
+
+    carla_juce_init();
 
     const NativePluginDescriptor* const rack = carla_get_native_rack_plugin();
     assert(rack != NULL);
@@ -99,12 +100,33 @@ int main(void)
     const CarlaHostHandle patchbay_host_handle = carla_create_native_plugin_host_handle(patchbay, patchbay_handle);
     assert(patchbay_host_handle);
 
+    uint32_t plugins_count = 0;
+    const NativePluginDescriptor* const plugin_descriptors = carla_get_native_plugins_data(&plugins_count);
+    assert(plugins_count != 0);
+    assert(plugin_descriptors != NULL);
+
+    for (uint32_t i=0; i<plugins_count; ++i)
+    {
+        const NativePluginDescriptor* const plugin_descriptor = &plugin_descriptors[i];
+        assert(plugin_descriptor->label != NULL);
+
+        printf("Loading plugin #%u '%s'\n", i+1, plugin_descriptor->label);
+
+        if ((plugin_descriptor->hints & NATIVE_PLUGIN_USES_CONTROL_VOLTAGE) == 0x0) {
+            assert(carla_add_plugin(rack_host_handle, BINARY_NATIVE, PLUGIN_INTERNAL, "", "", plugin_descriptor->label, 0, NULL, 0x0));
+        }
+
+        if (plugin_descriptor->midiIns <= 1 && plugin_descriptor->midiOuts <= 1) {
+            assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_INTERNAL, "", "", plugin_descriptor->label, 0, NULL, 0x0));
+        }
+    }
+
     rack->cleanup(patchbay_handle);
     rack->cleanup(rack_handle);
 
     carla_host_handle_free(patchbay_host_handle);
     carla_host_handle_free(rack_host_handle);
-    /*
-    carla_juce_cleanup();*/
+
+    carla_juce_cleanup();
     return 0;
 }

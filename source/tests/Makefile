@@ -87,6 +87,7 @@ ansi-%_run: $(BINDIR)/ansi-%
 	$(BINDIR)/ansi-$*
 
 carla-%_run: $(BINDIR)/carla-%
+# 	valgrind $(BINDIR)/carla-$*
 	valgrind --leak-check=full --show-leak-kinds=all --suppressions=valgrind.supp $(BINDIR)/carla-$*
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -120,7 +121,7 @@ $(BINDIR)/ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h .
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(BINDIR)/carla-host-plugin: carla-host-plugin.c
-	$(CC) $< $(PEDANTIC_CFLAGS) $(PEDANTIC_LDFLAGS) -Wno-declaration-after-statement -Wno-pedantic -lcarla_host-plugin -ansi -o $@
+	$(CC) $< $(PEDANTIC_CFLAGS) $(PEDANTIC_LDFLAGS) -g -O0 -Wno-declaration-after-statement -Wno-pedantic -lcarla_host-plugin -std=c99 -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
