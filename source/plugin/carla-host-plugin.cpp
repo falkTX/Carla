@@ -15,8 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaHost.h"
-#include "CarlaUtils.h"
+#include "CarlaNativePlugin.h"
 
 #define CARLA_PLUGIN_EXPORT
 
@@ -25,20 +24,10 @@
 
 #include "utils/CachedPlugins.cpp"
 #include "utils/Information.cpp"
+#include "utils/JUCE.cpp"
 #include "utils/PipeClient.cpp"
 #include "utils/System.cpp"
-// #include "utils/Windows.cpp"
-
-// -------------------------------------------------------------------------------------------------------------------
-// Always return a valid string ptr
-
-static const char* const gNullCharPtr = "";
-
-static void checkStringPtr(const char*& charPtr) noexcept
-{
-    if (charPtr == nullptr)
-        charPtr = gNullCharPtr;
-}
+#include "utils/Windows.cpp"
 
 // -------------------------------------------------------------------------------------------------------------------
 // Include all standalone code

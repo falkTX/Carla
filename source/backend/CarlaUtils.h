@@ -262,19 +262,29 @@ CARLA_EXPORT bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handl
  */
 CARLA_EXPORT void carla_pipe_client_destroy(CarlaPipeClientHandle handle);
 
-#ifndef CARLA_HOST_H_INCLUDED
+/* --------------------------------------------------------------------------------------------------------------------
+ * window control */
+
+CARLA_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
+
+CARLA_EXPORT void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2);
+
+CARLA_EXPORT void carla_x11_move_window(uintptr_t winId, int x, int y);
+
+CARLA_EXPORT int* carla_x11_get_window_pos(uintptr_t winId);
+
 /* --------------------------------------------------------------------------------------------------------------------
  * info about current library */
 
 /*!
  * Get the absolute filename of this carla library.
  */
-CARLA_EXPORT const char* carla_get_library_filename(void);
+CARLA_EXPORT const char* carla_utils_get_library_filename(void);
 
 /*!
  * Get the folder where this carla library resides.
  */
-CARLA_EXPORT const char* carla_get_library_folder(void);
+CARLA_EXPORT const char* carla_utils_get_library_folder(void);
 
 /* --------------------------------------------------------------------------------------------------------------------
  * JUCE */
@@ -287,30 +297,18 @@ CARLA_EXPORT const char* carla_get_library_folder(void);
  *
  * Make sure to call carla_juce_cleanup after you are done with APIs that need JUCE.
  */
-CARLA_EXPORT void carla_juce_init();
+CARLA_EXPORT void carla_juce_init(void);
 
 /*!
  * Give idle time to JUCE stuff.
  * Currently only used for Linux.
  */
-CARLA_EXPORT void carla_juce_idle();
+CARLA_EXPORT void carla_juce_idle(void);
 
 /*!
  * Cleanup the JUCE stuff that was initialized by carla_juce_init.
  */
-CARLA_EXPORT void carla_juce_cleanup();
-#endif
-
-/* --------------------------------------------------------------------------------------------------------------------
- * window control */
-
-CARLA_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
-
-CARLA_EXPORT void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2);
-
-CARLA_EXPORT void carla_x11_move_window(uintptr_t winId, int x, int y);
-
-CARLA_EXPORT int* carla_x11_get_window_pos(uintptr_t winId);
+CARLA_EXPORT void carla_juce_cleanup(void);
 
 /* ----------------------------------------------------------------------------------------------------------------- */
 

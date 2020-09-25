@@ -218,8 +218,10 @@ public:
         if (pData->options.binaryDir != nullptr)
             delete[] pData->options.binaryDir;
 
+        const water::String binaryDir(File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName());
+
         pData->options.resourceDir = carla_strdup(pHost->resourceDir);
-        pData->options.binaryDir   = carla_strdup(carla_get_library_folder());
+        pData->options.binaryDir   = carla_strdup(binaryDir.toRawUTF8());
     }
 
     ~CarlaEngineNative() override
@@ -2877,9 +2879,9 @@ const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint, const char* const
 
 CARLA_BACKEND_END_NAMESPACE
 
-#define CARLA_PLUGIN_UI_CLASS_PREFIX EngineNative
-#include "CarlaHostCommon.cpp"
+#define CARLA_PLUGIN_UI_CLASS_PREFIX Plugin
 #include "CarlaPluginUI.cpp"
+# undef CARLA_PLUGIN_UI_CLASS_PREFIX
 #include "CarlaDssiUtils.cpp"
 #include "CarlaMacUtils.cpp"
 #include "CarlaPatchbayUtils.cpp"
@@ -2887,6 +2889,6 @@ CARLA_BACKEND_END_NAMESPACE
 #include "CarlaProcessUtils.cpp"
 #include "CarlaStateUtils.cpp"
 
-#endif
+#endif /* CARLA_PLUGIN_EXPORT */
 
 // -----------------------------------------------------------------------

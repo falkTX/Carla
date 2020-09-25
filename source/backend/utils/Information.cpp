@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -221,8 +221,34 @@ const char* const* carla_get_supported_features()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#ifndef CARLA_PLUGIN_EXPORT
-# include "../CarlaHostCommon.cpp"
-#endif
+const char* carla_utils_get_library_filename()
+{
+    carla_debug("carla_utils_get_library_filename()");
+
+    static CarlaString ret;
+
+    if (ret.isEmpty())
+    {
+        using water::File;
+        ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
+    }
+
+    return ret;
+}
+
+const char* carla_utils_get_library_folder()
+{
+    carla_debug("carla_utils_get_library_folder()");
+
+    static CarlaString ret;
+
+    if (ret.isEmpty())
+    {
+        using water::File;
+        ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
+    }
+
+    return ret;
+}
 
 // -------------------------------------------------------------------------------------------------------------------

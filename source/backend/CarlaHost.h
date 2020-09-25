@@ -203,9 +203,7 @@ typedef struct _CarlaParameterInfo {
      * C++ constructor and destructor.
      */
     CARLA_API _CarlaParameterInfo() noexcept;
-    CARLA_API _CarlaParameterInfo(const char* n) noexcept;
     CARLA_API ~_CarlaParameterInfo() noexcept;
-    const char* _reserved;
     CARLA_DECLARE_NON_COPY_STRUCT(_CarlaParameterInfo)
 #endif
 
@@ -1156,12 +1154,12 @@ CARLA_EXPORT const char* carla_get_host_osc_url_udp(CarlaHostHandle handle);
 /*!
  * Get the absolute filename of this carla library.
  */
-CARLA_EXPORT const char* carla_get_library_filename(void);
+CARLA_EXPORT const char* carla_standalone_get_library_filename(void);
 
 /*!
  * Get the folder where this carla library resides.
  */
-CARLA_EXPORT const char* carla_get_library_folder(void);
+CARLA_EXPORT const char* carla_standalone_get_library_folder(void);
 
 /*!
  * Initialize NSM (that is, announce ourselves to it).

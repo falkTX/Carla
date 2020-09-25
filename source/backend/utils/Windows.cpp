@@ -19,7 +19,7 @@
 
 #include "CarlaUtils.hpp"
 
-#ifdef CARLA_OS_MAC
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
 # import <Cocoa/Cocoa.h>
 #endif
 
@@ -35,7 +35,7 @@ int carla_cocoa_get_window(void* nsViewPtr)
 {
     CARLA_SAFE_ASSERT_RETURN(nsViewPtr != nullptr, 0);
 
-#ifdef CARLA_OS_MAC
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
     NSView* const nsView = (NSView*)nsViewPtr;
     return [[nsView window] windowNumber];
 #else

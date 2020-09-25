@@ -27,12 +27,11 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 #include "ThreadSafeFFTW.hpp"
-
-#ifdef BUILD_BRIDGE
-# include "water/files/File.h"
-#else
+#ifndef BUILD_BRIDGE
 # include "CarlaLogThread.hpp"
 #endif
+
+#include "water/files/File.h"
 
 #define CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(cond, msg, ret) \
     if (! (cond)) {                                              \
@@ -43,20 +42,107 @@
     }
 
 // --------------------------------------------------------------------------------------------------------------------
-// API
-
-#ifndef CARLA_PLUGIN_EXPORT
-# define CARLA_COMMON_NEED_CHECKSTRINGPTR
-# include "CarlaHostCommon.cpp"
-# undef CARLA_COMMON_NEED_CHECKSTRINGPTR
-#endif
 
 #ifdef USING_JUCE
-static void carla_juce_init();
-static void carla_juce_idle();
-static void carla_juce_cleanup();
+static void carla_standalone_juce_init(void);
+static void carla_standalone_juce_idle(void);
+static void carla_standalone_juce_cleanup(void);
+# define carla_juce_init carla_standalone_juce_init
+# define carla_juce_idle carla_standalone_juce_idle
+# define carla_juce_cleanup carla_standalone_juce_cleanup
 # include "utils/JUCE.cpp"
+# undef carla_juce_init
+# undef carla_juce_idle
+# undef carla_juce_cleanup
 #endif
+
+// -------------------------------------------------------------------------------------------------------------------
+// Always return a valid string ptr for standalone functions
+
+static const char* const gNullCharPtr = "";
+
+static void checkStringPtr(const char*& charPtr) noexcept
+{
+    if (charPtr == nullptr)
+        charPtr = gNullCharPtr;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+// Constructors
+
+_CarlaPluginInfo::_CarlaPluginInfo() noexcept
+    : type(CB::PLUGIN_NONE),
+      category(CB::PLUGIN_CATEGORY_NONE),
+      hints(0x0),
+      optionsAvailable(0x0),
+      optionsEnabled(0x0),
+      filename(gNullCharPtr),
+      name(gNullCharPtr),
+      label(gNullCharPtr),
+      maker(gNullCharPtr),
+      copyright(gNullCharPtr),
+      iconName(gNullCharPtr),
+      uniqueId(0) {}
+
+_CarlaPluginInfo::~_CarlaPluginInfo() noexcept
+{
+    if (label != gNullCharPtr)
+        delete[] label;
+    if (maker != gNullCharPtr)
+        delete[] maker;
+    if (copyright != gNullCharPtr)
+        delete[] copyright;
+}
+
+_CarlaParameterInfo::_CarlaParameterInfo() noexcept
+    : name(gNullCharPtr),
+      symbol(gNullCharPtr),
+      unit(gNullCharPtr),
+      comment(gNullCharPtr),
+      groupName(gNullCharPtr),
+      scalePointCount(0) {}
+
+_CarlaParameterInfo::~_CarlaParameterInfo() noexcept
+{
+    if (name != gNullCharPtr)
+        delete[] name;
+    if (symbol != gNullCharPtr)
+        delete[] symbol;
+    if (unit != gNullCharPtr)
+        delete[] unit;
+    if (comment != gNullCharPtr)
+        delete[] comment;
+    if (groupName != gNullCharPtr)
+        delete[] groupName;
+}
+
+_CarlaScalePointInfo::_CarlaScalePointInfo() noexcept
+    : value(0.0f),
+      label(gNullCharPtr) {}
+
+_CarlaScalePointInfo::~_CarlaScalePointInfo() noexcept
+{
+    if (label != gNullCharPtr)
+        delete[] label;
+}
+
+_CarlaTransportInfo::_CarlaTransportInfo() noexcept
+    : playing(false),
+      frame(0),
+      bar(0),
+      beat(0),
+      tick(0),
+      bpm(0.0) {}
+
+void _CarlaTransportInfo::clear() noexcept
+{
+    playing = false;
+    frame = 0;
+    bar = 0;
+    beat = 0;
+    tick = 0;
+    bpm = 0.0;
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -319,7 +405,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
 #endif
 
 #ifdef USING_JUCE
-    carla_juce_init();
+    carla_standalone_juce_init();
 #endif
 
     CarlaHostStandalone& shandle((CarlaHostStandalone&)*handle);
@@ -369,7 +455,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
         shandle.engine = nullptr;
         delete engine;
 #ifdef USING_JUCE
-        carla_juce_cleanup();
+        carla_standalone_juce_cleanup();
 #endif
         return false;
     }
@@ -449,7 +535,7 @@ bool carla_engine_close(CarlaHostHandle handle)
     delete engine;
 
 #ifdef USING_JUCE
-    carla_juce_cleanup();
+    carla_standalone_juce_cleanup();
 #endif
     return closed;
 }
@@ -462,7 +548,7 @@ void carla_engine_idle(CarlaHostHandle handle)
 
 #ifdef USING_JUCE
     if (handle->isStandalone)
-        carla_juce_idle();
+        carla_standalone_juce_idle();
 #endif
 }
 
@@ -1354,7 +1440,7 @@ const CarlaPortCountInfo* carla_get_parameter_count_info(CarlaHostHandle handle,
 
 const CarlaParameterInfo* carla_get_parameter_info(CarlaHostHandle handle, uint pluginId, uint32_t parameterId)
 {
-    static CarlaParameterInfo retInfo(gNullCharPtr);
+    static CarlaParameterInfo retInfo;
 
     // reset
     retInfo.scalePointCount = 0;
@@ -2267,6 +2353,38 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 #endif
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
+const char* carla_standalone_get_library_filename()
+{
+    carla_debug("carla_standalone_get_library_filename()");
+
+    static CarlaString ret;
+
+    if (ret.isEmpty())
+    {
+        using water::File;
+        ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
+    }
+
+    return ret;
+}
+
+const char* carla_standalone_get_library_folder()
+{
+    carla_debug("carla_standalone_get_library_folder()");
+
+    static CarlaString ret;
+
+    if (ret.isEmpty())
+    {
+        using water::File;
+        ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
+    }
+
+    return ret;
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 
 #ifndef CARLA_PLUGIN_EXPORT
@@ -2279,6 +2397,6 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 # include "CarlaPipeUtils.cpp"
 # include "CarlaProcessUtils.cpp"
 # include "CarlaStateUtils.cpp"
-#endif
+#endif /* CARLA_PLUGIN_EXPORT */
 
 // --------------------------------------------------------------------------------------------------------------------
