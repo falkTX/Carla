@@ -131,8 +131,6 @@ SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_patchbay_cv_plugin
 SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_create_native_plugin_host_handle
 SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_host_handle_free
 SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_native_plugin_engine
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_library_filename
-SYMBOLS_NATIVE += -Wl,-exported_symbol,_carla_get_library_folder
 SYMBOLS_LV2     = -Wl,-exported_symbol,_lv2_descriptor
 ifeq ($(HAVE_PYQT),true)
 SYMBOLS_LV2    += -Wl,-exported_symbol,_lv2ui_descriptor
