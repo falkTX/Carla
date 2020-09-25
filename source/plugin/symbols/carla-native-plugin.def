@@ -10,5 +10,3 @@ EXPORTS
     carla_create_native_plugin_host_handle @7
     carla_host_handle_free @8
     carla_get_native_plugin_engine @9
-    carla_get_library_filename @10
-    carla_get_library_folder @11

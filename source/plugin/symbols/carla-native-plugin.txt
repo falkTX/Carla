@@ -7,5 +7,3 @@ carla_get_native_patchbay_cv_plugin
 carla_create_native_plugin_host_handle
 carla_host_handle_free
 carla_get_native_plugin_engine
-carla_get_library_filename
-carla_get_library_folder
