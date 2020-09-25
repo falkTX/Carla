@@ -202,8 +202,18 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
     info.hints = 0x0;
 
-    if (lilvPlugin.get_uis().size() > 0 || lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr)
-        info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+    {
+        Lilv::UIs lilvUIs(lilvPlugin.get_uis());
+
+        if (lilvUIs.size() > 0)
+            info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+#ifdef CARLA_OS_LINUX
+        else if (lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr)
+            info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+#endif
+
+        lilv_nodes_free(const_cast<LilvNodes*>(lilvUIs.me));
+    }
 
     {
         Lilv::Nodes lilvRequiredFeatureNodes(lilvPlugin.get_required_features());
