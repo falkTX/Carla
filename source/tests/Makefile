@@ -74,7 +74,8 @@ TARGETS = \
 	ansi-pedantic-test_cxx_ansi_run \
 	ansi-pedantic-test_cxx98_run \
 	ansi-pedantic-test_cxx03_run \
-	ansi-pedantic-test_cxx11_run
+	ansi-pedantic-test_cxx11_run \
+	carla-host-plugin_run
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -82,8 +83,11 @@ all: $(TARGETS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-%_run: $(BINDIR)/%
-	$(BINDIR)/$*
+ansi-%_run: $(BINDIR)/ansi-%
+	$(BINDIR)/ansi-$*
+
+carla-%_run: $(BINDIR)/carla-%
+	valgrind --leak-check=full --show-leak-kinds=all --suppressions=valgrind.supp $(BINDIR)/carla-$*
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -115,8 +119,13 @@ $(BINDIR)/ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h .
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+$(BINDIR)/carla-host-plugin: carla-host-plugin.c
+	$(CC) $< $(PEDANTIC_CFLAGS) $(PEDANTIC_LDFLAGS) -Wno-declaration-after-statement -Wno-pedantic -lcarla_host-plugin -ansi -o $@
+
+# ---------------------------------------------------------------------------------------------------------------------
+
 clean:
-	rm -f $(BINDIR)/ansi-pedantic-test_*
+	rm -f $(BINDIR)/ansi-pedantic-test_* $(BINDIR)/carla-host-plugin
 
 debug:
 	$(MAKE) DEBUG=true
