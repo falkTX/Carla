@@ -12,3 +12,10 @@
    ...
    fun:_dl_init
 }
+{
+   tls variables
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:tls_get_addr_tail
+}

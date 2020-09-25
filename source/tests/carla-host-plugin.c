@@ -105,6 +105,12 @@ int main(void)
     assert(plugins_count != 0);
     assert(plugin_descriptors != NULL);
 
+    assert(carla_add_plugin(rack_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaRack.so", "", "", 0, NULL, 0x0));
+    assert(carla_add_plugin(rack_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaPatchbay.so", "", "", 0, NULL, 0x0));
+
+    assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaRack.so", "", "", 0, NULL, 0x0));
+    assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaPatchbay.so", "", "", 0, NULL, 0x0));
+
     for (uint32_t i=0; i<plugins_count; ++i)
     {
         const NativePluginDescriptor* const plugin_descriptor = &plugin_descriptors[i];
@@ -121,11 +127,43 @@ int main(void)
         }
     }
 
-    rack->cleanup(patchbay_handle);
-    rack->cleanup(rack_handle);
+    carla_juce_idle();
 
-    carla_host_handle_free(patchbay_host_handle);
+    plugins_count = carla_get_current_plugin_count(rack_host_handle);
+
+    for (uint32_t i=0; i<plugins_count; ++i)
+    {
+        carla_get_plugin_info(rack_host_handle, i);
+        carla_get_audio_port_count_info(rack_host_handle, i);
+        carla_get_midi_port_count_info(rack_host_handle, i);
+        carla_get_parameter_count_info(rack_host_handle, i);
+    }
+
+    plugins_count = carla_get_current_plugin_count(patchbay_host_handle);
+
+    for (uint32_t i=0; i<plugins_count; ++i)
+    {
+        carla_get_plugin_info(patchbay_host_handle, i);
+        carla_get_audio_port_count_info(patchbay_host_handle, i);
+        carla_get_midi_port_count_info(patchbay_host_handle, i);
+        carla_get_parameter_count_info(patchbay_host_handle, i);
+    }
+
+    carla_juce_idle();
+
+#if 0
+    carla_set_engine_about_to_close(rack_host_handle);
+    carla_remove_all_plugins(rack_host_handle);
+
+    carla_set_engine_about_to_close(patchbay_host_handle);
+    carla_remove_all_plugins(patchbay_host_handle);
+#endif
+
+    rack->cleanup(rack_handle);
+    rack->cleanup(patchbay_handle);
+
     carla_host_handle_free(rack_host_handle);
+    carla_host_handle_free(patchbay_host_handle);
 
     carla_juce_cleanup();
     return 0;
