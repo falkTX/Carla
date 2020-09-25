@@ -356,7 +356,7 @@ static void midi2cv_process(NativePluginHandle handle,
 
 static const NativePluginDescriptor midi2cvDesc = {
     .category  = NATIVE_PLUGIN_CATEGORY_UTILITY,
-    .hints     = NATIVE_PLUGIN_IS_RTSAFE,
+    .hints     = NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_CONTROL_VOLTAGE,
     .supports  = NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF,
     .audioIns  = 0,
     .audioOuts = 0,
