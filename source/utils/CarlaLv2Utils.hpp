@@ -2777,7 +2777,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     // Set Plugin UIs
     {
 #ifdef CARLA_OS_LINUX
-        const bool hasMODGui(lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr);
+        const bool hasMODGui = lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr;
+#else
+        const bool hasMODGui = false;
 #endif
 
         Lilv::UIs lilvUIs(lilvPlugin.get_uis());
