@@ -1197,7 +1197,7 @@ typedef enum {
      * @a value1   New width
      * @a value2   New height
      */
-    ENGINE_CALLBACK_EMBED_UI_RESIZED = 48,
+    ENGINE_CALLBACK_EMBED_UI_RESIZED = 48
 
 } EngineCallbackOpcode;
 

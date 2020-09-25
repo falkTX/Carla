@@ -35,12 +35,13 @@ PEDANTIC_FLAGS += -Wcast-align -Wcast-qual -Wclobbered -Wconversion -Wdisabled-o
 PEDANTIC_FLAGS += -Wdouble-promotion -Wfloat-equal -Wlogical-op -Wpointer-arith -Wsign-conversion
 PEDANTIC_FLAGS += -Wformat=2 -Woverlength-strings
 PEDANTIC_FLAGS += -Wformat-truncation=2 -Wformat-overflow=2
-PEDANTIC_FLAGS += -Wstringop-overflow=4 -Wstringop-truncation
+PEDANTIC_FLAGS += -Wstringop-overflow=4
 PEDANTIC_FLAGS += -Wmissing-declarations -Wredundant-decls
 PEDANTIC_FLAGS += -Wshadow  -Wundef -Wuninitialized -Wunused
 PEDANTIC_FLAGS += -Wstrict-aliasing -fstrict-aliasing
 PEDANTIC_FLAGS += -Wstrict-overflow -fstrict-overflow
 PEDANTIC_FLAGS += -Wduplicated-branches -Wduplicated-cond -Wnull-dereference
+# -Wstringop-truncation
 
 PEDANTIC_CFLAGS  = $(PEDANTIC_FLAGS)
 PEDANTIC_CFLAGS += -Wc++-compat
@@ -53,6 +54,12 @@ PEDANTIC_CXXFLAGS += -Wnon-virtual-dtor -Woverloaded-virtual
 PEDANTIC_CXXFLAGS += -Wold-style-cast -Wuseless-cast
 PEDANTIC_CXXFLAGS += -Wzero-as-null-pointer-constant
 PEDANTIC_CXXFLAGS += -Weffc++
+
+PEDANTIC_CXX03_SKIPS  = -Wno-pedantic
+PEDANTIC_CXX03_SKIPS += -Wno-zero-as-null-pointer-constant
+
+PEDANTIC_CXX98_SKIPS  = $(PEDANTIC_CXX03_SKIPS)
+PEDANTIC_CXX98_SKIPS += -Wno-variadic-macros
 
 PEDANTIC_LDFLAGS = -Wl,-rpath,$(BINDIR) -L$(BINDIR)
 
@@ -95,13 +102,13 @@ $(BINDIR)/ansi-pedantic-test_c11: ansi-pedantic-test.c ../backend/Carla*.h ../in
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(BINDIR)/ansi-pedantic-test_cxx_ansi: ansi-pedantic-test.cpp ../backend/Carla*.h ../backend/Carla*.hpp ../includes/*.h
-	$(CXX) $< $(PEDANTIC_CXXFLAGS) $(PEDANTIC_LDFLAGS) -lcarla_standalone2 -lcarla_utils -ansi -Wno-effc++ -o $@
+	$(CXX) $< $(PEDANTIC_CXXFLAGS) $(PEDANTIC_CXX98_SKIPS) $(PEDANTIC_LDFLAGS) -lcarla_standalone2 -lcarla_utils -ansi -Wno-effc++ -o $@
 
 $(BINDIR)/ansi-pedantic-test_cxx98: ansi-pedantic-test.cpp ../backend/Carla*.h ../backend/Carla*.hpp ../includes/*.h
-	$(CXX) $< $(PEDANTIC_CXXFLAGS) $(PEDANTIC_LDFLAGS) -lcarla_standalone2 -lcarla_utils -std=c++98 -Wno-effc++ -o $@
+	$(CXX) $< $(PEDANTIC_CXXFLAGS) $(PEDANTIC_CXX98_SKIPS) $(PEDANTIC_LDFLAGS) -lcarla_standalone2 -lcarla_utils -std=c++98 -Wno-effc++ -o $@
 
 $(BINDIR)/ansi-pedantic-test_cxx03: ansi-pedantic-test.cpp ../backend/Carla*.h ../backend/Carla*.hpp ../includes/*.h
-	$(CXX) $< $(PEDANTIC_CXXFLAGS) $(PEDANTIC_LDFLAGS) -lcarla_standalone2 -lcarla_utils -std=c++03 -Wno-effc++ -o $@
+	$(CXX) $< $(PEDANTIC_CXXFLAGS) $(PEDANTIC_CXX03_SKIPS) $(PEDANTIC_LDFLAGS) -lcarla_standalone2 -lcarla_utils -std=c++03 -Wno-effc++ -o $@
 
 $(BINDIR)/ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h ../backend/Carla*.hpp ../includes/*.h
 	$(CXX) $< $(PEDANTIC_CXXFLAGS) $(PEDANTIC_LDFLAGS) -lcarla_standalone2 -lcarla_utils -std=c++11 -o $@

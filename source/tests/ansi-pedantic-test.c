@@ -28,7 +28,7 @@
 # include "CarlaPlugin.hpp"
 # include <cassert>
 # include <cstdio>
-# ifdef CARLA_PROPER_CPP11_SUPPORT
+# ifndef nullptr
 #  undef NULL
 #  define NULL nullptr
 # endif
@@ -57,6 +57,7 @@ int main(int argc, char* argv[])
     CarlaParameterInfo i;
     CarlaScalePointInfo j;
     CarlaTransportInfo k;
+    CarlaHostHandle handle;
 
     const char* licenseText;
     const char* const* fileExtensions;
@@ -131,34 +132,36 @@ int main(int argc, char* argv[])
         }
     }
 
-    carla_set_engine_option(ENGINE_OPTION_PROCESS_MODE, ENGINE_PROCESS_MODE_PATCHBAY, NULL);
-    carla_set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, NULL);
+    handle = carla_standalone_host_init();
 
-    if (carla_engine_init("Dummy", "ansi-test"))
+    carla_set_engine_option(handle, ENGINE_OPTION_PROCESS_MODE, ENGINE_PROCESS_MODE_PATCHBAY, NULL);
+    carla_set_engine_option(handle, ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, NULL);
+
+    if (carla_engine_init(handle, "Dummy", "ansi-test"))
     {
 #ifdef __cplusplus
-        CarlaEngine* const engine(carla_get_engine());
+        CarlaEngine* const engine(carla_get_engine_from_handle(handle));
         assert(engine != nullptr);
         engine->getLastError();
 #endif
-        if (carla_add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, NULL, NULL, "audiofile", 0, NULL, 0x0))
+        if (carla_add_plugin(handle, BINARY_NATIVE, PLUGIN_INTERNAL, NULL, NULL, "audiofile", 0, NULL, 0x0))
         {
 #ifdef __cplusplus
-            CarlaPlugin* const plugin(engine->getPlugin(0));
-            assert(plugin != nullptr);
+            const std::shared_ptr<CarlaPlugin> plugin(engine->getPlugin(0));
+            assert(plugin.get() != nullptr);
             plugin->getId();
 #endif
             /* carla_set_custom_data(0, CUSTOM_DATA_TYPE_STRING, "file", "/home/falktx/Music/test.wav"); */
-            carla_transport_play();
+            carla_transport_play(handle);
         }
         else
         {
-            printf("%s\n", carla_get_last_error());
+            printf("%s\n", carla_get_last_error(handle));
         }
 #ifdef __cplusplus
         engine->setAboutToClose();
 #endif
-        carla_engine_close();
+        carla_engine_close(handle);
     }
 
 #ifdef __cplusplus
