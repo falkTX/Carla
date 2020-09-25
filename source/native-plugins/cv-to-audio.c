@@ -181,7 +181,7 @@ static void cv2audio_process(NativePluginHandle handle,
 
 static const NativePluginDescriptor cv2audioDesc = {
     .category  = NATIVE_PLUGIN_CATEGORY_UTILITY,
-    .hints     = NATIVE_PLUGIN_IS_RTSAFE,
+    .hints     = NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_CONTROL_VOLTAGE,
     .supports  = NATIVE_PLUGIN_SUPPORTS_NOTHING,
     .audioIns  = 0,
     .audioOuts = 1,
