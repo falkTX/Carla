@@ -49,6 +49,24 @@ __cdecl static void cvst_processReplacingCallback(AEffect* effect, float** input
 }
 #endif
 
+static struct CarlaVSTCleanup {
+    std::vector<AEffect*> effects;
+    std::vector<VstObject*> objects;
+
+    CarlaVSTCleanup()
+        : effects(),
+          objects() {}
+
+    ~CarlaVSTCleanup()
+    {
+        for (std::vector<VstObject*>::iterator it=objects.begin(), end=objects.end(); it != end; ++it)
+            delete (*it);
+
+        for (std::vector<AEffect*>::iterator it=effects.begin(), end=effects.end(); it != end; ++it)
+            delete (*it);
+    }
+} gCarlaVSTCleanup;
+
 CARLA_EXPORT __cdecl
 const AEffect* VSTPluginMain(audioMasterCallback audioMaster);
 
@@ -71,6 +89,9 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     obj->audioMaster = (void*)audioMaster;
     obj->plugin      = nullptr;
     effect->object   = obj;
+
+    gCarlaVSTCleanup.effects.push_back(effect);
+    gCarlaVSTCleanup.objects.push_back(obj);
 
     // static calls
 #ifdef __WINE__
