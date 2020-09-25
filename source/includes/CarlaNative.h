@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#include <stdbool.h>
+#include "CarlaDefines.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -307,6 +307,7 @@ extern void carla_register_native_plugin(const NativePluginDescriptor* desc);
 void carla_register_all_native_plugins(void);
 
 /** Get meta-data only */
+CARLA_EXPORT
 const NativePluginDescriptor* carla_get_native_plugins_data(uint32_t* count);
 
 /* ------------------------------------------------------------------------------------------------------------ */
