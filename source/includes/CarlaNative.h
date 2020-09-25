@@ -271,7 +271,7 @@ typedef struct _NativePluginDescriptor {
     void (*activate)(NativePluginHandle handle);
     void (*deactivate)(NativePluginHandle handle);
 
-    // FIXME for v3.0, use const for the input buffer
+    /* FIXME for v3.0, use const for the input buffer */
     void (*process)(NativePluginHandle handle,
                     float** inBuffer, float** outBuffer, uint32_t frames,
                     const NativeMidiEvent* midiEvents, uint32_t midiEventCount);
