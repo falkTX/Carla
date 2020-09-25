@@ -290,14 +290,18 @@ struct CarlaPluginLV2EventData {
         ctrlIndex = 0;
     }
 
-    void clear() noexcept
+    void clear(CarlaEngineEventPort* const portToIgnore) noexcept
     {
         if (data != nullptr)
         {
             for (uint32_t i=0; i < count; ++i)
             {
-                if (data[i].port != nullptr && ctrl != nullptr && data[i].port == ctrl->port)
+                if (data[i].port != nullptr)
+                {
+                    if (data[i].port != portToIgnore)
+                        delete data[i].port;
                     data[i].port = nullptr;
+                }
             }
 
             delete[] data;
@@ -774,6 +778,9 @@ public:
 
         if (fFeatures[kFeatureIdInlineDisplay] != nullptr && fFeatures[kFeatureIdInlineDisplay]->data != nullptr)
             delete (LV2_Inline_Display*)fFeatures[kFeatureIdInlineDisplay]->data;
+
+        if (fFeatures[kFeatureIdMidnam] != nullptr && fFeatures[kFeatureIdMidnam]->data != nullptr)
+            delete (LV2_Midnam*)fFeatures[kFeatureIdMidnam]->data;
 
         for (uint32_t i=0; i < kFeatureCountAll; ++i)
         {
@@ -4780,8 +4787,8 @@ public:
             fParamBuffers = nullptr;
         }
 
-        fEventsIn.clear();
-        fEventsOut.clear();
+        fEventsIn.clear(pData->event.portIn);
+        fEventsOut.clear(pData->event.portOut);
 
         CarlaPlugin::clearBuffers();
 
