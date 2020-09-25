@@ -1071,7 +1071,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
             const std::size_t len(sname.length());
 
             // 1 digit, ex: " (2)"
-            if (sname[len-4] == ' ' && sname[len-3] == '(' && sname.isDigit(len-2) && sname[len-1] == ')')
+            if (len > 4 && sname[len-4] == ' ' && sname[len-3] == '(' && sname.isDigit(len-2) && sname[len-1] == ')')
             {
                 const int number = sname[len-2] - '0';
 
@@ -1089,7 +1089,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
             }
 
             // 2 digits, ex: " (11)"
-            if (sname[len-5] == ' ' && sname[len-4] == '(' && sname.isDigit(len-3) && sname.isDigit(len-2) && sname[len-1] == ')')
+            if (len > 5 && sname[len-5] == ' ' && sname[len-4] == '(' && sname.isDigit(len-3) && sname.isDigit(len-2) && sname[len-1] == ')')
             {
                 char n2 = sname[len-2];
                 char n3 = sname[len-3];
