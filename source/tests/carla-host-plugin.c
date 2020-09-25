@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 static uint32_t get_buffer_size(NativeHostHandle h)
 {
@@ -100,17 +101,15 @@ int main(void)
     const CarlaHostHandle patchbay_host_handle = carla_create_native_plugin_host_handle(patchbay, patchbay_handle);
     assert(patchbay_host_handle);
 
+    carla_set_engine_option(rack_host_handle, ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2, utils_folder);
+    carla_set_engine_option(patchbay_host_handle, ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2, utils_folder);
+
     uint32_t plugins_count = 0;
     const NativePluginDescriptor* const plugin_descriptors = carla_get_native_plugins_data(&plugins_count);
     assert(plugins_count != 0);
     assert(plugin_descriptors != NULL);
 
-    assert(carla_add_plugin(rack_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaRack.so", "", "", 0, NULL, 0x0));
-    assert(carla_add_plugin(rack_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaPatchbay.so", "", "", 0, NULL, 0x0));
-
-    assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaRack.so", "", "", 0, NULL, 0x0));
-    assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaPatchbay.so", "", "", 0, NULL, 0x0));
-
+#if 1
     for (uint32_t i=0; i<plugins_count; ++i)
     {
         const NativePluginDescriptor* const plugin_descriptor = &plugin_descriptors[i];
@@ -126,6 +125,37 @@ int main(void)
             assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_INTERNAL, "", "", plugin_descriptor->label, 0, NULL, 0x0));
         }
     }
+#endif
+
+    plugins_count = carla_get_cached_plugin_count(PLUGIN_LV2, utils_folder);
+    assert(plugins_count != 0);
+
+    for (uint32_t i=0; i<plugins_count; ++i)
+    {
+        const CarlaCachedPluginInfo* const plugin_info = carla_get_cached_plugin_info(PLUGIN_LV2, i);
+        assert(plugin_info != NULL);
+
+        printf("Loading plugin #%u '%s'\n", i+1, plugin_info->label);
+
+        const char* plugin_uri = strchr(plugin_info->label, '/');
+        assert(plugin_uri != NULL && plugin_uri[0] != '\0' && plugin_uri[1] != '\0');
+        ++plugin_uri;
+
+        if (plugin_info->cvIns + plugin_info->cvOuts == 0) {
+            assert(carla_add_plugin(rack_host_handle, BINARY_NATIVE, PLUGIN_LV2, "", "", plugin_uri, 0, NULL, 0x0));
+        }
+
+        if (plugin_info->midiIns <= 1 && plugin_info->midiOuts <= 1) {
+            assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_LV2, "", "", plugin_uri, 0, NULL, 0x0));
+        }
+    }
+
+#if 1
+    assert(carla_add_plugin(rack_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaRack.so", "", "", 0, NULL, 0x0));
+    assert(carla_add_plugin(rack_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaPatchbay.so", "", "", 0, NULL, 0x0));
+
+    assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaRack.so", "", "", 0, NULL, 0x0));
+    assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaPatchbay.so", "", "", 0, NULL, 0x0));
 
     carla_juce_idle();
 
@@ -150,6 +180,7 @@ int main(void)
     }
 
     carla_juce_idle();
+#endif
 
 #if 0
     carla_set_engine_about_to_close(rack_host_handle);

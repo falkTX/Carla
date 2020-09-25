@@ -87,7 +87,7 @@ ansi-%_run: $(BINDIR)/ansi-%
 	$(BINDIR)/ansi-$*
 
 carla-%_run: $(BINDIR)/carla-%
-# # 	valgrind $(BINDIR)/carla-$*
+# 	valgrind $(BINDIR)/carla-$*
 	valgrind --leak-check=full --show-leak-kinds=all --suppressions=valgrind.supp $(BINDIR)/carla-$*
 
 # ---------------------------------------------------------------------------------------------------------------------
