@@ -91,7 +91,7 @@ public:
 
         fApp = new QApplication(qargc, qargv);
 
-        fWindow = new QMainWindow(nullptr, nullptr);
+        fWindow = new QMainWindow();
         fWindow->resize(30, 30);
         fWindow->hide();
 
