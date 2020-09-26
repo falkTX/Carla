@@ -20,6 +20,9 @@
   ==============================================================================
 */
 
+// GCC4 compatibility
+namespace std { using ::max_align_t; }
+
 namespace juce
 {
 
