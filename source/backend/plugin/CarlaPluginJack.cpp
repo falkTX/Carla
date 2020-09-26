@@ -143,7 +143,7 @@ public:
         const EngineOptions& options(kEngine->getOptions());
         CarlaString binaryDir(options.binaryDir);
 #ifdef HAVE_LIBLO
-        const int sessionManager = fSetupLabel[4] - '0';
+        const int sessionManager = fSetupLabel[4U] - '0';
 #endif
 
         CarlaString ret;
@@ -192,7 +192,7 @@ protected:
 
         if ((announced || fProject.path.isEmpty()) && fProject.init(kPlugin->getName(),
                                                                     kEngine->getCurrentProjectFolder(),
-                                                                    &fSetupLabel[6]))
+                                                                    &fSetupLabel[6U]))
         {
             carla_stdout("Sending open signal %s %s %s",
                          fProject.path.buffer(), fProject.display.buffer(), fProject.clientName.buffer());
@@ -232,7 +232,7 @@ protected:
             static const char* const message = "Howdy, what took you so long?";
             static const char* const smName  = "Carla";
 
-            const char* const features = ((fSetupLabel[5] - '0') & LIBJACK_FLAG_CONTROL_WINDOW)
+            const char* const features = ((fSetupLabel[5U] - '0') & LIBJACK_FLAG_CONTROL_WINDOW)
                                        ? featuresG : featuresN;
 
             lo_send_from(fOscClientAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ssss",
@@ -316,7 +316,7 @@ protected:
             fOscClientAddress = nullptr;
         }
 
-        const int sessionManager = fSetupLabel[4] - '0';
+        const int sessionManager = fSetupLabel[4U] - '0';
 
         if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
         {
@@ -328,7 +328,7 @@ protected:
         }
 #endif
 
-        const bool externalProcess = ((fSetupLabel[5] - '0') & LIBJACK_FLAG_EXTERNAL_START)
+        const bool externalProcess = ((fSetupLabel[5U] - '0') & LIBJACK_FLAG_EXTERNAL_START)
                                    && ! kEngine->isLoadingProject();
 
         if (! externalProcess)
@@ -1763,7 +1763,7 @@ public:
 
         // remove unprintable characters if needed
         if (fSetupHints & LIBJACK_FLAG_EXTERNAL_START)
-            fInfo.setupLabel[5] = static_cast<char>('0' + (fSetupHints ^ LIBJACK_FLAG_EXTERNAL_START));
+            fInfo.setupLabel[5U] = static_cast<char>('0' + (fSetupHints ^ LIBJACK_FLAG_EXTERNAL_START));
 
         // ---------------------------------------------------------------
         // set options
