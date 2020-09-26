@@ -281,6 +281,12 @@ endif
 ifneq (,$(findstring aarch64,$(TARGET_MACHINE)))
 HACE_JUCE_SUPPORTED_ARCH = true
 endif
+ifneq (,$(findstring i486,$(TARGET_MACHINE)))
+HACE_JUCE_SUPPORTED_ARCH = true
+endif
+ifneq (,$(findstring i586,$(TARGET_MACHINE)))
+HACE_JUCE_SUPPORTED_ARCH = true
+endif
 ifneq (,$(findstring i686,$(TARGET_MACHINE)))
 HACE_JUCE_SUPPORTED_ARCH = true
 endif
