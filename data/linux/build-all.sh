@@ -356,6 +356,9 @@ cd ${CHROOT_CARLA_DIR}
 rm -rf ./tmp-install
 make ${MAKE_ARGS} install DESTDIR=./tmp-install PREFIX=/usr
 
+make -C data/windows/unzipfx-carla -f Makefile.linux clean
+make -C data/windows/unzipfx-carla-control -f Makefile.linux clean
+
 make -C data/windows/unzipfx-carla -f Makefile.linux ${MAKE_ARGS}
 make -C data/windows/unzipfx-carla-control -f Makefile.linux ${MAKE_ARGS}
 
