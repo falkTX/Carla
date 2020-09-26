@@ -91,7 +91,11 @@ public:
 
         fApp = new QApplication(qargc, qargv);
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
         fWindow = new QMainWindow(nullptr);
+#else
+        fWindow = new QMainWindow(nullptr, nullptr);
+#endif
         fWindow->resize(30, 30);
         fWindow->hide();
 
