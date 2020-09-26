@@ -242,7 +242,7 @@ set -e
 
 export OLDPATH=\${PATH}
 export CFLAGS="-I${CHROOT_TARGET_DIR}/carla${ARCH}/include"
-export CXXFLAGS=${CFLAGS}
+export CXXFLAGS="${CFLAGS}"
 export LDFLAGS="-L${CHROOT_TARGET_DIR}/carla${ARCH}/lib"
 export PKG_CONFIG_PATH=${CHROOT_TARGET_DIR}/carla${ARCH}/lib/pkgconfig
 export LINUX=true
