@@ -137,12 +137,18 @@ rm -rf build/Carla-Control.app/Contents/MacOS/resources/__pycache__
 
 # missed by cx-freeze
 mkdir build/Carla.app/Contents/MacOS/iconengines
+mkdir build/Carla-Control.app/Contents/MacOS/iconengines
 cp ${TARGETDIR}/carla/lib/qt5/plugins/iconengines/libqsvgicon.dylib build/Carla.app/Contents/MacOS/iconengines/
+cp ${TARGETDIR}/carla/lib/qt5/plugins/iconengines/libqsvgicon.dylib build/Carla-Control.app/Contents/MacOS/iconengines/
 if [ "${MACOS_VERSION_MIN}" = "10.12" ]; then
 mkdir build/Carla.app/Contents/MacOS/imageformats
+mkdir build/Carla-Control.app/Contents/MacOS/imageformats
 mkdir build/Carla.app/Contents/MacOS/platforms
+mkdir build/Carla-Control.app/Contents/MacOS/platforms
 cp ${TARGETDIR}/carla/lib/qt5/plugins/imageformats/libq{jpeg,svg}.dylib             build/Carla.app/Contents/MacOS/imageformats/
+cp ${TARGETDIR}/carla/lib/qt5/plugins/imageformats/libq{jpeg,svg}.dylib             build/Carla-Control.app/Contents/MacOS/imageformats/
 cp ${TARGETDIR}/carla/lib/qt5/plugins/platforms/libq{cocoa,minimal,offscreen}.dylib build/Carla.app/Contents/MacOS/platforms/
+cp ${TARGETDIR}/carla/lib/qt5/plugins/platforms/libq{cocoa,minimal,offscreen}.dylib build/Carla-Control.app/Contents/MacOS/platforms/
 fi
 
 # continuing...
