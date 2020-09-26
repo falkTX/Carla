@@ -212,10 +212,11 @@ fi
 
 ${CHROOT_CARLA_DIR}/data/linux/build-pyqt.sh ${ARCH}
 
-if [ ! -f /tmp/setup-repo-packages-extra3 ]; then
-    apt-get install -y --no-install-recommends libasound2-dev libpulse-dev libgtk2.0-dev libqt4-dev qt4-dev-tools zip unzip
+if [ ! -f /tmp/setup-repo-packages-extra4 ]; then
+  apt-get install -y --no-install-recommends libasound2-dev libpulse-dev libgtk2.0-dev libqt4-dev qt4-dev-tools zip unzip
+  apt-get install -y --no-install-recommends libfreetype6-dev libxcursor-dev libxext-dev
   apt-get clean
-  touch /tmp/setup-repo-packages-extra3
+  touch /tmp/setup-repo-packages-extra4
 fi
 
 EOF
