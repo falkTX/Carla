@@ -276,24 +276,24 @@ endif
 ifeq ($(LINUX),true)
 # juce only supports the most common architectures
 ifneq (,$(findstring arm,$(TARGET_MACHINE)))
-HACE_JUCE_SUPPORTED_ARCH = true
+HAVE_JUCE_SUPPORTED_ARCH = true
 endif
 ifneq (,$(findstring aarch64,$(TARGET_MACHINE)))
-HACE_JUCE_SUPPORTED_ARCH = true
+HAVE_JUCE_SUPPORTED_ARCH = true
 endif
 ifneq (,$(findstring i486,$(TARGET_MACHINE)))
-HACE_JUCE_SUPPORTED_ARCH = true
+HAVE_JUCE_SUPPORTED_ARCH = true
 endif
 ifneq (,$(findstring i586,$(TARGET_MACHINE)))
-HACE_JUCE_SUPPORTED_ARCH = true
+HAVE_JUCE_SUPPORTED_ARCH = true
 endif
 ifneq (,$(findstring i686,$(TARGET_MACHINE)))
-HACE_JUCE_SUPPORTED_ARCH = true
+HAVE_JUCE_SUPPORTED_ARCH = true
 endif
 ifneq (,$(findstring x86_64,$(TARGET_MACHINE)))
-HACE_JUCE_SUPPORTED_ARCH = true
+HAVE_JUCE_SUPPORTED_ARCH = true
 endif
-ifeq ($(HACE_JUCE_SUPPORTED_ARCH),true)
+ifeq ($(HAVE_JUCE_SUPPORTED_ARCH),true)
 HAVE_JUCE_LINUX_DEPS = $(shell $(PKG_CONFIG) --exists x11 xcursor xext freetype2 && echo true)
 endif
 endif
