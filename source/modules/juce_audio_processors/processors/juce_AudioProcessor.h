@@ -1191,7 +1191,7 @@ public:
         String xMeterID, yMeterID;
     };
 
-    virtual CurveData getResponseCurve (CurveData::Type /*curveType*/) const      { return {}; }
+    virtual CurveData getResponseCurve (CurveData::Type /*curveType*/) const      { return CurveData(); }
 
    #if ! JUCE_AUDIOPROCESSOR_NO_GUI
     //==============================================================================
