@@ -22,6 +22,8 @@ I18N_LANGUAGES :=
 # ---------------------------------------------------------------------------------------------------------------------
 # Auto-detect OS if not defined
 
+TARGET_MACHINE := $(shell $(CC) -dumpmachine)
+
 ifneq ($(BSD),true)
 ifneq ($(HAIKU),true)
 ifneq ($(HURD),true)
@@ -29,7 +31,6 @@ ifneq ($(LINUX),true)
 ifneq ($(MACOS),true)
 ifneq ($(WIN32),true)
 
-TARGET_MACHINE := $(shell $(CC) -dumpmachine)
 ifneq (,$(findstring bsd,$(TARGET_MACHINE)))
 BSD=true
 endif
