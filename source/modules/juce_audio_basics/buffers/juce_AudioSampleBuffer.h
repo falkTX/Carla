@@ -20,8 +20,10 @@
   ==============================================================================
 */
 
+#ifndef __clang__
 // GCC4 compatibility
 namespace std { using ::max_align_t; }
+#endif
 
 namespace juce
 {
