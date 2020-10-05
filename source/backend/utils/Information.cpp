@@ -20,7 +20,7 @@
 
 #include "CarlaString.hpp"
 
-#ifdef HAVE_FLUIDSYNTH
+#if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE)
 # include <fluidsynth.h>
 #endif
 
@@ -78,7 +78,7 @@ const char* carla_get_complete_license_text()
 #endif
 
         // Sample kit libraries
-#ifdef HAVE_FLUIDSYNTH
+#if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE)
         "<li>FluidSynth library v" FLUIDSYNTH_VERSION " for SF2/3 support</li>"
 #endif
         "<li>SFZero module for SFZ support</li>"
