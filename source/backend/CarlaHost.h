@@ -1152,16 +1152,6 @@ CARLA_EXPORT const char* carla_get_host_osc_url_tcp(CarlaHostHandle handle);
 CARLA_EXPORT const char* carla_get_host_osc_url_udp(CarlaHostHandle handle);
 
 /*!
- * Get the absolute filename of this carla library.
- */
-CARLA_EXPORT const char* carla_standalone_get_library_filename(void);
-
-/*!
- * Get the folder where this carla library resides.
- */
-CARLA_EXPORT const char* carla_standalone_get_library_folder(void);
-
-/*!
  * Initialize NSM (that is, announce ourselves to it).
  * Must be called as early as possible in the program's lifecycle.
  * Returns true if NSM is available and initialized correctly.
@@ -1172,6 +1162,39 @@ CARLA_EXPORT bool carla_nsm_init(CarlaHostHandle handle, uint64_t pid, const cha
  * Respond to an NSM callback.
  */
 CARLA_EXPORT void carla_nsm_ready(CarlaHostHandle handle, NsmCallbackOpcode opcode);
+
+#ifndef CARLA_UTILS_H_INCLUDED
+/*!
+ * Get the complete license text of used third-party code and features.
+ * Returned string is in basic html format.
+ */
+CARLA_EXPORT const char* carla_get_complete_license_text(void);
+
+/*!
+ * Get the juce version used in the current Carla build.
+ */
+CARLA_EXPORT const char* carla_get_juce_version(void);
+
+/*!
+ * Get the list of supported file extensions in carla_load_file().
+ */
+CARLA_EXPORT const char* const* carla_get_supported_file_extensions(void);
+
+/*!
+ * Get the list of supported features in the current Carla build.
+ */
+CARLA_EXPORT const char* const* carla_get_supported_features(void);
+
+/*!
+ * Get the absolute filename of this carla library.
+ */
+CARLA_EXPORT const char* carla_get_library_filename(void);
+
+/*!
+ * Get the folder where this carla library resides.
+ */
+CARLA_EXPORT const char* carla_get_library_folder(void);
+#endif
 
 /** @} */
 

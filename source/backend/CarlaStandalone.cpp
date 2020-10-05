@@ -2353,38 +2353,6 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 #endif
 }
 
-// -------------------------------------------------------------------------------------------------------------------
-
-const char* carla_standalone_get_library_filename()
-{
-    carla_debug("carla_standalone_get_library_filename()");
-
-    static CarlaString ret;
-
-    if (ret.isEmpty())
-    {
-        using water::File;
-        ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
-    }
-
-    return ret;
-}
-
-const char* carla_standalone_get_library_folder()
-{
-    carla_debug("carla_standalone_get_library_folder()");
-
-    static CarlaString ret;
-
-    if (ret.isEmpty())
-    {
-        using water::File;
-        ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
-    }
-
-    return ret;
-}
-
 // --------------------------------------------------------------------------------------------------------------------
 
 #ifndef CARLA_PLUGIN_EXPORT
@@ -2397,6 +2365,7 @@ const char* carla_standalone_get_library_folder()
 # include "CarlaPipeUtils.cpp"
 # include "CarlaProcessUtils.cpp"
 # include "CarlaStateUtils.cpp"
+# include "utils/Information.cpp"
 #endif /* CARLA_PLUGIN_EXPORT */
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -221,9 +221,9 @@ const char* const* carla_get_supported_features()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const char* carla_utils_get_library_filename()
+const char* carla_get_library_filename()
 {
-    carla_debug("carla_utils_get_library_filename()");
+    carla_debug("carla_get_library_filename()");
 
     static CarlaString ret;
 
@@ -236,9 +236,9 @@ const char* carla_utils_get_library_filename()
     return ret;
 }
 
-const char* carla_utils_get_library_folder()
+const char* carla_get_library_folder()
 {
-    carla_debug("carla_utils_get_library_folder()");
+    carla_debug("carla_get_library_folder()");
 
     static CarlaString ret;
 

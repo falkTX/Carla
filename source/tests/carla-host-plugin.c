@@ -69,17 +69,11 @@ static const NativeHostDescriptor host_descriptor = {
 
 int main(void)
 {
-    const char* const standalone_filename = carla_standalone_get_library_filename();
-    assert(standalone_filename != NULL && standalone_filename[0] != '\0');
+    const char* const lib_filename = carla_get_library_filename();
+    assert(lib_filename != NULL && lib_filename[0] != '\0');
 
-    const char* const utils_filename = carla_utils_get_library_filename();
-    assert(utils_filename != NULL && utils_filename[0] != '\0');
-
-    const char* const standalone_folder = carla_standalone_get_library_folder();
-    assert(standalone_folder != NULL && standalone_folder[0] != '\0');
-
-    const char* const utils_folder = carla_utils_get_library_folder();
-    assert(utils_folder != NULL && utils_folder[0] != '\0');
+    const char* const lib_folder = carla_get_library_folder();
+    assert(lib_folder != NULL && lib_folder[0] != '\0');
 
     carla_juce_init();
 
