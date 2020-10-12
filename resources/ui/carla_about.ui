@@ -254,7 +254,10 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/bitmaps/dial_03.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/dial_03.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -276,7 +279,10 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/bitmaps/button_on.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/button_on.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -298,7 +304,10 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/bitmaps/button_gui_down-white.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/button_gui_down-white.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -320,7 +329,10 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/bitmaps/button_edit_down-white.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/button_edit_down-white.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -686,6 +698,12 @@
        </item>
        <item row="7" column="0" colspan="4">
         <widget class="Line" name="line_vst2">
+         <property name="lineWidth">
+          <number>0</number>
+         </property>
+         <property name="midLineWidth">
+          <number>1</number>
+         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -905,6 +923,12 @@
        </item>
        <item row="9" column="0" colspan="4">
         <widget class="Line" name="line_vst3">
+         <property name="lineWidth">
+          <number>0</number>
+         </property>
+         <property name="midLineWidth">
+          <number>1</number>
+         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
