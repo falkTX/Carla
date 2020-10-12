@@ -3,7 +3,7 @@ libdir=X-LIBDIR-X/carla
 includedir=X-INCLUDEDIR-X/carla
 
 Name: carla-host-plugin
-Version: 2.2.91
+Version: 2.2.92
 Description: Carla Host as Native Plugin
 Libs: -Wl,-rpath,${libdir} -L${libdir} -lcarla_host-plugin
 Cflags: -DREAL_BUILD -I${includedir} -I${includedir}/includes

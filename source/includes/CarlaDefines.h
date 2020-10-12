@@ -32,8 +32,8 @@
 #endif
 
 /* Set Version */
-#define CARLA_VERSION_HEX    0x020291
-#define CARLA_VERSION_STRING "2.3.0-alpha1"
+#define CARLA_VERSION_HEX    0x020292
+#define CARLA_VERSION_STRING "2.3.0-alpha2"
 
 /* Check OS */
 #if defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
