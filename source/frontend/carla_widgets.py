@@ -128,7 +128,7 @@ class CarlaAboutW(QDialog):
         if self.ui.about.palette().color(QPalette.Background).blackF() < 0.5:
             self.ui.l_icons.setPixmap(QPixmap(":/bitmaps/carla_about_black.png"))
             self.ui.ico_example_edit.setPixmap(QPixmap(":/bitmaps/button_file-black.png"))
-            self.ui.ico_example_file.setPixmap(QPixmap(":/bitmaps/button_edit-black.png"))
+            self.ui.ico_example_file.setPixmap(QPixmap(":/scalable/button_edit-black.svg"))
             self.ui.ico_example_gui.setPixmap(QPixmap(":/bitmaps/button_gui-black.png"))
 
         if host.isControl:
@@ -207,9 +207,12 @@ class CarlaAboutW(QDialog):
 
         if usingJuce and (MACOS or WINDOWS):
             self.ui.l_vst2.setText(self.tr("Using JUCE host"))
-            self.ui.l_vst3.setText(self.tr("Using JUCE host"))
         else:
             self.ui.l_vst2.setText(self.tr("About 85&#37; complete (missing vst bank/presets and some minor stuff)"))
+
+        if usingJuce:
+            self.ui.l_vst3.setText(self.tr("Using JUCE host"))
+        else:
             self.ui.line_vst2.hide()
             self.ui.l_vst3.hide()
             self.ui.lid_vst3.hide()
