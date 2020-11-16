@@ -24,6 +24,7 @@
   ==============================================================================
 */
 
+#ifndef JUCE_VSTINTERFACE_H_INCLUDED
 #define JUCE_VSTINTERFACE_H_INCLUDED
 
 using namespace juce;
@@ -505,7 +506,7 @@ enum PresonusExtensionConstants
 
     @tags{Audio}
 */
-struct vst2FxBank
+struct fxBank
 {
     int32 magic1;
     int32 size;
@@ -527,3 +528,5 @@ struct vst2FxBank
 #else
  #pragma pack(pop)
 #endif
+
+#endif // JUCE_VSTINTERFACE_H_INCLUDED

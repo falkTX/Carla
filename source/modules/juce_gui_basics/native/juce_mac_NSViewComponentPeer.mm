@@ -23,6 +23,11 @@
   ==============================================================================
 */
 
+@interface NSEvent (DeviceDelta)
+- (float)deviceDeltaX;
+- (float)deviceDeltaY;
+@end
+
 //==============================================================================
 #if defined (MAC_OS_X_VERSION_10_8) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_8) \
   && USE_COREGRAPHICS_RENDERING && JUCE_COREGRAPHICS_DRAW_ASYNC
@@ -680,8 +685,8 @@ public:
             }
             else if ([ev respondsToSelector: @selector (deviceDeltaX)])
             {
-                wheel.deltaX = checkDeviceDeltaReturnValue ((float) getMsgSendFPRetFn() (ev, @selector (deviceDeltaX)));
-                wheel.deltaY = checkDeviceDeltaReturnValue ((float) getMsgSendFPRetFn() (ev, @selector (deviceDeltaY)));
+                wheel.deltaX = checkDeviceDeltaReturnValue ([ev deviceDeltaX]);
+                wheel.deltaY = checkDeviceDeltaReturnValue ([ev deviceDeltaY]);
             }
         }
         @catch (...)
@@ -1770,10 +1775,7 @@ private:
                 owner->stringBeingComposed.clear();
 
             if (! (owner->textWasInserted || owner->redirectKeyDown (ev)))
-            {
-                objc_super s = { self, [NSView class] };
-                getMsgSendSuperFn() (&s, @selector (keyDown:), ev);
-            }
+                sendSuperclassMessage<void> (self, @selector (keyDown:), ev);
         }
     }
 
@@ -1781,11 +1783,8 @@ private:
     {
         auto* owner = getOwner (self);
 
-        if (owner == nullptr || ! owner->redirectKeyUp (ev))
-        {
-            objc_super s = { self, [NSView class] };
-            getMsgSendSuperFn() (&s, @selector (keyUp:), ev);
-        }
+        if (! owner->redirectKeyUp (ev))
+            sendSuperclassMessage<void> (self, @selector (keyUp:), ev);
     }
 
     //==============================================================================
@@ -2035,7 +2034,7 @@ private:
 
     static void becomeKeyWindow (id self, SEL)
     {
-        sendSuperclassMessage (self, @selector (becomeKeyWindow));
+        sendSuperclassMessage<void> (self, @selector (becomeKeyWindow));
 
         if (auto* owner = getOwner (self))
         {
@@ -2057,10 +2056,15 @@ private:
         return owner == nullptr || owner->windowShouldClose();
     }
 
-    static NSRect constrainFrameRect (id self, SEL, NSRect frameRect, NSScreen*)
+    static NSRect constrainFrameRect (id self, SEL, NSRect frameRect, NSScreen* screen)
     {
         if (auto* owner = getOwner (self))
+        {
+            frameRect = sendSuperclassMessage<NSRect, NSRect, NSScreen*> (self, @selector (constrainFrameRect:toScreen:),
+                                                                          frameRect, screen);
+
             frameRect = owner->constrainRect (frameRect);
+        }
 
         return frameRect;
     }
@@ -2104,10 +2108,10 @@ private:
     {
         if (auto* owner = getOwner (self))
         {
-            owner->isZooming = true;
-            objc_super s = { self, [NSWindow class] };
-            getMsgSendSuperFn() (&s, @selector (zoom:), sender);
-            owner->isZooming = false;
+            {
+                const ScopedValueSetter<bool> svs (owner->isZooming, true);
+                sendSuperclassMessage<void> (self, @selector (zoom:), sender);
+            }
 
             owner->redirectMovedOrResized();
         }

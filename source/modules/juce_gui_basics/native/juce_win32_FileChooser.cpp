@@ -58,7 +58,7 @@ public:
         // Handle nonexistent root directories in the same way as existing ones
         files.calloc (static_cast<size_t> (charsAvailableForResult) + 1);
 
-        if (startingFile.isDirectory() ||startingFile.isRoot())
+        if (startingFile.isDirectory() || startingFile.isRoot())
         {
             initialPath = startingFile.getFullPathName();
         }
@@ -154,7 +154,7 @@ private:
     Component::SafePointer<Component> owner;
     String title, filtersString;
     std::unique_ptr<CustomComponentHolder> customComponent;
-    String initialPath, returnedString, defaultExtension;
+    String initialPath, returnedString;
 
     WaitableEvent threadHasReference;
     CriticalSection deletingDialog;
@@ -167,8 +167,144 @@ private:
     Atomic<HWND> nativeDialogRef;
     Atomic<int>  shouldCancel;
 
+    bool showDialog (IFileDialog& dialog, bool async) const
+    {
+        FILEOPENDIALOGOPTIONS flags = {};
+
+        if (FAILED (dialog.GetOptions (&flags)))
+            return false;
+
+        const auto setBit = [] (FILEOPENDIALOGOPTIONS& field, bool value, FILEOPENDIALOGOPTIONS option)
+        {
+            if (value)
+                field |= option;
+            else
+                field &= ~option;
+        };
+
+        setBit (flags, selectsDirectories,         FOS_PICKFOLDERS);
+        setBit (flags, warnAboutOverwrite,         FOS_OVERWRITEPROMPT);
+        setBit (flags, selectMultiple,             FOS_ALLOWMULTISELECT);
+        setBit (flags, customComponent != nullptr, FOS_FORCEPREVIEWPANEON);
+
+        if (FAILED (dialog.SetOptions (flags)) || FAILED (dialog.SetTitle (title.toUTF16())))
+            return false;
+
+        PIDLIST_ABSOLUTE pidl = {};
+
+        if (FAILED (SHParseDisplayName (initialPath.toWideCharPointer(), nullptr, &pidl, SFGAO_FOLDER, nullptr)))
+            return false;
+
+        const auto item = [&]
+        {
+            ComSmartPtr<IShellItem> ptr;
+            SHCreateShellItem (nullptr, nullptr, pidl, ptr.resetAndGetPointerAddress());
+            return ptr;
+        }();
+
+        if (item == nullptr || FAILED (dialog.SetFolder (item)))
+            return false;
+
+        String filename (files.getData());
+
+        if (FAILED (dialog.SetFileName (filename.toWideCharPointer())))
+            return false;
+
+        auto extension = getDefaultFileExtension (filename);
+
+        if (extension.isNotEmpty() && FAILED (dialog.SetDefaultExtension (extension.toWideCharPointer())))
+            return false;
+
+        const COMDLG_FILTERSPEC spec[] { { filtersString.toWideCharPointer(), filtersString.toWideCharPointer() } };
+
+        if (! selectsDirectories && FAILED (dialog.SetFileTypes (numElementsInArray (spec), spec)))
+            return false;
+
+        return dialog.Show (static_cast<HWND> (async ? nullptr : owner->getWindowHandle())) == S_OK;
+    }
+
     //==============================================================================
-    Array<URL> openDialog (bool async)
+    Array<URL> openDialogVistaAndUp (bool async)
+    {
+        const auto getUrl = [] (IShellItem& item)
+        {
+            struct Free
+            {
+                void operator() (LPWSTR ptr) const noexcept { CoTaskMemFree (ptr); }
+            };
+
+            LPWSTR ptr = nullptr;
+            item.GetDisplayName (SIGDN_URL, &ptr);
+            return std::unique_ptr<WCHAR, Free> { ptr };
+        };
+
+        if (isSave)
+        {
+            const auto dialog = [&]
+            {
+                ComSmartPtr<IFileDialog> ptr;
+                ptr.CoCreateInstance (CLSID_FileSaveDialog, CLSCTX_INPROC_SERVER);
+                return ptr;
+            }();
+
+            if (dialog == nullptr)
+                return {};
+
+            showDialog (*dialog, async);
+
+            const auto item = [&]
+            {
+                ComSmartPtr<IShellItem> ptr;
+                dialog->GetResult (ptr.resetAndGetPointerAddress());
+                return ptr;
+            }();
+
+            if (item == nullptr)
+                return {};
+
+            return { URL (String (getUrl (*item).get())) };
+        }
+
+        const auto dialog = [&]
+        {
+            ComSmartPtr<IFileOpenDialog> ptr;
+            ptr.CoCreateInstance (CLSID_FileOpenDialog, CLSCTX_INPROC_SERVER);
+            return ptr;
+        }();
+
+        if (dialog == nullptr)
+            return {};
+
+        showDialog (*dialog, async);
+
+        const auto items = [&]
+        {
+            ComSmartPtr<IShellItemArray> ptr;
+            dialog->GetResults (ptr.resetAndGetPointerAddress());
+            return ptr;
+        }();
+
+        if (items == nullptr)
+            return {};
+
+        Array<URL> result;
+
+        DWORD numItems = 0;
+        items->GetCount (&numItems);
+
+        for (DWORD i = 0; i < numItems; ++i)
+        {
+            ComSmartPtr<IShellItem> scope;
+            items->GetItemAt (i, scope.resetAndGetPointerAddress());
+
+            if (scope != nullptr)
+                result.add (String (getUrl (*scope).get()));
+        }
+
+        return result;
+    }
+
+    Array<URL> openDialogPreVista (bool async)
     {
         Array<URL> selections;
 
@@ -213,7 +349,7 @@ private:
         {
             OPENFILENAMEW of = {};
 
-            #ifdef OPENFILENAME_SIZE_VERSION_400W
+           #ifdef OPENFILENAME_SIZE_VERSION_400W
             of.lStructSize = OPENFILENAME_SIZE_VERSION_400W;
            #else
             of.lStructSize = sizeof (of);
@@ -231,16 +367,10 @@ private:
 
             if (isSave)
             {
-                StringArray tokens;
-                tokens.addTokens (filtersString, ";,", "\"'");
-                tokens.trim();
-                tokens.removeEmptyStrings();
+                auto extension = getDefaultFileExtension (files.getData());
 
-                if (tokens.size() == 1 && tokens[0].removeCharacters ("*.").isNotEmpty())
-                {
-                    defaultExtension = tokens[0].fromFirstOccurrenceOf (".", false, false);
-                    of.lpstrDefExt = defaultExtension.toWideCharPointer();
-                }
+                if (extension.isNotEmpty())
+                    of.lpstrDefExt = extension.toWideCharPointer();
 
                 if (! GetSaveFileName (&of))
                     return {};
@@ -251,7 +381,7 @@ private:
                     return {};
             }
 
-            if (selectMultiple && of.nFileOffset > 0 && files [of.nFileOffset - 1] == 0)
+            if (selectMultiple && of.nFileOffset > 0 && files[of.nFileOffset - 1] == 0)
             {
                 const WCHAR* filename = files + of.nFileOffset;
 
@@ -267,9 +397,25 @@ private:
             }
         }
 
-        getNativeDialogList().removeValue (this);
-
         return selections;
+    }
+
+    Array<URL> openDialog (bool async)
+    {
+        struct Remover
+        {
+            explicit Remover (Win32NativeFileChooser& chooser) : item (chooser) {}
+            ~Remover() { getNativeDialogList().removeValue (&item); }
+
+            Win32NativeFileChooser& item;
+        };
+
+        const Remover remover (*this);
+
+        if (SystemStats::getOperatingSystemType() >= SystemStats::WinVista)
+            return openDialogVistaAndUp (async);
+
+        return openDialogPreVista (async);
     }
 
     void run() override
@@ -278,7 +424,7 @@ private:
         Ptr safeThis (this);
         threadHasReference.signal();
 
-        Array<URL> r = openDialog (true);
+        auto r = openDialog (true);
         MessageManager::callAsync ([safeThis, r]
         {
             safeThis->results = r;
@@ -328,6 +474,23 @@ private:
             ofFlags |= OFN_ENABLEHOOK;
 
         return ofFlags;
+    }
+
+    String getDefaultFileExtension (const String& filename) const
+    {
+        auto extension = filename.fromLastOccurrenceOf (".", false, false);
+
+        if (extension.isEmpty())
+        {
+            auto tokens = StringArray::fromTokens (filtersString, ";,", "\"'");
+            tokens.trim();
+            tokens.removeEmptyStrings();
+
+            if (tokens.size() == 1 && tokens[0].removeCharacters ("*.").isNotEmpty())
+                extension = tokens[0].fromFirstOccurrenceOf (".", false, false);
+        }
+
+        return extension;
     }
 
     //==============================================================================
@@ -414,7 +577,7 @@ private:
 
         if (customComponent != nullptr && shouldCancel.get() == 0)
         {
-            if (FilePreviewComponent* comp = dynamic_cast<FilePreviewComponent*> (customComponent->getChildComponent(0)))
+            if (FilePreviewComponent* comp = dynamic_cast<FilePreviewComponent*> (customComponent->getChildComponent (0)))
             {
                 WCHAR path [MAX_PATH * 2] = { 0 };
                 CommDlg_OpenSave_GetFilePath (hdlg, (LPARAM) &path, MAX_PATH);
@@ -514,7 +677,6 @@ class FileChooser::Native     : public Component,
                                 public FileChooser::Pimpl
 {
 public:
-
     Native (FileChooser& fileChooser, int flags, FilePreviewComponent* previewComp)
         : owner (fileChooser),
           nativeFileChooser (new Win32NativeFileChooser (this, flags, previewComp, fileChooser.startingFile,
@@ -531,7 +693,7 @@ public:
         addToDesktop (0);
     }
 
-    ~Native()
+    ~Native() override
     {
         exitModalState (0);
         nativeFileChooser->cancel();
