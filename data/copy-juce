@@ -17,6 +17,7 @@ done
 
 find $CARLA_MODULES_DIR -name juce_module_info -delete
 rm -rf $CARLA_MODULES_DIR/juce_*/native/java/
+rm -rf $CARLA_MODULES_DIR/juce_*/native/javacore/
 rm -rf $CARLA_MODULES_DIR/juce_*/native/javaopt/
 rm -rf $CARLA_MODULES_DIR/juce_*/native/oboe/
 

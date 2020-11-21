@@ -19,6 +19,8 @@
 
 #define CARLA_PLUGIN_EXPORT
 
+#include "carla-native-plugin.cpp"
+
 // -------------------------------------------------------------------------------------------------------------------
 // Include utils code first
 
