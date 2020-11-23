@@ -95,8 +95,8 @@ int main(void)
     const CarlaHostHandle patchbay_host_handle = carla_create_native_plugin_host_handle(patchbay, patchbay_handle);
     assert(patchbay_host_handle);
 
-    carla_set_engine_option(rack_host_handle, ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2, utils_folder);
-    carla_set_engine_option(patchbay_host_handle, ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2, utils_folder);
+    carla_set_engine_option(rack_host_handle, ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2, lib_folder);
+    carla_set_engine_option(patchbay_host_handle, ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2, lib_folder);
 
     uint32_t plugins_count = 0;
     const NativePluginDescriptor* const plugin_descriptors = carla_get_native_plugins_data(&plugins_count);
@@ -121,7 +121,7 @@ int main(void)
     }
 #endif
 
-    plugins_count = carla_get_cached_plugin_count(PLUGIN_LV2, utils_folder);
+    plugins_count = carla_get_cached_plugin_count(PLUGIN_LV2, lib_folder);
     assert(plugins_count != 0);
 
     for (uint32_t i=0; i<plugins_count; ++i)
