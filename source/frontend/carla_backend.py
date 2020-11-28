@@ -321,6 +321,10 @@ PARAMETER_USES_CUSTOM_TEXT = 0x400
 # Parameter can be turned into a CV control.
 PARAMETER_CAN_BE_CV_CONTROLLED = 0x800
 
+# Parameter should not be saved as part of the project/session.
+# @note only valid for parameter inputs.
+PARAMETER_IS_NOT_SAVED = 0x1000
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Mapped Parameter Flags
 # Various flags for parameter mappings.

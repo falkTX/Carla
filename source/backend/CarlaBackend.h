@@ -341,6 +341,12 @@ static const uint PARAMETER_USES_CUSTOM_TEXT = 0x400;
  */
 static const uint PARAMETER_CAN_BE_CV_CONTROLLED = 0x800;
 
+/*!
+ * Parameter should not be saved as part of the project/session.
+ * @note only valid for parameter inputs.
+ */
+static const uint PARAMETER_IS_NOT_SAVED = 0x1000;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------

@@ -1512,6 +1512,72 @@ public:
         if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
             return CarlaPlugin::setCustomData(type, key, value, sendGui);
 
+        // See if this key is from a parameter exposed by carla, apply value if yes
+        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
+        {
+            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
+
+            if (std::strcmp(rdfParam.URI, key) == 0)
+            {
+                uint32_t parameterId = UINT32_MAX;
+                const int32_t rindex = static_cast<int32_t>(fRdfDescriptor->PortCount + i);
+
+                switch (rdfParam.Type)
+                {
+                case LV2_PARAMETER_BOOL:
+                case LV2_PARAMETER_INT:
+                // case LV2_PARAMETER_LONG:
+                case LV2_PARAMETER_FLOAT:
+                case LV2_PARAMETER_DOUBLE:
+                    for (uint32_t j=0; j < pData->param.count; ++j)
+                    {
+                        if (pData->param.data[j].rindex == rindex)
+                        {
+                            parameterId = j;
+                            break;
+                        }
+                    }
+                    break;
+                }
+
+                if (parameterId == UINT32_MAX)
+                    break;
+
+                std::vector<uint8_t> chunk(carla_getChunkFromBase64String(value));
+                CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+                const uint8_t* const valueptr = chunk.data();
+#else
+                const uint8_t* const valueptr = &chunk.front();
+#endif
+                float rvalue;
+
+                switch (rdfParam.Type)
+                {
+                case LV2_PARAMETER_BOOL:
+                    rvalue = *(const int32_t*)valueptr != 0 ? 1.0f : 0.0f;
+                    break;
+                case LV2_PARAMETER_INT:
+                    rvalue = static_cast<float>(*(const int32_t*)valueptr);
+                    break;
+                case LV2_PARAMETER_FLOAT:
+                    rvalue = *(const float*)valueptr;
+                    break;
+                case LV2_PARAMETER_DOUBLE:
+                    rvalue = static_cast<float>(*(const double*)valueptr);
+                    break;
+                default:
+                    // making compilers happy
+                    rvalue = pData->param.ranges[parameterId].def;
+                    break;
+                }
+
+                fParamBuffers[parameterId] = pData->param.getFixedValue(parameterId, rvalue);
+                break;
+            }
+        }
+
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
@@ -2965,6 +3031,7 @@ public:
                 pData->param.data[j].type   = PARAMETER_INPUT;
                 pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                pData->param.data[j].hints |= PARAMETER_IS_NOT_SAVED;
                 needsCtrlIn = true;
             }
             else

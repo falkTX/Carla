@@ -48,9 +48,9 @@ const ushort kPluginMaxMidiEvents = 512;
 // -----------------------------------------------------------------------
 // Extra parameter hints, hidden from backend
 
-const uint PARAMETER_MAPPED_RANGES_SET = 0x1000;
-const uint PARAMETER_IS_STRICT_BOUNDS  = 0x2000;
-const uint PARAMETER_IS_TRIGGER        = 0x4000;
+const uint PARAMETER_MAPPED_RANGES_SET = 0x10000;
+const uint PARAMETER_IS_STRICT_BOUNDS  = 0x20000;
+const uint PARAMETER_IS_TRIGGER        = 0x40000;
 
 // -----------------------------------------------------------------------
 // Extra plugin hints, hidden from backend

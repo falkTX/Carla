@@ -604,6 +604,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
         if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
+        if (paramData.hints & PARAMETER_IS_NOT_SAVED)
+            continue;
 
         const bool dummy = paramData.type != PARAMETER_INPUT || usingChunk;
 
@@ -750,6 +752,9 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     {
         for (uint32_t i=0; i < pData->param.count; ++i)
         {
+            if (pData->param.data[i].hints & PARAMETER_IS_NOT_SAVED)
+                continue;
+
             if (getParameterSymbol(i, strBuf))
             {
                 ParamSymbol* const paramSymbol(new ParamSymbol(i, strBuf));
