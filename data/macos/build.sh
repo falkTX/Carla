@@ -5,8 +5,7 @@
 
 set -e
 
-VERSION="2.3.0-alpha1"
-PKG_FOLDER="Carla_${VERSION}-macos"
+VERSION="2.3.0-alpha3"
 
 # ------------------------------------------------------------------------------------
 # cd to correct path
@@ -22,10 +21,17 @@ source data/macos/common.env
 
 if [ $(uname -r | cut -d '.' -f 1) -lt 16 ]; then
   export MACOS_VERSION_MIN="10.8"
+  PKG_SUFFIX="intel-10.8"
 else
   export MACOS_VERSION_MIN="10.12"
-  PKG_FOLDER="${PKG_FOLDER}-10.12"
+  if [ "${MACOS_UNIVERSAL}" -eq 1 ]; then
+    PKG_SUFFIX="universal"
+  else
+    PKG_SUFFIX="intel-10.12"
+  fi
 fi
+
+PKG_FOLDER="Carla_${VERSION}-macOS-${PKG_SUFFIX}"
 
 export MACOS="true"
 export USING_JUCE="true"

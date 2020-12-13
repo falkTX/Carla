@@ -566,6 +566,8 @@ if not CWD:
 # make it work with cxfreeze
 if os.path.isfile(CWD):
     CWD = os.path.dirname(CWD)
+    if CWD.endswith("/lib"):
+        CWD = CWD.rsplit("/lib",1)[0]
     CXFREEZE = True
 else:
     CXFREEZE = False

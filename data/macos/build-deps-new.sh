@@ -368,7 +368,7 @@ export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export PKG_CONFIG=${TARGETDIR}/carla64/bin/pkg-config
 
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64 -mmacosx-version-min=10.12"
+export CFLAGS="-O3 -mtune=generic -msse -msse2 -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -mmacosx-version-min=10.12"
 export LDFLAGS="-L${PREFIX}/lib -stdlib=libc++"
 
 if [ "${MACOS_UNIVERSAL}" -eq 1 ]; then
@@ -503,7 +503,7 @@ fi
 if [ ! -f sip-${SIP_VERSION}/build-done ]; then
   cd sip-${SIP_VERSION}
   python3 configure.py --sip-module PyQt5.sip
-  make ${MAKE_ARGS}
+  make ${MAKE_ARGS} CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LIBS="${LDFLAGS}"
   make install
   touch build-done
   cd ..
@@ -621,7 +621,9 @@ fi
 
 if [ ! -f cx_Freeze-${CXFREEZE_VERSION}/build-done ]; then
   cd cx_Freeze-${CXFREEZE_VERSION}
+  sed -i -e 's/, use_builtin_types=False//' cx_Freeze/macdist.py
   sed -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
+  sed -i -e 's/extra_postargs=extraArgs,/extra_postargs=extraArgs+os.getenv("LDFLAGS").split(),/' setup.py
   python3 setup.py build
   python3 setup.py install --prefix=${PREFIX}
   touch build-done
