@@ -26,6 +26,7 @@ ifneq ($(MACOS),true)
 WINE_32BIT_FLAGS += -I/usr/include/wine/wine/windows
 WINE_32BIT_FLAGS += -I/usr/include/wine-development/windows
 WINE_32BIT_FLAGS += -I/opt/wine-devel/include/wine/windows
+WINE_32BIT_FLAGS += -L/usr/lib/wine
 WINE_32BIT_FLAGS += -L/usr/lib32/wine
 WINE_32BIT_FLAGS += -L/usr/lib/i386-linux-gnu/wine
 WINE_32BIT_FLAGS += -L/usr/lib/i386-linux-gnu/wine-development
