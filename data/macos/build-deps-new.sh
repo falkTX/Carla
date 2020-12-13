@@ -548,6 +548,70 @@ if [ ! -f pyliblo-${PYLIBLO_VERSION}/build-done ]; then
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
+# setuptools-scm
+
+if [ ! -d setuptools_scm-${SETUPTOOLS_SCM_VERSION} ]; then
+  /opt/local/bin/aria2c https://files.pythonhosted.org/packages/ed/b6/979bfa7b81878b2b4475dde092aac517e7f25dd33661796ec35664907b31/setuptools_scm-${SETUPTOOLS_SCM_VERSION}.tar.gz
+  tar -xf setuptools_scm-${SETUPTOOLS_SCM_VERSION}.tar.gz
+fi
+
+if [ ! -f setuptools_scm-${SETUPTOOLS_SCM_VERSION}/build-done ]; then
+  cd setuptools_scm-${SETUPTOOLS_SCM_VERSION}
+  python3 setup.py build
+  python3 setup.py install --prefix=${PREFIX}
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# toml
+
+if [ ! -d toml-${TOML_VERSION} ]; then
+  /opt/local/bin/aria2c https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-${TOML_VERSION}.tar.gz
+  tar -xf toml-${TOML_VERSION}.tar.gz
+fi
+
+if [ ! -f toml-${TOML_VERSION}/build-done ]; then
+  cd toml-${TOML_VERSION}
+  python3 setup.py build
+  python3 setup.py install --prefix=${PREFIX}
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# zipp
+
+if [ ! -d zipp-${ZIPP_VERSION} ]; then
+  /opt/local/bin/aria2c https://files.pythonhosted.org/packages/ce/b0/757db659e8b91cb3ea47d90350d7735817fe1df36086afc77c1c4610d559/zipp-${ZIPP_VERSION}.tar.gz
+  tar -xf zipp-${ZIPP_VERSION}.tar.gz
+fi
+
+if [ ! -f zipp-${ZIPP_VERSION}/build-done ]; then
+  cd zipp-${ZIPP_VERSION}
+  python3 setup.py build
+  python3 setup.py install --prefix=${PREFIX}
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# importlib_metadata
+
+if [ ! -d importlib_metadata-${IMPORTLIB_METADATA_VERSION} ]; then
+  /opt/local/bin/aria2c https://files.pythonhosted.org/packages/3f/a8/16dc098b0addd1c20719c18a86e985be851b3ec1e103e703297169bb22cc/importlib_metadata-${IMPORTLIB_METADATA_VERSION}.tar.gz
+  tar -xf importlib_metadata-${IMPORTLIB_METADATA_VERSION}.tar.gz
+fi
+
+if [ ! -f importlib_metadata-${IMPORTLIB_METADATA_VERSION}/build-done ]; then
+  cd importlib_metadata-${IMPORTLIB_METADATA_VERSION}
+  python3 setup.py build
+  python3 setup.py install --prefix=${PREFIX}
+  touch build-done
+  cd ..
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
 # cxfreeze
 
 if [ ! -d cx_Freeze-${CXFREEZE_VERSION} ]; then
