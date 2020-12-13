@@ -69,12 +69,21 @@ export PREFIX=${TARGETDIR}/carla${ARCH}
 export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
-export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m${ARCH} -mmacosx-version-min=10.12"
-export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden -std=gnu++11 -stdlib=libc++"
+export CFLAGS="-O3 -mtune=generic -msse -msse2 -fvisibility=hidden -fdata-sections -ffunction-sections"
+export CFLAGS="${CFLAGS} -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -mmacosx-version-min=10.12"
 
 export LDFLAGS="-fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs"
-export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib -m${ARCH} -stdlib=libc++"
+export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib -stdlib=libc++"
+
+if [ "${MACOS_UNIVERSAL}" -eq 1 ]; then
+    export CFLAGS="${CFLAGS} -arch x86_64 -arch arm64 -Wno-unused-command-line-argument"
+    export LDFLAGS="${LDFLAGS} -arch x86_64 -arch arm64"
+else
+    export CFLAGS="${CFLAGS} -mfpmath=sse -m${ARCH}"
+    export LDFLAGS="${LDFLAGS} -m${ARCH}"
+fi
+
+export CXXFLAGS="${CFLAGS} -fvisibility-inlines-hidden -std=gnu++11 -stdlib=libc++"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # pkgconfig
@@ -318,11 +327,17 @@ if [ ! -f fftw-${FFTW3_VERSION}/build-done ]; then
   export CFLAGS="${CFLAGS} -ffast-math"
   export CXXFLAGS="${CXXFLAGS} -ffast-math"
   cd fftw-${FFTW3_VERSION}
-  ./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=${PREFIX}
+  if [ "${MACOS_UNIVERSAL}" -eq 0 ]; then
+      FFTW_EXTRAFLAGS="--enable-sse2"
+  fi
+  ./configure --enable-static ${FFTW_EXTRAFLAGS} --disable-shared --disable-debug --prefix=${PREFIX}
   make
   make install
   make clean
-  ./configure --enable-static --enable-sse --enable-sse2 --enable-single --disable-shared --disable-debug --prefix=${PREFIX}
+  if [ "${MACOS_UNIVERSAL}" -eq 0 ]; then
+      FFTW_EXTRAFLAGS="${FFTW_EXTRAFLAGS} --enable-sse"
+  fi
+  ./configure --enable-static ${FFTW_EXTRAFLAGS} --enable-single --disable-shared --disable-debug --prefix=${PREFIX}
   make
   make install
   make clean
@@ -353,9 +368,18 @@ export PATH=${PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export PKG_CONFIG=${TARGETDIR}/carla64/bin/pkg-config
 
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64 -mmacosx-version-min=10.12"
+export CFLAGS="-O3 -mtune=generic -msse -msse2 -fPIC -DPIC -DNDEBUG -I${PREFIX}/include -m64 -mmacosx-version-min=10.12"
+export LDFLAGS="-L${PREFIX}/lib -stdlib=libc++"
+
+if [ "${MACOS_UNIVERSAL}" -eq 1 ]; then
+    export CFLAGS="${CFLAGS} -arch x86_64 -arch arm64 -Wno-unused-command-line-argument"
+    export LDFLAGS="${LDFLAGS} -arch x86_64 -arch arm64"
+else
+    export CFLAGS="${CFLAGS} -mfpmath=sse -m${ARCH}"
+    export LDFLAGS="${LDFLAGS} -m${ARCH}"
+fi
+
 export CXXFLAGS="${CFLAGS} -std=gnu++11 -stdlib=libc++"
-export LDFLAGS="-L${PREFIX}/lib -m64 -stdlib=libc++"
 
 export MAKE=/usr/bin/make
 
@@ -374,11 +398,18 @@ fi
 if [ ! -f qtbase-everywhere-src-${QT5_VERSION}/build-done ]; then
   cd qtbase-everywhere-src-${QT5_VERSION}
   if [ ! -f configured ]; then
+    sed -i -e "s/QT_MAC_SDK_VERSION_MIN = 10.13/QT_MAC_SDK_VERSION_MIN = 10.12/" mkspecs/common/macx.conf
+    if [ "${MACOS_UNIVERSAL}" -eq 1 ]; then
+      sed -i -e "s/QMAKE_APPLE_DEVICE_ARCHS = x86_64/QMAKE_APPLE_DEVICE_ARCHS = arm64 x86_64/" mkspecs/common/macx.conf
+      QT5_EXTRAFLAGS="-no-sse2"
+    else
+      QT5_EXTRAFLAGS="-sse2"
+    fi
     chmod +x configure
     ./configure -release -shared -opensource -confirm-license -platform macx-clang -framework \
                 -prefix ${PREFIX} -plugindir ${PREFIX}/lib/qt5/plugins -headerdir ${PREFIX}/include/qt5 \
                 -pkg-config -force-pkg-config -strip \
-                -sse2 -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-avx512 \
+                ${QT5_EXTRAFLAGS} -no-sse3 -no-ssse3 -no-sse4.1 -no-sse4.2 -no-avx -no-avx2 -no-avx512 \
                 -no-mips_dsp -no-mips_dspr2 \
                 -no-pch -pkg-config \
                 -make libs -make tools \
@@ -397,7 +428,7 @@ if [ ! -f qtbase-everywhere-src-${QT5_VERSION}/build-done ]; then
     touch configured
   fi
   make ${MAKE_ARGS}
-  make install 
+  make install
   ln -s ${PREFIX}/lib/QtCore.framework/Headers    ${PREFIX}/include/qt5/QtCore
   ln -s ${PREFIX}/lib/QtGui.framework/Headers     ${PREFIX}/include/qt5/QtGui
   ln -s ${PREFIX}/lib/QtWidgets.framework/Headers ${PREFIX}/include/qt5/QtWidgets
@@ -451,8 +482,10 @@ fi
 
 if [ ! -f Python-${PYTHON_VERSION}/build-done ]; then
   cd Python-${PYTHON_VERSION}
-  sed -i -e "s/#zlib zlibmodule.c/zlib zlibmodule.c/" Modules/Setup.dist
-  ./configure --prefix=${PREFIX} --enable-optimizations --enable-shared
+  if [ "${MACOS_UNIVERSAL}" -ne 1 ]; then
+    sed -i -e "s/#zlib zlibmodule.c/zlib zlibmodule.c/" Modules/Setup.dist
+  fi
+  ./configure --prefix=${PREFIX} ${PYTHON_EXTRAFLAGS} --enable-optimizations --enable-shared
   make
   make install
   touch build-done

@@ -11,7 +11,6 @@ AR  ?= ar
 CC  ?= gcc
 CXX ?= g++
 
-PKG_CONFIG ?= pkg-config
 WINECC ?= winegcc
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -64,6 +63,42 @@ endif # HAIKU
 endif # BSD
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Auto-detect the processor
+
+TARGET_PROCESSOR := $(firstword $(subst -, ,$(TARGET_MACHINE)))
+
+ifneq (,$(filter i%86,$(TARGET_PROCESSOR)))
+CPU_I386=true
+CPU_I386_OR_X86_64=true
+endif
+ifneq (,$(filter x86_64,$(TARGET_PROCESSOR)))
+CPU_X86_64=true
+CPU_I386_OR_X86_64=true
+endif
+ifneq (,$(filter arm%,$(TARGET_PROCESSOR)))
+CPU_ARM=true
+CPU_ARM_OR_AARCH64=true
+endif
+ifneq (,$(filter arm64%,$(TARGET_PROCESSOR)))
+CPU_ARM64=true
+CPU_ARM_OR_AARCH64=true
+endif
+ifneq (,$(filter aarch64%,$(TARGET_PROCESSOR)))
+CPU_AARCH64=true
+CPU_ARM_OR_AARCH64=true
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Set PKG_CONFIG (can be overridden by environment variable)
+
+ifeq ($(WIN32),true)
+# Build statically on Windows by default
+PKG_CONFIG ?= pkg-config --static
+else
+PKG_CONFIG ?= pkg-config
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Set LINUX_OR_MACOS
 
 ifeq ($(LINUX),true)
@@ -75,14 +110,20 @@ LINUX_OR_MACOS=true
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Set MACOS_OR_WIN32
+# Set MACOS_OR_WIN32 and HAIKU_OR_MACOS_OR_WINDOWS
+
+ifeq ($(HAIKU),true)
+HAIKU_OR_MACOS_OR_WIN32=true
+endif
 
 ifeq ($(MACOS),true)
 MACOS_OR_WIN32=true
+HAIKU_OR_MACOS_OR_WIN32=true
 endif
 
 ifeq ($(WIN32),true)
 MACOS_OR_WIN32=true
+HAIKU_OR_MACOS_OR_WIN32=true
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -108,7 +149,17 @@ endif
 # Set build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP -fno-common
-BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
+BASE_OPTS  = -O3 -ffast-math -fdata-sections -ffunction-sections
+
+ifeq ($(CPU_I386_OR_X86_64),true)
+BASE_OPTS += -mtune=generic -msse -msse2 -mfpmath=sse
+endif
+
+ifeq ($(CPU_ARM),true)
+ifneq ($(CPU_ARM64),true)
+BASE_OPTS += -mfpu=neon-vfpv4 -mfloat-abi=hard
+endif
+endif
 
 ifeq ($(MACOS),true)
 # MacOS linker flags

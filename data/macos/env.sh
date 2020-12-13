@@ -13,10 +13,20 @@ fi
 
 export CC=clang
 export CXX=clang++
-export CFLAGS="-I${TARGETDIR}/carla64/include -m64 -mmacosx-version-min=${MACOS_VERSION_MIN}"
-export CXXFLAGS="${CFLAGS} -stdlib=libc++"
-export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64 -stdlib=libc++"
+export CFLAGS="-I${TARGETDIR}/carla64/include -mmacosx-version-min=${MACOS_VERSION_MIN}"
+export CFLAGS="${CFLAGS} -mtune=generic -msse -msse2"
+export LDFLAGS="-L${TARGETDIR}/carla64/lib -stdlib=libc++"
 unset CPPFLAGS
+
+if [ "${MACOS_UNIVERSAL}" -eq 1 ]; then
+    export CFLAGS="${CFLAGS} -arch x86_64 -arch arm64"
+    export LDFLAGS="${LDFLAGS} -arch x86_64 -arch arm64"
+else
+    export CFLAGS="${CFLAGS} -m${ARCH}"
+    export LDFLAGS="${LDFLAGS} -m${ARCH}"
+fi
+
+export CXXFLAGS="${CFLAGS} -stdlib=libc++ -Wno-unknown-pragmas -Wno-unused-private-field -Werror=auto-var-id"
 
 export MACOS="true"
 

@@ -38,9 +38,19 @@ unset CPPFLAGS
 ##############################################################################################
 # Complete 64bit build
 
-export CFLAGS="-I${TARGETDIR}/carla64/include -m64 -mmacosx-version-min=${MACOS_VERSION_MIN}"
+export CFLAGS="-I${TARGETDIR}/carla64/include -mmacosx-version-min=${MACOS_VERSION_MIN}"
+export CFLAGS="${CFLAGS} -mtune=generic -msse -msse2"
+export LDFLAGS="-L${TARGETDIR}/carla64/lib -mmacosx-version-min=${MACOS_VERSION_MIN} -stdlib=libc++"
+
+if [ "${MACOS_UNIVERSAL}" -eq 1 ]; then
+    export CFLAGS="${CFLAGS} -arch x86_64 -arch arm64"
+    export LDFLAGS="${LDFLAGS} -arch x86_64 -arch arm64"
+else
+    export CFLAGS="${CFLAGS} -m${ARCH}"
+    export LDFLAGS="${LDFLAGS} -m${ARCH}"
+fi
+
 export CXXFLAGS="${CFLAGS} -stdlib=libc++ -Wno-unknown-pragmas -Wno-unused-private-field -Werror=auto-var-id"
-export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64 -mmacosx-version-min=${MACOS_VERSION_MIN} -stdlib=libc++"
 
 export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=${TARGETDIR}/carla/lib/pkgconfig:${TARGETDIR}/carla64/lib/pkgconfig
