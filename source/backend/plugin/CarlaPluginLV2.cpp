@@ -3644,12 +3644,7 @@ public:
                 }
 
                 if (doPostRt)
-                    pData->postponeRtEvent(kPluginPostRtEventParameterChange,
-                                           true,
-                                           static_cast<int32_t>(k),
-                                           0,
-                                           0,
-                                           fParamBuffers[k]);
+                    pData->postponeParameterChangeRtEvent(true, static_cast<int32_t>(k), fParamBuffers[k]);
             }
 
             for (uint32_t i=0; i < fEventsIn.count; ++i)
@@ -4166,20 +4161,11 @@ public:
 
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn,
-                                               true,
-                                               event.channel,
-                                               midiData[1],
-                                               midiData[2],
-                                               0.0f);
+                        pData->postponeNoteOnRtEvent(true, event.channel, midiData[1], midiData[2]);
                     }
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff,
-                                               true,
-                                               event.channel,
-                                               midiData[1],
-                                               0, 0.0f);
+                        pData->postponeNoteOffRtEvent(true, event.channel, midiData[1]);
                     }
                 } break;
                 } // switch (event.type)
@@ -4461,11 +4447,7 @@ public:
                 if (carla_isNotEqual(fParamBuffers[k], pData->param.ranges[k].def))
                 {
                     fParamBuffers[k] = pData->param.ranges[k].def;
-                    pData->postponeRtEvent(kPluginPostRtEventParameterChange,
-                                           true,
-                                           static_cast<int32_t>(k),
-                                           1, 0,
-                                           fParamBuffers[k]);
+                    pData->postponeParameterChangeRtEvent(true, static_cast<int32_t>(k), fParamBuffers[k]);
                 }
             }
         }
@@ -4743,12 +4725,7 @@ public:
                 continue;
 
             fParamBuffers[k] = sampleRatef;
-            pData->postponeRtEvent(kPluginPostRtEventParameterChange,
-                                   true,
-                                   static_cast<int32_t>(k),
-                                   0,
-                                   0,
-                                   fParamBuffers[k]);
+            pData->postponeParameterChangeRtEvent(true, static_cast<int32_t>(k), fParamBuffers[k]);
             break;
         }
 
@@ -4762,12 +4739,7 @@ public:
             if (pData->param.data[k].type == PARAMETER_INPUT && pData->param.special[k] == PARAMETER_SPECIAL_FREEWHEEL)
             {
                 fParamBuffers[k] = isOffline ? pData->param.ranges[k].max : pData->param.ranges[k].min;
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange,
-                                       true,
-                                       static_cast<int32_t>(k),
-                                       0,
-                                       0,
-                                       fParamBuffers[k]);
+                pData->postponeParameterChangeRtEvent(true, static_cast<int32_t>(k), fParamBuffers[k]);
                 break;
             }
         }

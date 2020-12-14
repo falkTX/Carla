@@ -2110,10 +2110,7 @@ public:
 
                                         if (event.channel == pData->ctrlChannel)
                                         {
-                                            pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange,
-                                                                   true,
-                                                                   static_cast<int32_t>(k),
-                                                                   0, 0, 0.0f);
+                                            pData->postponeMidiProgramChangeRtEvent(true, k);
                                         }
 
                                         break;
@@ -2224,20 +2221,11 @@ public:
 
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn,
-                                               true,
-                                               event.channel,
-                                               midiEvent.data[1],
-                                               midiEvent.data[2],
-                                               0.0f);
+                        pData->postponeNoteOnRtEvent(true, event.channel, midiEvent.data[1], midiEvent.data[2]);
                     }
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff,
-                                               true,
-                                               event.channel,
-                                               midiEvent.data[1],
-                                               0, 0.0f);
+                        pData->postponeNoteOffRtEvent(true, event.channel, midiEvent.data[1]);
                     }
                 } break;
                 } // switch (event.type)

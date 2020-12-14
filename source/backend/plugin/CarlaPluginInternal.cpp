@@ -653,7 +653,7 @@ CarlaPlugin::ProtectedData::PostRtEvents::~PostRtEvents() noexcept
 
 void CarlaPlugin::ProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e) noexcept
 {
-    CARLA_SAFE_ASSERT_INT2_RETURN(dataPendingMutex.tryLock(), e.type, e.value1,);
+    CARLA_SAFE_ASSERT_INT_RETURN(dataPendingMutex.tryLock(), e.type,);
     dataPendingRT.append(e);
     dataPendingMutex.unlock();
 }
@@ -873,16 +873,66 @@ void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEvent& rtEven
     postRtEvents.appendRT(rtEvent);
 }
 
-void CarlaPlugin::ProtectedData::postponeRtEvent(const PluginPostRtEventType type,
-                                                 const bool sendCallbackLater,
-                                                 const int32_t value1,
-                                                 const int32_t value2,
-                                                 const int32_t value3,
-                                                 const float valuef) noexcept
+void CarlaPlugin::ProtectedData::postponeParameterChangeRtEvent(const bool sendCallbackLater,
+                                                                const int32_t index,
+                                                                const float value) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
+    PluginPostRtEvent rtEvent = { kPluginPostRtEventParameterChange, sendCallbackLater, {} };
+    rtEvent.parameter.index = index;
+    rtEvent.parameter.value = value;
 
-    PluginPostRtEvent rtEvent = { type, sendCallbackLater, value1, value2, value3, valuef };
+    postRtEvents.appendRT(rtEvent);
+}
+
+void CarlaPlugin::ProtectedData::postponeProgramChangeRtEvent(const bool sendCallbackLater,
+                                                              const uint32_t index) noexcept
+{
+    PluginPostRtEvent rtEvent = { kPluginPostRtEventProgramChange, sendCallbackLater, {} };
+    rtEvent.program.index = index;
+
+    postRtEvents.appendRT(rtEvent);
+}
+
+void CarlaPlugin::ProtectedData::postponeMidiProgramChangeRtEvent(const bool sendCallbackLater,
+                                                                  const uint32_t index) noexcept
+{
+    PluginPostRtEvent rtEvent = { kPluginPostRtEventMidiProgramChange, sendCallbackLater, {} };
+    rtEvent.program.index = index;
+
+    postRtEvents.appendRT(rtEvent);
+}
+
+void CarlaPlugin::ProtectedData::postponeNoteOnRtEvent(const bool sendCallbackLater,
+                                                       const uint8_t channel,
+                                                       const uint8_t note,
+                                                       const uint8_t velocity) noexcept
+{
+    PluginPostRtEvent rtEvent = { kPluginPostRtEventNoteOn, sendCallbackLater, {} };
+    rtEvent.note.channel = channel;
+    rtEvent.note.note = note;
+    rtEvent.note.velocity = velocity;
+
+    postRtEvents.appendRT(rtEvent);
+}
+void CarlaPlugin::ProtectedData::postponeNoteOffRtEvent(const bool sendCallbackLater,
+                                                        const uint8_t channel,
+                                                        const uint8_t note) noexcept
+{
+    PluginPostRtEvent rtEvent = { kPluginPostRtEventNoteOff, sendCallbackLater, {} };
+    rtEvent.note.channel = channel;
+    rtEvent.note.note = note;
+
+    postRtEvents.appendRT(rtEvent);
+}
+void CarlaPlugin::ProtectedData::postponeMidiLearnRtEvent(const bool sendCallbackLater,
+                                                          const uint32_t parameter,
+                                                          const uint8_t cc,
+                                                          const uint8_t channel) noexcept
+{
+    PluginPostRtEvent rtEvent = { kPluginPostRtEventMidiLearn, sendCallbackLater, {} };
+    rtEvent.midiLearn.parameter = parameter;
+    rtEvent.midiLearn.cc = cc;
+    rtEvent.midiLearn.channel = channel;
 
     postRtEvents.appendRT(rtEvent);
 }

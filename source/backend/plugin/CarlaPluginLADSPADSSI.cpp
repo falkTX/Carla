@@ -1836,7 +1836,7 @@ public:
                             seqEvent.data.note.channel = event.channel;
                             seqEvent.data.note.note    = note;
 
-                            pData->postponeRtEvent(kPluginPostRtEventNoteOff, true, event.channel, note, 0, 0.0f);
+                            pData->postponeNoteOffRtEvent(true, event.channel, note);
                         }
                         break;
 
@@ -1851,7 +1851,7 @@ public:
                             seqEvent.data.note.note     = note;
                             seqEvent.data.note.velocity = velo;
 
-                            pData->postponeRtEvent(kPluginPostRtEventNoteOn, true, event.channel, note, velo, 0.0f);
+                            pData->postponeNoteOnRtEvent(true, event.channel, note, velo);
                         }
                         break;
 

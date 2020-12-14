@@ -1581,20 +1581,11 @@ public:
 
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn,
-                                               true,
-                                               event.channel,
-                                               midiEvent.data[1],
-                                               midiEvent.data[2],
-                                               0.0f);
+                        pData->postponeNoteOnRtEvent(true, event.channel, midiEvent.data[1], midiEvent.data[2]);
                     }
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff,
-                                               true,
-                                               event.channel,
-                                               midiEvent.data[1],
-                                               0, 0.0f);
+                        pData->postponeNoteOffRtEvent(true, event.channel, midiEvent.data[1]);
                     }
                 } break;
                 } // switch (event.type)
@@ -1971,19 +1962,19 @@ protected:
             else if (pthread_equal(thisThread, fProcThread))
             {
                 CARLA_SAFE_ASSERT(fIsProcessing);
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, true, index, 0, 0, fixedValue);
+                pData->postponeParameterChangeRtEvent(true, index, fixedValue);
             }
             // Called from effSetChunk or effSetProgram
             else if (pthread_equal(thisThread, fChangingValuesThread))
             {
                 carla_debug("audioMasterAutomate called while setting state");
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, true, index, 0, 0, fixedValue);
+                pData->postponeParameterChangeRtEvent(true, index, fixedValue);
             }
             // Called from effIdle
             else if (pthread_equal(thisThread, fIdleThread))
             {
                 carla_debug("audioMasterAutomate called from idle thread");
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, true, index, 0, 0, fixedValue);
+                pData->postponeParameterChangeRtEvent(true, index, fixedValue);
             }
             // Called from main thread, why?
             else if (pthread_equal(thisThread, fMainThread))

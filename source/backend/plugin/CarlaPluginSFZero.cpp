@@ -533,20 +533,11 @@ public:
 
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOn,
-                                               true,
-                                               event.channel,
-                                               midiData[1],
-                                               midiData[2],
-                                               0.0f);
+                        pData->postponeNoteOnRtEvent(true, event.channel, midiData[1], midiData[2]);
                     }
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
-                        pData->postponeRtEvent(kPluginPostRtEventNoteOff,
-                                               true,
-                                               event.channel,
-                                               midiData[1],
-                                               0, 0.0f);
+                        pData->postponeNoteOffRtEvent(true, event.channel, midiData[1]);
                     }
                 } break;
                 }

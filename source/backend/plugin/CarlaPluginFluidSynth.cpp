@@ -1335,10 +1335,7 @@ public:
 
                                     if (event.channel == pData->ctrlChannel)
                                     {
-                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange,
-                                                               true,
-                                                               static_cast<int32_t>(k),
-                                                               0, 0, 0.0f);
+                                        pData->postponeMidiProgramChangeRtEvent(true, k);
                                     }
 
                                     break;
@@ -1392,7 +1389,7 @@ public:
 
                             fluid_synth_noteoff(fSynth, event.channel, note);
 
-                            pData->postponeRtEvent(kPluginPostRtEventNoteOff, true, event.channel, note, 0, 0.0f);
+                            pData->postponeNoteOffRtEvent(true, event.channel, note);
                         }
                         break;
 
@@ -1404,7 +1401,7 @@ public:
 
                             fluid_synth_noteon(fSynth, event.channel, note, velo);
 
-                            pData->postponeRtEvent(kPluginPostRtEventNoteOn, true, event.channel, note, velo, 0.0f);
+                            pData->postponeNoteOnRtEvent(true, event.channel, note, velo);
                         }
                         break;
 

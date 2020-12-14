@@ -81,13 +81,12 @@ enum SpecialParameterType {
  */
 enum PluginPostRtEventType {
     kPluginPostRtEventNull = 0,
-    kPluginPostRtEventDebug,
-    kPluginPostRtEventParameterChange,   // param, (unused), (unused), value
-    kPluginPostRtEventProgramChange,     // index
-    kPluginPostRtEventMidiProgramChange, // index
-    kPluginPostRtEventNoteOn,            // channel, note, velo
-    kPluginPostRtEventNoteOff,           // channel, note
-    kPluginPostRtEventMidiLearn          // param, cc, channel
+    kPluginPostRtEventParameterChange,
+    kPluginPostRtEventProgramChange,
+    kPluginPostRtEventMidiProgramChange,
+    kPluginPostRtEventNoteOn,
+    kPluginPostRtEventNoteOff,
+    kPluginPostRtEventMidiLearn
 };
 
 /*!
@@ -97,10 +96,25 @@ enum PluginPostRtEventType {
 struct PluginPostRtEvent {
     PluginPostRtEventType type;
     bool sendCallback;
-    int32_t value1;
-    int32_t value2;
-    int32_t value3;
-    float   valuef;
+    union {
+        struct {
+            int32_t index;
+            float value;
+        } parameter;
+        struct {
+            uint32_t index;
+        } program;
+        struct {
+            uint8_t channel;
+            uint8_t note;
+            uint8_t velocity;
+        } note;
+        struct {
+            uint32_t parameter;
+            uint8_t cc;
+            uint8_t channel;
+        } midiLearn;
+    };
 };
 
 // -----------------------------------------------------------------------
@@ -392,8 +406,12 @@ struct CarlaPlugin::ProtectedData {
     // Post-poned events
 
     void postponeRtEvent(const PluginPostRtEvent& rtEvent) noexcept;
-    void postponeRtEvent(PluginPostRtEventType type, bool sendCallbackLater,
-                         int32_t value1, int32_t value2, int32_t value3, float valuef) noexcept;
+    void postponeParameterChangeRtEvent(bool sendCallbackLater, int32_t index, float value) noexcept;
+    void postponeProgramChangeRtEvent(bool sendCallbackLater, uint32_t index) noexcept;
+    void postponeMidiProgramChangeRtEvent(bool sendCallbackLater, uint32_t index) noexcept;
+    void postponeNoteOnRtEvent(bool sendCallbackLater, uint8_t channel, uint8_t note, uint8_t velocity) noexcept;
+    void postponeNoteOffRtEvent(bool sendCallbackLater, uint8_t channel, uint8_t note) noexcept;
+    void postponeMidiLearnRtEvent(bool sendCallbackLater, uint32_t parameter, uint8_t cc, uint8_t channel) noexcept;
 
     // -------------------------------------------------------------------
     // Library functions
