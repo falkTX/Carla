@@ -35,6 +35,7 @@
 # if defined(__GNUC__) && __GNUC__ >= 8
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wclass-memaccess"
+#  pragma GCC diagnostic ignored "-Wdeprecated-copy"
 # endif
 # include <QtGui/QCommonStyle>
 # if defined(__GNUC__) && __GNUC__ >= 8

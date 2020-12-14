@@ -43,6 +43,9 @@
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wdeprecated-register"
 # endif
+# if defined(__GNUC__) && __GNUC__ >= 8
+#  pragma GCC diagnostic ignored "-Wdeprecated-copy"
+# endif
 # include <QtGui/QPainter>
 # include <QtGui/QPainterPath>
 # include <QtGui/QPixmapCache>
@@ -57,6 +60,9 @@
 # include <QtGui/QSpinBox>
 # include <QtGui/QSplitter>
 # include <QtGui/QWizard>
+# if defined(__GNUC__) && __GNUC__ >= 8
+#  pragma GCC diagnostic pop
+# endif
 # ifdef __clang__
 #  pragma clang diagnostic pop
 # endif
