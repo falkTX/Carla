@@ -219,6 +219,45 @@ struct Lv2PluginOptions {
     }
 };
 
+// -------------------------------------------------------------------------------------------------------------------
+
+static void initAtomForge(LV2_Atom_Forge& atomForge) noexcept
+{
+    carla_zeroStruct(atomForge);
+
+    atomForge.Bool     = kUridAtomBool;
+    atomForge.Chunk    = kUridAtomChunk;
+    atomForge.Double   = kUridAtomDouble;
+    atomForge.Float    = kUridAtomFloat;
+    atomForge.Int      = kUridAtomInt;
+    atomForge.Literal  = kUridAtomLiteral;
+    atomForge.Long     = kUridAtomLong;
+    atomForge.Object   = kUridAtomObject;
+    atomForge.Path     = kUridAtomPath;
+    atomForge.Property = kUridAtomProperty;
+    atomForge.Sequence = kUridAtomSequence;
+    atomForge.String   = kUridAtomString;
+    atomForge.Tuple    = kUridAtomTuple;
+    atomForge.URI      = kUridAtomURI;
+    atomForge.URID     = kUridAtomURID;
+    atomForge.Vector   = kUridAtomVector;
+
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    atomForge.Blank    = kUridAtomBlank;
+    atomForge.Resource = kUridAtomResource;
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 
 class CarlaLv2Client : public CarlaBridgeFormat
@@ -585,6 +624,77 @@ public:
             return;
 
         fDescriptor->port_event(fHandle, index, sizeof(float), kUridNull, &value);
+    }
+
+    void dspParameterChanged(const char* const uri, const float value) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,)
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+
+        if (fDescriptor->port_event == nullptr)
+            return;
+
+        uint32_t parameterId = UINT32_MAX;
+
+        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
+        {
+            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
+
+            if (std::strcmp(rdfParam.URI, uri) == 0)
+            {
+                parameterId = i;
+                break;
+            }
+        }
+
+        if (parameterId == UINT32_MAX)
+            return;
+
+        uint8_t atomBuf[256];
+        LV2_Atom_Forge atomForge;
+        initAtomForge(atomForge);
+        lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
+
+        LV2_Atom_Forge_Frame forgeFrame;
+        lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+        lv2_atom_forge_key(&atomForge, kUridPatchPoperty);
+        lv2_atom_forge_urid(&atomForge, getCustomURID(uri));
+
+        lv2_atom_forge_key(&atomForge, kUridPatchValue);
+
+        switch (fRdfDescriptor->Parameters[parameterId].Type)
+        {
+        case LV2_PARAMETER_BOOL:
+            lv2_atom_forge_bool(&atomForge, value > 0.5f);
+            break;
+        case LV2_PARAMETER_INT:
+            lv2_atom_forge_int(&atomForge, static_cast<int32_t>(value + 0.5f));
+            break;
+        case LV2_PARAMETER_LONG:
+            lv2_atom_forge_long(&atomForge, static_cast<int64_t>(value + 0.5f));
+            break;
+        case LV2_PARAMETER_FLOAT:
+            lv2_atom_forge_float(&atomForge, value);
+            break;
+        case LV2_PARAMETER_DOUBLE:
+            lv2_atom_forge_double(&atomForge, value);
+            break;
+        default:
+            carla_stderr2("dspParameterChanged called for invalid parameter, abort!");
+            return;
+        }
+
+        lv2_atom_forge_pop(&atomForge, &forgeFrame);
+
+        LV2_Atom* const atom((LV2_Atom*)atomBuf);
+        CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
+
+        fDescriptor->port_event(fHandle,
+                                fControlDesignatedPort,
+                                lv2_atom_total_size(atom),
+                                kUridAtomTransferEvent,
+                                atom);
     }
 
     void dspProgramChanged(const uint32_t index) override

@@ -566,6 +566,45 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
+static void initAtomForge(LV2_Atom_Forge& atomForge) noexcept
+{
+    carla_zeroStruct(atomForge);
+
+    atomForge.Bool     = kUridAtomBool;
+    atomForge.Chunk    = kUridAtomChunk;
+    atomForge.Double   = kUridAtomDouble;
+    atomForge.Float    = kUridAtomFloat;
+    atomForge.Int      = kUridAtomInt;
+    atomForge.Literal  = kUridAtomLiteral;
+    atomForge.Long     = kUridAtomLong;
+    atomForge.Object   = kUridAtomObject;
+    atomForge.Path     = kUridAtomPath;
+    atomForge.Property = kUridAtomProperty;
+    atomForge.Sequence = kUridAtomSequence;
+    atomForge.String   = kUridAtomString;
+    atomForge.Tuple    = kUridAtomTuple;
+    atomForge.URI      = kUridAtomURI;
+    atomForge.URID     = kUridAtomURID;
+    atomForge.Vector   = kUridAtomVector;
+
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    atomForge.Blank    = kUridAtomBlank;
+    atomForge.Resource = kUridAtomResource;
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 class CarlaPluginLV2 : public CarlaPlugin,
                        private CarlaPluginUI::Callback
 {
@@ -593,7 +632,6 @@ public:
           fAtomBufferUiOut(),
           fAtomBufferWorkerIn(),
           fAtomBufferWorkerResp(),
-          fAtomForge(),
           fAtomBufferUiOutTmpData(nullptr),
           fAtomBufferWorkerInTmpData(nullptr),
           fEventsIn(),
@@ -613,37 +651,6 @@ public:
 
         carla_zeroPointers(fFeatures, kFeatureCountAll+1);
         carla_zeroPointers(fStateFeatures, kStateFeatureCountAll+1);
-
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-        fAtomForge.Blank    = kUridAtomBlank;
-        fAtomForge.Bool     = kUridAtomBool;
-        fAtomForge.Chunk    = kUridAtomChunk;
-        fAtomForge.Double   = kUridAtomDouble;
-        fAtomForge.Float    = kUridAtomFloat;
-        fAtomForge.Int      = kUridAtomInt;
-        fAtomForge.Literal  = kUridAtomLiteral;
-        fAtomForge.Long     = kUridAtomLong;
-        fAtomForge.Object   = kUridAtomObject;
-        fAtomForge.Path     = kUridAtomPath;
-        fAtomForge.Property = kUridAtomProperty;
-        fAtomForge.Resource = kUridAtomResource;
-        fAtomForge.Sequence = kUridAtomSequence;
-        fAtomForge.String   = kUridAtomString;
-        fAtomForge.Tuple    = kUridAtomTuple;
-        fAtomForge.URI      = kUridAtomURI;
-        fAtomForge.URID     = kUridAtomURID;
-        fAtomForge.Vector   = kUridAtomVector;
-#if defined(__clang__)
-# pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-# pragma GCC diagnostic pop
-#endif
     }
 
     ~CarlaPluginLV2() override
@@ -1438,38 +1445,40 @@ public:
                                            rparamId, fRdfDescriptor->PortCount, fixedValue);
 
             uint8_t atomBuf[256];
-            lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
+            LV2_Atom_Forge atomForge;
+            initAtomForge(atomForge);
+            lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
 
             LV2_Atom_Forge_Frame forgeFrame;
-            lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
+            lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridPatchSet);
 
-            lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
-            lv2_atom_forge_urid(&fAtomForge, getCustomURID(fRdfDescriptor->Parameters[rparamId].URI));
-            lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
+            lv2_atom_forge_key(&atomForge, kUridPatchPoperty);
+            lv2_atom_forge_urid(&atomForge, getCustomURID(fRdfDescriptor->Parameters[rparamId].URI));
+            lv2_atom_forge_key(&atomForge, kUridPatchValue);
 
             switch (fRdfDescriptor->Parameters[rparamId].Type)
             {
             case LV2_PARAMETER_BOOL:
-                lv2_atom_forge_bool(&fAtomForge, fixedValue > 0.5f);
+                lv2_atom_forge_bool(&atomForge, fixedValue > 0.5f);
                 break;
             case LV2_PARAMETER_INT:
-                lv2_atom_forge_int(&fAtomForge, static_cast<int32_t>(fixedValue + 0.5f));
+                lv2_atom_forge_int(&atomForge, static_cast<int32_t>(fixedValue + 0.5f));
                 break;
             case LV2_PARAMETER_LONG:
-                lv2_atom_forge_long(&fAtomForge, static_cast<int64_t>(fixedValue + 0.5f));
+                lv2_atom_forge_long(&atomForge, static_cast<int64_t>(fixedValue + 0.5f));
                 break;
             case LV2_PARAMETER_FLOAT:
-                lv2_atom_forge_float(&fAtomForge, fixedValue);
+                lv2_atom_forge_float(&atomForge, fixedValue);
                 break;
             case LV2_PARAMETER_DOUBLE:
-                lv2_atom_forge_double(&fAtomForge, fixedValue);
+                lv2_atom_forge_double(&atomForge, fixedValue);
                 break;
             default:
                 carla_stderr2("setParameterValue called for invalid parameter, expect issues!");
                 break;
             }
 
-            lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+            lv2_atom_forge_pop(&atomForge, &forgeFrame);
 
             LV2_Atom* const atom((LV2_Atom*)atomBuf);
             CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
@@ -3663,42 +3672,44 @@ public:
                     continue;
 
                 uint8_t timeInfoBuf[256];
-                lv2_atom_forge_set_buffer(&fAtomForge, timeInfoBuf, sizeof(timeInfoBuf));
+                LV2_Atom_Forge atomForge;
+                initAtomForge(atomForge);
+                lv2_atom_forge_set_buffer(&atomForge, timeInfoBuf, sizeof(timeInfoBuf));
 
                 LV2_Atom_Forge_Frame forgeFrame;
-                lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridTimePosition);
+                lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridTimePosition);
 
-                lv2_atom_forge_key(&fAtomForge, kUridTimeSpeed);
-                lv2_atom_forge_float(&fAtomForge, timeInfo.playing ? 1.0f : 0.0f);
+                lv2_atom_forge_key(&atomForge, kUridTimeSpeed);
+                lv2_atom_forge_float(&atomForge, timeInfo.playing ? 1.0f : 0.0f);
 
-                lv2_atom_forge_key(&fAtomForge, kUridTimeFrame);
-                lv2_atom_forge_long(&fAtomForge, static_cast<int64_t>(timeInfo.frame));
+                lv2_atom_forge_key(&atomForge, kUridTimeFrame);
+                lv2_atom_forge_long(&atomForge, static_cast<int64_t>(timeInfo.frame));
 
                 if (timeInfo.bbt.valid)
                 {
-                    lv2_atom_forge_key(&fAtomForge, kUridTimeBar);
-                    lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);
+                    lv2_atom_forge_key(&atomForge, kUridTimeBar);
+                    lv2_atom_forge_long(&atomForge, timeInfo.bbt.bar - 1);
 
-                    lv2_atom_forge_key(&fAtomForge, kUridTimeBarBeat);
-                    lv2_atom_forge_float(&fAtomForge, static_cast<float>(barBeat));
+                    lv2_atom_forge_key(&atomForge, kUridTimeBarBeat);
+                    lv2_atom_forge_float(&atomForge, static_cast<float>(barBeat));
 
-                    lv2_atom_forge_key(&fAtomForge, kUridTimeBeat);
-                    lv2_atom_forge_double(&fAtomForge, timeInfo.bbt.beat - 1);
+                    lv2_atom_forge_key(&atomForge, kUridTimeBeat);
+                    lv2_atom_forge_double(&atomForge, timeInfo.bbt.beat - 1);
 
-                    lv2_atom_forge_key(&fAtomForge, kUridTimeBeatUnit);
-                    lv2_atom_forge_int(&fAtomForge, static_cast<int32_t>(timeInfo.bbt.beatType));
+                    lv2_atom_forge_key(&atomForge, kUridTimeBeatUnit);
+                    lv2_atom_forge_int(&atomForge, static_cast<int32_t>(timeInfo.bbt.beatType));
 
-                    lv2_atom_forge_key(&fAtomForge, kUridTimeBeatsPerBar);
-                    lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerBar);
+                    lv2_atom_forge_key(&atomForge, kUridTimeBeatsPerBar);
+                    lv2_atom_forge_float(&atomForge, timeInfo.bbt.beatsPerBar);
 
-                    lv2_atom_forge_key(&fAtomForge, kUridTimeBeatsPerMinute);
-                    lv2_atom_forge_float(&fAtomForge, static_cast<float>(timeInfo.bbt.beatsPerMinute));
+                    lv2_atom_forge_key(&atomForge, kUridTimeBeatsPerMinute);
+                    lv2_atom_forge_float(&atomForge, static_cast<float>(timeInfo.bbt.beatsPerMinute));
 
-                    lv2_atom_forge_key(&fAtomForge, kUridTimeTicksPerBeat);
-                    lv2_atom_forge_double(&fAtomForge, timeInfo.bbt.ticksPerBeat);
+                    lv2_atom_forge_key(&atomForge, kUridTimeTicksPerBeat);
+                    lv2_atom_forge_double(&atomForge, timeInfo.bbt.ticksPerBeat);
                 }
 
-                lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+                lv2_atom_forge_pop(&atomForge, &forgeFrame);
 
                 LV2_Atom* const atom((LV2_Atom*)timeInfoBuf);
                 CARLA_SAFE_ASSERT_BREAK(atom->size < 256);
@@ -4840,35 +4851,99 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(pData->param.data[index].rindex >= 0,);
 
         if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (! fPipeServer.isPipeRunning())
                 return;
+        }
+        else
+        {
+            if (fUI.handle == nullptr)
+                return;
+            if (fUI.descriptor == nullptr || fUI.descriptor->port_event == nullptr)
+                return;
+            if (fNeedsUiClose)
+                return;
+        }
 
-            ParameterData& pdata(pData->param.data[index]);
+        ParameterData& pdata(pData->param.data[index]);
 
-            if (pdata.hints & PARAMETER_IS_NOT_SAVED)
+        if (pdata.hints & PARAMETER_IS_NOT_SAVED)
+        {
+            int32_t rindex = pdata.rindex;
+            CARLA_SAFE_ASSERT_RETURN(rindex - static_cast<int32_t>(fRdfDescriptor->PortCount) >= 0,);
+
+            rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
+            CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount),);
+
+            const char* const uri = fRdfDescriptor->Parameters[rindex].URI;
+
+            if (fUI.type == UI::TYPE_BRIDGE)
             {
-                int32_t rindex = pdata.rindex;
-                CARLA_SAFE_ASSERT_RETURN(rindex - static_cast<int32_t>(fRdfDescriptor->PortCount) >= 0,);
-
-                rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
-                CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount),);
-
-                fPipeServer.writeLv2ParameterMessage(fRdfDescriptor->Parameters[rindex].URI, value, true);
+                fPipeServer.writeLv2ParameterMessage(uri, value);
             }
-            else
+            else if (fEventsIn.ctrl != nullptr)
             {
-                fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[index].rindex), value, true);
+                uint8_t atomBuf[256];
+                LV2_Atom_Forge atomForge;
+                initAtomForge(atomForge);
+                lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
+
+                LV2_Atom_Forge_Frame forgeFrame;
+                lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+                lv2_atom_forge_key(&atomForge, kUridPatchPoperty);
+                lv2_atom_forge_urid(&atomForge, getCustomURID(uri));
+
+                lv2_atom_forge_key(&atomForge, kUridPatchValue);
+
+                switch (fRdfDescriptor->Parameters[rindex].Type)
+                {
+                case LV2_PARAMETER_BOOL:
+                    lv2_atom_forge_bool(&atomForge, value > 0.5f);
+                    break;
+                case LV2_PARAMETER_INT:
+                    lv2_atom_forge_int(&atomForge, static_cast<int32_t>(value + 0.5f));
+                    break;
+                case LV2_PARAMETER_LONG:
+                    lv2_atom_forge_long(&atomForge, static_cast<int64_t>(value + 0.5f));
+                    break;
+                case LV2_PARAMETER_FLOAT:
+                    lv2_atom_forge_float(&atomForge, value);
+                    break;
+                case LV2_PARAMETER_DOUBLE:
+                    lv2_atom_forge_double(&atomForge, value);
+                    break;
+                default:
+                    carla_stderr2("uiParameterChange called for invalid parameter, abort!");
+                    return;
+                }
+
+                lv2_atom_forge_pop(&atomForge, &forgeFrame);
+
+                LV2_Atom* const atom((LV2_Atom*)atomBuf);
+                CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
+
+                fUI.descriptor->port_event(fUI.handle,
+                                           fEventsIn.ctrl->rindex,
+                                           lv2_atom_total_size(atom),
+                                           kUridAtomTransferEvent,
+                                           atom);
             }
         }
         else
         {
-            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && ! fNeedsUiClose)
+            if (fUI.type == UI::TYPE_BRIDGE)
             {
-                CARLA_SAFE_ASSERT_RETURN(pData->param.data[index].rindex >= 0,);
-                fUI.descriptor->port_event(fUI.handle, static_cast<uint32_t>(pData->param.data[index].rindex), sizeof(float), kUridNull, &value);
+                fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[index].rindex), value);
+            }
+            else
+            {
+                fUI.descriptor->port_event(fUI.handle,
+                                           static_cast<uint32_t>(pData->param.data[index].rindex),
+                                           sizeof(float), kUridNull, &value);
             }
         }
     }
@@ -7047,18 +7122,20 @@ public:
     void writeAtomPath(const char* const path, const LV2_URID urid)
     {
         uint8_t atomBuf[4096];
-        lv2_atom_forge_set_buffer(&fAtomForge, atomBuf, sizeof(atomBuf));
+        LV2_Atom_Forge atomForge;
+        initAtomForge(atomForge);
+        lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
 
         LV2_Atom_Forge_Frame forgeFrame;
-        lv2_atom_forge_object(&fAtomForge, &forgeFrame, kUridNull, kUridPatchSet);
+        lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridPatchSet);
 
-        lv2_atom_forge_key(&fAtomForge, kUridPatchPoperty);
-        lv2_atom_forge_urid(&fAtomForge, urid);
+        lv2_atom_forge_key(&atomForge, kUridPatchPoperty);
+        lv2_atom_forge_urid(&atomForge, urid);
 
-        lv2_atom_forge_key(&fAtomForge, kUridPatchValue);
-        lv2_atom_forge_path(&fAtomForge, path, static_cast<uint32_t>(std::strlen(path)));
+        lv2_atom_forge_key(&atomForge, kUridPatchValue);
+        lv2_atom_forge_path(&atomForge, path, static_cast<uint32_t>(std::strlen(path)));
 
-        lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
+        lv2_atom_forge_pop(&atomForge, &forgeFrame);
 
         LV2_Atom* const atom((LV2_Atom*)atomBuf);
         CARLA_SAFE_ASSERT(atom->size < sizeof(atomBuf));
@@ -7095,7 +7172,6 @@ private:
     Lv2AtomRingBuffer fAtomBufferUiOut;
     Lv2AtomRingBuffer fAtomBufferWorkerIn;
     Lv2AtomRingBuffer fAtomBufferWorkerResp;
-    LV2_Atom_Forge    fAtomForge;
     uint8_t*          fAtomBufferUiOutTmpData;
     uint8_t*          fAtomBufferWorkerInTmpData;
 

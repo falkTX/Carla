@@ -185,7 +185,7 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri, true), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
 
-        // dspParameterChanged(index, value);
+        dspParameterChanged(uri, value);
         return true;
     }
 
