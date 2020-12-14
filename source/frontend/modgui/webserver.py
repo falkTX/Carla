@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla bridge for LV2 modguis
-# Copyright (C) 2015-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2015-2020 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as

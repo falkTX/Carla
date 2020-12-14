@@ -1801,16 +1801,26 @@ public:
                     // write parameter values
                     for (uint32_t i=0; i < pData->param.count; ++i)
                     {
-                        if (! fPipeServer.writeMessage("control\n", 8))
-                            return;
+                        ParameterData& pdata(pData->param.data[i]);
 
-                        std::snprintf(tmpBuf, 0xff, "%i\n", pData->param.data[i].rindex);
-                        if (! fPipeServer.writeMessage(tmpBuf))
-                            return;
+                        if (pdata.hints & PARAMETER_IS_NOT_SAVED)
+                        {
+                            int32_t rindex = pdata.rindex;
+                            CARLA_SAFE_ASSERT_CONTINUE(rindex - static_cast<int32_t>(fRdfDescriptor->PortCount) >= 0);
 
-                        std::snprintf(tmpBuf, 0xff, "%.12g\n", static_cast<double>(getParameterValue(i)));
-                        if (! fPipeServer.writeMessage(tmpBuf))
-                            return;
+                            rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
+                            CARLA_SAFE_ASSERT_CONTINUE(rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount));
+
+                            if (! fPipeServer.writeLv2ParameterMessage(fRdfDescriptor->Parameters[rindex].URI,
+                                                                       getParameterValue(i), false))
+                                return;
+                        }
+                        else
+                        {
+                            if (! fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[i].rindex),
+                                                                  getParameterValue(i), false))
+                                return;
+                        }
                     }
 
                     // ready to show
@@ -4669,20 +4679,16 @@ public:
 
             if (fExt.options != nullptr && fExt.options->set != nullptr)
             {
-                LV2_Options_Option options[2];
-                carla_zeroStructs(options, 2);
+                LV2_Options_Option options[4];
+                carla_zeroStructs(options, 4);
 
                 carla_copyStruct(options[0], fLv2Options.opts[CarlaPluginLV2Options::MaxBlockLenth]);
-                fExt.options->set(fHandle, options);
-
-                carla_copyStruct(options[0], fLv2Options.opts[CarlaPluginLV2Options::NominalBlockLenth]);
-                fExt.options->set(fHandle, options);
+                carla_copyStruct(options[1], fLv2Options.opts[CarlaPluginLV2Options::NominalBlockLenth]);
 
                 if (fLv2Options.minBufferSize != 1)
-                {
-                    carla_copyStruct(options[0], fLv2Options.opts[CarlaPluginLV2Options::MinBlockLenth]);
-                    fExt.options->set(fHandle, options);
-                }
+                    carla_copyStruct(options[2], fLv2Options.opts[CarlaPluginLV2Options::MinBlockLenth]);
+
+                fExt.options->set(fHandle, options);
             }
         }
 
@@ -4703,15 +4709,8 @@ public:
             if (fExt.options != nullptr && fExt.options->set != nullptr)
             {
                 LV2_Options_Option options[2];
-                carla_zeroStructs(options, 2);
-
-                LV2_Options_Option& optSampleRate(options[0]);
-                optSampleRate.context = LV2_OPTIONS_INSTANCE;
-                optSampleRate.subject = 0;
-                optSampleRate.key     = kUridParamSampleRate;
-                optSampleRate.size    = sizeof(float);
-                optSampleRate.type    = kUridAtomFloat;
-                optSampleRate.value   = &fLv2Options.sampleRate;
+                carla_copyStruct(options[0], fLv2Options.opts[CarlaPluginLV2Options::SampleRate]);
+                carla_zeroStruct(options[1]);
 
                 fExt.options->set(fHandle, options);
             }
@@ -4844,8 +4843,25 @@ public:
 
         if (fUI.type == UI::TYPE_BRIDGE)
         {
-            if (fPipeServer.isPipeRunning())
-                fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[index].rindex), value);
+            if (! fPipeServer.isPipeRunning())
+                return;
+
+            ParameterData& pdata(pData->param.data[index]);
+
+            if (pdata.hints & PARAMETER_IS_NOT_SAVED)
+            {
+                int32_t rindex = pdata.rindex;
+                CARLA_SAFE_ASSERT_RETURN(rindex - static_cast<int32_t>(fRdfDescriptor->PortCount) >= 0,);
+
+                rindex -= static_cast<int32_t>(fRdfDescriptor->PortCount);
+                CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fRdfDescriptor->ParameterCount),);
+
+                fPipeServer.writeLv2ParameterMessage(fRdfDescriptor->Parameters[rindex].URI, value, true);
+            }
+            else
+            {
+                fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[index].rindex), value, true);
+            }
         }
         else
         {
@@ -5924,6 +5940,49 @@ public:
                          rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
             break;
         }
+    }
+
+    void handleUIBridgeParameter(const char* const uri, const float value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr,);
+        carla_debug("CarlaPluginLV2::handleUIBridgeParameter(%s, %f)", uri, static_cast<double>(value));
+
+        uint32_t parameterId = UINT32_MAX;
+
+        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
+        {
+            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
+
+            if (std::strcmp(rdfParam.URI, uri) == 0)
+            {
+                const int32_t rindex = static_cast<int32_t>(fRdfDescriptor->PortCount + i);
+
+                switch (rdfParam.Type)
+                {
+                case LV2_PARAMETER_BOOL:
+                case LV2_PARAMETER_INT:
+                // case LV2_PARAMETER_LONG:
+                case LV2_PARAMETER_FLOAT:
+                case LV2_PARAMETER_DOUBLE:
+                    for (uint32_t j=0; j < pData->param.count; ++j)
+                    {
+                        if (pData->param.data[j].rindex == rindex)
+                        {
+                            parameterId = j;
+                            break;
+                        }
+                    }
+                    break;
+                }
+
+                break;
+            }
+        }
+
+        if (parameterId == UINT32_MAX)
+            return;
+
+        setParameterValue(parameterId, value, false, true, true);
     }
 
     // -------------------------------------------------------------------
@@ -7744,6 +7803,21 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         try {
             kPlugin->handleUIWrite(index, sizeof(float), kUridNull, &value);
         } CARLA_SAFE_EXCEPTION("magReceived control");
+
+        return true;
+    }
+
+    if (std::strcmp(msg, "pcontrol") == 0)
+    {
+        const char* uri;
+        float value;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri, true), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
+
+        try {
+            kPlugin->handleUIBridgeParameter(uri, value);
+        } CARLA_SAFE_EXCEPTION("magReceived pcontrol");
 
         return true;
     }

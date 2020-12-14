@@ -177,6 +177,18 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
         return true;
     }
 
+    if (std::strcmp(msg, "parameter") == 0)
+    {
+        const char* uri;
+        float value;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri, true), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
+
+        // dspParameterChanged(index, value);
+        return true;
+    }
+
     if (std::strcmp(msg, "program") == 0)
     {
         uint32_t index;

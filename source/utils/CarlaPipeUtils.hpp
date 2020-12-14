@@ -180,52 +180,57 @@ public:
     /*!
      * Write an "error" message.
      */
-    void writeErrorMessage(const char* error) const noexcept;
+    bool writeErrorMessage(const char* error) const noexcept;
 
     /*!
-     * Write a "control" message used for parameter changes.
+     * Write a "control" message used for parameter/control changes.
      */
-    void writeControlMessage(uint32_t index, float value) const noexcept;
+    bool writeControlMessage(uint32_t index, float value, bool withWriteLock = true) const noexcept;
 
     /*!
      * Write a "configure" message used for state changes.
      */
-    void writeConfigureMessage(const char* key, const char* value) const noexcept;
+    bool writeConfigureMessage(const char* key, const char* value) const noexcept;
 
     /*!
      * Write a "program" message (using index).
      */
-    void writeProgramMessage(uint32_t index) const noexcept;
+    bool writeProgramMessage(uint32_t index) const noexcept;
 
     /*!
      * Write a "program" message (using channel, bank and program).
      */
-    void writeProgramMessage(uint8_t channel, uint32_t bank, uint32_t program) const noexcept;
+    bool writeProgramMessage(uint8_t channel, uint32_t bank, uint32_t program) const noexcept;
 
     /*!
      * Write a "midiprogram" message (using bank and program).
      */
-    void writeMidiProgramMessage(uint32_t bank, uint32_t program) const noexcept;
+    bool writeMidiProgramMessage(uint32_t bank, uint32_t program) const noexcept;
 
     /*!
      * Write a "reloadprograms" message.
      */
-    void writeReloadProgramsMessage(int32_t index) const noexcept;
+    bool writeReloadProgramsMessage(int32_t index) const noexcept;
 
     /*!
      * Write a MIDI "note" message.
      */
-    void writeMidiNoteMessage(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) const noexcept;
+    bool writeMidiNoteMessage(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) const noexcept;
 
     /*!
      * Write an lv2 "atom" message.
      */
-    void writeLv2AtomMessage(uint32_t index, const LV2_Atom* atom) const noexcept;
+    bool writeLv2AtomMessage(uint32_t index, const LV2_Atom* atom) const noexcept;
+
+    /*!
+     * Write an lv2 "parameter" message.
+     */
+    bool writeLv2ParameterMessage(const char* uri, float value, bool withWriteLock = true) const noexcept;
 
     /*!
      * Write an lv2 "urid" message.
      */
-    void writeLv2UridMessage(uint32_t urid, const char* uri) const noexcept;
+    bool writeLv2UridMessage(uint32_t urid, const char* uri) const noexcept;
 
     // -------------------------------------------------------------------
 
