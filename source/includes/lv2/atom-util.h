@@ -372,6 +372,7 @@ lv2_atom_object_body_get(uint32_t size, const LV2_Atom_Object_Body* body, ...)
 	va_start(args, body);
 	for (n_queries = 0; va_arg(args, uint32_t); ++n_queries) {
 		if (!va_arg(args, const LV2_Atom**)) {
+			va_end(args);
 			return -1;
 		}
 	}
@@ -385,6 +386,7 @@ lv2_atom_object_body_get(uint32_t size, const LV2_Atom_Object_Body* body, ...)
 			if (qkey == prop->key && !*qval) {
 				*qval = &prop->value;
 				if (++matches == n_queries) {
+					va_end(args);
 					return matches;
 				}
 				break;

@@ -115,7 +115,7 @@ enum CarlaLv2URIDs {
     kUridLogTrace,
     kUridLogWarning,
     kUridPatchSet,
-    kUridPatchPoperty,
+    kUridPatchProperty,
     kUridPatchValue,
     // time base type
     kUridTimePosition,
@@ -1452,7 +1452,7 @@ public:
             LV2_Atom_Forge_Frame forgeFrame;
             lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridPatchSet);
 
-            lv2_atom_forge_key(&atomForge, kUridPatchPoperty);
+            lv2_atom_forge_key(&atomForge, kUridPatchProperty);
             lv2_atom_forge_urid(&atomForge, getCustomURID(fRdfDescriptor->Parameters[rparamId].URI));
             lv2_atom_forge_key(&atomForge, kUridPatchValue);
 
@@ -3750,6 +3750,77 @@ public:
                             carla_stderr2("Event input buffer full, at least 1 message lost");
                             continue;
                         }
+
+                        // inspect message to detect patch:Set as parameter changes
+                        if (atom->type != kUridAtomObject)
+                            continue;
+
+                        const LV2_Atom_Object_Body* const objbody = (const LV2_Atom_Object_Body*)(atom + 1);
+                        if (objbody->otype != kUridPatchSet)
+                            continue;
+
+                        const LV2_Atom_URID *property = NULL;
+                        const LV2_Atom      *value    = NULL;
+
+                        lv2_atom_object_body_get(atom->size, objbody,
+                                                 kUridPatchProperty, (const LV2_Atom**)&property,
+                                                 kUridPatchValue,    &value,
+                                                 0);
+
+                        if (property != nullptr && value != nullptr)
+                        {
+                            uint32_t parameterId;
+                            bool valid;
+
+                            switch (value->type)
+                            {
+                            case kUridAtomBool:
+                            case kUridAtomInt:
+                            //case kUridAtomLong:
+                            case kUridAtomFloat:
+                            case kUridAtomDouble:
+                                valid = true;
+                                break;
+                            default:
+                                valid = false;
+                                break;
+                            }
+
+                            if (valid && getParameterIndexForURID(property->body, parameterId))
+                            {
+                                const uint8_t* const vbody = (const uint8_t*)(value + 1);
+                                float rvalue;
+
+                                switch (value->type)
+                                {
+                                case kUridAtomBool:
+                                    rvalue = *(const int32_t*)vbody != 0 ? 1.0f : 0.0f;
+                                    break;
+                                case kUridAtomInt:
+                                    rvalue = static_cast<float>(*(const int32_t*)vbody);
+                                    break;
+                                /*
+                                case kUridAtomLong:
+                                    rvalue = *(int64_t*)vbody;
+                                    break;
+                                */
+                                case kUridAtomFloat:
+                                    rvalue = *(const float*)vbody;
+                                    break;
+                                case kUridAtomDouble:
+                                    rvalue = static_cast<float>(*(const double*)vbody);
+                                    break;
+                                default:
+                                    rvalue = 0.0f;
+                                    break;
+                                }
+
+                                rvalue = pData->param.getFixedValue(parameterId, rvalue);
+                                fParamBuffers[parameterId] = rvalue;
+
+                                CarlaPlugin::setParameterValue(parameterId, rvalue, false, true, true);
+                            }
+                        }
                     }
                 }
 
@@ -4894,7 +4965,7 @@ public:
                 LV2_Atom_Forge_Frame forgeFrame;
                 lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridPatchSet);
 
-                lv2_atom_forge_key(&atomForge, kUridPatchPoperty);
+                lv2_atom_forge_key(&atomForge, kUridPatchProperty);
                 lv2_atom_forge_urid(&atomForge, getCustomURID(uri));
 
                 lv2_atom_forge_key(&atomForge, kUridPatchValue);
@@ -5390,6 +5461,89 @@ public:
                 fUI.descriptor->port_event(fUI.handle, static_cast<uint32_t>(pData->param.data[i].rindex), sizeof(float), kUridNull, &value);
             }
         }
+    }
+
+    bool getParameterIndexForURI(const char* const uri, uint32_t& parameterId) noexcept
+    {
+        parameterId = UINT32_MAX;
+
+        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
+        {
+            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
+
+            switch (rdfParam.Type)
+            {
+            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_INT:
+            // case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_FLOAT:
+            case LV2_PARAMETER_DOUBLE:
+                break;
+            default:
+                continue;
+            }
+
+            if (std::strcmp(rdfParam.URI, uri) == 0)
+            {
+                const int32_t rindex = static_cast<int32_t>(fRdfDescriptor->PortCount + i);
+
+                for (uint32_t j=0; j < pData->param.count; ++j)
+                {
+                    if (pData->param.data[j].rindex == rindex)
+                    {
+                        parameterId = j;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        return (parameterId != UINT32_MAX);
+    }
+
+    bool getParameterIndexForURID(const LV2_URID urid, uint32_t& parameterId) noexcept
+    {
+        parameterId = UINT32_MAX;
+
+        if (urid >= fCustomURIDs.size())
+            return false;
+
+        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
+        {
+            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
+
+            switch (rdfParam.Type)
+            {
+            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_INT:
+            // case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_FLOAT:
+            case LV2_PARAMETER_DOUBLE:
+                break;
+            default:
+                continue;
+            }
+
+            const std::string& uri(fCustomURIDs[urid]);
+
+            if (uri != rdfParam.URI)
+                continue;
+
+            const int32_t rindex = static_cast<int32_t>(fRdfDescriptor->PortCount + i);
+
+              for (uint32_t j=0; j < pData->param.count; ++j)
+              {
+                  if (pData->param.data[j].rindex == rindex)
+                  {
+                      parameterId = j;
+                      break;
+                  }
+              }
+              break;
+        }
+
+        return (parameterId != UINT32_MAX);
     }
 
     // -------------------------------------------------------------------
@@ -6022,42 +6176,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr,);
         carla_debug("CarlaPluginLV2::handleUIBridgeParameter(%s, %f)", uri, static_cast<double>(value));
 
-        uint32_t parameterId = UINT32_MAX;
+        uint32_t parameterId;
 
-        for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
-        {
-            const LV2_RDF_Parameter& rdfParam(fRdfDescriptor->Parameters[i]);
-
-            if (std::strcmp(rdfParam.URI, uri) == 0)
-            {
-                const int32_t rindex = static_cast<int32_t>(fRdfDescriptor->PortCount + i);
-
-                switch (rdfParam.Type)
-                {
-                case LV2_PARAMETER_BOOL:
-                case LV2_PARAMETER_INT:
-                // case LV2_PARAMETER_LONG:
-                case LV2_PARAMETER_FLOAT:
-                case LV2_PARAMETER_DOUBLE:
-                    for (uint32_t j=0; j < pData->param.count; ++j)
-                    {
-                        if (pData->param.data[j].rindex == rindex)
-                        {
-                            parameterId = j;
-                            break;
-                        }
-                    }
-                    break;
-                }
-
-                break;
-            }
-        }
-
-        if (parameterId == UINT32_MAX)
-            return;
-
-        setParameterValue(parameterId, value, false, true, true);
+        if (getParameterIndexForURI(uri, parameterId))
+            setParameterValue(parameterId, value, false, true, true);
     }
 
     // -------------------------------------------------------------------
@@ -7129,7 +7251,7 @@ public:
         LV2_Atom_Forge_Frame forgeFrame;
         lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridPatchSet);
 
-        lv2_atom_forge_key(&atomForge, kUridPatchPoperty);
+        lv2_atom_forge_key(&atomForge, kUridPatchProperty);
         lv2_atom_forge_urid(&atomForge, urid);
 
         lv2_atom_forge_key(&atomForge, kUridPatchValue);
@@ -7542,7 +7664,7 @@ private:
         if (std::strcmp(uri, LV2_PATCH__Set) == 0)
             return kUridPatchSet;
         if (std::strcmp(uri, LV2_PATCH__property) == 0)
-            return kUridPatchPoperty;
+            return kUridPatchProperty;
         if (std::strcmp(uri, LV2_PATCH__value) == 0)
             return kUridPatchValue;
 
@@ -7675,7 +7797,7 @@ private:
         // Patch types
         case kUridPatchSet:
             return LV2_PATCH__Set;
-        case kUridPatchPoperty:
+        case kUridPatchProperty:
             return LV2_PATCH__property;
         case kUridPatchValue:
             return LV2_PATCH__value;

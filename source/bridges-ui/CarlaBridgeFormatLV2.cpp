@@ -77,7 +77,7 @@ enum CarlaLv2URIDs {
     kUridLogTrace,
     kUridLogWarning,
     kUridPatchSet,
-    kUridPatchPoperty,
+    kUridPatchProperty,
     kUridPatchValue,
     // time base type
     kUridTimePosition,
@@ -658,7 +658,7 @@ public:
         LV2_Atom_Forge_Frame forgeFrame;
         lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridPatchSet);
 
-        lv2_atom_forge_key(&atomForge, kUridPatchPoperty);
+        lv2_atom_forge_key(&atomForge, kUridPatchProperty);
         lv2_atom_forge_urid(&atomForge, getCustomURID(uri));
 
         lv2_atom_forge_key(&atomForge, kUridPatchValue);
@@ -1254,7 +1254,7 @@ private:
         if (std::strcmp(uri, LV2_PATCH__Set) == 0)
             return kUridPatchSet;
         if (std::strcmp(uri, LV2_PATCH__property) == 0)
-            return kUridPatchPoperty;
+            return kUridPatchProperty;
         if (std::strcmp(uri, LV2_PATCH__value) == 0)
             return kUridPatchValue;
 
@@ -1387,7 +1387,7 @@ private:
         // Patch types
         case kUridPatchSet:
             return LV2_PATCH__Set;
-        case kUridPatchPoperty:
+        case kUridPatchProperty:
             return LV2_PATCH__property;
         case kUridPatchValue:
             return LV2_PATCH__value;
