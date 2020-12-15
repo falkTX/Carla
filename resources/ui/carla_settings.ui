@@ -200,7 +200,7 @@
          </font>
         </property>
         <property name="icon">
-         <iconset resource="../resources.qrc">
+         <iconset theme="folder" resource="../resources.qrc">
           <normaloff>:/scalable/folder.svgz</normaloff>:/scalable/folder.svgz</iconset>
         </property>
         <property name="flags">
@@ -218,7 +218,7 @@
          </font>
         </property>
         <property name="icon">
-         <iconset resource="../resources.qrc">
+         <iconset theme="folder" resource="../resources.qrc">
           <normaloff>:/scalable/folder.svgz</normaloff>:/scalable/folder.svgz</iconset>
         </property>
         <property name="flags">
@@ -236,7 +236,7 @@
          </font>
         </property>
         <property name="icon">
-         <iconset resource="../resources.qrc">
+         <iconset theme="wine" resource="../resources.qrc">
           <normaloff>:/scalable/wine.svgz</normaloff>:/scalable/wine.svgz</iconset>
         </property>
         <property name="flags">
@@ -254,7 +254,7 @@
          </font>
         </property>
         <property name="icon">
-         <iconset resource="../resources.qrc">
+         <iconset theme="dialog-warning" resource="../resources.qrc">
           <normaloff>:/scalable/warning.svgz</normaloff>:/scalable/warning.svgz</iconset>
         </property>
         <property name="flags">
@@ -355,7 +355,7 @@
                  <string/>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset theme="document-open" resource="../resources.qrc">
                   <normaloff>:/16x16/document-open.svgz</normaloff>:/16x16/document-open.svgz</iconset>
                 </property>
                 <property name="iconSize">
@@ -1111,7 +1111,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_22">
+            <widget class="QLabel" name="label_icon_engine_restart">
              <property name="maximumSize">
               <size>
                <width>22</width>
@@ -1297,7 +1297,7 @@
                </spacer>
               </item>
               <item>
-               <widget class="QLabel" name="label_39">
+               <widget class="QLabel" name="label_icon_osc_tcp">
                 <property name="maximumSize">
                  <size>
                   <width>22</width>
@@ -1482,7 +1482,7 @@
                </spacer>
               </item>
               <item>
-               <widget class="QLabel" name="label_41">
+               <widget class="QLabel" name="label_icon_osc_udp">
                 <property name="maximumSize">
                  <size>
                   <width>22</width>
@@ -1560,7 +1560,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_32">
+            <widget class="QLabel" name="label_icon_osc_restart">
              <property name="maximumSize">
               <size>
                <width>22</width>
@@ -1619,7 +1619,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_37">
+            <widget class="QLabel" name="label_icon_osc_dssi">
              <property name="maximumSize">
               <size>
                <width>22</width>
@@ -1690,7 +1690,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_8">
            <item>
-            <widget class="QLabel" name="label_24">
+            <widget class="QLabel" name="label_filepaths">
              <property name="text">
               <string>&lt;b&gt;File Paths&lt;/b&gt;</string>
              </property>
@@ -1713,7 +1713,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_31">
+            <widget class="QLabel" name="label_icon_filepaths">
              <property name="maximumSize">
               <size>
                <width>48</width>
@@ -1936,7 +1936,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_6">
            <item>
-            <widget class="QLabel" name="label_18">
+            <widget class="QLabel" name="label_pluginpaths">
              <property name="text">
               <string>&lt;b&gt;Plugin Paths&lt;/b&gt;</string>
              </property>
@@ -1959,7 +1959,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_19">
+            <widget class="QLabel" name="label_icon_pluginpaths">
              <property name="maximumSize">
               <size>
                <width>48</width>
@@ -2487,7 +2487,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_26">
+            <widget class="QLabel" name="label_icon_wine_info">
              <property name="maximumSize">
               <size>
                <width>22</width>
@@ -2628,7 +2628,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QLabel" name="label_16">
+            <widget class="QLabel" name="label_icon_experimental_small">
              <property name="maximumSize">
               <size>
                <width>22</width>

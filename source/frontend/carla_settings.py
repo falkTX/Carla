@@ -20,6 +20,7 @@
 # Imports (PyQt5)
 
 from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -746,6 +747,9 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_exp_plugin_bridges.setChecked(self.host.showPluginBridges)
         self.ui.ch_exp_wine_bridges.setChecked(self.host.showWineBridges)
 
+        icon_info = QIcon.fromTheme("dialog-information", QIcon(":/dialog-information.svgz"))
+        self.ui.label_icon_engine_restart.setPixmap(icon_info.pixmap(22, 22))
+
         # -------------------------------------------------------------------------------------------------------------
         # OSC
 
@@ -778,6 +782,13 @@ class CarlaSettingsW(QDialog):
             self.ui.rb_osc_udp_port_random.setChecked(False)
             self.ui.rb_osc_udp_port_specific.setChecked(True)
 
+        self.ui.label_icon_osc_tcp.setPixmap(icon_info.pixmap(22, 22))
+        self.ui.label_icon_osc_udp.setPixmap(icon_info.pixmap(22, 22))
+        self.ui.label_icon_osc_restart.setPixmap(icon_info.pixmap(22, 22))
+
+        icon_warn = QIcon.fromTheme("dialog-warning", QIcon(":/dialog-warning.svgz"))
+        self.ui.label_icon_osc_dssi.setPixmap(icon_warn.pixmap(22, 22))
+
         # -------------------------------------------------------------------------------------------------------------
         # File Paths
 
@@ -796,6 +807,9 @@ class CarlaSettingsW(QDialog):
             if not midiPath:
                 continue
             self.ui.lw_files_midi.addItem(midiPath)
+
+        ico = QIcon.fromTheme("folder", QIcon(":/folder.svgz"))
+        self.ui.label_icon_filepaths.setPixmap(ico.pixmap(48, 48))
 
         # -------------------------------------------------------------------------------------------------------------
         # Plugin Paths
@@ -851,6 +865,8 @@ class CarlaSettingsW(QDialog):
                 continue
             self.ui.lw_sfz.addItem(sfz)
 
+        self.ui.label_icon_pluginpaths.setPixmap(ico.pixmap(48, 48))
+
         # -------------------------------------------------------------------------------------------------------------
         # Wine
 
@@ -872,6 +888,10 @@ class CarlaSettingsW(QDialog):
         self.ui.sb_wine_server_prio.setValue(
             settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO, int))
 
+        ico = QIcon.fromTheme("wine", QIcon(":/wine.svgz"))
+        self.ui.label_icon_wine.setPixmap(ico.pixmap(48, 48))
+        self.ui.label_icon_wine_info.setPixmap(icon_info.pixmap(48, 48))
+
         # -------------------------------------------------------------------------------------------------------------
         # Experimental
 
@@ -887,6 +907,9 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_exp_prevent_bad_behaviour.setChecked(
             settings.value(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
                            CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, bool))
+
+        self.ui.label_icon_experimental.setPixmap(icon_warn.pixmap(48, 48))
+        self.ui.label_icon_experimental_small.setPixmap(icon_warn.pixmap(22, 22))
 
     # -----------------------------------------------------------------------------------------------------------------
 

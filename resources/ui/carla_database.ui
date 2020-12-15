@@ -133,7 +133,7 @@
         <string>&amp;Add Plugin</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset theme="list-add" resource="../resources.qrc">
          <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
        </property>
       </widget>
@@ -144,7 +144,7 @@
         <string>Cancel</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset theme="dialog-cancel" resource="../resources.qrc">
          <normaloff>:/16x16/dialog-cancel.svgz</normaloff>:/16x16/dialog-cancel.svgz</iconset>
        </property>
       </widget>
@@ -166,7 +166,7 @@
         <string>Refresh</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset theme="view-refresh" resource="../resources.qrc">
          <normaloff>:/16x16/view-refresh.svgz</normaloff>:/16x16/view-refresh.svgz</iconset>
        </property>
       </widget>
@@ -177,7 +177,7 @@
         <string>Reset filters</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset theme="edit-clear" resource="../resources.qrc">
          <normaloff>:/16x16/edit-clear.svgz</normaloff>:/16x16/edit-clear.svgz</iconset>
        </property>
       </widget>
@@ -599,7 +599,7 @@
        <string notr="true"/>
       </property>
       <property name="icon">
-       <iconset resource="../resources.qrc">
+       <iconset theme="user-bookmarks" resource="../resources.qrc">
         <normaloff>:/16x16/bookmarks.svgz</normaloff>:/16x16/bookmarks.svgz</iconset>
       </property>
      </column>

@@ -509,7 +509,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
         <string>Scan</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset theme="system-search" resource="../resources.qrc">
          <normaloff>:/16x16/arrow-right.svgz</normaloff>:/16x16/arrow-right.svgz</iconset>
        </property>
       </widget>
@@ -527,7 +527,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
         <string>Close</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset theme="window-close" resource="../resources.qrc">
          <normaloff>:/16x16/window-close.svgz</normaloff>:/16x16/window-close.svgz</iconset>
        </property>
       </widget>
