@@ -380,7 +380,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-#if defined(CARLA_OS_WIN) && ! defined(BUILDING_CARLA_FOR_WINDOWS)
+#if defined(CARLA_OS_WIN) && defined(BUILDING_CARLA_FOR_WINE)
     // ---------------------------------------------------------------------
     // Test if bridge is working
 

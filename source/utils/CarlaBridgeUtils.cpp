@@ -1,6 +1,6 @@
 /*
  * Carla Bridge utils
- * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
 // must be last
 #include "jackbridge/JackBridge.hpp"
 
-#if defined(CARLA_OS_WIN) && defined(BUILDING_CARLA_FOR_WINDOWS)
+#if defined(CARLA_OS_WIN) && !defined(BUILDING_CARLA_FOR_WINE)
 # define PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL    "Local\\carla-bridge_shm_ap_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT     "Local\\carla-bridge_shm_rtC_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "Local\\carla-bridge_shm_nonrtC_"

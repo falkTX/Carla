@@ -90,7 +90,7 @@ make ${MAKE_ARGS}
 
 if [ x"${ARCH}" != x"32" ]; then
   export_vars "32" "32" "i686"
-  make ${MAKE_ARGS} win32
+  make ${MAKE_ARGS} win32r
 fi
 
 # Testing:

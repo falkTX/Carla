@@ -1,6 +1,6 @@
 /*
  * Carla Plugin UI
- * Copyright (C) 2014-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2020 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -750,12 +750,12 @@ public:
             // winFlags |= WS_SIZEBOX;
         }
 
-#ifdef BUILDING_CARLA_FOR_WINDOWS
-        const uint winType = WS_EX_TOOLWINDOW;
-        const HWND parent  = (HWND)parentId;
-#else
+#ifdef BUILDING_CARLA_FOR_WINE
         const uint winType = WS_EX_DLGMODALFRAME;
         const HWND parent  = nullptr;
+#else
+        const uint winType = WS_EX_TOOLWINDOW;
+        const HWND parent  = (HWND)parentId;
 #endif
 
         fWindow = CreateWindowEx(winType,
@@ -775,14 +775,14 @@ public:
 
         SetWindowLongPtr(fWindow, GWLP_USERDATA, (LONG_PTR)this);
 
-#ifdef BUILDING_CARLA_FOR_WINDOWS
+#ifndef BUILDING_CARLA_FOR_WINE
         if (parentId != 0)
             setTransientWinId(parentId);
-#else
-        return;
-        // unused
-        (void)parentId;
 #endif
+        return;
+
+        // maybe unused
+        (void)parentId;
      }
 
     ~WindowsPluginUI() override

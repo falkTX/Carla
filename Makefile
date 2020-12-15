@@ -339,9 +339,13 @@ LIBS_WIN32 += $(MODULEDIR)/juce_gui_extra.win32.a
 endif
 endif
 
-win32: $(LIBS_WIN32)
+win32r: $(LIBS_WIN32)
 	$(MAKE) -C source/bridges-plugin win32
 	$(MAKE) -C source/discovery win32
+
+win32: $(LIBS_WIN32)
+	$(MAKE) BUILDING_FOR_WINE=true -C source/bridges-plugin win32
+	$(MAKE) BUILDING_FOR_WINE=true -C source/discovery win32
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (win64)
@@ -368,9 +372,13 @@ LIBS_WIN64 += $(MODULEDIR)/juce_gui_extra.win64.a
 endif
 endif
 
-win64: $(LIBS_WIN64)
+win64r: $(LIBS_WIN64)
 	$(MAKE) -C source/bridges-plugin win64
 	$(MAKE) -C source/discovery win64
+
+win64: $(LIBS_WIN64)
+	$(MAKE) BUILDING_FOR_WINE=true -C source/bridges-plugin win64
+	$(MAKE) BUILDING_FOR_WINE=true -C source/discovery win64
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (wine)
