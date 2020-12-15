@@ -3827,23 +3827,6 @@ public:
                 fAtomBufferEvIn.unlock();
             }
 
-            if (fExt.worker != nullptr && fAtomBufferWorkerIn.tryLock())
-            {
-                if (fAtomBufferWorkerIn.isDataAvailableForReading())
-                {
-                    const LV2_Atom* atom;
-                    uint32_t portIndex;
-
-                    for (; fAtomBufferWorkerIn.get(atom, portIndex);)
-                    {
-                        CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerIn);
-                        fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
-                    }
-                }
-
-                fAtomBufferWorkerIn.unlock();
-            }
-
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
@@ -4280,6 +4263,34 @@ public:
         } // End of Plugin processing (no events)
 
         // --------------------------------------------------------------------------------------------------------
+        // Final work
+
+        if (fEventsIn.ctrl != nullptr && fExt.worker != nullptr && fAtomBufferWorkerResp.tryLock())
+        {
+            if (fAtomBufferWorkerResp.isDataAvailableForReading())
+            {
+                const LV2_Atom* atom;
+                uint32_t portIndex;
+
+                for (; fAtomBufferWorkerResp.get(atom, portIndex);)
+                {
+                    CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerResp);
+                    fExt.worker->work_response(fHandle, atom->size, LV2_ATOM_BODY_CONST(atom));
+                }
+            }
+
+            fAtomBufferWorkerResp.unlock();
+        }
+
+        if (fExt.worker != nullptr && fExt.worker->end_run != nullptr)
+        {
+            fExt.worker->end_run(fHandle);
+
+            if (fHandle2 != nullptr)
+                fExt.worker->end_run(fHandle2);
+        }
+
+        // --------------------------------------------------------------------------------------------------------
         // Events/MIDI Output
 
         for (uint32_t i=0; i < fEventsOut.count; ++i)
@@ -4415,34 +4426,6 @@ public:
             }
         } // End of Control Output
 #endif
-
-        // --------------------------------------------------------------------------------------------------------
-        // Final work
-
-        if (fEventsIn.ctrl != nullptr && fExt.worker != nullptr && fAtomBufferWorkerResp.tryLock())
-        {
-            if (fAtomBufferWorkerResp.isDataAvailableForReading())
-            {
-                const LV2_Atom* atom;
-                uint32_t portIndex;
-
-                for (; fAtomBufferWorkerResp.get(atom, portIndex);)
-                {
-                    CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerResp);
-                    fExt.worker->work_response(fHandle, atom->size, LV2_ATOM_BODY_CONST(atom));
-                }
-            }
-
-            fAtomBufferWorkerResp.unlock();
-        }
-
-        if (fExt.worker != nullptr && fExt.worker->end_run != nullptr)
-        {
-            fExt.worker->end_run(fHandle);
-
-            if (fHandle2 != nullptr)
-                fExt.worker->end_run(fHandle2);
-        }
 
         fFirstActive = false;
 
