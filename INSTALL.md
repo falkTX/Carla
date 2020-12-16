@@ -1,5 +1,11 @@
 # INSTALL for Carla
 
+NOTE: when using MSYS2 on Windows, an additional step is necessary in order
+to solve an issue with symbolic links to some dependency folders before build:
+```
+$ make msys2fix
+```
+
 To install Carla, simply run as usual:
 ```
 $ make
