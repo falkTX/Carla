@@ -325,6 +325,11 @@ public:
         return !fLocked;
     }
 
+    bool tryAgain() const noexcept
+    {
+        return fMutex.tryLock();
+    }
+
 private:
     const Mutex& fMutex;
     const bool   fLocked;

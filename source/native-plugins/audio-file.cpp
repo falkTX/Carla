@@ -46,11 +46,9 @@ static const char* const audiofilesWildcard =
 // -----------------------------------------------------------------------
 
 #ifdef HAVE_PYQT
-class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>,
-                        public AbstractAudioPlayer
+class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>
 #else
-class AudioFilePlugin : public NativePluginClass,
-                        public AbstractAudioPlayer
+class AudioFilePlugin : public NativePluginClass
 #endif
 {
 public:
@@ -60,13 +58,12 @@ public:
 #else
         : NativePluginClass(host),
 #endif
-          AbstractAudioPlayer(),
           fLoopMode(true),
           fDoProcess(false),
-          fLastFrame(0),
+          fWasPlayingBefore(false),
           fMaxFrame(0),
           fPool(),
-          fThread(this)
+          fThread()
 #ifdef HAVE_PYQT
         , fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
           fInlineDisplay()
@@ -78,11 +75,6 @@ public:
     {
         fThread.stopNow();
         fPool.destroy();
-    }
-
-    uint64_t getLastFrame() const override
-    {
-        return fLastFrame;
     }
 
 protected:
@@ -139,7 +131,6 @@ protected:
 
         fLoopMode = b;
         fThread.setLoopingMode(b);
-        fThread.setNeedsRead();
     }
 
     void setCustomData(const char* const key, const char* const value) override
@@ -166,8 +157,7 @@ protected:
 
         if (! fDoProcess)
         {
-            //carla_stderr("P: no process");
-            fLastFrame = timePos->frame;
+            // carla_stderr("P: no process");
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
             return;
@@ -176,23 +166,26 @@ protected:
         // not playing
         if (! timePos->playing)
         {
-            //carla_stderr("P: not playing");
-            if (timePos->frame == 0 && fLastFrame > 0)
-                fThread.setNeedsRead();
+            // carla_stderr("P: not playing");
+            if (timePos->frame == 0 && fWasPlayingBefore)
+                fThread.setNeedsRead(timePos->frame);
 
-            fLastFrame = timePos->frame;
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
+            fWasPlayingBefore = false;
             return;
+        }
+        else
+        {
+            fWasPlayingBefore = true;
         }
 
         // out of reach
         if ((timePos->frame < fPool.startFrame || timePos->frame >= fMaxFrame) && !fLoopMode)
         {
             if (timePos->frame < fPool.startFrame)
-                fThread.setNeedsRead();
+                fThread.setNeedsRead(timePos->frame);
 
-            fLastFrame = timePos->frame;
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
 
@@ -251,15 +244,7 @@ protected:
         }
         else
         {
-            // NOTE: timePos->frame is always >= fPool.startFrame
-            const uint64_t poolStartFrame = timePos->frame - fThread.getPoolStartFrame();
-
-            if (fThread.tryPutData(fPool, poolStartFrame, frames))
-            {
-                carla_copyFloats(out1, fPool.buffer[0]+poolStartFrame, frames);
-                carla_copyFloats(out2, fPool.buffer[1]+poolStartFrame, frames);
-            }
-            else
+            if (! fThread.tryPutData(out1, out2, timePos->frame, frames))
             {
                 carla_zeroFloats(out1, frames);
                 carla_zeroFloats(out2, frames);
@@ -277,11 +262,10 @@ protected:
         if (! fInlineDisplay.pending)
         {
             fInlineDisplay.pending = true;
+            // FIXME this is not supposed to be here, but in some idle callback
             hostQueueDrawInlineDisplay();
         }
 #endif
-
-        fLastFrame = timePos->frame;
     }
 
     // -------------------------------------------------------------------
@@ -428,8 +412,8 @@ protected:
 private:
     bool fLoopMode;
     bool fDoProcess;
+    bool fWasPlayingBefore;
 
-    volatile uint64_t fLastFrame;
     uint32_t fMaxFrame;
 
     AudioFilePool   fPool;
