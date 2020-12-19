@@ -283,7 +283,7 @@ public:
         gIsInitiated = true;
 
         const bool testing = std::getenv("CARLA_BRIDGE_TESTING") != nullptr;
-        int64_t timeToEnd;
+        int64_t timeToEnd = 0;
 
         if (testing)
         {
