@@ -17,6 +17,7 @@
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
+#include "AppConfig.h"
 
 #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST
 # define USE_JUCE_FOR_VST2
