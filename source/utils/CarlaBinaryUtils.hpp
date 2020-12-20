@@ -112,9 +112,11 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
             // We just assume what architectures are more important, and check for them first
             if (std::strstr(output, "x86_64") != nullptr)
                 return BINARY_POSIX64;
-            if (std::strstr(output, "i386"))
+            if (std::strstr(output, "arm64") != nullptr)
+                return BINARY_POSIX64;
+            if (std::strstr(output, "i386") != nullptr)
                 return BINARY_POSIX32;
-            if (std::strstr(output, "ppc"))
+            if (std::strstr(output, "ppc") != nullptr)
                 return BINARY_OTHER;
         }
 

@@ -91,7 +91,8 @@ public:
         : CarlaThread("CarlaPluginBridgeThread"),
           kEngine(engine),
           kPlugin(plugin),
-          fBinary(),
+          fBinaryArchName(),
+          fBridgeBinary(),
           fLabel(),
           fShmIds(),
 #ifndef CARLA_OS_WIN
@@ -103,18 +104,20 @@ public:
 #ifndef CARLA_OS_WIN
                  const char* const winePrefix,
 #endif
-                 const char* const binary,
+                 const char* const binaryArchName,
+                 const char* const bridgeBinary,
                  const char* const label,
                  const char* const shmIds) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(binary != nullptr && binary[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(bridgeBinary != nullptr && bridgeBinary[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
 #ifndef CARLA_OS_WIN
         fWinePrefix = winePrefix;
 #endif
-        fBinary = binary;
+        fBinaryArchName = binaryArchName;
+        fBridgeBinary = bridgeBinary;
         fShmIds = shmIds;
 
         if (label != nullptr)
@@ -160,7 +163,7 @@ protected:
 
 #ifndef CARLA_OS_WIN
         // start with "wine" if needed
-        if (fBinary.endsWithIgnoreCase(".exe"))
+        if (fBridgeBinary.endsWithIgnoreCase(".exe"))
         {
             String wineCMD;
 
@@ -168,7 +171,7 @@ protected:
             {
                 wineCMD = options.wine.executable;
 
-                if (fBinary.endsWithIgnoreCase("64.exe")
+                if (fBridgeBinary.endsWithIgnoreCase("64.exe")
                     && options.wine.executable[0] == CARLA_OS_SEP
                     && File(wineCMD + "64").existsAsFile())
                     wineCMD += "64";
@@ -182,8 +185,18 @@ protected:
         }
 #endif
 
-        // binary
-        arguments.add(fBinary);
+#ifdef CARLA_OS_MAC
+        // setup binary arch
+        if (fBinaryArchName.isNotEmpty())
+        {
+            arguments.add("arch");
+            arguments.add("-arch");
+            arguments.add(fBinaryArchName);
+        }
+#endif
+
+        // bridge binary
+        arguments.add(fBridgeBinary);
 
         // plugin type
         arguments.add(getPluginTypeAsString(kPlugin->getType()));
@@ -309,7 +322,7 @@ protected:
 #endif
 
             carla_stdout("Starting plugin bridge, command is:\n%s \"%s\" \"%s\" \"%s\" " P_INT64,
-                         fBinary.toRawUTF8(), getPluginTypeAsString(kPlugin->getType()), filename.toRawUTF8(), fLabel.toRawUTF8(), kPlugin->getUniqueId());
+                         fBridgeBinary.toRawUTF8(), getPluginTypeAsString(kPlugin->getType()), filename.toRawUTF8(), fLabel.toRawUTF8(), kPlugin->getUniqueId());
 
             started = fProcess->start(arguments);
         }
@@ -361,7 +374,8 @@ private:
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
 
-    String fBinary;
+    String fBinaryArchName;
+    String fBridgeBinary;
     String fLabel;
     String fShmIds;
 #ifndef CARLA_OS_WIN
@@ -2543,6 +2557,7 @@ public:
               const char* const label,
               const int64_t uniqueId,
               const uint options,
+              const char* const binaryArchName,
               const char* const bridgeBinary)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
@@ -2652,7 +2667,7 @@ public:
 #ifndef CARLA_OS_WIN
                                   fWinePrefix.toRawUTF8(),
 #endif
-                                  bridgeBinary, label, shmIdsStr);
+                                  binaryArchName, bridgeBinary, label, shmIdsStr);
         }
 
         if (! restartBridgeThread())
@@ -3136,11 +3151,14 @@ CARLA_BACKEND_END_NAMESPACE
 CARLA_BACKEND_START_NAMESPACE
 
 CarlaPluginPtr CarlaPlugin::newBridge(const Initializer& init,
-                                      BinaryType btype, PluginType ptype, const char* bridgeBinary)
+                                      const BinaryType btype,
+                                      const PluginType ptype,
+                                      const char* const binaryArchName,
+                                      const char* bridgeBinary)
 {
-    carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")",
+    carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\", \"%s\")",
                 init.engine, init.filename, init.name, init.label,
-                BinaryType2Str(btype), PluginType2Str(ptype), bridgeBinary);
+                BinaryType2Str(btype), PluginType2Str(ptype), binaryArchName, bridgeBinary);
 
     if (bridgeBinary == nullptr || bridgeBinary[0] == '\0')
     {
@@ -3156,7 +3174,7 @@ CarlaPluginPtr CarlaPlugin::newBridge(const Initializer& init,
 
     std::shared_ptr<CarlaPluginBridge> plugin(new CarlaPluginBridge(init.engine, init.id, btype, ptype));
 
-    if (! plugin->init(plugin, init.filename, init.name, init.label, init.uniqueId, init.options, bridgeBinary))
+    if (! plugin->init(plugin, init.filename, init.name, init.label, init.uniqueId, init.options, binaryArchName, bridgeBinary))
         return nullptr;
 
     return plugin;
