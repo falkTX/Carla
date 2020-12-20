@@ -1389,12 +1389,16 @@ public:
 
                 for (int i = 0; i < fFormatManager.getNumFormats(); ++i)
                 {
+                    juce::AudioPluginFormat* const format = fFormatManager.getFormat(i);
+                    carla_debug("Trying to load '%s' plugin with format '%s'", fileOrIdentifier.toRawUTF8(), format->getName().toRawUTF8());
+
                     try {
-                        plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *fFormatManager.getFormat(i));
+                        plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *format);
                     } CARLA_SAFE_EXCEPTION_CONTINUE("scanAndAddFile")
 
                     if (sac.wasTriggered())
                     {
+                        carla_stderr("WARNING: Caught exception while scanning file, will not load this plugin");
                         pluginDescriptions.clearQuick(false);
                         break;
                     }
@@ -1426,7 +1430,10 @@ public:
             } CARLA_SAFE_EXCEPTION("createPluginInstance")
 
             if (sac.wasTriggered())
+            {
                 fInstance = nullptr;
+                carla_stderr("WARNING: Caught exception while instantiating, will not load this plugin");
+            }
         }
 
         if (fInstance == nullptr)
