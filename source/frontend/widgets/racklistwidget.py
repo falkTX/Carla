@@ -252,6 +252,12 @@ class RackListWidget(QListWidget):
         self.clearFocus()
 
     def isDragUrlValid(self, filename):
+        if not filename:
+            return False
+
+        if filename[-1] == '/':
+            filename = filename[:-1]
+
         lfilename = filename.lower()
 
         if os.path.isdir(filename):
@@ -332,6 +338,12 @@ class RackListWidget(QListWidget):
                     pluginId = -1
 
             filename = url.toLocalFile()
+
+            if not filename:
+                continue
+
+            if filename[-1] == '/':
+                filename = filename[:-1]
 
             if not self.host.load_file(filename):
                 CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
