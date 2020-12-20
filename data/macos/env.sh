@@ -21,9 +21,10 @@ unset CPPFLAGS
 if [ "${MACOS_UNIVERSAL}" -eq 1 ]; then
     export CFLAGS="${CFLAGS} -arch x86_64 -arch arm64"
     export LDFLAGS="${LDFLAGS} -arch x86_64 -arch arm64"
+    export MACOS_UNIVERSAL="true"
 else
-    export CFLAGS="${CFLAGS} -m${ARCH}"
-    export LDFLAGS="${LDFLAGS} -m${ARCH}"
+    export CFLAGS="${CFLAGS} -m64"
+    export LDFLAGS="${LDFLAGS} -m64"
 fi
 
 export CXXFLAGS="${CFLAGS} -stdlib=libc++ -Wno-unknown-pragmas -Wno-unused-private-field -Werror=auto-var-id"
