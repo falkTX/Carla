@@ -1378,7 +1378,28 @@ public:
                 fDesc.name = label;
         }
 
-        fFormatManager.addDefaultFormats();
+        /**/ if (std::strcmp(format, "AU") == 0)
+        {
+#if JUCE_PLUGINHOST_AU
+            fFormatManager.addFormat(new juce::AudioUnitPluginFormat());
+#endif
+        }
+        else if (std::strcmp(format, "VST2") == 0)
+        {
+#if JUCE_PLUGINHOST_VST
+            fFormatManager.addFormat(new juce::VSTPluginFormat());
+#endif
+        }
+        else if (std::strcmp(format, "VST3") == 0)
+        {
+#if JUCE_PLUGINHOST_VST3
+            fFormatManager.addFormat(new juce::VST3PluginFormat());
+#endif
+        }
+        else
+        {
+            fFormatManager.addDefaultFormats();
+        }
 
         {
             juce::OwnedArray<juce::PluginDescription> pluginDescriptions;
