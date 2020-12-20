@@ -143,49 +143,56 @@ public:
 
         if (! fShmAudioPool.attachClient(fBaseNameAudioPool))
         {
-            carla_stderr("Failed to attach to audio pool shared memory");
+            pData->close();
+            setLastError("Failed to attach to audio pool shared memory");
             return false;
         }
 
         if (! fShmRtClientControl.attachClient(fBaseNameRtClientControl))
         {
+            pData->close();
             clear();
-            carla_stderr("Failed to attach to rt client control shared memory");
+            setLastError("Failed to attach to rt client control shared memory");
             return false;
         }
 
         if (! fShmRtClientControl.mapData())
         {
+            pData->close();
             clear();
-            carla_stderr("Failed to map rt client control shared memory");
+            setLastError("Failed to map rt client control shared memory");
             return false;
         }
 
         if (! fShmNonRtClientControl.attachClient(fBaseNameNonRtClientControl))
         {
+            pData->close();
             clear();
-            carla_stderr("Failed to attach to non-rt client control shared memory");
+            setLastError("Failed to attach to non-rt client control shared memory");
             return false;
         }
 
         if (! fShmNonRtClientControl.mapData())
         {
+            pData->close();
             clear();
-            carla_stderr("Failed to map non-rt control client shared memory");
+            setLastError("Failed to map non-rt control client shared memory");
             return false;
         }
 
         if (! fShmNonRtServerControl.attachClient(fBaseNameNonRtServerControl))
         {
+            pData->close();
             clear();
-            carla_stderr("Failed to attach to non-rt server control shared memory");
+            setLastError("Failed to attach to non-rt server control shared memory");
             return false;
         }
 
         if (! fShmNonRtServerControl.mapData())
         {
+            pData->close();
             clear();
-            carla_stderr("Failed to map non-rt control server shared memory");
+            setLastError("Failed to map non-rt control server shared memory");
             return false;
         }
 
@@ -210,7 +217,9 @@ public:
             shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) ||
             shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
         {
-            carla_stderr2("CarlaEngineBridge: data size mismatch");
+            pData->close();
+            clear();
+            setLastError("Shared memory data size mismatch");
             return false;
         }
 
@@ -222,7 +231,9 @@ public:
 
         if (pData->bufferSize == 0 || carla_isZero(pData->sampleRate))
         {
-            carla_stderr2("CarlaEngineBridge: invalid empty state");
+            pData->close();
+            clear();
+            setLastError("Shared memory has invalid data");
             return false;
         }
 

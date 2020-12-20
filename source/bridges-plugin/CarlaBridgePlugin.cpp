@@ -239,7 +239,7 @@ public:
     {
         carla_debug("CarlaBridgePlugin::~CarlaBridgePlugin()");
 
-        if (! fUsingExec)
+        if (fEngine != nullptr && ! fUsingExec)
             carla_engine_close(gHostHandle);
     }
 
