@@ -13,7 +13,7 @@ fi
 
 export CC=clang
 export CXX=clang++
-export CFLAGS="-I${TARGETDIR}/carla64/include -mmacosx-version-min=${MACOS_VERSION_MIN}"
+export CFLAGS="-I${TARGETDIR}/carla64/include -mmacosx-version-min=${MACOS_VERSION_MIN} -DMAC_OS_X_VERSION_MAX_ALLOWED=MAC_OS_X_VERSION_10_12"
 export CFLAGS="${CFLAGS} -mtune=generic -msse -msse2"
 export LDFLAGS="-L${TARGETDIR}/carla64/lib -stdlib=libc++"
 unset CPPFLAGS

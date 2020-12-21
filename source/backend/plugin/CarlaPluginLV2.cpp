@@ -6748,6 +6748,9 @@ public:
             initUi();
 
         return true;
+
+        // might be unused
+        (void)needsArchBridge;
     }
 
     // -------------------------------------------------------------------
