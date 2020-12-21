@@ -1410,13 +1410,13 @@ public:
 
                 for (int i = 0; i < fFormatManager.getNumFormats(); ++i)
                 {
-                    juce::AudioPluginFormat* const format = fFormatManager.getFormat(i);
-                    CARLA_SAFE_ASSERT_CONTINUE(format != nullptr);
+                    juce::AudioPluginFormat* const apformat = fFormatManager.getFormat(i);
+                    CARLA_SAFE_ASSERT_CONTINUE(apformat != nullptr);
 
-                    carla_debug("Trying to load '%s' plugin with format '%s'", fileOrIdentifier.toRawUTF8(), format->getName().toRawUTF8());
+                    carla_debug("Trying to load '%s' plugin with format '%s'", fileOrIdentifier.toRawUTF8(), apformat->getName().toRawUTF8());
 
                     try {
-                        plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *format);
+                        plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *apformat);
                     } CARLA_SAFE_EXCEPTION_CONTINUE("scanAndAddFile")
 
                     if (sac.wasTriggered())
