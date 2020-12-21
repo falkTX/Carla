@@ -36,6 +36,11 @@ const char* findBinaryInBundle(const char* const bundleDir);
 /*
  * ...
  */
+bool removeFileFromQuarantine(const char* const filename);
+
+/*
+ * ...
+ */
 class AutoNSAutoreleasePool {
 public:
     AutoNSAutoreleasePool();

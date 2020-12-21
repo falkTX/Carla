@@ -565,6 +565,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
     }
 
     const bool canBeBridged = ptype != PLUGIN_INTERNAL
+                           && ptype != PLUGIN_DLS
+                           && ptype != PLUGIN_GIG
                            && ptype != PLUGIN_SF2
                            && ptype != PLUGIN_SFZ
                            && ptype != PLUGIN_JACK;
@@ -572,6 +574,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
     // Prefer bridges for some specific plugins
     bool preferBridges = pData->options.preferPluginBridges;
     const char* needsArchBridge = nullptr;
+
+#ifdef CARLA_OS_MAC
+    // Plugin might be in quarentine due to Apple stupid notarization rules, let's remove that if possible
+    if (canBeBridged && ptype != PLUGIN_LV2 && ptype != PLUGIN_AU)
+        removeFileFromQuarantine(filename);
+#endif
 
 #ifndef BUILD_BRIDGE
     if (canBeBridged && ! preferBridges)

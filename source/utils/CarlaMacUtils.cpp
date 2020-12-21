@@ -20,6 +20,8 @@
 #include "CarlaMacUtils.hpp"
 #include "CarlaString.hpp"
 
+#include <sys/xattr.h>
+
 #import <Foundation/Foundation.h>
 
 CARLA_BACKEND_START_NAMESPACE
@@ -52,6 +54,11 @@ const char* findBinaryInBundle(const char* const bundleDir)
     CFRelease(urlRef);
 
     return ret.buffer();
+}
+
+bool removeFileFromQuarantine(const char* const filename)
+{
+    return removexattr(filename, "com.apple.quarantine", 0) == 0;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

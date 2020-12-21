@@ -1411,6 +1411,8 @@ public:
                 for (int i = 0; i < fFormatManager.getNumFormats(); ++i)
                 {
                     juce::AudioPluginFormat* const format = fFormatManager.getFormat(i);
+                    CARLA_SAFE_ASSERT_CONTINUE(format != nullptr);
+
                     carla_debug("Trying to load '%s' plugin with format '%s'", fileOrIdentifier.toRawUTF8(), format->getName().toRawUTF8());
 
                     try {
