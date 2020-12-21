@@ -43,6 +43,10 @@ extern "C" {
 
 #ifdef CARLA_OS_MAC
 # include "CarlaMacUtils.hpp"
+# if defined(CARLA_OS_64BIT) && defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#  define ADAPT_FOR_APPLE_SILLICON
+#  include "CarlaBinaryUtils.hpp"
+# endif
 #endif
 
 #include <string>
@@ -6253,7 +6257,8 @@ public:
 
 public:
     bool init(const CarlaPluginPtr plugin,
-              const char* const name, const char* const uri, const uint options)
+              const char* const name, const char* const uri, const uint options,
+              const char*& needsArchBridge)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -6296,6 +6301,28 @@ public:
             pData->engine->setLastError("Failed to find the requested plugin");
             return false;
         }
+
+#ifdef ADAPT_FOR_APPLE_SILLICON
+        // ---------------------------------------------------------------
+        // check if we can open this binary, might need a bridge
+
+        {
+            const CarlaMagic magic;
+
+            if (const char* const output = magic.getFileDescription(fRdfDescriptor->Binary))
+            {
+# ifdef __aarch64__
+                if (std::strstr(output, "arm64") == nullptr && std::strstr(output, "x86_64") != nullptr)
+                    needsArchBridge = "x86_64";
+# else
+                if (std::strstr(output, "x86_64") == nullptr && std::strstr(output, "arm64") != nullptr)
+                    needsArchBridge = "arm64";
+# endif
+                if (needsArchBridge != nullptr)
+                    return false;
+            }
+        }
+#endif // ADAPT_FOR_APPLE_SILLICON
 
         // ---------------------------------------------------------------
         // open DLL
@@ -8117,10 +8144,19 @@ CarlaPluginPtr CarlaPlugin::newLV2(const Initializer& init)
 
     std::shared_ptr<CarlaPluginLV2> plugin(new CarlaPluginLV2(init.engine, init.id));
 
-    if (! plugin->init(plugin, init.name, init.label, init.options))
-        return nullptr;
+    const char* needsArchBridge = nullptr;
+    if (plugin->init(plugin, init.name, init.label, init.options, needsArchBridge))
+        return plugin;
 
-    return plugin;
+    if (needsArchBridge != nullptr)
+    {
+        CarlaString bridgeBinary(init.engine->getOptions().binaryDir);
+        bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native";
+
+        return CarlaPlugin::newBridge(init, BINARY_NATIVE, PLUGIN_LV2, needsArchBridge, bridgeBinary);
+    }
+
+    return nullptr;
 }
 
 // used in CarlaStandalone.cpp

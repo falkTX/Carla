@@ -44,7 +44,7 @@
 #include "water/xml/XmlDocument.h"
 #include "water/xml/XmlElement.h"
 
-#if defined(CARLA_OS_MAC) && defined(CARLA_OS_64BIT) && defined(HAVE_LIBMAGIC) // && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#if defined(CARLA_OS_MAC) && defined(CARLA_OS_64BIT) && defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
 # define ADAPT_FOR_APPLE_SILLICON
 #endif
 
