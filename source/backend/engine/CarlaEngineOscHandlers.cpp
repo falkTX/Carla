@@ -218,7 +218,7 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
     else
     {
         const char* const host  = lo_address_get_hostname(source);
-        const char* const port  = lo_address_get_port(source);
+        /* */ char* const port  = lo_url_get_port(url); // NOTE: lo_address_get_port is buggy against TCP
         const lo_address target = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
 
         oscData.owner  = carla_strdup_safe(url);
@@ -226,9 +226,10 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
         oscData.target = target;
 
         char* const targeturl = lo_address_get_url(target);
-        carla_stdout("OSC %s backend registered to %s, path: %s, target: %s",
-                     isTCP ? "TCP" : "UDP", url, oscData.path, targeturl);
+        carla_stdout("OSC %s backend registered to %s, path: %s, target: %s (host: %s, port: %s)",
+                     isTCP ? "TCP" : "UDP", url, oscData.path, targeturl, host, port);
         free(targeturl);
+        free(port);
 
         if (isTCP)
         {
