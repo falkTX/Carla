@@ -22,12 +22,12 @@
 
 <http://kxstudio.sf.net/carla/file/audio>
     a lv2:Parameter ;
-    mod:fileTypes "audiofiles,audioloops" ;
+    mod:fileTypes "audioloop,audiorecording,audiotrack" ;
     rdfs:label "audio file" ;
     rdfs:range atom:Path .
 
 <http://kxstudio.sf.net/carla/file/midi>
     a lv2:Parameter ;
-    mod:fileTypes "midi" ;
+    mod:fileTypes "midisong" ;
     rdfs:label "midi file" ;
     rdfs:range atom:Path .
