@@ -73,9 +73,9 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
     std::size_t bytesAfterName;
     if (fControlDataTCP.owner != nullptr && std::strcmp(lo_address_get_hostname(source), fControlDataTCP.owner) == 0)
     {
-        if (const char* const slash = std::strchr(path, '/'))
+        if (const char* const slash = std::strchr(path+1, '/'))
         {
-            bytesAfterName = static_cast<std::size_t>(slash - path) + 1U;
+            bytesAfterName = static_cast<std::size_t>(slash - path);
         }
         else
         {
@@ -93,47 +93,49 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
                         path, fName.buffer());
             return 1;
         }
+
+        ++bytesAfterName;
     }
 
     // Get plugin id from path, "/carla/23/method" -> 23
     uint pluginId = 0;
     std::size_t offset;
 
-    if (! std::isdigit(path[bytesAfterName+2]))
+    if (! std::isdigit(path[bytesAfterName+1]))
     {
         carla_stderr("CarlaEngineOsc::handleMessage() - invalid message '%s'", path);
         return 1;
     }
 
-    if (std::isdigit(path[bytesAfterName+3]))
+    if (std::isdigit(path[bytesAfterName+2]))
     {
-        if (std::isdigit(path[bytesAfterName+5]))
+        if (std::isdigit(path[bytesAfterName+4]))
         {
             carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")",
-                          path+(bytesAfterName+1));
+                          path+bytesAfterName);
             return 1;
         }
-        else if (std::isdigit(path[bytesAfterName+4]))
+        else if (std::isdigit(path[bytesAfterName+3]))
         {
             // 3 digits, /xyz/method
             offset    = 6;
-            pluginId += uint(path[bytesAfterName+2]-'0')*100;
-            pluginId += uint(path[bytesAfterName+3]-'0')*10;
-            pluginId += uint(path[bytesAfterName+4]-'0');
+            pluginId += uint(path[bytesAfterName+1]-'0')*100;
+            pluginId += uint(path[bytesAfterName+2]-'0')*10;
+            pluginId += uint(path[bytesAfterName+3]-'0');
         }
         else
         {
             // 2 digits, /xy/method
             offset    = 5;
-            pluginId += uint(path[bytesAfterName+2]-'0')*10;
-            pluginId += uint(path[bytesAfterName+3]-'0');
+            pluginId += uint(path[bytesAfterName+1]-'0')*10;
+            pluginId += uint(path[bytesAfterName+2]-'0');
         }
     }
     else
     {
         // single digit, /x/method
         offset    = 4;
-        pluginId += uint(path[bytesAfterName+2]-'0');
+        pluginId += uint(path[bytesAfterName+1]-'0');
     }
 
     if (pluginId > fEngine->getCurrentPluginCount())
