@@ -21,32 +21,18 @@
 #include "water/files/FileInputStream.h"
 #include "water/midi/MidiFile.h"
 
-#ifndef HAVE_PYQT
-# define process2 process
-#endif
-
 // -----------------------------------------------------------------------
 
-#ifdef HAVE_PYQT
 class MidiFilePlugin : public NativePluginWithMidiPrograms<FileMIDI>,
-#else
-class MidiFilePlugin : public NativePluginClass,
-#endif
                        public AbstractMidiPlayer
 {
 public:
     MidiFilePlugin(const NativeHostDescriptor* const host)
-#ifdef HAVE_PYQT
         : NativePluginWithMidiPrograms<FileMIDI>(host, fPrograms, 0),
-#else
-        : NativePluginClass(host),
-#endif
           fMidiOut(this),
           fNeedsAllNotesOff(false),
-          fWasPlayingBefore(false)
-#ifdef HAVE_PYQT
-        , fPrograms(hostGetFilePath("midi"), "*.mid;*.midi")
-#endif
+          fWasPlayingBefore(false),
+          fPrograms(hostGetFilePath("midi"), "*.mid;*.midi")
     {
     }
 
@@ -62,9 +48,7 @@ protected:
         if (std::strcmp(key, "file") != 0)
             return;
 
-#ifdef HAVE_PYQT
         invalidateNextFilename();
-#endif
         _loadMidiFile(value);
     }
 
@@ -137,12 +121,10 @@ protected:
         fMidiOut.setState(data);
     }
 
-#ifdef HAVE_PYQT
     void setStateFromFile(const char* const filename) override
     {
         _loadMidiFile(filename);
     }
-#endif
 
     // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
@@ -168,9 +150,7 @@ private:
     MidiPattern fMidiOut;
     bool fNeedsAllNotesOff;
     bool fWasPlayingBefore;
-#ifdef HAVE_PYQT
     NativeMidiPrograms fPrograms;
-#endif
 
     void _loadMidiFile(const char* const filename)
     {

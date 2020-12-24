@@ -20,56 +20,43 @@
 
 #include "audio-base.hpp"
 
-#ifdef HAVE_PYQT
 static const char* const audiofilesWildcard =
-# ifdef HAVE_SNDFILE
+#ifdef HAVE_SNDFILE
     "*.aif;*.aifc;*.aiff;*.au;*.bwf;*.flac;*.htk;*.iff;*.mat4;*.mat5;*.oga;*.ogg;"
     "*.paf;*.pvf;*.pvf5;*.sd2;*.sf;*.snd;*.svx;*.vcc;*.w64;*.wav;*.xi;"
-# endif
-# ifdef HAVE_FFMPEG
-    "*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma;"
-#  ifndef HAVE_SNDFILE
-    "*.flac;*.oga;*.ogg;*.w64;*.wav;"
-#  endif
-# endif
-# if !defined(HAVE_SNDFILE) && !defined(HAVE_FFMPEG)
-    ""
-#  ifndef BUILDING_FOR_CI
-#   warning sndfile and ffmpeg libraries missing, no audio file support will be available
-#  endif
-# endif
-;
-#else
-# define process2 process
 #endif
+#ifdef HAVE_FFMPEG
+    "*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma;"
+# ifndef HAVE_SNDFILE
+    "*.flac;*.oga;*.ogg;*.w64;*.wav;"
+# endif
+#endif
+#if !defined(HAVE_SNDFILE) && !defined(HAVE_FFMPEG)
+    ""
+# ifndef BUILDING_FOR_CI
+#  warning sndfile and ffmpeg libraries missing, no audio file support will be available
+# endif
+#endif
+;
 
 // -----------------------------------------------------------------------
 
-#ifdef HAVE_PYQT
 class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>,
                         public AbstractAudioPlayer
-#else
-class AudioFilePlugin : public NativePluginClass,
-                        public AbstractAudioPlayer
-#endif
 {
 public:
     AudioFilePlugin(const NativeHostDescriptor* const host)
-#ifdef HAVE_PYQT
         : NativePluginWithMidiPrograms<FileAudio>(host, fPrograms, 2),
-#else
-        : NativePluginClass(host),
-#endif
           AbstractAudioPlayer(),
           fLoopMode(true),
           fDoProcess(false),
           fLastFrame(0),
           fMaxFrame(0),
           fPool(),
-          fThread(this)
-#ifdef HAVE_PYQT
-        , fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
-          fInlineDisplay()
+          fThread(this),
+          fPrograms(hostGetFilePath("audio"), audiofilesWildcard)
+#ifndef __MOD_DEVICES__
+        , fInlineDisplay()
 #endif
     {
     }
@@ -147,9 +134,7 @@ protected:
         if (std::strcmp(key, "file") != 0)
             return;
 
-#ifdef HAVE_PYQT
         invalidateNextFilename();
-#endif
         loadFilename(value);
     }
 
@@ -196,7 +181,7 @@ protected:
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
 
-#ifdef HAVE_PYQT
+#ifndef __MOD_DEVICES__
             if (fInlineDisplay.writtenValues < 32)
             {
                 fInlineDisplay.lastValuesL[fInlineDisplay.writtenValues] = 0.0f;
@@ -266,7 +251,7 @@ protected:
             }
         }
 
-#ifdef HAVE_PYQT
+#ifndef __MOD_DEVICES__
         if (fInlineDisplay.writtenValues < 32)
         {
             fInlineDisplay.lastValuesL[fInlineDisplay.writtenValues] = carla_findMaxNormalizedFloat(out1, frames);
@@ -301,17 +286,15 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-#ifdef HAVE_PYQT
     void setStateFromFile(const char* const filename) override
     {
         loadFilename(filename);
     }
-#endif
 
     // -------------------------------------------------------------------
     // Plugin dispatcher calls
 
-#ifdef HAVE_PYQT
+#ifndef __MOD_DEVICES__
     const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t rwidth, const uint32_t height) override
     {
         CARLA_SAFE_ASSERT_RETURN(height > 4, nullptr);
@@ -435,9 +418,9 @@ private:
     AudioFilePool   fPool;
     AudioFileThread fThread;
 
-#ifdef HAVE_PYQT
     NativeMidiPrograms fPrograms;
 
+#ifndef __MOD_DEVICES__
     struct InlineDisplay : NativeInlineDisplayImageSurfaceCompat {
         float lastValuesL[32];
         float lastValuesR[32];
@@ -517,10 +500,10 @@ static const NativePluginDescriptor audiofileDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
-#ifdef HAVE_PYQT
+#ifndef __MOD_DEVICES__
                                                   |NATIVE_PLUGIN_HAS_INLINE_DISPLAY
-                                                  |NATIVE_PLUGIN_REQUESTS_IDLE
 #endif
+                                                  |NATIVE_PLUGIN_REQUESTS_IDLE
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
