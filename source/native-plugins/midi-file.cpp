@@ -216,9 +216,7 @@ static const NativePluginDescriptor midifileDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
-#ifdef HAVE_PYQT
                                                   |NATIVE_PLUGIN_REQUESTS_IDLE
-#endif
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
@@ -247,7 +245,3 @@ void carla_register_native_plugin_midifile()
 }
 
 // -----------------------------------------------------------------------
-
-#ifndef HAVE_PYQT
-# undef process2
-#endif

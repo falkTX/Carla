@@ -517,7 +517,3 @@ void carla_register_native_plugin_audiofile()
 }
 
 // -----------------------------------------------------------------------
-
-#ifndef HAVE_PYQT
-# undef process2
-#endif

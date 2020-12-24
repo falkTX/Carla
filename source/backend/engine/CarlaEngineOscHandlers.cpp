@@ -118,7 +118,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
         else if (std::isdigit(path[bytesAfterName+3]))
         {
             // 3 digits, /xyz/method
-            offset    = 6;
+            offset    = 5;
             pluginId += uint(path[bytesAfterName+1]-'0')*100;
             pluginId += uint(path[bytesAfterName+2]-'0')*10;
             pluginId += uint(path[bytesAfterName+3]-'0');
@@ -126,7 +126,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
         else
         {
             // 2 digits, /xy/method
-            offset    = 5;
+            offset    = 4;
             pluginId += uint(path[bytesAfterName+1]-'0')*10;
             pluginId += uint(path[bytesAfterName+2]-'0');
         }
@@ -134,7 +134,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
     else
     {
         // single digit, /x/method
-        offset    = 4;
+        offset    = 3;
         pluginId += uint(path[bytesAfterName+1]-'0');
     }
 
