@@ -34,7 +34,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     CARLA_SAFE_ASSERT_RETURN(fName.isNotEmpty(), 1);
     CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', 1);
 #ifdef DEBUG
-    if (std::strstr(path, "/bridge_pong") == nullptr) {
+    if (std::strncmp(path, "/bridge_pong", 12) != 0) {
         carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)",
                     bool2str(isTCP), path, argc, argv, types, msg);
     }
@@ -64,7 +64,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgControl(path + 6, argc, argv, types);
     }
 
-    const std::size_t nameSize(fName.length());
+    const std::size_t nameSize = fName.length();
 
     // Check if message is for this client
     if (std::strlen(path) <= nameSize || std::strncmp(path+1, fName, nameSize) != 0)
@@ -203,8 +203,10 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
         carla_stderr("OSC backend already registered to %s", oscData.owner);
 
         char* const path = lo_url_get_path(url);
+        const size_t pathlen = std::strlen(path);
+        CARLA_SAFE_ASSERT_RETURN(pathlen < 32, 0);
 
-        char targetPath[std::strlen(path)+18];
+        char targetPath[pathlen+12];
         std::strcpy(targetPath, path);
         std::strcat(targetPath, "/exit-error");
 
