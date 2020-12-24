@@ -4582,6 +4582,11 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
     engine->setOption(ENGINE_OPTION_PROCESS_MODE, mode, nullptr);
     engine->setOption(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_JACK, nullptr);
 
+#ifdef __MOD_DEVICES__
+    engine->setOption(ENGINE_OPTION_FILE_PATH, FILE_AUDIO, "/data/user-files/Audio Loops:/data/user-files/Audio Tracks");
+    engine->setOption(ENGINE_OPTION_FILE_PATH, FILE_MIDI, "/data/user-files/MIDI Songs");
+#endif
+
     // FIXME
     engine->setOption(ENGINE_OPTION_PATH_BINARIES, 0, "/usr/lib/carla");
     engine->setOption(ENGINE_OPTION_PATH_RESOURCES, 0, "/usr/share/resources");
