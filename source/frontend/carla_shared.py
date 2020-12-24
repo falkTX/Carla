@@ -666,12 +666,17 @@ def handleInitialCommandLineArguments(file):
             print(" and OPTION can be one or more of the following:")
             print("")
             print("    --cnprefix\t Set a prefix for client names in multi-client mode.")
-            print("    --gdb     \t Run Carla inside gdb.")
-            print(" -n,--no-gui  \t Run Carla headless, don't show UI.")
-            print("")
+            if not isinstance(gCarla.nogui, int):
+                print("    --gdb     \t Run Carla inside gdb.")
+                print(" -n,--no-gui  \t Run Carla headless, don't show UI.")
+                print("")
             print(" -h,--help    \t Print this help text and exit.")
             print(" -v,--version \t Print version information and exit.")
             print("")
+
+            if isinstance(gCarla.nogui, int):
+                print("NOTE: when using %s the FILE is only valid the first time the backend is started" % initName)
+                sys.exit(1)
 
             sys.exit(0)
 
@@ -685,11 +690,17 @@ def handleInitialCommandLineArguments(file):
             print("  Binary dir:     %s" % pathBinaries)
             print("  Resources dir:  %s" % pathResources)
 
-            sys.exit(0)
+            sys.exit(1 if gCarla.nogui else 0)
 
         elif readPrefixNext:
             readPrefixNext = False
             gCarla.cnprefix = arg
+
+    if gCarla.nogui and isinstance(gCarla.nogui, int):
+        if os.fork():
+            os._exit(0)
+        else:
+            os.setsid()
 
     return (initName, libPrefix)
 

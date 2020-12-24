@@ -3125,12 +3125,13 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     # --------------------------------------------------------------------------------------------------------
     # Print info
 
-    print("Carla %s started, status:" % VERSION)
-    print("  Python version: %s" % sys.version.split(" ",1)[0])
-    print("  Qt version:     %s" % QT_VERSION_STR)
-    print("  PyQt version:   %s" % PYQT_VERSION_STR)
-    print("  Binary dir:     %s" % pathBinaries)
-    print("  Resources dir:  %s" % pathResources)
+    if not (gCarla.nogui and isinstance(gCarla.nogui, int)):
+        print("Carla %s started, status:" % VERSION)
+        print("  Python version: %s" % sys.version.split(" ",1)[0])
+        print("  Qt version:     %s" % QT_VERSION_STR)
+        print("  PyQt version:   %s" % PYQT_VERSION_STR)
+        print("  Binary dir:     %s" % pathBinaries)
+        print("  Resources dir:  %s" % pathResources)
 
     # --------------------------------------------------------------------------------------------------------
     # Init host
@@ -3418,9 +3419,10 @@ def runHostWithoutUI(host):
     if not gCarla.nogui:
         return
 
+    projectFile = getInitialProjectFile(True)
+
     if not isinstance(gCarla.nogui, int):
         oscPort = None
-        projectFile = getInitialProjectFile(True)
 
         if not projectFile:
             print("Carla no-gui mode can only be used together with a project file.")
@@ -3442,7 +3444,7 @@ def runHostWithoutUI(host):
         print("Engine failed to initialize, possible reasons:\n%s" % host.get_last_error())
         sys.exit(1)
 
-    if oscPort is None and not host.load_project(projectFile):
+    if projectFile and not host.load_project(projectFile):
         print("Failed to load selected project file, possible reasons:\n%s" % host.get_last_error())
         host.engine_close()
         sys.exit(1)

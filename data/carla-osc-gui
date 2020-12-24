@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 PYTHON=$(which python3 2>/dev/null)
 
 if [ ! -f ${PYTHON} ]; then
@@ -25,8 +27,8 @@ fi
 if lsof -i:21337 > /dev/null; then
     echo "NOTICE: Backend already running"
 else
-    echo "NOTICE: Backend not running yet, starting it now"
-    ${PYTHON} "${INSTALL_FRONTENDDIR}/carla" ${INSTALL_ARGS} --osc-gui=21337 "$@" &
+    ${PYTHON} "${INSTALL_FRONTENDDIR}/carla" ${INSTALL_ARGS} --osc-gui=21337 "$@" --with-appname="carla-osc-dsp"
+    echo "NOTICE: Backend was not running yet, start was triggered now"
 fi
 
 exec ${PYTHON} "${INSTALL_FRONTENDDIR}/carla-control" ${INSTALL_ARGS} osc.tcp://127.0.0.1:21337/Carla "$@"
