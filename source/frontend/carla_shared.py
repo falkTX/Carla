@@ -698,7 +698,9 @@ def handleInitialCommandLineArguments(file):
 
     if gCarla.nogui and isinstance(gCarla.nogui, int):
         if os.fork():
+            # pylint: disable=protected-access
             os._exit(0)
+            # pylint: enable=protected-access
         else:
             os.setsid()
 
