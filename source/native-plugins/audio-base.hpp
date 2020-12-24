@@ -551,7 +551,7 @@ public:
 
             } while (i < poolNumFrame);
 
-            fPool.startFrame = readFrame;
+            fPool.startFrame = static_cast<uint64_t>(readFrame);
         }
 
         fNeedsRead = false;
