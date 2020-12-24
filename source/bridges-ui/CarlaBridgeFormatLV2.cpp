@@ -25,6 +25,10 @@
 
 #include "water/files/File.h"
 
+#ifdef CARLA_OS_MAC
+# include "CarlaMacUtils.hpp"
+#endif
+
 #include <string>
 #include <vector>
 
@@ -511,6 +515,11 @@ public:
 
         // ------------------------------------------------------------------------------------------------------------
         // open DLL
+
+#ifdef CARLA_OS_MAC
+        // Binary might be in quarentine due to Apple stupid notarization rules, let's remove that if possible
+        CarlaBackend::removeFileFromQuarantine(fRdfUiDescriptor->Binary);
+#endif
 
         if (! libOpen(fRdfUiDescriptor->Binary))
         {

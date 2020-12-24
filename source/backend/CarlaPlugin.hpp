@@ -964,7 +964,8 @@ public:
 
     static CarlaPluginPtr newNative(const Initializer& init);
     static CarlaPluginPtr newBridge(const Initializer& init,
-                                                  BinaryType btype, PluginType ptype, const char* bridgeBinary);
+                                    BinaryType btype, PluginType ptype,
+                                    const char* binaryArchName, const char* bridgeBinary);
 
     static CarlaPluginPtr newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* rdfDescriptor);
     static CarlaPluginPtr newDSSI(const Initializer& init);

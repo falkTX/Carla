@@ -63,6 +63,7 @@
 # undef Component
 # undef MemoryBlock
 # undef Point
+# include "CarlaMacUtils.cpp"
 #endif
 
 #ifdef CARLA_OS_WIN
@@ -1750,6 +1751,21 @@ int main(int argc, char* argv[])
     {
         do_cached_check(type);
         return 0;
+    }
+#endif
+
+#ifdef CARLA_OS_MAC
+    // Plugin might be in quarentine due to Apple stupid notarization rules, let's remove that if possible
+    switch (type)
+    {
+    case PLUGIN_LADSPA:
+    case PLUGIN_DSSI:
+    case PLUGIN_VST2:
+    case PLUGIN_VST3:
+        removeFileFromQuarantine(filename);
+        break;
+    default:
+        break;
     }
 #endif
 

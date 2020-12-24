@@ -68,6 +68,7 @@
 #include "jackbridge/JackBridge.hpp"
 
 #include "water/files/File.h"
+#include "water/misc/Time.h"
 
 using CarlaBackend::CarlaEngine;
 using CarlaBackend::EngineCallbackOpcode;
@@ -238,7 +239,7 @@ public:
     {
         carla_debug("CarlaBridgePlugin::~CarlaBridgePlugin()");
 
-        if (! fUsingExec)
+        if (fEngine != nullptr && ! fUsingExec)
             carla_engine_close(gHostHandle);
     }
 
@@ -281,6 +282,15 @@ public:
 
         gIsInitiated = true;
 
+        const bool testing = std::getenv("CARLA_BRIDGE_TESTING") != nullptr;
+        int64_t timeToEnd = 0;
+
+        if (testing)
+        {
+            timeToEnd = water::Time::currentTimeMillis() + 10 * 1000;
+            fEngine->transportPlay();
+        }
+
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 # ifndef CARLA_OS_WIN
         static const int argc = 0;
@@ -298,6 +308,8 @@ public:
 # else
             carla_msleep(5);
 # endif
+            if (testing && timeToEnd - water::Time::currentTimeMillis() < 0)
+                break;
         }
 #endif
 
@@ -332,7 +344,7 @@ protected:
     }
 
 private:
-    const CarlaEngine* fEngine;
+    CarlaEngine* fEngine;
 
 #ifdef USING_JUCE
     const juce::ScopedJuceInitialiser_GUI fJuceInitialiser;
@@ -649,7 +661,14 @@ int main(int argc, char* argv[])
 
                 if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(gHostHandle, 0))
                 {
-                    if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
+                    if (itype == CarlaBackend::PLUGIN_INTERNAL && (std::strcmp(label, "audiofile") == 0 || std::strcmp(label, "midifile") == 0))
+                    {
+                        if (file.exists())
+                            carla_set_custom_data(gHostHandle, 0,
+                                                  CarlaBackend::CUSTOM_DATA_TYPE_STRING,
+                                                  "file", file.getFullPathName().toRawUTF8());
+                    }
+                    else if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
                     {
 #ifdef HAVE_X11
                         if (std::getenv("DISPLAY") != nullptr)

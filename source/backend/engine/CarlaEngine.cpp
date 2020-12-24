@@ -44,6 +44,13 @@
 #include "water/xml/XmlDocument.h"
 #include "water/xml/XmlElement.h"
 
+#ifdef CARLA_OS_MAC
+# include "CarlaMacUtils.hpp"
+# if defined(CARLA_OS_64BIT) && defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+#  define ADAPT_FOR_APPLE_SILLICON
+# endif
+#endif
+
 #include <map>
 
 // FIXME Remove on 2.1 release
@@ -560,12 +567,27 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             bridgeBinary.clear();
     }
 
-    // Prefer bridges for some specific plugins
-    const bool preferBridges = pData->options.preferPluginBridges;
+    const bool canBeBridged = ptype != PLUGIN_INTERNAL
+                           && ptype != PLUGIN_DLS
+                           && ptype != PLUGIN_GIG
+                           && ptype != PLUGIN_SF2
+                           && ptype != PLUGIN_SFZ
+                           && ptype != PLUGIN_JACK;
 
-#if 0 // ndef BUILD_BRIDGE
-    if (! preferBridges)
+    // Prefer bridges for some specific plugins
+    bool preferBridges = pData->options.preferPluginBridges;
+    const char* needsArchBridge = nullptr;
+
+#ifdef CARLA_OS_MAC
+    // Plugin might be in quarentine due to Apple stupid notarization rules, let's remove that if possible
+    if (canBeBridged && ptype != PLUGIN_LV2 && ptype != PLUGIN_AU)
+        removeFileFromQuarantine(filename);
+#endif
+
+#ifndef BUILD_BRIDGE
+    if (canBeBridged && ! preferBridges)
     {
+# if 0
         if (ptype == PLUGIN_LV2 && label != nullptr)
         {
             if (std::strncmp(label, "http://calf.sourceforge.net/plugins/", 36) == 0 ||
@@ -575,19 +597,39 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                 preferBridges = true;
             }
         }
+# endif
+# ifdef ADAPT_FOR_APPLE_SILLICON
+        // see if this binary needs bridging
+        if (ptype == PLUGIN_VST2)
+        {
+            if (const char* const vst2Binary = findBinaryInBundle(filename))
+            {
+                const CarlaMagic magic;
+                if (const char* const output = magic.getFileDescription(vst2Binary))
+                {
+#  ifdef __aarch64__
+                    if (std::strstr(output, "arm64") == nullptr && std::strstr(output, "x86_64") != nullptr)
+                        needsArchBridge = "x86_64";
+#  else
+                    if (std::strstr(output, "x86_64") == nullptr && std::strstr(output, "arm64") != nullptr)
+                        needsArchBridge = "arm64";
+#  endif
+                }
+            }
+        }
+        else if (ptype == PLUGIN_VST3)
+        {
+            // TODO
+        }
+# endif
     }
 #endif // ! BUILD_BRIDGE
 
-    const bool canBeBridged = ptype != PLUGIN_INTERNAL
-                           && ptype != PLUGIN_SF2
-                           && ptype != PLUGIN_SFZ
-                           && ptype != PLUGIN_JACK;
-
-    if (canBeBridged && (btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
+    if (canBeBridged && (needsArchBridge || btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
     {
         if (bridgeBinary.isNotEmpty())
         {
-            plugin = CarlaPlugin::newBridge(initializer, btype, ptype, bridgeBinary);
+            plugin = CarlaPlugin::newBridge(initializer, btype, ptype, needsArchBridge, bridgeBinary);
         }
         else
         {

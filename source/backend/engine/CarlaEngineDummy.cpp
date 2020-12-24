@@ -232,9 +232,11 @@ protected:
         carla_zeroFloats(audioIns[1], bufferSize);
         carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);
 
+        int64_t oldTime, newTime;
+
         while (! shouldThreadExit())
         {
-            const int64_t oldTime = getTimeInMicroseconds();
+            oldTime = getTimeInMicroseconds();
 
             const PendingRtEventsRunner prt(this, bufferSize, true);
 
@@ -244,7 +246,7 @@ protected:
 
             pData->graph.process(pData, audioIns, audioOuts, bufferSize);
 
-            const int64_t newTime = getTimeInMicroseconds();
+            newTime = getTimeInMicroseconds();
             CARLA_SAFE_ASSERT_CONTINUE(newTime >= oldTime);
 
             const int64_t remainingTime = cycleTime - (newTime - oldTime);
@@ -267,7 +269,7 @@ protected:
         std::free(audioOuts[0]);
         std::free(audioOuts[1]);
 
-        carla_stdout("CarlaEngineDummy audio thread finished");
+        carla_stdout("CarlaEngineDummy audio thread finished with %u Xruns", pData->xruns);
     }
 
     // -------------------------------------------------------------------

@@ -185,35 +185,17 @@ private:
                 CARLA_SAFE_ASSERT_CONTINUE(midiEventHolder != nullptr);
 
                 const MidiMessage& midiMessage(midiEventHolder->message);
-                //const double time(track->getEventTime(i)*sampleRate);
-                const int dataSize(midiMessage.getRawDataSize());
 
+                const int dataSize = midiMessage.getRawDataSize();
                 if (dataSize <= 0 || dataSize > MAX_EVENT_DATA_SIZE)
                     continue;
-                if (midiMessage.isActiveSense())
-                    continue;
-                if (midiMessage.isMetaEvent())
-                    continue;
-                if (midiMessage.isMidiStart())
-                    continue;
-                if (midiMessage.isMidiContinue())
-                    continue;
-                if (midiMessage.isMidiStop())
-                    continue;
-                if (midiMessage.isMidiClock())
-                    continue;
-                if (midiMessage.isSongPositionPointer())
-                    continue;
-                if (midiMessage.isQuarterFrame())
-                    continue;
-                if (midiMessage.isFullFrame())
-                    continue;
-                if (midiMessage.isMidiMachineControlMessage())
-                    continue;
-                if (midiMessage.isSysEx())
+
+                const uint8_t* const data = midiMessage.getRawData();
+                if (! MIDI_IS_CHANNEL_MESSAGE(data[0]))
                     continue;
 
-                const double time(midiMessage.getTimeStamp()*sampleRate);
+                const double time = midiMessage.getTimeStamp() * sampleRate;
+                // const double time = track->getEventTime(i) * sampleRate;
                 CARLA_SAFE_ASSERT_CONTINUE(time >= 0.0);
 
                 fMidiOut.addRaw(static_cast<uint64_t>(time), midiMessage.getRawData(), static_cast<uint8_t>(dataSize));

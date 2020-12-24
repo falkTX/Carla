@@ -1378,7 +1378,28 @@ public:
                 fDesc.name = label;
         }
 
-        fFormatManager.addDefaultFormats();
+        /**/ if (std::strcmp(format, "AU") == 0)
+        {
+#if JUCE_PLUGINHOST_AU
+            fFormatManager.addFormat(new juce::AudioUnitPluginFormat());
+#endif
+        }
+        else if (std::strcmp(format, "VST2") == 0)
+        {
+#if JUCE_PLUGINHOST_VST
+            fFormatManager.addFormat(new juce::VSTPluginFormat());
+#endif
+        }
+        else if (std::strcmp(format, "VST3") == 0)
+        {
+#if JUCE_PLUGINHOST_VST3
+            fFormatManager.addFormat(new juce::VST3PluginFormat());
+#endif
+        }
+        else
+        {
+            fFormatManager.addDefaultFormats();
+        }
 
         {
             juce::OwnedArray<juce::PluginDescription> pluginDescriptions;
@@ -1389,12 +1410,18 @@ public:
 
                 for (int i = 0; i < fFormatManager.getNumFormats(); ++i)
                 {
+                    juce::AudioPluginFormat* const apformat = fFormatManager.getFormat(i);
+                    CARLA_SAFE_ASSERT_CONTINUE(apformat != nullptr);
+
+                    carla_debug("Trying to load '%s' plugin with format '%s'", fileOrIdentifier.toRawUTF8(), apformat->getName().toRawUTF8());
+
                     try {
-                        plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *fFormatManager.getFormat(i));
+                        plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *apformat);
                     } CARLA_SAFE_EXCEPTION_CONTINUE("scanAndAddFile")
 
                     if (sac.wasTriggered())
                     {
+                        carla_stderr("WARNING: Caught exception while scanning file, will not load this plugin");
                         pluginDescriptions.clearQuick(false);
                         break;
                     }
@@ -1426,7 +1453,10 @@ public:
             } CARLA_SAFE_EXCEPTION("createPluginInstance")
 
             if (sac.wasTriggered())
+            {
                 fInstance = nullptr;
+                carla_stderr("WARNING: Caught exception while instantiating, will not load this plugin");
+            }
         }
 
         if (fInstance == nullptr)
