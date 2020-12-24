@@ -35,7 +35,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', 1);
 #ifdef DEBUG
     if (std::strstr(path, "/bridge_pong") == nullptr) {
-        carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)", bool2str(isTCP), path, argc, argv, types, msg);
+        carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)",
+                    bool2str(isTCP), path, argc, argv, types, msg);
     }
 #endif
 
@@ -52,7 +53,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 
     // Initial path check
     if (std::strcmp(path, "/register") == 0)
-        return handleMsgRegister(isTCP, argc, argv, types);
+        return handleMsgRegister(isTCP, argc, argv, types, lo_message_get_source(msg));
 
     if (std::strcmp(path, "/unregister") == 0)
         return handleMsgUnregister(isTCP, argc, argv, types);
@@ -187,13 +188,13 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 // -----------------------------------------------------------------------
 
 int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
-                                      const int argc, const lo_arg* const* const argv, const char* const types)
+                                      const int argc, const lo_arg* const* const argv, const char* const types,
+                                      const lo_address source)
 {
     carla_debug("CarlaEngineOsc::handleMsgRegister()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
 
     const char* const url = &argv[0]->s;
-    const lo_address addr = lo_address_new_from_url(url);
 
     CarlaOscData& oscData(isTCP ? fControlDataTCP : fControlDataUDP);
 
@@ -207,15 +208,15 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
         std::strcpy(targetPath, path);
         std::strcat(targetPath, "/exit-error");
 
-        lo_send_from(addr, isTCP ? fServerTCP : fServerUDP, LO_TT_IMMEDIATE,
+        lo_send_from(source, isTCP ? fServerTCP : fServerUDP, LO_TT_IMMEDIATE,
                      targetPath, "s", "OSC already registered to another client");
 
         free(path);
     }
     else
     {
-        const char* const host  = lo_address_get_hostname(addr);
-        const char* const port  = lo_address_get_port(addr);
+        const char* const host  = lo_address_get_hostname(source);
+        const char* const port  = lo_address_get_port(source);
         const lo_address target = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
 
         oscData.owner  = carla_strdup_safe(url);
@@ -252,7 +253,6 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
         }
     }
 
-    lo_address_free(addr);
     return 0;
 }
 
