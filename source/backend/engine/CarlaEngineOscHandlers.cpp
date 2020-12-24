@@ -29,10 +29,13 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg)
+int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
+                                  const int argc, const lo_arg* const* const argv, const char* const types,
+                                  const lo_message msg)
 {
     CARLA_SAFE_ASSERT_RETURN(fName.isNotEmpty(), 1);
     CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', 1);
+    CARLA_SAFE_ASSERT_RETURN(path[0] == '/', 1);
 #ifdef DEBUG
     if (std::strncmp(path, "/bridge_pong", 12) != 0) {
         carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)",
@@ -51,9 +54,11 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         CARLA_SAFE_ASSERT_RETURN(fServerUDP != nullptr, 1);
     }
 
+    const lo_address source = lo_message_get_source(msg);
+
     // Initial path check
     if (std::strcmp(path, "/register") == 0)
-        return handleMsgRegister(isTCP, argc, argv, types, lo_message_get_source(msg));
+        return handleMsgRegister(isTCP, argc, argv, types, source);
 
     if (std::strcmp(path, "/unregister") == 0)
         return handleMsgUnregister(isTCP, argc, argv, types);
@@ -64,56 +69,71 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgControl(path + 6, argc, argv, types);
     }
 
-    const std::size_t nameSize = fName.length();
-
     // Check if message is for this client
-    if (std::strlen(path) <= nameSize || std::strncmp(path+1, fName, nameSize) != 0)
+    std::size_t bytesAfterName;
+    if (fControlDataTCP.owner != nullptr && std::strcmp(lo_address_get_hostname(source), fControlDataTCP.owner) == 0)
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'",
-                     path, fName.buffer());
-        return 1;
+        if (const char* const slash = std::strchr(path, '/'))
+        {
+            bytesAfterName = static_cast<std::size_t>(slash - path) + 1U;
+        }
+        else
+        {
+            carla_stderr("CarlaEngineOsc::handleMessage() - message '%s' is invalid", path);
+            return 1;
+        }
+    }
+    else
+    {
+        bytesAfterName = fName.length();
+
+        if (std::strlen(path) <= bytesAfterName || std::strncmp(path+1, fName, bytesAfterName) != 0)
+        {
+            carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'",
+                        path, fName.buffer());
+            return 1;
+        }
     }
 
     // Get plugin id from path, "/carla/23/method" -> 23
     uint pluginId = 0;
     std::size_t offset;
 
-    if (std::isdigit(path[nameSize+2]))
+    if (! std::isdigit(path[bytesAfterName+2]))
     {
-        if (std::isdigit(path[nameSize+3]))
+        carla_stderr("CarlaEngineOsc::handleMessage() - invalid message '%s'", path);
+        return 1;
+    }
+
+    if (std::isdigit(path[bytesAfterName+3]))
+    {
+        if (std::isdigit(path[bytesAfterName+5]))
         {
-            if (std::isdigit(path[nameSize+5]))
-            {
-                carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")", path+(nameSize+1));
-                return 1;
-            }
-            else if (std::isdigit(path[nameSize+4]))
-            {
-                // 3 digits, /xyz/method
-                offset    = 6;
-                pluginId += uint(path[nameSize+2]-'0')*100;
-                pluginId += uint(path[nameSize+3]-'0')*10;
-                pluginId += uint(path[nameSize+4]-'0');
-            }
-            else
-            {
-                // 2 digits, /xy/method
-                offset    = 5;
-                pluginId += uint(path[nameSize+2]-'0')*10;
-                pluginId += uint(path[nameSize+3]-'0');
-            }
+            carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")",
+                          path+(bytesAfterName+1));
+            return 1;
+        }
+        else if (std::isdigit(path[bytesAfterName+4]))
+        {
+            // 3 digits, /xyz/method
+            offset    = 6;
+            pluginId += uint(path[bytesAfterName+2]-'0')*100;
+            pluginId += uint(path[bytesAfterName+3]-'0')*10;
+            pluginId += uint(path[bytesAfterName+4]-'0');
         }
         else
         {
-            // single digit, /x/method
-            offset    = 4;
-            pluginId += uint(path[nameSize+2]-'0');
+            // 2 digits, /xy/method
+            offset    = 5;
+            pluginId += uint(path[bytesAfterName+2]-'0')*10;
+            pluginId += uint(path[bytesAfterName+3]-'0');
         }
     }
     else
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - invalid message '%s'", path);
-        return 1;
+        // single digit, /x/method
+        offset    = 4;
+        pluginId += uint(path[bytesAfterName+2]-'0');
     }
 
     if (pluginId > fEngine->getCurrentPluginCount())
@@ -133,7 +153,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 
     // Get method from path, "/Carla/i/method" -> "method"
     char method[48];
-    std::strncpy(method, path + (nameSize + offset), 47);
+    std::strncpy(method, path + (bytesAfterName + offset), 47);
     method[47] = '\0';
 
     if (method[0] == '\0')
@@ -221,7 +241,7 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
         /* */ char* const port  = lo_url_get_port(url); // NOTE: lo_address_get_port is buggy against TCP
         const lo_address target = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
 
-        oscData.owner  = carla_strdup_safe(url);
+        oscData.owner  = carla_strdup_safe(host);
         oscData.path   = carla_strdup_free(lo_url_get_path(url));
         oscData.target = target;
 
