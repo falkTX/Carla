@@ -1838,9 +1838,7 @@ class HostWindow(QMainWindow):
 
         settings.setValue("Geometry", self.saveGeometry())
         settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
-
-        if not self.host.isControl:
-            settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
+        settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
 
         diskFolders = []
 
@@ -1878,7 +1876,7 @@ class HostWindow(QMainWindow):
             #else:
                 #self.ui.splitter.setSizes([210, 99999])
 
-            showSidePanel = settings.value("ShowSidePanel", True, bool) and not self.host.isControl
+            showSidePanel = settings.value("ShowSidePanel", True, bool)
             self.ui.act_settings_show_side_panel.setChecked(showSidePanel)
             self.slot_showSidePanel(showSidePanel)
 
