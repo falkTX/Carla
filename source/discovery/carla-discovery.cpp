@@ -1411,9 +1411,9 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter, int& maxTot
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static void do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
+static bool do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
 {
-    CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0,) // FIXME
+    CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0, false) // FIXME
     carla_debug("do_juce_check(%s, %s, %s)", filename_, stype, bool2str(doInit));
 
     carla_juce_init();
@@ -1440,6 +1440,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         pluginFormat = new juce::VSTPluginFormat();
 #else
         DISCOVERY_OUT("error", "VST2 support not available");
+        return false;
 #endif
     }
     else if (std::strcmp(stype, "VST3") == 0)
@@ -1448,6 +1449,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         pluginFormat = new juce::VST3PluginFormat();
 #else
         DISCOVERY_OUT("error", "VST3 support not available");
+        return false;
 #endif
     }
     else if (std::strcmp(stype, "AU") == 0)
@@ -1456,27 +1458,32 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         pluginFormat = new juce::AudioUnitPluginFormat();
 #else
         DISCOVERY_OUT("error", "AU support not available");
+        return false;
 #endif
     }
 
     if (pluginFormat == nullptr)
     {
         DISCOVERY_OUT("error", stype << " support not available");
-        return;
+        return false;
     }
 
 #ifdef CARLA_OS_WIN
-    CARLA_CUSTOM_SAFE_ASSERT_RETURN("Plugin file/folder does not exist", juce::File(filename).exists(),);
+    CARLA_CUSTOM_SAFE_ASSERT_RETURN("Plugin file/folder does not exist", juce::File(filename).exists(), false);
 #endif
-    CARLA_SAFE_ASSERT_RETURN(pluginFormat->fileMightContainThisPluginType(filename),);
+    CARLA_SAFE_ASSERT_RETURN(pluginFormat->fileMightContainThisPluginType(filename), false);
 
     juce::OwnedArray<juce::PluginDescription> results;
     pluginFormat->findAllTypesForFile(results, filename);
 
     if (results.size() == 0)
     {
+#if defined(CARLA_OS_MAC) && defined(__aarch64__)
+        if (std::strcmp(stype, "VST2") == 0 || std::strcmp(stype, "VST3") == 0)
+            return true;
+#endif
         DISCOVERY_OUT("error", "No plugins found");
-        return;
+        return false;
     }
 
     for (juce::PluginDescription **it = results.begin(), **end = results.end(); it != end; ++it)
@@ -1535,6 +1542,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 
     carla_juce_idle();
     carla_juce_cleanup();
+    return false;
 }
 #endif // USING_JUCE_FOR_VST2
 
@@ -1787,7 +1795,27 @@ int main(int argc, char* argv[])
 
     case PLUGIN_VST2:
 #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST
-        do_juce_check(filename, "VST2", doInit);
+        if (do_juce_check(filename, "VST2", doInit))
+        {
+# if defined(CARLA_OS_MAC) && defined(__aarch64__)
+            DISCOVERY_OUT("warning", "No plugins found while scanning in arm64 mode, will try x86_64 now");
+
+            const pid_t pid = vfork();
+            if (pid >= 0)
+            {
+                if (pid == 0)
+                {
+                    execl("/usr/bin/arch", "/usr/bin/arch", "-arch", "x86_64", argv[0], argv[1], argv[2], nullptr);
+                    exit(1);
+                }
+                else
+                {
+                    int status;
+                    waitpid(pid, &status, 0);
+                }
+            }
+# endif
+        }
 #else
         do_vst_check(handle, filename, doInit);
 #endif
