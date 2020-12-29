@@ -70,6 +70,7 @@ LIBS += $(MODULEDIR)/water.a
 LIBS += $(MODULEDIR)/audio_decoder.a
 LIBS += $(MODULEDIR)/native-plugins.a
 LIBS += $(MODULEDIR)/sfzero.a
+LIBS += $(MODULEDIR)/zita-resampler.a
 
 ifeq ($(HAVE_DGL),true)
 LIBS += $(MODULEDIR)/dgl.a

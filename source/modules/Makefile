@@ -17,6 +17,7 @@ clean:
 	$(MAKE) clean -C rtmidi
 	$(MAKE) clean -C sfzero
 	$(MAKE) clean -C water
+	$(MAKE) clean -C zita-resampler
 
 	$(MAKE) clean -C juce_audio_basics
 	$(MAKE) clean -C juce_audio_devices

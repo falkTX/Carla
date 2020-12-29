@@ -25,6 +25,8 @@ extern "C" {
 #include "audio_decoder/ad.h"
 }
 
+#include "zita-resampler/resampler.h"
+
 typedef struct adinfo ADInfo;
 
 struct AudioFilePool {
@@ -114,7 +116,8 @@ public:
           fPollTempSize(0),
           fPool(),
           fMutex(),
-          fSignal()
+          fSignal(),
+          fResampler()
     {
         static bool adInitiated = false;
 
@@ -590,6 +593,7 @@ private:
     AudioFilePool fPool;
     CarlaMutex    fMutex;
     CarlaSignal   fSignal;
+    Resampler     fResampler;
 
     CARLA_DECLARE_NON_COPY_STRUCT(AudioFileThread)
 };

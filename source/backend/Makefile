@@ -28,6 +28,7 @@ STANDALONE_LIBS += $(MODULEDIR)/native-plugins.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmempool.a
 STANDALONE_LIBS += $(MODULEDIR)/sfzero.a
 STANDALONE_LIBS += $(MODULEDIR)/water.a
+STANDALONE_LIBS += $(MODULEDIR)/zita-resampler.a
 
 ifeq ($(HAVE_DGL),true)
 STANDALONE_LIBS += $(MODULEDIR)/dgl.a
