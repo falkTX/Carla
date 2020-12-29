@@ -245,12 +245,31 @@ public:
             // valid
             const uint32_t fileNumFrames = static_cast<uint32_t>(fFileNfo.frames);
             const uint32_t poolNumFrames = sampleRate * 5;
+            bool needsResample;
 
-            if (fileNumFrames <= poolNumFrames)
+            if (fFileNfo.sample_rate != sampleRate)
+            {
+                needsResample = true;
+                fResampler.setup(fFileNfo.sample_rate, sampleRate, fFileNfo.channels, 32);
+            }
+            else
+            {
+                needsResample = false;
+                fResampler.clear();
+            }
+
+            // TODO resample on the fly too
+            if (fileNumFrames <= poolNumFrames || needsResample)
             {
                 // entire file fits in a small pool, lets read it now
-                fPool.create(fileNumFrames);
-                readEntireFileIntoPool();
+                const uint32_t poolNumFrames = needsResample
+                                             ? static_cast<uint32_t>(
+                                                 static_cast<double>(fileNumFrames) * (
+                                                     static_cast<double>(sampleRate) /
+                                                        static_cast<double>(fFileNfo.sample_rate)) + 0.5)
+                                             : fileNumFrames;
+                fPool.create(poolNumFrames);
+                readEntireFileIntoPool(needsResample);
                 ad_close(fFilePtr);
                 fFilePtr = nullptr;
             }
@@ -369,23 +388,43 @@ public:
         return true;
     }
 
-    void readEntireFileIntoPool()
+    void readEntireFileIntoPool(const bool needsResample)
     {
         CARLA_SAFE_ASSERT_RETURN(fPool.numFrames > 0,);
 
         const uint numChannels = fFileNfo.channels;
-        const size_t bufferSize = fPool.numFrames * numChannels;
-        float* const buffer = (float*)std::malloc(bufferSize*sizeof(float));
-        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+        const size_t numFrames = fFileNfo.frames;
 
-        carla_zeroFloats(buffer, bufferSize);
+        float* const buffer = (float*)std::malloc(numFrames*sizeof(float));
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
+        carla_zeroFloats(buffer, numFrames);
 
         ad_seek(fFilePtr, 0);
-        ssize_t rv = ad_read(fFilePtr, buffer, bufferSize);
-        CARLA_SAFE_ASSERT_INT2_RETURN(rv == static_cast<ssize_t>(bufferSize),
+        ssize_t rv = ad_read(fFilePtr, buffer, numFrames);
+        CARLA_SAFE_ASSERT_INT2_RETURN(rv == static_cast<ssize_t>(numFrames),
                                       static_cast<int>(rv),
-                                      static_cast<int>(bufferSize),
+                                      static_cast<int>(numFrames),
                                       std::free(buffer));
+
+        float* rbuffer;
+
+        if (needsResample)
+        {
+            rv = fPool.numFrames;
+            rbuffer = (float*)std::malloc(fPool.numFrames*sizeof(float));
+            CARLA_SAFE_ASSERT_RETURN(rbuffer != nullptr, std::free(buffer););
+            carla_zeroFloats(rbuffer, fPool.numFrames);
+
+            fResampler.inp_count = numFrames / numChannels;
+            fResampler.out_count = fPool.numFrames / numChannels;
+            fResampler.inp_data = buffer;
+            fResampler.out_data = rbuffer;
+            fResampler.process();
+        }
+        else
+        {
+            rbuffer = buffer;
+        }
 
         {
             // lock, and put data asap
@@ -395,24 +434,27 @@ public:
             {
                 if (numChannels == 1)
                 {
-                    fPool.buffer[0][i] = buffer[j];
-                    fPool.buffer[1][i] = buffer[j];
+                    fPool.buffer[0][i] = rbuffer[j];
+                    fPool.buffer[1][i] = rbuffer[j];
                     ++i;
                 }
                 else
                 {
                     if (j % 2 == 0)
                     {
-                        fPool.buffer[0][i] = buffer[j];
+                        fPool.buffer[0][i] = rbuffer[j];
                     }
                     else
                     {
-                        fPool.buffer[1][i] = buffer[j];
+                        fPool.buffer[1][i] = rbuffer[j];
                         ++i;
                     }
                 }
             }
         }
+
+        if (rbuffer != buffer)
+            std::free(rbuffer);
 
         std::free(buffer);
 
@@ -501,7 +543,7 @@ public:
             carla_debug("R: reading %li frames at frame %lu", rv, readFrameCheck);
 
             // local copy
-            const uint32_t poolNumFrame = fPool.numFrames;
+            const uint32_t poolNumFrames = fPool.numFrames;
             const int64_t fileFrames = fFileNfo.frames;
             const bool isMonoFile = fFileNfo.channels == 1;
             float* const pbuffer0 = fPool.buffer[0];
@@ -512,7 +554,7 @@ public:
             const CarlaMutexLocker cml(fMutex);
 
             do {
-                for (; i < poolNumFrame && j < rv; ++j)
+                for (; i < poolNumFrames && j < rv; ++j)
                 {
                     if (isMonoFile)
                     {
@@ -533,7 +575,7 @@ public:
                     }
                 }
 
-                if (i >= poolNumFrame) {
+                if (i >= poolNumFrames) {
                     break;
                 }
 
@@ -547,12 +589,12 @@ public:
                 {
                     carla_debug("read break, not enough space");
 
-                    carla_zeroFloats(pbuffer0, poolNumFrame - i);
-                    carla_zeroFloats(pbuffer1, poolNumFrame - i);
+                    carla_zeroFloats(pbuffer0, poolNumFrames - i);
+                    carla_zeroFloats(pbuffer1, poolNumFrames - i);
                     break;
                 }
 
-            } while (i < poolNumFrame);
+            } while (i < poolNumFrames);
 
             fPool.startFrame = static_cast<uint64_t>(readFrame);
         }
