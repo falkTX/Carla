@@ -207,6 +207,34 @@ theme: libs
 	@$(MAKE) -C source/theme
 
 # ---------------------------------------------------------------------------------------------------------------------
+# prepare for (re)distribution
+
+_CARLA_APP_FILES = \
+	carla-bridge-lv2-cocoa \
+	carla-bridge-lv2.dylib \
+	carla-bridge-native \
+	carla-discovery-native \
+	libcarla_standalone2.dylib \
+	libcarla_utils.dylib \
+	styles/carlastyle.dylib \
+	styles/carlastyle.json
+
+CARLA_APP_FILES = $(_CARLA_APP_FILES:%=build/Carla.app/Contents/MacOS/%)
+
+ifeq ($(MACOS),true)
+dist: $(CARLA_APP_FILES)
+else
+dist:
+endif
+
+bdist_mac_%:
+	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=$* python3 ./data/macos/bundle.py bdist_mac --bundle-name=$*
+
+build/Carla.app/Contents/MacOS/%: bin/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+# ---------------------------------------------------------------------------------------------------------------------
 # hacks
 
 msys2fix:
