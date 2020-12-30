@@ -509,6 +509,9 @@ $(OBJDIR)/carla-lv2-export.cpp.o: carla-lv2-export.cpp
 -include $(OBJDIR)/carla-host-plugin.cpp.d
 -include $(OBJDIR)/carla-native-plugin.cpp.d
 -include $(OBJDIR)/carla-lv2.cpp.d
+-include $(OBJDIR)/carla-lv2-bundles.cpp.audiogain.d
+-include $(OBJDIR)/carla-lv2-bundles.cpp.files.d
+-include $(OBJDIR)/carla-lv2-bundles.cpp.miditools.d
 -include $(OBJDIR)/carla-lv2-export.cpp.d
 -include $(OBJDIR)/carla-vst.cpp.patchbay-fx.d
 -include $(OBJDIR)/carla-vst.cpp.patchbay-syn.d

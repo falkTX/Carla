@@ -225,18 +225,18 @@ protected:
         pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
     }
 
-    void hostRequestIdle() const
+    bool hostRequestIdle() const
     {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);
 
-        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_REQUEST_IDLE, 0, 0, nullptr, 0.0f);
+        return pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_REQUEST_IDLE, 0, 0, nullptr, 0.0f) == 1;
     }
 
-    void hostQueueDrawInlineDisplay()
+    bool hostQueueDrawInlineDisplay()
     {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);
 
-        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY, 0, 0, nullptr, 0.0f);
+        return pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY, 0, 0, nullptr, 0.0f) == 1;
     }
 
     const char* hostGetFilePath(const char* const filetype) const

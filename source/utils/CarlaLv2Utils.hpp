@@ -1524,7 +1524,8 @@ protected:
         LV2_URID timeFrame;
         LV2_URID timeSpeed;
         LV2_URID timeTicksPerBeat;
-        LV2_URID uiEvents;
+        LV2_URID carlaRequestIdle;
+        LV2_URID carlaUiEvents;
 
         URIDs()
             : atomBlank(0),
@@ -1553,7 +1554,8 @@ protected:
               timeFrame(0),
               timeSpeed(0),
               timeTicksPerBeat(0),
-              uiEvents(0) {}
+              carlaRequestIdle(0),
+              carlaUiEvents(0) {}
 
         void map(const LV2_URID_Map* const uridMap)
         {
@@ -1583,7 +1585,8 @@ protected:
             timeBeatsPerBar    = uridMap->map(uridMap->handle, LV2_TIME__beatsPerBar);
             timeBeatsPerMinute = uridMap->map(uridMap->handle, LV2_TIME__beatsPerMinute);
             timeTicksPerBeat   = uridMap->map(uridMap->handle, LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat);
-            uiEvents           = uridMap->map(uridMap->handle, "urn:carla:transmitEv");
+            carlaRequestIdle   = uridMap->map(uridMap->handle, "urn:carla:idle");
+            carlaUiEvents      = uridMap->map(uridMap->handle, "urn:carla:uiEvents");
         }
     } fURIs;
 

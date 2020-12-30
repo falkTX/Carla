@@ -57,6 +57,7 @@ public:
           fMidiEventCount(0),
           fLastProjectPath(),
           fLoadedFile(),
+          fPluginNeedsIdle(false),
           fWorkerUISignal(0)
     {
         carla_zeroStruct(fHost);
@@ -234,7 +235,7 @@ public:
                     if (event == nullptr)
                         continue;
 
-                    if (event->body.type == fURIs.uiEvents && fWorkerUISignal != -1)
+                    if (event->body.type == fURIs.carlaUiEvents && fWorkerUISignal != -1)
                     {
                         CARLA_SAFE_ASSERT_CONTINUE((fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE) == 0);
 
@@ -320,6 +321,14 @@ public:
 
         fDescriptor->process(fHandle, fPorts.audioCVIns, fPorts.audioCVOuts, frames, fMidiEvents, fMidiEventCount);
 
+        if (fPluginNeedsIdle)
+        {
+            fPluginNeedsIdle = false;
+            const char* const msg = "idle";
+            const size_t msgSize = std::strlen(msg);
+            fWorker->schedule_work(fWorker->handle, static_cast<uint32_t>(msgSize + 1U), msg);
+        }
+
         if (fWorkerUISignal == -1 && fPorts.hasUI)
         {
             const char* const msg = "quit";
@@ -334,7 +343,7 @@ public:
 
                 aev->time.frames = 0;
                 aev->body.size   = msgSize;
-                aev->body.type   = fURIs.uiEvents;
+                aev->body.type   = fURIs.carlaUiEvents;
                 std::memcpy(LV2_ATOM_BODY(&aev->body), msg, msgSize);
 
                 const uint32_t size = lv2_atom_pad_size(static_cast<uint32_t>(sizeof(LV2_Atom_Event) + msgSize));
@@ -516,6 +525,15 @@ public:
     LV2_Worker_Status lv2_work(LV2_Worker_Respond_Function, LV2_Worker_Respond_Handle, uint32_t, const void* data)
     {
         const char* const msg = (const char*)data;
+
+        if (fDescriptor->hints & NATIVE_PLUGIN_REQUESTS_IDLE)
+        {
+            if (std::strcmp(msg, "idle") == 0)
+            {
+                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_IDLE, 0, 0, nullptr, 0.0f);
+                return LV2_WORKER_SUCCESS;
+            }
+        }
 
         if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
         {
@@ -839,9 +857,19 @@ protected:
         case NATIVE_HOST_OPCODE_RELOAD_ALL:
         case NATIVE_HOST_OPCODE_HOST_IDLE:
         case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
-        case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
-        case NATIVE_HOST_OPCODE_REQUEST_IDLE:
             // nothing
+            break;
+
+        case NATIVE_HOST_OPCODE_REQUEST_IDLE:
+            CARLA_SAFE_ASSERT_RETURN(fDescriptor->hints & NATIVE_PLUGIN_REQUESTS_IDLE, 0);
+            if (fWorker != nullptr)
+            {
+                fPluginNeedsIdle = true;
+                return 1;
+            }
+            return 0;
+
+        case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
             break;
 
         case NATIVE_HOST_OPCODE_GET_FILE_PATH:
@@ -908,8 +936,10 @@ private:
 
     CarlaString fLastProjectPath;
     CarlaString fLoadedFile;
+    volatile bool fPluginNeedsIdle;
 
     int fWorkerUISignal;
+    // -1 needs close, 0 idle, 1 stuff is writing??
 
     // -------------------------------------------------------------------
 
