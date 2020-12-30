@@ -25,18 +25,22 @@ extern "C" {
 #include "audio_decoder/ad.h"
 }
 
+#include "water/threads/ScopedLock.h"
+#include "water/threads/SpinLock.h"
 #include "zita-resampler/resampler.h"
 
 typedef struct adinfo ADInfo;
 
 struct AudioFilePool {
     float*   buffer[2];
+    float*   tmpbuf[2];
     uint32_t numFrames;
     volatile uint64_t startFrame;
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     AudioFilePool() noexcept
         : buffer{nullptr},
+          tmpbuf{nullptr},
           numFrames(0),
           startFrame(0) {}
 #else
@@ -45,6 +49,7 @@ struct AudioFilePool {
           startFrame(0)
     {
         buffer[0] = buffer[1] = nullptr;
+        tmpbuf[0] = tmpbuf[1] = nullptr;
     }
 #endif
 
@@ -53,16 +58,24 @@ struct AudioFilePool {
         destroy();
     }
 
-    void create(const uint32_t desiredNumFrames)
+    void create(const uint32_t desiredNumFrames, const bool withTempBuffers)
     {
         CARLA_ASSERT(buffer[0] == nullptr);
         CARLA_ASSERT(buffer[1] == nullptr);
+        CARLA_ASSERT(tmpbuf[0] == nullptr);
+        CARLA_ASSERT(tmpbuf[1] == nullptr);
         CARLA_ASSERT(startFrame == 0);
         CARLA_ASSERT(numFrames == 0);
 
         numFrames = desiredNumFrames;
         buffer[0] = new float[numFrames];
         buffer[1] = new float[numFrames];
+
+        if (withTempBuffers)
+        {
+            tmpbuf[0] = new float[numFrames];
+            tmpbuf[1] = new float[numFrames];
+        }
 
         reset();
     }
@@ -81,6 +94,18 @@ struct AudioFilePool {
             buffer[1] = nullptr;
         }
 
+        if (tmpbuf[0] != nullptr)
+        {
+            delete[] tmpbuf[0];
+            tmpbuf[0] = nullptr;
+        }
+
+        if (tmpbuf[1] != nullptr)
+        {
+            delete[] tmpbuf[1];
+            tmpbuf[1] = nullptr;
+        }
+
         startFrame = 0;
         numFrames = 0;
     }
@@ -93,6 +118,11 @@ struct AudioFilePool {
         {
             carla_zeroFloats(buffer[0], numFrames);
             carla_zeroFloats(buffer[1], numFrames);
+
+            if (tmpbuf[0] != nullptr)
+                carla_zeroFloats(tmpbuf[0], numFrames);
+            if (tmpbuf[1] != nullptr)
+                carla_zeroFloats(tmpbuf[1], numFrames);
         }
     }
 
@@ -165,8 +195,8 @@ public:
 
     void reset()
     {
-        const CarlaMutexLocker cml1(fPoolMutex);
-        const CarlaMutexLocker cml2(fReaderMutex);
+        const water::GenericScopedLock<water::SpinLock> gsl(fPoolMutex);
+        const CarlaMutexLocker cml(fReaderMutex);
 
         fNeedsFrame = 0;
         fNeedsRead = false;
@@ -256,7 +286,7 @@ public:
             if (fileNumFrames <= poolNumFrames)
             {
                 // entire file fits in a small pool, lets read it now
-                fPool.create(resampleNumFrames != 0 ? resampleNumFrames : fileNumFrames);
+                fPool.create(resampleNumFrames != 0 ? resampleNumFrames : fileNumFrames, false);
                 readEntireFileIntoPool(resampleNumFrames != 0);
                 ad_close(fFilePtr);
                 fFilePtr = nullptr;
@@ -264,7 +294,7 @@ public:
             else
             {
                 // file is too big for our audio pool, we need an extra buffer
-                fPool.create(poolNumFrames);
+                fPool.create(poolNumFrames, true);
 
                 const size_t pollTempSize = poolNumFrames * fFileNfo.channels;
                 const size_t resampleTempSize = resampleNumFrames * fFileNfo.channels;
@@ -315,7 +345,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pool.numFrames == fPool.numFrames,);
 
-        const CarlaMutexLocker cml(fPoolMutex);
+        const water::GenericScopedLock<water::SpinLock> gsl(fPoolMutex);
 
         pool.startFrame = fPool.startFrame;
         carla_copyFloats(pool.buffer[0], fPool.buffer[0], fPool.numFrames);
@@ -337,22 +367,7 @@ public:
         uint64_t frameDiff;
         const uint64_t numFramesNearEnd = fPool.numFrames*3/4;
 
-#if 1
-        const CarlaMutexLocker cml(fPoolMutex);
-#else
-        const CarlaMutexTryLocker cmtl(fPoolMutex);
-        if (! cmtl.wasLocked())
-        {
-            for (int i=0; i<5; ++i)
-            {
-                pthread_yield();
-                if (cmtl.tryAgain())
-                    break;
-                if (i == 4)
-                    return false;
-            }
-        }
-#endif
+        const water::GenericScopedLock<water::SpinLock> gsl(fPoolMutex);
 
         if (framePos < fPool.startFrame)
         {
@@ -431,7 +446,7 @@ public:
             fResampler.inp_data = buffer;
             fResampler.out_data = rbuffer;
             fResampler.process();
-            CARLA_ASSERT_INT(fResampler.inp_count == 0, fResampler.inp_count);
+            CARLA_ASSERT_INT(fResampler.inp_count <= 1, fResampler.inp_count);
         }
         else
         {
@@ -440,7 +455,7 @@ public:
 
         {
             // lock, and put data asap
-            const CarlaMutexLocker cml(fPoolMutex);
+            const water::GenericScopedLock<water::SpinLock> gsl(fPoolMutex);
 
             if (numChannels == 1)
             {
@@ -559,10 +574,8 @@ public:
 
             // local copy
             const uint32_t poolNumFrames = fPool.numFrames;
-            const int64_t fileFrames = fFileNfo.frames;
-            const bool isMonoFile = fFileNfo.channels == 1;
-            float* const pbuffer0 = fPool.buffer[0];
-            float* const pbuffer1 = fPool.buffer[1];
+            float* const pbuffer0 = fPool.tmpbuf[0];
+            float* const pbuffer1 = fPool.tmpbuf[1];
             const float* tmpbuf = fPollTempData;
 
             // resample as needed
@@ -574,14 +587,11 @@ public:
                 fResampler.inp_data = fPollTempData;
                 fResampler.out_data = fResampleTempData;
                 fResampler.process();
-                CARLA_ASSERT_INT(fResampler.inp_count == 0, fResampler.inp_count);
+                CARLA_ASSERT_INT(fResampler.inp_count <= 1, fResampler.inp_count);
             }
 
-            // lock, and put data asap
-            const CarlaMutexLocker cml(fPoolMutex);
-
             do {
-                if (isMonoFile)
+                if (fFileNfo.channels == 1)
                 {
                     for (; i < poolNumFrames && j < rv; ++i, ++j)
                         pbuffer0[i] = pbuffer1[i] = tmpbuf[j];
@@ -605,7 +615,7 @@ public:
                 if (i >= poolNumFrames)
                     break;
 
-                if (rv == fileFrames)
+                if (rv == fFileNfo.frames)
                 {
                     // full file read
                     j = 0;
@@ -622,6 +632,11 @@ public:
 
             } while (i < poolNumFrames);
 
+            // lock, and put data asap
+            const water::GenericScopedLock<water::SpinLock> gsl(fPoolMutex);
+
+            carla_copyFloats(fPool.buffer[0], pbuffer0, poolNumFrames);
+            carla_copyFloats(fPool.buffer[1], pbuffer1, poolNumFrames);
             fPool.startFrame = static_cast<uint64_t>(readFrame);
         }
 
@@ -649,8 +664,8 @@ private:
     AudioFilePool fPool;
     Resampler     fResampler;
 
-    CarlaMutex fPoolMutex;
-    CarlaMutex fReaderMutex;
+    water::SpinLock fPoolMutex;
+    CarlaMutex      fReaderMutex;
 
     CARLA_DECLARE_NON_COPY_STRUCT(AudioFileReader)
 };

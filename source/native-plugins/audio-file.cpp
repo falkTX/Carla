@@ -45,7 +45,7 @@ class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>
 {
 public:
 #ifndef __MOD_DEVICES__
-    typedef enum PendingInlineDisplay : uint8_t {
+    typedef enum _PendingInlineDisplay : uint8_t {
         InlineDisplayNotPending,
         InlineDisplayNeedRequest,
         InlineDisplayRequesting
@@ -495,7 +495,7 @@ private:
 
         if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate())))
         {
-            fPool.create(fReader.getPoolNumFrames());
+            fPool.create(fReader.getPoolNumFrames(), false);
             fMaxFrame = fReader.getMaxFrame();
 
             if (fReader.isEntireFileLoaded())
