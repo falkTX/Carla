@@ -22,6 +22,8 @@
 #define __RESAMPLER_TABLE_H
 
 
+#include "CarlaDefines.h"
+
 #include <pthread.h>
 
 
