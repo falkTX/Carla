@@ -101,10 +101,10 @@ protected:
     {
         static NativeParameter param;
 
-        param.scalePointCount = 0;
-        param.scalePoints     = nullptr;
-        param.unit            = nullptr;
-        param.ranges.step = 1.0f;
+        param.scalePointCount  = 0;
+        param.scalePoints      = nullptr;
+        param.unit             = nullptr;
+        param.ranges.step      = 1.0f;
         param.ranges.stepSmall = 1.0f;
         param.ranges.stepLarge = 1.0f;
 
