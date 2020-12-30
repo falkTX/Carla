@@ -4,6 +4,8 @@
 @prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
 @prefix opts:  <http://lv2plug.in/ns/ext/options#> .
 @prefix patch: <http://lv2plug.in/ns/ext/patch#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix unit:  <http://lv2plug.in/ns/extensions/units#> .
 
 <http://kxstudio.sf.net/carla/plugins/audiofile>
     a lv2:UtilityPlugin, lv2:Plugin ;
@@ -72,11 +74,62 @@
         lv2:index 5 ;
         lv2:symbol "loop_mode" ;
         lv2:name "Loop Mode" ;
-        lv2:default 1.000000 ;
-        lv2:minimum 0.000000 ;
-        lv2:maximum 1.000000 ;
-        lv2:portProperty lv2:toggled ;
+        lv2:default 1 ;
+        lv2:minimum 0 ;
+        lv2:maximum 1 ;
+        lv2:portProperty lv2:integer, lv2:toggled ;
+    ] , [
+        a lv2:OutputPort, lv2:ControlPort ;
+        lv2:index 6 ;
+        lv2:symbol "num_channels" ;
+        lv2:name "Num Channels" ;
+        lv2:minimum 0 ;
+        lv2:maximum 2 ;
+        lv2:portProperty lv2:integer ;
+    ] , [
+        a lv2:OutputPort, lv2:ControlPort ;
+        lv2:index 7 ;
+        lv2:symbol "bit_rate" ;
+        lv2:name "Bit Rate" ;
+        lv2:minimum 0 ;
+        lv2:maximum 24576000 ;
+        lv2:portProperty lv2:integer ;
+    ] , [
+        a lv2:OutputPort, lv2:ControlPort ;
+        lv2:index 8 ;
+        lv2:symbol "bit_depth" ;
+        lv2:name "Bit Depth" ;
+        lv2:minimum 0 ;
+        lv2:maximum 32 ;
+        lv2:portProperty lv2:integer ;
+    ] , [
+        a lv2:OutputPort, lv2:ControlPort ;
+        lv2:index 9 ;
+        lv2:symbol "sample_rate" ;
+        lv2:name "Sample Rate" ;
+        lv2:minimum 0 ;
+        lv2:maximum 384000 ;
+        lv2:portProperty lv2:integer ;
+    ] , [
+        a lv2:OutputPort, lv2:ControlPort ;
+        lv2:index 10 ;
+        lv2:symbol "length" ;
+        lv2:name "Length" ;
+        lv2:minimum 0.0 ;
+        lv2:maximum 9223372036854775808.0 ;
+        unit:unit [
+            a unit:Unit ;
+            rdfs:label  "s" ;
+            unit:symbol "s" ;
+            unit:render "%f s" ;
+        ] ;
     ] ;
 
+    doap:license <http://opensource.org/licenses/GPL-2.0> ;
     doap:name "Audio File" ;
-    doap:maintainer [ foaf:name "falkTX" ] .
+    doap:developer [ foaf:name "falkTX" ] ;
+    doap:maintainer [ foaf:name "falkTX" ] ;
+
+    lv2:microVersion 22 ;
+    lv2:minorVersion 146 ;
+    lv2:symbol "audiofile" .
