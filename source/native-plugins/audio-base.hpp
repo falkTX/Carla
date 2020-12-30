@@ -114,6 +114,8 @@ public:
           fNumFileFrames(0),
           fPollTempData(nullptr),
           fPollTempSize(0),
+          fResampleTempData(nullptr),
+          fResampleTempSize(0),
           fPool(),
           fMutex(),
           fSignal(),
@@ -153,6 +155,13 @@ public:
             delete[] fPollTempData;
             fPollTempData = nullptr;
             fPollTempSize = 0;
+        }
+
+        if (fResampleTempData != nullptr)
+        {
+            delete[] fResampleTempData;
+            fResampleTempData = nullptr;
+            fResampleTempSize = 0;
         }
 
         fPool.destroy();
@@ -245,31 +254,27 @@ public:
             // valid
             const uint32_t fileNumFrames = static_cast<uint32_t>(fFileNfo.frames);
             const uint32_t poolNumFrames = sampleRate * 5;
-            bool needsResample;
+            uint32_t resampleNumFrames;
 
             if (fFileNfo.sample_rate != sampleRate)
             {
-                needsResample = true;
                 fResampler.setup(fFileNfo.sample_rate, sampleRate, fFileNfo.channels, 32);
+                resampleNumFrames = static_cast<uint32_t>(
+                                        static_cast<double>(std::min(fileNumFrames, poolNumFrames)) * (
+                                            static_cast<double>(sampleRate) / static_cast<double>(fFileNfo.sample_rate)
+                                        ) + 0.5);
             }
             else
             {
-                needsResample = false;
                 fResampler.clear();
+                resampleNumFrames = 0;
             }
 
-            // TODO resample on the fly too
-            if (fileNumFrames <= poolNumFrames || needsResample)
+            if (fileNumFrames <= poolNumFrames)
             {
                 // entire file fits in a small pool, lets read it now
-                const uint32_t poolNumFrames = needsResample
-                                             ? static_cast<uint32_t>(
-                                                 static_cast<double>(fileNumFrames) * (
-                                                     static_cast<double>(sampleRate) /
-                                                        static_cast<double>(fFileNfo.sample_rate)) + 0.5)
-                                             : fileNumFrames;
                 fPool.create(poolNumFrames);
-                readEntireFileIntoPool(needsResample);
+                readEntireFileIntoPool(resampleNumFrames != 0);
                 ad_close(fFilePtr);
                 fFilePtr = nullptr;
             }
@@ -279,6 +284,7 @@ public:
                 fPool.create(poolNumFrames);
 
                 const size_t pollTempSize = poolNumFrames * fFileNfo.channels;
+                const size_t resampleTempSize = resampleNumFrames * fFileNfo.channels;
 
                 try {
                     fPollTempData = new float[pollTempSize];
@@ -288,7 +294,21 @@ public:
                     return false;
                 }
 
+                if (resampleTempSize)
+                {
+                    try {
+                        fResampleTempData = new float[resampleTempSize];
+                    } catch (...) {
+                        delete[] fPollTempData;
+                        fPollTempData = nullptr;
+                        ad_close(fFilePtr);
+                        fFilePtr = nullptr;
+                        return false;
+                    }
+                }
+
                 fPollTempSize = pollTempSize;
+                fResampleTempSize = resampleTempSize;
             }
 
             fNumFileFrames = fileNumFrames;
@@ -548,20 +568,31 @@ public:
             const bool isMonoFile = fFileNfo.channels == 1;
             float* const pbuffer0 = fPool.buffer[0];
             float* const pbuffer1 = fPool.buffer[1];
-            const float* const tmpbuf = fPollTempData;
+            const float* tmpbuf = fPollTempData;
+
+            // resample as needed
+            if (fResampleTempSize != 0)
+            {
+                tmpbuf = fResampleTempData;
+                fResampler.inp_count = rv / fFileNfo.channels;
+                fResampler.out_count = fResampleTempSize / fFileNfo.channels;
+                fResampler.inp_data = fPollTempData;
+                fResampler.out_data = fResampleTempData;
+                fResampler.process();
+            }
 
             // lock, and put data asap
             const CarlaMutexLocker cml(fMutex);
 
             do {
-                for (; i < poolNumFrames && j < rv; ++j)
+                if (isMonoFile)
                 {
-                    if (isMonoFile)
-                    {
+                    for (; i < poolNumFrames && j < rv; ++i, ++j)
                         pbuffer0[i] = pbuffer1[i] = tmpbuf[j];
-                        i++;
-                    }
-                    else
+                }
+                else
+                {
+                    for (; i < poolNumFrames && j < rv; ++j)
                     {
                         if (j % 2 == 0)
                         {
@@ -575,9 +606,8 @@ public:
                     }
                 }
 
-                if (i >= poolNumFrames) {
+                if (i >= poolNumFrames)
                     break;
-                }
 
                 if (rv == fileFrames)
                 {
@@ -631,6 +661,9 @@ private:
 
     float* fPollTempData;
     size_t fPollTempSize;
+
+    float* fResampleTempData;
+    size_t fResampleTempSize;
 
     AudioFilePool fPool;
     CarlaMutex    fMutex;
