@@ -538,7 +538,39 @@ struct LV2_RDF_Parameter {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Parameter)
+    LV2_RDF_Parameter& operator=(LV2_RDF_Parameter& other) noexcept
+    {
+        URI = other.URI;
+        Type = other.Type;
+        Input = other.Input;
+        Label = other.Label;
+        Comment = other.Comment;
+        GroupURI = other.GroupURI;
+        MidiMap = other.MidiMap;
+        Points = other.Points;
+        Unit.Hints = other.Unit.Hints;
+        Unit.Name = other.Unit.Name;
+        Unit.Render = other.Unit.Render;
+        Unit.Symbol = other.Unit.Symbol;
+        Unit.Unit = other.Unit.Unit;
+        other.URI = nullptr;
+        other.Label = nullptr;
+        other.Comment = nullptr;
+        other.GroupURI = nullptr;
+        other.Unit.Name = nullptr;
+        other.Unit.Render = nullptr;
+        other.Unit.Symbol = nullptr;
+        return *this;
+    }
+
+private:
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+    LV2_RDF_Parameter(LV2_RDF_Parameter&) = delete;
+    LV2_RDF_Parameter(const LV2_RDF_Parameter&) = delete;
+#else
+    LV2_RDF_Parameter(LV2_RDF_Parameter&);
+    LV2_RDF_Parameter(const LV2_RDF_Parameter&);
+#endif
 };
 
 // Preset
