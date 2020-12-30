@@ -458,6 +458,8 @@ public:
             {
                 PortNameToId portNameToId;
                 portNameToId.setData(kExternalGraphGroupAudioOut, uint(i+1), outputNames[i].toRawUTF8(), "");
+
+                extGraph.audioPorts.outs.append(portNameToId);
             }
         }
 
