@@ -186,13 +186,13 @@ protected:
         switch (index)
         {
         case kParameterInfoChannels:
-            return nfo.channels;
+            return static_cast<float>(nfo.channels);
         case kParameterInfoBitRate:
-            return nfo.bit_rate;
+            return static_cast<float>(nfo.bit_rate);
         case kParameterInfoBitDepth:
-            return nfo.bit_depth;
+            return static_cast<float>(nfo.bit_depth);
         case kParameterInfoSampleRate:
-            return nfo.sample_rate;
+            return static_cast<float>(nfo.sample_rate);
         case kParameterInfoLength:
             return static_cast<float>(nfo.length)/1000.0f;
         default:

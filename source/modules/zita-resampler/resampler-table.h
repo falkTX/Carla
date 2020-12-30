@@ -31,7 +31,7 @@ private:
 
     friend class Resampler_table;
 
-    Resampler_mutex (void) { pthread_mutex_init (&_mutex, 0); }
+    Resampler_mutex (void) { pthread_mutex_init (&_mutex, nullptr); }
     ~Resampler_mutex (void) { pthread_mutex_destroy (&_mutex); }
     void lock (void) { pthread_mutex_lock (&_mutex); }
     void unlock (void) { pthread_mutex_unlock (&_mutex); }

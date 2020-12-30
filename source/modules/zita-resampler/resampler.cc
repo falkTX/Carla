@@ -48,7 +48,7 @@ static unsigned int gcd (unsigned int a, unsigned int b)
 }
 
 
-Resampler::Resampler (void) :
+Resampler::Resampler (void) noexcept :
     _table (0),
     _nchan (0),
     _buff  (0)
@@ -132,21 +132,21 @@ void Resampler::clear (void)
 }
 
 
-double Resampler::inpdist (void) const
+double Resampler::inpdist (void) const noexcept
 {
     if (!_table) return 0;
     return (int)(_table->_hl + 1 - _nread) - (double)_phase / _table->_np;
 }
 
 
-int Resampler::inpsize (void) const
+unsigned int Resampler::inpsize (void) const noexcept
 {
     if (!_table) return 0;
     return 2 * _table->_hl;
 }
 
 
-int Resampler::reset (void)
+int Resampler::reset (void) noexcept
 {
     if (!_table) return 1;
 
@@ -157,11 +157,11 @@ int Resampler::reset (void)
     _index = 0;
     _nread = 0;
     _nzero = 0;
-    _phase = 0; 
+    _phase = 0;
     if (_table)
     {
         _nread = 2 * _table->_hl;
-	return 0;
+        return 0;
     }
     return 1;
 }

@@ -29,7 +29,7 @@ class Resampler
 {
 public:
 
-    Resampler (void);
+    Resampler (void) noexcept;
     ~Resampler (void);
 
     int  setup (unsigned int fs_inp,
@@ -43,13 +43,13 @@ public:
                 unsigned int hlen,
                 double       frel);
 
-    void   clear (void);
-    int    reset (void);
-    int    nchan (void) const { return _nchan; }
-    int    filtlen (void) const { return inpsize (); } // Deprecated
-    int    inpsize (void) const;
-    double inpdist (void) const; 
-    int    process (void);
+    void         clear (void);
+    int          reset (void) noexcept;
+    unsigned int nchan (void) const noexcept { return _nchan; }
+    unsigned int filtlen (void) const noexcept { return inpsize (); } // Deprecated
+    unsigned int inpsize (void) const noexcept;
+    double       inpdist (void) const noexcept;
+    int          process (void);
 
     unsigned int         inp_count;
     unsigned int         out_count;

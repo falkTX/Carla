@@ -27,7 +27,18 @@ extern "C" {
 
 #include "water/threads/ScopedLock.h"
 #include "water/threads/SpinLock.h"
+
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Weffc++"
+#endif
+
 #include "zita-resampler/resampler.h"
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 typedef struct adinfo ADInfo;
 
@@ -140,7 +151,7 @@ public:
           fFilePtr(nullptr),
           fFileNfo(),
           fMaxFrame(0),
-          fResampleRatio(1.0),
+          fResampleRatio(0.0),
           fPollTempData(nullptr),
           fPollTempSize(0),
           fResampleTempData(nullptr),
@@ -284,7 +295,7 @@ public:
             else
             {
                 fResampler.clear();
-                fResampleRatio = 1.0;
+                fResampleRatio = 0.0;
                 resampleNumFrames = 0;
             }
 
@@ -301,8 +312,8 @@ public:
                 // file is too big for our audio pool, we need an extra buffer
                 fPool.create(poolNumFrames, true);
 
-                const size_t pollTempSize = poolNumFrames * fFileNfo.channels;
-                const size_t resampleTempSize = resampleNumFrames * fFileNfo.channels;
+                const uint pollTempSize = poolNumFrames * fFileNfo.channels;
+                const uint resampleTempSize = resampleNumFrames * fFileNfo.channels;
 
                 try {
                     fPollTempData = new float[pollTempSize];
@@ -329,7 +340,7 @@ public:
                 fResampleTempSize = resampleTempSize;
             }
 
-            fMaxFrame = fResampleRatio != 1.0
+            fMaxFrame = carla_isNotZero(fResampleRatio)
                         ? static_cast<uint32_t>(static_cast<double>(fileNumFrames) * fResampleRatio + 0.5)
                         : fileNumFrames;
 
@@ -424,9 +435,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPool.numFrames > 0,);
 
         const uint numChannels = fFileNfo.channels;
-        const size_t bufferSize = fFileNfo.frames * numChannels;
+        const uint numFrames = static_cast<uint>(fFileNfo.frames);
+        uint bufferSize = numFrames * numChannels;
 
-        float* const buffer = (float*)std::malloc(bufferSize*sizeof(float));
+        float* const buffer = (float*)std::malloc(bufferSize * sizeof(float));
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
         carla_zeroFloats(buffer, bufferSize);
 
@@ -441,10 +453,12 @@ public:
 
         if (needsResample)
         {
-            rv = fPool.numFrames * numChannels;
-            rbuffer = (float*)std::malloc(rv*sizeof(float));
+            bufferSize = fPool.numFrames * numChannels;
+            rbuffer = (float*)std::malloc(bufferSize * sizeof(float));
             CARLA_SAFE_ASSERT_RETURN(rbuffer != nullptr, std::free(buffer););
-            carla_zeroFloats(rbuffer, rv);
+            carla_zeroFloats(rbuffer, bufferSize);
+
+            rv = static_cast<ssize_t>(bufferSize);
 
             fResampler.inp_count = bufferSize / numChannels;
             fResampler.out_count = fPool.numFrames;
@@ -550,7 +564,9 @@ public:
                         readFrame, readFrame/sampleRate/60, (readFrame/sampleRate) % 60, lastFrame);
 #endif
 
-            const int64_t readFrameReal = fResampleRatio != 1.0 ? readFrame / fResampleRatio : readFrame;
+            const int64_t readFrameReal = carla_isNotZero(fResampleRatio)
+                                        ? static_cast<int64_t>(static_cast<double>(readFrame) / fResampleRatio + 0.5)
+                                        : readFrame;
 
             ad_seek(fFilePtr, readFrameReal);
             size_t i = 0;
@@ -559,7 +575,7 @@ public:
 
             if (rv < 0)
             {
-                carla_stderr("R: ad_read failed");
+                carla_stderr("R: ad_read1 failed");
                 fNeedsFrame = 0;
                 fNeedsRead = false;
                 return;
@@ -572,7 +588,17 @@ public:
             {
                 carla_debug("R: from start");
                 ad_seek(fFilePtr, 0);
-                rv += ad_read(fFilePtr, fPollTempData+urv, fPollTempSize-urv);
+                j = ad_read(fFilePtr, fPollTempData+urv, fPollTempSize-urv);
+
+                if (j < 0)
+                {
+                    carla_stderr("R: ad_read2 failed");
+                    fNeedsFrame = 0;
+                    fNeedsRead = false;
+                    return;
+                }
+
+                rv += j;
             }
 
             carla_debug("R: reading %li frames at frame %lu", rv, readFrameCheck);
@@ -587,7 +613,7 @@ public:
             if (fResampleTempSize != 0)
             {
                 tmpbuf = fResampleTempData;
-                fResampler.inp_count = rv / fFileNfo.channels;
+                fResampler.inp_count = static_cast<uint>(rv / fFileNfo.channels);
                 fResampler.out_count = fResampleTempSize / fFileNfo.channels;
                 fResampler.inp_data = fPollTempData;
                 fResampler.out_data = fResampleTempData;
@@ -595,6 +621,7 @@ public:
                 CARLA_ASSERT_INT(fResampler.inp_count <= 1, fResampler.inp_count);
             }
 
+            j = 0;
             do {
                 if (fFileNfo.channels == 1)
                 {
@@ -661,10 +688,10 @@ private:
     double fResampleRatio;
 
     float* fPollTempData;
-    size_t fPollTempSize;
+    uint fPollTempSize;
 
     float* fResampleTempData;
-    size_t fResampleTempSize;
+    uint fResampleTempSize;
 
     AudioFilePool fPool;
     Resampler     fResampler;
