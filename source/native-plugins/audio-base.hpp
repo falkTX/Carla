@@ -287,7 +287,15 @@ public:
 
             if (fFileNfo.sample_rate != sampleRate)
             {
-                fResampler.setup(fFileNfo.sample_rate, sampleRate, fFileNfo.channels, 32);
+                if (! fResampler.setup(fFileNfo.sample_rate, sampleRate, fFileNfo.channels, 32))
+                {
+                    ad_clear_nfo(&fFileNfo);
+                    ad_close(fFilePtr);
+                    fFilePtr = nullptr;
+                    carla_stderr2("loadFilename error, resampler setup failed");
+                    return false;
+                }
+
                 fResampleRatio = static_cast<double>(sampleRate) / static_cast<double>(fFileNfo.sample_rate);
                 resampleNumFrames = static_cast<uint32_t>(
                                         static_cast<double>(std::min(fileNumFrames, poolNumFrames)) * fResampleRatio + 0.5);
@@ -318,8 +326,10 @@ public:
                 try {
                     fPollTempData = new float[pollTempSize];
                 } catch (...) {
+                    ad_clear_nfo(&fFileNfo);
                     ad_close(fFilePtr);
                     fFilePtr = nullptr;
+                    carla_stderr2("loadFilename error, out of memory");
                     return false;
                 }
 
@@ -330,8 +340,10 @@ public:
                     } catch (...) {
                         delete[] fPollTempData;
                         fPollTempData = nullptr;
+                        ad_clear_nfo(&fFileNfo);
                         ad_close(fFilePtr);
                         fFilePtr = nullptr;
+                        carla_stderr2("loadFilename error, out of memory");
                         return false;
                     }
                 }

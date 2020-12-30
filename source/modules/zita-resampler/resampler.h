@@ -44,12 +44,12 @@ public:
                 double       frel);
 
     void         clear (void);
-    int          reset (void) noexcept;
+    bool         reset (void) noexcept;
     unsigned int nchan (void) const noexcept { return _nchan; }
     unsigned int filtlen (void) const noexcept { return inpsize (); } // Deprecated
     unsigned int inpsize (void) const noexcept;
     double       inpdist (void) const noexcept;
-    int          process (void);
+    bool         process (void);
 
     unsigned int         inp_count;
     unsigned int         out_count;

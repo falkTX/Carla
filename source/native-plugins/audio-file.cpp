@@ -137,7 +137,7 @@ protected:
                                                             NATIVE_PARAMETER_IS_OUTPUT);
             param.ranges.def = 0.0f;
             param.ranges.min = 0.0f;
-            param.ranges.max = 384000.0f;
+            param.ranges.max = 384000.0f * 32.0f * 2.0f;
             break;
         case kParameterInfoBitDepth:
             param.name  = "Bit Depth";

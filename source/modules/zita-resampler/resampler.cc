@@ -87,35 +87,35 @@ int Resampler::setup (unsigned int fs_inp,
     k = s = 0;
     if (fs_inp && fs_out && nchan)
     {
-	r = (double) fs_out / (double) fs_inp;
+        r = (double) fs_out / (double) fs_inp;
         g = gcd (fs_out, fs_inp);
         n = fs_out / g;
-	s = fs_inp / g;
+        s = fs_inp / g;
         if ((16 * r >= 1) && (n <= 1000))
-	{
-	    h = hlen;
-	    k = 250;
-	    if (r < 1) 
-	    {
-		frel *= r;
-		h = (unsigned int)(ceil (h / r));
-		k = (unsigned int)(ceil (k / r));
-	    }
+        {
+            h = hlen;
+            k = 250;
+            if (r < 1)
+            {
+                frel *= r;
+                h = (unsigned int)(ceil (h / r));
+                k = (unsigned int)(ceil (k / r));
+            }
             T = Resampler_table::create (frel, h, n);
-	    B = new float [nchan * (2 * h - 1 + k)];
-	}
+            B = new float [nchan * (2 * h - 1 + k)];
+        }
     }
     clear ();
     if (T)
     {
-	_table = T;
-	_buff  = B;
-	_nchan = nchan;
-	_inmax = k;
-	_pstep = s;
-	return reset ();
+        _table = T;
+        _buff  = B;
+        _nchan = nchan;
+        _inmax = k;
+        _pstep = s;
+        return reset ();
     }
-    else return 1;
+    return 1;
 }
 
 
@@ -146,33 +146,29 @@ unsigned int Resampler::inpsize (void) const noexcept
 }
 
 
-int Resampler::reset (void) noexcept
+bool Resampler::reset (void) noexcept
 {
-    if (!_table) return 1;
+    if (!_table) return false;
 
     inp_count = 0;
     out_count = 0;
-    inp_data = 0;
-    out_data = 0;
+    inp_data = nullptr;
+    out_data = nullptr;
     _index = 0;
     _nread = 0;
     _nzero = 0;
     _phase = 0;
-    if (_table)
-    {
-        _nread = 2 * _table->_hl;
-        return 0;
-    }
-    return 1;
+    _nread = 2 * _table->_hl;
+    return true;
 }
 
 
-int Resampler::process (void)
+bool Resampler::process (void)
 {
     unsigned int   hl, ph, np, dp, in, nr, nz, i, n, c;
     float          *p1, *p2;
 
-    if (!_table) return 1;
+    if (!_table) return false;
 
     hl = _table->_hl;
     np = _table->_np;
@@ -187,77 +183,77 @@ int Resampler::process (void)
 
     while (out_count)
     {
-	if (nr)
-	{
-	    if (inp_count == 0) break;
-  	    if (inp_data)
-	    {
+        if (nr)
+        {
+            if (inp_count == 0) break;
+            if (inp_data)
+            {
                 for (c = 0; c < _nchan; c++) p2 [c] = inp_data [c];
-		inp_data += _nchan;
-		nz = 0;
-	    }
-	    else
-	    {
+                inp_data += _nchan;
+              nz = 0;
+            }
+            else
+            {
                 for (c = 0; c < _nchan; c++) p2 [c] = 0;
-		if (nz < 2 * hl) nz++;
-	    }
-	    nr--;
-	    p2 += _nchan;
-	    inp_count--;
-	}
-	else
-	{
-	    if (out_data)
-	    {
-		if (nz < 2 * hl)
-		{
-		    float *c1 = _table->_ctab + hl * ph;
-		    float *c2 = _table->_ctab + hl * (np - ph);
-		    for (c = 0; c < _nchan; c++)
-		    {
-			float *q1 = p1 + c;
-			float *q2 = p2 + c;
-			float s = 1e-20f;
-			for (i = 0; i < hl; i++)
-			{
-			    q2 -= _nchan;
-			    s += *q1 * c1 [i] + *q2 * c2 [i];
-			    q1 += _nchan;
-			}
-			*out_data++ = s - 1e-20f;
-		    }
-		}
-		else
-		{
-		    for (c = 0; c < _nchan; c++) *out_data++ = 0;
-		}
-	    }
-	    out_count--;
+                if (nz < 2 * hl) nz++;
+            }
+            nr--;
+            p2 += _nchan;
+            inp_count--;
+        }
+        else
+        {
+            if (out_data)
+            {
+                if (nz < 2 * hl)
+                {
+                    float *c1 = _table->_ctab + hl * ph;
+                    float *c2 = _table->_ctab + hl * (np - ph);
+                    for (c = 0; c < _nchan; c++)
+                    {
+                        float *q1 = p1 + c;
+                        float *q2 = p2 + c;
+                        float s = 1e-20f;
+                        for (i = 0; i < hl; i++)
+                        {
+                            q2 -= _nchan;
+                            s += *q1 * c1 [i] + *q2 * c2 [i];
+                            q1 += _nchan;
+                        }
+                        *out_data++ = s - 1e-20f;
+                    }
+                }
+                else
+                {
+                    for (c = 0; c < _nchan; c++) *out_data++ = 0;
+                }
+            }
+            out_count--;
 
-	    ph += dp;
-	    if (ph >= np)
-	    {
-		nr = ph / np;
-		ph -= nr * np;
-		in += nr;
-		p1 += nr * _nchan;;
-		if (in >= _inmax)
-		{
-		    n = (2 * hl - nr) * _nchan;
-		    memcpy (_buff, p1, n * sizeof (float));
-		    in = 0;
-		    p1 = _buff;
-		    p2 = p1 + n;
-		}
-	    }
-	}
+            ph += dp;
+            if (ph >= np)
+            {
+                nr = ph / np;
+                ph -= nr * np;
+                in += nr;
+                p1 += nr * _nchan;;
+                if (in >= _inmax)
+                {
+                    n = (2 * hl - nr) * _nchan;
+                    memcpy (_buff, p1, n * sizeof (float));
+                    in = 0;
+                    p1 = _buff;
+                    p2 = p1 + n;
+                }
+            }
+        }
     }
     _index = in;
     _nread = nr;
     _phase = ph;
     _nzero = nz;
 
-    return 0;
+    return true;
 }
 
 
