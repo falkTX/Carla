@@ -111,7 +111,8 @@ public:
           fQuitNow(true),
           fFilePtr(nullptr),
           fFileNfo(),
-          fNumFileFrames(0),
+          fMaxFrame(0),
+          fResampleRatio(1.0),
           fPollTempData(nullptr),
           fPollTempSize(0),
           fResampleTempData(nullptr),
@@ -198,7 +199,7 @@ public:
 
     uint32_t getMaxFrame() const noexcept
     {
-        return fNumFileFrames;
+        return fMaxFrame;
     }
 
     uint64_t getPoolStartFrame() const noexcept
@@ -259,21 +260,21 @@ public:
             if (fFileNfo.sample_rate != sampleRate)
             {
                 fResampler.setup(fFileNfo.sample_rate, sampleRate, fFileNfo.channels, 32);
+                fResampleRatio = static_cast<double>(sampleRate) / static_cast<double>(fFileNfo.sample_rate);
                 resampleNumFrames = static_cast<uint32_t>(
-                                        static_cast<double>(std::min(fileNumFrames, poolNumFrames)) * (
-                                            static_cast<double>(sampleRate) / static_cast<double>(fFileNfo.sample_rate)
-                                        ) + 0.5);
+                                        static_cast<double>(std::min(fileNumFrames, poolNumFrames)) * fResampleRatio + 0.5);
             }
             else
             {
                 fResampler.clear();
+                fResampleRatio = 1.0;
                 resampleNumFrames = 0;
             }
 
             if (fileNumFrames <= poolNumFrames)
             {
                 // entire file fits in a small pool, lets read it now
-                fPool.create(poolNumFrames);
+                fPool.create(resampleNumFrames != 0 ? resampleNumFrames : fileNumFrames);
                 readEntireFileIntoPool(resampleNumFrames != 0);
                 ad_close(fFilePtr);
                 fFilePtr = nullptr;
@@ -311,7 +312,9 @@ public:
                 fResampleTempSize = resampleTempSize;
             }
 
-            fNumFileFrames = fileNumFrames;
+            fMaxFrame = fResampleRatio != 1.0
+                        ? static_cast<uint32_t>(static_cast<double>(fileNumFrames) * fResampleRatio + 0.5)
+                        : fileNumFrames;
 
             readPoll();
             return true;
@@ -341,10 +344,10 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fPool.numFrames != 0, false);
 
-        if (framePos >= fNumFileFrames)
+        if (framePos >= fMaxFrame)
         {
             if (fLoopingMode)
-                framePos %= fNumFileFrames;
+                framePos %= fMaxFrame;
             else
                 return false;
         }
@@ -371,13 +374,13 @@ public:
 
         if (framePos < fPool.startFrame)
         {
-            if (fPool.startFrame + fPool.numFrames <= fNumFileFrames)
+            if (fPool.startFrame + fPool.numFrames <= fMaxFrame)
             {
                 setNeedsRead(framePos);
                 return false;
             }
 
-            frameDiff = framePos + (fNumFileFrames - fPool.startFrame);
+            frameDiff = framePos + (fMaxFrame - fPool.startFrame);
 
             if (frameDiff + frames >= fPool.numFrames)
             {
@@ -413,33 +416,34 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPool.numFrames > 0,);
 
         const uint numChannels = fFileNfo.channels;
-        const size_t numFrames = fFileNfo.frames;
+        const size_t bufferSize = fFileNfo.frames * numChannels;
 
-        float* const buffer = (float*)std::malloc(numFrames*sizeof(float));
+        float* const buffer = (float*)std::malloc(bufferSize*sizeof(float));
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
-        carla_zeroFloats(buffer, numFrames);
+        carla_zeroFloats(buffer, bufferSize);
 
         ad_seek(fFilePtr, 0);
-        ssize_t rv = ad_read(fFilePtr, buffer, numFrames);
-        CARLA_SAFE_ASSERT_INT2_RETURN(rv == static_cast<ssize_t>(numFrames),
+        ssize_t rv = ad_read(fFilePtr, buffer, bufferSize);
+        CARLA_SAFE_ASSERT_INT2_RETURN(rv == static_cast<ssize_t>(bufferSize),
                                       static_cast<int>(rv),
-                                      static_cast<int>(numFrames),
+                                      static_cast<int>(bufferSize),
                                       std::free(buffer));
 
         float* rbuffer;
 
         if (needsResample)
         {
-            rv = fPool.numFrames;
-            rbuffer = (float*)std::malloc(fPool.numFrames*sizeof(float));
+            rv = fPool.numFrames * numChannels;
+            rbuffer = (float*)std::malloc(rv*sizeof(float));
             CARLA_SAFE_ASSERT_RETURN(rbuffer != nullptr, std::free(buffer););
-            carla_zeroFloats(rbuffer, fPool.numFrames);
+            carla_zeroFloats(rbuffer, rv);
 
-            fResampler.inp_count = numFrames / numChannels;
-            fResampler.out_count = fPool.numFrames / numChannels;
+            fResampler.inp_count = bufferSize / numChannels;
+            fResampler.out_count = fPool.numFrames;
             fResampler.inp_data = buffer;
             fResampler.out_data = rbuffer;
             fResampler.process();
+            CARLA_ASSERT_INT(fResampler.inp_count == 0, fResampler.inp_count);
         }
         else
         {
@@ -483,7 +487,7 @@ public:
 
     void readPoll()
     {
-        if (fNumFileFrames == 0 || fFileNfo.channels == 0 || fFilePtr == nullptr)
+        if (fMaxFrame == 0 || fFileNfo.channels == 0 || fFilePtr == nullptr)
         {
             carla_debug("R: no song loaded");
             fNeedsFrame = 0;
@@ -501,11 +505,11 @@ public:
         uint64_t lastFrame = fNeedsFrame;
         int64_t readFrameCheck;
 
-        if (lastFrame >= fNumFileFrames)
+        if (lastFrame >= fMaxFrame)
         {
             if (fLoopingMode)
             {
-                const uint64_t readFrameCheckLoop = lastFrame % fNumFileFrames;
+                const uint64_t readFrameCheckLoop = lastFrame % fMaxFrame;
                 CARLA_SAFE_ASSERT_RETURN(readFrameCheckLoop < INT32_MAX,);
 
                 carla_debug("R: transport out of bounds for loop");
@@ -537,7 +541,9 @@ public:
                         readFrame, readFrame/sampleRate/60, (readFrame/sampleRate) % 60, lastFrame);
 #endif
 
-            ad_seek(fFilePtr, readFrame);
+            const int64_t readFrameReal = fResampleRatio != 1.0 ? readFrame / fResampleRatio : readFrame;
+
+            ad_seek(fFilePtr, readFrameReal);
             size_t i = 0;
             ssize_t j = 0;
             ssize_t rv = ad_read(fFilePtr, fPollTempData, fPollTempSize);
@@ -553,7 +559,7 @@ public:
             const size_t urv = static_cast<size_t>(rv);
 
             // see if we can read more
-            if (readFrame + rv >= static_cast<ssize_t>(fFileNfo.frames) && urv < fPollTempSize)
+            if (readFrameReal + rv >= static_cast<ssize_t>(fFileNfo.frames) && urv < fPollTempSize)
             {
                 carla_debug("R: from start");
                 ad_seek(fFilePtr, 0);
@@ -579,6 +585,7 @@ public:
                 fResampler.inp_data = fPollTempData;
                 fResampler.out_data = fResampleTempData;
                 fResampler.process();
+                CARLA_ASSERT_INT(fResampler.inp_count == 0, fResampler.inp_count);
             }
 
             // lock, and put data asap
@@ -657,7 +664,8 @@ private:
     void*  fFilePtr;
     ADInfo fFileNfo;
 
-    uint32_t fNumFileFrames;
+    uint32_t fMaxFrame;
+    double fResampleRatio;
 
     float* fPollTempData;
     size_t fPollTempSize;
