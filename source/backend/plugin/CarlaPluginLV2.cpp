@@ -7303,7 +7303,7 @@ public:
         lv2_atom_forge_urid(&atomForge, urid);
 
         lv2_atom_forge_key(&atomForge, kUridPatchValue);
-        lv2_atom_forge_path(&atomForge, path, static_cast<uint32_t>(std::strlen(path)));
+        lv2_atom_forge_path(&atomForge, path, static_cast<uint32_t>(std::strlen(path))+1);
 
         lv2_atom_forge_pop(&atomForge, &forgeFrame);
 

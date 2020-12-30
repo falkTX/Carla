@@ -54,9 +54,11 @@ public:
           fProgramDesc({0, 0, nullptr}),
 #endif
           kIgnoreParameters(std::strncmp(desc->label, "carla", 5) == 0),
+          fAtomForge(),
           fMidiEventCount(0),
           fLastProjectPath(),
           fLoadedFile(),
+          fNeedsNotifyFileChanged(false),
           fPluginNeedsIdle(false),
           fWorkerUISignal(0)
     {
@@ -89,6 +91,9 @@ public:
         fHost.ui_open_file           = host_ui_open_file;
         fHost.ui_save_file           = host_ui_save_file;
         fHost.dispatcher             = host_dispatcher;
+
+        carla_zeroStruct(fAtomForge);
+        lv2_atom_forge_init(&fAtomForge, fUridMap);
     }
 
     ~NativePlugin()
@@ -259,7 +264,8 @@ public:
                     {
                         const LV2_Atom_Object* const obj = (const LV2_Atom_Object*)(&event->body);
 
-                        if (obj->body.otype == fURIs.patchSet) {
+                        if (obj->body.otype == fURIs.patchSet)
+                        {
                             // Get property URI.
                             const LV2_Atom* property = nullptr;
                             lv2_atom_object_get(obj, fURIs.patchProperty, &property, 0);
@@ -287,6 +293,11 @@ public:
                             fWorker->schedule_work(fWorker->handle,
                                                    static_cast<uint32_t>(std::strlen(filepath) + 1U),
                                                    filepath);
+                        }
+                        else if (obj->body.otype == fURIs.patchGet)
+                        {
+                            if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
+                                fNeedsNotifyFileChanged = true;
                         }
 
                         continue;
@@ -317,6 +328,54 @@ public:
                         break;
                 }
             }
+
+            if (fNeedsNotifyFileChanged)
+            {
+                fNeedsNotifyFileChanged = false;
+
+                uint8_t atomBuf[4096];
+                LV2_Atom_Forge atomForge = fAtomForge;
+                lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
+
+                LV2_Atom_Forge_Frame forgeFrame;
+                lv2_atom_forge_object(&atomForge, &forgeFrame, 0, fURIs.patchSet);
+
+                lv2_atom_forge_key(&atomForge, fURIs.patchProperty);
+
+                /*  */ if (std::strcmp(fDescriptor->label, "audiofile") == 0) {
+                    lv2_atom_forge_urid(&atomForge, fURIs.carlaFileAudio);
+                } else if (std::strcmp(fDescriptor->label, "midifile") == 0) {
+                    lv2_atom_forge_urid(&atomForge, fURIs.carlaFileMIDI);
+                } else {
+                    lv2_atom_forge_urid(&atomForge, fURIs.carlaFile);
+                }
+
+                lv2_atom_forge_key(&atomForge, fURIs.patchValue);
+                lv2_atom_forge_path(&atomForge,
+                                    fLoadedFile.buffer(),
+                                    static_cast<uint32_t>(fLoadedFile.length()+1));
+
+                lv2_atom_forge_pop(&atomForge, &forgeFrame);
+
+                LV2_Atom* const atom = (LV2_Atom*)atomBuf;
+
+                LV2_Atom_Sequence* const seq = fPorts.eventsOut[0];
+                Ports::EventsOutData& mData(fPorts.eventsOutData[0]);
+
+                if (sizeof(LV2_Atom_Event) + atom->size <= mData.capacity - mData.offset)
+                {
+                    LV2_Atom_Event* const aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + mData.offset);
+
+                    aev->time.frames = 0;
+                    aev->body.size   = atom->size;
+                    aev->body.type   = atom->type;
+                    std::memcpy(LV2_ATOM_BODY(&aev->body), atom + 1, atom->size);
+
+                    const uint32_t size = lv2_atom_pad_size(static_cast<uint32_t>(sizeof(LV2_Atom_Event) + atom->size));
+                    mData.offset       += size;
+                    seq->atom.size     += size;
+                }
+            }
         }
 
         fDescriptor->process(fHandle, fPorts.audioCVIns, fPorts.audioCVOuts, frames, fMidiEvents, fMidiEventCount);
@@ -324,7 +383,7 @@ public:
         if (fPluginNeedsIdle)
         {
             fPluginNeedsIdle = false;
-            const char* const msg = "idle";
+            const char* const msg = "_idle_";
             const size_t msgSize = std::strlen(msg);
             fWorker->schedule_work(fWorker->handle, static_cast<uint32_t>(msgSize + 1U), msg);
         }
@@ -453,22 +512,57 @@ public:
 
         if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
         {
+            if (fLoadedFile.isEmpty())
+                return LV2_STATE_SUCCESS;
+
+            const LV2_State_Free_Path* freePath = nullptr;
+            const LV2_State_Map_Path* mapPath = nullptr;
+
+            if (features != nullptr)
+            {
+                for (int i=0; features[i] != nullptr; ++i)
+                {
+                    /**/ if (freePath == nullptr && std::strcmp(features[i]->URI, LV2_STATE__freePath) == 0)
+                        freePath = (const LV2_State_Free_Path*)features[i]->data;
+                    else if (mapPath == nullptr && std::strcmp(features[i]->URI, LV2_STATE__mapPath) == 0)
+                        mapPath = (const LV2_State_Map_Path*)features[i]->data;
+                }
+            }
+
+            if (mapPath == nullptr || mapPath->abstract_path == nullptr)
+                return LV2_STATE_ERR_NO_FEATURE;
+
+            char* path = mapPath->abstract_path(mapPath->handle, fLoadedFile.buffer());
+
             store(handle,
                   fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/file"),
-                  fLoadedFile.buffer(),
-                  fLoadedFile.length()+1,
+                  path,
+                  std::strlen(path)+1,
                   fURIs.atomPath,
-                  LV2_STATE_IS_POD);
+                  LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
+
+            if (freePath != nullptr && freePath->free_path != nullptr)
+                freePath->free_path(freePath->handle, path);
+#ifndef CARLA_OS_WIN
+            // this is not safe to call under windows
+            else
+                std::free(path);
+#endif
+
             return LV2_STATE_SUCCESS;
         }
 
         if ((fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) == 0 || fDescriptor->get_state == nullptr)
-            return LV2_STATE_ERR_NO_FEATURE;
+            return LV2_STATE_ERR_UNKNOWN;
 
         if (char* const state = fDescriptor->get_state(fHandle))
         {
-            store(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"),
-                  state, std::strlen(state)+1, fURIs.atomString, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
+            store(handle,
+                  fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"),
+                  state,
+                  std::strlen(state)+1,
+                  fURIs.atomString,
+                  LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
             std::free(state);
             return LV2_STATE_SUCCESS;
         }
@@ -476,8 +570,10 @@ public:
         return LV2_STATE_ERR_UNKNOWN;
     }
 
-    LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve, const LV2_State_Handle handle,
-                                 uint32_t flags, const LV2_Feature* const* const features)
+    LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve,
+                                 const LV2_State_Handle handle,
+                                 uint32_t flags,
+                                 const LV2_Feature* const* const features)
     {
         saveLastProjectPathIfPossible(features);
 
@@ -490,21 +586,53 @@ public:
             const void* const data = retrieve(handle,
                                               fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/file"),
                                               &size, &type, &flags);
+            if (size <= 1 || type == 0)
+                return LV2_STATE_ERR_NO_PROPERTY;
 
             CARLA_SAFE_ASSERT_RETURN(type == fURIs.atomPath, LV2_STATE_ERR_UNKNOWN);
 
+            const LV2_State_Free_Path* freePath = nullptr;
+            const LV2_State_Map_Path* mapPath = nullptr;
+
+            if (features != nullptr)
+            {
+                for (int i=0; features[i] != nullptr; ++i)
+                {
+                    /**/ if (freePath == nullptr && std::strcmp(features[i]->URI, LV2_STATE__freePath) == 0)
+                        freePath = (const LV2_State_Free_Path*)features[i]->data;
+                    else if (mapPath == nullptr && std::strcmp(features[i]->URI, LV2_STATE__mapPath) == 0)
+                        mapPath = (const LV2_State_Map_Path*)features[i]->data;
+                }
+            }
+
+            if (mapPath == nullptr || mapPath->absolute_path == nullptr)
+                return LV2_STATE_ERR_NO_FEATURE;
+
             const char* const filename = (const char*)data;
 
-            fLoadedFile = filename;
-            fDescriptor->set_custom_data(fHandle, "file", filename);
+            char* const absolute_filename = mapPath->absolute_path(mapPath->handle, filename);
+            fLoadedFile = absolute_filename;
+
+            if (freePath != nullptr && freePath->free_path != nullptr)
+                freePath->free_path(freePath->handle, absolute_filename);
+#ifndef CARLA_OS_WIN
+            // this is not safe to call under windows
+            else
+                std::free(absolute_filename);
+#endif
+
+            fNeedsNotifyFileChanged = true;
+            fDescriptor->set_custom_data(fHandle, "file", fLoadedFile);
             return LV2_STATE_SUCCESS;
         }
 
         if ((fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) == 0 || fDescriptor->set_state == nullptr)
-            return LV2_STATE_ERR_NO_FEATURE;
+            return LV2_STATE_ERR_UNKNOWN;
 
         size = type = 0;
-        const void* const data = retrieve(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), &size, &type, &flags);
+        const void* const data = retrieve(handle,
+                                          fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"),
+                                          &size, &type, &flags);
 
         if (size == 0)
             return LV2_STATE_ERR_UNKNOWN;
@@ -526,13 +654,14 @@ public:
     {
         const char* const msg = (const char*)data;
 
-        if (fDescriptor->hints & NATIVE_PLUGIN_REQUESTS_IDLE)
+        if (std::strcmp(msg, "_idle_") == 0)
         {
-            if (std::strcmp(msg, "idle") == 0)
+            if (fDescriptor->hints & NATIVE_PLUGIN_REQUESTS_IDLE)
             {
                 fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_IDLE, 0, 0, nullptr, 0.0f);
                 return LV2_WORKER_SUCCESS;
             }
+            return LV2_WORKER_ERR_UNKNOWN;
         }
 
         if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
@@ -949,11 +1078,13 @@ private:
     // carla as plugin does not implement lv2 parameter API yet, needed for feedback
     const bool kIgnoreParameters;
 
+    LV2_Atom_Forge  fAtomForge;
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
 
     CarlaString fLastProjectPath;
     CarlaString fLoadedFile;
+    volatile bool fNeedsNotifyFileChanged;
     volatile bool fPluginNeedsIdle;
 
     int fWorkerUISignal;

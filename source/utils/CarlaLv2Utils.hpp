@@ -963,10 +963,12 @@ public:
         if (frames == 0)
             return false;
 
-        // init midi out data
+        // init event out data
         if (fPorts.numMidiOuts > 0 || fPorts.hasUI)
         {
-            for (uint32_t i=0; i<fPorts.numMidiOuts; ++i)
+            const uint32_t count = fPorts.numMidiOuts > 0 ? fPorts.numMidiOuts : 1;
+
+            for (uint32_t i=0; i < count; ++i)
             {
                 LV2_Atom_Sequence* const seq(fPorts.eventsOut[i]);
                 CARLA_SAFE_ASSERT_CONTINUE(seq != nullptr);
@@ -1371,6 +1373,7 @@ protected:
             {
                 eventsOut = new LV2_Atom_Sequence*[1];
                 eventsOut[0] = nullptr;
+                eventsOutData = new EventsOutData[1];
             }
 
             if (const uint32_t numAudioCVIns = numAudioIns+numCVIns)
@@ -1519,6 +1522,7 @@ protected:
         LV2_URID carlaFileMIDI;
         LV2_URID midiEvent;
         LV2_URID patchProperty;
+        LV2_URID patchGet;
         LV2_URID patchSet;
         LV2_URID patchValue;
         LV2_URID timePos;
@@ -1549,6 +1553,7 @@ protected:
               carlaFileMIDI(0),
               midiEvent(0),
               patchProperty(0),
+              patchGet(0),
               patchSet(0),
               patchValue(0),
               timePos(0),
@@ -1580,6 +1585,7 @@ protected:
             carlaFileMIDI      = uridMap->map(uridMap->handle, "http://kxstudio.sf.net/carla/file/midi");
             midiEvent          = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
             patchProperty      = uridMap->map(uridMap->handle, LV2_PATCH__property);
+            patchGet           = uridMap->map(uridMap->handle, LV2_PATCH__Get);
             patchSet           = uridMap->map(uridMap->handle, LV2_PATCH__Set);
             patchValue         = uridMap->map(uridMap->handle, LV2_PATCH__value);
             timePos            = uridMap->map(uridMap->handle, LV2_TIME__Position);
@@ -2344,12 +2350,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Parameters
     {
+        std::map<std::string, LV2_RDF_Parameter> parameters;
         Lilv::Nodes patchWritableNodes(lilvPlugin.get_value(lv2World.patch_writable));
 
         if (const uint numParameters = patchWritableNodes.size())
         {
-            rdfDescriptor->Parameters = new LV2_RDF_Parameter[numParameters];
-
             uint numUsed = 0;
             LILV_FOREACH(nodes, it, patchWritableNodes)
             {
@@ -2371,10 +2376,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     lilv_node_free(typeNode);
                 }
 
-                LV2_RDF_Parameter& rdfParam(rdfDescriptor->Parameters[numUsed++]);
-
                 CARLA_SAFE_ASSERT_CONTINUE(patchWritableNode.is_uri());
 
+                ++numUsed;
+                LV2_RDF_Parameter rdfParam;
                 rdfParam.URI = carla_strdup(patchWritableNode.as_uri());
 
                 // ----------------------------------------------------------------------------------------------------
@@ -2557,9 +2562,20 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                     lilv_node_free(unitUnitNode);
                 }
+
+                parameters[rdfParam.URI] = rdfParam;
             }
 
+            CARLA_SAFE_ASSERT_UINT2(parameters.size() == numUsed, parameters.size(), numUsed);
+            rdfDescriptor->Parameters = new LV2_RDF_Parameter[numUsed];
             rdfDescriptor->ParameterCount = numUsed;
+
+            numUsed = 0;
+            for (std::map<std::string, LV2_RDF_Parameter>::iterator it = parameters.begin(), end = parameters.end();
+                 it != end; ++it)
+            {
+                rdfDescriptor->Parameters[numUsed++] = it->second;
+            }
         }
 
         lilv_nodes_free(const_cast<LilvNodes*>(patchWritableNodes.me));

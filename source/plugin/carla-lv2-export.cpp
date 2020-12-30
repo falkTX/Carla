@@ -323,10 +323,12 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
 
     // optional
     if (pluginDesc->hints & NATIVE_PLUGIN_IS_RTSAFE)
-        text += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ;\n\n";
-
+        text += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ;\n";
     if (pluginDesc->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
         text += "    lv2:optionalFeature <" LV2_INLINEDISPLAY__queue_draw "> ;\n";
+    if ((pluginDesc->hints & NATIVE_PLUGIN_USES_STATE) || (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE))
+        text += "    lv2:optionalFeature <" LV2_STATE__threadSafeRestore "> ;\n";
+    text += "\n";
 
     // required
     text += "    lv2:requiredFeature <" LV2_BUF_SIZE__boundedBlockLength "> ,\n";
@@ -404,6 +406,8 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
         {
             text += "        atom:supports <" LV2_TIME__Position "> ;\n";
         }
+        if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
+            text += "        atom:supports <" LV2_PATCH__Message "> ;\n";
 
         text += "        lv2:designation lv2:control ;\n";
         text += "        lv2:index " + String(portIndex++) + " ;\n";
@@ -482,6 +486,8 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
 
         if (pluginDesc->midiOuts > 0)
             text += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
+        if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
+            text += "        atom:supports <" LV2_PATCH__Message "> ;\n";
 
         text += "        lv2:index " + String(portIndex++) + " ;\n";
 
