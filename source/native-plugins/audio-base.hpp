@@ -224,6 +224,11 @@ public:
         return fPool.numFrames;
     }
 
+    ADInfo getFileInfo() const noexcept
+    {
+        return fFileNfo;
+    }
+
     void setLoopingMode(const bool on) noexcept
     {
         fLoopingMode = on;

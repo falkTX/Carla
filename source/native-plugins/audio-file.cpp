@@ -56,6 +56,16 @@ public:
     } PendingInlineDisplay;
 #endif
 
+    enum Parameters {
+        kParameterLooping,
+        kParameterInfoChannels,
+        kParameterInfoBitRate,
+        kParameterInfoBitDepth,
+        kParameterInfoSampleRate,
+        kParameterInfoLength,
+        kParameterCount
+    };
+
     AudioFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginWithMidiPrograms<FileAudio>(host, fPrograms, 2),
           fLoopMode(true),
@@ -84,37 +94,110 @@ protected:
 
     uint32_t getParameterCount() const override
     {
-        return 1;
+        return kParameterCount;
     }
 
     const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
-        if (index != 0)
-            return nullptr;
-
         static NativeParameter param;
 
-        param.name  = "Loop Mode";
-        param.unit  = nullptr;
-        param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_BOOLEAN);
-        param.ranges.def = 1.0f;
-        param.ranges.min = 0.0f;
-        param.ranges.max = 1.0f;
+        param.scalePointCount = 0;
+        param.scalePoints     = nullptr;
+        param.unit            = nullptr;
         param.ranges.step = 1.0f;
         param.ranges.stepSmall = 1.0f;
         param.ranges.stepLarge = 1.0f;
-        param.scalePointCount = 0;
-        param.scalePoints     = nullptr;
+
+        switch (index)
+        {
+        case kParameterLooping:
+            param.name  = "Loop Mode";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_BOOLEAN);
+            param.ranges.def = 1.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 1.0f;
+            break;
+        case kParameterInfoChannels:
+            param.name  = "Num Channels";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_INTEGER|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 2.0f;
+            break;
+        case kParameterInfoBitRate:
+            param.name  = "Bit Rate";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_INTEGER|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 384000.0f;
+            break;
+        case kParameterInfoBitDepth:
+            param.name  = "Bit Depth";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_INTEGER|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 32.0f;
+            break;
+        case kParameterInfoSampleRate:
+            param.name  = "Sample Rate";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_INTEGER|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 384000.0f;
+            break;
+        case kParameterInfoLength:
+            param.name  = "Length";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = (float)INT64_MAX;
+            param.unit = "s";
+            break;
+        default:
+            return nullptr;
+        }
 
         return &param;
     }
 
     float getParameterValue(const uint32_t index) const override
     {
-        if (index != 0)
-            return 0.0f;
+        if (index == kParameterLooping)
+            return fLoopMode ? 1.0f : 0.0f;
 
-        return fLoopMode ? 1.0f : 0.0f;
+        const ADInfo nfo = fReader.getFileInfo();
+
+        switch (index)
+        {
+        case kParameterInfoChannels:
+            return nfo.channels;
+        case kParameterInfoBitRate:
+            return nfo.bit_rate;
+        case kParameterInfoBitDepth:
+            return nfo.bit_depth;
+        case kParameterInfoSampleRate:
+            return nfo.sample_rate;
+        case kParameterInfoLength:
+            return static_cast<float>(nfo.length)/1000.0f;
+        default:
+            return 0.0f;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -122,7 +205,7 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        if (index != 0)
+        if (index != kParameterLooping)
             return;
 
         bool b = (value > 0.5f);
