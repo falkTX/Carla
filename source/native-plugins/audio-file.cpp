@@ -260,22 +260,6 @@ protected:
     }
 
     // -------------------------------------------------------------------
-    // Plugin dispatcher calls
-
-    void idle() override
-    {
-        NativePluginWithMidiPrograms<FileAudio>::idle();
-
-#ifndef __MOD_DEVICES__
-        if (fInlineDisplay.pending == InlineDisplayNeedRequest)
-        {
-            fInlineDisplay.pending = InlineDisplayRequesting;
-            hostQueueDrawInlineDisplay();
-        }
-#endif
-    }
-
-    // -------------------------------------------------------------------
     // Plugin UI calls
 
     void uiShow(const bool show) override
@@ -299,6 +283,19 @@ protected:
 
     // -------------------------------------------------------------------
     // Plugin dispatcher calls
+
+    void idle() override
+    {
+        NativePluginWithMidiPrograms<FileAudio>::idle();
+
+#ifndef __MOD_DEVICES__
+        if (fInlineDisplay.pending == InlineDisplayNeedRequest)
+        {
+            fInlineDisplay.pending = InlineDisplayRequesting;
+            hostQueueDrawInlineDisplay();
+        }
+#endif
+    }
 
 #ifndef __MOD_DEVICES__
     const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t rwidth, const uint32_t height) override

@@ -175,15 +175,24 @@ protected:
             needsInlineRender = true;
         }
 
-        if (needsInlineRender && fInlineDisplay.pending != 1)
+        if (needsInlineRender && fInlineDisplay.pending != 1 && fInlineDisplay.pending != 2)
         {
             fInlineDisplay.pending = 1;
-            hostQueueDrawInlineDisplay();
+            hostRequestIdle();
         }
     }
 
     // -------------------------------------------------------------------
     // Plugin dispatcher calls
+
+    void idle() override
+    {
+        if (fInlineDisplay.pending == 1)
+        {
+            fInlineDisplay.pending = 2;
+            hostQueueDrawInlineDisplay();
+        }
+    }
 
     const NativeInlineDisplayImageSurface* renderInlineDisplay(const uint32_t rwidth, const uint32_t height) override
     {
@@ -324,7 +333,8 @@ static const NativePluginDescriptor bigmeterDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_INLINE_DISPLAY
-                                                  |NATIVE_PLUGIN_HAS_UI),
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_REQUESTS_IDLE),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 0,
