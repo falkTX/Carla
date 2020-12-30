@@ -57,9 +57,10 @@ public:
           fLoopMode(true),
           fDoProcess(false),
           fWasPlayingBefore(false),
+          fNeedsFileRead(false),
           fMaxFrame(0),
           fPool(),
-          fThread(),
+          fReader(),
           fPrograms(hostGetFilePath("audio"), audiofilesWildcard)
 #ifndef __MOD_DEVICES__
         , fInlineDisplay()
@@ -69,7 +70,7 @@ public:
 
     ~AudioFilePlugin() override
     {
-        fThread.stopNow();
+        fReader.reset();
         fPool.destroy();
     }
 
@@ -126,7 +127,7 @@ protected:
             return;
 
         fLoopMode = b;
-        fThread.setLoopingMode(b);
+        fReader.setLoopingMode(b);
     }
 
     void setCustomData(const char* const key, const char* const value) override
@@ -148,6 +149,7 @@ protected:
 
         float* out1 = outBuffer[0];
         float* out2 = outBuffer[1];
+        bool needsIdleRequest = false;
 
         if (! fDoProcess)
         {
@@ -162,7 +164,7 @@ protected:
         {
             // carla_stderr("P: not playing");
             if (timePos->frame == 0 && fWasPlayingBefore)
-                fThread.setNeedsRead(timePos->frame);
+                fReader.setNeedsRead(timePos->frame);
 
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
@@ -178,7 +180,11 @@ protected:
         if ((timePos->frame < fPool.startFrame || timePos->frame >= fMaxFrame) && !fLoopMode)
         {
             if (timePos->frame < fPool.startFrame)
-                fThread.setNeedsRead(timePos->frame);
+            {
+                needsIdleRequest = true;
+                fNeedsFileRead = true;
+                fReader.setNeedsRead(timePos->frame);
+            }
 
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
@@ -192,14 +198,18 @@ protected:
             }
             if (fInlineDisplay.pending == InlineDisplayNotPending)
             {
+                needsIdleRequest = true;
                 fInlineDisplay.pending = InlineDisplayNeedRequest;
-                hostRequestIdle();
             }
 #endif
+
+            if (needsIdleRequest)
+                hostRequestIdle();
+
             return;
         }
 
-        if (fThread.isEntireFileLoaded())
+        if (fReader.isEntireFileLoaded())
         {
             // NOTE: timePos->frame is always < fMaxFrame (or looping)
             uint32_t targetStartFrame = static_cast<uint32_t>(fLoopMode ? timePos->frame % fMaxFrame : timePos->frame);
@@ -237,11 +247,13 @@ protected:
         }
         else
         {
-            if (! fThread.tryPutData(out1, out2, timePos->frame, frames))
+            if (! fReader.tryPutData(out1, out2, timePos->frame, frames, needsIdleRequest))
             {
                 carla_zeroFloats(out1, frames);
                 carla_zeroFloats(out2, frames);
             }
+            if (needsIdleRequest)
+                fNeedsFileRead = true;
         }
 
 #ifndef __MOD_DEVICES__
@@ -253,10 +265,13 @@ protected:
         }
         if (fInlineDisplay.pending == InlineDisplayNotPending)
         {
+            needsIdleRequest = true;
             fInlineDisplay.pending = InlineDisplayNeedRequest;
-            hostRequestIdle();
         }
 #endif
+
+        if (needsIdleRequest)
+            hostRequestIdle();
     }
 
     // -------------------------------------------------------------------
@@ -287,6 +302,9 @@ protected:
     void idle() override
     {
         NativePluginWithMidiPrograms<FileAudio>::idle();
+
+        if (fNeedsFileRead)
+            fReader.readPoll();
 
 #ifndef __MOD_DEVICES__
         if (fInlineDisplay.pending == InlineDisplayNeedRequest)
@@ -415,11 +433,12 @@ private:
     bool fLoopMode;
     bool fDoProcess;
     bool fWasPlayingBefore;
+    bool fNeedsFileRead;
 
     uint32_t fMaxFrame;
 
     AudioFilePool   fPool;
-    AudioFileThread fThread;
+    AudioFileReader fReader;
 
     NativeMidiPrograms fPrograms;
 
@@ -464,7 +483,7 @@ private:
         CARLA_ASSERT(filename != nullptr);
         carla_debug("AudioFilePlugin::loadFilename(\"%s\")", filename);
 
-        fThread.stopNow();
+        fReader.reset();
         fPool.destroy();
 
         if (filename == nullptr || *filename == '\0')
@@ -474,15 +493,15 @@ private:
             return;
         }
 
-        if (fThread.loadFilename(filename, static_cast<uint32_t>(getSampleRate())))
+        if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate())))
         {
-            fPool.create(fThread.getPoolNumFrames());
-            fMaxFrame = fThread.getMaxFrame();
+            fPool.create(fReader.getPoolNumFrames());
+            fMaxFrame = fReader.getMaxFrame();
 
-            if (fThread.isEntireFileLoaded())
-                fThread.putAllData(fPool);
+            if (fReader.isEntireFileLoaded())
+                fReader.putAllData(fPool);
             else
-                fThread.startNow();
+                fReader.readPoll();
 
             fDoProcess = true;
         }

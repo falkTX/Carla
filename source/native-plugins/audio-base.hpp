@@ -99,16 +99,14 @@ struct AudioFilePool {
     CARLA_DECLARE_NON_COPY_STRUCT(AudioFilePool)
 };
 
-class AudioFileThread : public CarlaThread
+class AudioFileReader
 {
 public:
-    AudioFileThread()
-        : CarlaThread("AudioFileThread"),
-          fEntireFileLoaded(false),
+    AudioFileReader()
+        : fEntireFileLoaded(false),
           fLoopingMode(true),
           fNeedsFrame(0),
           fNeedsRead(false),
-          fQuitNow(true),
           fFilePtr(nullptr),
           fFileNfo(),
           fMaxFrame(0),
@@ -118,9 +116,9 @@ public:
           fResampleTempData(nullptr),
           fResampleTempSize(0),
           fPool(),
-          fMutex(),
-          fSignal(),
-          fResampler()
+          fResampler(),
+          fPoolMutex(),
+          fReaderMutex()
     {
         static bool adInitiated = false;
 
@@ -133,11 +131,8 @@ public:
         ad_clear_nfo(&fFileNfo);
     }
 
-    ~AudioFileThread() override
+    ~AudioFileReader()
     {
-        CARLA_ASSERT(fQuitNow);
-        CARLA_ASSERT(! isThreadRunning());
-
         cleanup();
     }
 
@@ -168,27 +163,14 @@ public:
         fPool.destroy();
     }
 
-    void startNow()
+    void reset()
     {
-        if (fPollTempData == nullptr)
-            return;
+        const CarlaMutexLocker cml1(fPoolMutex);
+        const CarlaMutexLocker cml2(fReaderMutex);
 
         fNeedsFrame = 0;
         fNeedsRead = false;
-        fQuitNow = false;
-        startThread();
-    }
 
-    void stopNow()
-    {
-        fNeedsFrame = 0;
-        fNeedsRead = false;
-        fQuitNow = true;
-
-        fSignal.signal();
-        stopThread(1000);
-
-        const CarlaMutexLocker cml(fMutex);
         fPool.reset();
     }
 
@@ -224,13 +206,13 @@ public:
 
         fNeedsFrame = frame;
         fNeedsRead = true;
-        fSignal.signal();
     }
 
     bool loadFilename(const char* const filename, const uint32_t sampleRate)
     {
-        CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(), false);
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && *filename != '\0', false);
+
+        const CarlaMutexLocker cml(fReaderMutex);
 
         cleanup();
         ad_clear_nfo(&fFileNfo);
@@ -316,7 +298,7 @@ public:
                         ? static_cast<uint32_t>(static_cast<double>(fileNumFrames) * fResampleRatio + 0.5)
                         : fileNumFrames;
 
-            readPoll();
+            fNeedsRead = true;
             return true;
         }
         else
@@ -333,14 +315,14 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pool.numFrames == fPool.numFrames,);
 
-        const CarlaMutexLocker cml(fMutex);
+        const CarlaMutexLocker cml(fPoolMutex);
 
         pool.startFrame = fPool.startFrame;
         carla_copyFloats(pool.buffer[0], fPool.buffer[0], fPool.numFrames);
         carla_copyFloats(pool.buffer[1], fPool.buffer[1], fPool.numFrames);
     }
 
-    bool tryPutData(float* const out1, float* const out2, uint64_t framePos, const uint32_t frames)
+    bool tryPutData(float* const out1, float* const out2, uint64_t framePos, const uint32_t frames, bool& needsRead)
     {
         CARLA_SAFE_ASSERT_RETURN(fPool.numFrames != 0, false);
 
@@ -356,9 +338,9 @@ public:
         const uint64_t numFramesNearEnd = fPool.numFrames*3/4;
 
 #if 1
-        const CarlaMutexLocker cml(fMutex);
+        const CarlaMutexLocker cml(fPoolMutex);
 #else
-        const CarlaMutexTryLocker cmtl(fMutex);
+        const CarlaMutexTryLocker cmtl(fPoolMutex);
         if (! cmtl.wasLocked())
         {
             for (int i=0; i<5; ++i)
@@ -376,6 +358,7 @@ public:
         {
             if (fPool.startFrame + fPool.numFrames <= fMaxFrame)
             {
+                needsRead = true;
                 setNeedsRead(framePos);
                 return false;
             }
@@ -384,6 +367,7 @@ public:
 
             if (frameDiff + frames >= fPool.numFrames)
             {
+                needsRead = true;
                 setNeedsRead(framePos);
                 return false;
             }
@@ -397,6 +381,7 @@ public:
 
             if (frameDiff + frames >= fPool.numFrames)
             {
+                needsRead = true;
                 setNeedsRead(framePos);
                 return false;
             }
@@ -406,7 +391,10 @@ public:
         }
 
         if (frameDiff > numFramesNearEnd)
+        {
+            needsRead = true;
             setNeedsRead(framePos + frames);
+        }
 
         return true;
     }
@@ -452,17 +440,16 @@ public:
 
         {
             // lock, and put data asap
-            const CarlaMutexLocker cml(fMutex);
+            const CarlaMutexLocker cml(fPoolMutex);
 
-            for (ssize_t i=0, j=0; j < rv; ++j)
+            if (numChannels == 1)
             {
-                if (numChannels == 1)
-                {
-                    fPool.buffer[0][i] = rbuffer[j];
-                    fPool.buffer[1][i] = rbuffer[j];
-                    ++i;
-                }
-                else
+                for (ssize_t i=0, j=0; j < rv; ++i, ++j)
+                    fPool.buffer[0][i] = fPool.buffer[1][i] = rbuffer[j];
+            }
+            else
+            {
+                for (ssize_t i=0, j=0; j < rv; ++j)
                 {
                     if (j % 2 == 0)
                     {
@@ -487,6 +474,8 @@ public:
 
     void readPoll()
     {
+        const CarlaMutexLocker cml(fReaderMutex);
+
         if (fMaxFrame == 0 || fFileNfo.channels == 0 || fFilePtr == nullptr)
         {
             carla_debug("R: no song loaded");
@@ -589,7 +578,7 @@ public:
             }
 
             // lock, and put data asap
-            const CarlaMutexLocker cml(fMutex);
+            const CarlaMutexLocker cml(fPoolMutex);
 
             do {
                 if (isMonoFile)
@@ -639,27 +628,11 @@ public:
         fNeedsRead = false;
     }
 
-protected:
-    void run() override
-    {
-        while (! fQuitNow)
-        {
-            if (fNeedsRead)
-                readPoll();
-
-            if (fQuitNow)
-                break;
-
-            fSignal.wait();
-        }
-    }
-
 private:
     bool fEntireFileLoaded;
     bool fLoopingMode;
     volatile uint64_t fNeedsFrame;
     volatile bool fNeedsRead;
-    volatile bool fQuitNow;
 
     void*  fFilePtr;
     ADInfo fFileNfo;
@@ -674,11 +647,12 @@ private:
     size_t fResampleTempSize;
 
     AudioFilePool fPool;
-    CarlaMutex    fMutex;
-    CarlaSignal   fSignal;
     Resampler     fResampler;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(AudioFileThread)
+    CarlaMutex fPoolMutex;
+    CarlaMutex fReaderMutex;
+
+    CARLA_DECLARE_NON_COPY_STRUCT(AudioFileReader)
 };
 
 #endif // AUDIO_BASE_HPP_INCLUDED
