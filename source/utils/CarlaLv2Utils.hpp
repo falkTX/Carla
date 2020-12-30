@@ -574,6 +574,7 @@ public:
           fUridMap(nullptr),
           fUridUnmap(nullptr),
           fWorker(nullptr),
+          fInlineDisplay(nullptr),
           fTimeInfo(),
           fLastPositionData(),
           fPorts(),
@@ -595,6 +596,7 @@ public:
         const LV2_URID_Map*        uridMap   = nullptr;
         const LV2_URID_Unmap*      uridUnmap = nullptr;
         const LV2_Worker_Schedule* worker    = nullptr;
+        const LV2_Inline_Display*  idisp     = nullptr;
 
         for (int i=0; features[i] != nullptr; ++i)
         {
@@ -608,6 +610,8 @@ public:
                 uridUnmap = (const LV2_URID_Unmap*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_WORKER__schedule) == 0)
                 worker = (const LV2_Worker_Schedule*)features[i]->data;
+            else if (std::strcmp(features[i]->URI, LV2_INLINEDISPLAY__queue_draw) == 0)
+                idisp = (const LV2_Inline_Display*)features[i]->data;
         }
 
         if (options == nullptr || uridMap == nullptr)
@@ -670,6 +674,7 @@ public:
         fFreePath = freePath;
         fUridUnmap = uridUnmap;
         fWorker = worker;
+        fInlineDisplay = idisp;
 
         clearTimeData();
     }
@@ -1187,6 +1192,7 @@ protected:
     const LV2_URID_Map* fUridMap;
     const LV2_URID_Unmap* fUridUnmap;
     const LV2_Worker_Schedule* fWorker;
+    const LV2_Inline_Display* fInlineDisplay;
 
     // Time info stuff
     TimeInfoStruct fTimeInfo;

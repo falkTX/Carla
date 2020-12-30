@@ -32,6 +32,7 @@
 #include "lv2/units.h"
 #include "lv2/urid.h"
 #include "lv2/worker.h"
+#include "lv2/inline-display.h"
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
@@ -324,11 +325,17 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
     if (pluginDesc->hints & NATIVE_PLUGIN_IS_RTSAFE)
         text += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ;\n\n";
 
+    if (pluginDesc->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
+        text += "    lv2:optionalFeature <" LV2_INLINEDISPLAY__queue_draw "> ;\n";
+
     // required
     text += "    lv2:requiredFeature <" LV2_BUF_SIZE__boundedBlockLength "> ,\n";
 
     if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
         text += "                        <" LV2_BUF_SIZE__fixedBlockLength "> ,\n";
+
+    if (pluginDesc->hints & NATIVE_PLUGIN_REQUESTS_IDLE)
+        text += "                        <" LV2_WORKER__schedule "> ,\n";
 
     text += "                        <" LV2_OPTIONS__options "> ,\n";
     text += "                        <" LV2_URID__map "> ;\n";
@@ -347,6 +354,9 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
 
     if (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI)
         text += "    lv2:extensionData <" LV2_WORKER__interface "> ;\n";
+
+    if (pluginDesc->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
+        text += "    lv2:extensionData <" LV2_INLINEDISPLAY__interface "> ;\n";
 
     text += "\n";
 

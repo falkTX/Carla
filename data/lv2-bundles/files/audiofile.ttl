@@ -13,6 +13,7 @@
     lv2:optionalFeature <http://lv2plug.in/ns/lv2core#hardRTCapable> ;
 
     lv2:requiredFeature <http://lv2plug.in/ns/ext/buf-size#boundedBlockLength> ,
+                        <http://lv2plug.in/ns/ext/worker#schedule> ,
                         <http://lv2plug.in/ns/ext/options#options> ,
                         <http://lv2plug.in/ns/ext/urid#map> ;
 

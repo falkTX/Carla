@@ -600,6 +600,19 @@ public:
         return LV2_WORKER_SUCCESS;
     }
 
+    const LV2_Inline_Display_Image_Surface* lv2_idisp_render(const uint32_t width, const uint32_t height)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->render_inline_display, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(width > 0, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(height > 0, nullptr);
+
+        const NativeInlineDisplayImageSurface* nsur = fDescriptor->render_inline_display(fHandle, width, height);
+        CARLA_SAFE_ASSERT_RETURN(nsur != nullptr, nullptr);
+
+        return (const LV2_Inline_Display_Image_Surface*)(nsur);
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
 
     void lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
@@ -870,7 +883,12 @@ protected:
             return 0;
 
         case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
-            break;
+            if (fInlineDisplay != nullptr && fInlineDisplay->queue_draw != nullptr)
+            {
+                fInlineDisplay->queue_draw(fInlineDisplay->handle);
+                return 1;
+            }
+            return 0;
 
         case NATIVE_HOST_OPCODE_GET_FILE_PATH:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
@@ -1142,14 +1160,21 @@ static LV2_Worker_Status lv2_work_resp(LV2_Handle instance, uint32_t size, const
     return instancePtr->lv2_work_resp(size, body);
 }
 
+static const LV2_Inline_Display_Image_Surface* lv2_idisp_render(LV2_Handle instance, uint32_t w, uint32_t h)
+{
+    // carla_debug("lv2_idisp_render(%p, %u, %u)", instance, w, h);
+    return instancePtr->lv2_idisp_render(w, h);
+}
+
 static const void* lv2_extension_data(const char* uri)
 {
     carla_debug("lv2_extension_data(\"%s\")", uri);
 
-    static const LV2_Options_Interface  options  = { lv2_get_options, lv2_set_options };
-    static const LV2_Programs_Interface programs = { lv2_get_program, lv2_select_program };
-    static const LV2_State_Interface    state    = { lv2_save, lv2_restore };
-    static const LV2_Worker_Interface   worker   = { lv2_work, lv2_work_resp, nullptr };
+    static const LV2_Options_Interface  options     = { lv2_get_options, lv2_set_options };
+    static const LV2_Programs_Interface programs    = { lv2_get_program, lv2_select_program };
+    static const LV2_State_Interface    state       = { lv2_save, lv2_restore };
+    static const LV2_Worker_Interface   worker      = { lv2_work, lv2_work_resp, nullptr };
+    static const LV2_Inline_Display_Interface idisp = { lv2_idisp_render };
 
     if (std::strcmp(uri, LV2_OPTIONS__interface) == 0)
         return &options;
@@ -1159,6 +1184,8 @@ static const void* lv2_extension_data(const char* uri)
         return &state;
     if (std::strcmp(uri, LV2_WORKER__interface) == 0)
         return &worker;
+    if (std::strcmp(uri, LV2_INLINEDISPLAY__interface) == 0)
+        return &idisp;
 
     return nullptr;
 }
