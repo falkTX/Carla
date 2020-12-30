@@ -34,6 +34,7 @@
 
 #define URI_CARLA_ATOM_WORKER_IN   "http://kxstudio.sf.net/ns/carla/atomWorkerIn"
 #define URI_CARLA_ATOM_WORKER_RESP "http://kxstudio.sf.net/ns/carla/atomWorkerResp"
+#define URI_CARLA_PARAMETER_CHANGE "http://kxstudio.sf.net/ns/carla/parameterChange"
 
 using water::File;
 
@@ -82,6 +83,7 @@ enum CarlaLv2URIDs {
     kUridLogWarning,
     kUridPatchSet,
     kUridPatchProperty,
+    kUridPatchSubject,
     kUridPatchValue,
     // time base type
     kUridTimePosition,
@@ -106,6 +108,7 @@ enum CarlaLv2URIDs {
     // custom carla props
     kUridCarlaAtomWorkerIn,
     kUridCarlaAtomWorkerResp,
+    kUridCarlaParameterChange,
     kUridCarlaTransientWindowId,
     // count
     kUridCount
@@ -666,6 +669,9 @@ public:
 
         LV2_Atom_Forge_Frame forgeFrame;
         lv2_atom_forge_object(&atomForge, &forgeFrame, kUridNull, kUridPatchSet);
+
+        lv2_atom_forge_key(&atomForge, kUridCarlaParameterChange);
+        lv2_atom_forge_bool(&atomForge, true);
 
         lv2_atom_forge_key(&atomForge, kUridPatchProperty);
         lv2_atom_forge_urid(&atomForge, getCustomURID(uri));
@@ -1264,6 +1270,8 @@ private:
             return kUridPatchSet;
         if (std::strcmp(uri, LV2_PATCH__property) == 0)
             return kUridPatchProperty;
+        if (std::strcmp(uri, LV2_PATCH__subject) == 0)
+            return kUridPatchSubject;
         if (std::strcmp(uri, LV2_PATCH__value) == 0)
             return kUridPatchValue;
 
@@ -1310,6 +1318,8 @@ private:
             return kUridCarlaAtomWorkerIn;
         if (std::strcmp(uri, URI_CARLA_ATOM_WORKER_RESP) == 0)
             return kUridCarlaAtomWorkerResp;
+        if (std::strcmp(uri, URI_CARLA_PARAMETER_CHANGE) == 0)
+            return kUridCarlaParameterChange;
         if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
             return kUridCarlaTransientWindowId;
 
@@ -1398,6 +1408,8 @@ private:
             return LV2_PATCH__Set;
         case kUridPatchProperty:
             return LV2_PATCH__property;
+        case kUridPatchSubject:
+            return LV2_PATCH__subject;
         case kUridPatchValue:
             return LV2_PATCH__value;
 
@@ -1444,6 +1456,8 @@ private:
             return URI_CARLA_ATOM_WORKER_IN;
         case kUridCarlaAtomWorkerResp:
             return URI_CARLA_ATOM_WORKER_RESP;
+        case kUridCarlaParameterChange:
+            return URI_CARLA_PARAMETER_CHANGE;
         case kUridCarlaTransientWindowId:
             return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
         }
