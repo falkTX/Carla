@@ -184,7 +184,7 @@ endif
 libjack: libs
 	@$(MAKE) -C source/libjack
 
-lv2-bundles-dep: $(MODULEDIR)/audio_decoder.a $(MODULEDIR)/water.a
+lv2-bundles-dep: $(MODULEDIR)/audio_decoder.a $(MODULEDIR)/water.a $(MODULEDIR)/zita-resampler.a
 	@$(MAKE) -C source/native-plugins bundles
 
 lv2-bundles: lv2-bundles-dep
