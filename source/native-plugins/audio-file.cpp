@@ -45,7 +45,11 @@ class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>
 {
 public:
 #ifndef __MOD_DEVICES__
-    typedef enum _PendingInlineDisplay : uint8_t {
+    typedef enum _PendingInlineDisplay
+# ifdef CARLA_PROPER_CPP11_SUPPORT
+    : uint8_t
+# endif
+    {
         InlineDisplayNotPending,
         InlineDisplayNeedRequest,
         InlineDisplayRequesting
