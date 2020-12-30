@@ -44,6 +44,14 @@ static const char* const audiofilesWildcard =
 class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>
 {
 public:
+#ifndef __MOD_DEVICES__
+    typedef enum PendingInlineDisplay : uint8_t {
+        InlineDisplayNotPending,
+        InlineDisplayNeedRequest,
+        InlineDisplayRequesting
+    } PendingInlineDisplay;
+#endif
+
     AudioFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginWithMidiPrograms<FileAudio>(host, fPrograms, 2),
           fLoopMode(true),
@@ -182,11 +190,10 @@ protected:
                 fInlineDisplay.lastValuesR[fInlineDisplay.writtenValues] = 0.0f;
                 ++fInlineDisplay.writtenValues;
             }
-
-            if (! fInlineDisplay.pending)
+            if (fInlineDisplay.pending == InlineDisplayNotPending)
             {
-                fInlineDisplay.pending = true;
-                hostQueueDrawInlineDisplay();
+                fInlineDisplay.pending = InlineDisplayNeedRequest;
+                hostRequestIdle();
             }
 #endif
             return;
@@ -244,11 +251,25 @@ protected:
             fInlineDisplay.lastValuesR[fInlineDisplay.writtenValues] = carla_findMaxNormalizedFloat(out2, frames);
             ++fInlineDisplay.writtenValues;
         }
-
-        if (! fInlineDisplay.pending)
+        if (fInlineDisplay.pending == InlineDisplayNotPending)
         {
-            fInlineDisplay.pending = true;
-            // FIXME this is not supposed to be here, but in some idle callback
+            fInlineDisplay.pending = InlineDisplayNeedRequest;
+            hostRequestIdle();
+        }
+#endif
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin dispatcher calls
+
+    void idle() override
+    {
+        NativePluginWithMidiPrograms<FileAudio>::idle();
+
+#ifndef __MOD_DEVICES__
+        if (fInlineDisplay.pending == InlineDisplayNeedRequest)
+        {
+            fInlineDisplay.pending = InlineDisplayRequesting;
             hostQueueDrawInlineDisplay();
         }
 #endif
@@ -386,7 +407,7 @@ protected:
         }
 
         fInlineDisplay.writtenValues = 0;
-        fInlineDisplay.pending = false;
+        fInlineDisplay.pending = InlineDisplayNotPending;
         return (NativeInlineDisplayImageSurface*)(NativeInlineDisplayImageSurfaceCompat*)&fInlineDisplay;
     }
 #endif
@@ -409,8 +430,8 @@ private:
     struct InlineDisplay : NativeInlineDisplayImageSurfaceCompat {
         float lastValuesL[32];
         float lastValuesR[32];
+        volatile PendingInlineDisplay pending;
         volatile uint8_t writtenValues;
-        volatile bool pending;
 
         InlineDisplay()
             : NativeInlineDisplayImageSurfaceCompat(),
@@ -418,8 +439,8 @@ private:
               lastValuesL{0.0f},
               lastValuesR{0.0f},
 # endif
-              writtenValues(0),
-              pending(false)
+              pending(InlineDisplayNotPending),
+              writtenValues(0)
         {
 # ifndef CARLA_PROPER_CPP11_SUPPORT
             carla_zeroFloats(lastValuesL, 32);
