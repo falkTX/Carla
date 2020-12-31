@@ -2563,7 +2563,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     lilv_node_free(unitUnitNode);
                 }
 
-                parameters[rdfParam.URI] = rdfParam;
+                parameters[rdfParam.URI].copyAndReplace(rdfParam);
             }
 
             CARLA_SAFE_ASSERT_UINT2(parameters.size() == numUsed, parameters.size(), numUsed);
