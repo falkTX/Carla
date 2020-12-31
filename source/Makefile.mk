@@ -427,6 +427,9 @@ else
 ifeq ($(MACOS),true)
 ifeq ($(HAVE_PYQT),true)
 HAVE_THEME = true
+MOC_QT5 ?= moc
+RCC_QT5 ?= rcc
+UIC_QT5 ?= uic
 endif
 endif
 endif
