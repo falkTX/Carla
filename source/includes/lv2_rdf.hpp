@@ -538,7 +538,7 @@ struct LV2_RDF_Parameter {
         }
     }
 
-    LV2_RDF_Parameter& operator=(LV2_RDF_Parameter& other) noexcept
+    void copyAndReplace(LV2_RDF_Parameter& other) noexcept
     {
         URI = other.URI;
         Type = other.Type;
@@ -560,17 +560,9 @@ struct LV2_RDF_Parameter {
         other.Unit.Name = nullptr;
         other.Unit.Render = nullptr;
         other.Unit.Symbol = nullptr;
-        return *this;
     }
 
-private:
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LV2_RDF_Parameter(LV2_RDF_Parameter&) = delete;
-    LV2_RDF_Parameter(const LV2_RDF_Parameter&) = delete;
-#else
-    LV2_RDF_Parameter(LV2_RDF_Parameter&);
-    LV2_RDF_Parameter(const LV2_RDF_Parameter&);
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Parameter)
 };
 
 // Preset

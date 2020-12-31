@@ -2574,7 +2574,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             for (std::map<std::string, LV2_RDF_Parameter>::iterator it = parameters.begin(), end = parameters.end();
                  it != end; ++it)
             {
-                rdfDescriptor->Parameters[numUsed++] = it->second;
+                rdfDescriptor->Parameters[numUsed++].copyAndReplace(it->second);
             }
         }
 
