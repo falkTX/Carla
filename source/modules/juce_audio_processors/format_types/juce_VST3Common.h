@@ -654,7 +654,7 @@ private:
     struct BasicOptional final
     {
         BasicOptional() noexcept = default;
-        BasicOptional (const Item& i) noexcept : item { i }, isValid { true } {}
+        BasicOptional (const Item& i) noexcept : item ( i ), isValid ( true ) {}
 
         Item item;
         bool isValid{};
