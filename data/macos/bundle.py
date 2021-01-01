@@ -34,6 +34,6 @@ setup(name = "Carla",
       version = VERSION,
       description = "Carla Plugin Host",
       options = {"build_exe": options, "bdist_mac": boptions},
-      executables = [Executable("./source/frontend/%s.pyw" % SCRIPT_NAME)])
+      executables = [Executable("./source/frontend/%s" % SCRIPT_NAME)])
 
 # ------------------------------------------------------------------------------------------------------------

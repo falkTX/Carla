@@ -210,26 +210,105 @@ theme: libs
 # ---------------------------------------------------------------------------------------------------------------------
 # prepare for (re)distribution
 
+_CARLA_QT5_DYLIBS = \
+	iconengines/libqsvgicon.dylib \
+	imageformats/libqjpeg.dylib \
+	imageformats/libqsvg.dylib \
+	platforms/libqcocoa.dylib \
+	platforms/libqminimal.dylib \
+	platforms/libqoffscreen.dylib \
+	styles/carlastyle.dylib
+
+_CARLA_PLUGIN_UIS = \
+	carla-plugin \
+	bigmeter-ui \
+	midipattern-ui \
+	notes-ui \
+	xycontroller-ui
+
 _CARLA_APP_FILES = \
+	Carla \
 	carla-bridge-lv2-cocoa \
 	carla-bridge-lv2.dylib \
 	carla-bridge-native \
 	carla-discovery-native \
 	libcarla_standalone2.dylib \
 	libcarla_utils.dylib \
-	styles/carlastyle.dylib \
-	styles/carlastyle.json
+	styles/carlastyle.json \
+	$(_CARLA_QT5_DYLIBS) \
+	$(_CARLA_PLUGIN_UIS:%=resources/%)
 
 CARLA_APP_FILES = $(_CARLA_APP_FILES:%=build/Carla.app/Contents/MacOS/%)
+CARLA_QT5_DYLIBS = $(_CARLA_QT5_DYLIBS:%=build/Carla.app/Contents/MacOS/%)
+CARLA_PLUGIN_ZIPS = $(_CARLA_PLUGIN_UIS:%=build/%.app/Contents/MacOS/lib/library.zip)
 
-ifeq ($(MACOS),true)
-dist: $(CARLA_APP_FILES)
-else
-dist:
-endif
+QT5_PREFIX = $(shell pkg-config --variable=prefix Qt5OpenGLExtensions)
 
-bdist_mac_%:
+dist: carla_mac
+
+carla_mac: $(CARLA_APP_FILES)
+
+build/Carla.app/Contents/MacOS/Carla: build/Carla.app/Contents/MacOS/lib/library.zip $(CARLA_QT5_DYLIBS)
+	# cleanup
+	find build/Carla.app/Contents/MacOS/ -type f -name "*.py" -delete
+	find build/Carla.app/Contents/MacOS/ -type f -name "*.pyi" -delete
+	find build/Carla.app/Contents/MacOS/ -type f -name "pylupdate.so" -delete
+	find build/Carla.app/Contents/MacOS/ -type f -name "pyrcc.so" -delete
+	find build/Carla.app/Contents/MacOS/ -type f -name "QtMacExtras*" -delete
+	find build/Carla.app/Contents/MacOS/ -type f -name "QtNetwork*" -delete
+	find build/Carla.app/Contents/MacOS/ -type f -name "QtSql*" -delete
+	find build/Carla.app/Contents/MacOS/ -type f -name "QtTest*" -delete
+	find build/Carla.app/Contents/MacOS/ -type f -name "QtXml*" -delete
+	find build/Carla.app/Contents/MacOS/ -type f -name "*.pyc" -delete
+	rm -rf build/Carla.app/Contents/MacOS/lib/PyQt5/uic
+	# adjust binaries
+	(cd build/Carla.app/Contents/MacOS && \
+		for f in `find . -type f | grep -e Q -e libq -e carlastyle.dylib`; do \
+			install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore"                 @executable_path/QtCore         $$f && \
+			install_name_tool -change "@rpath/QtGui.framework/Versions/5/QtGui"                   @executable_path/QtGui          $$f && \
+			install_name_tool -change "@rpath/QtOpenGL.framework/Versions/5/QtOpenGL"             @executable_path/QtOpenGL       $$f && \
+			install_name_tool -change "@rpath/QtPrintSupport.framework/Versions/5/QtPrintSupport" @executable_path/QtPrintSupport $$f && \
+			install_name_tool -change "@rpath/QtSvg.framework/Versions/5/QtSvg"                   @executable_path/QtSvg          $$f && \
+			install_name_tool -change "@rpath/QtWidgets.framework/Versions/5/QtWidgets"           @executable_path/QtWidgets      $$f && \
+			install_name_tool -change "@rpath/QtMacExtras.framework/Versions/5/QtMacExtras"       @executable_path/QtMacExtras    $$f; \
+		done)
+	# symlink resources
+	mkdir -p build/Carla.app/Contents/MacOS/resources
+	(cd build/Carla.app/Contents/MacOS/resources && \
+		ln -sf ../Qt* ../lib ../iconengines ../imageformats ../platforms ../styles . && \
+		ln -sf carla-plugin carla-plugin-patchbay)
+
+build/Carla.app/Contents/MacOS/lib/library.zip: $(CARLA_PLUGIN_ZIPS) data/macos/bundle.py data/macos/*.plist source/frontend/*
+	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=Carla python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
+	# merge all zips into 1
+	rm -rf build/Carla.app/Contents/MacOS/lib/_lib
+	mkdir build/Carla.app/Contents/MacOS/lib/_lib
+	(cd build/Carla.app/Contents/MacOS/lib/_lib && \
+		mv ../library.zip ../library-main.zip && \
+		$(_CARLA_PLUGIN_UIS:%=unzip -n $(CURDIR)/build/%.app/Contents/MacOS/lib/library.zip &&) \
+		unzip -o ../library-main.zip && \
+		zip -r -9 ../library.zip *)
+	rm -rf build/Carla.app/Contents/MacOS/lib/_lib
+	rm -rf build/Carla.app/Contents/MacOS/lib/library-main.zip
+
+build/%.app/Contents/MacOS/lib/library.zip: data/macos/bundle.py data/macos/*.plist source/frontend/*
 	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=$* python3 ./data/macos/bundle.py bdist_mac --bundle-name=$*
+
+build/Carla.app/Contents/MacOS/iconengines/%: ${QT5_PREFIX}/lib/qt5/plugins/iconengines/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/Carla.app/Contents/MacOS/imageformats/%: ${QT5_PREFIX}/lib/qt5/plugins/imageformats/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/Carla.app/Contents/MacOS/platforms/%: ${QT5_PREFIX}/lib/qt5/plugins/platforms/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/Carla.app/Contents/MacOS/resources/%: build/%.app/Contents/MacOS/lib/library.zip source/frontend/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v build/$*.app/Contents/MacOS/$* $@
 
 build/Carla.app/Contents/MacOS/%: bin/%
 	-@mkdir -p $(shell dirname $@)
