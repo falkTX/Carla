@@ -10,10 +10,6 @@ include ../modules/Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-ifeq ($(MACOS),true)
-MAC_BUILDS_PREFIX = ~/builds/carla
-endif
-
 ifeq ($(WIN32),true)
 NON_STATIC_LINK_FLAGS = $(shell echo $(LINK_FLAGS) | awk 'sub(" -static","")') -static-libgcc
 else
@@ -34,15 +30,12 @@ else
 ifeq ($(MACOS),true)
 ifeq ($(HAVE_PYQT),true)
 HAVE_QT5=true
-QT5_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB
-QT5_LINK_FLAGS = $(NON_STATIC_LINK_FLAGS) -F $(MAC_BUILDS_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
-QT5_STYLES_DIR = $(MAC_BUILDS_PREFIX)/lib/qt5/plugins/styles
+QT5_PREFIX     = $(shell pkg-config --variable=prefix Qt5OpenGLExtensions)
+QT5_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT5_PREFIX)/include/qt5
+QT5_LINK_FLAGS = $(NON_STATIC_LINK_FLAGS) -F $(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
+QT5_STYLES_DIR = $(QT5_PREFIX)/lib/qt5/plugins/styles
 endif
 endif
-endif
-
-ifeq ($(MACOS),true)
-QT5_CXX_FLAGS += -I $(MAC_BUILDS_PREFIX)/include/qt5
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
