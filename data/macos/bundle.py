@@ -24,7 +24,7 @@ options = {
 }
 
 boptions = {
-  "iconfile": "./resources/ico/carla.icns"
+  "iconfile": "./resources/ico/carla%s.icns" % ("-control" if SCRIPT_NAME == "Carla-Control" else "")
 }
 
 if SCRIPT_NAME in ("Carla", "Carla-Control"):

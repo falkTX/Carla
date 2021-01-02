@@ -161,7 +161,7 @@ class CarlaApplication():
         if gCarla.nogui:
             return
 
-        if appName.lower() == "carla-control":
+        if appName == "Carla2-Control":
             if QT_VERSION >= 0x50700:
                 self.fApp.setDesktopFileName("carla-control")
             self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
