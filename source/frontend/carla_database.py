@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin database code
-# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -1003,7 +1003,7 @@ class SearchPluginsThread(QThread):
 # Plugin Refresh Dialog
 
 class PluginRefreshW(QDialog):
-    def __init__(self, parent, host):
+    def __init__(self, parent, host, useSystemIcons):
         QDialog.__init__(self, parent)
         self.host = host
         self.ui = ui_carla_refresh.Ui_PluginRefreshW()
@@ -1019,8 +1019,22 @@ class PluginRefreshW(QDialog):
         hasWin64   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win64.exe"))
 
         self.fThread  = SearchPluginsThread(self, host.pathBinaries)
-        self.fIconYes = QPixmap(":/16x16/dialog-ok-apply.svgz")
-        self.fIconNo  = QPixmap(":/16x16/dialog-error.svgz")
+
+        # -------------------------------------------------------------------------------------------------------------
+        # Set-up Icons
+
+        if useSystemIcons:
+            self.ui.b_start.setIcon(getIcon('arrow-right', 16, 'svgz'))
+            self.ui.b_close.setIcon(getIcon('window-close', 16, 'svgz'))
+            if QT_VERSION >= 0x50600:
+                size = int(16 * self.devicePixelRatioF())
+            else:
+                size = 16
+            self.fIconYes = QPixmap(getIcon('dialog-ok-apply', 16, 'svgz').pixmap(size))
+            self.fIconNo  = QPixmap(getIcon('dialog-error', 16, 'svgz').pixmap(size))
+        else:
+            self.fIconYes = QPixmap(":/16x16/dialog-ok-apply.svgz")
+            self.fIconNo  = QPixmap(":/16x16/dialog-error.svgz")
 
         # -------------------------------------------------------------------------------------------------------------
         # Set-up GUI
@@ -1387,7 +1401,7 @@ class PluginDatabaseW(QDialog):
     TABLEWIDGET_ITEM_MAKER    = 3
     TABLEWIDGET_ITEM_BINARY   = 4
 
-    def __init__(self, parent, host):
+    def __init__(self, parent, host, useSystemIcons):
         QDialog.__init__(self, parent)
         self.host = host
         self.ui = ui_carla_database.Ui_PluginDatabaseW()
@@ -1401,6 +1415,7 @@ class PluginDatabaseW(QDialog):
         self.fRealParent = parent
         self.fFavoritePlugins = []
         self.fFavoritePluginsChanged = False
+        self.fUseSystemIcons = useSystemIcons
 
         self.fTrYes    = self.tr("Yes")
         self.fTrNo     = self.tr("No")
@@ -1458,6 +1473,16 @@ class PluginDatabaseW(QDialog):
             self.ui.ch_bridged_wine.setChecked(False)
             self.ui.ch_bridged_wine.setEnabled(False)
             self.ui.ch_bridged_wine.setVisible(False)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Set-up Icons
+
+        if useSystemIcons:
+            self.ui.b_add.setIcon(getIcon('list-add', 16, 'svgz'))
+            self.ui.b_cancel.setIcon(getIcon('dialog-cancel', 16, 'svgz'))
+            self.ui.b_clear_filters.setIcon(getIcon('edit-clear', 16, 'svgz'))
+            self.ui.b_refresh.setIcon(getIcon('view-refresh', 16, 'svgz'))
+            self.ui.tableWidget.horizontalHeaderItem(self.TABLEWIDGET_ITEM_FAVORITE).setIcon(getIcon('bookmarks', 16, 'svgz'))
 
         # ----------------------------------------------------------------------------------------------------
         # Set-up connections
@@ -1656,7 +1681,7 @@ class PluginDatabaseW(QDialog):
 
     @pyqtSlot()
     def slot_refreshPlugins(self):
-        if PluginRefreshW(self, self.host).exec_():
+        if PluginRefreshW(self, self.host, self.fUseSystemIcons).exec_():
             self._reAddPlugins()
 
             if self.fRealParent:
@@ -2381,7 +2406,8 @@ if __name__ == '__main__':
     host = _initHost("Carla2-Database", libPrefix, False, False, False)
     _loadHostSettings(host)
 
-    gui = PluginDatabaseW(None, host)
+    gui = PluginDatabaseW(None, host, True)
+    #gui = PluginRefreshW(None, host, True)
     gui.show()
 
     app.exit_exec()

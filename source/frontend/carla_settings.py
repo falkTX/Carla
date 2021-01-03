@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla settings code
-# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -55,6 +55,7 @@ from carla_shared import (
     CARLA_KEY_MAIN_REFRESH_INTERVAL,
     CARLA_KEY_MAIN_CONFIRM_EXIT,
     CARLA_KEY_MAIN_SHOW_LOGS,
+    CARLA_KEY_MAIN_SYSTEM_ICONS,
     CARLA_KEY_MAIN_EXPERIMENTAL,
     CARLA_KEY_CANVAS_THEME,
     CARLA_KEY_CANVAS_SIZE,
@@ -113,6 +114,7 @@ from carla_shared import (
     CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,
     CARLA_DEFAULT_MAIN_CONFIRM_EXIT,
     CARLA_DEFAULT_MAIN_SHOW_LOGS,
+    CARLA_DEFAULT_MAIN_SYSTEM_ICONS,
     #CARLA_DEFAULT_MAIN_EXPERIMENTAL,
     CARLA_DEFAULT_CANVAS_THEME,
     CARLA_DEFAULT_CANVAS_SIZE,
@@ -643,6 +645,9 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_main_confirm_exit.setChecked(
             settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT, CARLA_DEFAULT_MAIN_CONFIRM_EXIT, bool))
 
+        self.ui.ch_main_system_icons.setChecked(
+            settings.value(CARLA_KEY_MAIN_SYSTEM_ICONS, CARLA_DEFAULT_MAIN_SYSTEM_ICONS, bool))
+
         # -------------------------------------------------------------------------------------------------------------
         # Canvas
 
@@ -907,6 +912,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    self.ui.ch_main_theme_pro.isChecked())
         settings.setValue(CARLA_KEY_MAIN_PRO_THEME_COLOR,  self.ui.cb_main_theme_color.currentText())
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
+        settings.setValue(CARLA_KEY_MAIN_SYSTEM_ICONS,     self.ui.ch_main_system_icons.isChecked())
 
         # -------------------------------------------------------------------------------------------------------------
         # Canvas
@@ -1269,6 +1275,7 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_exp_prevent_bad_behaviour.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR)
 
         # Temporary, until stable
+        self.ui.ch_main_system_icons.setChecked(CARLA_DEFAULT_MAIN_SYSTEM_ICONS)
         self.ui.cb_canvas_fancy_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY)
         self.ui.cb_canvas_use_opengl.setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL and
                                                 self.ui.cb_canvas_use_opengl.isEnabled())

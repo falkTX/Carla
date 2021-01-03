@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>612</width>
-    <height>572</height>
+    <height>620</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -2708,6 +2708,13 @@
              <widget class="QCheckBox" name="ch_exp_export_lv2">
               <property name="text">
                <string>Export single plugins to LV2</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="ch_main_system_icons">
+              <property name="text">
+               <string>Use system/desktop-theme icons (needs restart)</string>
               </property>
              </widget>
             </item>

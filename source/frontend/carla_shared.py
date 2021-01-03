@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Common Carla code
-# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -184,6 +184,7 @@ CARLA_KEY_MAIN_PRO_THEME_COLOR  = "Main/ProThemeColor"   # str
 CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
 CARLA_KEY_MAIN_CONFIRM_EXIT     = "Main/ConfirmExit"     # bool
 CARLA_KEY_MAIN_SHOW_LOGS        = "Main/ShowLogs"        # bool
+CARLA_KEY_MAIN_SYSTEM_ICONS     = "Main/SystemIcons"     # bool
 CARLA_KEY_MAIN_EXPERIMENTAL     = "Main/Experimental"    # bool
 
 CARLA_KEY_CANVAS_THEME             = "Canvas/Theme"           # str
@@ -259,6 +260,7 @@ CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  = "Black"
 CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
 CARLA_DEFAULT_MAIN_CONFIRM_EXIT     = True
 CARLA_DEFAULT_MAIN_SHOW_LOGS        = bool(not WINDOWS)
+CARLA_DEFAULT_MAIN_SYSTEM_ICONS     = False
 CARLA_DEFAULT_MAIN_EXPERIMENTAL     = False
 
 # Canvas
@@ -622,8 +624,8 @@ def toList(value):
 # ------------------------------------------------------------------------------------------------------------
 # Get Icon from user theme, using our own as backup (Oxygen)
 
-def getIcon(icon, size = 16):
-    return QIcon.fromTheme(icon, QIcon(":/%ix%i/%s.png" % (size, size, icon)))
+def getIcon(icon, size, qrcformat):
+    return QIcon.fromTheme(icon, QIcon(":/%ix%i/%s.%s" % (size, size, icon, qrcformat)))
 
 # ------------------------------------------------------------------------------------------------------------
 # Handle some basic command-line arguments shared between all carla variants

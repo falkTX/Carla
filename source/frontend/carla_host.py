@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla host code
-# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -448,6 +448,32 @@ class HostWindow(QMainWindow):
                 self.ui.graphicsView.setViewport(self.ui.glView)
 
             self.setupCanvas()
+
+        # ----------------------------------------------------------------------------------------------------
+        # Set-up Icons
+
+        if self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS]:
+            self.ui.act_file_connect.setIcon(getIcon('network-connect', 16, 'svgz'))
+            self.ui.act_file_refresh.setIcon(getIcon('view-refresh', 16, 'svgz'))
+            self.ui.act_file_new.setIcon(getIcon('document-new', 16, 'svgz'))
+            self.ui.act_file_open.setIcon(getIcon('document-open', 16, 'svgz'))
+            self.ui.act_file_save.setIcon(getIcon('document-save', 16, 'svgz'))
+            self.ui.act_file_save_as.setIcon(getIcon('document-save-as', 16, 'svgz'))
+            self.ui.act_file_quit.setIcon(getIcon('application-exit', 16, 'svgz'))
+            self.ui.act_engine_start.setIcon(getIcon('media-playback-start', 16, 'svgz'))
+            self.ui.act_engine_stop.setIcon(getIcon('media-playback-stop', 16, 'svgz'))
+            self.ui.act_engine_panic.setIcon(getIcon('dialog-warning', 16, 'svgz'))
+            self.ui.act_engine_config.setIcon(getIcon('configure', 16, 'svgz'))
+            self.ui.act_plugin_add.setIcon(getIcon('list-add', 16, 'svgz'))
+            self.ui.act_plugin_add_jack.setIcon(getIcon('list-add', 16, 'svgz'))
+            self.ui.act_plugin_remove_all.setIcon(getIcon('edit-delete', 16, 'svgz'))
+            self.ui.act_canvas_arrange.setIcon(getIcon('view-sort-ascending', 16, 'svgz'))
+            self.ui.act_canvas_refresh.setIcon(getIcon('view-refresh', 16, 'svgz'))
+            self.ui.act_canvas_zoom_fit.setIcon(getIcon('zoom-fit-best', 16, 'svgz'))
+            self.ui.act_canvas_zoom_in.setIcon(getIcon('zoom-in', 16, 'svgz'))
+            self.ui.act_canvas_zoom_out.setIcon(getIcon('zoom-out', 16, 'svgz'))
+            self.ui.act_canvas_zoom_100.setIcon(getIcon('zoom-original', 16, 'svgz'))
+            self.ui.act_settings_configure.setIcon(getIcon('configure', 16, 'svgz'))
 
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
@@ -1145,7 +1171,8 @@ class HostWindow(QMainWindow):
 
     def showAddPluginDialog(self):
         if self.fPluginDatabaseDialog is None:
-            self.fPluginDatabaseDialog = PluginDatabaseW(self.fParentOrSelf, self.host)
+            self.fPluginDatabaseDialog = PluginDatabaseW(self.fParentOrSelf, self.host,
+                                                         self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
         dialog = self.fPluginDatabaseDialog
 
         ret = dialog.exec_()
@@ -1912,6 +1939,7 @@ class HostWindow(QMainWindow):
             CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      str),
             CARLA_KEY_MAIN_CONFIRM_EXIT:        settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT,        CARLA_DEFAULT_MAIN_CONFIRM_EXIT,        bool),
             CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    int),
+            CARLA_KEY_MAIN_SYSTEM_ICONS:        settings.value(CARLA_KEY_MAIN_SYSTEM_ICONS,        CARLA_DEFAULT_MAIN_SYSTEM_ICONS,        bool),
             CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        bool),
             CARLA_KEY_CANVAS_THEME:             settings.value(CARLA_KEY_CANVAS_THEME,             CARLA_DEFAULT_CANVAS_THEME,             str),
             CARLA_KEY_CANVAS_SIZE:              settings.value(CARLA_KEY_CANVAS_SIZE,              CARLA_DEFAULT_CANVAS_SIZE,              str),
