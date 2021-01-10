@@ -234,13 +234,21 @@ build/Carla.app/Contents/MacOS/% build/Carla-Control.app/Contents/MacOS/%: bin/%
 # ----------------------------------------------------------------------------------------------------------------------------
 # Plugin rules
 
-build/Carla-Plugins.pkg: build/carla-lv2.pkg build/carla-vst2fx.pkg build/carla-vst2syn.pkg
+MACOS_PACKAGE_EXP  = -e 's/version="0"/version="$(VERSION)"/'
+ifeq ($(CPU_ARM64),true)
+MACOS_PACKAGE_EXP += -e 's/hostArchitectures="x86_64"/hostArchitectures="arm64,x86_64"/'
+endif
+
+build/Carla-Plugins.pkg: build/carla-lv2.pkg build/carla-vst2fx.pkg build/carla-vst2syn.pkg build/package.xml
 	productbuild \
-		--distribution data/macos/package.xml \
+		--distribution build/package.xml \
 		--identifier studio.kx.carla \
 		--package-path "build" \
 		--version "$(VERSION)" \
 		"$@"
+
+build/package.xml: data/macos/package.xml
+	sed $(MACOS_PACKAGE_EXP) $< > $@
 
 build/carla-lv2.pkg: $(_CARLA_LV2_PLUGIN_FILES:%=build/%)
 	pkgbuild \
