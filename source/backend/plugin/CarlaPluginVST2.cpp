@@ -2421,19 +2421,21 @@ public:
             if (! CFBundleLoadExecutable(fMacBundleRef))
             {
                 CFRelease(fMacBundleRef);
+                fMacBundleRef = nullptr;
                 pData->engine->setLastError("Failed to load VST bundle executable");
                 return false;
             }
 
-            vstFn = (VST_Function)CFBundleGetFunctionPointerForName(fMacBundleRef, CFSTR("main_macho"));
+            vstFn = (VST_Function)CFBundleGetFunctionPointerForName(fMacBundleRef, CFSTR("VSTPluginMain"));
 
             if (vstFn == nullptr)
-                vstFn = (VST_Function)CFBundleGetFunctionPointerForName(fMacBundleRef, CFSTR("VSTPluginMain"));
+                vstFn = (VST_Function)CFBundleGetFunctionPointerForName(fMacBundleRef, CFSTR("main_macho"));
 
             if (vstFn == nullptr)
             {
                 CFBundleUnloadExecutable(fMacBundleRef);
                 CFRelease(fMacBundleRef);
+                fMacBundleRef = nullptr;
                 pData->engine->setLastError("Not a VST plugin");
                 return false;
             }
