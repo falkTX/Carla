@@ -22,6 +22,8 @@ else
 MODULEDIR := $(CURDIR)/build/modules/Release
 endif
 
+VERSION   := 2.3
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 all: backend discovery bridges-plugin bridges-ui frontend interposer libjack plugin theme

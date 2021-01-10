@@ -28,7 +28,7 @@ boptions = {
 }
 
 if SCRIPT_NAME in ("Carla", "Carla-Control"):
-  boptions["custom_info_plist"] = "./data/macos/%s_Info.plist" % SCRIPT_NAME
+  boptions["custom_info_plist"] = "./data/macos/%s.plist" % SCRIPT_NAME
 
 setup(name = "Carla",
       version = VERSION,

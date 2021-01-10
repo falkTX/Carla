@@ -9,7 +9,7 @@
         <key>CFBundleIconFile</key>
         <string></string>
         <key>CFBundleIdentifier</key>
-        <string>studio.kx.carla.CarlaVstShell</string>
+        <string>studio.kx.carla.vst2syn</string>
         <key>CFBundleInfoDictionaryVersion</key>
         <string>6.0</string>
         <key>CFBundlePackageType</key>

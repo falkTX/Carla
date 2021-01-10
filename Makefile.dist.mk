@@ -96,12 +96,19 @@ CARLA_CONTROL_APP_FILES = $(_CARLA_CONTROL_APP_FILES:%=build/Carla-Control.app/C
 # ----------------------------------------------------------------------------------------------------------------------------
 # entry point
 
-TARGETS = \
-	build/Carla.app/Contents/Info.plist \
-	build/Carla-Control.app/Contents/Info.plist \
-	build/Carla-Plugins.pkg
+TARGETS = Carla-$(VERSION)-macOS.dmg
 
 dist: $(TARGETS)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# create final file
+
+Carla-$(VERSION)-macOS.dmg: build/Carla.app/Contents/Info.plist build/Carla-Control.app/Contents/Info.plist build/Carla-Plugins.pkg
+	rm -rf build/macos-pkg $@
+	mkdir build/macos-pkg
+	cp -r build/Carla.app build/Carla-Control.app build/Carla-Plugins.pkg data/macos/README build/macos-pkg/
+	hdiutil create $@ -srcfolder build/macos-pkg -volname "Carla-$(VERSION)" -fs HFS+ -ov
+	rm -rf build/macos-pkg
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # final cleanup, after everything is in place
@@ -162,7 +169,7 @@ endef
 
 build/Carla.app/Contents/MacOS/Carla: build/Carla.app/Contents/MacOS/lib/library.zip
 
-build/Carla.app/Contents/MacOS/lib/library.zip: $(CARLA_APP_ZIPS) data/macos/bundle.py data/macos/Carla_Info.plist source/frontend/*
+build/Carla.app/Contents/MacOS/lib/library.zip: $(CARLA_APP_ZIPS) data/macos/bundle.py data/macos/Carla.plist source/frontend/*
 	$(call GENERATE_LIBRARY_ZIP,Carla)
 	# merge all zips into 1
 	rm -rf build/Carla.app/Contents/MacOS/lib/_lib
@@ -179,7 +186,7 @@ build/Carla.app/Contents/MacOS/lib/library.zip: $(CARLA_APP_ZIPS) data/macos/bun
 
 build/Carla-Control.app/Contents/MacOS/Carla-Control: build/Carla-Control.app/Contents/MacOS/lib/library.zip
 
-build/Carla-Control.app/Contents/MacOS/lib/library.zip: data/macos/bundle.py data/macos/Carla-Control_Info.plist source/frontend/*
+build/Carla-Control.app/Contents/MacOS/lib/library.zip: data/macos/bundle.py data/macos/Carla-Control.plist source/frontend/*
 	$(call GENERATE_LIBRARY_ZIP,Carla-Control)
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -232,7 +239,7 @@ build/Carla-Plugins.pkg: build/carla-lv2.pkg build/carla-vst2fx.pkg build/carla-
 		--distribution data/macos/package.xml \
 		--identifier studio.kx.carla \
 		--package-path "build" \
-		--version "2.3.0-alpha3" \
+		--version "$(VERSION)" \
 		"$@"
 
 build/carla-lv2.pkg: $(_CARLA_LV2_PLUGIN_FILES:%=build/%)
