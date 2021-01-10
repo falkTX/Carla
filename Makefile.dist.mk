@@ -36,15 +36,18 @@ _THEME_FILES = \
 	styles/carlastyle.json \
 	styles/carlastyle$(LIB_EXT)
 
-_CARLA_APP_FILES = \
-	Carla$(APP_EXT) \
+_CARLA_HOST_FILES = \
 	carla-bridge-lv2-cocoa$(APP_EXT) \
 	carla-bridge-lv2$(LIB_EXT) \
 	carla-bridge-native$(APP_EXT) \
 	carla-discovery-native$(APP_EXT) \
+	$(_PLUGIN_UIS:%=resources/%$(APP_EXT))
+
+_CARLA_APP_FILES = \
+	Carla$(APP_EXT) \
 	libcarla_standalone2$(LIB_EXT) \
 	libcarla_utils$(LIB_EXT) \
-	$(_PLUGIN_UIS:%=resources/%$(APP_EXT)) \
+	$(_CARLA_HOST_FILES) \
 	$(_QT5_DLLS) \
 	$(_THEME_FILES)
 
@@ -54,15 +57,29 @@ _CARLA_CONTROL_APP_FILES = \
 	$(_QT5_DLLS) \
 	$(_THEME_FILES)
 
+_CARLA_LV2_PLUGIN_FILES = \
+	carla.lv2/carla$(LIB_EXT) \
+	carla.lv2/manifest.ttl \
+	$(_CARLA_HOST_FILES:%=carla.lv2/%)
+
 CARLA_APP_FILES = $(_CARLA_APP_FILES:%=build/Carla.app/Contents/MacOS/%)
-CARLA_QT5_DLLS = $(_QT5_DLLS:%=build/Carla.app/Contents/MacOS/%)
-CARLA_PLUGIN_UIS_ZIPS = $(_PLUGIN_UIS:%=build/%.app/Contents/MacOS/lib/library.zip)
+CARLA_APP_ZIPS = $(_PLUGIN_UIS:%=build/%.app/Contents/MacOS/lib/library.zip)
 
 CARLA_CONTROL_APP_FILES = $(_CARLA_CONTROL_APP_FILES:%=build/Carla-Control.app/Contents/MacOS/%)
-CARLA_CONTROL_QT5_DLLS = $(_QT5_DLLS:%=build/Carla-Control.app/Contents/MacOS/%)
+
+CARLA_PLUGIN_FILES = $(_CARLA_LV2_PLUGIN_FILES:%=build/%)
 
 # ----------------------------------------------------------------------------------------------------------------------------
-# macOS application bundle, depends on cxfreeze library.zip and all qt-related dlls
+# entry point
+
+TARGETS = \
+	build/Carla.app/Contents/Info.plist \
+	build/Carla-Control.app/Contents/Info.plist
+
+dist: $(TARGETS)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# final cleanup, after everything is in place
 
 define CLEANUP_AND_PATCH_CXFREEZE_FILES
 	# cleanup
@@ -79,7 +96,7 @@ define CLEANUP_AND_PATCH_CXFREEZE_FILES
 	rm -rf build/${1}.app/Contents/MacOS/lib/PyQt5/uic
 	# adjust binaries
 	(cd build/${1}.app/Contents/MacOS && \
-		for f in `find . -type f | grep -e Q -e libq -e carlastyle.dylib`; do \
+		for f in `find . -type f | grep -e /Qt -e QOpenGL -e libq -e carlastyle.dylib -e sip.so`; do \
 			install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore"                 @executable_path/QtCore         $$f && \
 			install_name_tool -change "@rpath/QtGui.framework/Versions/5/QtGui"                   @executable_path/QtGui          $$f && \
 			install_name_tool -change "@rpath/QtOpenGL.framework/Versions/5/QtOpenGL"             @executable_path/QtOpenGL       $$f && \
@@ -90,52 +107,64 @@ define CLEANUP_AND_PATCH_CXFREEZE_FILES
 		done)
 endef
 
-build/Carla.app/Contents/MacOS/Carla: build/Carla.app/Contents/MacOS/lib/library.zip $(CARLA_QT5_DLLS)
+build/Carla.app/Contents/Info.plist: $(CARLA_APP_FILES)
 	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla)
 	# extra step for standalone, symlink resources used in plugin UIs
 	mkdir -p build/Carla.app/Contents/MacOS/resources
 	(cd build/Carla.app/Contents/MacOS/resources && \
 		ln -sf ../Qt* ../lib ../iconengines ../imageformats ../platforms ../styles . && \
 		ln -sf carla-plugin carla-plugin-patchbay)
+	# mark as done
+	touch $@
 
-build/Carla-Control.app/Contents/MacOS/Carla-Control: build/Carla-Control.app/Contents/MacOS/lib/library.zip $(CARLA_CONTROL_QT5_DLLS)
+build/Carla-Control.app/Contents/Info.plist: $(CARLA_CONTROL_APP_FILES)
 	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla-Control)
+	# mark as done
+	touch $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
-# macOS library.zip
+# macOS application bundle, depends on cxfreeze library.zip
 
 define GENERATE_LIBRARY_ZIP
 	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=${1} python3 ./data/macos/bundle.py bdist_mac --bundle-name=${1}
 endef
 
-build/Carla.app/Contents/MacOS/lib/library.zip: $(CARLA_PLUGIN_UIS_ZIPS) data/macos/bundle.py data/macos/Carla_Info.plist source/frontend/*
+# ----------------------------------------------------------------------------------------------------------------------------
+
+build/Carla.app/Contents/MacOS/Carla: build/Carla.app/Contents/MacOS/lib/library.zip
+
+build/Carla.app/Contents/MacOS/lib/library.zip: $(CARLA_APP_ZIPS) data/macos/bundle.py data/macos/Carla_Info.plist source/frontend/*
 	$(call GENERATE_LIBRARY_ZIP,Carla)
 	# merge all zips into 1
 	rm -rf build/Carla.app/Contents/MacOS/lib/_lib
 	mkdir build/Carla.app/Contents/MacOS/lib/_lib
 	(cd build/Carla.app/Contents/MacOS/lib/_lib && \
 		mv ../library.zip ../library-main.zip && \
-		$(_CARLA_PLUGIN_UIS:%=unzip -n $(CURDIR)/build/%.app/Contents/MacOS/lib/library.zip &&) \
+		$(_PLUGIN_UIS:%=unzip -n $(CURDIR)/build/%.app/Contents/MacOS/lib/library.zip &&) \
 		unzip -o ../library-main.zip && \
 		zip -r -9 ../library.zip *)
 	rm -rf build/Carla.app/Contents/MacOS/lib/_lib
 	rm -rf build/Carla.app/Contents/MacOS/lib/library-main.zip
 
+# ----------------------------------------------------------------------------------------------------------------------------
+
+build/Carla-Control.app/Contents/MacOS/Carla-Control: build/Carla-Control.app/Contents/MacOS/lib/library.zip
+
 build/Carla-Control.app/Contents/MacOS/lib/library.zip: data/macos/bundle.py data/macos/Carla-Control_Info.plist source/frontend/*
 	$(call GENERATE_LIBRARY_ZIP,Carla-Control)
-
-build/%.app/Contents/MacOS/lib/library.zip: data/macos/bundle.py data/macos/*.plist source/frontend/*
-	$(call GENERATE_LIBRARY_ZIP,$*)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # macOS plugin UIs (stored in resources, depend on their respective startup script and generation of matching library.zip)
 
-build/Carla.app/Contents/MacOS/resources/%: build/%.app/Contents/MacOS/lib/library.zip source/frontend/%
+build/Carla.app/Contents/MacOS/resources/%: build/%.app/Contents/MacOS/lib/library.zip
 	-@mkdir -p $(shell dirname $@)
 	@cp -v build/$*.app/Contents/MacOS/$* $@
 
+build/%.app/Contents/MacOS/lib/library.zip: data/macos/bundle.py source/frontend/%
+	$(call GENERATE_LIBRARY_ZIP,$*)
+
 # ----------------------------------------------------------------------------------------------------------------------------
-# macOS generic bundle files (either from Qt or Carla binaries)
+# macOS generic bundle files (either Qt or Carla binaries)
 
 build/Carla.app/Contents/MacOS/Qt% build/Carla-Control.app/Contents/MacOS/Qt%: $(QT5_PREFIX)/lib/Qt%.framework
 	-@mkdir -p $(shell dirname $@)
@@ -156,11 +185,5 @@ build/Carla.app/Contents/MacOS/platforms/% build/Carla-Control.app/Contents/MacO
 build/Carla.app/Contents/MacOS/% build/Carla-Control.app/Contents/MacOS/%: bin/%
 	-@mkdir -p $(shell dirname $@)
 	@cp -v $< $@
-
-# ----------------------------------------------------------------------------------------------------------------------------
-
-dist: carla_mac
-
-carla_mac: $(CARLA_APP_FILES) $(CARLA_CONTROL_APP_FILES)
 
 # ----------------------------------------------------------------------------------------------------------------------------
