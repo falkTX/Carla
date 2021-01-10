@@ -116,7 +116,11 @@ void carla_debug(const char* const fmt, ...) noexcept
 
         if (output == stdout)
         {
+#ifdef CARLA_OS_MAC
+            std::fprintf(output, "\x1b[37;1m");
+#else
             std::fprintf(output, "\x1b[30;1m");
+#endif
             std::vfprintf(output, fmt, args);
             std::fprintf(output, "\x1b[0m\n");
         }
