@@ -320,10 +320,10 @@ posix64: $(LIBS_POSIX64)
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (win32)
 
-ifeq ($(BUILDING_FOR_WINDOWS),true)
-LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32.a
-else
+ifeq ($(BUILDING_FOR_WINE),true)
 LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32e.a
+else
+LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32.a
 endif
 LIBS_WIN32 += $(MODULEDIR)/lilv.win32.a
 LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
@@ -353,10 +353,10 @@ win32: $(LIBS_WIN32)
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (win64)
 
-ifeq ($(BUILDING_FOR_WINDOWS),true)
-LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64.a
-else
+ifeq ($(BUILDING_FOR_WINE),true)
 LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64e.a
+else
+LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64.a
 endif
 LIBS_WIN64 += $(MODULEDIR)/lilv.win64.a
 LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
