@@ -283,13 +283,6 @@ public:
         }
 
         gIsInitiated = true;
-        int64_t timeToEnd = 0;
-
-        if (testing)
-        {
-            timeToEnd = water::Time::currentTimeMillis() + 5 * 1000;
-            fEngine->transportPlay();
-        }
 
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 # ifndef CARLA_OS_WIN
@@ -299,6 +292,14 @@ public:
         juce::JUCEApplicationBase::createInstance = &juce_CreateApplication;
         juce::JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
 #else
+        int64_t timeToEnd = 0;
+
+        if (testing)
+        {
+            timeToEnd = water::Time::currentTimeMillis() + 5 * 1000;
+            fEngine->transportPlay();
+        }
+
         for (; runMainLoopOnce() && ! gCloseNow;)
         {
             gIdle();
