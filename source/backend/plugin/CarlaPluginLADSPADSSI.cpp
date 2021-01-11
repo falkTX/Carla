@@ -225,7 +225,7 @@ public:
                     carla_stdout("CarlaThreadDSSIUI::run() - UI auto-closed successfully");
                 }
             }
-            else if (fProcess->getExitCode() != 0 /*|| fProcess->exitStatus() == QProcess::CrashExit*/)
+            else if (fProcess->getExitCodeAndClearPID() != 0)
                 carla_stderr("CarlaThreadDSSIUI::run() - UI crashed while running");
             else
                 carla_stdout("CarlaThreadDSSIUI::run() - UI closed cleanly");

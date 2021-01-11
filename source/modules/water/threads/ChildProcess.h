@@ -81,8 +81,8 @@ public:
     /** Blocks until the process is no longer running. */
     bool waitForProcessToFinish (int timeoutMs);
 
-    /** If the process has finished, this returns its exit code. */
-    uint32 getExitCode() const;
+    /** If the process has finished, this returns its exit code and also clears assigned PID. */
+    uint32 getExitCodeAndClearPID();
 
     /** Attempts to kill the child process.
         Returns true if it succeeded. Trying to read from the process after calling this may

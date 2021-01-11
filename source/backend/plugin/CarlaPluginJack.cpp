@@ -432,7 +432,7 @@ protected:
             else
             {
                 // forced quit, may have crashed
-                if (fProcess->getExitCode() != 0 /*|| fProcess->exitStatus() == QProcess::CrashExit*/)
+                if (fProcess->getExitCodeAndClearPID() != 0)
                 {
                     carla_stderr("CarlaPluginJackThread::run() - application crashed");
 

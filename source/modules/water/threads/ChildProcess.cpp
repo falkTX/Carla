@@ -55,8 +55,14 @@ public:
 
     ~ActiveProcess()
     {
+        closeProcessInfo();
+    }
+
+    void closeProcessInfo() noexcept
+    {
         if (ok)
         {
+            ok = false;
             CloseHandle (processInfo.hThread);
             CloseHandle (processInfo.hProcess);
         }
@@ -88,10 +94,11 @@ public:
         return TerminateProcess (processInfo.hProcess, 0) != FALSE;
     }
 
-    uint32 getExitCode() const noexcept
+    uint32 getExitCodeAndClearPID() noexcept
     {
         DWORD exitCode = 0;
         GetExitCodeProcess (processInfo.hProcess, &exitCode);
+        closeProcessInfo();
         return (uint32) exitCode;
     }
 
@@ -200,12 +207,13 @@ public:
         return ::kill (childPID, SIGTERM) == 0;
     }
 
-    uint32 getExitCode() const noexcept
+    uint32 getExitCodeAndClearPID() noexcept
     {
         if (childPID != 0)
         {
             int childState = 0;
             const int pid = waitpid (childPID, &childState, WNOHANG);
+            childPID = 0;
 
             if (pid >= 0 && WIFEXITED (childState))
                 return WEXITSTATUS (childState);
@@ -246,9 +254,9 @@ bool ChildProcess::terminate()
     return activeProcess == nullptr || activeProcess->terminateProcess();
 }
 
-uint32 ChildProcess::getExitCode() const
+uint32 ChildProcess::getExitCodeAndClearPID()
 {
-    return activeProcess != nullptr ? activeProcess->getExitCode() : 0;
+    return activeProcess != nullptr ? activeProcess->getExitCodeAndClearPID() : 0;
 }
 
 bool ChildProcess::waitForProcessToFinish (const int timeoutMs)
