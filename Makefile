@@ -822,7 +822,18 @@ uninstall:
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+ifeq ($(MACOS),true)
+ifneq ($(MACOS_OLD),true)
+HAVE_DIST = true
+endif
+endif
+
+ifeq ($(HAVE_DIST),true)
 include Makefile.dist.mk
+else
+dist:
+endif
+
 include Makefile.print.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
