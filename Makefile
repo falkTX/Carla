@@ -440,6 +440,7 @@ stoat:
 install_main:
 	# Create directories
 	install -d $(DESTDIR)$(BINDIR)
+	install -d $(DESTDIR)$(DATADIR)/carla/resources
 ifeq ($(LINUX),true)
 	install -d $(DESTDIR)$(LIBDIR)/carla/jack
 else
@@ -465,7 +466,6 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
-	install -d $(DESTDIR)$(DATADIR)/carla/resources
 	install -d $(DESTDIR)$(DATADIR)/carla/resources/translations
 	install -d $(DESTDIR)$(DATADIR)/carla/modgui
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas

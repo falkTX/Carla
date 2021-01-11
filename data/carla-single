@@ -76,6 +76,7 @@ if len(sys.argv) < 2:
 # Initialize variables to null
 
 ARCH     = os.getenv("CARLA_BRIDGE_PLUGIN_BINARY_TYPE", "native")
+TESTING  = os.getenv("CARLA_BRIDGE_TESTING", None)
 FORMAT   = "none"
 FILENAME = ""
 LABEL    = ""
@@ -164,7 +165,7 @@ if len(sys.argv) > arg:
 
 BRIDGE = os.path.join(CARLA_LIBDIR, "carla-bridge-" + ARCH)
 
-if ARCH in ("win32", "win64"):
+if ARCH in ("win32", "win64") or TESTING in ("win32", "win64"):
     BRIDGE = BRIDGE + ".exe"
 
 # --------------------------------------------------------------------------------------------------------
@@ -182,7 +183,7 @@ if not os.path.exists(CARLA_RESDIR):
 # Check for existing arch binary
 
 if not os.path.exists(BRIDGE):
-    print("Carla plugin bridge for the requested arch (%s) does not exist" % (ARCH,))
+    print("Carla plugin bridge (%s) for the requested arch (%s) does not exist" % (os.path.basename(BRIDGE), ARCH,))
     sys.exit(2)
 
 # --------------------------------------------------------------------------------------------------------
@@ -241,9 +242,9 @@ command = []
 
 if os.getenv("CARLA_BRIDGE_PLUGIN_BINARY_TYPE") is not None:
     BRIDGE = os.path.join(CARLA_LIBDIR, "carla-bridge-native")
-elif ARCH == "win32":
+elif ARCH == "win32" or TESTING == "win32":
     command.append("wine")
-elif ARCH == "win64":
+elif ARCH == "win64" or TESTING == "win64":
     command.append("wine64")
 
 command.append(BRIDGE)

@@ -255,7 +255,9 @@ public:
         fUsingBridge = useBridge;
         fUsingExec   = true;
 
-        if (! useBridge)
+        const bool testing = std::getenv("CARLA_BRIDGE_TESTING") != nullptr;
+
+        if (! useBridge && ! testing)
         {
             const CarlaPluginInfo* const pInfo = carla_get_plugin_info(gHostHandle, 0);
             CARLA_SAFE_ASSERT_RETURN(pInfo != nullptr,);
@@ -281,8 +283,6 @@ public:
         }
 
         gIsInitiated = true;
-
-        const bool testing = std::getenv("CARLA_BRIDGE_TESTING") != nullptr;
         int64_t timeToEnd = 0;
 
         if (testing)
