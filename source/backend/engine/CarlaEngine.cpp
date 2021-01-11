@@ -743,15 +743,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 
     bool canRun = true;
 
-    /**/ if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
-        {
-            setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
-            canRun = false;
-        }
-    }
-    else if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
         /**/ if (plugin->getMidiInCount() > 1 || plugin->getMidiOutCount() > 1)
         {

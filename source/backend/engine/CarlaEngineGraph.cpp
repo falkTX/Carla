@@ -1008,6 +1008,7 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
         const uint32_t numInBufs  = std::max(oldAudioInCount,  2U);
         const uint32_t numOutBufs = std::max(oldAudioOutCount, 2U);
+        const uint32_t numCvBufs  = std::max(plugin->getCVInCount(), plugin->getCVOutCount());
 
         const float* inBuf[numInBufs];
         inBuf[0] = inBuf0;
@@ -1017,7 +1018,11 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         outBuf[0] = outBufReal[0];
         outBuf[1] = outBufReal[1];
 
-        if (numInBufs > 2 || numOutBufs > 2)
+        float* cvBuf[numCvBufs];
+        for (uint32_t j=0; j<numCvBufs; ++j)
+            cvBuf[j] = dummyBuf;
+
+        if (numInBufs > 2 || numOutBufs > 2 || numCvBufs != 0)
         {
             carla_zeroFloats(dummyBuf, frames);
 
@@ -1030,7 +1035,7 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
         // process
         plugin->initBuffers();
-        plugin->process(inBuf, outBuf, nullptr, nullptr, frames);
+        plugin->process(inBuf, outBuf, cvBuf, cvBuf, frames);
         plugin->unlock();
 
         // if plugin has no audio inputs, add input buffer
