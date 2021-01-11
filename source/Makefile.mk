@@ -768,7 +768,9 @@ LINK := ln -sf
 
 ifneq ($(BUILDING_FOR_WINE),true)
 ifeq ($(CROSS_COMPILING),true)
+ifeq ($(WIN32),true)
 NEEDS_WINE = true
+endif
 endif
 endif
 

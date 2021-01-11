@@ -789,7 +789,9 @@ endif
 ifneq ($(HAVE_PYQT),true)
 	# Remove gui files for non-gui build
 	rm $(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
+ifeq ($(CAN_GENERATE_LV2_TTL),true)
 	rm $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/carla-bridge-lv2-modgui
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
