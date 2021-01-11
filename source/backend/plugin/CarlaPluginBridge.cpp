@@ -123,7 +123,7 @@ public:
         if (label != nullptr)
             fLabel = label;
         if (fLabel.isEmpty())
-            fLabel = "\"\"";
+            fLabel = "(none)";
     }
 
     uintptr_t getProcessPID() const noexcept
@@ -150,14 +150,10 @@ protected:
 
         const EngineOptions& options(kEngine->getOptions());
 
-        String name(kPlugin->getName());
         String filename(kPlugin->getFilename());
 
-        if (name.isEmpty())
-            name = "(none)";
-
         if (filename.isEmpty())
-            filename = "\"\"";
+            filename = "(none)";
 
         StringArray arguments;
 
