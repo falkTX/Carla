@@ -287,7 +287,7 @@ public:
 
         if (testing)
         {
-            timeToEnd = water::Time::currentTimeMillis() + 10 * 1000;
+            timeToEnd = water::Time::currentTimeMillis() + 5 * 1000;
             fEngine->transportPlay();
         }
 
