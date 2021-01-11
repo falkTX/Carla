@@ -44,18 +44,6 @@ ifeq ($(HAVE_X11),true)
 BUILD_CXX_FLAGS += $(X11_FLAGS)
 endif
 
-ifeq ($(BUILDING_FOR_WINDOWS),true)
-ifeq ($(CROSS_COMPILING),true)
-NEEDS_WINE = true
-endif
-endif
-
-ifneq ($(CROSS_COMPILING),true)
-CAN_GENERATE_LV2_TTL = true
-else ifeq ($(NEEDS_WINE),true)
-CAN_GENERATE_LV2_TTL = true
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Libs
 

@@ -720,6 +720,7 @@ endif # HAVE_PYQT
 
 	# -------------------------------------------------------------------------------------------------------------
 
+ifeq ($(CAN_GENERATE_LV2_TTL),true)
 	# Install lv2 plugin
 	install -d $(DESTDIR)$(LIBDIR)/lv2/carla.lv2
 
@@ -733,6 +734,7 @@ endif # HAVE_PYQT
 		$(LINK) ../../carla/$$i $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/$$i; \
 	done
 	rm -f $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/libcarla_standalone2.*
+endif
 
 ifeq ($(LINUX),true)
 	# Link jack app bridge

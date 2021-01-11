@@ -764,6 +764,22 @@ endif
 LINK := ln -sf
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Check if we can generate ttl files
+
+ifneq ($(BUILDING_FOR_WINE),true)
+ifeq ($(CROSS_COMPILING),true)
+NEEDS_WINE = true
+endif
+endif
+
+ifneq ($(CROSS_COMPILING),true)
+CAN_GENERATE_LV2_TTL = true
+else ifeq ($(NEEDS_WINE),true)
+CAN_GENERATE_LV2_TTL = true
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Check if we should build the external plugins
 
 ifneq ($(DEBUG),true)
 ifneq ($(TESTBUILD),true)
