@@ -674,7 +674,8 @@ int main(int argc, char* argv[])
 #ifdef HAVE_X11
                         if (std::getenv("DISPLAY") != nullptr)
 #endif
-                            carla_show_custom_ui(gHostHandle, 0, true);
+                            if (std::getenv("CARLA_BRIDGE_TESTING") == nullptr)
+                                carla_show_custom_ui(gHostHandle, 0, true);
                     }
                 }
             }
