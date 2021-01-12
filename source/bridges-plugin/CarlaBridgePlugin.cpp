@@ -580,6 +580,8 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Initialize OS features
 
+    const bool testing = std::getenv("CARLA_BRIDGE_TESTING") != nullptr;
+
 #ifdef CARLA_OS_WIN
     OleInitialize(nullptr);
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
@@ -611,7 +613,7 @@ int main(int argc, char* argv[])
 
         if (sparam.sched_priority > 0)
         {
-            if (sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &sparam) < 0)
+            if (sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &sparam) < 0 && ! testing)
             {
                 CarlaString error(std::strerror(errno));
                 carla_stderr("Failed to set high priority, error %i: %s", errno, error.buffer());
@@ -621,7 +623,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef CARLA_OS_WIN
-    if (! SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS))
+    if (! SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) && ! testing)
         carla_stderr("Failed to set high priority.");
 #endif
 
@@ -674,7 +676,7 @@ int main(int argc, char* argv[])
 #ifdef HAVE_X11
                         if (std::getenv("DISPLAY") != nullptr)
 #endif
-                            if (std::getenv("CARLA_BRIDGE_TESTING") == nullptr)
+                            if (! testing)
                                 carla_show_custom_ui(gHostHandle, 0, true);
                     }
                 }
