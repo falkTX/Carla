@@ -730,13 +730,13 @@ ifeq ($(CAN_GENERATE_LV2_TTL),true)
 		$(LINK) ../../carla/$$i $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/$$i; \
 	done
 	rm -f $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/libcarla_standalone2.*
-endif
 
 ifeq ($(LINUX),true)
 	# Link jack app bridge
 	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/jack
 	$(LINK) ../../carla/jack $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/jack
 endif
+endif # CAN_GENERATE_LV2_TTL
 
 ifeq ($(HAVE_PYQT),true)
 	# Link resources for lv2 plugin
