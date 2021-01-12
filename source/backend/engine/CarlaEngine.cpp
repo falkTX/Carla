@@ -552,14 +552,14 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-posix64";
                 break;
             case BINARY_WIN32:
-#if BINARY_NATIVE == BINARY_WIN32
+#if defined(CARLA_OS_WIN) && !defined(CARLA_OS_64BIT)
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native.exe";
 #else
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-win32.exe";
 #endif
                 break;
             case BINARY_WIN64:
-#if BINARY_NATIVE == BINARY_WIN64
+#if defined(CARLA_OS_WIN) && defined(CARLA_OS_64BIT)
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native.exe";
 #else
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-win64.exe";
