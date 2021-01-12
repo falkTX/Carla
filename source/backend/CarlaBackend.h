@@ -539,6 +539,13 @@ typedef enum {
 
 } BinaryType;
 
+/* expose binary types as macros so they can be compared to BINARY_NATIVE */
+#define BINARY_POSIX32 BINARY_POSIX32
+#define BINARY_POSIX64 BINARY_POSIX64
+#define BINARY_WIN32 BINARY_WIN32
+#define BINARY_WIN64 BINARY_WIN64
+#define BINARY_OTHER BINARY_OTHER
+
 /* ------------------------------------------------------------------------------------------------------------
  * File Type */
 
