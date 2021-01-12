@@ -540,11 +540,19 @@ typedef enum {
 } BinaryType;
 
 /* expose binary types as macros so they can be compared to BINARY_NATIVE */
+#ifdef __cplusplus
+#define BINARY_POSIX32 CarlaBackend::BINARY_POSIX32
+#define BINARY_POSIX64 CarlaBackend::BINARY_POSIX64
+#define BINARY_WIN32 CarlaBackend::BINARY_WIN32
+#define BINARY_WIN64 CarlaBackend::BINARY_WIN64
+#define BINARY_OTHER CarlaBackend::BINARY_OTHER
+#else
 #define BINARY_POSIX32 BINARY_POSIX32
 #define BINARY_POSIX64 BINARY_POSIX64
 #define BINARY_WIN32 BINARY_WIN32
 #define BINARY_WIN64 BINARY_WIN64
 #define BINARY_OTHER BINARY_OTHER
+#endif
 
 /* ------------------------------------------------------------------------------------------------------------
  * File Type */
