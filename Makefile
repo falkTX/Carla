@@ -320,11 +320,6 @@ posix64: $(LIBS_POSIX64)
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (win32)
 
-ifeq ($(BUILDING_FOR_WINE),true)
-LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32e.a
-else
-LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32.a
-endif
 LIBS_WIN32 += $(MODULEDIR)/lilv.win32.a
 LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
 LIBS_WIN32 += $(MODULEDIR)/water.win32.a
@@ -342,22 +337,20 @@ LIBS_WIN32 += $(MODULEDIR)/juce_gui_extra.win32.a
 endif
 endif
 
-win32r: $(LIBS_WIN32)
-	$(MAKE) -C source/bridges-plugin win32
-	$(MAKE) -C source/discovery win32
+LIBS_WINE32 = $(LIBS_WIN32) $(MODULEDIR)/jackbridge.win32e.a
+LIBS_RWIN32 = $(LIBS_WIN32) $(MODULEDIR)/jackbridge.win32.a
 
-win32: $(LIBS_WIN32)
+win32: $(LIBS_WINE32)
 	$(MAKE) BUILDING_FOR_WINE=true -C source/bridges-plugin win32
 	$(MAKE) BUILDING_FOR_WINE=true -C source/discovery win32
+
+win32r: $(LIBS_RWIN32)
+	$(MAKE) -C source/bridges-plugin win32
+	$(MAKE) -C source/discovery win32
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (win64)
 
-ifeq ($(BUILDING_FOR_WINE),true)
-LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64e.a
-else
-LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64.a
-endif
 LIBS_WIN64 += $(MODULEDIR)/lilv.win64.a
 LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
 LIBS_WIN64 += $(MODULEDIR)/water.win64.a
@@ -375,13 +368,16 @@ LIBS_WIN64 += $(MODULEDIR)/juce_gui_extra.win64.a
 endif
 endif
 
-win64r: $(LIBS_WIN64)
-	$(MAKE) -C source/bridges-plugin win64
-	$(MAKE) -C source/discovery win64
+LIBS_WINE64 = $(LIBS_WIN64) $(MODULEDIR)/jackbridge.win64e.a
+LIBS_RWIN64 = $(LIBS_WIN64) $(MODULEDIR)/jackbridge.win64.a
 
-win64: $(LIBS_WIN64)
+win64: $(LIBS_WINE64)
 	$(MAKE) BUILDING_FOR_WINE=true -C source/bridges-plugin win64
 	$(MAKE) BUILDING_FOR_WINE=true -C source/discovery win64
+
+win64r: $(LIBS_RWIN64)
+	$(MAKE) -C source/bridges-plugin win64
+	$(MAKE) -C source/discovery win64
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (wine)
