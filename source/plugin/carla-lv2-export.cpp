@@ -197,14 +197,14 @@ static void writeManifestFile(PluginListManager& plm, const uint32_t microVersio
 
     text += "<http://kxstudio.sf.net/carla/file/audio>\n";
     text += "    a lv2:Parameter ;\n";
-    text += "    mod:fileTypes \"audiofiles,audioloops\" ;\n";
+    text += "    mod:fileTypes \"audioloop,audiorecording,audiotrack\" ;\n";
     text += "    rdfs:label \"audio file\" ;\n";
     text += "    rdfs:range atom:Path .\n";
     text += "\n";
 
     text += "<http://kxstudio.sf.net/carla/file/midi>\n";
     text += "    a lv2:Parameter ;\n";
-    text += "    mod:fileTypes \"midi\" ;\n";
+    text += "    mod:fileTypes \"midisong\" ;\n";
     text += "    rdfs:label \"midi file\" ;\n";
     text += "    rdfs:range atom:Path .\n";
     text += "\n";
