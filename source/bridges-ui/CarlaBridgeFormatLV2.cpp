@@ -680,19 +680,19 @@ public:
 
         switch (fRdfDescriptor->Parameters[parameterId].Type)
         {
-        case LV2_PARAMETER_BOOL:
+        case LV2_PARAMETER_TYPE_BOOL:
             lv2_atom_forge_bool(&atomForge, value > 0.5f);
             break;
-        case LV2_PARAMETER_INT:
+        case LV2_PARAMETER_TYPE_INT:
             lv2_atom_forge_int(&atomForge, static_cast<int32_t>(value + 0.5f));
             break;
-        case LV2_PARAMETER_LONG:
+        case LV2_PARAMETER_TYPE_LONG:
             lv2_atom_forge_long(&atomForge, static_cast<int64_t>(value + 0.5f));
             break;
-        case LV2_PARAMETER_FLOAT:
+        case LV2_PARAMETER_TYPE_FLOAT:
             lv2_atom_forge_float(&atomForge, value);
             break;
-        case LV2_PARAMETER_DOUBLE:
+        case LV2_PARAMETER_TYPE_DOUBLE:
             lv2_atom_forge_double(&atomForge, value);
             break;
         default:
@@ -949,7 +949,7 @@ public:
 
         for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
         {
-            if (fRdfDescriptor->Parameters[i].Type != LV2_PARAMETER_PATH)
+            if (fRdfDescriptor->Parameters[i].Type != LV2_PARAMETER_TYPE_PATH)
                 continue;
             if (std::strcmp(fRdfDescriptor->Parameters[i].URI, uri) != 0)
                 continue;

@@ -250,6 +250,7 @@ public:
 
     Lilv::Node lv2_name;
     Lilv::Node lv2_symbol;
+    Lilv::Node patch_readable;
     Lilv::Node patch_writable;
     Lilv::Node pg_group;
     Lilv::Node preset_preset;
@@ -385,6 +386,7 @@ public:
 
           lv2_name           (new_uri(LV2_CORE__name)),
           lv2_symbol         (new_uri(LV2_CORE__symbol)),
+          patch_readable     (new_uri(LV2_PATCH__readable)),
           patch_writable     (new_uri(LV2_PATCH__writable)),
           pg_group           (new_uri(LV2_PORT_GROUPS__group)),
           preset_preset      (new_uri(LV2_PRESETS__Preset)),
@@ -2351,6 +2353,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     // Set Plugin Parameters
     {
         std::map<std::string, LV2_RDF_Parameter> parameters;
+        Lilv::Nodes patchReadableNodes(lilvPlugin.get_value(lv2World.patch_readable));
         Lilv::Nodes patchWritableNodes(lilvPlugin.get_value(lv2World.patch_writable));
 
         if (const uint numParameters = patchWritableNodes.size())
@@ -2375,12 +2378,20 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                     lilv_node_free(typeNode);
                 }
+                else
+                {
+                    continue;
+                }
 
                 CARLA_SAFE_ASSERT_CONTINUE(patchWritableNode.is_uri());
 
                 ++numUsed;
                 LV2_RDF_Parameter rdfParam;
                 rdfParam.URI = carla_strdup(patchWritableNode.as_uri());
+                rdfParam.Flags = LV2_PARAMETER_FLAG_INPUT;
+
+                if (patchReadableNodes.contains(patchWritableNode))
+                    rdfParam.Flags |= LV2_PARAMETER_FLAG_OUTPUT;
 
                 // ----------------------------------------------------------------------------------------------------
                 // Set Basics
@@ -2391,19 +2402,19 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     const char* const rangeURI = lilv_node_as_string(rangeNode);
 
                     /**/ if (std::strcmp(rangeURI, LV2_ATOM__Bool) == 0)
-                        rdfParam.Type = LV2_PARAMETER_BOOL;
+                        rdfParam.Type = LV2_PARAMETER_TYPE_BOOL;
                     else if (std::strcmp(rangeURI, LV2_ATOM__Int) == 0)
-                        rdfParam.Type = LV2_PARAMETER_INT;
+                        rdfParam.Type = LV2_PARAMETER_TYPE_INT;
                     else if (std::strcmp(rangeURI, LV2_ATOM__Long) == 0)
-                        rdfParam.Type = LV2_PARAMETER_LONG;
+                        rdfParam.Type = LV2_PARAMETER_TYPE_LONG;
                     else if (std::strcmp(rangeURI, LV2_ATOM__Float) == 0)
-                        rdfParam.Type = LV2_PARAMETER_FLOAT;
+                        rdfParam.Type = LV2_PARAMETER_TYPE_FLOAT;
                     else if (std::strcmp(rangeURI, LV2_ATOM__Double) == 0)
-                        rdfParam.Type = LV2_PARAMETER_DOUBLE;
+                        rdfParam.Type = LV2_PARAMETER_TYPE_DOUBLE;
                     else if (std::strcmp(rangeURI, LV2_ATOM__Path) == 0)
-                        rdfParam.Type = LV2_PARAMETER_PATH;
+                        rdfParam.Type = LV2_PARAMETER_TYPE_PATH;
                     else if (std::strcmp(rangeURI, LV2_ATOM__String) == 0)
-                        rdfParam.Type = LV2_PARAMETER_STRING;
+                        rdfParam.Type = LV2_PARAMETER_TYPE_STRING;
                     else
                         carla_stderr("lv2_rdf_new(\"%s\") - got unknown parameter type '%s'", uri, rangeURI);
 
@@ -2578,6 +2589,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             }
         }
 
+        lilv_nodes_free(const_cast<LilvNodes*>(patchReadableNodes.me));
         lilv_nodes_free(const_cast<LilvNodes*>(patchWritableNodes.me));
     }
 

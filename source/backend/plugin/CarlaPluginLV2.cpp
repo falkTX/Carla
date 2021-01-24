@@ -1473,19 +1473,19 @@ public:
 
             switch (fRdfDescriptor->Parameters[rparamId].Type)
             {
-            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_TYPE_BOOL:
                 lv2_atom_forge_bool(&atomForge, fixedValue > 0.5f);
                 break;
-            case LV2_PARAMETER_INT:
+            case LV2_PARAMETER_TYPE_INT:
                 lv2_atom_forge_int(&atomForge, static_cast<int32_t>(fixedValue + 0.5f));
                 break;
-            case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_TYPE_LONG:
                 lv2_atom_forge_long(&atomForge, static_cast<int64_t>(fixedValue + 0.5f));
                 break;
-            case LV2_PARAMETER_FLOAT:
+            case LV2_PARAMETER_TYPE_FLOAT:
                 lv2_atom_forge_float(&atomForge, fixedValue);
                 break;
-            case LV2_PARAMETER_DOUBLE:
+            case LV2_PARAMETER_TYPE_DOUBLE:
                 lv2_atom_forge_double(&atomForge, fixedValue);
                 break;
             default:
@@ -1548,11 +1548,11 @@ public:
 
                 switch (rdfParam.Type)
                 {
-                case LV2_PARAMETER_BOOL:
-                case LV2_PARAMETER_INT:
-                // case LV2_PARAMETER_LONG:
-                case LV2_PARAMETER_FLOAT:
-                case LV2_PARAMETER_DOUBLE:
+                case LV2_PARAMETER_TYPE_BOOL:
+                case LV2_PARAMETER_TYPE_INT:
+                // case LV2_PARAMETER_TYPE_LONG:
+                case LV2_PARAMETER_TYPE_FLOAT:
+                case LV2_PARAMETER_TYPE_DOUBLE:
                     for (uint32_t j=0; j < pData->param.count; ++j)
                     {
                         if (pData->param.data[j].rindex == rindex)
@@ -1579,16 +1579,16 @@ public:
 
                 switch (rdfParam.Type)
                 {
-                case LV2_PARAMETER_BOOL:
+                case LV2_PARAMETER_TYPE_BOOL:
                     rvalue = *(const int32_t*)valueptr != 0 ? 1.0f : 0.0f;
                     break;
-                case LV2_PARAMETER_INT:
+                case LV2_PARAMETER_TYPE_INT:
                     rvalue = static_cast<float>(*(const int32_t*)valueptr);
                     break;
-                case LV2_PARAMETER_FLOAT:
+                case LV2_PARAMETER_TYPE_FLOAT:
                     rvalue = *(const float*)valueptr;
                     break;
-                case LV2_PARAMETER_DOUBLE:
+                case LV2_PARAMETER_TYPE_DOUBLE:
                     rvalue = static_cast<float>(*(const double*)valueptr);
                     break;
                 default:
@@ -2239,13 +2239,13 @@ public:
         aIns = aOuts = cvIns = cvOuts = params = 0;
         LinkedList<uint> evIns, evOuts;
 
-        const uint32_t eventBufferSize(static_cast<uint32_t>(fLv2Options.sequenceSize)+0xff);
+        const uint32_t eventBufferSize = static_cast<uint32_t>(fLv2Options.sequenceSize) + 0xff;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
 
-        bool needsCtrlIn, needsCtrlOut;
-        needsCtrlIn = needsCtrlOut = false;
+        bool needsCtrlIn, needsCtrlOut, hasPatchParameterOutputs;
+        needsCtrlIn = needsCtrlOut = hasPatchParameterOutputs = false;
 
         for (uint32_t i=0; i < portCount; ++i)
         {
@@ -2294,14 +2294,14 @@ public:
         {
             switch (fRdfDescriptor->Parameters[i].Type)
             {
-            case LV2_PARAMETER_BOOL:
-            case LV2_PARAMETER_INT:
-            // case LV2_PARAMETER_LONG:
-            case LV2_PARAMETER_FLOAT:
-            case LV2_PARAMETER_DOUBLE:
+            case LV2_PARAMETER_TYPE_BOOL:
+            case LV2_PARAMETER_TYPE_INT:
+            // case LV2_PARAMETER_TYPE_LONG:
+            case LV2_PARAMETER_TYPE_FLOAT:
+            case LV2_PARAMETER_TYPE_DOUBLE:
                 params += 1;
                 break;
-            case LV2_PARAMETER_PATH:
+            case LV2_PARAMETER_TYPE_PATH:
                 if (fFilePathURI.isEmpty())
                     fFilePathURI = fRdfDescriptor->Parameters[i].URI;
                 break;
@@ -2982,11 +2982,11 @@ public:
 
             switch (rdfParam.Type)
             {
-            case LV2_PARAMETER_BOOL:
-            case LV2_PARAMETER_INT:
-            // case LV2_PARAMETER_LONG:
-            case LV2_PARAMETER_FLOAT:
-            case LV2_PARAMETER_DOUBLE:
+            case LV2_PARAMETER_TYPE_BOOL:
+            case LV2_PARAMETER_TYPE_INT:
+            // case LV2_PARAMETER_TYPE_LONG:
+            case LV2_PARAMETER_TYPE_FLOAT:
+            case LV2_PARAMETER_TYPE_DOUBLE:
                 break;
             default:
                 continue;
@@ -3039,15 +3039,15 @@ public:
 
             switch (rdfParam.Type)
             {
-            case LV2_PARAMETER_BOOL:
+            case LV2_PARAMETER_TYPE_BOOL:
                 step = max - min;
                 stepSmall = step;
                 stepLarge = step;
                 pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
                 break;
 
-            case LV2_PARAMETER_INT:
-            case LV2_PARAMETER_LONG:
+            case LV2_PARAMETER_TYPE_INT:
+            case LV2_PARAMETER_TYPE_LONG:
                 step = 1.0f;
                 stepSmall = 1.0f;
                 stepLarge = 10.0f;
@@ -3062,20 +3062,23 @@ public:
                 break;
             }
 
-            if (rdfParam.Input)
+            if (rdfParam.Flags & LV2_PARAMETER_FLAG_INPUT)
             {
                 pData->param.data[j].type   = PARAMETER_INPUT;
                 pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                 pData->param.data[j].hints |= PARAMETER_IS_NOT_SAVED;
                 needsCtrlIn = true;
+                if (rdfParam.Flags & LV2_PARAMETER_FLAG_OUTPUT)
+                    hasPatchParameterOutputs = true;
             }
-            else
+            else if (rdfParam.Flags & LV2_PARAMETER_FLAG_OUTPUT)
             {
                 pData->param.data[j].type   = PARAMETER_OUTPUT;
                 pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                 needsCtrlOut = true;
+                hasPatchParameterOutputs = true;
             }
 
             pData->param.ranges[j].min = min;
@@ -3134,7 +3137,8 @@ public:
             (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
             fAtomBufferEvIn.createBuffer(eventBufferSize);
 
-        if (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0)
+        if (hasPatchParameterOutputs ||
+            (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
         {
             fAtomBufferUiOut.createBuffer(std::min(eventBufferSize*32, 1638400U));
             fAtomBufferUiOutTmpData = new uint8_t[fAtomBufferUiOut.getSize()];
@@ -4906,19 +4910,19 @@ public:
 
                 switch (fRdfDescriptor->Parameters[rindex].Type)
                 {
-                case LV2_PARAMETER_BOOL:
+                case LV2_PARAMETER_TYPE_BOOL:
                     lv2_atom_forge_bool(&atomForge, value > 0.5f);
                     break;
-                case LV2_PARAMETER_INT:
+                case LV2_PARAMETER_TYPE_INT:
                     lv2_atom_forge_int(&atomForge, static_cast<int32_t>(value + 0.5f));
                     break;
-                case LV2_PARAMETER_LONG:
+                case LV2_PARAMETER_TYPE_LONG:
                     lv2_atom_forge_long(&atomForge, static_cast<int64_t>(value + 0.5f));
                     break;
-                case LV2_PARAMETER_FLOAT:
+                case LV2_PARAMETER_TYPE_FLOAT:
                     lv2_atom_forge_float(&atomForge, value);
                     break;
-                case LV2_PARAMETER_DOUBLE:
+                case LV2_PARAMETER_TYPE_DOUBLE:
                     lv2_atom_forge_double(&atomForge, value);
                     break;
                 default:
@@ -5482,11 +5486,11 @@ public:
 
             switch (rdfParam.Type)
             {
-            case LV2_PARAMETER_BOOL:
-            case LV2_PARAMETER_INT:
-            // case LV2_PARAMETER_LONG:
-            case LV2_PARAMETER_FLOAT:
-            case LV2_PARAMETER_DOUBLE:
+            case LV2_PARAMETER_TYPE_BOOL:
+            case LV2_PARAMETER_TYPE_INT:
+            // case LV2_PARAMETER_TYPE_LONG:
+            case LV2_PARAMETER_TYPE_FLOAT:
+            case LV2_PARAMETER_TYPE_DOUBLE:
                 break;
             default:
                 continue;
@@ -5524,11 +5528,11 @@ public:
 
             switch (rdfParam.Type)
             {
-            case LV2_PARAMETER_BOOL:
-            case LV2_PARAMETER_INT:
-            // case LV2_PARAMETER_LONG:
-            case LV2_PARAMETER_FLOAT:
-            case LV2_PARAMETER_DOUBLE:
+            case LV2_PARAMETER_TYPE_BOOL:
+            case LV2_PARAMETER_TYPE_INT:
+            // case LV2_PARAMETER_TYPE_LONG:
+            case LV2_PARAMETER_TYPE_FLOAT:
+            case LV2_PARAMETER_TYPE_DOUBLE:
                 break;
             default:
                 continue;
@@ -6023,7 +6027,7 @@ public:
 
         for (uint32_t i=0; i < fRdfDescriptor->ParameterCount; ++i)
         {
-            if (fRdfDescriptor->Parameters[i].Type != LV2_PARAMETER_PATH)
+            if (fRdfDescriptor->Parameters[i].Type != LV2_PARAMETER_TYPE_PATH)
                 continue;
             if (std::strcmp(fRdfDescriptor->Parameters[i].URI, uri) != 0)
                 continue;
@@ -6219,8 +6223,8 @@ public:
         switch (type)
         {
         case kUridAtomBool:
-            CARLA_SAFE_ASSERT_RETURN(size == sizeof(bool),);
-            paramValue = (*(const bool*)value) ? 1.0f : 0.0f;
+            CARLA_SAFE_ASSERT_RETURN(size == sizeof(int32_t),);
+            paramValue = *(const int32_t*)value != 0 ? 1.0f : 0.0f;
             break;
         case kUridAtomDouble:
             CARLA_SAFE_ASSERT_RETURN(size == sizeof(double),);
@@ -6228,15 +6232,15 @@ public:
             break;
         case kUridAtomFloat:
             CARLA_SAFE_ASSERT_RETURN(size == sizeof(float),);
-            paramValue = (*(const float*)value);
+            paramValue = *(const float*)value;
             break;
         case kUridAtomInt:
             CARLA_SAFE_ASSERT_RETURN(size == sizeof(int32_t),);
-            paramValue = static_cast<float>((*(const int32_t*)value));
+            paramValue = static_cast<float>(*(const int32_t*)value);
             break;
         case kUridAtomLong:
             CARLA_SAFE_ASSERT_RETURN(size == sizeof(int64_t),);
-            paramValue = static_cast<float>((*(const int64_t*)value));
+            paramValue = static_cast<float>(*(const int64_t*)value);
             break;
         default:
             carla_stdout("CarlaPluginLV2::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\") - unknown type",
