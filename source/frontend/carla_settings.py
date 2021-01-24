@@ -170,6 +170,7 @@ from carla_shared import (
     CARLA_DEFAULT_SF2_PATH,
     CARLA_DEFAULT_SFZ_PATH,
     getAndSetPath,
+    getIcon,
     fontMetricsHorizontalAdvance,
     splitter,
     QSafeSettings
@@ -558,6 +559,18 @@ class CarlaSettingsW(QDialog):
         # Load settings
 
         self.loadSettings()
+
+        # -------------------------------------------------------------------------------------------------------------
+        # Set-up Icons
+
+        if self.ui.ch_main_system_icons.isChecked():
+            self.ui.b_main_proj_folder_open.setIcon(getIcon('document-open', 16, 'svgz'))
+            self.ui.b_filepaths_add.setIcon(getIcon('list-add', 16, 'svgz'))
+            self.ui.b_filepaths_change.setIcon(getIcon('edit-rename', 16, 'svgz'))
+            self.ui.b_filepaths_remove.setIcon(getIcon('list-remove', 16, 'svgz'))
+            self.ui.b_paths_add.setIcon(getIcon('list-add', 16, 'svgz'))
+            self.ui.b_paths_change.setIcon(getIcon('edit-rename', 16, 'svgz'))
+            self.ui.b_paths_remove.setIcon(getIcon('list-remove', 16, 'svgz'))
 
         # -------------------------------------------------------------------------------------------------------------
         # Set-up connections

@@ -474,6 +474,12 @@ class HostWindow(QMainWindow):
             self.ui.act_canvas_zoom_out.setIcon(getIcon('zoom-out', 16, 'svgz'))
             self.ui.act_canvas_zoom_100.setIcon(getIcon('zoom-original', 16, 'svgz'))
             self.ui.act_settings_configure.setIcon(getIcon('configure', 16, 'svgz'))
+            self.ui.b_disk_add.setIcon(getIcon('list-add', 16, 'svgz'))
+            self.ui.b_disk_remove.setIcon(getIcon('list-remove', 16, 'svgz'))
+            self.ui.b_transport_play.setIcon(getIcon('media-playback-start', 16, 'svgz'))
+            self.ui.b_transport_stop.setIcon(getIcon('media-playback-stop', 16, 'svgz'))
+            self.ui.b_transport_backwards.setIcon(getIcon('media-seek-backward', 16, 'svgz'))
+            self.ui.b_transport_forwards.setIcon(getIcon('media-seek-forward', 16, 'svgz'))
 
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
@@ -2120,12 +2126,18 @@ class HostWindow(QMainWindow):
 
         if playing != self.fLastTransportState or forced:
             if playing:
-                icon = QIcon(":/16x16/media-playback-pause.svgz")
+                if self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS]:
+                    icon = getIcon('media-playback-pause', 16, 'svgz')
+                else:
+                    icon = QIcon(":/16x16/media-playback-pause.svgz")
                 self.ui.b_transport_play.setChecked(True)
                 self.ui.b_transport_play.setIcon(icon)
                 #self.ui.b_transport_play.setText(self.tr("&Pause"))
             else:
-                icon = QIcon(":/16x16/media-playback-start.svgz")
+                if self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS]:
+                    icon = getIcon('media-playback-start', 16, 'svgz')
+                else:
+                    icon = QIcon(":/16x16/media-playback-start.svgz")
                 self.ui.b_transport_play.setChecked(False)
                 self.ui.b_transport_play.setIcon(icon)
                 #self.ui.b_play.setText(self.tr("&Play"))
