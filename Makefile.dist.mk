@@ -8,6 +8,17 @@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+PYTHON = $(EXE_WRAPPER) $(shell which python3$(APP_EXT))
+
+ifeq ($(WIN32),true)
+QT5_DLL_EXT = .dll
+QT5_DLL_V = 5
+endif
+
+ifeq ($(MACOS),true)
+QT5_LIB_PREFIX = lib
+endif
+
 QT5_PREFIX = $(shell pkg-config --variable=prefix Qt5OpenGLExtensions)
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -20,30 +31,48 @@ _PLUGIN_UIS = \
 	xycontroller-ui
 
 _QT5_DLLS = \
-	QtCore \
-	QtGui \
-	QtOpenGL \
-	QtPrintSupport \
-	QtSvg \
-	QtWidgets
+	Qt$(QT5_DLL_V)Core$(QT5_DLL_EXT) \
+	Qt$(QT5_DLL_V)Gui$(QT5_DLL_EXT) \
+	Qt$(QT5_DLL_V)OpenGL$(QT5_DLL_EXT) \
+	Qt$(QT5_DLL_V)PrintSupport$(QT5_DLL_EXT) \
+	Qt$(QT5_DLL_V)Svg$(QT5_DLL_EXT) \
+	Qt$(QT5_DLL_V)Widgets$(QT5_DLL_EXT)
 
 _QT5_PLUGINS = \
-	iconengines/libqsvgicon$(LIB_EXT) \
-	imageformats/libqjpeg$(LIB_EXT) \
-	imageformats/libqsvg$(LIB_EXT) \
-	platforms/libqcocoa$(LIB_EXT)
+	iconengines/$(QT5_LIB_PREFIX)qsvgicon$(LIB_EXT) \
+	imageformats/$(QT5_LIB_PREFIX)qjpeg$(LIB_EXT) \
+	imageformats/$(QT5_LIB_PREFIX)qsvg$(LIB_EXT)
+
+ifeq ($(MACOS),true)
+_QT5_PLUGINS += \
+	platforms/$(QT5_LIB_PREFIX)qcocoa$(LIB_EXT)
+else ifeq ($(WIN32),true)
+_QT5_PLUGINS += \
+	platforms/$(QT5_LIB_PREFIX)qwindows$(LIB_EXT)
+endif
+
+# NOTE this has to be hardcoded for now. oh well
+ifeq ($(WIN32),true)
+_PYTHON_FILES = \
+	libpython3.8.dll
+endif
 
 _THEME_FILES = \
 	styles/carlastyle.json \
 	styles/carlastyle$(LIB_EXT)
 
 _CARLA_HOST_FILES = \
-	carla-bridge-lv2-cocoa$(APP_EXT) \
 	carla-bridge-lv2$(LIB_EXT) \
 	carla-bridge-native$(APP_EXT) \
 	carla-discovery-native$(APP_EXT) \
-	libcarla_utils$(LIB_EXT) \
-	$(_PLUGIN_UIS:%=resources/%$(APP_EXT))
+	libcarla_utils$(LIB_EXT)
+
+# TODO plugin UIs on windows
+ifeq ($(MACOS),true)
+_CARLA_HOST_FILES += \
+	$(_PLUGIN_UIS:%=resources/%$(APP_EXT)) \
+	carla-bridge-lv2-cocoa$(APP_EXT)
+endif
 
 _CARLA_APP_FILES = \
 	Carla$(APP_EXT) \
@@ -51,6 +80,7 @@ _CARLA_APP_FILES = \
 	$(_CARLA_HOST_FILES) \
 	$(_QT5_DLLS) \
 	$(_QT5_PLUGINS) \
+	$(_PYTHON_FILES) \
 	$(_THEME_FILES)
 
 _CARLA_CONTROL_APP_FILES = \
@@ -58,6 +88,7 @@ _CARLA_CONTROL_APP_FILES = \
 	libcarla_utils$(LIB_EXT) \
 	$(_QT5_DLLS) \
 	$(_QT5_PLUGINS) \
+	$(_PYTHON_FILES) \
 	$(_THEME_FILES)
 
 _CARLA_LV2_PLUGIN_FILES = \
@@ -88,15 +119,26 @@ _CARLA_VST2SYN_PLUGIN_FILES = \
 	$(_QT5_PLUGINS:%=carla.vst/Contents/MacOS/resources/%) \
 	$(_THEME_FILES:%=carla.vst/Contents/MacOS/resources/%)
 
+ifeq ($(WIN32),true)
+CARLA_APP_FILES = $(_CARLA_APP_FILES:%=build/Carla/%)
+CARLA_APP_ZIPS = $(_PLUGIN_UIS:%=build/%/lib/library.zip)
+CARLA_CONTROL_APP_FILES = $(_CARLA_CONTROL_APP_FILES:%=build/Carla-Control/%)
+else
 CARLA_APP_FILES = $(_CARLA_APP_FILES:%=build/Carla.app/Contents/MacOS/%)
 CARLA_APP_ZIPS = $(_PLUGIN_UIS:%=build/%.app/Contents/MacOS/lib/library.zip)
-
 CARLA_CONTROL_APP_FILES = $(_CARLA_CONTROL_APP_FILES:%=build/Carla-Control.app/Contents/MacOS/%)
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # entry point
 
+ifeq ($(WIN64),true)
+TARGETS = Carla-$(VERSION)-win64.zip
+else ifeq ($(WIN32),true)
+TARGETS = Carla-$(VERSION)-win32.zip
+else
 TARGETS = Carla-$(VERSION)-macOS.dmg
+endif
 
 dist: $(TARGETS)
 
@@ -110,8 +152,12 @@ Carla-$(VERSION)-macOS.dmg: build/Carla.app/Contents/Info.plist build/Carla-Cont
 	hdiutil create $@ -srcfolder build/macos-pkg -volname "Carla-$(VERSION)" -fs HFS+ -ov
 	rm -rf build/macos-pkg
 
+Carla-$(VERSION)-win64.zip: $(CARLA_APP_FILES)
+	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla)
+# 	env PYTHONPATH=$(CURDIR)/source/frontend $(PYTHON) ./data/windows/app-gui.py build_exe
+
 # ----------------------------------------------------------------------------------------------------------------------------
-# final cleanup, after everything is in place
+# macOS final cleanup, after everything is in place
 
 define PATCH_QT_DEPENDENCIES
 	install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore"                 @executable_path/QtCore         ${1} && \
@@ -123,6 +169,7 @@ define PATCH_QT_DEPENDENCIES
 	install_name_tool -change "@rpath/QtMacExtras.framework/Versions/5/QtMacExtras"       @executable_path/QtMacExtras    ${1}
 endef
 
+ifeq ($(MACOS),true)
 define CLEANUP_AND_PATCH_CXFREEZE_FILES
 	# cleanup
 	find build/${1}.app/Contents/MacOS/ -type f -name "*.py" -delete
@@ -142,6 +189,22 @@ define CLEANUP_AND_PATCH_CXFREEZE_FILES
 			$(call PATCH_QT_DEPENDENCIES,$$f); \
 		done)
 endef
+else ifeq ($(WIN32),true)
+define CLEANUP_AND_PATCH_CXFREEZE_FILES
+	# cleanup
+	find build/${1}/ -type f -name "*.py" -delete
+	find build/${1}/ -type f -name "*.pyi" -delete
+	find build/${1}/ -type f -name "pylupdate.so" -delete
+	find build/${1}/ -type f -name "pyrcc.so" -delete
+	find build/${1}/ -type f -name "QtMacExtras*" -delete
+	find build/${1}/ -type f -name "QtNetwork*" -delete
+	find build/${1}/ -type f -name "QtSql*" -delete
+	find build/${1}/ -type f -name "QtTest*" -delete
+	find build/${1}/ -type f -name "QtXml*" -delete
+	#find build/${1}/ -type f -name "*.pyc" -delete
+	rm -rf build/${1}/lib/PyQt5/uic
+endef
+endif
 
 build/Carla.app/Contents/Info.plist: $(CARLA_APP_FILES)
 	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla)
@@ -159,11 +222,18 @@ build/Carla-Control.app/Contents/Info.plist: $(CARLA_CONTROL_APP_FILES)
 	touch $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
-# macOS application bundle, depends on cxfreeze library.zip
+# application bundle, depends on cxfreeze library.zip
 
+ifeq ($(WIN32),true)
 define GENERATE_LIBRARY_ZIP
-	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=${1} python3 ./data/macos/bundle.py bdist_mac --bundle-name=${1}
+	# FIXME
+	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=${1} $(PYTHON) ./data/windows/app-gui.py build_exe
 endef
+else
+define GENERATE_LIBRARY_ZIP
+	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=${1} $(PYTHON) ./data/macos/bundle.py bdist_mac --bundle-name=${1}
+endef
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -181,6 +251,15 @@ build/Carla.app/Contents/MacOS/lib/library.zip: $(CARLA_APP_ZIPS) data/macos/bun
 		zip -r -9 ../library.zip *)
 	rm -rf build/Carla.app/Contents/MacOS/lib/_lib
 	rm -rf build/Carla.app/Contents/MacOS/lib/library-main.zip
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+build/Carla/Carla.exe: build/Carla/lib/library.zip
+
+build/Carla/lib/library.zip: data/windows/app-gui.py # source/frontend/*
+	$(call GENERATE_LIBRARY_ZIP,Carla)
+
+# $(CARLA_APP_ZIPS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -228,6 +307,25 @@ build/Carla.app/Contents/MacOS/styles/%.dylib build/Carla-Control.app/Contents/M
 	$(call PATCH_QT_DEPENDENCIES,$@)
 
 build/Carla.app/Contents/MacOS/% build/Carla-Control.app/Contents/MacOS/%: bin/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# win32 generic bundle files (either Qt or Carla binaries)
+
+build/Carla/libpython3% build/Carla-Control/libpython3%: $(QT5_PREFIX)/bin/libpython3%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/Carla/Qt5% build/Carla-Control/Qt5%: $(QT5_PREFIX)/bin/Qt5%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/Carla/iconengines/% build/Carla-Control/iconengines/%: $(QT5_PREFIX)/lib/qt5/plugins/iconengines/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/Carla/% build/Carla-Control/%: bin/%
 	-@mkdir -p $(shell dirname $@)
 	@cp -v $< $@
 

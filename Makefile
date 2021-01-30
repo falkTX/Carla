@@ -223,39 +223,6 @@ msys2fix:
 	cp -r source/modules/lilv/lilv-0.24.0/lilv source/includes/lilv
 
 # ---------------------------------------------------------------------------------------------------------------------
-# nuitka
-
-nuitka: bin/carla bin/carla-rack bin/carla-plugin
-
-bin/carla:
-	python3 -m nuitka \
-		-j 4 \
-		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
-		--follow-imports \
-		-o ./$@ \
-		./source/frontend/carla
-
-bin/carla-rack:
-	python3 -m nuitka \
-		-j 8 \
-		--recurse-all \
-		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
-		--recurse-not-to=PyQt5 \
-		--file-reference-choice=runtime \
-		-o ./$@ \
-		./source/frontend/carla
-
-bin/carla-plugin:
-	python3 -m nuitka \
-		-j 8 \
-		--recurse-all \
-		--python-flag -O --warn-unusual-code --warn-implicit-exceptions \
-		--recurse-not-to=PyQt5 \
-		--file-reference-choice=runtime \
-		-o ./$@ \
-		./source/native-plugins/resources/carla-plugin
-
-# ---------------------------------------------------------------------------------------------------------------------
 # Binaries (arm32)
 
 LIBS_ARM32  = $(MODULEDIR)/jackbridge.arm32.a
@@ -826,6 +793,10 @@ ifeq ($(MACOS),true)
 ifneq ($(MACOS_OLD),true)
 HAVE_DIST = true
 endif
+endif
+
+ifeq ($(WIN32),true)
+HAVE_DIST = true
 endif
 
 ifeq ($(HAVE_DIST),true)

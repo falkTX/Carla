@@ -20,14 +20,14 @@ options = {
   "zip_include_packages": ["*"],
   "zip_exclude_packages": ["PyQt5"],
   "replace_paths": [["*",".\\lib\\"]],
-  "build_exe": ".\\Carla\\resources\\",
+  "build_exe": ".\\build\\Carla\\resources\\",
   "optimize": True,
 }
 
 exe_options = {
-  "script": "..\\..\\bin\\resources\\{}".format(name),
-  "icon": "..\\..\\resources\\ico\\carla.ico",
-  "copyright": "Copyright (C) 2011-2019 Filipe Coelho",
+  "script": ".\\source\\frontend\\{}".format(name),
+  "icon": ".\\resources\\ico\\carla.ico",
+  "copyright": "Copyright (C) 2011-2021 Filipe Coelho",
   "base": "Win32GUI",
   "targetName": "{}.exe".format(name),
 }

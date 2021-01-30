@@ -27,6 +27,10 @@ OBJDIR    := $(CWD)/../build/plugin/Release
 MODULEDIR := $(CWD)/../build/modules/Release
 endif
 
+ifeq ($(NEEDS_WINE),true)
+EXE_WRAPPER ?= wine
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
@@ -475,11 +479,7 @@ $(BINDIR)/carla.lv2/manifest.ttl: $(OBJDIR)/carla-lv2-export.cpp.o $(BINDIR)/car
 	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(NATIVE_LINK_FLAGS) -o $(BINDIR)/carla-lv2-export$(APP_EXT)
 
 	@echo "Generating LV2 ttl data"
-ifeq ($(NEEDS_WINE),true)
-	@cd $(BINDIR) && wine ./carla-lv2-export$(APP_EXT)
-else
-	@cd $(BINDIR) && ./carla-lv2-export$(APP_EXT)
-endif
+	@cd $(BINDIR) && $(EXE_WRAPPER) ./carla-lv2-export$(APP_EXT)
 	@cd $(BINDIR)/carla.lv2 && ln -sf ../*bridge-* ../carla-discovery-* .
 
 $(BINDIR)/carla-lv2-export$(APP_EXT): $(OBJDIR)/carla-lv2-export.cpp.o
