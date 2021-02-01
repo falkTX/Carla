@@ -27,9 +27,16 @@ class MidiFilePlugin : public NativePluginWithMidiPrograms<FileMIDI>,
                        public AbstractMidiPlayer
 {
 public:
+    enum Parameters {
+        // NOTE WIP
+        kParameterInfoLength,
+        kParameterCount
+    };
+
     MidiFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginWithMidiPrograms<FileMIDI>(host, fPrograms, 0),
           fMidiOut(this),
+          fFileLength(0.0),
           fNeedsAllNotesOff(false),
           fWasPlayingBefore(false),
           fPrograms(hostGetFilePath("midi"), "*.mid;*.midi")
@@ -37,6 +44,55 @@ public:
     }
 
 protected:
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+    uint32_t getParameterCount() const override
+    {
+        return kParameterCount;
+    }
+
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
+    {
+        static NativeParameter param;
+
+        param.scalePointCount  = 0;
+        param.scalePoints      = nullptr;
+        param.unit             = nullptr;
+        param.ranges.step      = 1.0f;
+        param.ranges.stepSmall = 1.0f;
+        param.ranges.stepLarge = 1.0f;
+
+        switch (index)
+        {
+        case kParameterInfoLength:
+            param.name  = "Length";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = (float)INT64_MAX;
+            param.unit = "s";
+            break;
+        default:
+            return nullptr;
+        }
+
+        return &param;
+    }
+
+    float getParameterValue(const uint32_t index) const override
+    {
+        switch (index)
+        {
+        case kParameterInfoLength:
+            return static_cast<float>(fFileLength);
+        default:
+            return 0.0f;
+        }
+    }
+
     // -------------------------------------------------------------------
     // Plugin state calls
 
@@ -148,6 +204,7 @@ protected:
 
 private:
     MidiPattern fMidiOut;
+    double fFileLength;
     bool fNeedsAllNotesOff;
     bool fWasPlayingBefore;
     NativeMidiPrograms fPrograms;
@@ -172,7 +229,7 @@ private:
 
         midiFile.convertTimestampTicksToSeconds();
 
-        const double sampleRate(getSampleRate());
+        const double sampleRate = getSampleRate();
 
         for (size_t i=0, numTracks = midiFile.getNumTracks(); i<numTracks; ++i)
         {
@@ -202,6 +259,7 @@ private:
             }
         }
 
+        fFileLength = midiFile.getLastTimestamp();
         fNeedsAllNotesOff = true;
     }
 
