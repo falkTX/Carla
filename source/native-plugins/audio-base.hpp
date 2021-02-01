@@ -380,7 +380,12 @@ public:
         carla_copyFloats(pool.buffer[1], fPool.buffer[1], fPool.numFrames);
     }
 
-    bool tryPutData(float* const out1, float* const out2, uint64_t framePos, const uint32_t frames, bool& needsRead)
+    bool tryPutData(float* const out1,
+                    float* const out2,
+                    uint64_t framePos,
+                    const uint32_t frames,
+                    const bool isOffline,
+                    bool& needsRead)
     {
         CARLA_SAFE_ASSERT_RETURN(fPool.numFrames != 0, false);
 
@@ -436,7 +441,7 @@ public:
         if (frameDiff > numFramesNearEnd)
         {
             needsRead = true;
-            setNeedsRead(framePos + frames);
+            setNeedsRead(framePos + (isOffline ? 0 : frames));
         }
 
         return true;
@@ -477,7 +482,7 @@ public:
             fResampler.inp_data = buffer;
             fResampler.out_data = rbuffer;
             fResampler.process();
-            CARLA_ASSERT_INT(fResampler.inp_count <= 1, fResampler.inp_count);
+            CARLA_SAFE_ASSERT_INT(fResampler.inp_count <= 1, fResampler.inp_count);
         }
         else
         {

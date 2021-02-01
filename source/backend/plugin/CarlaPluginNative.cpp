@@ -252,7 +252,7 @@ public:
           fHost(),
           fDescriptor(nullptr),
           fIsProcessing(false),
-          fIsOffline(false),
+          fIsOffline(engine->isOffline()),
           fIsUiAvailable(false),
           fIsUiVisible(false),
           fNeedsIdle(false),

@@ -334,13 +334,33 @@ protected:
         }
         else
         {
-            if (! fReader.tryPutData(out1, out2, timePos->frame, frames, needsIdleRequest))
+            const bool offline = isOffline();
+
+            if (! fReader.tryPutData(out1, out2, timePos->frame, frames, offline, needsIdleRequest))
             {
                 carla_zeroFloats(out1, frames);
                 carla_zeroFloats(out2, frames);
             }
+
             if (needsIdleRequest)
+            {
                 fNeedsFileRead = true;
+
+                if (isOffline())
+                {
+                    needsIdleRequest = false;
+                    fReader.readPoll();
+
+                    if (! fReader.tryPutData(out1, out2, timePos->frame, frames, offline, needsIdleRequest))
+                    {
+                        carla_zeroFloats(out1, frames);
+                        carla_zeroFloats(out2, frames);
+                    }
+
+                    if (needsIdleRequest)
+                        fNeedsFileRead = true;
+                }
+            }
         }
 
 #ifndef __MOD_DEVICES__
@@ -391,7 +411,10 @@ protected:
         NativePluginWithMidiPrograms<FileAudio>::idle();
 
         if (fNeedsFileRead)
+        {
             fReader.readPoll();
+            fNeedsFileRead = false;
+        }
 
 #ifndef __MOD_DEVICES__
         if (fInlineDisplay.pending == InlineDisplayNeedRequest)
@@ -520,7 +543,7 @@ private:
     bool fLoopMode;
     bool fDoProcess;
     bool fWasPlayingBefore;
-    bool fNeedsFileRead;
+    volatile bool fNeedsFileRead;
 
     uint32_t fMaxFrame;
 
