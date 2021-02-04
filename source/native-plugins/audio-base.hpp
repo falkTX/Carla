@@ -28,7 +28,6 @@ extern "C" {
 #include "water/threads/ScopedLock.h"
 #include "water/threads/SpinLock.h"
 
-
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Weffc++"
@@ -38,6 +37,14 @@ extern "C" {
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic pop
+#endif
+
+#ifdef CARLA_OS_WIN
+# include <windows.h>
+# define CARLA_MLOCK(ptr, size) VirtualLock((ptr), (size))
+#else
+# include <sys/mman.h>
+# define CARLA_MLOCK(ptr, size) mlock((ptr), (size))
 #endif
 
 typedef struct adinfo ADInfo;
@@ -81,11 +88,15 @@ struct AudioFilePool {
         numFrames = desiredNumFrames;
         buffer[0] = new float[numFrames];
         buffer[1] = new float[numFrames];
+        CARLA_MLOCK(buffer[0], sizeof(float)*numFrames);
+        CARLA_MLOCK(buffer[1], sizeof(float)*numFrames);
 
         if (withTempBuffers)
         {
             tmpbuf[0] = new float[numFrames];
             tmpbuf[1] = new float[numFrames];
+            CARLA_MLOCK(tmpbuf[0], sizeof(float)*numFrames);
+            CARLA_MLOCK(tmpbuf[1], sizeof(float)*numFrames);
         }
 
         reset();
@@ -282,10 +293,10 @@ public:
         {
             // valid
             const uint32_t fileNumFrames = static_cast<uint32_t>(fFileNfo.frames);
-            const uint32_t poolNumFrames = sampleRate * 5;
-            uint32_t resampleNumFrames;
+            const uint32_t maxPoolNumFrames = sampleRate * 10;
+            const bool needsResample = fFileNfo.sample_rate != sampleRate;
 
-            if (fFileNfo.sample_rate != sampleRate)
+            if (needsResample)
             {
                 if (! fResampler.setup(fFileNfo.sample_rate, sampleRate, fFileNfo.channels, 32))
                 {
@@ -297,31 +308,30 @@ public:
                 }
 
                 fResampleRatio = static_cast<double>(sampleRate) / static_cast<double>(fFileNfo.sample_rate);
-                resampleNumFrames = static_cast<uint32_t>(
-                                        static_cast<double>(std::min(fileNumFrames, poolNumFrames)) * fResampleRatio + 0.5);
             }
             else
             {
                 fResampler.clear();
                 fResampleRatio = 0.0;
-                resampleNumFrames = 0;
             }
 
-            if (fileNumFrames <= poolNumFrames)
+            if (fileNumFrames <= maxPoolNumFrames)
             {
                 // entire file fits in a small pool, lets read it now
-                fPool.create(resampleNumFrames != 0 ? resampleNumFrames : fileNumFrames, false);
-                readEntireFileIntoPool(resampleNumFrames != 0);
+                fPool.create(needsResample ? static_cast<uint32_t>(static_cast<double>(fileNumFrames) * fResampleRatio + 0.5)
+                                           : fileNumFrames, false);
+                readEntireFileIntoPool(needsResample);
                 ad_close(fFilePtr);
                 fFilePtr = nullptr;
             }
             else
             {
                 // file is too big for our audio pool, we need an extra buffer
-                fPool.create(poolNumFrames, true);
-
+                const uint32_t poolNumFrames = sampleRate * 1;
                 const uint pollTempSize = poolNumFrames * fFileNfo.channels;
-                const uint resampleTempSize = resampleNumFrames * fFileNfo.channels;
+                uint resampleTempSize = 0;
+
+                fPool.create(poolNumFrames, true);
 
                 try {
                     fPollTempData = new float[pollTempSize];
@@ -333,8 +343,13 @@ public:
                     return false;
                 }
 
-                if (resampleTempSize)
+                CARLA_MLOCK(fPollTempData, sizeof(float)*pollTempSize);
+
+                if (needsResample)
                 {
+                    resampleTempSize = static_cast<uint32_t>(static_cast<double>(poolNumFrames) * fResampleRatio + 0.5);
+                    resampleTempSize *= fFileNfo.channels;
+
                     try {
                         fResampleTempData = new float[resampleTempSize];
                     } catch (...) {
@@ -346,6 +361,8 @@ public:
                         carla_stderr2("loadFilename error, out of memory");
                         return false;
                     }
+
+                    CARLA_MLOCK(fResampleTempData, sizeof(float)*resampleTempSize);
                 }
 
                 fPollTempSize = pollTempSize;
@@ -398,7 +415,7 @@ public:
         }
 
         uint64_t frameDiff;
-        const uint64_t numFramesNearEnd = fPool.numFrames*3/4;
+        const uint64_t numFramesNearEnd = fPool.numFrames*3/5;
 
         const water::GenericScopedLock<water::SpinLock> gsl(fPoolMutex);
 
@@ -684,8 +701,8 @@ public:
             // lock, and put data asap
             const water::GenericScopedLock<water::SpinLock> gsl(fPoolMutex);
 
-            carla_copyFloats(fPool.buffer[0], pbuffer0, poolNumFrames);
-            carla_copyFloats(fPool.buffer[1], pbuffer1, poolNumFrames);
+            std::memcpy(fPool.buffer[0], pbuffer0, sizeof(float)*poolNumFrames);
+            std::memcpy(fPool.buffer[1], pbuffer1, sizeof(float)*poolNumFrames);
             fPool.startFrame = static_cast<uint64_t>(readFrame);
         }
 
