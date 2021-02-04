@@ -469,12 +469,11 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPool.numFrames > 0,);
 
         const uint numChannels = fFileNfo.channels;
-        const uint numFrames = static_cast<uint>(fFileNfo.frames);
-        uint bufferSize = numFrames * numChannels;
+        const uint fileNumFrames = static_cast<uint>(fFileNfo.frames);
+        const uint bufferSize = fileNumFrames * numChannels;
 
-        float* const buffer = (float*)std::malloc(bufferSize * sizeof(float));
+        float* const buffer = (float*)std::calloc(bufferSize, sizeof(float));
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
-        carla_zeroFloats(buffer, bufferSize);
 
         ad_seek(fFilePtr, 0);
         ssize_t rv = ad_read(fFilePtr, buffer, bufferSize);
@@ -487,19 +486,18 @@ public:
 
         if (needsResample)
         {
-            bufferSize = fPool.numFrames * numChannels;
-            rbuffer = (float*)std::malloc(bufferSize * sizeof(float));
+            const uint rbufferSize = fPool.numFrames * numChannels;
+            rbuffer = (float*)std::calloc(rbufferSize, sizeof(float));
             CARLA_SAFE_ASSERT_RETURN(rbuffer != nullptr, std::free(buffer););
-            carla_zeroFloats(rbuffer, bufferSize);
 
-            rv = static_cast<ssize_t>(bufferSize);
+            rv = static_cast<ssize_t>(rbufferSize);
 
-            fResampler.inp_count = bufferSize / numChannels;
+            fResampler.inp_count = fileNumFrames;
             fResampler.out_count = fPool.numFrames;
             fResampler.inp_data = buffer;
             fResampler.out_data = rbuffer;
             fResampler.process();
-            CARLA_SAFE_ASSERT_INT(fResampler.inp_count <= 1, fResampler.inp_count);
+            CARLA_SAFE_ASSERT_INT(fResampler.inp_count <= 2, fResampler.inp_count);
         }
         else
         {
