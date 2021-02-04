@@ -59,7 +59,7 @@ public:
           fLastProjectPath(),
           fLoadedFile(),
           fNeedsNotifyFileChanged(false),
-          fPluginNeedsIdle(false),
+          fPluginNeedsIdle(0),
           fWorkerUISignal(0)
     {
         carla_zeroStruct(fHost);
@@ -299,7 +299,6 @@ public:
                             if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
                                 fNeedsNotifyFileChanged = true;
                         }
-
                         continue;
                     }
 
@@ -380,9 +379,9 @@ public:
 
         fDescriptor->process(fHandle, fPorts.audioCVIns, fPorts.audioCVOuts, frames, fMidiEvents, fMidiEventCount);
 
-        if (fPluginNeedsIdle)
+        if (fPluginNeedsIdle == 1)
         {
-            fPluginNeedsIdle = false;
+            fPluginNeedsIdle = 2;
             const char* const msg = "_idle_";
             const size_t msgSize = std::strlen(msg);
             fWorker->schedule_work(fWorker->handle, static_cast<uint32_t>(msgSize + 1U), msg);
@@ -658,6 +657,7 @@ public:
         {
             if (fDescriptor->hints & NATIVE_PLUGIN_REQUESTS_IDLE)
             {
+                fPluginNeedsIdle = 0;
                 fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_IDLE, 0, 0, nullptr, 0.0f);
                 return LV2_WORKER_SUCCESS;
             }
@@ -1004,9 +1004,9 @@ protected:
 
         case NATIVE_HOST_OPCODE_REQUEST_IDLE:
             CARLA_SAFE_ASSERT_RETURN(fDescriptor->hints & NATIVE_PLUGIN_REQUESTS_IDLE, 0);
-            if (fWorker != nullptr)
+            if (fWorker != nullptr && fPluginNeedsIdle == 0)
             {
-                fPluginNeedsIdle = true;
+                fPluginNeedsIdle = 1;
                 return 1;
             }
             return 0;
@@ -1085,7 +1085,7 @@ private:
     CarlaString fLastProjectPath;
     CarlaString fLoadedFile;
     volatile bool fNeedsNotifyFileChanged;
-    volatile bool fPluginNeedsIdle;
+    volatile int fPluginNeedsIdle;
 
     int fWorkerUISignal;
     // -1 needs close, 0 idle, 1 stuff is writing??
