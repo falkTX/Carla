@@ -84,7 +84,7 @@ public:
 
     ~AudioFilePlugin() override
     {
-        fReader.reset();
+        fReader.destroy();
         fPool.destroy();
     }
 
@@ -593,12 +593,12 @@ private:
         CARLA_ASSERT(filename != nullptr);
         carla_debug("AudioFilePlugin::loadFilename(\"%s\")", filename);
 
-        fReader.reset();
+        fDoProcess = false;
+        fReader.destroy();
         fPool.destroy();
 
         if (filename == nullptr || *filename == '\0')
         {
-            fDoProcess = false;
             fMaxFrame = 0;
             return;
         }
@@ -617,7 +617,6 @@ private:
         }
         else
         {
-            fDoProcess = false;
             fMaxFrame = 0;
         }
     }
