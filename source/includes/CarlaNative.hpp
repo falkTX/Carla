@@ -254,7 +254,7 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_PREVIEW_BUFFER_DATA, type, size, (void*)buffer, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_PREVIEW_BUFFER_DATA, type, size, const_cast<void*>(buffer), 0.0f);
     }
 
     // -------------------------------------------------------------------
