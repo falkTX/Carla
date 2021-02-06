@@ -117,7 +117,8 @@ typedef enum {
     NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER    = 10, /** uses index, value as bool                         */
     NATIVE_HOST_OPCODE_REQUEST_IDLE          = 11, /** nothing                                           */
     NATIVE_HOST_OPCODE_GET_FILE_PATH         = 12, /** uses ptr as string for file type                  */
-    NATIVE_HOST_OPCODE_UI_RESIZE             = 13  /** uses index and value                              */
+    NATIVE_HOST_OPCODE_UI_RESIZE             = 13, /** uses index and value                              */
+    NATIVE_HOST_OPCODE_PREVIEW_BUFFER_DATA   = 14  /** uses index as type, value as size, and ptr        */
 } NativeHostDispatcherOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------

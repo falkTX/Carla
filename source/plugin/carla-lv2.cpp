@@ -34,6 +34,19 @@ void Lv2PluginBaseClass<NativeTimeInfo>::clearTimeData() noexcept
     carla_zeroStruct(fTimeInfo);
 }
 
+struct PreviewData {
+    char type;
+    uint32_t size;
+    const void* buffer;
+    bool shouldSend;
+
+    PreviewData()
+        : type(0),
+          size(0),
+          buffer(nullptr),
+          shouldSend(false) {}
+};
+
 // --------------------------------------------------------------------------------------------------------------------
 // Carla Internal Plugin API exposed as LV2 plugin
 
@@ -58,6 +71,7 @@ public:
           fMidiEventCount(0),
           fLastProjectPath(),
           fLoadedFile(),
+          fPreviewData(),
           fNeedsNotifyFileChanged(false),
           fPluginNeedsIdle(0),
           fWorkerUISignal(0)
@@ -298,6 +312,8 @@ public:
                         {
                             if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
                                 fNeedsNotifyFileChanged = true;
+                            if (fPreviewData.buffer != nullptr)
+                                fPreviewData.shouldSend = true;
                         }
                         continue;
                     }
@@ -328,51 +344,88 @@ public:
                 }
             }
 
-            if (fNeedsNotifyFileChanged)
+            if (fNeedsNotifyFileChanged || fPreviewData.shouldSend)
             {
-                fNeedsNotifyFileChanged = false;
-
                 uint8_t atomBuf[4096];
                 LV2_Atom_Forge atomForge = fAtomForge;
                 lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
 
-                LV2_Atom_Forge_Frame forgeFrame;
-                lv2_atom_forge_object(&atomForge, &forgeFrame, 0, fURIs.patchSet);
+                const int numEvents = fNeedsNotifyFileChanged && fPreviewData.shouldSend ? 2 : 1;
 
-                lv2_atom_forge_key(&atomForge, fURIs.patchProperty);
+                if (fNeedsNotifyFileChanged)
+                {
+                    fNeedsNotifyFileChanged = false;
 
-                /*  */ if (std::strcmp(fDescriptor->label, "audiofile") == 0) {
-                    lv2_atom_forge_urid(&atomForge, fURIs.carlaFileAudio);
-                } else if (std::strcmp(fDescriptor->label, "midifile") == 0) {
-                    lv2_atom_forge_urid(&atomForge, fURIs.carlaFileMIDI);
-                } else {
-                    lv2_atom_forge_urid(&atomForge, fURIs.carlaFile);
+                    LV2_Atom_Forge_Frame forgeFrame;
+                    lv2_atom_forge_object(&atomForge, &forgeFrame, 0, fURIs.patchSet);
+
+                    lv2_atom_forge_key(&atomForge, fURIs.patchProperty);
+
+                    /*  */ if (std::strcmp(fDescriptor->label, "audiofile") == 0) {
+                        lv2_atom_forge_urid(&atomForge, fURIs.carlaFileAudio);
+                    } else if (std::strcmp(fDescriptor->label, "midifile") == 0) {
+                        lv2_atom_forge_urid(&atomForge, fURIs.carlaFileMIDI);
+                    } else {
+                        lv2_atom_forge_urid(&atomForge, fURIs.carlaFile);
+                    }
+
+                    lv2_atom_forge_key(&atomForge, fURIs.patchValue);
+                    lv2_atom_forge_path(&atomForge,
+                                        fLoadedFile.buffer(),
+                                        static_cast<uint32_t>(fLoadedFile.length()+1));
+
+                    lv2_atom_forge_pop(&atomForge, &forgeFrame);
                 }
 
-                lv2_atom_forge_key(&atomForge, fURIs.patchValue);
-                lv2_atom_forge_path(&atomForge,
-                                    fLoadedFile.buffer(),
-                                    static_cast<uint32_t>(fLoadedFile.length()+1));
+                if (fPreviewData.shouldSend)
+                {
+                    const char ptype = fPreviewData.type;
+                    const uint32_t psize = fPreviewData.size;
+                    const void* const pbuffer = fPreviewData.buffer;
+                    fPreviewData.shouldSend = false;
 
-                lv2_atom_forge_pop(&atomForge, &forgeFrame);
+                    LV2_Atom_Forge_Frame forgeFrame;
+                    lv2_atom_forge_object(&atomForge, &forgeFrame, 0, fURIs.patchSet);
 
-                LV2_Atom* const atom = (LV2_Atom*)atomBuf;
+                    lv2_atom_forge_key(&atomForge, fURIs.patchProperty);
+                    lv2_atom_forge_urid(&atomForge, fURIs.carlaPreview);
 
+                    lv2_atom_forge_key(&atomForge, fURIs.patchValue);
+
+                    switch (ptype)
+                    {
+                    case 'f':
+                        lv2_atom_forge_vector(&atomForge, sizeof(float), fURIs.atomFloat, psize, pbuffer);
+                        break;
+                    default:
+                        carla_stderr2("Preview data buffer has wrong type '%c' (and size %u)", ptype, psize);
+                        break;
+                    }
+
+                    lv2_atom_forge_pop(&atomForge, &forgeFrame);
+                }
+
+                LV2_Atom* atom = (LV2_Atom*)atomBuf;
                 LV2_Atom_Sequence* const seq = fPorts.eventsOut[0];
                 Ports::EventsOutData& mData(fPorts.eventsOutData[0]);
 
-                if (sizeof(LV2_Atom_Event) + atom->size <= mData.capacity - mData.offset)
+                for (int i=0; i<numEvents; ++i)
                 {
-                    LV2_Atom_Event* const aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + mData.offset);
+                    if (sizeof(LV2_Atom_Event) + atom->size <= mData.capacity - mData.offset)
+                    {
+                        LV2_Atom_Event* const aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + mData.offset);
 
-                    aev->time.frames = 0;
-                    aev->body.size   = atom->size;
-                    aev->body.type   = atom->type;
-                    std::memcpy(LV2_ATOM_BODY(&aev->body), atom + 1, atom->size);
+                        aev->time.frames = 0;
+                        aev->body.size   = atom->size;
+                        aev->body.type   = atom->type;
+                        std::memcpy(LV2_ATOM_BODY(&aev->body), atom + 1, atom->size);
 
-                    const uint32_t size = lv2_atom_pad_size(static_cast<uint32_t>(sizeof(LV2_Atom_Event) + atom->size));
-                    mData.offset       += size;
-                    seq->atom.size     += size;
+                        const uint32_t size = lv2_atom_pad_size(static_cast<uint32_t>(sizeof(LV2_Atom_Event) + atom->size));
+                        mData.offset       += size;
+                        seq->atom.size     += size;
+                    }
+
+                    atom = (LV2_Atom*)(atomBuf + lv2_atom_total_size(atom));
                 }
             }
         }
@@ -940,6 +993,14 @@ protected:
         // nothing here
     }
 
+    void handlePreviewBufferData(const char type, const uint32_t size, const void* const buffer) noexcept
+    {
+        fPreviewData.type = type;
+        fPreviewData.size = size;
+        fPreviewData.buffer = buffer;
+        fPreviewData.shouldSend = true;
+    }
+
     void handleUiCustomDataChanged(const char* const key, const char* const value) const
     {
         carla_stdout("TODO: handleUiCustomDataChanged %s %s", key, value);
@@ -1039,14 +1100,20 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
             handleUiResize(static_cast<uint32_t>(index), static_cast<uint32_t>(value));
             break;
+
+        case NATIVE_HOST_OPCODE_PREVIEW_BUFFER_DATA:
+            CARLA_SAFE_ASSERT_RETURN(index != 0, 0);
+            CARLA_SAFE_ASSERT_RETURN(index >= 'a', 0);
+            CARLA_SAFE_ASSERT_RETURN(index <= 'z', 0);
+            CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
+            CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
+            handlePreviewBufferData(static_cast<char>(index), static_cast<uint32_t>(value), (const void*)ptr);
+            break;
         }
 
         return ret;
 
         // unused for now
-        (void)index;
-        (void)value;
-        (void)ptr;
         (void)opt;
     }
 
@@ -1084,6 +1151,7 @@ private:
 
     CarlaString fLastProjectPath;
     CarlaString fLoadedFile;
+    PreviewData fPreviewData;
     volatile bool fNeedsNotifyFileChanged;
     volatile int fPluginNeedsIdle;
 

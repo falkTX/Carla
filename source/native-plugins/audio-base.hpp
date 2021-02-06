@@ -271,7 +271,8 @@ public:
         fNeedsRead = true;
     }
 
-    bool loadFilename(const char* const filename, const uint32_t sampleRate)
+    bool loadFilename(const char* const filename, const uint32_t sampleRate,
+                      const uint32_t previewDataSize, float* previewData)
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && *filename != '\0', false);
 
@@ -329,6 +330,15 @@ public:
                 readEntireFileIntoPool(needsResample);
                 ad_close(fFilePtr);
                 fFilePtr = nullptr;
+
+                const float fileNumFramesF = static_cast<float>(fileNumFrames);
+                const float previewDataSizeF = static_cast<float>(previewDataSize);
+                for (uint i=0; i<previewDataSize; ++i)
+                {
+                    const float stepF = static_cast<float>(i)/previewDataSizeF * fileNumFramesF;
+                    const uint step = carla_fixedValue(0U, fileNumFrames-1U, static_cast<uint>(stepF + 0.5f));
+                    previewData[i] = fPool.buffer[0][step];
+                }
             }
             else
             {
@@ -336,6 +346,8 @@ public:
                 const uint32_t poolNumFrames = sampleRate * 1;
                 const uint pollTempSize = poolNumFrames * fFileNfo.channels;
                 uint resampleTempSize = 0;
+
+                carla_zeroFloats(previewData, 300);
 
                 fPool.create(poolNumFrames, true);
 
@@ -392,14 +404,24 @@ public:
         }
     }
 
-    void putAllData(AudioFilePool& pool)
+    void putAndSwapAllData(AudioFilePool& pool)
     {
-        const water::GenericScopedLock<water::SpinLock> gsl(fPool.mutex);
-        CARLA_SAFE_ASSERT_RETURN(pool.numFrames == fPool.numFrames,);
+        const water::GenericScopedLock<water::SpinLock> gsl1(fPool.mutex);
+        const water::GenericScopedLock<water::SpinLock> gsl2(pool.mutex);
+        CARLA_SAFE_ASSERT_RETURN(fPool.numFrames != 0,);
+        CARLA_SAFE_ASSERT_RETURN(pool.numFrames == 0,);
+        CARLA_SAFE_ASSERT_RETURN(fPool.tmpbuf[0] == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pool.tmpbuf[0] == nullptr,);
 
         pool.startFrame = fPool.startFrame;
-        carla_copyFloats(pool.buffer[0], fPool.buffer[0], fPool.numFrames);
-        carla_copyFloats(pool.buffer[1], fPool.buffer[1], fPool.numFrames);
+        pool.numFrames = fPool.numFrames;
+        pool.buffer[0] = fPool.buffer[0];
+        pool.buffer[1] = fPool.buffer[1];
+
+        fPool.startFrame = 0;
+        fPool.numFrames = 0;
+        fPool.buffer[0] = nullptr;
+        fPool.buffer[1] = nullptr;
     }
 
     bool tryPutData(float* const out1,

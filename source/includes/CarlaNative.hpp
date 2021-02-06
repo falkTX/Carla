@@ -250,6 +250,13 @@ protected:
                                                          0.0f);
     }
 
+    void hostSendPreviewBufferData(const char type, const uint32_t size, const void* const buffer)
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_PREVIEW_BUFFER_DATA, type, size, (void*)buffer, 0.0f);
+    }
+
     // -------------------------------------------------------------------
     // Plugin parameter calls
 

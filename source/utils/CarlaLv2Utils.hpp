@@ -1522,6 +1522,7 @@ protected:
         LV2_URID carlaFile;
         LV2_URID carlaFileAudio;
         LV2_URID carlaFileMIDI;
+        LV2_URID carlaPreview;
         LV2_URID midiEvent;
         LV2_URID patchProperty;
         LV2_URID patchGet;
@@ -1553,6 +1554,7 @@ protected:
               carlaFile(0),
               carlaFileAudio(0),
               carlaFileMIDI(0),
+              carlaPreview(0),
               midiEvent(0),
               patchProperty(0),
               patchGet(0),
@@ -1585,6 +1587,7 @@ protected:
             carlaFile          = uridMap->map(uridMap->handle, "http://kxstudio.sf.net/carla/file");
             carlaFileAudio     = uridMap->map(uridMap->handle, "http://kxstudio.sf.net/carla/file/audio");
             carlaFileMIDI      = uridMap->map(uridMap->handle, "http://kxstudio.sf.net/carla/file/midi");
+            carlaPreview       = uridMap->map(uridMap->handle, "http://kxstudio.sf.net/carla/preview");
             midiEvent          = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
             patchProperty      = uridMap->map(uridMap->handle, LV2_PATCH__property);
             patchGet           = uridMap->map(uridMap->handle, LV2_PATCH__Get);

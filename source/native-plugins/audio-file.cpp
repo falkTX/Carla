@@ -75,7 +75,8 @@ public:
           fMaxFrame(0),
           fPool(),
           fReader(),
-          fPrograms(hostGetFilePath("audio"), audiofilesWildcard)
+          fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
+          fPreviewData()
 #ifndef __MOD_DEVICES__
         , fInlineDisplay()
 #endif
@@ -551,6 +552,7 @@ private:
     AudioFileReader fReader;
 
     NativeMidiPrograms fPrograms;
+    float fPreviewData[300];
 
 #ifndef __MOD_DEVICES__
     struct InlineDisplay : NativeInlineDisplayImageSurfaceCompat {
@@ -603,17 +605,24 @@ private:
             return;
         }
 
-        if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate())))
+        const uint32_t previewDataSize = sizeof(fPreviewData)/sizeof(float);
+
+        if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate()), previewDataSize, fPreviewData))
         {
-            fPool.create(fReader.getPoolNumFrames(), false);
             fMaxFrame = fReader.getMaxFrame();
 
             if (fReader.isEntireFileLoaded())
-                fReader.putAllData(fPool);
+            {
+                fReader.putAndSwapAllData(fPool);
+            }
             else
+            {
+                fPool.create(fReader.getPoolNumFrames(), false);
                 fReader.readPoll();
+            }
 
             fDoProcess = true;
+            hostSendPreviewBufferData('f', previewDataSize, fPreviewData);
         }
         else
         {
