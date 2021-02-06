@@ -2849,6 +2849,7 @@ protected:
             break;
 
         case NATIVE_HOST_OPCODE_UI_RESIZE:
+        case NATIVE_HOST_OPCODE_PREVIEW_BUFFER_DATA:
             // unused here
             break;
         }

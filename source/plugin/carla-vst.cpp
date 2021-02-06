@@ -784,6 +784,7 @@ protected:
         case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
         case NATIVE_HOST_OPCODE_REQUEST_IDLE:
         case NATIVE_HOST_OPCODE_GET_FILE_PATH:
+        case NATIVE_HOST_OPCODE_PREVIEW_BUFFER_DATA:
             // nothing
             break;
 
