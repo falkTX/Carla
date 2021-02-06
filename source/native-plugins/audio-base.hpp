@@ -347,7 +347,7 @@ public:
                 const uint pollTempSize = poolNumFrames * fFileNfo.channels;
                 uint resampleTempSize = 0;
 
-                carla_zeroFloats(previewData, 300);
+                readFilePreview(previewDataSize, previewData);
 
                 fPool.create(poolNumFrames, true);
 
@@ -488,6 +488,24 @@ public:
         }
 
         return true;
+    }
+
+    void readFilePreview(const uint32_t previewDataSize, float* previewData)
+    {
+        carla_zeroFloats(previewData, previewDataSize);
+
+        const uint fileNumFrames = static_cast<uint>(fFileNfo.frames);
+        const float fileNumFramesF = static_cast<float>(fileNumFrames);
+        const float previewDataSizeF = static_cast<float>(previewDataSize);
+
+        for (uint i=0; i<previewDataSize; ++i)
+        {
+            const float posF = static_cast<float>(i)/previewDataSizeF * fileNumFramesF;
+            const uint pos = carla_fixedValue(0U, fileNumFrames-2U, static_cast<uint>(posF + 0.5f));
+
+            ad_seek(fFilePtr, pos);
+            ad_read(fFilePtr, previewData + i, 2);
+        }
     }
 
     void readEntireFileIntoPool(const bool needsResample)
