@@ -63,6 +63,7 @@ public:
         kParameterInfoBitDepth,
         kParameterInfoSampleRate,
         kParameterInfoLength,
+        kParameterInfoPosition,
         kParameterCount
     };
 
@@ -73,6 +74,7 @@ public:
           fWasPlayingBefore(false),
           fNeedsFileRead(false),
           fMaxFrame(0),
+          fLastPosition(0),
           fPool(),
           fReader(),
           fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
@@ -170,6 +172,16 @@ protected:
             param.ranges.max = (float)INT64_MAX;
             param.unit = "s";
             break;
+        case kParameterInfoPosition:
+            param.name  = "Position";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 100.0f;
+            param.unit = "%";
+            break;
         default:
             return nullptr;
         }
@@ -196,6 +208,8 @@ protected:
             return static_cast<float>(nfo.sample_rate);
         case kParameterInfoLength:
             return static_cast<float>(nfo.length)/1000.0f;
+        case kParameterInfoPosition:
+            return fLastPosition;
         default:
             return 0.0f;
         }
@@ -244,6 +258,7 @@ protected:
             // carla_stderr("P: no process");
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
+            fLastPosition = 0.0f;
             return;
         }
 
@@ -294,6 +309,12 @@ protected:
             if (needsIdleRequest)
                 hostRequestIdle();
 
+            if (timePos->frame == 0)
+                fLastPosition = 0.0f;
+            else if (timePos->frame >= fMaxFrame)
+                fLastPosition = 100.0f;
+            else
+                fLastPosition = static_cast<float>(timePos->frame) / static_cast<float>(fMaxFrame) * 100.0f;
             return;
         }
 
@@ -332,6 +353,8 @@ protected:
                 // reset for next loop
                 targetStartFrame = 0;
             }
+
+            fLastPosition = static_cast<float>(targetStartFrame) / static_cast<float>(fMaxFrame) * 100.0f;
         }
         else
         {
@@ -362,6 +385,8 @@ protected:
                         fNeedsFileRead = true;
                 }
             }
+
+            fLastPosition = static_cast<float>(timePos->frame % fMaxFrame) / static_cast<float>(fMaxFrame) * 100.0f;
         }
 
 #ifndef __MOD_DEVICES__
@@ -547,6 +572,7 @@ private:
     volatile bool fNeedsFileRead;
 
     uint32_t fMaxFrame;
+    float fLastPosition;
 
     AudioFilePool   fPool;
     AudioFileReader fReader;
