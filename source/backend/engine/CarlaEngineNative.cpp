@@ -347,10 +347,24 @@ public:
                     fParameters[rindex] = valuef;
 
                     if (fUiServer.isPipeRunning())
+                    {
                         pHost->ui_parameter_changed(pHost->handle, rindex, valuef);
+                    }
                     else
-                        carla_stdout("Plugin with id %d triggered parameter %d update while UI is hidden",
-                                     pluginId, value1);
+                    {
+                        static uint last_pluginId = pluginId;
+                        static int last_value1 = value1;
+                        static bool init = true;
+
+                        if (init || last_pluginId != pluginId || last_value1 != value1)
+                        {
+                            init = false;
+                            last_pluginId = pluginId;
+                            last_value1 = value1;
+                            carla_stdout("Plugin with id %d triggered parameter %d update while UI is hidden",
+                                         pluginId, value1);
+                        }
+                    }
                 }
             }
             break;

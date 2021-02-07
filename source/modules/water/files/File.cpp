@@ -1111,7 +1111,7 @@ File File::getCurrentWorkingDirectory()
 
 bool File::setAsCurrentWorkingDirectory() const
 {
-    return SetCurrentDirectory (getFullPathName().toWideCharPointer()) != FALSE;
+    return SetCurrentDirectory (getFullPathName().toUTF8()) != FALSE;
 }
 
 bool File::isSymbolicLink() const
