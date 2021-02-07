@@ -256,7 +256,7 @@ build/Carla.app/Contents/MacOS/lib/library.zip: $(CARLA_APP_ZIPS) data/macos/bun
 
 build/Carla/Carla.exe: build/Carla/lib/library.zip
 
-build/Carla/lib/library.zip: data/windows/app-gui.py # source/frontend/*
+build/Carla/lib/library.zip: data/windows/app-gui.py source/frontend/*
 	$(call GENERATE_LIBRARY_ZIP,Carla)
 
 # $(CARLA_APP_ZIPS)
@@ -322,6 +322,14 @@ build/Carla/Qt5% build/Carla-Control/Qt5%: $(QT5_PREFIX)/bin/Qt5%
 	@cp -v $< $@
 
 build/Carla/iconengines/% build/Carla-Control/iconengines/%: $(QT5_PREFIX)/lib/qt5/plugins/iconengines/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/Carla/imageformats/% build/Carla-Control/imageformats/%: $(QT5_PREFIX)/lib/qt5/plugins/imageformats/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/Carla/platforms/% build/Carla-Control/platforms/%: $(QT5_PREFIX)/lib/qt5/plugins/platforms/%
 	-@mkdir -p $(shell dirname $@)
 	@cp -v $< $@
 

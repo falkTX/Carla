@@ -1135,11 +1135,11 @@ class PluginRefreshW(QDialog):
             self.ui.ico_native.setPixmap(self.fIconNo)
             self.ui.ch_native.setEnabled(False)
             self.ui.ch_sf2.setEnabled(False)
-            self.ui.ch_sfz.setEnabled(False)
             if not hasNonNative:
                 self.ui.ch_ladspa.setEnabled(False)
                 self.ui.ch_dssi.setEnabled(False)
                 self.ui.ch_vst.setEnabled(False)
+                self.ui.ch_vst3.setEnabled(False)
 
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
