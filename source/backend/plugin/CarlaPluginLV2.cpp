@@ -2019,6 +2019,12 @@ public:
             fUI.descriptor->cleanup(fUI.handle);
             fUI.handle = nullptr;
             fUI.widget = nullptr;
+
+            if (fUI.type == UI::TYPE_EMBED && fUI.window != nullptr)
+            {
+                delete fUI.window;
+                fUI.window = nullptr;
+            }
         }
     }
 
