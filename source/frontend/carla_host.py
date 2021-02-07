@@ -480,6 +480,8 @@ class HostWindow(QMainWindow):
             self.ui.b_transport_stop.setIcon(getIcon('media-playback-stop', 16, 'svgz'))
             self.ui.b_transport_backwards.setIcon(getIcon('media-seek-backward', 16, 'svgz'))
             self.ui.b_transport_forwards.setIcon(getIcon('media-seek-forward', 16, 'svgz'))
+            self.ui.logs_clear.setIcon(getIcon('edit-clear', 16, 'svgz'))
+            self.ui.logs_save.setIcon(getIcon('document-save', 16, 'svgz'))
 
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
