@@ -767,7 +767,12 @@ bool CarlaPipeCommon::readNextLineAsUInt(uint32_t& value) const noexcept
 
     if (const char* const msg = _readlineblock(false))
     {
+#if (defined(__WORDSIZE) && __WORDSIZE < 64) || (defined(__SIZE_WIDTH__) && __SIZE_WIDTH__ < 64) || \
+      defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
+        const long long aslong = std::atoll(msg);
+#else
         const long aslong = std::atol(msg);
+#endif
 
         if (aslong >= 0)
         {

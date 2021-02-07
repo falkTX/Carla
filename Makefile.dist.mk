@@ -67,11 +67,14 @@ _CARLA_HOST_FILES = \
 	carla-discovery-native$(APP_EXT) \
 	libcarla_utils$(LIB_EXT)
 
-# TODO plugin UIs on windows
 ifeq ($(MACOS),true)
 _CARLA_HOST_FILES += \
 	$(_PLUGIN_UIS:%=resources/%$(APP_EXT)) \
 	carla-bridge-lv2-cocoa$(APP_EXT)
+else ifeq ($(WIN32),true)
+# TODO plugin UIs on windows
+_CARLA_HOST_FILES += \
+	carla-bridge-lv2-windows$(APP_EXT)
 endif
 
 _CARLA_APP_FILES = \
