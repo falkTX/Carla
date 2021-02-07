@@ -70,10 +70,12 @@ _CARLA_HOST_FILES = \
 ifeq ($(MACOS),true)
 _CARLA_HOST_FILES += \
 	$(_PLUGIN_UIS:%=resources/%$(APP_EXT)) \
+	resources/carla-plugin-patchbay$(APP_EXT) \
 	carla-bridge-lv2-cocoa$(APP_EXT)
 else ifeq ($(WIN32),true)
 _CARLA_HOST_FILES += \
 	$(_PLUGIN_UIS:%=resources/%$(APP_EXT)) \
+	resources/carla-plugin-patchbay$(APP_EXT) \
 	carla-bridge-lv2-windows$(APP_EXT)
 endif
 
@@ -97,16 +99,17 @@ _CARLA_CONTROL_APP_FILES = \
 _CARLA_LV2_PLUGIN_FILES = \
 	carla.lv2/carla$(LIB_EXT) \
 	carla.lv2/manifest.ttl \
-	carla.lv2/resources/carla-plugin-patchbay \
+	carla.lv2/resources/carla-plugin-patchbay$(APP_EXT) \
 	carla.lv2/resources/lib/library.zip \
 	$(_CARLA_HOST_FILES:%=carla.lv2/%) \
 	$(_QT5_DLLS:%=carla.lv2/resources/%) \
 	$(_QT5_PLUGINS:%=carla.lv2/resources/%) \
 	$(_THEME_FILES:%=carla.lv2/resources/%)
 
+ifeq ($(MACOS),true)
 _CARLA_VST2FX_PLUGIN_FILES = \
 	carlafx.vst/Contents/MacOS/CarlaVstFxShell \
-	carlafx.vst/Contents/MacOS/resources/carla-plugin-patchbay \
+	carlafx.vst/Contents/MacOS/resources/carla-plugin-patchbay$(APP_EXT) \
 	carlafx.vst/Contents/MacOS/resources/lib/library.zip \
 	$(_CARLA_HOST_FILES:%=carlafx.vst/Contents/MacOS/%) \
 	$(_QT5_DLLS:%=carlafx.vst/Contents/MacOS/resources/%) \
@@ -115,12 +118,25 @@ _CARLA_VST2FX_PLUGIN_FILES = \
 
 _CARLA_VST2SYN_PLUGIN_FILES = \
 	carla.vst/Contents/MacOS/CarlaVstShell \
-	carla.vst/Contents/MacOS/resources/carla-plugin-patchbay \
+	carla.vst/Contents/MacOS/resources/carla-plugin-patchbay$(APP_EXT) \
 	carla.vst/Contents/MacOS/resources/lib/library.zip \
 	$(_CARLA_HOST_FILES:%=carla.vst/Contents/MacOS/%) \
 	$(_QT5_DLLS:%=carla.vst/Contents/MacOS/resources/%) \
 	$(_QT5_PLUGINS:%=carla.vst/Contents/MacOS/resources/%) \
 	$(_THEME_FILES:%=carla.vst/Contents/MacOS/resources/%)
+else ifeq ($(WIN32),true)
+_CARLA_VST2_PLUGIN_FILES = \
+	carla.vst/CarlaVstShell.dll \
+	carla.vst/CarlaVstFxShell.dll \
+	carla.vst/resources/carla-plugin-patchbay.exe \
+	carla.vst/resources/lib/library.zip \
+	$(_CARLA_HOST_FILES:%=carla.vst/%) \
+	$(_PYTHON_FILES:%=carla.vst/resources/%) \
+	$(_QT5_DLLS:%=carla.vst/resources/%) \
+	$(_QT5_PLUGINS:%=carla.vst/resources/%) \
+	$(_THEME_FILES:%=carla.vst/resources/%)
+
+endif
 
 ifeq ($(WIN32),true)
 CARLA_APP_FILES = $(_CARLA_APP_FILES:%=build/Carla/%)
@@ -155,9 +171,8 @@ Carla-$(VERSION)-macOS.dmg: build/Carla.app/Contents/Info.plist build/Carla-Cont
 	hdiutil create $@ -srcfolder build/macos-pkg -volname "Carla-$(VERSION)" -fs HFS+ -ov
 	rm -rf build/macos-pkg
 
-Carla-$(VERSION)-win64.zip: $(CARLA_APP_FILES)
-	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla)
-# 	env PYTHONPATH=$(CURDIR)/source/frontend $(PYTHON) ./data/windows/app-gui.py build_exe
+Carla-$(VERSION)-win64.zip: $(CARLA_APP_FILES) $(CARLA_CONTROL_APP_FILES) $(_CARLA_LV2_PLUGIN_FILES:%=build/%) $(_CARLA_VST2_PLUGIN_FILES:%=build/%)
+	echo TODO
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # macOS final cleanup, after everything is in place
@@ -229,7 +244,6 @@ build/Carla-Control.app/Contents/Info.plist: $(CARLA_CONTROL_APP_FILES)
 
 ifeq ($(WIN32),true)
 define GENERATE_LIBRARY_ZIP
-	# FIXME
 	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=${1} $(PYTHON) ./data/windows/app-gui.py build_exe
 endef
 else
@@ -275,6 +289,8 @@ build/%.app/Contents/MacOS/lib/library.zip: data/macos/bundle.py source/frontend
 # ----------------------------------------------------------------------------------------------------------------------------
 
 build/Carla/Carla.exe: build/Carla/lib/library.zip
+	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla)
+	touch $@
 
 build/Carla/lib/library.zip: $(CARLA_APP_ZIPS) data/windows/app-gui.py source/frontend/*
 	$(call GENERATE_LIBRARY_ZIP,Carla)
@@ -295,6 +311,15 @@ build/Carla/resources/%.exe: build/%-resources/lib/library.zip
 
 build/%-resources/lib/library.zip: data/windows/app-gui.py source/frontend/%
 	$(call GENERATE_LIBRARY_ZIP,$*)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+build/Carla-Control/Carla-Control.exe: build/Carla-Control/lib/library.zip
+	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla-Control)
+	touch $@
+
+build/Carla-Control/lib/library.zip: data/windows/app-gui.py source/frontend/*
+	$(call GENERATE_LIBRARY_ZIP,Carla-Control)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # macOS generic bundle files (either Qt or Carla binaries)
@@ -440,12 +465,16 @@ build/%.vst/Contents/Resources/empty.lproj:
 # ----------------------------------------------------------------------------------------------------------------------------
 # Generic plugin rules
 
+build/Carla/resources/carla-plugin-patchbay.exe: build/Carla/resources/carla-plugin.exe
+	@ln -sfv carla-plugin.exe $@
+
 build/carla%/resources/carla-plugin-patchbay$(APP_EXT): build/carla%/resources/carla-plugin$(APP_EXT)
 	-@mkdir -p $(shell dirname $@)
 	@ln -sfv carla-plugin$(APP_EXT) $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+ifeq ($(MACOS),true)
 build/carla.lv2/resources/% build/carla.vst/Contents/MacOS/resources/% build/carlafx.vst/Contents/MacOS/resources/%: build/Carla.app/Contents/MacOS/resources/%
 	-@mkdir -p $(shell dirname $@)
 	@cp -v $< $@
@@ -457,5 +486,22 @@ build/carla.lv2/resources/lib/library.zip build/carla.vst/Contents/MacOS/resourc
 build/carla.lv2/% build/carla.vst/Contents/MacOS/% build/carlafx.vst/Contents/MacOS/%: build/Carla.app/Contents/MacOS/%
 	-@mkdir -p $(shell dirname $@)
 	@cp -v $< $@
+else
+build/carla.lv2/resources/libpython3% build/carla.vst/resources/libpython3%: build/Carla/libpython3%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/carla.lv2/resources/% build/carla.vst/resources/%: build/Carla/resources/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+
+build/carla.lv2/resources/lib/library.zip build/carla.vst/resources/lib/library.zip: build/Carla/resources/lib/library.zip
+	-@mkdir -p $(shell dirname $@)
+	@cp -rv build/Carla/resources/lib/* $(shell dirname $@)/
+
+build/carla.lv2/% build/carla.vst/%: build/Carla/%
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
