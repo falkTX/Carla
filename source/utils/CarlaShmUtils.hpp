@@ -132,7 +132,9 @@ void carla_shm_close(carla_shm_t& shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
 #ifdef CARLA_OS_WIN
-    CARLA_SAFE_ASSERT(shm.map == INVALID_HANDLE_VALUE);
+    if (shm.isServer) {
+        CARLA_SAFE_ASSERT(shm.map == INVALID_HANDLE_VALUE);
+    }
 #endif
 
 #ifdef CARLA_OS_WIN
@@ -248,7 +250,7 @@ void carla_shm_unmap(carla_shm_t& shm, void* const ptr) noexcept
 
     try {
 #ifdef CARLA_OS_WIN
-        const HANDLE map(shm.map);
+        const HANDLE map = shm.map;
         shm.map = INVALID_HANDLE_VALUE;
 
         ::UnmapViewOfFile(ptr);
