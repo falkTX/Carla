@@ -1109,6 +1109,11 @@ File File::getCurrentWorkingDirectory()
     return File (String (dest));
 }
 
+bool File::setAsCurrentWorkingDirectory() const
+{
+    return SetCurrentDirectory (getFullPathName().toWideCharPointer()) != FALSE;
+}
+
 bool File::isSymbolicLink() const
 {
     return (GetFileAttributes (fullPath.toUTF8()) & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
@@ -1340,6 +1345,11 @@ File File::getCurrentWorkingDirectory()
     }
 
     return File (CharPointer_UTF8 (cwd));
+}
+
+bool File::setAsCurrentWorkingDirectory() const
+{
+    return chdir (getFullPathName().toUTF8()) == 0;
 }
 
 File water_getExecutableFile();

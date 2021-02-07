@@ -1406,7 +1406,8 @@ bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurren
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
 const char* CarlaEngine::getCurrentProjectFolder() const noexcept
 {
-    return pData->currentProjectFolder;
+    return pData->currentProjectFolder.isNotEmpty() ? pData->currentProjectFolder.buffer()
+                                                    : nullptr;
 }
 
 const char* CarlaEngine::getCurrentProjectFilename() const noexcept
