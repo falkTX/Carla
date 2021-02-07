@@ -72,8 +72,8 @@ _CARLA_HOST_FILES += \
 	$(_PLUGIN_UIS:%=resources/%$(APP_EXT)) \
 	carla-bridge-lv2-cocoa$(APP_EXT)
 else ifeq ($(WIN32),true)
-# TODO plugin UIs on windows
 _CARLA_HOST_FILES += \
+	$(_PLUGIN_UIS:%=resources/%$(APP_EXT)) \
 	carla-bridge-lv2-windows$(APP_EXT)
 endif
 
@@ -124,7 +124,7 @@ _CARLA_VST2SYN_PLUGIN_FILES = \
 
 ifeq ($(WIN32),true)
 CARLA_APP_FILES = $(_CARLA_APP_FILES:%=build/Carla/%)
-CARLA_APP_ZIPS = $(_PLUGIN_UIS:%=build/%/lib/library.zip)
+CARLA_APP_ZIPS = $(_PLUGIN_UIS:%=build/%-resources/lib/library.zip)
 CARLA_CONTROL_APP_FILES = $(_CARLA_CONTROL_APP_FILES:%=build/Carla-Control/%)
 else
 CARLA_APP_FILES = $(_CARLA_APP_FILES:%=build/Carla.app/Contents/MacOS/%)
@@ -257,15 +257,6 @@ build/Carla.app/Contents/MacOS/lib/library.zip: $(CARLA_APP_ZIPS) data/macos/bun
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-build/Carla/Carla.exe: build/Carla/lib/library.zip
-
-build/Carla/lib/library.zip: data/windows/app-gui.py source/frontend/*
-	$(call GENERATE_LIBRARY_ZIP,Carla)
-
-# $(CARLA_APP_ZIPS)
-
-# ----------------------------------------------------------------------------------------------------------------------------
-
 build/Carla-Control.app/Contents/MacOS/Carla-Control: build/Carla-Control.app/Contents/MacOS/lib/library.zip
 
 build/Carla-Control.app/Contents/MacOS/lib/library.zip: data/macos/bundle.py data/macos/Carla-Control.plist source/frontend/*
@@ -279,6 +270,30 @@ build/Carla.app/Contents/MacOS/resources/%: build/%.app/Contents/MacOS/lib/libra
 	@cp -v build/$*.app/Contents/MacOS/$* $@
 
 build/%.app/Contents/MacOS/lib/library.zip: data/macos/bundle.py source/frontend/%
+	$(call GENERATE_LIBRARY_ZIP,$*)
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+build/Carla/Carla.exe: build/Carla/lib/library.zip
+
+build/Carla/lib/library.zip: $(CARLA_APP_ZIPS) data/windows/app-gui.py source/frontend/*
+	$(call GENERATE_LIBRARY_ZIP,Carla)
+	# merge all zips into 1
+	rm -rf build/Carla/lib/_lib
+	mkdir build/Carla/lib/_lib
+	(cd build/Carla/lib/_lib && \
+		mv ../library.zip ../library-main.zip && \
+		$(_PLUGIN_UIS:%=unzip -n $(CURDIR)/build/%-resources/lib/library.zip &&) \
+		unzip -o ../library-main.zip && \
+		zip -r -9 ../library.zip *)
+	rm -rf build/Carla/lib/_lib
+	rm -rf build/Carla/lib/library-main.zip
+
+build/Carla/resources/%.exe: build/%-resources/lib/library.zip
+	-@mkdir -p $(shell dirname $@)
+	@cp -v build/$*-resources/$*.exe $@
+
+build/%-resources/lib/library.zip: data/windows/app-gui.py source/frontend/%
 	$(call GENERATE_LIBRARY_ZIP,$*)
 
 # ----------------------------------------------------------------------------------------------------------------------------
