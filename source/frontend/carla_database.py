@@ -1012,7 +1012,8 @@ class PluginRefreshW(QDialog):
         # -------------------------------------------------------------------------------------------------------------
         # Internal stuff
 
-        hasNative  = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-native"))
+        toolNative = "carla-discovery-native.exe" if WINDOWS else "carla-discovery-native"
+        hasNative  = os.path.exists(os.path.join(self.host.pathBinaries, toolNative))
         hasPosix32 = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-posix32"))
         hasPosix64 = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-posix64"))
         hasWin32   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win32.exe"))
@@ -1082,14 +1083,12 @@ class PluginRefreshW(QDialog):
 
         if WINDOWS:
             if kIs64bit:
-                hasNative = hasWin64
                 hasNonNative = hasWin32
                 self.ui.ch_win64.setEnabled(False)
                 self.ui.ch_win64.setVisible(False)
                 self.ui.ico_win64.setVisible(False)
                 self.ui.label_win64.setVisible(False)
             else:
-                hasNative = hasWin32
                 hasNonNative = hasWin64
                 self.ui.ch_win32.setEnabled(False)
                 self.ui.ch_win32.setVisible(False)
