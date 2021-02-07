@@ -2277,6 +2277,9 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int)
     def slot_noteOn(self, note):
+        if self.fPluginCount == 0:
+            return
+
         for pluginId in self.fSelectedPlugins:
             self.host.send_midi_note(pluginId, 0, note, 100)
 
@@ -2285,6 +2288,9 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int)
     def slot_noteOff(self, note):
+        if self.fPluginCount == 0:
+            return
+
         for pluginId in self.fSelectedPlugins:
             self.host.send_midi_note(pluginId, 0, note, 0)
 
