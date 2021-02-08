@@ -25,6 +25,7 @@ QT5_PREFIX = $(shell pkg-config --variable=prefix Qt5OpenGLExtensions)
 
 _PLUGIN_UIS = \
 	carla-plugin \
+	carla-plugin-patchbay \
 	bigmeter-ui \
 	midipattern-ui \
 	notes-ui \
@@ -65,7 +66,6 @@ _CARLA_HOST_FILES = \
 	carla-discovery-native$(APP_EXT) \
 	libcarla_utils$(LIB_EXT) \
 	$(_PLUGIN_UIS:%=resources/%$(APP_EXT)) \
-	resources/carla-plugin-patchbay$(APP_EXT) \
 	resources/lib
 
 ifeq ($(MACOS),true)
@@ -164,26 +164,37 @@ Carla-$(VERSION)-macOS.dmg: build/Carla.app/Contents/Info.plist build/Carla-Cont
 	hdiutil create $@ -srcfolder build/macos-pkg -volname "Carla-$(VERSION)" -fs HFS+ -ov
 	rm -rf build/macos-pkg
 
-Carla-$(VERSION)-win%.zip: $(CARLA_APP_FILES) $(CARLA_CONTROL_APP_FILES) $(CARLA_PLUGIN_FILES)
-	rm -rf build/Carla-$(VERSION)-win$* $@
-	mkdir build/Carla-$(VERSION)-win$*
-	cp -r build/Carla build/Carla-Control data/windows/README.txt build/Carla-$(VERSION)-win$*/
-	cp -r build/carla.lv2 build/Carla-$(VERSION)-win$*/Carla.lv2
-	cp -r build/carla.vst build/Carla-$(VERSION)-win$*/Carla.vst
-	(cd build && \
-		zip -r -9 ../$@ Carla-$(VERSION)-win$*)
-	rm -rf build/Carla-$(VERSION)-win$*
+Carla-$(VERSION)-win32.zip: $(CARLA_APP_FILES) $(CARLA_CONTROL_APP_FILES) $(CARLA_PLUGIN_FILES)
+	$(call GENERATE_FINAL_ZIP,win32)
 
+Carla-$(VERSION)-win64.zip: $(CARLA_APP_FILES) $(CARLA_CONTROL_APP_FILES) $(CARLA_PLUGIN_FILES)
+	$(call GENERATE_FINAL_ZIP,win64)
+
+ifneq ($(TESTING),true)
+define GENERATE_FINAL_ZIP
+	rm -rf build/Carla-$(VERSION)-${1} $@
+	mkdir build/Carla-$(VERSION)-${1}
+	cp -r build/Carla build/Carla-Control data/windows/README.txt build/Carla-$(VERSION)-${1}/
+	cp -r build/carla.lv2 build/Carla-$(VERSION)-${1}/Carla.lv2
+	cp -r build/carla.vst build/Carla-$(VERSION)-${1}/Carla.vst
+	(cd build && \
+		zip -r -9 ../$@ Carla-$(VERSION)-${1})
+	rm -rf build/Carla-$(VERSION)-${1}
+endef
+else
+define GENERATE_FINAL_ZIP
+endef
+endif
 # ---------------------------------------------------------------------------------------------------------------------
 # macOS plist files
 
 build/Carla.app/Contents/Info.plist: $(CARLA_APP_FILES)
 	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla)
-	# extra step for standalone, symlink resources used in plugin UIs
-	mkdir -p build/Carla.app/Contents/MacOS/resources
-	(cd build/Carla.app/Contents/MacOS/resources && \
-		ln -sf ../Qt* ../lib ../iconengines ../imageformats ../platforms ../styles . && \
-		ln -sf carla-plugin$(APP_EXT) carla-plugin-patchbay$(APP_EXT))
+# 	# extra step for standalone, symlink resources used in plugin UIs
+# 	mkdir -p build/Carla.app/Contents/MacOS/resources
+# 	(cd build/Carla.app/Contents/MacOS/resources && \
+# 		ln -sf ../Qt* ../lib ../iconengines ../imageformats ../platforms ../styles . && \
+# 		ln -sf carla-plugin carla-plugin-patchbay)
 	# mark as done
 	touch $@
 
@@ -450,6 +461,10 @@ build/carla.lv2/resources/libpython3% build/carla.vst/resources/libpython3%: bui
 build/carla.lv2/manifest.ttl: bin/carla.lv2/manifest.ttl
 	-@mkdir -p $(shell dirname $@)
 	@cp -v bin/carla.lv2/*.ttl build/carla.lv2/
+
+build/carla.lv2/carla$(LIB_EXT): bin/carla.lv2/carla$(LIB_EXT)
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 # macOS plugin rules
