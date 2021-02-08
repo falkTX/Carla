@@ -113,7 +113,9 @@ class CarlaApplication():
         self.fApp.setStyle("carla" if stylesDir else "fusion")
 
         if WINDOWS:
-            carlastyle = os.path.join(pathBinaries, "styles", "carlastyle.dll")
+            carlastyle1 = os.path.join(pathBinaries, "styles", "carlastyle.dll")
+            carlastyle2 = os.path.join(pathResources, "styles", "carlastyle.dll")
+            carlastyle = carlastyle2 if os.path.exists(carlastyle2) else carlastyle1
             self._stylelib = CDLL(carlastyle, RTLD_GLOBAL)
             self._stylelib.set_qt_app_style.argtypes = None
             self._stylelib.set_qt_app_style.restype = None
