@@ -65,8 +65,7 @@ _CARLA_HOST_FILES = \
 	carla-bridge-native$(APP_EXT) \
 	carla-discovery-native$(APP_EXT) \
 	libcarla_utils$(LIB_EXT) \
-	$(_PLUGIN_UIS:%=resources/%$(APP_EXT)) \
-	resources/lib
+	$(_PLUGIN_UIS:%=resources/%$(APP_EXT))
 
 ifeq ($(MACOS),true)
 _CARLA_HOST_FILES += carla-bridge-lv2-cocoa$(APP_EXT)
@@ -88,7 +87,8 @@ _CARLA_APP_FILES = \
 	$(_PYTHON_FILES) \
 	$(_QT5_DLLS) \
 	$(_QT5_PLUGINS) \
-	$(_THEME_FILES)
+	$(_THEME_FILES) \
+	resources/lib
 
 _CARLA_CONTROL_APP_FILES = \
 	Carla-Control$(APP_EXT) \
