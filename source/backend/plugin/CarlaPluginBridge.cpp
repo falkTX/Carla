@@ -320,6 +320,7 @@ protected:
             carla_stdout("Starting plugin bridge, command is:\n%s \"%s\" \"%s\" \"%s\" " P_INT64,
                          fBridgeBinary.toRawUTF8(), getPluginTypeAsString(kPlugin->getType()), filename.toRawUTF8(), fLabel.toRawUTF8(), kPlugin->getUniqueId());
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             const File projFolder(kEngine->getCurrentProjectFolder());
 
             if (projFolder.isNotNull())
@@ -330,6 +331,7 @@ protected:
                 oldFolder.setAsCurrentWorkingDirectory();
             }
             else
+#endif
             {
                 started = fProcess->start(arguments);
             }
