@@ -312,8 +312,13 @@ win32: $(LIBS_WINE32)
 	$(MAKE) BUILDING_FOR_WINE=true -C source/discovery win32
 
 win32r: $(LIBS_RWIN32)
+ifeq ($(CC),x86_64-w64-mingw32-gcc)
+	$(MAKE) CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ -C source/bridges-plugin win32
+	$(MAKE) CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ -C source/discovery win32
+else
 	$(MAKE) -C source/bridges-plugin win32
 	$(MAKE) -C source/discovery win32
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (win64)
@@ -343,8 +348,13 @@ win64: $(LIBS_WINE64)
 	$(MAKE) BUILDING_FOR_WINE=true -C source/discovery win64
 
 win64r: $(LIBS_RWIN64)
+ifeq ($(CC),i686-w64-mingw32-gcc)
+	$(MAKE) CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ -C source/bridges-plugin win64
+	$(MAKE) CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ -C source/discovery win64
+else
 	$(MAKE) -C source/bridges-plugin win64
 	$(MAKE) -C source/discovery win64
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (wine)
