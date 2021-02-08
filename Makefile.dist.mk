@@ -74,8 +74,15 @@ else ifeq ($(WIN32),true)
 _CARLA_HOST_FILES += carla-bridge-lv2-windows$(APP_EXT)
 endif
 
+ifeq ($(WIN64),true)
+_CARLA_HOST_FILES += carla-bridge-win32$(APP_EXT)
+_CARLA_HOST_FILES += carla-discovery-win32$(APP_EXT)
+endif
+
 _CARLA_APP_FILES = \
 	Carla$(APP_EXT) \
+	libcarla_host-plugin$(LIB_EXT) \
+	libcarla_native-plugin$(LIB_EXT) \
 	libcarla_standalone2$(LIB_EXT) \
 	$(_CARLA_HOST_FILES) \
 	$(_PYTHON_FILES) \
