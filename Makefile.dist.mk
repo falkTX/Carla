@@ -295,7 +295,7 @@ define GENERATE_LIBRARY_ZIP
 endef
 else ifeq ($(WIN32),true)
 define GENERATE_LIBRARY_ZIP
-	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=${1} $(PYTHON) ./data/windows/app-gui.py build_exe
+	env PYTHONPATH=$(CURDIR)/source/frontend:$(QT5_PREFIX)/lib/python3/site-packages SCRIPT_NAME=${1} $(PYTHON) ./data/windows/app-gui.py build_exe
 endef
 endif
 
