@@ -123,6 +123,7 @@ struct AudioFilePool {
             const water::GenericScopedLock<water::SpinLock> gsl(mutex);
             startFrame = 0;
             numFrames = 0;
+            maxFrame = 0;
         }
 
         if (buffer[0] != nullptr)
