@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -73,6 +73,7 @@ public:
           fDoProcess(false),
           fWasPlayingBefore(false),
           fNeedsFileRead(false),
+          fEntireFileLoaded(false),
           fMaxFrame(0),
           fLastPosition(0),
           fPool(),
@@ -248,10 +249,13 @@ protected:
                   const NativeMidiEvent*, uint32_t) override
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
+        const bool loopMode = fLoopMode;
 
         float* out1 = outBuffer[0];
         float* out2 = outBuffer[1];
         bool needsIdleRequest = false;
+
+        const water::GenericScopedLock<water::SpinLock> gsl(fPool.mutex);
 
         if (! fDoProcess)
         {
@@ -280,7 +284,7 @@ protected:
         }
 
         // out of reach
-        if ((timePos->frame < fPool.startFrame || timePos->frame >= fMaxFrame) && !fLoopMode)
+        if ((timePos->frame < fPool.startFrame || timePos->frame >= fMaxFrame) && !loopMode)
         {
             if (timePos->frame < fPool.startFrame)
             {
@@ -318,10 +322,10 @@ protected:
             return;
         }
 
-        if (fReader.isEntireFileLoaded())
+        if (fEntireFileLoaded)
         {
             // NOTE: timePos->frame is always < fMaxFrame (or looping)
-            uint32_t targetStartFrame = static_cast<uint32_t>(fLoopMode ? timePos->frame % fMaxFrame : timePos->frame);
+            uint32_t targetStartFrame = static_cast<uint32_t>(loopMode ? timePos->frame % fMaxFrame : timePos->frame);
 
             for (uint32_t framesDone=0, framesToDo=frames, remainingFrames; framesDone < frames;)
             {
@@ -339,7 +343,7 @@ protected:
                 framesDone += remainingFrames;
                 framesToDo -= remainingFrames;
 
-                if (! fLoopMode)
+                if (! loopMode)
                 {
                     // not looping, stop here
                     if (framesToDo != 0)
@@ -360,7 +364,7 @@ protected:
         {
             const bool offline = isOffline();
 
-            if (! fReader.tryPutData(out1, out2, timePos->frame, frames, offline, needsIdleRequest))
+            if (! fReader.tryPutData(fPool, out1, out2, timePos->frame, frames, loopMode, offline, needsIdleRequest))
             {
                 carla_zeroFloats(out1, frames);
                 carla_zeroFloats(out2, frames);
@@ -375,7 +379,7 @@ protected:
                     needsIdleRequest = false;
                     fReader.readPoll();
 
-                    if (! fReader.tryPutData(out1, out2, timePos->frame, frames, offline, needsIdleRequest))
+                    if (! fReader.tryPutData(fPool, out1, out2, timePos->frame, frames, loopMode, offline, needsIdleRequest))
                     {
                         carla_zeroFloats(out1, frames);
                         carla_zeroFloats(out2, frames);
@@ -571,6 +575,7 @@ private:
     bool fWasPlayingBefore;
     volatile bool fNeedsFileRead;
 
+    bool fEntireFileLoaded;
     uint32_t fMaxFrame;
     float fLastPosition;
 
@@ -622,8 +627,8 @@ private:
         carla_debug("AudioFilePlugin::loadFilename(\"%s\")", filename);
 
         fDoProcess = false;
-        fReader.destroy();
         fPool.destroy();
+        fReader.destroy();
 
         if (filename == nullptr || *filename == '\0')
         {
@@ -635,15 +640,16 @@ private:
 
         if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate()), previewDataSize, fPreviewData))
         {
+            fEntireFileLoaded = fReader.isEntireFileLoaded();
             fMaxFrame = fReader.getMaxFrame();
 
-            if (fReader.isEntireFileLoaded())
+            if (fEntireFileLoaded)
             {
                 fReader.putAndSwapAllData(fPool);
             }
             else
             {
-                fPool.create(fReader.getPoolNumFrames(), false);
+                fReader.createSwapablePool(fPool);
                 fReader.readPoll();
             }
 
@@ -652,6 +658,7 @@ private:
         }
         else
         {
+            fEntireFileLoaded = false;
             fMaxFrame = 0;
         }
     }
