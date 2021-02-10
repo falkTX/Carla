@@ -155,7 +155,7 @@ protected:
                                                             NATIVE_PARAMETER_IS_OUTPUT);
             param.ranges.def = 0.0f;
             param.ranges.min = 0.0f;
-            param.ranges.max = 32.0f;
+            param.ranges.max = 64.0f;
             break;
         case kParameterInfoSampleRate:
             param.name  = "Sample Rate";
