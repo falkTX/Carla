@@ -66,6 +66,7 @@ public:
         kParameterInfoSampleRate,
         kParameterInfoLength,
         kParameterInfoPosition,
+        kParameterInfoPoolFill,
         kParameterCount
     };
 
@@ -77,7 +78,8 @@ public:
           fNeedsFileRead(false),
           fEntireFileLoaded(false),
           fMaxFrame(0),
-          fLastPosition(0),
+          fLastPosition(0.0f),
+          fLastPoolFill(0.0f),
           fPool(),
           fReader(),
           fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
@@ -142,8 +144,8 @@ protected:
                                                             NATIVE_PARAMETER_IS_INTEGER|
                                                             NATIVE_PARAMETER_IS_OUTPUT);
             param.ranges.def = 0.0f;
-            param.ranges.min = 0.0f;
-            param.ranges.max = 384000.0f * 32.0f * 2.0f;
+            param.ranges.min = -1.0f;
+            param.ranges.max = 384000.0f * 64.0f * 2.0f;
             break;
         case kParameterInfoBitDepth:
             param.name  = "Bit Depth";
@@ -185,6 +187,16 @@ protected:
             param.ranges.max = 100.0f;
             param.unit = "%";
             break;
+        case kParameterInfoPoolFill:
+            param.name  = "Pool Fill";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 100.0f;
+            param.unit = "%";
+            break;
         default:
             return nullptr;
         }
@@ -196,6 +208,8 @@ protected:
     {
         if (index == kParameterLooping)
             return fLoopMode ? 1.0f : 0.0f;
+        if (index == kParameterInfoBitRate)
+            return static_cast<float>(fReader.getCurrentBitRate());
 
         const ADInfo nfo = fReader.getFileInfo();
 
@@ -203,8 +217,6 @@ protected:
         {
         case kParameterInfoChannels:
             return static_cast<float>(nfo.channels);
-        case kParameterInfoBitRate:
-            return static_cast<float>(nfo.bit_rate);
         case kParameterInfoBitDepth:
             return static_cast<float>(nfo.bit_depth);
         case kParameterInfoSampleRate:
@@ -213,6 +225,8 @@ protected:
             return static_cast<float>(nfo.length)/1000.0f;
         case kParameterInfoPosition:
             return fLastPosition;
+        case kParameterInfoPoolFill:
+            return fLastPoolFill;
         default:
             return 0.0f;
         }
@@ -392,7 +406,13 @@ protected:
                 }
             }
 
-            fLastPosition = static_cast<float>(timePos->frame % fMaxFrame) / static_cast<float>(fMaxFrame) * 100.0f;
+            const uint32_t modframe = static_cast<uint32_t>(timePos->frame % fMaxFrame);
+            fLastPosition = static_cast<float>(modframe) / static_cast<float>(fMaxFrame) * 100.0f;
+
+            if (modframe > fPool.startFrame)
+                fLastPoolFill = static_cast<float>(modframe - fPool.startFrame) / static_cast<float>(fPool.numFrames) * 100.0f;
+            else
+                fLastPoolFill = static_cast<float>(fPool.startFrame - modframe) / static_cast<float>(fPool.numFrames) * 100.0f;
         }
 
 #ifndef __MOD_DEVICES__
@@ -580,6 +600,7 @@ private:
     bool fEntireFileLoaded;
     uint32_t fMaxFrame;
     float fLastPosition;
+    float fLastPoolFill;
 
     AudioFilePool   fPool;
     AudioFileReader fReader;
@@ -629,6 +650,7 @@ private:
         carla_debug("AudioFilePlugin::loadFilename(\"%s\")", filename);
 
         fDoProcess = false;
+        fLastPoolFill = 0.0f;
         fPool.destroy();
         fReader.destroy();
 
@@ -648,6 +670,7 @@ private:
             if (fEntireFileLoaded)
             {
                 fReader.putAndSwapAllData(fPool);
+                fLastPoolFill = 100.0f;
             }
             else
             {

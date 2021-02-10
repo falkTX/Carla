@@ -62,6 +62,7 @@ static int ad_info_sndfile(void *sf, struct adinfo *nfo) {
 		nfo->bit_depth   = parse_bit_depth(priv->sfinfo.format);
 		nfo->bit_rate    = nfo->bit_depth * nfo->channels * nfo->sample_rate;
 		nfo->meta_data   = NULL;
+		nfo->can_seek    = 1;
 	}
 	return 0;
 }
@@ -104,6 +105,12 @@ static ssize_t ad_read_sndfile(void *sf, float* d, size_t len) {
 	return sf_read_float (priv->sffile, d, len);
 }
 
+static int ad_get_bitrate_sndfile(void *sf) {
+	sndfile_audio_decoder *priv = (sndfile_audio_decoder*) sf;
+	if (!priv) return -1;
+	return parse_bit_depth(priv->sfinfo.format) * priv->sfinfo.channels * priv->sfinfo.samplerate;
+}
+
 static int ad_eval_sndfile(const char *f) { 
 	char *ext = strrchr(f, '.');
 	if (strstr (f, "://")) return 0;
@@ -136,19 +143,21 @@ static int ad_eval_sndfile(const char *f) {
 
 static const ad_plugin ad_sndfile = {
 #ifdef HAVE_SNDFILE
-  &ad_eval_sndfile,
+	&ad_eval_sndfile,
 	&ad_open_sndfile,
 	&ad_close_sndfile,
 	&ad_info_sndfile,
 	&ad_seek_sndfile,
-	&ad_read_sndfile
+	&ad_read_sndfile,
+	&ad_get_bitrate_sndfile
 #else
-  &ad_eval_null,
+	&ad_eval_null,
 	&ad_open_null,
 	&ad_close_null,
 	&ad_info_null,
 	&ad_seek_null,
-	&ad_read_null
+	&ad_read_null,
+	&ad_bitrate_null
 #endif
 };
 

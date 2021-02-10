@@ -35,6 +35,7 @@ int     ad_close_null(void *x) { UNUSED(x); return -1; }
 int     ad_info_null(void *x, struct adinfo *n) { UNUSED(x); UNUSED(n); return -1; }
 int64_t ad_seek_null(void *x, int64_t p) { UNUSED(x); UNUSED(p); return -1; }
 ssize_t ad_read_null(void *x, float*d, size_t s) { UNUSED(x); UNUSED(d); UNUSED(s); return -1;}
+int     ad_bitrate_null(void *x) { UNUSED(x); return -1;}
 
 typedef struct {
 	ad_plugin const *b; ///< decoder back-end
@@ -104,6 +105,12 @@ ssize_t ad_read(void *sf, float* out, size_t len){
 	adecoder *d = (adecoder*) sf;
 	if (!d) return -1;
 	return d->b->read(d->d, out, len);
+}
+
+int ad_get_bitrate(void *sf) {
+	adecoder *d = (adecoder*) sf;
+	if (!d) return -1;
+	return d->b->bitrate(d->d);
 }
 
 /*

@@ -49,6 +49,7 @@ typedef struct {
 	int     (*info)(void *, struct adinfo *);
 	int64_t (*seek)(void *, int64_t);
 	ssize_t (*read)(void *, float *, size_t);
+	int     (*bitrate)(void *);
 } ad_plugin;
 
 int     ad_eval_null(const char *);
@@ -57,9 +58,11 @@ int     ad_close_null(void *);
 int     ad_info_null(void *, struct adinfo *);
 int64_t ad_seek_null(void *, int64_t);
 ssize_t ad_read_null(void *, float*, size_t);
+int     ad_bitrate_null(void *);
 
 /* hardcoded backends */
 const ad_plugin * adp_get_sndfile();
+const ad_plugin * adp_get_dr_mp3();
 const ad_plugin * adp_get_minimp3();
 const ad_plugin * adp_get_ffmpeg();
 #endif

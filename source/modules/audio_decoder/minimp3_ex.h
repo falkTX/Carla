@@ -949,6 +949,7 @@ size_t mp3dec_ex_read(mp3dec_ex_t *dec, mp3d_sample_t *buf, size_t samples)
         }
         dec->offset += frame_info.frame_bytes;
     }
+    dec->info.bitrate_kbps = frame_info.bitrate_kbps;
     return samples_requested - samples;
 }
 

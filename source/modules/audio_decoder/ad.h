@@ -71,6 +71,13 @@ int64_t ad_seek  (void *sf, int64_t pos);
  */
 ssize_t ad_read  (void *sf, float* out, size_t len);
 
+/** get the current playing bit_rate
+ *
+ * @param sf decoder handle
+ * @return the bitrate in kbps or -1 on error.
+ */
+int ad_get_bitrate(void *sf);
+
 /** re-read the file information and meta-data.
  *
  * this is not neccesary in general \ref ad_open includes an inplicit call

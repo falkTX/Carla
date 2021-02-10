@@ -173,7 +173,7 @@ struct AudioFilePool {
         }
 
         uint64_t frameDiff;
-        const uint32_t numFramesNearEnd = numFrames*3/5;
+        const uint32_t numFramesNearEnd = numFrames*3/4;
 
         if (framePos < startFrame)
         {
@@ -229,6 +229,7 @@ public:
     AudioFileReader()
         : fEntireFileLoaded(false),
           fLoopingMode(true),
+          fCurrentBitRate(0),
           fNeedsFrame(0),
           fNeedsRead(false),
           fFilePtr(nullptr),
@@ -263,6 +264,7 @@ public:
     void cleanup()
     {
         fPool.destroy();
+        fCurrentBitRate = 0;
         fEntireFileLoaded = false;
 
         if (fFilePtr != nullptr)
@@ -298,6 +300,11 @@ public:
     bool isEntireFileLoaded() const noexcept
     {
         return fEntireFileLoaded;
+    }
+
+    int getCurrentBitRate() const noexcept
+    {
+        return fCurrentBitRate;
     }
 
     uint32_t getMaxFrame() const noexcept
@@ -378,7 +385,7 @@ public:
                 maxFrame = fileNumFrames;
             }
 
-            if (fileNumFrames <= maxPoolNumFrames || ! fFileNfo.can_seek)
+            if (fileNumFrames <= maxPoolNumFrames || fFileNfo.can_seek == 0)
             {
                 // entire file fits in a small pool, lets read it now
                 const uint32_t poolNumFrames = needsResample
@@ -514,21 +521,26 @@ public:
         return ret;
     }
 
-    void readFilePreview(const uint32_t previewDataSize, float* previewData)
+    void readFilePreview(uint32_t previewDataSize, float* previewData)
     {
         carla_zeroFloats(previewData, previewDataSize);
 
         const uint fileNumFrames = static_cast<uint>(fFileNfo.frames);
         const float fileNumFramesF = static_cast<float>(fileNumFrames);
         const float previewDataSizeF = static_cast<float>(previewDataSize);
+        const uint samplesPerRun = fFileNfo.channels;
+        const uint maxSampleToRead = fileNumFrames - samplesPerRun;
+
+        if (samplesPerRun == 2)
+            previewDataSize -= 1;
 
         for (uint i=0; i<previewDataSize; ++i)
         {
             const float posF = static_cast<float>(i)/previewDataSizeF * fileNumFramesF;
-            const uint pos = carla_fixedValue(0U, fileNumFrames-2U, static_cast<uint>(posF + 0.5f));
+            const uint pos = carla_fixedValue(0U, maxSampleToRead, static_cast<uint>(posF));
 
             ad_seek(fFilePtr, pos);
-            ad_read(fFilePtr, previewData + i, 2);
+            ad_read(fFilePtr, previewData + i, samplesPerRun);
         }
     }
 
@@ -549,6 +561,8 @@ public:
                                       static_cast<int>(rv),
                                       static_cast<int>(bufferSize),
                                       std::free(buffer));
+
+        fCurrentBitRate = ad_get_bitrate(fFilePtr);
 
         float* rbuffer;
 
@@ -625,8 +639,8 @@ public:
             return;
         }
 
+        const uint32_t maxFrame = fPool.maxFrame;
         uint64_t lastFrame = fNeedsFrame;
-        uint32_t maxFrame = fPool.maxFrame;
         int64_t readFrameCheck;
 
         if (lastFrame >= maxFrame)
@@ -707,6 +721,7 @@ public:
 #ifdef DEBUG_FILE_OPS
             carla_stdout("R: reading %li frames at frame %lu", rv, readFrameCheck);
 #endif
+            fCurrentBitRate = ad_get_bitrate(fFilePtr);
 
             // local copy
             const uint32_t poolNumFrames = fPool.numFrames;
@@ -791,6 +806,7 @@ public:
 private:
     bool fEntireFileLoaded;
     bool fLoopingMode;
+    int fCurrentBitRate;
     volatile uint64_t fNeedsFrame;
     volatile bool fNeedsRead;
 

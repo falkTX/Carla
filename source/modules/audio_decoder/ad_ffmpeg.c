@@ -356,14 +356,16 @@ static const ad_plugin ad_ffmpeg = {
   &ad_close_ffmpeg,
   &ad_info_ffmpeg,
   &ad_seek_ffmpeg,
-  &ad_read_ffmpeg
+  &ad_read_ffmpeg,
+  &ad_bitrate_null
 #else
   &ad_eval_null,
   &ad_open_null,
   &ad_close_null,
   &ad_info_null,
   &ad_seek_null,
-  &ad_read_null
+  &ad_read_null,
+  &ad_bitrate_null
 #endif
 };
 

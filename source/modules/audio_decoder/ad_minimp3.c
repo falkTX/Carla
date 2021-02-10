@@ -117,6 +117,12 @@ static ssize_t ad_read_minimp3(void *sf, float* d, size_t len)
 	return mp3dec_ex_read (&priv->dec_ex, d, len);
 }
 
+static int ad_get_bitrate_minimp3(void *sf) {
+	minimp3_audio_decoder *priv = (minimp3_audio_decoder*) sf;
+	if (!priv) return -1;
+	return priv->dec_ex.info.bitrate_kbps;
+}
+
 static int ad_eval_minimp3(const char *f)
 {
 	char *ext = strrchr(f, '.');
@@ -128,19 +134,21 @@ static int ad_eval_minimp3(const char *f)
 
 static const ad_plugin ad_minimp3 = {
 #if 1
-	.eval = &ad_eval_minimp3,
-	.open = &ad_open_minimp3,
-	.close = &ad_close_minimp3,
-	.info = &ad_info_minimp3,
-	.seek = &ad_seek_minimp3,
-	.read = &ad_read_minimp3
+	&ad_eval_minimp3,
+	&ad_open_minimp3,
+	&ad_close_minimp3,
+	&ad_info_minimp3,
+	&ad_seek_minimp3,
+	&ad_read_minimp3,
+	&ad_get_bitrate_minimp3
 #else
 	&ad_eval_null,
 	&ad_open_null,
 	&ad_close_null,
 	&ad_info_null,
 	&ad_seek_null,
-	&ad_read_null
+	&ad_read_null,
+	&ad_bitrate_null
 #endif
 };
 
