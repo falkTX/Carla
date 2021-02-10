@@ -54,8 +54,15 @@ static ad_plugin const * choose_backend(const char *fn) {
 	val=adp_get_sndfile()->eval(fn);
 	if (val>max) {max=val; b=adp_get_sndfile();}
 
+#if 0
+	// NOTE seek is broken for minimp3
 	val = adp_get_minimp3()->eval(fn);
 	if (val > max) {max=val; b=adp_get_minimp3();}
+#else
+	// NOTE dr_mp3 has memory corruption issues
+	val = adp_get_dr_mp3()->eval(fn);
+	if (val > max) {max=val; b=adp_get_dr_mp3();}
+#endif
 
 	val=adp_get_ffmpeg()->eval(fn);
 	if (val>max) {max=val; b=adp_get_ffmpeg();}
