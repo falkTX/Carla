@@ -44,8 +44,6 @@ typedef struct {
 
 /* samplecat api */
 
-void ad_init() { /* global init */ }
-
 static ad_plugin const * choose_backend(const char *fn) {
 	int max, val;
 	ad_plugin const *b=NULL;

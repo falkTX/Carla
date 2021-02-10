@@ -37,9 +37,6 @@ struct adinfo {
 	int     can_seek;
 };
 
-/* global init function - register codecs */
-void ad_init();
-
 /* --- public API --- */
 
 /** open an audio file

@@ -245,14 +245,6 @@ public:
           fResampler(),
           fReaderMutex()
     {
-        static bool adInitiated = false;
-
-        if (! adInitiated)
-        {
-            ad_init();
-            adInitiated = true;
-        }
-
         ad_clear_nfo(&fFileNfo);
     }
 
