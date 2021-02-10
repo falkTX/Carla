@@ -412,7 +412,7 @@ protected:
             if (modframe > fPool.startFrame)
                 fLastPoolFill = static_cast<float>(modframe - fPool.startFrame) / static_cast<float>(fPool.numFrames) * 100.0f;
             else
-                fLastPoolFill = static_cast<float>(fPool.startFrame - modframe) / static_cast<float>(fPool.numFrames) * 100.0f;
+                fLastPoolFill = 100.0f;
         }
 
 #ifndef __MOD_DEVICES__
