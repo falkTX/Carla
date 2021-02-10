@@ -34,6 +34,7 @@ struct adinfo {
 	int     bit_rate;
 	int     bit_depth;
 	char *  meta_data;
+	int     can_seek;
 };
 
 /* global init function - register codecs */

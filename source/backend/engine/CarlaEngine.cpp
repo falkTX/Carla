@@ -1199,6 +1199,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     // -------------------------------------------------------------------
 
     if (
+        extension == "mp3"  ||
 #ifdef HAVE_SNDFILE
         extension == "aif"  ||
         extension == "aifc" ||
@@ -1232,7 +1233,6 @@ bool CarlaEngine::loadFile(const char* const filename)
         extension == "amr" ||
         extension == "ape" ||
         extension == "mp2" ||
-        extension == "mp3" ||
         extension == "mpc" ||
         extension == "wma" ||
 # ifndef HAVE_SNDFILE

@@ -30,6 +30,8 @@ static const char* const audiofilesWildcard =
 # ifndef HAVE_SNDFILE
     "*.flac;*.oga;*.ogg;*.w64;*.wav;"
 # endif
+#else
+    "*.mp3;"
 #endif
 #if !defined(HAVE_SNDFILE) && !defined(HAVE_FFMPEG)
     ""

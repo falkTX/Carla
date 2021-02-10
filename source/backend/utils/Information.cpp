@@ -168,6 +168,9 @@ const char* const* carla_get_supported_file_extensions()
         // FFmpeg without sndfile
         "flac", "oga", "ogg", "w64", "wav",
 # endif
+#else
+        // minimp3
+        "mp3",
 #endif
 
         // MIDI files

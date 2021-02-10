@@ -16,6 +16,7 @@ BUILD_C_FLAGS += -Werror=deprecated-declarations
 
 OBJS = \
 	$(OBJDIR)/ad_ffmpeg.c.o \
+	$(OBJDIR)/ad_minimp3.c.o \
 	$(OBJDIR)/ad_plugin.c.o \
 	$(OBJDIR)/ad_soundfile.c.o
 
@@ -45,6 +46,11 @@ $(OBJDIR)/ad_ffmpeg.c.o: ad_ffmpeg.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CC) $< $(BUILD_C_FLAGS) $(FFMPEG_FLAGS) -c -o $@
+
+$(OBJDIR)/ad_minimp3.c.o: ad_minimp3.c
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
 $(OBJDIR)/ad_plugin.c.o: ad_plugin.c
 	-@mkdir -p $(OBJDIR)

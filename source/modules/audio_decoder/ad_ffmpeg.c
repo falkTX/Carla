@@ -66,6 +66,7 @@ static int ad_info_ffmpeg(void *sf, struct adinfo *nfo) {
     nfo->bit_rate    = priv->formatContext->bit_rate;
     nfo->bit_depth   = 0;
     nfo->meta_data   = NULL;
+    nfo->can_seek    = 1;
 
 #ifdef WITH_GTK // XXX replace g_* functions with POSIX equiv
     AVDictionaryEntry *tag = NULL;

@@ -159,7 +159,7 @@ struct AudioFilePool {
                     const bool loopingMode,
                     const bool isOffline,
                     bool& needsRead,
-                    uint32_t& needsReadFrame)
+                    uint64_t& needsReadFrame)
     {
         CARLA_SAFE_ASSERT_RETURN(numFrames != 0, false);
         CARLA_SAFE_ASSERT_RETURN(maxFrame != 0, false);
@@ -378,7 +378,7 @@ public:
                 maxFrame = fileNumFrames;
             }
 
-            if (fileNumFrames <= maxPoolNumFrames)
+            if (fileNumFrames <= maxPoolNumFrames || ! fFileNfo.can_seek)
             {
                 // entire file fits in a small pool, lets read it now
                 const uint32_t poolNumFrames = needsResample
@@ -497,7 +497,7 @@ public:
         _tryPoolSwap(pool);
 
         bool needsRead = false;
-        uint32_t needsReadFrame;
+        uint64_t needsReadFrame;
         const bool ret = pool.tryPutData(out1, out2, framePos, frames, loopMode, isOffline, needsRead, needsReadFrame);
 
         if (needsRead)
@@ -773,7 +773,7 @@ public:
             } while (i < poolNumFrames);
 
             // lock, and put data asap
-            const CarlaMutexLocker cml(fPoolMutex);
+            const CarlaMutexLocker cmlp(fPoolMutex);
             const water::GenericScopedLock<water::SpinLock> gsl(fPool.mutex);
 
             std::memcpy(fPool.buffer[0], pbuffer0, sizeof(float)*poolNumFrames);
@@ -814,7 +814,8 @@ private:
     // NOTE it is assumed that `pool` mutex is locked
     void _tryPoolSwap(AudioFilePool& pool)
     {
-        uint32_t tmp_u;
+        uint32_t tmp_u32;
+        uint64_t tmp_u64;
         float* tmp_fp;
 
         const CarlaMutexTryLocker cmtl(fPoolMutex);
@@ -827,13 +828,13 @@ private:
         if (! fPoolReadyToSwap)
             return;
 
-        tmp_u = pool.startFrame;
+        tmp_u64 = pool.startFrame;
         pool.startFrame = fPool.startFrame;
-        fPool.startFrame = tmp_u;
+        fPool.startFrame = tmp_u64;
 
-        tmp_u = pool.numFrames;
+        tmp_u32 = pool.numFrames;
         pool.numFrames = fPool.numFrames;
-        fPool.numFrames = tmp_u;
+        fPool.numFrames = tmp_u32;
 
         tmp_fp = pool.buffer[0];
         pool.buffer[0] = fPool.buffer[0];
