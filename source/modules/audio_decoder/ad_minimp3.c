@@ -25,6 +25,12 @@
 
 #include "ad_plugin.h"
 
+// disable SIMD for macos-old builds
+#include "CarlaDefines.h"
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PROPER_CPP11_SUPPORT)
+# define MINIMP3_NO_SIMD
+#endif
+
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
 #include "minimp3_ex.h"
