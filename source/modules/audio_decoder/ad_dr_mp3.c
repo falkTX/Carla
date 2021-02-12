@@ -28,12 +28,16 @@
 
 #define DR_MP3_FLOAT_OUTPUT
 #define DR_MP3_IMPLEMENTATION
+#define DRMP3_DATA_CHUNK_SIZE DRMP3_MIN_DATA_CHUNK_SIZE*40
 #include "dr_mp3.h"
 
 /* internal abstraction */
 
+#define DR_MP3_MAX_SEEK_POINTS 500
+
 typedef struct {
 	drmp3 mp3;
+	drmp3_seek_point seekPoints[DR_MP3_MAX_SEEK_POINTS];
 } drmp3_audio_decoder;
 
 static int ad_info_dr_mp3(void *sf, struct adinfo *nfo) {
@@ -60,6 +64,9 @@ static void *ad_open_dr_mp3(const char *filename, struct adinfo *nfo) {
 		free (priv);
 		return NULL;
 	}
+	drmp3_uint32 seekPointCount = DR_MP3_MAX_SEEK_POINTS;
+	drmp3_calculate_seek_points (&priv->mp3, &seekPointCount, priv->seekPoints);
+	drmp3_bind_seek_table (&priv->mp3, seekPointCount, priv->seekPoints);
 	ad_info_dr_mp3 (priv, nfo);
 	return (void*) priv;
 }
