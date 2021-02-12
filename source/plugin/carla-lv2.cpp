@@ -320,6 +320,10 @@ public:
 
                     if (event->body.type != fURIs.midiEvent)
                         continue;
+
+                    // anything past this point assumes plugin with MIDI input
+                    CARLA_SAFE_ASSERT_CONTINUE(fPorts.numMidiIns > 0);
+
                     if (event->body.size > 4)
                         continue;
                     if (event->time.frames >= frames)
