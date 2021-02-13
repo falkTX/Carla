@@ -320,7 +320,14 @@ protected:
     bool tryRead(void* const buf, const uint32_t size) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
+        #if defined(__clang__)
+        # pragma clang diagnostic push
+        # pragma clang diagnostic ignored "-Wtautological-pointer-compare"
+        #endif
         CARLA_SAFE_ASSERT_RETURN(fBuffer->buf != nullptr, false);
+        #if defined(__clang__)
+        # pragma clang diagnostic pop
+        #endif
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(size > 0, false);
         CARLA_SAFE_ASSERT_RETURN(size < fBuffer->size, false);

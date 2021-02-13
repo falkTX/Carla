@@ -110,7 +110,7 @@ public:
 # ifdef CARLA_USE_CONFIGTHREADLOCALE
         : oldthreadloc(_configthreadlocale(_ENABLE_PER_THREAD_LOCALE)),
 # else
-        : oldthreadloc(-1),
+        :
 # endif
           oldloc(carla_strdup_safe(::setlocale(LC_NUMERIC, nullptr)))
     {
@@ -143,7 +143,9 @@ private:
 #ifdef CARLA_USE_NEWLOCALE
     locale_t newloc, oldloc;
 #else
+# ifdef CARLA_USE_CONFIGTHREADLOCALE
     const int oldthreadloc;
+# endif
     const char* const oldloc;
 #endif
 
