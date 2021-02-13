@@ -1776,6 +1776,10 @@ int main(int argc, char* argv[])
         break;
     }
 #endif
+#ifdef USING_JUCE
+    // some macOS plugins have not been yet ported to arm64, re-run them in x86_64 mode if discovery fails
+    bool retryJucePlugin = false;
+#endif
 
     switch (type)
     {
@@ -1795,27 +1799,7 @@ int main(int argc, char* argv[])
 
     case PLUGIN_VST2:
 #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST
-        if (do_juce_check(filename, "VST2", doInit))
-        {
-# if defined(CARLA_OS_MAC) && defined(__aarch64__)
-            DISCOVERY_OUT("warning", "No plugins found while scanning in arm64 mode, will try x86_64 now");
-
-            const pid_t pid = vfork();
-            if (pid >= 0)
-            {
-                if (pid == 0)
-                {
-                    execl("/usr/bin/arch", "/usr/bin/arch", "-arch", "x86_64", argv[0], argv[1], argv[2], nullptr);
-                    exit(1);
-                }
-                else
-                {
-                    int status;
-                    waitpid(pid, &status, 0);
-                }
-            }
-# endif
-        }
+        retryJucePlugin = do_juce_check(filename, "VST2", doInit);
 #else
         do_vst_check(handle, filename, doInit);
 #endif
@@ -1823,7 +1807,7 @@ int main(int argc, char* argv[])
 
     case PLUGIN_VST3:
 #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST3
-        do_juce_check(filename, "VST3", doInit);
+        retryJucePlugin = do_juce_check(filename, "VST3", doInit);
 #else
         DISCOVERY_OUT("error", "VST3 support not available");
 #endif
@@ -1847,6 +1831,28 @@ int main(int argc, char* argv[])
         break;
     }
 
+#if defined(CARLA_OS_MAC) && defined(USING_JUCE) && defined(__aarch64__)
+    if (retryJucePlugin)
+    {
+        DISCOVERY_OUT("warning", "No plugins found while scanning in arm64 mode, will try x86_64 now");
+
+        const pid_t pid = vfork();
+        if (pid >= 0)
+        {
+            if (pid == 0)
+            {
+                execl("/usr/bin/arch", "/usr/bin/arch", "-arch", "x86_64", argv[0], argv[1], argv[2], nullptr);
+                exit(1);
+            }
+            else
+            {
+                int status;
+                waitpid(pid, &status, 0);
+            }
+        }
+    }
+#endif
+
     if (openLib && handle != nullptr)
         lib_close(handle);
 
@@ -1862,6 +1868,11 @@ int main(int argc, char* argv[])
 #endif
 
     return 0;
+
+#ifdef USING_JUCE
+    // might be unused
+    (void)retryJucePlugin;
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------

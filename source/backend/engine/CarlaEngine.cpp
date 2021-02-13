@@ -608,7 +608,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 # endif
 # ifdef ADAPT_FOR_APPLE_SILLICON
         // see if this binary needs bridging
-        if (ptype == PLUGIN_VST2)
+        if (ptype == PLUGIN_VST2 || ptype == PLUGIN_VST3)
         {
             if (const char* const vst2Binary = findBinaryInBundle(filename))
             {
@@ -624,10 +624,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 #  endif
                 }
             }
-        }
-        else if (ptype == PLUGIN_VST3)
-        {
-            // TODO
         }
 # endif
     }
