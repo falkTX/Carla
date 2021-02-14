@@ -291,11 +291,11 @@ endif
 
 ifeq ($(MACOS),true)
 define GENERATE_LIBRARY_ZIP
-	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=${1} $(PYTHON) ./data/macos/bundle.py bdist_mac --bundle-name=${1}
+	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=${1} $(PYTHON) ./data/macos/bundle.py bdist_mac --bundle-name=${1} 1>/dev/null
 endef
 else ifeq ($(WIN32),true)
 define GENERATE_LIBRARY_ZIP
-	env PYTHONPATH="$(CURDIR)/source/frontend;$(QT5_PREFIX)/lib/python3/site-packages" SCRIPT_NAME=${1} $(PYTHON) ./data/windows/app-gui.py build_exe
+	env PYTHONPATH="$(CURDIR)/source/frontend;$(QT5_PREFIX)/lib/python3/site-packages" SCRIPT_NAME=${1} $(PYTHON) ./data/windows/app-gui.py build_exe 1>/dev/null
 endef
 endif
 
