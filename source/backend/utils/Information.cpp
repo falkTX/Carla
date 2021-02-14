@@ -85,12 +85,19 @@ const char* carla_get_complete_license_text()
 
         // misc libs
         "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
+        "<li>dr_mp3 for mp3 file support</li>"
+#ifdef HAVE_LIBLO
         "<li>liblo library for OSC support</li>"
+#endif
+#ifdef HAVE_SNDFILE
+        "<li>libsndfile library for base audio file support</li>"
+#endif
         "<li>rtmempool library by Nedko Arnaudov"
         "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
 #ifndef USING_JUCE
         "<li>RtAudio v" RTAUDIO_VERSION " and RtMidi v" RTMIDI_VERSION " for native Audio and MIDI support</li>"
 #endif
+        "<li>zita-resampler for audio file sample rate resampling</li>"
 
         // Internal plugins
         "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
@@ -169,7 +176,7 @@ const char* const* carla_get_supported_file_extensions()
         "flac", "oga", "ogg", "w64", "wav",
 # endif
 #else
-        // minimp3
+        // dr_mp3
         "mp3",
 #endif
 
