@@ -199,6 +199,7 @@ ifeq ($(HAVE_SNDFILE),true)
 else
 	@printf -- "Basic: $(ANS_NO) $(mS)libsndfile missing$(mE)\n"
 endif
+	@printf -- "MP3:   $(ANS_YES)\n"
 ifeq ($(HAVE_FFMPEG),true)
 	@printf -- "Extra: $(ANS_YES)\n"
 else

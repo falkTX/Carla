@@ -101,8 +101,17 @@
          <property name="text">
           <string>Extended licensing here</string>
          </property>
+         <property name="textFormat">
+          <enum>Qt::RichText</enum>
+         </property>
          <property name="wordWrap">
           <bool>true</bool>
+         </property>
+         <property name="margin">
+          <number>1</number>
+         </property>
+         <property name="indent">
+          <number>1</number>
          </property>
         </widget>
        </item>
