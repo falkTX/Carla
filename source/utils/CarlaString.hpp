@@ -766,16 +766,26 @@ public:
 
     CarlaString& operator+=(const char* const strBuf) noexcept
     {
-        if (strBuf == nullptr)
+        if (strBuf == nullptr || strBuf[0] == '\0')
             return *this;
 
-        const std::size_t newBufSize = fBufferLen + std::strlen(strBuf) + 1;
-        char              newBuf[newBufSize];
+        const std::size_t strBufLen = std::strlen(strBuf);
 
-        std::strcpy(newBuf, fBuffer);
-        std::strcat(newBuf, strBuf);
+        // for empty strings, we can just take the appended string as our entire data
+        if (isEmpty())
+        {
+            _dup(strBuf, strBufLen);
+            return *this;
+        }
 
-        _dup(newBuf, newBufSize-1);
+        // we have some data ourselves, reallocate to add the new stuff
+        char* const newBuf = (char*)realloc(fBuffer, fBufferLen + strBufLen + 1);
+        CARLA_SAFE_ASSERT_RETURN(newBuf != nullptr, *this);
+
+        std::memcpy(newBuf + fBufferLen, strBuf, strBufLen + 1);
+
+        fBuffer = newBuf;
+        fBufferLen += strBufLen;
 
         return *this;
     }
@@ -787,13 +797,18 @@ public:
 
     CarlaString operator+(const char* const strBuf) noexcept
     {
-        const std::size_t newBufSize = fBufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
-        char              newBuf[newBufSize];
+        if (strBuf == nullptr || strBuf[0] == '\0')
+            return *this;
+        if (isEmpty())
+            return CarlaString(strBuf);
 
-        std::strcpy(newBuf, fBuffer);
+        const std::size_t strBufLen = std::strlen(strBuf);
+        const std::size_t newBufSize = fBufferLen + strBufLen;
+        char* const newBuf = (char*)malloc(newBufSize + 1);
+        CARLA_SAFE_ASSERT_RETURN(newBuf != nullptr, CarlaString());
 
-        if (strBuf != nullptr)
-            std::strcat(newBuf, strBuf);
+        std::memcpy(newBuf, fBuffer, fBufferLen);
+        std::memcpy(newBuf + fBufferLen, strBuf, strBufLen + 1);
 
         return CarlaString(newBuf);
     }
@@ -880,12 +895,19 @@ private:
 static inline
 CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfter) noexcept
 {
-    const char* const strBufBefore = strBefore.buffer();
-    const std::size_t newBufSize   = strBefore.length() + ((strBufAfter != nullptr) ? std::strlen(strBufAfter) : 0) + 1;
-    char newBuf[newBufSize];
+    if (strBufAfter == nullptr || strBufAfter[0] == '\0')
+        return strBefore;
+    if (strBefore.isEmpty())
+        return CarlaString(strBufAfter);
 
-    std::strcpy(newBuf, strBufBefore);
-    std::strcat(newBuf, strBufAfter);
+    const std::size_t strBeforeLen = strBefore.length();
+    const std::size_t strBufAfterLen = std::strlen(strBufAfter);
+    const std::size_t newBufSize = strBeforeLen + strBufAfterLen;
+    char* const newBuf = (char*)malloc(newBufSize + 1);
+    CARLA_SAFE_ASSERT_RETURN(newBuf != nullptr, CarlaString());
+
+    std::memcpy(newBuf, strBefore.buffer(), strBeforeLen);
+    std::memcpy(newBuf + strBeforeLen, strBufAfter, strBufAfterLen + 1);
 
     return CarlaString(newBuf);
 }
@@ -893,12 +915,19 @@ CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfte
 static inline
 CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfter) noexcept
 {
-    const char* const strBufAfter = strAfter.buffer();
-    const std::size_t newBufSize  = ((strBufBefore != nullptr) ? std::strlen(strBufBefore) : 0) + strAfter.length() + 1;
-    char newBuf[newBufSize];
+    if (strAfter.isEmpty())
+        return CarlaString(strBufBefore);
+    if (strBufBefore == nullptr || strBufBefore[0] == '\0')
+        return strAfter;
 
-    std::strcpy(newBuf, strBufBefore);
-    std::strcat(newBuf, strBufAfter);
+    const std::size_t strBufBeforeLen = std::strlen(strBufBefore);
+    const std::size_t strAfterLen = strAfter.length();
+    const std::size_t newBufSize = strBufBeforeLen + strAfterLen;
+    char* const newBuf = (char*)malloc(newBufSize + 1);
+    CARLA_SAFE_ASSERT_RETURN(newBuf != nullptr, CarlaString());
+
+    std::memcpy(newBuf, strBufBefore, strBufBeforeLen);
+    std::memcpy(newBuf + strBufBeforeLen, strAfter.buffer(), strAfterLen + 1);
 
     return CarlaString(newBuf);
 }
