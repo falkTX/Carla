@@ -151,7 +151,9 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # entry point
 
-ifeq ($(MACOS),true)
+ifeq ($(MACOS_UNIVERSAL),true)
+TARGETS = Carla-$(VERSION)-macOS-universal.dmg
+else ifeq ($(MACOS),true)
 TARGETS = Carla-$(VERSION)-macOS.dmg
 else ifeq ($(WIN64),true)
 TARGETS = Carla-$(VERSION)-win64.zip
@@ -164,7 +166,7 @@ dist: $(TARGETS)
 # ---------------------------------------------------------------------------------------------------------------------
 # create final file
 
-Carla-$(VERSION)-macOS.dmg: build/Carla.app/Contents/Info.plist build/Carla-Control.app/Contents/Info.plist build/Carla-Plugins.pkg
+Carla-$(VERSION)-macOS.dmg Carla-$(VERSION)-macOS-universal.dmg: build/Carla.app/Contents/Info.plist build/Carla-Control.app/Contents/Info.plist build/Carla-Plugins.pkg
 	rm -rf build/macos-pkg $@
 	mkdir build/macos-pkg
 	cp -r build/Carla.app build/Carla-Control.app build/Carla-Plugins.pkg data/macos/README build/macos-pkg/
