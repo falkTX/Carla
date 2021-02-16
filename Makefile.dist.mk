@@ -73,6 +73,13 @@ else ifeq ($(WIN32),true)
 _CARLA_HOST_FILES += carla-bridge-lv2-windows$(APP_EXT)
 endif
 
+ifeq ($(MACOS),true)
+ifneq ($(MACOS_UNIVERSAL),true)
+_CARLA_HOST_FILES += carla-bridge-posix32
+_CARLA_HOST_FILES += carla-discovery-posix32
+endif
+endif
+
 ifeq ($(WIN64),true)
 _CARLA_HOST_FILES += carla-bridge-win32$(APP_EXT)
 _CARLA_HOST_FILES += carla-discovery-win32$(APP_EXT)
