@@ -615,6 +615,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                 const CarlaMagic magic;
                 if (const char* const output = magic.getFileDescription(vst2Binary))
                 {
+                    carla_stdout("VST binary magic output is '%s'", output);
 #  ifdef __aarch64__
                     if (std::strstr(output, "arm64") == nullptr && std::strstr(output, "x86_64") != nullptr)
                         needsArchBridge = "x86_64";
@@ -623,6 +624,14 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                         needsArchBridge = "arm64";
 #  endif
                 }
+                else
+                {
+                    carla_stdout("VST binary magic output is null");
+                }
+            }
+            else
+            {
+                carla_stdout("Search for binary in VST bundle failed");
             }
         }
 # endif
