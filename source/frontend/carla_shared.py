@@ -571,6 +571,8 @@ if os.path.isfile(CWD):
     if CWD.endswith("/lib"):
         CWD = CWD.rsplit("/lib",1)[0]
     CXFREEZE = True
+    if not WINDOWS:
+        os.environ['CARLA_MAGIC_FILE'] = os.path.join(CWD, "magic.mgc")
 else:
     CXFREEZE = False
 
