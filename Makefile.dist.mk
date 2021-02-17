@@ -69,6 +69,7 @@ _CARLA_HOST_FILES = \
 
 ifeq ($(MACOS),true)
 _CARLA_HOST_FILES += carla-bridge-lv2-cocoa$(APP_EXT)
+_CARLA_HOST_FILES += magic.mgc
 else ifeq ($(WIN32),true)
 _CARLA_HOST_FILES += carla-bridge-lv2-windows$(APP_EXT)
 endif
@@ -430,6 +431,10 @@ build/Carla$(_APP_BUNDLE_EXTRA_PATH)/Qt5% build/Carla-Control$(_APP_BUNDLE_EXTRA
 
 build/Carla$(_APP_BUNDLE_EXTRA_PATH)/resources/carla-plugin-patchbay$(APP_EXT): build/Carla$(_APP_BUNDLE_EXTRA_PATH)/resources/carla-plugin$(APP_EXT)
 	@ln -sfv carla-plugin$(APP_EXT) $@
+
+build/Carla$(_APP_BUNDLE_EXTRA_PATH)/magic.mgc build/carla.lv2/magic.mgc build/carla.vst$(_BUNDLE_EXTRA_PATH)/magic.mgc build/carlafx.vst$(_BUNDLE_EXTRA_PATH)/magic.mgc: $(QT5_PREFIX)/share/misc/magic.mgc
+	-@mkdir -p $(shell dirname $@)
+	@cp -v $< $@
 
 build/carla.lv2/resources/lib/library.zip build/carla.vst$(_BUNDLE_EXTRA_PATH)/resources/lib/library.zip build/carlafx.vst$(_BUNDLE_EXTRA_PATH)/resources/lib/library.zip: build/Carla$(_APP_BUNDLE_EXTRA_PATH)/resources/lib/library.zip
 	-@mkdir -p $(shell dirname $@)
