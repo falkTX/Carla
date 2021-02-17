@@ -141,7 +141,6 @@ _CARLA_VST2_PLUGIN_FILES = \
 	$(_QT5_DLLS:%=carla.vst/resources/%) \
 	$(_QT5_PLUGINS:%=carla.vst/resources/%) \
 	$(_THEME_FILES:%=carla.vst/resources/%)
-
 endif
 
 ifeq ($(MACOS),true)
@@ -173,12 +172,11 @@ dist: $(TARGETS)
 # ---------------------------------------------------------------------------------------------------------------------
 # create final file
 
-Carla-$(VERSION)-macOS.dmg Carla-$(VERSION)-macOS-universal.dmg: build/Carla.app/Contents/Info.plist build/Carla-Control.app/Contents/Info.plist build/Carla-Plugins.pkg
-	rm -rf build/macos-pkg $@
-	mkdir build/macos-pkg
-	cp -r build/Carla.app build/Carla-Control.app build/Carla-Plugins.pkg data/macos/README build/macos-pkg/
-	hdiutil create $@ -srcfolder build/macos-pkg -volname "Carla-$(VERSION)" -fs HFS+ -ov
-	rm -rf build/macos-pkg
+Carla-$(VERSION)-macOS.dmg: $(CARLA_APP_FILES) $(CARLA_CONTROL_APP_FILES) $(CARLA_PLUGIN_FILES)build/Carla.app/Contents/Info.plist build/Carla-Control.app/Contents/Info.plist build/Carla-Plugins.pkg
+	$(call GENERATE_FINAL_DMG,intel)
+
+Carla-$(VERSION)-macOS-universal.dmg: $(CARLA_APP_FILES) $(CARLA_CONTROL_APP_FILES) $(CARLA_PLUGIN_FILES)build/Carla.app/Contents/Info.plist build/Carla-Control.app/Contents/Info.plist build/Carla-Plugins.pkg
+	$(call GENERATE_FINAL_DMG,universal)
 
 Carla-$(VERSION)-win32.zip: $(CARLA_APP_FILES) $(CARLA_CONTROL_APP_FILES) $(CARLA_PLUGIN_FILES)
 	$(call GENERATE_FINAL_ZIP,win32)
@@ -187,6 +185,13 @@ Carla-$(VERSION)-win64.zip: $(CARLA_APP_FILES) $(CARLA_CONTROL_APP_FILES) $(CARL
 	$(call GENERATE_FINAL_ZIP,win64)
 
 ifneq ($(TESTING),true)
+define GENERATE_FINAL_DMG
+	rm -rf build/macos-pkg $@
+	mkdir build/macos-pkg
+	cp -r build/Carla.app build/Carla-Control.app build/Carla-Plugins.pkg data/macos/README build/macos-pkg/
+	hdiutil create $@ -srcfolder build/macos-pkg -volname "Carla-$(VERSION)-${1}" -fs HFS+ -ov
+	rm -rf build/macos-pkg
+endef
 define GENERATE_FINAL_ZIP
 	rm -rf build/Carla-$(VERSION)-${1} $@
 	mkdir build/Carla-$(VERSION)-${1}
@@ -198,23 +203,24 @@ define GENERATE_FINAL_ZIP
 	rm -rf build/Carla-$(VERSION)-${1}
 endef
 else
+define GENERATE_FINAL_DMG
+endef
 define GENERATE_FINAL_ZIP
 endef
 endif
 # ---------------------------------------------------------------------------------------------------------------------
 # macOS plist files
 
-build/Carla.app/Contents/Info.plist: $(CARLA_APP_FILES)
+build/Carla.app/Contents/Info.plist: build/Carla.app/Contents/MacOS/Carla
 	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla)
-# 	# extra step for standalone, symlink resources used in plugin UIs
-# 	mkdir -p build/Carla.app/Contents/MacOS/resources
-# 	(cd build/Carla.app/Contents/MacOS/resources && \
-# 		ln -sf ../Qt* ../lib ../iconengines ../imageformats ../platforms ../styles . && \
-# 		ln -sf carla-plugin carla-plugin-patchbay)
+	# extra step for standalone, symlink resources used in plugin UIs
+	mkdir -p build/Carla.app/Contents/MacOS/resources
+	(cd build/Carla.app/Contents/MacOS/resources && \
+		ln -sf ../Qt* ../lib ../iconengines ../imageformats ../platforms ../styles .)
 	# mark as done
 	touch $@
 
-build/Carla-Control.app/Contents/Info.plist: $(CARLA_CONTROL_APP_FILES)
+build/Carla-Control.app/Contents/Info.plist: build/Carla-Control.app/Contents/MacOS/Carla-Control
 	$(call CLEANUP_AND_PATCH_CXFREEZE_FILES,Carla-Control)
 	# mark as done
 	touch $@
@@ -300,6 +306,7 @@ endif
 
 ifeq ($(MACOS),true)
 define GENERATE_LIBRARY_ZIP
+	rm -rf build/exe.*
 	env PYTHONPATH=$(CURDIR)/source/frontend SCRIPT_NAME=${1} $(PYTHON) ./data/macos/bundle.py bdist_mac --bundle-name=${1} 1>/dev/null
 endef
 else ifeq ($(WIN32),true)
