@@ -2995,6 +2995,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             case PLUGIN_DSSI:
             case PLUGIN_LV2:
             case PLUGIN_VST2:
+            case PLUGIN_VST3:
                 btype = getBinaryTypeFromFile(stateSave.binary);
                 break;
             default:
