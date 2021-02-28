@@ -1120,13 +1120,13 @@ class PluginRefreshW(QDialog):
                 self.ui.ico_posix32.setVisible(False)
                 self.ui.label_posix32.setVisible(False)
 
-            if not MACOS:
-                self.ui.ch_au.setEnabled(False)
-                self.ui.ch_au.setVisible(False)
-
                 if not (LINUX or hasWin32 or hasWin64):
                     self.ui.ch_vst3.setEnabled(False)
                     self.ui.ch_vst3.setVisible(False)
+
+        if not MACOS:
+            self.ui.ch_au.setEnabled(False)
+            self.ui.ch_au.setVisible(False)
 
         if hasNative:
             self.ui.ico_native.setPixmap(self.fIconYes)
