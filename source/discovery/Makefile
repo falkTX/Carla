@@ -179,9 +179,6 @@ $(BINDIR)/$(MODULENAME)-native.exe: $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-native.exe"
 	@$(CXX) $< $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
-	@echo "Symlinking $(MODULENAME)-win$(winv).exe"
-	@rm -f $(BINDIR)/$(MODULENAME)-win$(winv).exe
-	@ln -s $(MODULENAME)-native.exe $(BINDIR)/$(MODULENAME)-win$(winv).exe
 
 $(BINDIR)/$(MODULENAME)-arm32: $(OBJS_arm32) $(LIBS_arm32)
 	-@mkdir -p $(BINDIR)

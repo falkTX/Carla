@@ -413,12 +413,11 @@ class SearchPluginsThread(QThread):
         self.fCheckSFZ    = False
 
         if WINDOWS:
-            toolNative = "carla-discovery-win64.exe" if kIs64bit else "carla-discovery-win32.exe"
+            toolNative = "carla-discovery-native.exe"
             self.fWineSettings = None
 
         else:
             toolNative = "carla-discovery-native"
-
             settings = QSafeSettings("falkTX", "Carla2")
             self.fWineSettings = {
                 'executable'    : settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, str),
