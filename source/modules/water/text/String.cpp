@@ -1786,6 +1786,8 @@ String String::formatted (const String pf, ... )
 
         if (num == 0 || bufferSize > 65536) // the upper limit is a sanity check to avoid situations where vsnprintf repeatedly
             break;                          // returns -1 because of an error rather than because it needs more space.
+
+        temp.realloc (bufferSize);
     }
 
     return String();
