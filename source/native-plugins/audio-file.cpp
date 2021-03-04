@@ -60,6 +60,9 @@ public:
 
     enum Parameters {
         kParameterLooping,
+        kParameterHostSync,
+        kParameterVolume,
+        kParameterEnabled,
         kParameterInfoChannels,
         kParameterInfoBitRate,
         kParameterInfoBitDepth,
@@ -73,13 +76,21 @@ public:
     AudioFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginWithMidiPrograms<FileAudio>(host, fPrograms, 2),
           fLoopMode(true),
+#ifdef __MOD_DEVICES__
+          fHostSync(false),
+#else
+          fHostSync(true),
+#endif
+          fEnabled(true),
           fDoProcess(false),
           fWasPlayingBefore(false),
           fNeedsFileRead(false),
           fEntireFileLoaded(false),
           fMaxFrame(0),
+          fInternalTransportFrame(0),
           fLastPosition(0.0f),
           fLastPoolFill(0.0f),
+          fVolume(1.0f),
           fPool(),
           fReader(),
           fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
@@ -115,6 +126,7 @@ protected:
         param.ranges.step      = 1.0f;
         param.ranges.stepSmall = 1.0f;
         param.ranges.stepLarge = 1.0f;
+        param.designation      = NATIVE_PARAMETER_DESIGNATION_NONE;
 
         switch (index)
         {
@@ -126,6 +138,41 @@ protected:
             param.ranges.def = 1.0f;
             param.ranges.min = 0.0f;
             param.ranges.max = 1.0f;
+            break;
+        case kParameterHostSync:
+            param.name  = "Host Sync";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_BOOLEAN);
+#ifdef __MOD_DEVICES__
+            param.ranges.def = 0.0f;
+#else
+            param.ranges.def = 1.0f;
+#endif
+            param.ranges.min = 0.0f;
+            param.ranges.max = 1.0f;
+            break;
+        case kParameterVolume:
+            param.name  = "Volume";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED);
+            param.ranges.def = 100.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 127.0f;
+            param.ranges.stepSmall = 0.5f;
+            param.ranges.stepLarge = 10.0f;
+            param.unit = "%";
+            break;
+        case kParameterEnabled:
+            param.name  = "Enabled";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_BOOLEAN|
+                                                            NATIVE_PARAMETER_USES_DESIGNATION);
+            param.ranges.def = 1.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 1.0f;
+            param.designation = NATIVE_PARAMETER_DESIGNATION_ENABLED;
             break;
         case kParameterInfoChannels:
             param.name  = "Num Channels";
@@ -206,10 +253,19 @@ protected:
 
     float getParameterValue(const uint32_t index) const override
     {
-        if (index == kParameterLooping)
+        switch (index)
+        {
+        case kParameterLooping:
             return fLoopMode ? 1.0f : 0.0f;
-        if (index == kParameterInfoBitRate)
+        case kParameterHostSync:
+            return fHostSync ? 1.0f : 0.0f;
+        case kParameterEnabled:
+            return fEnabled ? 1.0f : 0.0f;
+        case kParameterVolume:
+            return fVolume * 100.0f;
+        case kParameterInfoBitRate:
             return static_cast<float>(fReader.getCurrentBitRate());
+        }
 
         const ADInfo nfo = fReader.getFileInfo();
 
@@ -237,16 +293,40 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        if (index != kParameterLooping)
+        if (index == kParameterVolume)
+        {
+            fVolume = value / 100.0f;
             return;
+        }
 
-        bool b = (value > 0.5f);
+        const bool b = (value > 0.5f);
 
-        if (b == fLoopMode)
-            return;
-
-        fLoopMode = b;
-        fReader.setLoopingMode(b);
+        switch (index)
+        {
+        case kParameterLooping:
+            if (fLoopMode != b)
+            {
+                fLoopMode = b;
+                fReader.setLoopingMode(b);
+            }
+            break;
+        case kParameterHostSync:
+            if (fHostSync != b)
+            {
+                fInternalTransportFrame = 0;
+                fHostSync = b;
+            }
+            break;
+        case kParameterEnabled:
+            if (fEnabled != b)
+            {
+                fInternalTransportFrame = 0;
+                fEnabled = b;
+            }
+            break;
+        default:
+            break;
+        }
     }
 
     void setCustomData(const char* const key, const char* const value) override
@@ -264,12 +344,28 @@ protected:
     void process2(const float* const*, float** const outBuffer, const uint32_t frames,
                   const NativeMidiEvent*, uint32_t) override
     {
-        const NativeTimeInfo* const timePos(getTimeInfo());
         const bool loopMode = fLoopMode;
-
-        float* out1 = outBuffer[0];
-        float* out2 = outBuffer[1];
+        const float volume = fVolume;
+        float* const out1 = outBuffer[0];
+        float* const out2 = outBuffer[1];
         bool needsIdleRequest = false;
+        bool playing;
+        uint64_t frame;
+
+        if (fHostSync)
+        {
+            const NativeTimeInfo* const timePos = getTimeInfo();
+            playing = fEnabled && timePos->playing;
+            frame = timePos->frame;
+        }
+        else
+        {
+            playing = fEnabled;
+            frame = fInternalTransportFrame;
+
+            if (playing)
+                fInternalTransportFrame += frames;
+        }
 
         const water::GenericScopedLock<water::SpinLock> gsl(fPool.mutex);
 
@@ -283,11 +379,11 @@ protected:
         }
 
         // not playing
-        if (! timePos->playing)
+        if (! playing)
         {
             // carla_stderr("P: not playing");
-            if (timePos->frame == 0 && fWasPlayingBefore)
-                fReader.setNeedsRead(timePos->frame);
+            if (frame == 0 && fWasPlayingBefore)
+                fReader.setNeedsRead(frame);
 
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
@@ -300,13 +396,13 @@ protected:
         }
 
         // out of reach
-        if ((timePos->frame < fPool.startFrame || timePos->frame >= fMaxFrame) && !loopMode)
+        if ((frame < fPool.startFrame || frame >= fMaxFrame) && !loopMode)
         {
-            if (timePos->frame < fPool.startFrame)
+            if (frame < fPool.startFrame)
             {
                 needsIdleRequest = true;
                 fNeedsFileRead = true;
-                fReader.setNeedsRead(timePos->frame);
+                fReader.setNeedsRead(frame);
             }
 
             carla_zeroFloats(out1, frames);
@@ -329,19 +425,19 @@ protected:
             if (needsIdleRequest)
                 hostRequestIdle();
 
-            if (timePos->frame == 0)
+            if (frame == 0)
                 fLastPosition = 0.0f;
-            else if (timePos->frame >= fMaxFrame)
+            else if (frame >= fMaxFrame)
                 fLastPosition = 100.0f;
             else
-                fLastPosition = static_cast<float>(timePos->frame) / static_cast<float>(fMaxFrame) * 100.0f;
+                fLastPosition = static_cast<float>(frame) / static_cast<float>(fMaxFrame) * 100.0f;
             return;
         }
 
         if (fEntireFileLoaded)
         {
-            // NOTE: timePos->frame is always < fMaxFrame (or looping)
-            uint32_t targetStartFrame = static_cast<uint32_t>(loopMode ? timePos->frame % fMaxFrame : timePos->frame);
+            // NOTE: frame is always < fMaxFrame (or looping)
+            uint32_t targetStartFrame = static_cast<uint32_t>(loopMode ? frame % fMaxFrame : frame);
 
             for (uint32_t framesDone=0, framesToDo=frames, remainingFrames; framesDone < frames;)
             {
@@ -380,7 +476,7 @@ protected:
         {
             const bool offline = isOffline();
 
-            if (! fReader.tryPutData(fPool, out1, out2, timePos->frame, frames, loopMode, offline, needsIdleRequest))
+            if (! fReader.tryPutData(fPool, out1, out2, frame, frames, loopMode, offline, needsIdleRequest))
             {
                 carla_zeroFloats(out1, frames);
                 carla_zeroFloats(out2, frames);
@@ -395,7 +491,7 @@ protected:
                     needsIdleRequest = false;
                     fReader.readPoll();
 
-                    if (! fReader.tryPutData(fPool, out1, out2, timePos->frame, frames, loopMode, offline, needsIdleRequest))
+                    if (! fReader.tryPutData(fPool, out1, out2, frame, frames, loopMode, offline, needsIdleRequest))
                     {
                         carla_zeroFloats(out1, frames);
                         carla_zeroFloats(out2, frames);
@@ -406,13 +502,19 @@ protected:
                 }
             }
 
-            const uint32_t modframe = static_cast<uint32_t>(timePos->frame % fMaxFrame);
+            const uint32_t modframe = static_cast<uint32_t>(frame % fMaxFrame);
             fLastPosition = static_cast<float>(modframe) / static_cast<float>(fMaxFrame) * 100.0f;
 
             if (modframe > fPool.startFrame)
                 fLastPoolFill = static_cast<float>(modframe - fPool.startFrame) / static_cast<float>(fPool.numFrames) * 100.0f;
             else
                 fLastPoolFill = 100.0f;
+        }
+
+        if (carla_isNotZero(volume-1.0f))
+        {
+            carla_multiply(out1, volume, frames);
+            carla_multiply(out2, volume, frames);
         }
 
 #ifndef __MOD_DEVICES__
@@ -593,14 +695,18 @@ protected:
 
 private:
     bool fLoopMode;
+    bool fHostSync;
+    bool fEnabled;
     bool fDoProcess;
     bool fWasPlayingBefore;
     volatile bool fNeedsFileRead;
 
     bool fEntireFileLoaded;
     uint32_t fMaxFrame;
+    uint32_t fInternalTransportFrame;
     float fLastPosition;
     float fLastPoolFill;
+    float fVolume;
 
     AudioFilePool   fPool;
     AudioFileReader fReader;
@@ -651,6 +757,7 @@ private:
 
         fDoProcess = false;
         fLastPoolFill = 0.0f;
+        fInternalTransportFrame = 0;
         fPool.destroy();
         fReader.destroy();
 

@@ -82,6 +82,11 @@ typedef enum {
 } NativePluginSupports;
 
 typedef enum {
+    NATIVE_PARAMETER_DESIGNATION_NONE = 0,
+    NATIVE_PARAMETER_DESIGNATION_ENABLED
+} NativeParameterDesignations;
+
+typedef enum {
     NATIVE_PARAMETER_IS_OUTPUT        = 1 << 0,
     NATIVE_PARAMETER_IS_ENABLED       = 1 << 1,
     NATIVE_PARAMETER_IS_AUTOMABLE     = 1 << 2,
@@ -89,7 +94,8 @@ typedef enum {
     NATIVE_PARAMETER_IS_INTEGER       = 1 << 4,
     NATIVE_PARAMETER_IS_LOGARITHMIC   = 1 << 5,
     NATIVE_PARAMETER_USES_SAMPLE_RATE = 1 << 6,
-    NATIVE_PARAMETER_USES_SCALEPOINTS = 1 << 7
+    NATIVE_PARAMETER_USES_SCALEPOINTS = 1 << 7,
+    NATIVE_PARAMETER_USES_DESIGNATION = 1 << 8
 } NativeParameterHints;
 
 typedef enum {
@@ -153,6 +159,8 @@ typedef struct {
 
     const char* comment;
     const char* groupName;
+
+    uint designation;
 } NativeParameter;
 
 typedef struct {
