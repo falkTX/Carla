@@ -31,3 +31,8 @@
     mod:fileTypes "midisong" ;
     rdfs:label "midi file" ;
     rdfs:range atom:Path .
+
+<http://kxstudio.sf.net/carla/preview>
+    a lv2:Parameter ;
+    rdfs:label "preview" ;
+    rdfs:range atom:Vector .
