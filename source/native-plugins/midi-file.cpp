@@ -230,7 +230,7 @@ protected:
                 fInternalTransportFrame += frames;
         }
 
-        if (fRepeatMode && maxFrame != 0 && frame > maxFrame)
+        if (fRepeatMode && maxFrame != 0 && frame >= maxFrame)
             frame %= maxFrame;
 
         if (fWasPlayingBefore != playing || frame < fLastFrame)
