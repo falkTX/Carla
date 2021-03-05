@@ -394,6 +394,8 @@ private:
 
         fFileLength = midiFile.getLastTimestamp();
         fNeedsAllNotesOff = true;
+        fInternalTransportFrame = 0;
+        fLastFrame = 0;
         fMaxFrame = static_cast<uint32_t>(fFileLength * sampleRate + 0.5);
     }
 
