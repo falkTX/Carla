@@ -344,10 +344,22 @@ protected:
     void process2(const float* const*, float** const outBuffer, const uint32_t frames,
                   const NativeMidiEvent*, uint32_t) override
     {
-        const bool loopMode = fLoopMode;
-        const float volume = fVolume;
         float* const out1 = outBuffer[0];
         float* const out2 = outBuffer[1];
+
+        const water::GenericScopedLock<water::SpinLock> gsl(fPool.mutex);
+
+        if (! fDoProcess)
+        {
+            // carla_stderr("P: no process");
+            carla_zeroFloats(out1, frames);
+            carla_zeroFloats(out2, frames);
+            fLastPosition = 0.0f;
+            return;
+        }
+
+        const bool loopMode = fLoopMode;
+        const float volume = fVolume;
         bool needsIdleRequest = false;
         bool playing;
         uint64_t frame;
@@ -365,17 +377,6 @@ protected:
 
             if (playing)
                 fInternalTransportFrame += frames;
-        }
-
-        const water::GenericScopedLock<water::SpinLock> gsl(fPool.mutex);
-
-        if (! fDoProcess)
-        {
-            // carla_stderr("P: no process");
-            carla_zeroFloats(out1, frames);
-            carla_zeroFloats(out2, frames);
-            fLastPosition = 0.0f;
-            return;
         }
 
         // not playing
