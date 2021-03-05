@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -28,17 +28,31 @@ class MidiFilePlugin : public NativePluginWithMidiPrograms<FileMIDI>,
 {
 public:
     enum Parameters {
-        // NOTE WIP
+        kParameterRepeating,
+        kParameterHostSync,
+        kParameterEnabled,
         kParameterInfoLength,
+        kParameterInfoPosition,
         kParameterCount
     };
 
     MidiFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginWithMidiPrograms<FileMIDI>(host, fPrograms, 0),
-          fMidiOut(this),
-          fFileLength(0.0),
+          fRepeatMode(false),
+#ifdef __MOD_DEVICES__
+          fHostSync(false),
+#else
+          fHostSync(true),
+#endif
+          fEnabled(true),
           fNeedsAllNotesOff(false),
           fWasPlayingBefore(false),
+          fLastPosition(0.0f),
+          fMidiOut(this),
+          fFileLength(0.0),
+          fInternalTransportFrame(0),
+          fMaxFrame(0),
+          fLastFrame(0),
           fPrograms(hostGetFilePath("midi"), "*.mid;*.midi")
     {
     }
@@ -62,9 +76,43 @@ protected:
         param.ranges.step      = 1.0f;
         param.ranges.stepSmall = 1.0f;
         param.ranges.stepLarge = 1.0f;
+        param.designation      = NATIVE_PARAMETER_DESIGNATION_NONE;
 
         switch (index)
         {
+        case kParameterRepeating:
+            param.name  = "Repeat Mode";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_BOOLEAN);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 1.0f;
+            break;
+        case kParameterHostSync:
+            param.name  = "Host Sync";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_BOOLEAN);
+#ifdef __MOD_DEVICES__
+            param.ranges.def = 0.0f;
+#else
+            param.ranges.def = 1.0f;
+#endif
+            param.ranges.min = 0.0f;
+            param.ranges.max = 1.0f;
+            break;
+        case kParameterEnabled:
+            param.name  = "Enabled";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_BOOLEAN|
+                                                            NATIVE_PARAMETER_USES_DESIGNATION);
+            param.ranges.def = 1.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 1.0f;
+            param.designation = NATIVE_PARAMETER_DESIGNATION_ENABLED;
+            break;
         case kParameterInfoLength:
             param.name  = "Length";
             param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
@@ -74,6 +122,16 @@ protected:
             param.ranges.min = 0.0f;
             param.ranges.max = (float)INT64_MAX;
             param.unit = "s";
+            break;
+        case kParameterInfoPosition:
+            param.name  = "Position";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 100.0f;
+            param.unit = "%";
             break;
         default:
             return nullptr;
@@ -86,8 +144,16 @@ protected:
     {
         switch (index)
         {
+        case kParameterRepeating:
+            return fRepeatMode ? 1.0f : 0.0f;
+        case kParameterHostSync:
+            return fHostSync ? 1.0f : 0.0f;
+        case kParameterEnabled:
+            return fEnabled ? 1.0f : 0.0f;
         case kParameterInfoLength:
             return static_cast<float>(fFileLength);
+        case kParameterInfoPosition:
+            return fLastPosition;
         default:
             return 0.0f;
         }
@@ -95,6 +161,38 @@ protected:
 
     // -------------------------------------------------------------------
     // Plugin state calls
+
+    void setParameterValue(const uint32_t index, const float value) override
+    {
+        const bool b = (value > 0.5f);
+
+        switch (index)
+        {
+        case kParameterRepeating:
+            if (fRepeatMode != b)
+            {
+                fRepeatMode = b;
+                fNeedsAllNotesOff = true;
+            }
+            break;
+        case kParameterHostSync:
+            if (fHostSync != b)
+            {
+                fInternalTransportFrame = 0;
+                fHostSync = b;
+            }
+            break;
+        case kParameterEnabled:
+            if (fEnabled != b)
+            {
+                fInternalTransportFrame = 0;
+                fEnabled = b;
+            }
+            break;
+        default:
+            break;
+        }
+    }
 
     void setCustomData(const char* const key, const char* const value) override
     {
@@ -113,15 +211,32 @@ protected:
 
     void process2(const float* const*, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
-        const NativeTimeInfo* const timePos(getTimeInfo());
+        const uint32_t maxFrame = fMaxFrame;
+        bool playing;
+        uint64_t frame;
 
-        if (timePos == nullptr)
-            return;
+        if (fHostSync)
+        {
+            const NativeTimeInfo* const timePos = getTimeInfo();
+            playing = fEnabled && timePos->playing;
+            frame = timePos->frame;
+        }
+        else
+        {
+            playing = fEnabled;
+            frame = fInternalTransportFrame;
 
-        if (fWasPlayingBefore != timePos->playing)
+            if (playing)
+                fInternalTransportFrame += frames;
+        }
+
+        if (fRepeatMode && maxFrame != 0 && frame > maxFrame)
+            frame %= maxFrame;
+
+        if (fWasPlayingBefore != playing || frame < fLastFrame)
         {
             fNeedsAllNotesOff = true;
-            fWasPlayingBefore = timePos->playing;
+            fWasPlayingBefore = playing;
         }
 
         if (fNeedsAllNotesOff)
@@ -146,8 +261,15 @@ protected:
         }
 
         if (fWasPlayingBefore)
-            if (! fMidiOut.play(timePos->frame, frames))
+            if (! fMidiOut.play(frame, frames))
                 fNeedsAllNotesOff = true;
+
+        fLastFrame = frame;
+
+        if (frame < maxFrame)
+            fLastPosition = static_cast<float>(frame) / static_cast<float>(maxFrame) * 100.0f;
+        else
+            fLastPosition = 100.0f;
     }
 
     // -------------------------------------------------------------------
@@ -203,15 +325,26 @@ protected:
     // -------------------------------------------------------------------
 
 private:
-    MidiPattern fMidiOut;
-    double fFileLength;
+    bool fRepeatMode;
+    bool fHostSync;
+    bool fEnabled;
     bool fNeedsAllNotesOff;
     bool fWasPlayingBefore;
+    float fLastPosition;
+    MidiPattern fMidiOut;
+    double fFileLength;
+    uint32_t fInternalTransportFrame;
+    uint32_t fMaxFrame;
+    uint64_t fLastFrame;
     NativeMidiPrograms fPrograms;
 
     void _loadMidiFile(const char* const filename)
     {
         fMidiOut.clear();
+        fInternalTransportFrame = 0;
+        fMaxFrame = 0;
+        fLastFrame = 0;
+        fLastPosition = 0.0f;
 
         using namespace water;
 
@@ -261,6 +394,7 @@ private:
 
         fFileLength = midiFile.getLastTimestamp();
         fNeedsAllNotesOff = true;
+        fMaxFrame = static_cast<uint32_t>(fFileLength * sampleRate + 0.5);
     }
 
     PluginClassEND(MidiFilePlugin)

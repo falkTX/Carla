@@ -263,6 +263,10 @@ protected:
             return fEnabled ? 1.0f : 0.0f;
         case kParameterVolume:
             return fVolume * 100.0f;
+        case kParameterInfoPosition:
+            return fLastPosition;
+        case kParameterInfoPoolFill:
+            return fLastPoolFill;
         case kParameterInfoBitRate:
             return static_cast<float>(fReader.getCurrentBitRate());
         }
@@ -279,10 +283,6 @@ protected:
             return static_cast<float>(nfo.sample_rate);
         case kParameterInfoLength:
             return static_cast<float>(nfo.length)/1000.0f;
-        case kParameterInfoPosition:
-            return fLastPosition;
-        case kParameterInfoPoolFill:
-            return fLastPoolFill;
         default:
             return 0.0f;
         }
