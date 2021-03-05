@@ -59,12 +59,66 @@
         lv2:portProperty lv2:toggled, <http://lv2plug.in/ns/ext/port-props#notOnGUI> ;
     ] ;
 
+    lv2:port [
+        a lv2:InputPort, lv2:ControlPort ;
+        lv2:index 3 ;
+        lv2:symbol "repeat_mode" ;
+        lv2:name "Repeat Mode" ;
+        lv2:default 0.000000 ;
+        lv2:minimum 0.000000 ;
+        lv2:maximum 1.000000 ;
+        lv2:portProperty lv2:toggled ;
+    ] , [
+        a lv2:InputPort, lv2:ControlPort ;
+        lv2:index 4 ;
+        lv2:symbol "host_sync" ;
+        lv2:name "Host Sync" ;
+        lv2:default 1.000000 ;
+        lv2:minimum 0.000000 ;
+        lv2:maximum 1.000000 ;
+        lv2:portProperty lv2:toggled ;
+    ] , [
+        a lv2:InputPort, lv2:ControlPort ;
+        lv2:index 5 ;
+        lv2:symbol "enabled" ;
+        lv2:name "Enabled" ;
+        lv2:default 1.000000 ;
+        lv2:minimum 0.000000 ;
+        lv2:maximum 1.000000 ;
+        lv2:portProperty lv2:toggled ;
+    ] , [
+        a lv2:OutputPort, lv2:ControlPort ;
+        lv2:index 6 ;
+        lv2:symbol "length" ;
+        lv2:name "Length" ;
+        lv2:minimum 0.000000 ;
+        lv2:maximum 9223372036854775808.000000 ;
+        unit:unit [
+            a unit:Unit ;
+            rdfs:label  "s" ;
+            unit:symbol "s" ;
+            unit:render "%f s" ;
+        ] ;
+    ] , [
+        a lv2:OutputPort, lv2:ControlPort ;
+        lv2:index 7 ;
+        lv2:symbol "position" ;
+        lv2:name "Position" ;
+        lv2:minimum 0.000000 ;
+        lv2:maximum 100.000000 ;
+        unit:unit [
+            a unit:Unit ;
+            rdfs:label  "%" ;
+            unit:symbol "%" ;
+            unit:render "%f %" ;
+        ] ;
+    ] ;
+
     doap:license <http://opensource.org/licenses/GPL-2.0> ;
     doap:name "MIDI File" ;
     doap:developer [ foaf:name "falkTX" ] ;
     doap:maintainer [ foaf:name "falkTX" ] ;
 
     lv2:microVersion 22 ;
-    lv2:minorVersion 146 ;
+    lv2:minorVersion 149 ;
     lv2:symbol "midifile" .
-
