@@ -713,7 +713,7 @@ private:
     AudioFileReader fReader;
 
     NativeMidiPrograms fPrograms;
-    float fPreviewData[300];
+    float fPreviewData[108];
 
 #ifndef __MOD_DEVICES__
     struct InlineDisplay : NativeInlineDisplayImageSurfaceCompat {

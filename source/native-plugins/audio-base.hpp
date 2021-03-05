@@ -394,7 +394,7 @@ public:
                 {
                     const float stepF = static_cast<float>(i)/previewDataSizeF * fileNumFramesF;
                     const uint step = carla_fixedValue(0U, fileNumFrames-1U, static_cast<uint>(stepF + 0.5f));
-                    previewData[i] = fPool.buffer[0][step];
+                    previewData[i] = std::max(std::fabs(fPool.buffer[0][step]), std::fabs(fPool.buffer[1][step]));
                 }
             }
             else
@@ -522,6 +522,8 @@ public:
         const float previewDataSizeF = static_cast<float>(previewDataSize);
         const uint samplesPerRun = fFileNfo.channels;
         const uint maxSampleToRead = fileNumFrames - samplesPerRun;
+        CARLA_SAFE_ASSERT_INT_RETURN(samplesPerRun == 1 || samplesPerRun == 2, samplesPerRun,);
+        float tmp[2] = { 0.0f, 0.0f };
 
         if (samplesPerRun == 2)
             previewDataSize -= 1;
@@ -532,7 +534,8 @@ public:
             const uint pos = carla_fixedValue(0U, maxSampleToRead, static_cast<uint>(posF));
 
             ad_seek(fFilePtr, pos);
-            ad_read(fFilePtr, previewData + i, samplesPerRun);
+            ad_read(fFilePtr, tmp, samplesPerRun);
+            previewData[i] = std::max(std::fabs(tmp[0]), std::fabs(tmp[1]));
         }
     }
 
