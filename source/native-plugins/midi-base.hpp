@@ -473,6 +473,15 @@ private:
             return;
         }
 
+        if (const RawMidiEvent* const lastEvent = fData.getLast(nullptr))
+        {
+            if (event->time >= lastEvent->time)
+            {
+                fData.append(event);
+                return;
+            }
+        }
+
         for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin2(); it.valid(); it.next())
         {
             const RawMidiEvent* const oldEvent(it.getValue(nullptr));

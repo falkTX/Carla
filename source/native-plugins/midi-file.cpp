@@ -31,6 +31,7 @@ public:
         kParameterRepeating,
         kParameterHostSync,
         kParameterEnabled,
+        kParameterInfoNumTracks,
         kParameterInfoLength,
         kParameterInfoPosition,
         kParameterCount
@@ -49,7 +50,8 @@ public:
           fWasPlayingBefore(false),
           fLastPosition(0.0f),
           fMidiOut(this),
-          fFileLength(0.0),
+          fFileLength(0.0f),
+          fNumTracks(0.0f),
           fInternalTransportFrame(0),
           fMaxFrame(0),
           fLastFrame(0),
@@ -113,6 +115,16 @@ protected:
             param.ranges.max = 1.0f;
             param.designation = NATIVE_PARAMETER_DESIGNATION_ENABLED;
             break;
+        case kParameterInfoNumTracks:
+            param.name  = "Num Tracks";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_INTEGER|
+                                                            NATIVE_PARAMETER_IS_OUTPUT);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 256.0f;
+            break;
         case kParameterInfoLength:
             param.name  = "Length";
             param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
@@ -150,8 +162,10 @@ protected:
             return fHostSync ? 1.0f : 0.0f;
         case kParameterEnabled:
             return fEnabled ? 1.0f : 0.0f;
+        case kParameterInfoNumTracks:
+            return fNumTracks;
         case kParameterInfoLength:
-            return static_cast<float>(fFileLength);
+            return fFileLength;
         case kParameterInfoPosition:
             return fLastPosition;
         default:
@@ -332,7 +346,8 @@ private:
     bool fWasPlayingBefore;
     float fLastPosition;
     MidiPattern fMidiOut;
-    double fFileLength;
+    float fFileLength;
+    float fNumTracks;
     uint32_t fInternalTransportFrame;
     uint32_t fMaxFrame;
     uint64_t fLastFrame;
@@ -342,6 +357,8 @@ private:
     {
         fMidiOut.clear();
         fInternalTransportFrame = 0;
+        fFileLength = 0.0f;
+        fNumTracks = 0.0f;
         fMaxFrame = 0;
         fLastFrame = 0;
         fLastPosition = 0.0f;
@@ -363,8 +380,9 @@ private:
         midiFile.convertTimestampTicksToSeconds();
 
         const double sampleRate = getSampleRate();
+        const size_t numTracks = midiFile.getNumTracks();
 
-        for (size_t i=0, numTracks = midiFile.getNumTracks(); i<numTracks; ++i)
+        for (size_t i=0; i<numTracks; ++i)
         {
             const MidiMessageSequence* const track(midiFile.getTrack(i));
             CARLA_SAFE_ASSERT_CONTINUE(track != nullptr);
@@ -392,7 +410,8 @@ private:
             }
         }
 
-        fFileLength = midiFile.getLastTimestamp();
+        fFileLength = static_cast<float>(midiFile.getLastTimestamp());
+        fNumTracks = static_cast<float>(numTracks);
         fNeedsAllNotesOff = true;
         fInternalTransportFrame = 0;
         fLastFrame = 0;
