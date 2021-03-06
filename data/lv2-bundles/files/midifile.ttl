@@ -89,6 +89,14 @@
     ] , [
         a lv2:OutputPort, lv2:ControlPort ;
         lv2:index 6 ;
+        lv2:symbol "num_tracks" ;
+        lv2:name "Num Tracks" ;
+        lv2:minimum 0.000000 ;
+        lv2:maximum 256.000000 ;
+        lv2:portProperty lv2:integer ;
+    ] , [
+        a lv2:OutputPort, lv2:ControlPort ;
+        lv2:index 7 ;
         lv2:symbol "length" ;
         lv2:name "Length" ;
         lv2:minimum 0.000000 ;
@@ -101,7 +109,7 @@
         ] ;
     ] , [
         a lv2:OutputPort, lv2:ControlPort ;
-        lv2:index 7 ;
+        lv2:index 8 ;
         lv2:symbol "position" ;
         lv2:name "Position" ;
         lv2:minimum 0.000000 ;
