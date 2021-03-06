@@ -1510,6 +1510,7 @@ protected:
     // Rest of host<->plugin support
     struct URIDs {
         LV2_URID atomBlank;
+        LV2_URID atomBool;
         LV2_URID atomObject;
         LV2_URID atomDouble;
         LV2_URID atomFloat;
@@ -1542,6 +1543,7 @@ protected:
 
         URIDs()
             : atomBlank(0),
+              atomBool(0),
               atomObject(0),
               atomDouble(0),
               atomFloat(0),
@@ -1575,6 +1577,7 @@ protected:
         void map(const LV2_URID_Map* const uridMap)
         {
             atomBlank          = uridMap->map(uridMap->handle, LV2_ATOM__Blank);
+            atomBool           = uridMap->map(uridMap->handle, LV2_ATOM__Bool);
             atomObject         = uridMap->map(uridMap->handle, LV2_ATOM__Object);
             atomDouble         = uridMap->map(uridMap->handle, LV2_ATOM__Double);
             atomFloat          = uridMap->map(uridMap->handle, LV2_ATOM__Float);

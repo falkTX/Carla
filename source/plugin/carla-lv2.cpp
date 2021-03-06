@@ -398,6 +398,12 @@ public:
 
                     switch (ptype)
                     {
+                    case 'b':
+                        lv2_atom_forge_vector(&atomForge, sizeof(int32_t), fURIs.atomBool, psize, pbuffer);
+                        break;
+                    case 'i':
+                        lv2_atom_forge_vector(&atomForge, sizeof(int32_t), fURIs.atomInt, psize, pbuffer);
+                        break;
                     case 'f':
                         lv2_atom_forge_vector(&atomForge, sizeof(float), fURIs.atomFloat, psize, pbuffer);
                         break;
