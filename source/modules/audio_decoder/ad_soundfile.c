@@ -136,7 +136,9 @@ static int ad_eval_sndfile(const char *f) {
 	if (!strcasecmp(ext, ".sd2")) return 100;
 // libsndfile >= 1.0.18
 	if (!strcasecmp(ext, ".flac")) return 80;
+	if (!strcasecmp(ext, ".oga")) return 80;
 	if (!strcasecmp(ext, ".ogg")) return 80;
+	if (!strcasecmp(ext, ".opus")) return 80;
 	return 0;
 }
 #endif

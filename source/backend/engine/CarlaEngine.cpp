@@ -1218,6 +1218,7 @@ bool CarlaEngine::loadFile(const char* const filename)
         extension == "mat5" ||
         extension == "oga"  ||
         extension == "ogg"  ||
+        extension == "opus" ||
         extension == "paf"  ||
         extension == "pvf"  ||
         extension == "pvf5" ||
