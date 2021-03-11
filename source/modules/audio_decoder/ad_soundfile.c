@@ -48,7 +48,7 @@ static int parse_bit_depth(int format) {
 		case SF_FORMAT_DOUBLE: return 64; /* 64 bit float data */
 		default: break;
 	}
-	return 0;
+	return 16;
 }
 
 static int ad_info_sndfile(void *sf, struct adinfo *nfo) {
