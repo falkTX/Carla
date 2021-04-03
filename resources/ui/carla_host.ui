@@ -1531,6 +1531,9 @@
    <property name="text">
     <string>Show &amp;Side Panel</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>
    </property>
