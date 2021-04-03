@@ -1997,7 +1997,7 @@ protected:
             else
             {
                 carla_stdout("audioMasterAutomate called from unknown source");
-                setParameterValue(uindex, fixedValue, false, true, true);
+                CarlaPlugin::setParameterValue(uindex, fixedValue, false, true, true);
             }
             break;
         }
