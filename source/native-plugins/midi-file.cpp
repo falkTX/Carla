@@ -410,12 +410,14 @@ private:
             }
         }
 
-        fFileLength = static_cast<float>(midiFile.getLastTimestamp());
+        const double lastTimeStamp = midiFile.getLastTimestamp();
+
+        fFileLength = static_cast<float>(lastTimeStamp);
         fNumTracks = static_cast<float>(numTracks);
         fNeedsAllNotesOff = true;
         fInternalTransportFrame = 0;
         fLastFrame = 0;
-        fMaxFrame = static_cast<uint32_t>(fFileLength * sampleRate + 0.5);
+        fMaxFrame = static_cast<uint32_t>(lastTimeStamp * sampleRate + 0.5);
     }
 
     PluginClassEND(MidiFilePlugin)
