@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "lv2/midi.h"
 #include "lv2/presets.h"
 
 #include "lilv_internal.h"
@@ -78,6 +79,7 @@ lilv_world_new(void)
 	world->uris.lv2_requiredFeature = NEW_URI(LV2_CORE__requiredFeature);
 	world->uris.lv2_symbol          = NEW_URI(LV2_CORE__symbol);
 	world->uris.lv2_prototype       = NEW_URI(LV2_CORE__prototype);
+	world->uris.midi_Event          = NEW_URI(LV2_MIDI__MidiEvent);
 	world->uris.mod_builderVersion  = NEW_URI("http://moddevices.com/ns/mod#builderVersion");
 	world->uris.mod_releaseNumber   = NEW_URI("http://moddevices.com/ns/mod#releaseNumber");
 	world->uris.owl_Ontology        = NEW_URI(NS_OWL "Ontology");

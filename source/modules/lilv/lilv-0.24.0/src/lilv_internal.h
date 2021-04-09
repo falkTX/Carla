@@ -185,6 +185,7 @@ struct LilvWorldImpl {
 		SordNode* lv2_requiredFeature;
 		SordNode* lv2_symbol;
 		SordNode* lv2_prototype;
+		SordNode* midi_Event;
 		SordNode* mod_builderVersion;
 		SordNode* mod_releaseNumber;
 		SordNode* owl_Ontology;

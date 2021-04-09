@@ -20,6 +20,7 @@
 
 #include "CarlaMathUtils.hpp"
 #include "CarlaStringList.hpp"
+#include "CarlaMIDI.h"
 
 #ifndef nullptr
 # undef NULL
@@ -268,6 +269,7 @@ public:
     Lilv::Node rz_minSize;
 
     // Port Data Types
+    Lilv::Node midi_binding;
     Lilv::Node midi_event;
     Lilv::Node patch_message;
     Lilv::Node time_position;
@@ -403,6 +405,7 @@ public:
           rz_asLargeAs       (new_uri(LV2_RESIZE_PORT__asLargeAs)),
           rz_minSize         (new_uri(LV2_RESIZE_PORT__minimumSize)),
 
+          midi_binding       (new_uri(LV2_MIDI__binding)),
           midi_event         (new_uri(LV2_MIDI__MidiEvent)),
           patch_message      (new_uri(LV2_PATCH__Message)),
           time_position      (new_uri(LV2_TIME__Position)),
@@ -2134,37 +2137,53 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
             // --------------------------------------------------------------------------------------------------------
             // Set Port MIDI Map
+
+            if (LilvNode* const bindingNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.midi_binding.me))
             {
-                if (LilvNode* const midiMapNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.mm_defaultControl.me))
+                if (const char* const bindingAsString = lilv_node_as_string(bindingNode))
                 {
-                    if (lilv_node_is_blank(midiMapNode))
+                    if (std::strncmp(bindingAsString, "B0", 2) == 0 && std::strlen(bindingAsString) == 6)
                     {
-                        Lilv::Nodes midiMapTypeNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlType, nullptr));
-                        Lilv::Nodes midiMapNumberNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlNumber, nullptr));
+                        const char binding[3] = { bindingAsString[2], bindingAsString[3], '\0' };
+                        const long number = std::strtol(binding, nullptr, 16);
 
-                        if (midiMapTypeNodes.size() == 1 && midiMapNumberNodes.size() == 1)
+                        if (number >= 0 && number <= 0xff)
                         {
-                            if (const char* const midiMapType = midiMapTypeNodes.get_first().as_string())
-                            {
-                                /**/ if (std::strcmp(midiMapType, LV2_MIDI_Map__CC) == 0)
-                                    rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
-                                else if (std::strcmp(midiMapType, LV2_MIDI_Map__NRPN) == 0)
-                                    rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_NRPN;
-                                else
-                                    carla_stderr("lv2_rdf_new(\"%s\") - got unknown port Midi-Map type '%s'", uri, midiMapType);
-
-                                rdfPort->MidiMap.Number = static_cast<uint32_t>(midiMapNumberNodes.get_first().as_int());
-                            }
+                            rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
+                            rdfPort->MidiMap.Number = static_cast<uint32_t>(number);
                         }
-
-                        lilv_nodes_free(const_cast<LilvNodes*>(midiMapTypeNodes.me));
-                        lilv_nodes_free(const_cast<LilvNodes*>(midiMapNumberNodes.me));
                     }
-
-                    lilv_node_free(midiMapNode);
                 }
 
-                // TODO - also check using new official MIDI API too
+                lilv_node_free(bindingNode);
+            }
+            else if (LilvNode* const midiMapNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.mm_defaultControl.me))
+            {
+                if (lilv_node_is_blank(midiMapNode))
+                {
+                    Lilv::Nodes midiMapTypeNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlType, nullptr));
+                    Lilv::Nodes midiMapNumberNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlNumber, nullptr));
+
+                    if (midiMapTypeNodes.size() == 1 && midiMapNumberNodes.size() == 1)
+                    {
+                        if (const char* const midiMapType = midiMapTypeNodes.get_first().as_string())
+                        {
+                            /**/ if (std::strcmp(midiMapType, LV2_MIDI_Map__CC) == 0)
+                                rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
+                            else if (std::strcmp(midiMapType, LV2_MIDI_Map__NRPN) == 0)
+                                rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_NRPN;
+                            else
+                                carla_stderr("lv2_rdf_new(\"%s\") - got unknown port Midi-Map type '%s'", uri, midiMapType);
+
+                            rdfPort->MidiMap.Number = static_cast<uint32_t>(midiMapNumberNodes.get_first().as_int());
+                        }
+                    }
+
+                    lilv_nodes_free(const_cast<LilvNodes*>(midiMapTypeNodes.me));
+                    lilv_nodes_free(const_cast<LilvNodes*>(midiMapNumberNodes.me));
+                }
+
+                lilv_node_free(midiMapNode);
             }
 
             // --------------------------------------------------------------------------------------------------------
@@ -2450,6 +2469,30 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         portGroupNodes.append(groupNode);
                     else
                         lilv_node_free(groupNode);
+                }
+
+                // ----------------------------------------------------------------------------------------------------
+                // Set Port MIDI Map
+
+                if (LilvNode* const bindingNode = lilv_world_get(lv2World.me, patchWritableNode,
+                                                                 lv2World.midi_binding.me, nullptr))
+                {
+                    if (const char* const bindingAsString = lilv_node_as_string(bindingNode))
+                    {
+                        if (std::strncmp(bindingAsString, "B0", 2) == 0 && std::strlen(bindingAsString) == 6)
+                        {
+                            const char binding[3] = { bindingAsString[2], bindingAsString[3], '\0' };
+                            const long number = std::strtol(binding, nullptr, 16);
+
+                            if (number >= 0 && number <= 0xff)
+                            {
+                                rdfParam.MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
+                                rdfParam.MidiMap.Number = static_cast<uint32_t>(number);
+                            }
+                        }
+                    }
+
+                    lilv_node_free(bindingNode);
                 }
 
                 // ----------------------------------------------------------------------------------------------------

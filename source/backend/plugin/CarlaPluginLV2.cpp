@@ -3075,8 +3075,15 @@ public:
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                 pData->param.data[j].hints |= PARAMETER_IS_NOT_SAVED;
                 needsCtrlIn = true;
+
                 if (rdfParam.Flags & LV2_PARAMETER_FLAG_OUTPUT)
                     hasPatchParameterOutputs = true;
+
+                if (LV2_IS_PORT_MIDI_MAP_CC(rdfParam.MidiMap.Type))
+                {
+                    if (! MIDI_IS_CONTROL_BANK_SELECT(rdfParam.MidiMap.Number))
+                        pData->param.data[j].mappedControlIndex = static_cast<int16_t>(rdfParam.MidiMap.Number);
+                }
             }
             else if (rdfParam.Flags & LV2_PARAMETER_FLAG_OUTPUT)
             {
