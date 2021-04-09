@@ -3081,7 +3081,7 @@ public:
 
                 if (LV2_IS_PORT_MIDI_MAP_CC(rdfParam.MidiMap.Type))
                 {
-                    if (! MIDI_IS_CONTROL_BANK_SELECT(rdfParam.MidiMap.Number))
+                    if (rdfParam.MidiMap.Number < MAX_MIDI_CONTROL && ! MIDI_IS_CONTROL_BANK_SELECT(rdfParam.MidiMap.Number))
                         pData->param.data[j].mappedControlIndex = static_cast<int16_t>(rdfParam.MidiMap.Number);
                 }
             }
