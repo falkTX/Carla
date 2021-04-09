@@ -1373,12 +1373,6 @@ bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurren
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
-    MemoryOutputStream out;
-    saveProjectInternal(out);
-
-    const String jfilename = String(CharPointer_UTF8(filename));
-    File file(jfilename);
-
     if (setAsCurrentProject)
     {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -1401,6 +1395,12 @@ bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurren
         }
 #endif
     }
+
+    MemoryOutputStream out;
+    saveProjectInternal(out);
+
+    const String jfilename = String(CharPointer_UTF8(filename));
+    File file(jfilename);
 
     if (file.replaceWithData(out.getData(), out.getDataSize()))
         return true;
