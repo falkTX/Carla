@@ -133,7 +133,7 @@ lilv_node_new_from_node(LilvWorld* world, const SordNode* node)
 				type = LILV_VALUE_BLOB;
 			else if (sord_node_equals(datatype_uri,
 			                          world->uris.midi_Event))
-				type = LILV_VALUE_BLOB;
+				type = LILV_VALUE_STRING;
 			else
 				LILV_ERRORF("Unknown datatype `%s'\n",
 				            sord_node_get_string(datatype_uri));
