@@ -2008,8 +2008,10 @@ class PluginDatabaseW(QDialog):
 
         index = self.fLastTableIndex
 
+        isFav = bool(self._createFavoritePluginDict(plugin) in self.fFavoritePlugins)
         favItem = QTableWidgetItem()
-        favItem.setCheckState(Qt.Checked if self._createFavoritePluginDict(plugin) in self.fFavoritePlugins else Qt.Unchecked)
+        favItem.setCheckState(Qt.Checked if isFav else Qt.Unchecked)
+        favItem.setText(" " if isFav else "  ")
 
         pluginText = (plugin['name']+plugin['label']+plugin['maker']+plugin['filename']).lower()
         self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_FAVORITE, favItem)
