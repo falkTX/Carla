@@ -63,12 +63,10 @@ class PatchScene(QGraphicsScene):
     def __init__(self, parent, view):
         QGraphicsScene.__init__(self, parent)
 
-        self.m_ctrl_down = False
+        self.m_connection_cut_mode = False
         self.m_scale_area = False
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False
-        self.m_mid_button_down = False
-        self.m_pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
         self.m_scale_min = 0.1
         self.m_scale_max = 4.0
 
@@ -80,8 +78,8 @@ class PatchScene(QGraphicsScene):
         if not self.m_view:
             qFatal("PatchCanvas::PatchScene() - invalid view")
 
-        self.curCut = None
-        self.curZoomArea = None
+        self.m_cursor_cut = None
+        self.m_cursor_zoom = None
 
         self.selectionChanged.connect(self.slot_selectionChanged)
 
@@ -134,8 +132,8 @@ class PatchScene(QGraphicsScene):
         self.m_rubberband.setBrush(canvas.theme.rubberband_brush)
 
         cur_color = "black" if canvas.theme.canvas_bg.blackF() < 0.5 else "white"
-        self.curCut = QCursor(QPixmap(":/cursors/cut_"+cur_color+".png"), 1, 1)
-        self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area_"+cur_color+".png"), 8, 7)
+        self.m_cursor_cut = QCursor(QPixmap(":/cursors/cut_"+cur_color+".png"), 1, 1)
+        self.m_cursor_zoom = QCursor(QPixmap(":/cursors/zoom-area_"+cur_color+".png"), 8, 7)
 
     def zoom_fit(self):
         min_x = min_y = max_x = max_y = None
@@ -192,6 +190,21 @@ class PatchScene(QGraphicsScene):
         self.m_view.resetTransform()
         self.scaleChanged.emit(1.0)
 
+    def startConnectionCut(self):
+        if self.m_cursor_cut:
+            self.m_connection_cut_mode = True
+            self.m_view.viewport().setCursor(self.m_cursor_cut)
+
+    def stopConnectionCut(self):
+        if self.m_connection_cut_mode:
+            self.m_connection_cut_mode = False
+            self.m_view.viewport().unsetCursor()
+
+    def triggerRubberbandScale(self):
+        self.m_scale_area = True
+        if self.m_cursor_zoom:
+            self.m_view.viewport().setCursor(self.m_cursor_zoom)
+
     @pyqtSlot()
     def slot_selectionChanged(self):
         items_list = self.selectedItems()
@@ -222,27 +235,17 @@ class PatchScene(QGraphicsScene):
 
         self.pluginSelected.emit(plugin_list)
 
-    def triggerRubberbandScale(self):
-        self.m_scale_area = True
-        if self.curZoomArea:
-            self.m_view.viewport().setCursor(self.curZoomArea)
-
     def keyPressEvent(self, event):
         if not self.m_view:
             event.ignore()
             return
 
-        if event.key() == Qt.Key_Control:
-            self.m_ctrl_down = True
-            if self.m_mid_button_down:
-                self.startConnectionCut()
-
-        elif event.key() == Qt.Key_Home:
+        if event.key() == Qt.Key_Home:
             event.accept()
             self.zoom_fit()
             return
 
-        elif self.m_ctrl_down:
+        if event.modifiers() & Qt.ControlModifier:
             if event.key() == Qt.Key_Plus:
                 event.accept()
                 self.zoom_in()
@@ -261,37 +264,20 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.keyPressEvent(self, event)
 
     def keyReleaseEvent(self, event):
-        if event.key() == Qt.Key_Control:
-            self.m_ctrl_down = False
-
-            # Connection cut mode off
-            if self.m_mid_button_down:
-                self.m_view.viewport().unsetCursor()
-
+        self.stopConnectionCut()
         QGraphicsScene.keyReleaseEvent(self, event)
 
-    def startConnectionCut(self):
-        if self.curCut:
-            self.m_view.viewport().setCursor(self.curCut)
-
     def mousePressEvent(self, event):
+        ctrlDown = bool(event.modifiers() & Qt.ControlModifier)
+
         self.m_mouse_down_init = (
-            (event.button() == Qt.LeftButton) or ((event.button() == Qt.RightButton) and self.m_ctrl_down)
+            (event.button() == Qt.LeftButton) or ((event.button() == Qt.RightButton) and ctrlDown)
         )
         self.m_mouse_rubberband = False
 
-        # FIXME stop using self.m_ctrl_down
-        if event.modifiers() & Qt.ControlModifier:
-            self.m_ctrl_down = True
-
-        if event.button() == Qt.MidButton and self.m_ctrl_down:
-            self.m_mid_button_down = True
+        if event.button() == Qt.MidButton and ctrlDown:
             self.startConnectionCut()
-
-            pos = event.scenePos()
-            self.m_pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
-
-            items = self.items(self.m_pointer_border)
+            items = self.items(event.scenePos())
             for item in items:
                 if item and item.type() in (CanvasLineType, CanvasBezierLineType, CanvasPortType):
                     item.triggerDisconnect()
@@ -301,10 +287,13 @@ class PatchScene(QGraphicsScene):
     def mouseMoveEvent(self, event):
         if self.m_mouse_down_init:
             self.m_mouse_down_init = False
-            topmost = self.itemAt(event.scenePos(), self.m_view.transform())
-            self.m_mouse_rubberband = not (topmost and topmost.type() in (CanvasBoxType,
-                                                                          CanvasIconType,
-                                                                          CanvasPortType))
+            items = self.items(event.scenePos())
+            for item in items:
+                if item and item.type() in (CanvasBoxType, CanvasIconType, CanvasPortType):
+                    self.m_mouse_rubberband = False
+                    break
+            else:
+                self.m_mouse_rubberband = True
 
         if self.m_mouse_rubberband:
             event.accept()
@@ -327,7 +316,7 @@ class PatchScene(QGraphicsScene):
                                       abs(pos_y - rubberband_orig_point.y()))
             return
 
-        if self.m_mid_button_down and self.m_ctrl_down:
+        if self.m_connection_cut_mode:
             trail = QPolygonF([event.scenePos(), event.lastScenePos(), event.scenePos()])
             items = self.items(trail)
             for item in items:
@@ -378,13 +367,7 @@ class PatchScene(QGraphicsScene):
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False
 
-        if event.button() == Qt.MidButton:
-            self.m_mid_button_down = False
-
-            # Connection cut mode off
-            if self.m_ctrl_down:
-                self.m_view.viewport().unsetCursor()
-
+        self.stopConnectionCut()
         QGraphicsScene.mouseReleaseEvent(self, event)
 
     def zoom_wheel(self, delta):
@@ -403,7 +386,7 @@ class PatchScene(QGraphicsScene):
             event.ignore()
             return
 
-        if self.m_ctrl_down:
+        if event.modifiers() & Qt.ControlModifier:
             event.accept()
             self.zoom_wheel(event.delta())
             return
@@ -411,7 +394,7 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.wheelEvent(self, event)
 
     def contextMenuEvent(self, event):
-        if self.m_ctrl_down:
+        if event.modifiers() & Qt.ControlModifier:
             event.accept()
             self.triggerRubberbandScale()
             return
