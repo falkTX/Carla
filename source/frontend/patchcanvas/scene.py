@@ -190,6 +190,44 @@ class PatchScene(QGraphicsScene):
         self.m_view.resetTransform()
         self.scaleChanged.emit(1.0)
 
+    def handleMouseRelease(self):
+        rubberband_active = self.m_rubberband_selection
+
+        if self.m_scale_area and not self.m_rubberband_selection:
+            self.m_scale_area = False
+            self.m_view.viewport().unsetCursor()
+
+        if self.m_rubberband_selection:
+            if self.m_scale_area:
+                self.m_scale_area = False
+                self.m_view.viewport().unsetCursor()
+
+                rect = self.m_rubberband.rect()
+                self.m_view.fitInView(rect.x(), rect.y(), rect.width(), rect.height(), Qt.KeepAspectRatio)
+                self.fixScaleFactor()
+
+            else:
+                items_list = self.items()
+                for item in items_list:
+                    if item and item.isVisible() and item.type() == CanvasBoxType:
+                        item_rect = item.sceneBoundingRect()
+                        item_top_left = QPointF(item_rect.x(), item_rect.y())
+                        item_bottom_right = QPointF(item_rect.x() + item_rect.width(),
+                                                    item_rect.y() + item_rect.height())
+
+                        if self.m_rubberband.contains(item_top_left) and self.m_rubberband.contains(item_bottom_right):
+                            item.setSelected(True)
+
+            self.m_rubberband.hide()
+            self.m_rubberband.setRect(0, 0, 0, 0)
+            self.m_rubberband_selection = False
+
+        self.m_mouse_rubberband = False
+
+        self.stopConnectionCut()
+
+        return rubberband_active
+
     def startConnectionCut(self):
         if self.m_cursor_cut:
             self.m_connection_cut_mode = True
@@ -326,48 +364,19 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
-        if self.m_scale_area and not self.m_rubberband_selection:
-            self.m_scale_area = False
-            self.m_view.viewport().unsetCursor()
+        self.m_mouse_down_init = False
 
-        if self.m_rubberband_selection:
-            if self.m_scale_area:
-                self.m_scale_area = False
-                self.m_view.viewport().unsetCursor()
-
-                rect = self.m_rubberband.rect()
-                self.m_view.fitInView(rect.x(), rect.y(), rect.width(), rect.height(), Qt.KeepAspectRatio)
-                self.fixScaleFactor()
-
-            else:
-                items_list = self.items()
-                for item in items_list:
-                    if item and item.isVisible() and item.type() == CanvasBoxType:
-                        item_rect = item.sceneBoundingRect()
-                        item_top_left = QPointF(item_rect.x(), item_rect.y())
-                        item_bottom_right = QPointF(item_rect.x() + item_rect.width(),
-                                                    item_rect.y() + item_rect.height())
-
-                        if self.m_rubberband.contains(item_top_left) and self.m_rubberband.contains(item_bottom_right):
-                            item.setSelected(True)
-
-            self.m_rubberband.hide()
-            self.m_rubberband.setRect(0, 0, 0, 0)
-            self.m_rubberband_selection = False
-
-        else:
+        if not self.handleMouseRelease():
             items_list = self.selectedItems()
+            needs_update = False
             for item in items_list:
                 if item and item.isVisible() and item.type() == CanvasBoxType:
                     item.checkItemPos()
+                    needs_update = True
 
-            if len(items_list) > 1:
+            if needs_update:
                 canvas.scene.update()
 
-        self.m_mouse_down_init = False
-        self.m_mouse_rubberband = False
-
-        self.stopConnectionCut()
         QGraphicsScene.mouseReleaseEvent(self, event)
 
     def zoom_wheel(self, delta):
@@ -394,16 +403,23 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.wheelEvent(self, event)
 
     def contextMenuEvent(self, event):
+        if self.handleMouseRelease():
+            self.m_mouse_down_init = False
+            QGraphicsScene.contextMenuEvent(self, event)
+            return
+
         if event.modifiers() & Qt.ControlModifier:
             event.accept()
             self.triggerRubberbandScale()
             return
 
         if len(self.selectedItems()) == 0:
+            self.m_mouse_down_init = False
             event.accept()
             canvas.callback(ACTION_BG_RIGHT_CLICK, 0, 0, "")
             return
 
+        self.m_mouse_down_init = False
         QGraphicsScene.contextMenuEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
