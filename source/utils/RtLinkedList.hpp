@@ -21,7 +21,8 @@
 #include "LinkedList.hpp"
 
 extern "C" {
-#include "rtmempool/rtmempool.h"
+/* full path as IDE Helper */
+#include "../modules/rtmempool/rtmempool.h"
 }
 
 // -----------------------------------------------------------------------

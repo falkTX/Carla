@@ -317,10 +317,9 @@ def runCarlaDiscovery(itype, stype, filename, tool, wineSettings=None):
             else:
                 print("%s - %s (unknown property)" % (line, filename))
 
-    # FIXME?
     tmp = gDiscoveryProcess
     gDiscoveryProcess = None
-    del gDiscoveryProcess, tmp
+    del tmp
 
     return plugins
 
