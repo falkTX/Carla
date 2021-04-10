@@ -21,7 +21,7 @@
 # Imports (Global)
 
 from PyQt5.QtCore import Qt, QRectF, QPointF, pyqtSignal
-from PyQt5.QtGui import QColor, QFont, QPen, QPainter, QTransform
+from PyQt5.QtGui import QColor, QCursor, QFont, QPen, QPainter, QTransform
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsOpacityEffect, QGraphicsRectItem, QGraphicsSimpleTextItem
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView
 from PyQt5.QtWidgets import QWidget, QLabel, QComboBox, QHBoxLayout, QVBoxLayout, QStyle
@@ -92,6 +92,7 @@ class NoteExpander(QGraphicsRectItem):
 
     def hoverEnterEvent(self, event):
         QGraphicsRectItem.hoverEnterEvent(self, event)
+        self.setCursor(QCursor(Qt.SizeHorCursor))
         if self.parent.isSelected():
             self.parent.setBrush(self.parent.select_brush)
         else:
@@ -100,6 +101,7 @@ class NoteExpander(QGraphicsRectItem):
 
     def hoverLeaveEvent(self, event):
         QGraphicsRectItem.hoverLeaveEvent(self, event)
+        self.unsetCursor()
         if self.parent.isSelected():
             self.parent.setBrush(self.parent.select_brush)
         elif self.parent.hovering:
@@ -146,18 +148,22 @@ class NoteItem(QGraphicsRectItem):
 
     def setSelected(self, boolean):
         QGraphicsRectItem.setSelected(self, boolean)
-        if boolean: self.setBrush(self.select_brush)
-        else: self.setBrush(self.orig_brush)
+        if boolean:
+            self.setBrush(self.select_brush)
+        else:
+            self.setBrush(self.orig_brush)
 
     def hoverEnterEvent(self, event):
-        self.hovering = True
         QGraphicsRectItem.hoverEnterEvent(self, event)
+        self.hovering = True
+        self.setCursor(QCursor(Qt.OpenHandCursor))
         if not self.isSelected():
             self.setBrush(self.hover_brush)
 
     def hoverLeaveEvent(self, event):
-        self.hovering = False
         QGraphicsRectItem.hoverLeaveEvent(self, event)
+        self.hovering = False
+        self.unsetCursor()
         if not self.isSelected():
             self.setBrush(self.orig_brush)
         elif self.isSelected():
@@ -165,11 +171,25 @@ class NoteItem(QGraphicsRectItem):
 
     def mousePressEvent(self, event):
         QGraphicsRectItem.mousePressEvent(self, event)
-        self.setSelected(True)
         self.pressed = True
+        self.setCursor(QCursor(Qt.ClosedHandCursor))
+        self.setSelected(True)
 
     def mouseMoveEvent(self, event):
         pass
+
+    def mouseReleaseEvent(self, event):
+        QGraphicsRectItem.mouseReleaseEvent(self, event)
+        self.pressed = False
+        self.setCursor(QCursor(Qt.OpenHandCursor))
+        if event.button() == Qt.LeftButton:
+            self.moving_diff = (0,0)
+            self.expand_diff = 0
+            self.back.stretch = False
+            self.front.stretch = False
+            (pos_x, pos_y,) = self.piano().snap(self.pos().x(), self.pos().y())
+            self.setPos(pos_x, pos_y)
+            self.updateNoteInfo(pos_x, pos_y)
 
     def moveEvent(self, event):
         offset = event.scenePos() - event.lastScenePos()
@@ -219,18 +239,6 @@ class NoteItem(QGraphicsRectItem):
         self.note[2] = self.piano().get_note_length_from_x(
                 self.rect().right() - self.rect().left())
         #print("note: {}".format(self.note))
-
-    def mouseReleaseEvent(self, event):
-        QGraphicsRectItem.mouseReleaseEvent(self, event)
-        self.pressed = False
-        if event.button() == Qt.LeftButton:
-            self.moving_diff = (0,0)
-            self.expand_diff = 0
-            self.back.stretch = False
-            self.front.stretch = False
-            (pos_x, pos_y,) = self.piano().snap(self.pos().x(), self.pos().y())
-            self.setPos(pos_x, pos_y)
-            self.updateNoteInfo(pos_x, pos_y)
 
     def updateVelocity(self, event):
         offset = event.scenePos().x() - event.lastScenePos().x()
