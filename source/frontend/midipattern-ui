@@ -325,7 +325,8 @@ class MidiPatternW(ExternalUI, QMainWindow):
 
             self.ui.piano.drawNote(note,
                                    on_time/self.TICKS_PER_BEAT,
-                                   (time-on_time)/self.TICKS_PER_BEAT/self.fTimeSignature[0], on_velo)
+                                   (time-on_time)/self.TICKS_PER_BEAT/self.fTimeSignature[0],
+                                   on_velo)
 
 
 #--------------- main ------------------

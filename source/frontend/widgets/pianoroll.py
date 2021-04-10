@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # A piano roll viewer/editor
-# Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
 # Copyright (C) 2014-2015 Perry Nguyen
 #
 # This program is free software; you can redistribute it and/or
@@ -69,63 +69,55 @@ def MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status):   return MIDI_IS_CHANNEL_MESSAGE
 def MIDI_GET_STATUS_FROM_DATA(data):  return data[0] & MIDI_STATUS_BIT  if MIDI_IS_CHANNEL_MESSAGE(data[0]) else data[0]
 def MIDI_GET_CHANNEL_FROM_DATA(data): return data[0] & MIDI_CHANNEL_BIT if MIDI_IS_CHANNEL_MESSAGE(data[0]) else 0
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Graphics Items
 
 class NoteExpander(QGraphicsRectItem):
     def __init__(self, length, height, parent):
         QGraphicsRectItem.__init__(self, 0, 0, length, height, parent)
         self.parent = parent
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        self.setAcceptHoverEvents(True)
-
-        clearpen = QPen(QColor(0,0,0,0))
-        self.setPen(clearpen)
-
         self.orig_brush = QColor(0, 0, 0, 0)
         self.hover_brush = QColor(200, 200, 200)
         self.stretch = False
+
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        self.setPen(QPen(QColor(0,0,0,0)))
+
+    def paint(self, painter, option, widget=None):
+        paint_option = option
+        paint_option.state &= ~QStyle.State_Selected
+        QGraphicsRectItem.paint(self, painter, paint_option, widget)
 
     def mousePressEvent(self, event):
         QGraphicsRectItem.mousePressEvent(self, event)
         self.stretch = True
 
+    def mouseReleaseEvent(self, event):
+        QGraphicsRectItem.mouseReleaseEvent(self, event)
+        self.stretch = False
+
     def hoverEnterEvent(self, event):
         QGraphicsRectItem.hoverEnterEvent(self, event)
         self.setCursor(QCursor(Qt.SizeHorCursor))
-        if self.parent.isSelected():
-            self.parent.setBrush(self.parent.select_brush)
-        else:
-            self.parent.setBrush(self.parent.orig_brush)
         self.setBrush(self.hover_brush)
 
     def hoverLeaveEvent(self, event):
         QGraphicsRectItem.hoverLeaveEvent(self, event)
         self.unsetCursor()
-        if self.parent.isSelected():
-            self.parent.setBrush(self.parent.select_brush)
-        elif self.parent.hovering:
-            self.parent.setBrush(self.parent.hover_brush)
-        else:
-            self.parent.setBrush(self.parent.orig_brush)
         self.setBrush(self.orig_brush)
+
+# ---------------------------------------------------------------------------------------------------------------------
 
 class NoteItem(QGraphicsRectItem):
     '''a note on the pianoroll sequencer'''
     def __init__(self, height, length, note_info):
         QGraphicsRectItem.__init__(self, 0, 0, length, height)
 
-        self.setFlag(QGraphicsItem.ItemIsMovable)
-        self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        self.setAcceptHoverEvents(True)
-
-        clearpen = QPen(QColor(0,0,0,0))
-        self.setPen(clearpen)
         self.orig_brush = QColor(note_info[3], 0, 0)
-        self.hover_brush = QColor(note_info[3] + 100, 200, 100)
-        self.select_brush = QColor(note_info[3] + 100, 100, 100)
-        self.setBrush(self.orig_brush)
+        self.hover_brush = QColor(note_info[3] + 98, 200, 100)
+        self.select_brush = QColor(note_info[3] + 98, 100, 100)
 
         self.note = note_info
         self.length = length
@@ -136,6 +128,13 @@ class NoteItem(QGraphicsRectItem):
         self.moving_diff = (0,0)
         self.expand_diff = 0
 
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        self.setPen(QPen(QColor(0,0,0,0)))
+        self.setBrush(self.orig_brush)
+
         l = 5
         self.front = NoteExpander(l, height, self)
         self.back = NoteExpander(l, height, self)
@@ -144,75 +143,80 @@ class NoteItem(QGraphicsRectItem):
     def paint(self, painter, option, widget=None):
         paint_option = option
         paint_option.state &= ~QStyle.State_Selected
-        QGraphicsRectItem.paint(self, painter, paint_option, widget)
-
-    def setSelected(self, boolean):
-        QGraphicsRectItem.setSelected(self, boolean)
-        if boolean:
+        if self.isSelected():
             self.setBrush(self.select_brush)
+        elif self.hovering:
+            self.setBrush(self.hover_brush)
         else:
             self.setBrush(self.orig_brush)
+        QGraphicsRectItem.paint(self, painter, paint_option, widget)
 
     def hoverEnterEvent(self, event):
         QGraphicsRectItem.hoverEnterEvent(self, event)
         self.hovering = True
+        self.update()
         self.setCursor(QCursor(Qt.OpenHandCursor))
-        if not self.isSelected():
-            self.setBrush(self.hover_brush)
 
     def hoverLeaveEvent(self, event):
         QGraphicsRectItem.hoverLeaveEvent(self, event)
         self.hovering = False
         self.unsetCursor()
-        if not self.isSelected():
-            self.setBrush(self.orig_brush)
-        elif self.isSelected():
-            self.setBrush(self.select_brush)
+        self.update()
 
     def mousePressEvent(self, event):
         QGraphicsRectItem.mousePressEvent(self, event)
         self.pressed = True
+        self.moving_diff = (0,0)
+        self.expand_diff = 0
         self.setCursor(QCursor(Qt.ClosedHandCursor))
         self.setSelected(True)
 
     def mouseMoveEvent(self, event):
-        pass
+        event.ignore()
 
     def mouseReleaseEvent(self, event):
         QGraphicsRectItem.mouseReleaseEvent(self, event)
         self.pressed = False
+        self.moving_diff = (0,0)
+        self.expand_diff = 0
         self.setCursor(QCursor(Qt.OpenHandCursor))
-        if event.button() == Qt.LeftButton:
-            self.moving_diff = (0,0)
-            self.expand_diff = 0
-            self.back.stretch = False
-            self.front.stretch = False
-            (pos_x, pos_y,) = self.piano().snap(self.pos().x(), self.pos().y())
-            self.setPos(pos_x, pos_y)
-            self.updateNoteInfo(pos_x, pos_y)
 
     def moveEvent(self, event):
         offset = event.scenePos() - event.lastScenePos()
+        #print("mouseEvent", self.back.stretch, self.front.stretch)
 
         if self.back.stretch:
             self.expand(self.back, offset)
-        else:
-            self.move_pos = self.scenePos() + offset \
-                    + QPointF(self.moving_diff[0],self.moving_diff[1])
-            pos = self.piano().enforce_bounds(self.move_pos)
-            pos_x, pos_y = pos.x(), pos.y()
-            pos_sx, pos_sy = self.piano().snap(pos_x, pos_y)
-            self.moving_diff = (pos_x-pos_sx, pos_y-pos_sy)
-            if self.front.stretch:
-                right = self.rect().right() - offset.x() + self.expand_diff
-                if (self.scenePos().x() == self.piano().piano_width and offset.x() < 0) \
-                        or right < 10:
-                    self.expand_diff = 0
-                    return
-                self.expand(self.front, offset)
-                self.setPos(pos_sx, self.scenePos().y())
-            else:
-                self.setPos(pos_sx, pos_sy)
+            self.updateNoteInfo(self.scenePos().x(), self.scenePos().y())
+            return
+
+        piano = self.piano()
+
+        pos = self.scenePos() + offset + QPointF(self.moving_diff[0],self.moving_diff[1])
+        pos = piano.enforce_bounds(pos)
+        pos_x = pos.x()
+        pos_y = pos.y()
+        width = self.rect().width()
+        if pos_x + width > piano.grid_width + piano.piano_width:
+            pos_x = piano.grid_width + piano.piano_width - width
+        pos_sx, pos_sy = piano.snap(pos_x, pos_y)
+        #if pos_sx < pos_x + width:
+            #pos_sx = pos_x + width
+
+        self.moving_diff = (pos_x-pos_sx, pos_y-pos_sy)
+
+        #if self.front.stretch:
+            #right = self.rect().right() - offset.x() + self.expand_diff
+            #if (self.scenePos().x() == piano.piano_width and offset.x() < 0) or right < 10:
+                #self.expand_diff = 0
+                #return
+            #self.expand(self.front, offset)
+            #pos_sy = self.scenePos().y()
+            #self.setPos(pos_sx, pos_sy)
+        #else:
+        self.setPos(pos_sx, pos_sy)
+
+        self.updateNoteInfo(pos_sx, pos_sy)
 
     def expand(self, rectItem, offset):
         rect = self.rect()
@@ -227,69 +231,90 @@ class NoteItem(QGraphicsRectItem):
         else:
             right -= offset.x()
             new_x = self.piano().snap(right+2.75)
-        if self.piano().snap_value: new_x -= 2.75 # where does this number come from?!
+        if self.piano().snap_value:
+            new_x -= 2.75 # where does this number come from?!
         self.expand_diff = right - new_x
         self.back.setPos(new_x - 5, 0)
         rect.setRight(new_x)
         self.setRect(rect)
 
     def updateNoteInfo(self, pos_x, pos_y):
-        self.note[0] = self.piano().get_note_num_from_y(pos_y)
-        self.note[1] = self.piano().get_note_start_from_x(pos_x)
-        self.note[2] = self.piano().get_note_length_from_x(
-                self.rect().right() - self.rect().left())
-        #print("note: {}".format(self.note))
+        note_info = (self.piano().get_note_num_from_y(pos_y),
+                     self.piano().get_note_start_from_x(pos_x),
+                     self.piano().get_note_length_from_x(self.rect().width()),
+                     self.note[3])
+        if self.note != note_info:
+            self.piano().move_note(self.note, note_info)
+            self.note = note_info
 
     def updateVelocity(self, event):
         offset = event.scenePos().x() - event.lastScenePos().x()
-        self.note[3] += int(offset/5)
-        if self.note[3] > 127:
-            self.note[3] = 127
-        elif self.note[3] < 0:
-            self.note[3] = 0
-        print("new vel: {}".format(self.note[3]))
-        self.orig_brush = QColor(self.note[3], 0, 0)
-        self.select_brush = QColor(self.note[3] + 100, 100, 100)
-        self.setBrush(self.orig_brush)
+        offset = int(offset/5)
 
+        note_info = self.note[:]
+        note_info[3] += offset
+        if note_info[3] > 127:
+            note_info[3] = 127
+        elif note_info[3] < 0:
+            note_info[3] = 0
+        if self.note != note_info:
+            self.orig_brush = QColor(note_info[3], 0, 0)
+            self.hover_brush = QColor(note_info[3] + 98, 200, 100)
+            self.select_brush = QColor(note_info[3] + 98, 100, 100)
+            self.update()
+            self.piano().move_note(self.note, note_info)
+            self.note = note_info
+
+# ---------------------------------------------------------------------------------------------------------------------
 
 class PianoKeyItem(QGraphicsRectItem):
     def __init__(self, width, height, note, parent):
         QGraphicsRectItem.__init__(self, 0, 0, width, height, parent)
-        self.setPen(QPen(QColor(0,0,0,80)))
+
         self.width = width
         self.height = height
         self.note = note
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        self.setAcceptHoverEvents(True)
-        self.hover_brush = QColor(200, 0, 0)
-        self.click_brush = QColor(255, 100, 100)
+        self.piano = self.scene
+        self.hovered = False
         self.pressed = False
+
+        self.click_brush = QColor(255, 100, 100)
+        self.hover_brush = QColor(200, 0, 0)
+        self.orig_brush = None
+
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setPen(QPen(QColor(0,0,0,80)))
+
+    def paint(self, painter, option, widget=None):
+        paint_option = option
+        paint_option.state &= ~QStyle.State_Selected
+        QGraphicsRectItem.paint(self, painter, paint_option, widget)
 
     def hoverEnterEvent(self, event):
         QGraphicsRectItem.hoverEnterEvent(self, event)
+        self.hovered = True
         self.orig_brush = self.brush()
         self.setBrush(self.hover_brush)
 
     def hoverLeaveEvent(self, event):
-        if self.pressed:
-            self.pressed = False
-            self.setBrush(self.hover_brush)
         QGraphicsRectItem.hoverLeaveEvent(self, event)
-        self.setBrush(self.orig_brush)
+        self.hovered = False
+        self.setBrush(self.click_brush if self.pressed else self.orig_brush)
 
-    #def mousePressEvent(self, event):
-    #    self.pressed = True
-    #    self.setBrush(self.click_brush)
-
-    def mouseMoveEvent(self, event):
-        """this may eventually do something"""
-        pass
+    def mousePressEvent(self, event):
+        QGraphicsRectItem.mousePressEvent(self, event)
+        self.pressed = True
+        self.setBrush(self.click_brush)
+        self.piano().noteclicked.emit(self.note, True)
 
     def mouseReleaseEvent(self, event):
-        self.pressed = False
         QGraphicsRectItem.mouseReleaseEvent(self, event)
-        self.setBrush(self.hover_brush)
+        self.pressed = False
+        self.setBrush(self.hover_brush if self.hovered else self.orig_brush)
+        self.piano().noteclicked.emit(self.note, False)
+
+# ---------------------------------------------------------------------------------------------------------------------
 
 class PianoRoll(QGraphicsScene):
     '''the piano roll'''
@@ -299,10 +324,11 @@ class PianoRoll(QGraphicsScene):
     measureupdate = pyqtSignal(int)
     modeupdate = pyqtSignal(str)
 
+    default_ghost_vel = 100
+
     def __init__(self, time_sig = '4/4', num_measures = 4, quantize_val = '1/8'):
         QGraphicsScene.__init__(self)
         self.setBackgroundBrush(QColor(50, 50, 50))
-        self.mousePos = QPointF()
 
         self.notes = []
         self.removed_notes = []
@@ -310,12 +336,19 @@ class PianoRoll(QGraphicsScene):
         self.piano_keys = []
 
         self.marquee_select = False
+        self.marquee_rect = None
+        self.marquee = None
+
+        self.ghost_note = None
+        self.ghost_rect = None
+        self.ghost_rect_orig_width = None
+        self.ghost_vel = self.default_ghost_vel
+
+        self.ignore_mouse_events = False
         self.insert_mode = False
         self.velocity_mode = False
         self.place_ghost = False
-        self.ghost_note = None
-        self.default_ghost_vel = 100
-        self.ghost_vel = self.default_ghost_vel
+        self.last_mouse_pos = QPointF()
 
         ## dimensions
         self.padding = 2
@@ -352,7 +385,6 @@ class PianoRoll(QGraphicsScene):
         self.piano = None
         self.header = None
         self.play_head = None
-        self.last_piano_note = None
 
         self.setGridDiv()
         self.default_length = 1. / self.grid_div
@@ -387,10 +419,8 @@ class PianoRoll(QGraphicsScene):
     def setDefaultLength(self, length):
         v = list(map(float, length.split('/')))
         if len(v) < 3:
-            self.default_length = \
-                    v[0] if len(v)==1 else \
-                    v[0] / v[1]
-            pos = self.enforce_bounds(self.mousePos)
+            self.default_length = v[0] if len(v) == 1 else v[0] / v[1]
+            pos = self.enforce_bounds(self.last_mouse_pos)
             if self.insert_mode:
                 self.makeGhostNote(pos.x(), pos.y())
 
@@ -422,41 +452,64 @@ class PianoRoll(QGraphicsScene):
 
     def keyPressEvent(self, event):
         QGraphicsScene.keyPressEvent(self, event)
+
         if event.key() == Qt.Key_F:
             if not self.insert_mode:
+                # turn off velocity mode
                 self.velocity_mode = False
+                # enable insert mode
                 self.insert_mode = True
-                self.makeGhostNote(self.mousePos.x(), self.mousePos.y())
+                self.place_ghost = False
+                self.makeGhostNote(self.last_mouse_pos.x(), self.last_mouse_pos.y())
                 self.modeupdate.emit('insert_mode')
-            elif self.insert_mode:
-                self.insert_mode = False
-                if self.place_ghost: self.place_ghost = False
-                self.removeItem(self.ghost_note)
-                self.ghost_note = None
-                self.modeupdate.emit('')
-        elif event.key() == Qt.Key_D:
-            if self.velocity_mode:
-                self.velocity_mode = False
-                self.modeupdate.emit('')
             else:
-                if self.insert_mode:
-                    self.removeItem(self.ghost_note)
-                self.ghost_note = None
+                # turn off insert mode
                 self.insert_mode = False
                 self.place_ghost = False
+                if self.ghost_note is not None:
+                    self.removeItem(self.ghost_note)
+                    self.ghost_note = None
+                self.modeupdate.emit('')
+
+        elif event.key() == Qt.Key_D:
+            if not self.velocity_mode:
+                # turn off insert mode
+                self.insert_mode = False
+                self.place_ghost = False
+                if self.ghost_note is not None:
+                    self.removeItem(self.ghost_note)
+                    self.ghost_note = None
+                # enable velocity mode
                 self.velocity_mode = True
                 self.modeupdate.emit('velocity_mode')
-        elif event.key() == Qt.Key_A:
-            if all((note.isSelected() for note in self.notes)):
-                for note in self.notes:
-                    note.setSelected(False)
-                self.selected_notes = []
             else:
+                # turn off velocity mode
+                self.velocity_mode = False
+                self.modeupdate.emit('')
+
+        elif event.key() == Qt.Key_A:
+            for note in self.notes:
+                if not note.isSelected():
+                    has_unselected = True
+                    break
+            else:
+                has_unselected = False
+
+            # select all notes
+            if has_unselected:
                 for note in self.notes:
                     note.setSelected(True)
                 self.selected_notes = self.notes[:]
+            # unselect all
+            else:
+                for note in self.notes:
+                    note.setSelected(False)
+                self.selected_notes = []
+
         elif event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+            # remove selected notes from our notes list
             self.notes = [note for note in self.notes if note not in self.selected_notes]
+            # delete the selected notes
             for note in self.selected_notes:
                 self.removeItem(note)
                 self.midievent.emit(["midievent-remove", note.note[0], note.note[1], note.note[2], note.note[3]])
@@ -466,138 +519,166 @@ class PianoRoll(QGraphicsScene):
     def mousePressEvent(self, event):
         QGraphicsScene.mousePressEvent(self, event)
 
+        # mouse click on left-side piano area
         if self.piano.contains(event.scenePos()):
-            item = self.itemAt(event.scenePos(), QTransform())
-            if isinstance(item, PianoKeyItem) and item.note is not None:
-                self.last_piano_note = item.note
-                self.noteclicked.emit(self.last_piano_note, True)
+            self.ignore_mouse_events = True
+            return
+
+        clicked_notes = []
+
+        for note in self.notes:
+            if note.pressed or note.back.stretch or note.front.stretch:
+                clicked_notes.append(note)
+
+        print("clicked_notes", clicked_notes)
+
+        # mouse click on existing notes
+        if clicked_notes:
+            keep_selection = all(note in self.selected_notes for note in clicked_notes)
+            if keep_selection:
+                for note in self.selected_notes:
+                    note.setSelected(True)
                 return
 
-        if not (any(key.pressed for key in self.piano_keys)
-                or any(note.pressed for note in self.notes)):
             for note in self.selected_notes:
-                note.setSelected(False)
-            self.selected_notes = []
+                if note not in clicked_notes:
+                    note.setSelected(False)
+            for note in clicked_notes:
+                if note not in self.selected_notes:
+                    note.setSelected(True)
 
-            if event.button() == Qt.LeftButton:
-                if self.insert_mode:
-                    self.place_ghost = True
-                else:
-                    self.marquee_select = True
-                    self.marquee_rect = QRectF(event.scenePos().x(), event.scenePos().y(), 1, 1)
-                    self.marquee = QGraphicsRectItem(self.marquee_rect)
-                    self.marquee.setBrush(QColor(255, 255, 255, 100))
-                    self.addItem(self.marquee)
+            self.selected_notes = clicked_notes
+            return
 
+        # mouse click on empty area (no note selected)
+        for note in self.selected_notes:
+            note.setSelected(False)
+        self.selected_notes = []
+
+        if event.button() != Qt.LeftButton:
+            return
+
+        if self.insert_mode:
+            self.place_ghost = True
         else:
-            for s_note in self.notes:
-                if s_note.pressed and s_note in self.selected_notes:
-                    break
-                elif s_note.pressed and s_note not in self.selected_notes:
-                    for note in self.selected_notes:
-                        note.setSelected(False)
-                    self.selected_notes = [s_note]
-                    break
-            for note in self.selected_notes:
-                if not self.velocity_mode:
-                    note.mousePressEvent(event)
+            self.marquee_select = True
+            self.marquee_rect = QRectF(event.scenePos().x(), event.scenePos().y(), 1, 1)
+            self.marquee = QGraphicsRectItem(self.marquee_rect)
+            self.marquee.setBrush(QColor(255, 255, 255, 100))
+            self.addItem(self.marquee)
 
     def mouseMoveEvent(self, event):
         QGraphicsScene.mouseMoveEvent(self, event)
 
-        if self.last_piano_note is not None:
+        self.last_mouse_pos = event.scenePos()
+
+        if self.ignore_mouse_events:
             return
 
-        self.mousePos = event.scenePos()
-        if not (any((key.pressed for key in self.piano_keys))):
-            m_pos = event.scenePos()
-            if self.insert_mode and self.place_ghost: #placing a note
-                m_width = self.ghost_rect.x() + self.ghost_rect_orig_width
-                if m_pos.x() > m_width:
-                    m_new_x = self.snap(m_pos.x())
-                    self.ghost_rect.setRight(m_new_x)
-                    self.ghost_note.setRect(self.ghost_rect)
+        pos = self.enforce_bounds(self.last_mouse_pos)
+
+        if self.insert_mode:
+            if self.ghost_note is None:
+                self.makeGhostNote(pos.x(), pos.y())
+            max_x = self.grid_width + self.piano_width
+
+            # placing note, only width needs updating
+            if self.place_ghost:
+                pos_x = pos.x()
+                min_x = self.ghost_rect.x() + self.ghost_rect_orig_width
+                if pos_x < min_x:
+                    pos_x = min_x
+                new_x = self.snap(pos_x)
+                self.ghost_rect.setRight(new_x)
+                self.ghost_note.setRect(self.ghost_rect)
                 #self.adjust_note_vel(event)
+
+            # ghostnote following mouse around
             else:
-                m_pos = self.enforce_bounds(m_pos)
+                pos_x = pos.x()
+                if pos_x + self.ghost_rect.width() >= max_x:
+                    pos_x = max_x - self.ghost_rect.width()
+                elif pos_x > self.piano_width + self.ghost_rect.width()*3/4:
+                    pos_x -= self.ghost_rect.width()/2
+                new_x, new_y = self.snap(pos_x, pos.y())
+                self.ghost_rect.moveTo(new_x, new_y)
+                self.ghost_note.setRect(self.ghost_rect)
+            return
 
-                if self.insert_mode: #ghostnote follows mouse around
-                    (m_new_x, m_new_y) = self.snap(m_pos.x(), m_pos.y())
-                    self.ghost_rect.moveTo(m_new_x, m_new_y)
-                    try:
-                        self.ghost_note.setRect(self.ghost_rect)
-                    except RuntimeError:
-                        self.ghost_note = None
-                        self.makeGhostNote(m_new_x, m_new_y)
+        if self.marquee_select:
+            marquee_orig_pos = event.buttonDownScenePos(Qt.LeftButton)
+            if marquee_orig_pos.x() < pos.x() and marquee_orig_pos.y() < pos.y():
+                self.marquee_rect.setBottomRight(pos)
+            elif marquee_orig_pos.x() < pos.x() and marquee_orig_pos.y() > pos.y():
+                self.marquee_rect.setTopRight(pos)
+            elif marquee_orig_pos.x() > pos.x() and marquee_orig_pos.y() < pos.y():
+                self.marquee_rect.setBottomLeft(pos)
+            elif marquee_orig_pos.x() > pos.x() and marquee_orig_pos.y() > pos.y():
+                self.marquee_rect.setTopLeft(pos)
+            self.marquee.setRect(self.marquee_rect)
 
-                elif self.marquee_select:
-                    marquee_orig_pos = event.buttonDownScenePos(Qt.LeftButton)
-                    if marquee_orig_pos.x() < m_pos.x() and marquee_orig_pos.y() < m_pos.y():
-                        self.marquee_rect.setBottomRight(m_pos)
-                    elif marquee_orig_pos.x() < m_pos.x() and marquee_orig_pos.y() > m_pos.y():
-                        self.marquee_rect.setTopRight(m_pos)
-                    elif marquee_orig_pos.x() > m_pos.x() and marquee_orig_pos.y() < m_pos.y():
-                        self.marquee_rect.setBottomLeft(m_pos)
-                    elif marquee_orig_pos.x() > m_pos.x() and marquee_orig_pos.y() > m_pos.y():
-                        self.marquee_rect.setTopLeft(m_pos)
-                    self.marquee.setRect(self.marquee_rect)
-                    self.selected_notes = []
-                    for item in self.collidingItems(self.marquee):
-                        if item in self.notes:
-                            self.selected_notes.append(item)
+            for note in self.selected_notes:
+                note.setSelected(False)
+            self.selected_notes = []
 
-                    for note in self.notes:
-                        if note in self.selected_notes: note.setSelected(True)
-                        else: note.setSelected(False)
+            for item in self.collidingItems(self.marquee):
+                if item in self.notes:
+                    item.setSelected(True)
+                    self.selected_notes.append(item)
+            return
 
-                elif self.velocity_mode:
-                    if Qt.LeftButton == event.buttons():
-                        for note in self.selected_notes:
-                            note.updateVelocity(event)
+        if event.buttons() != Qt.LeftButton:
+            return
 
-                elif not self.marquee_select: #move selected
-                    if Qt.LeftButton == event.buttons():
-                        x = y = False
-                        if any(note.back.stretch for note in self.selected_notes):
-                            x = True
-                        elif any(note.front.stretch for note in self.selected_notes):
-                            y = True
-                        for note in self.selected_notes:
-                            note.back.stretch = x
-                            note.front.stretch = y
-                            note.moveEvent(event)
+        if self.velocity_mode:
+            for note in self.selected_notes:
+                note.updateVelocity(event)
+            return
+
+        x = y = False
+        for note in self.selected_notes:
+            if note.back.stretch:
+                x = True
+                break
+        for note in self.selected_notes:
+            if note.front.stretch:
+                y = True
+                break
+        for note in self.selected_notes:
+            note.back.stretch = x
+            note.front.stretch = y
+            note.moveEvent(event)
 
     def mouseReleaseEvent(self, event):
         QGraphicsScene.mouseReleaseEvent(self, event)
 
-        if self.last_piano_note is not None:
-            self.noteclicked.emit(self.last_piano_note, False)
-            self.last_piano_note = None
+        if self.ignore_mouse_events:
+            self.ignore_mouse_events = False
             return
 
-        if not (any((key.pressed for key in self.piano_keys)) or any((note.pressed for note in self.notes))):
-            if event.button() == Qt.LeftButton:
-                if self.place_ghost and self.insert_mode:
-                    self.place_ghost = False
-                    note_start = self.get_note_start_from_x(self.ghost_rect.x())
-                    note_num = self.get_note_num_from_y(self.ghost_rect.y())
-                    note_length = self.get_note_length_from_x(self.ghost_rect.width())
-                    self.drawNote(note_num, note_start, note_length, self.ghost_vel)
-                    self.midievent.emit(["midievent-add", note_num, note_start, note_length, self.ghost_vel])
-                    self.makeGhostNote(self.mousePos.x(), self.mousePos.y())
-                elif self.marquee_select:
-                    self.marquee_select = False
-                    self.removeItem(self.marquee)
+        if self.marquee_select:
+            self.marquee_select = False
+            self.removeItem(self.marquee)
+            self.marquee = None
 
-        elif not self.marquee_select:
-            for note in self.selected_notes:
-                old_info = note.note[:]
-                note.mouseReleaseEvent(event)
-                if self.velocity_mode:
-                    note.setSelected(True)
-                if not old_info == note.note:
-                    self.midievent.emit(["midievent-remove", old_info[0], old_info[1], old_info[2], old_info[3]])
-                    self.midievent.emit(["midievent-add", note.note[0], note.note[1], note.note[2], note.note[3]])
+        if self.insert_mode and self.place_ghost:
+            self.place_ghost = False
+            note_start = self.get_note_start_from_x(self.ghost_rect.x())
+            note_num = self.get_note_num_from_y(self.ghost_rect.y())
+            note_length = self.get_note_length_from_x(self.ghost_rect.width())
+            note = self.drawNote(note_num, note_start, note_length, self.ghost_vel)
+            note.setSelected(True)
+            self.selected_notes.append(note)
+            self.midievent.emit(["midievent-add", note_num, note_start, note_length, self.ghost_vel])
+            pos = self.enforce_bounds(self.last_mouse_pos)
+            pos_x = pos.x()
+            if pos_x > self.piano_width + self.ghost_rect.width()*3/4:
+                pos_x -= self.ghost_rect.width()/2
+            self.makeGhostNote(pos_x, pos.y())
+
+        for note in self.selected_notes:
+            note.back.stretch = False
+            note.front.stretch = False
 
     # -------------------------------------------------------------------------
     # Internal Functions
@@ -644,9 +725,7 @@ class PianoRoll(QGraphicsScene):
                     key.setBrush(QColor(255, 255, 255))
                     key.setPos(0, self.note_height * j + self.octave_height * (i - 1))
                 if j == 12:
-                    label = QGraphicsSimpleTextItem('{}{}'.format(labels[j - 1],
-                                                                  self.end_octave - i + 1),
-                                                                  key)
+                    label = QGraphicsSimpleTextItem('{}{}'.format(labels[j - 1], self.end_octave - i + 1), key)
                     label.setPos(18, 6)
                     label.setFont(piano_label)
                 self.piano_keys.append(key)
@@ -697,6 +776,10 @@ class PianoRoll(QGraphicsScene):
         list(map(self.removeItem, self.notes))
         self.selected_notes = []
         self.piano_keys = []
+        self.place_ghost = False
+        if self.ghost_note is not None:
+            self.removeItem(self.ghost_note)
+            self.ghost_note = None
         self.clear()
         self.drawPiano()
         self.drawHeader()
@@ -736,18 +819,18 @@ class PianoRoll(QGraphicsScene):
 
     def makeGhostNote(self, pos_x, pos_y):
         """creates the ghostnote that is placed on the scene before the real one is."""
-        if self.ghost_note:
+        if self.ghost_note is not None:
             self.removeItem(self.ghost_note)
         length = self.full_note_width * self.default_length
-        (start, note) = self.snap(pos_x, pos_y)
+        pos_x, pos_y = self.snap(pos_x, pos_y)
         self.ghost_vel = self.default_ghost_vel
-        self.ghost_rect = QRectF(start, note, length, self.note_height)
+        self.ghost_rect = QRectF(pos_x, pos_y, length, self.note_height)
         self.ghost_rect_orig_width = self.ghost_rect.width()
         self.ghost_note = QGraphicsRectItem(self.ghost_rect)
         self.ghost_note.setBrush(QColor(230, 221, 45, 100))
         self.addItem(self.ghost_note)
 
-    def drawNote(self, note_num, note_start=None, note_length=None, note_velocity=None, add=True):
+    def drawNote(self, note_num, note_start, note_length, note_velocity, add=True):
         """
         note_num: midi number, 0 - 127
         note_start: 0 - (num_measures * time_sig[0]) so this is in beats
@@ -774,8 +857,11 @@ class PianoRoll(QGraphicsScene):
         note.setPos(x_start, y_pos)
 
         self.notes.append(note)
+
         if add:
             self.addItem(note)
+
+        return note
 
     # -------------------------------------------------------------------------
     # Helper Functions
@@ -790,11 +876,9 @@ class PianoRoll(QGraphicsScene):
 
     def snap(self, pos_x, pos_y = None):
         if self.snap_value:
-            pos_x = int(round((pos_x - self.piano_width) / self.snap_value)) \
-                    * self.snap_value + self.piano_width
+            pos_x = int(round((pos_x - self.piano_width) / self.snap_value)) * self.snap_value + self.piano_width
         if pos_y is not None:
-            pos_y = int((pos_y - self.header_height) / self.note_height) \
-                    * self.note_height + self.header_height
+            pos_y = int((pos_y - self.header_height) / self.note_height) * self.note_height + self.header_height
         return (pos_x, pos_y) if pos_y is not None else pos_x
 
     def adjust_note_vel(self, event):
@@ -813,12 +897,12 @@ class PianoRoll(QGraphicsScene):
         self.ghost_rect.setRight(m_new_x)
         self.ghost_note.setRect(self.ghost_rect)
 
-
     def enforce_bounds(self, pos):
+        pos = QPointF(pos)
         if pos.x() < self.piano_width:
             pos.setX(self.piano_width)
-        elif pos.x() > self.grid_width + self.piano_width:
-            pos.setX(self.grid_width + self.piano_width)
+        elif pos.x() >= self.grid_width + self.piano_width:
+            pos.setX(self.grid_width + self.piano_width - 1)
         if pos.y() < self.header_height + self.padding:
             pos.setY(self.header_height + self.padding)
         return pos
@@ -826,24 +910,26 @@ class PianoRoll(QGraphicsScene):
     def get_note_start_from_x(self, note_x):
         return (note_x - self.piano_width) / (self.grid_width / self.num_measures / self.time_sig[0])
 
-
     def get_note_x_start(self, note_start):
-        return self.piano_width + \
-                (self.grid_width / self.num_measures / self.time_sig[0]) * note_start
+        return self.piano_width + (self.grid_width / self.num_measures / self.time_sig[0]) * note_start
 
     def get_note_x_length(self, note_length):
         return float(self.time_sig[1]) / self.time_sig[0] * note_length * self.grid_width / self.num_measures
 
     def get_note_length_from_x(self, note_x):
-        return float(self.time_sig[0]) / self.time_sig[1] * self.num_measures / self.grid_width \
-                * note_x
-
+        return float(self.time_sig[0]) / self.time_sig[1] * self.num_measures / self.grid_width * note_x
 
     def get_note_y_pos(self, note_num):
         return self.header_height + self.note_height * (self.total_notes - note_num - 1)
 
     def get_note_num_from_y(self, note_y_pos):
-        return -(((note_y_pos - self.header_height) / self.note_height) - self.total_notes + 1)
+        return -(int((note_y_pos - self.header_height) / self.note_height) - self.total_notes + 1)
+
+    def move_note(self, old_note, new_note):
+        self.midievent.emit(["midievent-remove", old_note[0], old_note[1], old_note[2], old_note[3]])
+        self.midievent.emit(["midievent-add", new_note[0], new_note[1], new_note[2], new_note[3]])
+
+# ------------------------------------------------------------------------------------------------------------
 
 class PianoRollView(QGraphicsView):
     def __init__(self, parent, time_sig = '4/4', num_measures = 4, quantize_val = '1/8'):
@@ -877,21 +963,22 @@ class ModeIndicator(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self, parent)
         #self.setGeometry(0, 0, 30, 20)
-        self.setFixedSize(30,20)
         self.mode = None
+        self.setFixedSize(30,20)
 
     def paintEvent(self, event):
         event.accept()
 
         painter = QPainter(self)
-
         painter.setPen(QPen(QColor(0, 0, 0, 0)))
+
         if self.mode == 'velocity_mode':
             painter.setBrush(QColor(127, 0, 0))
         elif self.mode == 'insert_mode':
             painter.setBrush(QColor(0, 100, 127))
         else:
             painter.setBrush(QColor(0, 0, 0, 0))
+
         painter.drawRect(0, 0, 30, 20)
 
     def changeMode(self, new_mode):
