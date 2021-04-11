@@ -328,7 +328,6 @@ class MidiPatternW(ExternalUI, QMainWindow):
                                    (time-on_time)/self.TICKS_PER_BEAT/self.fTimeSignature[0],
                                    on_velo)
 
-
 #--------------- main ------------------
 if __name__ == '__main__':
     import resources_rc

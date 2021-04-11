@@ -1518,11 +1518,9 @@ public:
                 pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
         }
 
-        if (fInstance->getNumPrograms() > 1 && ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0))
-        {
+        if (fInstance->getNumPrograms() > 1 && (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0)
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
                 pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-        }
 
         return true;
     }
