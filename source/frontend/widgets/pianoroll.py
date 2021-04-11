@@ -183,10 +183,14 @@ class NoteItem(QGraphicsRectItem):
 
     def moveEvent(self, event):
         offset = event.scenePos() - event.lastScenePos()
-        #print("mouseEvent", self.back.stretch, self.front.stretch)
 
         if self.back.stretch:
             self.expand(self.back, offset)
+            self.updateNoteInfo(self.scenePos().x(), self.scenePos().y())
+            return
+
+        if self.front.stretch:
+            self.expand(self.front, offset)
             self.updateNoteInfo(self.scenePos().x(), self.scenePos().y())
             return
 
@@ -200,42 +204,59 @@ class NoteItem(QGraphicsRectItem):
         if pos_x + width > piano.grid_width + piano.piano_width:
             pos_x = piano.grid_width + piano.piano_width - width
         pos_sx, pos_sy = piano.snap(pos_x, pos_y)
-        #if pos_sx < pos_x + width:
-            #pos_sx = pos_x + width
+
+        if pos_sx + width > piano.grid_width + piano.piano_width:
+            self.moving_diff = (0,0)
+            self.expand_diff = 0
+            return
 
         self.moving_diff = (pos_x-pos_sx, pos_y-pos_sy)
-
-        #if self.front.stretch:
-            #right = self.rect().right() - offset.x() + self.expand_diff
-            #if (self.scenePos().x() == piano.piano_width and offset.x() < 0) or right < 10:
-                #self.expand_diff = 0
-                #return
-            #self.expand(self.front, offset)
-            #pos_sy = self.scenePos().y()
-            #self.setPos(pos_sx, pos_sy)
-        #else:
         self.setPos(pos_sx, pos_sy)
 
         self.updateNoteInfo(pos_sx, pos_sy)
 
     def expand(self, rectItem, offset):
         rect = self.rect()
-        right = rect.right() + self.expand_diff
+        piano = self.piano()
+        width = rect.right() + self.expand_diff
+
         if rectItem == self.back:
-            right += offset.x()
-            if right > self.piano().grid_width:
-                right = self.piano().grid_width
-            elif right < 10:
-                right = 10
-            new_x = self.piano().snap(right)
+            width += offset.x()
+            max_x = piano.grid_width + piano.piano_width
+            if width + self.scenePos().x() >= max_x:
+                width = max_x - self.scenePos().x() - 1
+            elif piano.snap_value and width < piano.snap_value:
+                width = piano.snap_value
+            elif width < 10:
+                width = 10
+            new_w = piano.snap(width) - 2.75
+            if new_w + self.scenePos().x() >= max_x:
+                self.moving_diff = (0,0)
+                self.expand_diff = 0
+                return
+
         else:
-            right -= offset.x()
-            new_x = self.piano().snap(right+2.75)
-        if self.piano().snap_value:
-            new_x -= 2.75 # where does this number come from?!
-        self.expand_diff = right - new_x
-        self.back.setPos(new_x - 5, 0)
-        rect.setRight(new_x)
+            width -= offset.x()
+            new_w = piano.snap(width+2.75) - 2.75
+            if new_w <= 0:
+                new_w = piano.snap_value
+                self.moving_diff = (0,0)
+                self.expand_diff = 0
+                return
+            diff = rect.right() - new_w
+            if diff: # >= piano.snap_value:
+                new_x = self.scenePos().x() + diff
+                if new_x < piano.piano_width:
+                    new_x = piano.piano_width
+                    self.moving_diff = (0,0)
+                    self.expand_diff = 0
+                    return
+                print(new_x, new_w, diff)
+                self.setX(new_x)
+
+        self.expand_diff = width - new_w
+        self.back.setPos(new_w - 5, 0)
+        rect.setRight(new_w)
         self.setRect(rect)
 
     def updateNoteInfo(self, pos_x, pos_y):
@@ -529,8 +550,6 @@ class PianoRoll(QGraphicsScene):
         for note in self.notes:
             if note.pressed or note.back.stretch or note.front.stretch:
                 clicked_notes.append(note)
-
-        print("clicked_notes", clicked_notes)
 
         # mouse click on existing notes
         if clicked_notes:
