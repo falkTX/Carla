@@ -971,6 +971,9 @@ public:
         // can't disable forced stereo if enabled in the engine
         if (pData->engine->getOptions().forceStereo)
             pass();
+        // if there are event outputs, we can't force stereo
+        else if (fEventsOut.count != 0)
+            pass();
         // if inputs or outputs are just 1, then yes we can force stereo
         else if ((pData->audioIn.count == 1 || pData->audioOut.count == 1) || fHandle2 != nullptr)
             options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -2314,7 +2317,7 @@ public:
             }
         }
 
-        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && aIns <= 1 && aOuts <= 1 && fExt.state == nullptr && fExt.worker == nullptr)
+        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && aIns <= 1 && aOuts <= 1 && evOuts.count() == 0 && fExt.state == nullptr && fExt.worker == nullptr)
         {
             if (fHandle2 == nullptr)
             {
