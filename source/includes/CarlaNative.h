@@ -18,13 +18,13 @@
 #ifndef CARLA_NATIVE_H_INCLUDED
 #define CARLA_NATIVE_H_INCLUDED
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "CarlaDefines.h"
 #include <stddef.h>
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*!
  * @defgroup CarlaNativeAPI Carla Native API
