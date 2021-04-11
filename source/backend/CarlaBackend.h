@@ -1258,7 +1258,12 @@ typedef enum {
     /*!
      * Hide-optional-gui message.
      */
-    NSM_CALLBACK_HIDE_OPTIONAL_GUI = 7
+    NSM_CALLBACK_HIDE_OPTIONAL_GUI = 7,
+
+    /*!
+     * Set client name id message.
+     */
+    NSM_CALLBACK_SET_CLIENT_NAME_ID = 8
 
 } NsmCallbackOpcode;
 

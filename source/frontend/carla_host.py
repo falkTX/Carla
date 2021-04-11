@@ -2490,7 +2490,6 @@ class HostWindow(QMainWindow):
 
         # Open
         elif opcode == NSM_CALLBACK_OPEN:
-            self.fClientName      = os.path.basename(valueStr)
             self.fProjectFilename = QFileInfo(valueStr+".carxp").absoluteFilePath()
             self.setProperWindowTitle()
 
@@ -2513,6 +2512,11 @@ class HostWindow(QMainWindow):
         # Hide Optional Gui
         elif opcode == NSM_CALLBACK_HIDE_OPTIONAL_GUI:
             self.hideForNSM()
+
+        # Set client name
+        elif opcode == NSM_CALLBACK_SET_CLIENT_NAME_ID:
+            self.fClientName = valueStr
+            return
 
         self.host.nsm_ready(opcode)
 

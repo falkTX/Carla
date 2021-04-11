@@ -1456,17 +1456,7 @@ public:
 
         if (fClient == nullptr && clientName != nullptr)
         {
-#ifndef BUILD_BRIDGE
-            if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS && fClientNamePrefix.isNotEmpty())
-            {
-                truncatedClientName = fClientNamePrefix;
-                truncatedClientName.truncate(truncatedClientName.rfind("."));
-            }
-            else
-#endif
-            {
-                truncatedClientName = clientName;
-            }
+            truncatedClientName = clientName;
             truncatedClientName.truncate(getMaxClientNameSize());
         }
 

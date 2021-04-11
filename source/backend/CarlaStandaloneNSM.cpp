@@ -179,6 +179,9 @@ public:
                 lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_hidden", "");
             }
             break;
+
+        case CB::NSM_CALLBACK_SET_CLIENT_NAME_ID:
+            break;
         }
     }
 
@@ -284,6 +287,12 @@ protected:
         if (gStandalone.engineCallback != nullptr)
         {
             fReadyActionOpen = false;
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr,
+                                       CB::ENGINE_CALLBACK_NSM,
+                                       0,
+                                       CB::NSM_CALLBACK_SET_CLIENT_NAME_ID,
+                                       0, 0, 0.0f,
+                                       clientNameId);
             gStandalone.engineCallback(gStandalone.engineCallbackPtr,
                                        CB::ENGINE_CALLBACK_NSM,
                                        0,
