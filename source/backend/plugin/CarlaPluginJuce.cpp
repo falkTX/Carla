@@ -207,7 +207,6 @@ public:
 
         uint options = 0x0;
 
-        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (fInstance->getNumPrograms() > 1)

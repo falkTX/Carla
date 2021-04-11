@@ -679,6 +679,11 @@ int main(int argc, char* argv[])
                             if (! testing)
                                 carla_show_custom_ui(gHostHandle, 0, true);
                     }
+
+                    // on standalone usage, enable everything that makes sense
+                    const uint optsAvailable = pluginInfo->optionsAvailable;
+                    if (optsAvailable & CarlaBackend::PLUGIN_OPTION_FIXED_BUFFERS)
+                        carla_set_option(gHostHandle, 0, CarlaBackend::PLUGIN_OPTION_FIXED_BUFFERS, true);
                 }
             }
 
