@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -461,6 +461,15 @@ protected:
             }
 
             fMidiOut.removeRaw(time, data, size);
+
+            if (MIDI_IS_STATUS_NOTE_ON(data[0]))
+            {
+                const uint8_t status = MIDI_STATUS_NOTE_OFF | (data[0] & MIDI_CHANNEL_BIT);
+
+                const CarlaMutexLocker cml(fMidiQueue.getMutex());
+                fMidiQueue.put(status, data[1], 0);
+            }
+
             return true;
         }
 
