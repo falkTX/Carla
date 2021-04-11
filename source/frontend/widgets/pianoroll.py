@@ -24,7 +24,7 @@ from PyQt5.QtCore import Qt, QRectF, QPointF, pyqtSignal
 from PyQt5.QtGui import QColor, QCursor, QFont, QPen, QPainter, QTransform
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsOpacityEffect, QGraphicsRectItem, QGraphicsSimpleTextItem
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView
-from PyQt5.QtWidgets import QWidget, QLabel, QComboBox, QHBoxLayout, QVBoxLayout, QStyle
+from PyQt5.QtWidgets import QApplication, QComboBox, QHBoxLayout, QLabel, QStyle, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -473,6 +473,10 @@ class PianoRoll(QGraphicsScene):
 
     def keyPressEvent(self, event):
         QGraphicsScene.keyPressEvent(self, event)
+
+        if event.key() == Qt.Key_Escape:
+            QApplication.instance().closeAllWindows()
+            return
 
         if event.key() == Qt.Key_F:
             if not self.insert_mode:
