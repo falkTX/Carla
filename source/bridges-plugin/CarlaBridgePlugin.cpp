@@ -654,7 +654,7 @@ int main(int argc, char* argv[])
 
         if (carla_add_plugin(gHostHandle,
                              btype, itype,
-                             file.getFullPathName().toRawUTF8(), name, label, uniqueId, extraStuff, 0x0))
+                             file.getFullPathName().toRawUTF8(), name, label, uniqueId, extraStuff, PLUGIN_OPTIONS_NULL))
         {
             ret = 0;
 
