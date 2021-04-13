@@ -2274,7 +2274,7 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
 
     outStream << "<?xml version='1.0' encoding='UTF-8'?>\n";
     outStream << "<!DOCTYPE CARLA-PROJECT>\n";
-    outStream << "<CARLA-PROJECT VERSION='2.2'";
+    outStream << "<CARLA-PROJECT VERSION='" CARLA_VERSION_STRMIN "'";
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->ignoreClientPrefix)
