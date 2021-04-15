@@ -29,6 +29,7 @@
 #include "../memory/Memory.h"
 
 #include <algorithm>
+#include <limits>
 
 namespace water {
 
