@@ -57,9 +57,11 @@ from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
 from .canvasline import CanvasLine
 from .theme import Theme, getDefaultTheme, getThemeName
-from .utils import (CanvasCallback, CanvasGetNewGroupPos, CanvasItemFX, 
-    CanvasRemoveItemFX, CanvasGetPortGroupPosition, CanvasAddPortToPortGroup,
-    CanvasRemovePortFromPortGroup)
+from .utils import (
+    CanvasCallback,
+    CanvasGetNewGroupPos,
+    CanvasItemFX, 
+    CanvasRemoveItemFX)
 
 # FIXME
 from . import *
@@ -720,7 +722,7 @@ def setGroupAsPlugin(group_id, plugin_id, hasUI, hasInlineDisplay):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def addPort(group_id, port_id, port_name, port_mode, port_type, portgrp_id, is_alternate=False):
+def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=False):
     if canvas.debug:
         print("PatchCanvas::addPort(%i, %i, %s, %s, %s, %s)" % (
               group_id, port_id, port_name.encode(),
@@ -744,7 +746,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, portgrp_id, is_a
             box_widget = group.widgets[n]
             port_widget = box_widget.addPortFromGroup(
                 port_id, port_mode, port_type,
-                port_name, portgrp_id, is_alternate)
+                port_name, is_alternate)
             break
 
     if not (box_widget and port_widget):
@@ -763,10 +765,6 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, portgrp_id, is_a
     port_dict.widget = port_widget
     canvas.port_list.append(port_dict)
     
-    if portgrp_id:
-        port_dict.portgrp_id = CanvasAddPortToPortGroup(group_id, port_id,
-                                                 portgrp_id)
-    
     canvas.last_z_value += 1
     port_widget.setZValue(canvas.last_z_value)
     box_widget.updatePositions()
@@ -784,8 +782,9 @@ def removePort(group_id, port_id):
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
             if port.portgrp_id:
-                CanvasRemovePortFromPortGroup(group_id, port_id,
-                                              port.portgrp_id)
+                qCritical("PatchCanvas::removePort(%i, %i) - Port is in portgroup %i, remove it before !" % (
+                    group_id, port_id, port.portgrp_id))
+                return
             
             item = port.widget
             item.parentItem().removePortFromGroup(port_id)
@@ -798,7 +797,7 @@ def removePort(group_id, port_id):
 
     qCritical("PatchCanvas::removePort(%i, %i) - Unable to find port to remove" % (group_id, port_id))
 
-def changePortProperties(group_id, port_id, portgrp_id, new_port_name):
+def changePortProperties(group_id, port_id, new_port_name):
     if canvas.debug:
         print("PatchCanvas::renamePort(%i, %i, %s)" % (group_id, port_id, new_port_name.encode()))
 
@@ -808,13 +807,6 @@ def changePortProperties(group_id, port_id, portgrp_id, new_port_name):
                 port.port_name = new_port_name
                 port.widget.setPortName(new_port_name)
             
-            if portgrp_id != port.portgrp_id:
-                if port.portgrp_id:
-                    CanvasRemovePortFromPortGroup(group_id, port_id,
-                                                  port.portgrp_id)
-                if portgrp_id:
-                    CanvasAddPortToPortGroup(group_id, port_id, portgrp_id)
-            
             port.widget.parentItem().updatePositions()
 
             QTimer.singleShot(0, canvas.scene.update)
@@ -823,73 +815,111 @@ def changePortProperties(group_id, port_id, portgrp_id, new_port_name):
     qCritical("PatchCanvas::renamePort(%i, %i, %s) - Unable to find port to rename" % (
               group_id, port_id, new_port_name.encode()))
 
-def addPortToPortGroup(group_id, port_id, portgrp_id):
-    for port in canvas.port_list:
-        if port.group_id == group_id and port.port_id == port_id:
-            if portgrp_id != port.portgrp_id:
-                if port.portgrp_id:
-                    CanvasRemovePortFromPortGroup(group_id, port_id,
-                                                  port.portgrp_id)
-                if portgrp_id:
-                    CanvasAddPortToPortGroup(group_id, port_id, portgrp_id)
-            
-            port.widget.parentItem().updatePositions()
-
-            QTimer.singleShot(0, canvas.scene.update)
-            return
-
-def addPortGroup(group_id, portgrp_id, port_mode, port_type):
+def addPortGroup(group_id, portgrp_id, port_mode, port_type, port_id_list):
     if canvas.debug:
         print("PatchCanvas::addPortGroup(%i, %i)" % (group_id, portgrp_id))
-        
+
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id and portgrp.portgrp_id == portgrp_id:
-            qWarning("PatchCanvas::addPortGroup(%i, %i) - port group already exists" % (
+            qWarning("PatchCanvas::addPortGroup(%i, %i) - portgroup already exists" % (
                      group_id, portgrp_id))
             return
-        
+
     portgrp_dict = portgrp_dict_t()
     portgrp_dict.group_id = group_id
     portgrp_dict.portgrp_id = portgrp_id
     portgrp_dict.port_mode = port_mode
     portgrp_dict.port_type = port_type
-    portgrp_dict.port_id_list = []
+    portgrp_dict.port_id_list = tuple(port_id_list)
     portgrp_dict.widget = None
+
+    i = 0
+    # check that port ids are present and groupable in this group
+    for port in canvas.port_list:
+        if (port.group_id == group_id
+                and port.port_type == port_type
+                and port.port_mode == port_mode):
+            if port.port_id == port_id_list[i]:
+                if port.portgrp_id:
+                    qWarning("PatchCanvas::addPortGroup(%i, %i, %s) - port id %i is already in portgroup %i"
+                             % (group_id, portgrp_id, str(port_id_list), port.port_id, port.portgrp_id))
+                    return
+
+                i += 1
+
+                if i == len(port_id_list):
+                    # everything seems ok for this portgroup, stop the check
+                    break
+
+            elif i > 0:
+                qWarning("PatchCanvas::addPortGroup(%i, %i, %s) - port ids are not consecutive" % (
+                    group_id, portgrp_id, str(port_id_list)))
+                return
+    else:
+        qWarning("PatchCanvas::addPortGroup(%i, %i, %s) - not enought ports with port_id_list" % (
+            group_id, portgrp_id, str(port_id_list)))
+        return
+
+    # modify ports impacted by portgroup
+    for port in canvas.port_list:
+        if (port.group_id == group_id
+                 and port.port_id in port_id_list):
+            port.portgrp_id = portgrp_id
+            if port.widget is not None:
+                port.widget.setPortGroupId(portgrp_id)
+
     canvas.portgrp_list.append(portgrp_dict)
+
+    # add portgroup widget and refresh the view
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            for box in group.widgets:
+                if box is None:
+                    continue
+
+                if (not box.isSplitted()
+                        or box.getSplittedMode() == port_mode):
+                    portgrp_dict.widget = box.addPortGroupFromGroup(
+                        portgrp_id, port_mode, port_type, port_id_list)
+
+                    box.updatePositions()
+            break
 
 def removePortGroup(group_id, portgrp_id):
     if canvas.debug:
         print("PatchCanvas::removePortGroup(%i, %i)" % (group_id, portgrp_id))
-    
+
     box_widget = None
-    
+
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
+            # set portgrp_id to the concerned ports
             for port in canvas.port_list:
-                if port.port_id in portgrp.port_id_list:
+                if (port.group_id == group_id
+                        and port.portgrp_id == portgrp_id):
                     port.portgrp_id = 0
-                    if port.widget:
+
+                    if port.widget is not None:
                         port.widget.setPortGroupId(0)
                         box_widget = port.widget.parentItem()
-                        
-            portgrp.port_id_list.clear()
-            
-            if portgrp.widget:
+
+            if portgrp.widget is not None:
                 item = portgrp.widget
                 canvas.scene.removeItem(item)
                 del item
-            
+                portgrp.widget = None
             break
     else:
         qCritical("PatchCanvas::removePortGroup(%i, %i) - Unable to find portgrp to remove" % (
               group_id, portgrp_id))
         return
-    
+
     canvas.portgrp_list.remove(portgrp)
-    if box_widget:
+
+    if box_widget is not None:
         box_widget.updatePositions()
-    
+
     QTimer.singleShot(0, canvas.scene.update)
 
 def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):

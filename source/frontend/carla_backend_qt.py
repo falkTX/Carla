@@ -55,7 +55,7 @@ class CarlaHostSignals(QObject):
     PatchbayClientRemovedCallback = pyqtSignal(int)
     PatchbayClientRenamedCallback = pyqtSignal(int, str)
     PatchbayClientDataChangedCallback = pyqtSignal(int, int, int)
-    PatchbayPortAddedCallback = pyqtSignal(int, int, int, int, str)
+    PatchbayPortAddedCallback = pyqtSignal(int, int, int, str)
     PatchbayPortRemovedCallback = pyqtSignal(int, int)
     PatchbayPortChangedCallback = pyqtSignal(int, int, int, int, str)
     PatchbayPortGroupAddedCallback = pyqtSignal(int, int, int, str)

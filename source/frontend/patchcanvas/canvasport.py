@@ -66,7 +66,7 @@ from .utils import (
 
 class CanvasPort(QGraphicsItem):
     def __init__(self, group_id, port_id, port_name, port_mode, 
-                 port_type, portgrp_id, is_alternate, parent):
+                 port_type, is_alternate, parent):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
 
@@ -76,7 +76,7 @@ class CanvasPort(QGraphicsItem):
         self.m_port_mode = port_mode
         self.m_port_type = port_type
         self.m_port_name = port_name
-        self.m_portgrp_id = portgrp_id
+        self.m_portgrp_id = 0
         self.m_is_alternate = is_alternate
 
         # Base Variables
@@ -171,18 +171,13 @@ class CanvasPort(QGraphicsItem):
     def SetAsStereo(self, port_id):
         port_id_list = []
         for port in canvas.port_list:
-            if port.port_id in (self.m_port_id, port_id):
+            if (port.group_id == self.m_group_id
+                    and port.port_id in (self.m_port_id, port_id)):
                 port_id_list.append(port.port_id)
         
-        # get non used portgrp_id
-        new_portgrp_id = int(0x010000)
-        for portgrp in canvas.portgrp_list:
-            new_portgrp_id = max(new_portgrp_id, portgrp.portgrp_id)
-        
-        new_portgrp_id += 1
-        data = "%i:%i:%i:%i:%i:%i" % (self.m_group_id, new_portgrp_id,
-                                      self.m_port_mode, self.m_port_type,
-                                      port_id_list[0], port_id_list[1])
+        data = "%i:%i:%i:%i:%i" % (
+            self.m_group_id, self.m_port_mode, self.m_port_type,
+            port_id_list[0], port_id_list[1])
         
         CanvasCallback(ACTION_PORT_GROUP_ADD, 0, 0, data)
     

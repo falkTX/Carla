@@ -225,7 +225,7 @@ class CanvasBox(QGraphicsItem):
             self.shadow.setOpacity(opacity)
 
     def addPortFromGroup(self, port_id, port_mode, port_type, 
-                         port_name, portgrp_id, is_alternate):
+                         port_name, is_alternate):
         if len(self.m_port_list_ids) == 0:
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
@@ -233,17 +233,7 @@ class CanvasBox(QGraphicsItem):
                 self.setVisible(True)
 
         new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, 
-                                port_type, portgrp_id, is_alternate, self)
-
-        port_dict = port_dict_t()
-        port_dict.group_id = self.m_group_id
-        port_dict.port_id = port_id
-        port_dict.port_name = port_name
-        port_dict.port_mode = port_mode
-        port_dict.port_type = port_type
-        port_dict.portgrp_id = portgrp_id
-        port_dict.is_alternate = is_alternate
-        port_dict.widget = new_widget
+                                port_type, is_alternate, self)
 
         self.m_port_list_ids.append(port_id)
 
