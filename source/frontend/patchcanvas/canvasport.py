@@ -426,7 +426,6 @@ class CanvasPort(QGraphicsItem):
             canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
             
     def setPortSelected(self, yesno):
-        print('ofko')
         for connection in canvas.connection_list:
             if CanvasConnectionConcerns(connection,
                             self.m_group_id, [self.m_port_id]):
@@ -434,7 +433,6 @@ class CanvasPort(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:
-            print('oroor')
             self.setPortSelected(value)
         return QGraphicsItem.itemChange(self, change, value)
 
