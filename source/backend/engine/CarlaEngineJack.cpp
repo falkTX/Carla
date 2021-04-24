@@ -50,6 +50,9 @@
 # include <xmmintrin.h>
 #endif
 
+#define CARLA_SKIP_FUTEXES
+#include "CarlaSemUtils.hpp"
+
 // must be last
 #include "jackbridge/JackBridge.hpp"
 
@@ -1382,6 +1385,7 @@ public:
           fLastPatchbaySetGroupPos(),
           fPostPonedEvents(),
           fPostPonedEventsMutex(),
+          fPostPonedEventsSemaphore(),
           fPostPonedUUIDs(),
           fPostPonedUUIDsMutex(),
           fIsInternalClient(false)
@@ -1393,6 +1397,7 @@ public:
         pData->options.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
 #else
         carla_zeroPointers(fRackPorts, kRackPortCount);
+        carla_sem_create2(fPostPonedEventsSemaphore, false);
 #endif
     }
 
@@ -1405,6 +1410,7 @@ public:
         fUsedGroups.clear();
         fUsedPorts.clear();
         fUsedConnections.clear();
+        carla_sem_destroy2(fPostPonedEventsSemaphore);
         CARLA_SAFE_ASSERT(fPostPonedEvents.count() == 0);
 #endif
     }
@@ -2424,7 +2430,9 @@ public:
             jack_uuid_t uuid;
             {
                 char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupName);
-                CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0', false);
+
+                if (uuidstr == nullptr || uuidstr[0] == '\0')
+                    return false;
 
                 const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                 jackbridge_free(uuidstr);
@@ -3586,7 +3594,9 @@ private:
         jack_uuid_t uuid;
         {
             char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, clientName);
-            CARLA_SAFE_ASSERT_RETURN(uuidstr != nullptr && uuidstr[0] != '\0',);
+
+            if (uuidstr == nullptr || uuidstr[0] == '\0')
+                return;
 
             const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
             jackbridge_free(uuidstr);
@@ -3922,7 +3932,9 @@ private:
                 jack_uuid_t uuid;
                 {
                     char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, group.strVal);
-                    CARLA_SAFE_ASSERT_CONTINUE(uuidstr != nullptr && uuidstr[0] != '\0');
+
+                    if (uuidstr == nullptr || uuidstr[0] == '\0')
+                        continue;
 
                     const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                     jackbridge_free(uuidstr);
@@ -4163,6 +4175,7 @@ private:
 
     LinkedList<PostPonedJackEvent> fPostPonedEvents;
     CarlaMutex fPostPonedEventsMutex;
+    carla_sem_t fPostPonedEventsSemaphore;
 
     water::Array<jack_uuid_t> fPostPonedUUIDs;
     CarlaMutex fPostPonedUUIDsMutex;
@@ -4171,8 +4184,11 @@ private:
 
     void postPoneJackCallback(PostPonedJackEvent& ev)
     {
-        const CarlaMutexLocker cml(fPostPonedEventsMutex);
-        fPostPonedEvents.append(ev);
+        {
+            const CarlaMutexLocker cml(fPostPonedEventsMutex);
+            fPostPonedEvents.append(ev);
+        }
+        carla_sem_post(fPostPonedEventsSemaphore);
     }
 
     void run() override
@@ -4187,6 +4203,7 @@ private:
             if (fIsInternalClient)
                 idle();
 
+            if (carla_sem_timedwait(fPostPonedEventsSemaphore, fIsInternalClient ? 50 : 1000))
             {
                 const CarlaMutexLocker cml(fPostPonedEventsMutex);
 
@@ -4198,10 +4215,7 @@ private:
                 break;
 
             if (events.count() == 0)
-            {
-                carla_msleep(fIsInternalClient ? 50 : 200);
                 continue;
-            }
 
             for (LinkedList<PostPonedJackEvent>::Itenerator it = events.begin2(); it.valid(); it.next())
             {
