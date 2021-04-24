@@ -2640,7 +2640,9 @@ public:
                 jack_uuid_t uuid;
                 {
                     char* const uuidstr = jackbridge_get_uuid_for_client_name(fClient, groupNameToId.name);
-                    CARLA_SAFE_ASSERT_CONTINUE(uuidstr != nullptr && uuidstr[0] != '\0');
+
+                    if (uuidstr == nullptr || uuidstr[0] == '\0')
+                        continue;
 
                     const bool parsed = jackbridge_uuid_parse(uuidstr, &uuid);
                     jackbridge_free(uuidstr);
