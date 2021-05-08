@@ -15,21 +15,18 @@ jobs:
     # linux with macOS cross-compilation
     - os: linux
       compiler: gcc
-      dist: trusty
       env:
         - TARGET="macos"
 
     # linux with win32 cross-compilation
     - os: linux
       compiler: gcc
-      dist: trusty
       env:
         - TARGET="win32"
 
     # linux with win64 cross-compilation
     - os: linux
       compiler: gcc
-      dist: trusty
       env:
         - TARGET="win64"
 

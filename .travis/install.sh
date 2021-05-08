@@ -88,20 +88,17 @@ elif [ "${TARGET}" = "linux-juce-strict" ]; then
 
 elif [ "${TARGET}" = "macos" ]; then
     sudo apt-get install -y \
-        pkg-config \
-        apple-x86-setup
+        pkg-config 
+        # Cant find this package
+        #apple-x86-setup
 
 elif [ "${TARGET}" = "win32" ]; then
     sudo apt-get install -y \
-        mingw32-x-gcc \
-        mingw32-x-pkgconfig
+        mingw-w64
 
 elif [ "${TARGET}" = "win64" ]; then
     sudo apt-get install -y \
-        mingw32-x-gcc \
-        mingw32-x-pkgconfig \
-        mingw64-x-gcc \
-        mingw64-x-pkgconfig
+        mingw-w64
 
 elif [ "${TARGET}" = "pylint" ]; then
     sudo apt-get install -y \
