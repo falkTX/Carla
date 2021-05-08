@@ -93,15 +93,11 @@ elif [ "${TARGET}" = "macos" ]; then
 
 elif [ "${TARGET}" = "win32" ]; then
     sudo apt-get install -y \
-        mingw32-x-gcc \
-        mingw32-x-pkgconfig
+        mingw-w64
 
 elif [ "${TARGET}" = "win64" ]; then
     sudo apt-get install -y \
-        mingw32-x-gcc \
-        mingw32-x-pkgconfig \
-        mingw64-x-gcc \
-        mingw64-x-pkgconfig
+        mingw-w64
 
 elif [ "${TARGET}" = "pylint" ]; then
     sudo apt-get install -y \
