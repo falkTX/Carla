@@ -23,7 +23,7 @@ MODULEDIR := $(CURDIR)/build/modules/Release
 endif
 
 VERSION   := 2.3.0
-
+PYTHON    := python3
 # ---------------------------------------------------------------------------------------------------------------------
 
 all: backend discovery bridges-plugin bridges-ui frontend interposer libjack plugin theme
@@ -608,6 +608,8 @@ endif
 		bin/resources/carla-plugin-patchbay \
 		bin/resources/*-ui \
 		$(DESTDIR)$(DATADIR)/carla/resources
+		
+	
 endif # CPPMODE
 
 ifeq ($(HAVE_THEME),true)
@@ -767,6 +769,10 @@ ifeq ($(CAN_GENERATE_LV2_TTL),true)
 endif
 endif
 
+	# -------------------------------------------------------------------------------------------------------------
+	# compile all python .pyc files to __pycache__ for faster application start
+	$(PYTHON) -m compileall $(DATADIR)/carla
+	
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifneq ($(EXTERNAL_PLUGINS),true)
