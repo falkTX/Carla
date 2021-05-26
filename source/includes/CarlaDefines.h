@@ -37,7 +37,7 @@
 #define CARLA_VERSION_STRMIN "2.3"
 
 /* Check OS */
-#if defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
+#if defined(WIN64) || defined(_WIN64) || defined(__WIN64__) || defined(_M_ARM64)
 # define CARLA_OS_WIN64
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define CARLA_OS_WIN32
@@ -61,7 +61,7 @@
 # define CARLA_OS_UNIX
 #endif
 
-#if defined (__LP64__) || defined (_LP64) || defined (__arm64__) || defined (__aarch64__) || defined(CARLA_OS_WIN64)
+#if defined(__LP64__) || defined(_LP64) || defined(__arm64__) || defined(__aarch64__) || defined(CARLA_OS_WIN64)
 # define CARLA_OS_64BIT
 #endif
 
