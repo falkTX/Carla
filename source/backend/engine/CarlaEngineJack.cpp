@@ -1548,7 +1548,7 @@ public:
         jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
         jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback, this);
         jackbridge_set_freewheel_callback(fClient, carla_jack_freewheel_callback, this);
-        jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
+        // jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
         jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
         jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
 
@@ -2052,7 +2052,7 @@ public:
             jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback_plugin, pluginReserve);
             jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback_plugin, pluginReserve);
             */
-            jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, pluginReserve);
+            // jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, pluginReserve);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, pluginReserve);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, pluginReserve);
 #else
@@ -2064,7 +2064,7 @@ public:
             jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
             jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
             jackbridge_set_freewheel_callback(client, carla_jack_freewheel_callback, this);
-            jackbridge_set_latency_callback(client, carla_jack_latency_callback, this);
+            // jackbridge_set_latency_callback(client, carla_jack_latency_callback, this);
             jackbridge_set_process_callback(client, carla_jack_process_callback, this);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback, this);
 
@@ -2223,7 +2223,7 @@ public:
                 // set new client data
                 CarlaPluginPtr* const pluginReserve = new CarlaPluginPtr(plugin);
                 client->reservePluginPtr(pluginReserve);
-                jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, pluginReserve);
+                // jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, pluginReserve);
                 jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, pluginReserve);
                 jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, pluginReserve);
 
