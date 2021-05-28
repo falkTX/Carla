@@ -78,7 +78,7 @@ public:
         carla_zeroStruct(attr);
 
         attr.border_pixel = 0;
-        attr.event_mask   = KeyPressMask|KeyReleaseMask;
+        attr.event_mask   = KeyPressMask|KeyReleaseMask|FocusChangeMask;
 
         if (fIsResizable)
             attr.event_mask |= StructureNotifyMask;
@@ -238,9 +238,14 @@ public:
                                 carla_zeroStruct(sizeHints);
 
                                 if (XGetNormalHints(fDisplay, fChildWindow, &sizeHints) && !gErrorTriggered)
+                                {
                                     XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
+                                }
                                 else
+                                {
+                                    carla_stdout("Caught errors while accessing child window");
                                     fChildWindow = 0;
+                                }
 
                                 fChildWindowConfigured = true;
                                 XSetErrorHandler(oldErrorHandler);
@@ -273,6 +278,13 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(fCallback != nullptr);
                     fCallback->handlePluginUIClosed();
                 }
+                break;
+
+            case FocusIn:
+                if (fChildWindow == 0)
+                    fChildWindow = getChildWindow();
+                if (fChildWindow != 0)
+                    XSetInputFocus(fDisplay, fChildWindow, RevertToNone, CurrentTime);
                 break;
             }
 
