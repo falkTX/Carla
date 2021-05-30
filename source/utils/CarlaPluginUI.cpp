@@ -77,11 +77,7 @@ public:
         XSetWindowAttributes attr;
         carla_zeroStruct(attr);
 
-        attr.border_pixel = 0;
-        attr.event_mask   = KeyPressMask|KeyReleaseMask|FocusChangeMask;
-
-        if (fIsResizable)
-            attr.event_mask |= StructureNotifyMask;
+        attr.event_mask = KeyPressMask|KeyReleaseMask|FocusChangeMask|StructureNotifyMask|SubstructureNotifyMask;
 
         fHostWindow = XCreateWindow(fDisplay, RootWindow(fDisplay, screen),
                                     0, 0, 300, 300, 0,
@@ -155,10 +151,29 @@ public:
                     XSizeHints hints;
                     carla_zeroStruct(hints);
 
-                    if (XGetNormalHints(fDisplay, childWindow, &hints) && hints.width > 0 && hints.height > 0)
+                    if (XGetNormalHints(fDisplay, childWindow, &hints))
                     {
-                        setSize(static_cast<uint>(hints.width),
-                                static_cast<uint>(hints.height), false);
+                        int width = 0;
+                        int height = 0;
+
+                        if (hints.flags & PSize)
+                        {
+                            width = hints.width;
+                            height = hints.height;
+                        }
+                        else if (hints.flags & PBaseSize)
+                        {
+                            width = hints.base_width;
+                            height = hints.base_height;
+                        }
+                        else if (hints.flags & PMinSize)
+                        {
+                            width = hints.min_width;
+                            height = hints.min_height;
+                        }
+
+                        if (width > 0 && height > 0)
+                            setSize(static_cast<uint>(width), static_cast<uint>(height), false);
                     }
                 }
 
@@ -205,6 +220,9 @@ public:
         // prevent recursion
         if (fIsIdling) return;
 
+        int nextWidth = 0;
+        int nextHeight = 0;
+
         fIsIdling = true;
 
         for (XEvent event; XPending(fDisplay) > 0;)
@@ -223,6 +241,7 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.width > 0);
                     CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.height > 0);
 
+                    if (event.xconfigure.window == fHostWindow)
                     {
                         const uint width  = static_cast<uint>(event.xconfigure.width);
                         const uint height = static_cast<uint>(event.xconfigure.height);
@@ -256,6 +275,11 @@ public:
                         }
 
                         fCallback->handlePluginUIResized(width, height);
+                    }
+                    else if (event.xconfigure.window == fChildWindow && fChildWindow != 0)
+                    {
+                        nextWidth = event.xconfigure.width;
+                        nextHeight = event.xconfigure.height;
                     }
                     break;
 
@@ -292,6 +316,18 @@ public:
                 XFree(type);
             else if (fEventProc != nullptr)
                 fEventProc(&event);
+        }
+
+        if (nextWidth != 0 && nextHeight != 0)
+        {
+            XSizeHints sizeHints;
+            carla_zeroStruct(sizeHints);
+
+            if (XGetNormalHints(fDisplay, fChildWindow, &sizeHints))
+                XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
+
+            XResizeWindow(fDisplay, fHostWindow, nextWidth, nextHeight);
+            XFlush(fDisplay);
         }
 
         fIsIdling = false;
