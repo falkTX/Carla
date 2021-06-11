@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -4121,6 +4121,7 @@ private:
     struct PostPonedJackEvent {
         enum Type {
             kTypeNull = 0,
+            kTypeClientRegister,
             kTypeClientUnregister,
             kTypeClientPositionChange,
             kTypePortRegister,
@@ -4133,6 +4134,9 @@ private:
         Type type;
 
         union {
+            struct {
+                char name[STR_MAX+1];
+            } clientRegister;
             struct {
                 char name[STR_MAX+1];
             } clientUnregister;
@@ -4184,6 +4188,8 @@ private:
         PostPonedJackEvent nullEvent;
         carla_zeroStruct(nullEvent);
 
+        CarlaStringList clientsToIgnore, portsToIgnore;
+
         for (; ! shouldThreadExit();)
         {
             if (fIsInternalClient)
@@ -4205,6 +4211,37 @@ private:
                 continue;
             }
 
+            // 1st iteration, fill in what things we ought to ignore and do unregistration
+            clientsToIgnore.clear();
+            portsToIgnore.clear();
+
+            for (LinkedList<PostPonedJackEvent>::Itenerator it = events.begin2(); it.valid(); it.next())
+            {
+                const PostPonedJackEvent& ev(it.getValue(nullEvent));
+                CARLA_SAFE_ASSERT_CONTINUE(ev.type != PostPonedJackEvent::kTypeNull);
+
+                switch (ev.type)
+                {
+                case PostPonedJackEvent::kTypeClientRegister:
+                    clientsToIgnore.removeOne(ev.clientRegister.name);
+                    break;
+                case PostPonedJackEvent::kTypeClientUnregister:
+                    clientsToIgnore.append(ev.clientUnregister.name);
+                    handleJackClientUnregistrationCallback(ev.clientUnregister.name);
+                    break;
+                case PostPonedJackEvent::kTypePortRegister:
+                    portsToIgnore.removeOne(ev.portRegister.fullName);
+                    break;
+                case PostPonedJackEvent::kTypePortUnregister:
+                    portsToIgnore.append(ev.portUnregister.fullName);
+                    handleJackPortUnregistrationCallback(ev.portUnregister.fullName);
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            // 2nd iteration, go through all postponed events while ignoring some
             for (LinkedList<PostPonedJackEvent>::Itenerator it = events.begin2(); it.valid(); it.next())
             {
                 const PostPonedJackEvent& ev(it.getValue(nullEvent));
@@ -4213,32 +4250,49 @@ private:
                 switch (ev.type)
                 {
                 case PostPonedJackEvent::kTypeNull:
-                    break;
-
+                case PostPonedJackEvent::kTypeClientRegister:
                 case PostPonedJackEvent::kTypeClientUnregister:
-                    handleJackClientUnregistrationCallback(ev.clientUnregister.name);
+                case PostPonedJackEvent::kTypePortUnregister:
                     break;
 
                 case PostPonedJackEvent::kTypeClientPositionChange:
+                {
+                    char uuidstr[JACK_UUID_STRING_SIZE];
+                    carla_zeroStruct(uuidstr);
+                    jackbridge_uuid_unparse(ev.clientPositionChange.uuid, uuidstr);
+
+                    const char* const clientname = jackbridge_get_client_name_by_uuid(fClient, uuidstr);
+                    CARLA_SAFE_ASSERT_BREAK(clientname != nullptr && clientname[0] != '\0');
+
+                    if (clientsToIgnore.contains(clientname))
+                        continue;
+
                     handleJackClientPositionChangeCallback(ev.clientPositionChange.uuid);
                     break;
+                }
 
                 case PostPonedJackEvent::kTypePortRegister:
+                    if (portsToIgnore.contains(ev.portRegister.fullName))
+                        continue;
                     handleJackPortRegistrationCallback(ev.portRegister.fullName,
                                                        ev.portRegister.shortName,
                                                        ev.portRegister.hints);
                     break;
 
-                case PostPonedJackEvent::kTypePortUnregister:
-                    handleJackPortUnregistrationCallback(ev.portUnregister.fullName);
-                    break;
-
                 case PostPonedJackEvent::kTypePortConnect:
+                    if (portsToIgnore.contains(ev.portConnect.portNameA))
+                        continue;
+                    if (portsToIgnore.contains(ev.portConnect.portNameB))
+                        continue;
                     handleJackPortConnectCallback(ev.portConnect.portNameA,
                                                   ev.portConnect.portNameB);
                     break;
 
                 case PostPonedJackEvent::kTypePortDisconnect:
+                    if (portsToIgnore.contains(ev.portConnect.portNameA))
+                        continue;
+                    if (portsToIgnore.contains(ev.portConnect.portNameB))
+                        continue;
                     handleJackPortDisconnectCallback(ev.portDisconnect.portNameA,
                                                      ev.portDisconnect.portNameB);
                     break;
@@ -4255,6 +4309,8 @@ private:
         }
 
         events.clear();
+        clientsToIgnore.clear();
+        portsToIgnore.clear();
     }
 #endif //  BUILD_BRIDGE
 
@@ -4315,15 +4371,20 @@ private:
 
     static void JACKBRIDGE_API carla_jack_client_registration_callback(const char* name, int reg, void* arg)
     {
-        // ignored
-        if (reg != 0)
-            return;
-
         PostPonedJackEvent ev;
         carla_zeroStruct(ev);
 
-        ev.type = PostPonedJackEvent::kTypeClientUnregister;
-        std::strncpy(ev.clientUnregister.name, name, STR_MAX);
+        if (reg != 0)
+        {
+            ev.type = PostPonedJackEvent::kTypeClientRegister;
+            std::strncpy(ev.clientRegister.name, name, STR_MAX);
+        }
+        else
+        {
+            ev.type = PostPonedJackEvent::kTypeClientUnregister;
+            std::strncpy(ev.clientUnregister.name, name, STR_MAX);
+        }
+
         handlePtr->postPoneJackCallback(ev);
     }
 
