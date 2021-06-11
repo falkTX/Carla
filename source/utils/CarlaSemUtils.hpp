@@ -1,6 +1,6 @@
 /*
  * Carla semaphore utils
- * Copyright (C) 2013-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,7 +22,7 @@
 
 #include <ctime>
 
-#if defined(CARLA_OS_LINUX) && ! defined(CARLA_SKIP_FUTEXES)
+#if defined(CARLA_OS_LINUX) && ! defined(STOAT_TEST_BUILD)
 # define CARLA_USE_FUTEXES 1
 #endif
 
