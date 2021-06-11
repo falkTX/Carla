@@ -326,7 +326,7 @@ public:
             if (XGetNormalHints(fDisplay, fChildWindow, &sizeHints))
                 XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
 
-            XResizeWindow(fDisplay, fHostWindow, nextWidth, nextHeight);
+            XResizeWindow(fDisplay, fHostWindow, static_cast<uint>(nextWidth), static_cast<uint>(nextHeight));
             XFlush(fDisplay);
         }
 
