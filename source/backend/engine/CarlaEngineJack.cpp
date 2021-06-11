@@ -4262,15 +4262,17 @@ private:
 
                 case PostPonedJackEvent::kTypeClientPositionChange:
                 {
+                    /* FIXME there is something seriously wrong on the JACK side if we try to do this...
                     char uuidstr[JACK_UUID_STRING_SIZE];
                     carla_zeroStruct(uuidstr);
                     jackbridge_uuid_unparse(ev.clientPositionChange.uuid, uuidstr);
 
                     const char* const clientname = jackbridge_get_client_name_by_uuid(fClient, uuidstr);
-                    CARLA_SAFE_ASSERT_BREAK(clientname != nullptr && clientname[0] != '\0');
+                    CARLA_SAFE_ASSERT_CONTINUE(clientname != nullptr && clientname[0] != '\0');
 
                     if (clientsToIgnore.contains(clientname))
                         continue;
+                    */
 
                     handleJackClientPositionChangeCallback(ev.clientPositionChange.uuid);
                     break;
