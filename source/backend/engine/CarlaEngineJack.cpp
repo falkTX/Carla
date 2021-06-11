@@ -4236,6 +4236,10 @@ private:
                     portsToIgnore.append(ev.portUnregister.fullName);
                     handleJackPortUnregistrationCallback(ev.portUnregister.fullName);
                     break;
+                case PostPonedJackEvent::kTypePortDisconnect:
+                    handleJackPortDisconnectCallback(ev.portDisconnect.portNameA,
+                                                     ev.portDisconnect.portNameB);
+                    break;
                 default:
                     break;
                 }
@@ -4253,6 +4257,7 @@ private:
                 case PostPonedJackEvent::kTypeClientRegister:
                 case PostPonedJackEvent::kTypeClientUnregister:
                 case PostPonedJackEvent::kTypePortUnregister:
+                case PostPonedJackEvent::kTypePortDisconnect:
                     break;
 
                 case PostPonedJackEvent::kTypeClientPositionChange:
@@ -4286,15 +4291,6 @@ private:
                         continue;
                     handleJackPortConnectCallback(ev.portConnect.portNameA,
                                                   ev.portConnect.portNameB);
-                    break;
-
-                case PostPonedJackEvent::kTypePortDisconnect:
-                    if (portsToIgnore.contains(ev.portConnect.portNameA))
-                        continue;
-                    if (portsToIgnore.contains(ev.portConnect.portNameB))
-                        continue;
-                    handleJackPortDisconnectCallback(ev.portDisconnect.portNameA,
-                                                     ev.portDisconnect.portNameB);
                     break;
 
                 case PostPonedJackEvent::kTypePortRename:
