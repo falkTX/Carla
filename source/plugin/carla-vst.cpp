@@ -960,7 +960,8 @@ intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, 
             CARLA_SAFE_ASSERT_RETURN(obj->audioMaster != nullptr, 0);
 
             // some hosts call effOpen twice
-            CARLA_SAFE_ASSERT_RETURN(obj->plugin == nullptr, 1);
+            if (obj->plugin != nullptr)
+                return 1;
 
             d_lastBufferSize = static_cast<uint32_t>(VSTAudioMaster(effect, audioMasterGetBlockSize, 0, 0, nullptr, 0.0f));
             d_lastSampleRate = static_cast<double>(VSTAudioMaster(effect, audioMasterGetSampleRate, 0, 0, nullptr, 0.0f));
