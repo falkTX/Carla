@@ -321,10 +321,11 @@ public:
         VstParameterProperties prop;
         carla_zeroStruct(prop);
 
-        if (dispatcher(effGetParameterProperties, static_cast<int32_t>(parameterId), 0, &prop) == 1 && prop.label[0] != '\0')
+        if (dispatcher(effGetParameterProperties, static_cast<int32_t>(parameterId), 0, &prop) == 1
+            && prop.label[0] != '\0')
         {
-            std::strncpy(strBuf, prop.label, 64);
-            strBuf[64] = '\0';
+            std::strncpy(strBuf, prop.label, VestigeMaxLabelLen);
+            strBuf[VestigeMaxLabelLen] = '\0';
             return true;
         }
 
@@ -354,6 +355,27 @@ public:
 
         strBuf[0] = '\0';
         dispatcher(effGetParamLabel, static_cast<int32_t>(parameterId), 0, strBuf);
+        return true;
+    }
+
+    bool getParameterGroupName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        strBuf[0] = '\0';
+
+        VstParameterProperties prop;
+        carla_zeroStruct(prop);
+
+        if (dispatcher(effGetParameterProperties, static_cast<int32_t>(parameterId), 0, &prop) == 1
+            && prop.category != 0 && prop.categoryLabel[0] != '\0')
+        {
+            std::snprintf(strBuf, STR_MAX, "%d:%s", prop.category, prop.categoryLabel);
+            return true;
+        }
+
+        strBuf[0] = '\0';
         return true;
     }
 
