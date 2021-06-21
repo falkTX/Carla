@@ -14,6 +14,10 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __WINE__
+# include "winsock2.h"
+#endif
+
 #include "ApplicationPrivateData.hpp"
 #include "../Window.hpp"
 
