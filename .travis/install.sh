@@ -11,7 +11,6 @@ if [ "${TARGET}" = "linux" ]; then
         python3-rdflib \
         libgtk2.0-dev \
         libgtk-3-dev \
-        libqt4-dev \
         qtbase5-dev \
         libasound2-dev \
         libpulse-dev \
@@ -42,7 +41,6 @@ elif [ "${TARGET}" = "linux-strict" ]; then
         python3-rdflib \
         libgtk2.0-dev \
         libgtk-3-dev \
-        libqt4-dev \
         qtbase5-dev \
         libasound2-dev \
         libpulse-dev \
@@ -66,7 +64,6 @@ elif [ "${TARGET}" = "linux-juce-strict" ]; then
         python3-rdflib \
         libgtk2.0-dev \
         libgtk-3-dev \
-        libqt4-dev \
         qtbase5-dev \
         libasound2-dev \
         libjack-jackd2-dev \

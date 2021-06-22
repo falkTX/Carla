@@ -1,5 +1,5 @@
-# ![Carla Logo](https://raw.githubusercontent.com/falkTX/Carla/master/resources/48x48/carla.png) Carla Plugin Host
-[![Build Status](https://travis-ci.org/falkTX/Carla.png)](https://travis-ci.org/falkTX/Carla)
+# ![Carla Logo](resources/48x48/carla.png) Carla Plugin Host
+[![Build Status](https://travis-ci.com/falkTX/Carla.png)](https://travis-ci.com/falkTX/Carla)
 
 What is Carla?
 ---------------
@@ -29,7 +29,7 @@ Carla is also available as an LV2 plugin and VST2 plugin.
 Screenshot
 ----------
 
-![Screenshot](http://kxstudio.linuxaudio.org/screenshots/carla.png)
+![Screenshot](https://kx.studio/screenshots/carla.png)
 
 
-See the [official webpage](http://kxstudio.linuxaudio.org/Applications:Carla) also.
+See the [official webpage](https://kx.studio/Applications:Carla) also.
