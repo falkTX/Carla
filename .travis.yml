@@ -2,7 +2,7 @@ language: cpp
 
 os: linux
 
-dist: bionic
+dist: focal
 
 jobs:
   include:
@@ -60,4 +60,4 @@ script:
 
 notifications:
   email: true
-  irc: "ircs://chat.freenode.net:7070/#kxstudio"
+  irc: "ircs://chat.libera.chat:7070/#kxstudio"

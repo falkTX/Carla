@@ -91,6 +91,11 @@ elif [ "${TARGET}" = "macos" ]; then
         pkg-config \
         apple-x86-setup
 
+elif [ "${TARGET}" = "macos-native" ] || [ "${TARGET}" = "macos-universal" ]; then
+    HOMEBREW_NO_AUTO_UPDATE=1 brew install cmake jq meson
+    exit 0
+fi
+
 elif [ "${TARGET}" = "win32" ]; then
     sudo apt-get install -y \
         g++-multilib \
