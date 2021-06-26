@@ -1865,7 +1865,7 @@ typedef struct {
 /*!
  * Custom data, used for saving key:value 'dictionaries'.
  */
-typedef struct {
+typedef struct _CustomData {
     /*!
      * Value type, in URI form.
      * @see CustomDataTypes
