@@ -622,7 +622,7 @@ public:
         if (fParentWindow != nullptr)
         {
             [fParentWindow addChildWindow:fWindow
-                                   ordered:NSWindowAbove];
+                                  ordered:NSWindowAbove];
         }
         else
         {
@@ -720,10 +720,17 @@ public:
                                    ordered:NSWindowAbove];
     }
 
-    void setChildWindow(void* const window) override
+    void setChildWindow(void* const childWindow) override
     {
-        carla_debug("CocoaPluginUI::setChildWindow(%p)", window);
-        CARLA_SAFE_ASSERT_RETURN(window != nullptr,);
+        carla_debug("CocoaPluginUI::setChildWindow(%p)", childWindow);
+        CARLA_SAFE_ASSERT_RETURN(childWindow != nullptr,);
+
+        NSView* const view = (NSView*)childWindow;
+        const NSRect frame = [view frame];
+
+        [fWindow setContentSize:frame.size];
+        [fView setFrame:frame];
+        [fView setNeedsDisplay:YES];
     }
 
     void* getPtr() const noexcept override
