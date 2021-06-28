@@ -43,10 +43,10 @@ public:
           fNeedsAllNotesOff(false),
           fWasPlayingBefore(false),
           fTimeSigNum(4),
-          fLastPosition(0.0f),
+          fLastPosition(0.0),
           fLastFrame(0),
           fTicksPerFrame(0.0),
-          fMaxTicks(0.0),
+          fMaxTicksPerSigNum(0.0),
           fMidiOut(this),
           fTimeInfo(),
           fMidiQueue(),
@@ -60,7 +60,7 @@ public:
         fParameters[kParameterDefLength] = 4.0f;
         fParameters[kParameterQuantize]  = 4.0f;
 
-        fMaxTicks = TICKS_PER_BEAT * fTimeSigNum * 4 /* kParameterMeasures */;
+        fMaxTicksPerSigNum = TICKS_PER_BEAT * fTimeSigNum * 4 /* kParameterMeasures */;
     }
 
 protected:
@@ -197,7 +197,8 @@ protected:
             fTimeSigNum = static_cast<int>(value + 1.5f);
             // fall through
         case kParameterMeasures:
-            fMaxTicks = TICKS_PER_BEAT * fTimeSigNum * static_cast<double>(fParameters[kParameterMeasures]);
+            fMaxTicksPerSigNum = TICKS_PER_BEAT * fTimeSigNum * static_cast<double>(fParameters[kParameterMeasures]);
+            fNeedsAllNotesOff = true;
             break;
         }
     }
@@ -214,9 +215,13 @@ protected:
         if (fWasPlayingBefore != fTimeInfo.playing)
         {
             fLastFrame = 0;
-            fLastPosition = 0.0f;
+            fLastPosition = 0.0;
             fNeedsAllNotesOff = true;
             fWasPlayingBefore = fTimeInfo.playing;
+        }
+        else if (fTimeInfo.playing && fLastFrame + frames != fTimeInfo.frame)
+        {
+            fNeedsAllNotesOff = true;
         }
 
         if (fNeedsAllNotesOff)
@@ -266,7 +271,7 @@ protected:
             if (fLastFrame + frames == fTimeInfo.frame)
             {
                 // continuous playback
-                playPos = static_cast<double>(fLastPosition) + fTicksPerFrame * static_cast<double>(frames);
+                playPos = fLastPosition + fTicksPerFrame * static_cast<double>(frames);
             }
             else
             {
@@ -275,11 +280,11 @@ protected:
             }
 
             const double endPos       = playPos + fTicksPerFrame * static_cast<double>(frames);
-            const double loopedEndPos = std::fmod(endPos, fMaxTicks);
+            const double loopedEndPos = std::fmod(endPos, fMaxTicksPerSigNum);
 
-            for (; playPos < endPos; playPos += fMaxTicks)
+            for (; playPos < endPos; playPos += fMaxTicksPerSigNum)
             {
-                const double loopedPlayPos = std::fmod(playPos, fMaxTicks);
+                const double loopedPlayPos = std::fmod(playPos, fMaxTicksPerSigNum);
 
                 if (loopedEndPos >= loopedPlayPos)
                 {
@@ -288,16 +293,17 @@ protected:
                 }
                 else
                 {
-                    const double diff = fMaxTicks - loopedPlayPos;
+                    const double diff = fMaxTicksPerSigNum - loopedPlayPos;
 
                     if (! (fMidiOut.play(loopedPlayPos, diff) && fMidiOut.play(0.0, loopedEndPos, diff)))
                         fNeedsAllNotesOff = true;
                 }
             }
 
-            fLastFrame = fTimeInfo.frame;
-            fLastPosition = static_cast<float>(playPos);
+            fLastPosition = playPos;
         }
+
+        fLastFrame = fTimeInfo.frame;
     }
 
     // -------------------------------------------------------------------
@@ -483,11 +489,11 @@ private:
     bool fWasPlayingBefore;
     int  fTimeSigNum;
 
-    float    fLastPosition;
+    double   fLastPosition;
     uint64_t fLastFrame;
 
     double fTicksPerFrame;
-    double fMaxTicks;
+    double fMaxTicksPerSigNum;
 
     MidiPattern    fMidiOut;
     NativeTimeInfo fTimeInfo;
