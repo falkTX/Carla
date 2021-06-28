@@ -2060,7 +2060,9 @@ def getColorAndSkinStyle(host, pluginId):
 
     # DISTRHO Plugins (needs to be last)
     if pluginMaker.startswith("falkTX, ") or pluginMaker == "DISTRHO" or pluginLabel.startswith("http://distrho.sf.net/plugins/"):
-        return (colorNone, pluginLabel.replace("http://distrho.sf.net/plugins/",""))
+        skinStyle = pluginLabel.replace("http://distrho.sf.net/plugins/","")
+        if skinStyle in ("3bandeq", "nekobi"):
+            return (colorNone, skinStyle)
 
     return (colorCategory, "default")
 
