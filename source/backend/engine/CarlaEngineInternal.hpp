@@ -162,7 +162,6 @@ private:
     double beatsPerMinute;
     double bufferSize;
     double sampleRate;
-    double tick;
     bool needsReset;
 
     uint64_t nextFrame;

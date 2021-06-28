@@ -82,7 +82,6 @@ EngineInternalTime::EngineInternalTime(EngineTimeInfo& ti, const EngineTransport
       beatsPerMinute(120.0),
       bufferSize(0.0),
       sampleRate(0.0),
-      tick(0.0),
       needsReset(false),
       nextFrame(0),
 #ifndef BUILD_BRIDGE
@@ -228,7 +227,7 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
     }
     else if (timeInfo.playing)
     {
-        ticktmp = tick + (newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60));
+        ticktmp = timeInfo.bbt.tick + (newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60));
 
         while (ticktmp >= kTicksPerBeat)
         {
@@ -244,13 +243,12 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
     }
     else
     {
-        ticktmp = tick;
+        ticktmp = timeInfo.bbt.tick;
     }
 
     timeInfo.bbt.beatsPerBar = static_cast<float>(beatsPerBar);
     timeInfo.bbt.beatsPerMinute = beatsPerMinute;
     timeInfo.bbt.tick = ticktmp;
-    tick = ticktmp;
 
     if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL && timeInfo.playing)
         nextFrame += newFrames;
@@ -267,7 +265,7 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
     pos->valid = JackPositionBBT;
     pos->bar   = timeInfo.bbt.bar;
     pos->beat  = timeInfo.bbt.beat;
-    pos->tick  = static_cast<int32_t>(tick + 0.5);
+    pos->tick  = static_cast<int32_t>(timeInfo.bbt.tick + 0.5);
     pos->bar_start_tick = timeInfo.bbt.barStartTick;
     pos->beats_per_bar = timeInfo.bbt.beatsPerBar;
     pos->beat_type = timeInfo.bbt.beatType;
