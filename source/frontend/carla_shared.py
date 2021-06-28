@@ -596,8 +596,8 @@ def countDecimalPoints(step, stepSmall):
         return 2
 
     count = 0
-    value = fmod(abs(stepSmall), 1)
-    while 0.001 < value < 0.99 and count < 6:
+    value = fmod(abs(step), 1)
+    while 0.0001 < value < 0.999 and count < 6:
         value = fmod(value*10, 1)
         count += 1
 
