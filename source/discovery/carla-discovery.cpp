@@ -65,6 +65,9 @@
 # undef Point
 # include "CarlaMacUtils.cpp"
 # include <spawn.h>
+# if defined(USING_JUCE) && defined(__aarch64__)
+#  include <spawn.h>
+# endif
 #endif
 
 #ifdef CARLA_OS_WIN

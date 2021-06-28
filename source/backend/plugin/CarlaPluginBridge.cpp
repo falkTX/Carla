@@ -181,15 +181,16 @@ protected:
         }
 #endif
 
-#ifdef CARLA_OS_MAC
         // setup binary arch
-        if (fBinaryArchName.isNotEmpty())
-        {
-            arguments.add("arch");
-            arguments.add("-arch");
-            arguments.add(fBinaryArchName);
-        }
+        ChildProcess::Type childType;
+#ifdef CARLA_OS_MAC
+        if (fBinaryArchName == "arm64")
+            childType = ChildProcess::TypeARM;
+        else if (fBinaryArchName == "x86_64")
+            childType = ChildProcess::TypeIntel;
+        else
 #endif
+            childType = ChildProcess::TypeAny;
 
         // bridge binary
         arguments.add(fBridgeBinary);
@@ -327,13 +328,13 @@ protected:
             {
                 const File oldFolder(File::getCurrentWorkingDirectory());
                 projFolder.setAsCurrentWorkingDirectory();
-                started = fProcess->start(arguments);
+                started = fProcess->start(arguments, childType);
                 oldFolder.setAsCurrentWorkingDirectory();
             }
             else
 #endif
             {
-                started = fProcess->start(arguments);
+                started = fProcess->start(arguments, childType);
             }
         }
 

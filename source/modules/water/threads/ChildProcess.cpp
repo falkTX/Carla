@@ -27,6 +27,11 @@
 #include "../files/File.h"
 #include "../misc/Time.h"
 
+#ifdef CARLA_OS_MAC
+# include <crt_externs.h>
+# include <spawn.h>
+#endif
+
 #ifndef CARLA_OS_WIN
 # include <signal.h>
 # include <sys/wait.h>
@@ -118,7 +123,7 @@ private:
 class ChildProcess::ActiveProcess
 {
 public:
-    ActiveProcess (const StringArray& arguments)
+    ActiveProcess (const StringArray& arguments, const Type type)
         : childPID (0)
     {
         String exe (arguments[0].unquoted());
@@ -135,12 +140,40 @@ public:
 
         argv.add (nullptr);
 
+#ifdef CARLA_OS_MAC
+        cpu_type_t pref;
+        pid_t result = -1;
+
+        switch (type)
+        {
+        case TypeARM:
+            pref = CPU_TYPE_ARM64;
+            break;
+        case TypeIntel:
+            pref = CPU_TYPE_X86_64;
+            break;
+        default:
+            pref = CPU_TYPE_ANY;
+            break;
+        }
+
+        posix_spawnattr_t attr;
+        posix_spawnattr_init(&attr);
+        // posix_spawnattr_setflags(&attr, POSIX_SPAWN_USEVFORK);
+        CARLA_SAFE_ASSERT_RETURN(posix_spawnattr_setbinpref_np(&attr, 1, &pref, nullptr) == 0,);
+        char*** const environptr = _NSGetEnviron();
+        CARLA_SAFE_ASSERT_RETURN(posix_spawn(&result, exe.toRawUTF8(), nullptr, &attr, 
+                                 argv.getRawDataPointer(), environptr != nullptr ? *environptr : nullptr) == 0,);
+        posix_spawnattr_destroy(&attr);
+#else
         const pid_t result = vfork();
+#endif
 
         if (result < 0)
         {
             // error
         }
+#ifndef CARLA_OS_MAC
         else if (result == 0)
         {
             // child process
@@ -149,11 +182,17 @@ public:
             if (execvp (exe.toRawUTF8(), argv.getRawDataPointer()))
                 _exit (-1);
         }
+#endif
         else
         {
             // we're the parent process..
             childPID = result;
         }
+
+#ifndef CARLA_OS_MAC
+        // unused
+        (void)pref;
+#endif
     }
 
     ~ActiveProcess()
@@ -285,7 +324,7 @@ uint32 ChildProcess::getPID() const noexcept
 //=====================================================================================================================
 
 #ifdef CARLA_OS_WIN
-bool ChildProcess::start (const String& command)
+bool ChildProcess::start (const String& command, Type)
 {
     activeProcess = new ActiveProcess (command);
 
@@ -317,17 +356,17 @@ bool ChildProcess::start (const StringArray& args)
     return start (escaped.trim());
 }
 #else
-bool ChildProcess::start (const String& command)
+bool ChildProcess::start (const String& command, const Type type)
 {
-    return start (StringArray::fromTokens (command, true));
+    return start (StringArray::fromTokens (command, true), type);
 }
 
-bool ChildProcess::start (const StringArray& args)
+bool ChildProcess::start (const StringArray& args, const Type type)
 {
     if (args.size() == 0)
         return false;
 
-    activeProcess = new ActiveProcess (args);
+    activeProcess = new ActiveProcess (args, type);
 
     if (activeProcess->childPID == 0)
         activeProcess = nullptr;

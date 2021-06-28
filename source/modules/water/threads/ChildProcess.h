@@ -43,6 +43,13 @@ class ChildProcess
 {
 public:
     //==============================================================================
+    /** Child process type, only used in macOS. */
+    enum Type {
+        TypeAny,
+        TypeARM,
+        TypeIntel
+    };
+
     /** Creates a process object.
         To actually launch the process, use start().
     */
@@ -62,7 +69,7 @@ public:
         The streamFlags is a combinations of values to indicate which of the child's output
         streams should be read and returned by readProcessOutput().
     */
-    bool start (const String& command);
+    bool start (const String& command, Type type = TypeAny);
 
     /** Attempts to launch a child process command.
 
@@ -73,7 +80,7 @@ public:
         The streamFlags is a combinations of values to indicate which of the child's output
         streams should be read and returned by readProcessOutput().
     */
-    bool start (const StringArray& arguments);
+    bool start (const StringArray& arguments, Type type = TypeAny);
 
     /** Returns true if the child process is alive. */
     bool isRunning() const;
