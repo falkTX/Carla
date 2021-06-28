@@ -109,8 +109,8 @@ class CanvasBox(QGraphicsObject):
         self.p_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
 
         self.m_last_pos = QPointF()
-        self.m_splitted = False
-        self.m_splitted_mode = PORT_MODE_NULL
+        self.m_split = False
+        self.m_split_mode = PORT_MODE_NULL
 
         self.m_cursor_moving = False
         self.m_forced_split = False
@@ -173,11 +173,11 @@ class CanvasBox(QGraphicsObject):
     def getGroupName(self):
         return self.m_group_name
 
-    def isSplitted(self):
-        return self.m_splitted
+    def isSplit(self):
+        return self.m_split
 
-    def getSplittedMode(self):
-        return self.m_splitted_mode
+    def getSplitMode(self):
+        return self.m_split_mode
 
     def getPortCount(self):
         return len(self.m_port_list_ids)
@@ -217,8 +217,8 @@ class CanvasBox(QGraphicsObject):
             self.icon_svg.setIcon(icon, self.m_group_name)
 
     def setSplit(self, split, mode=PORT_MODE_NULL):
-        self.m_splitted = split
-        self.m_splitted_mode = mode
+        self.m_split = split
+        self.m_split_mode = mode
 
     def setGroupName(self, group_name):
         self.m_group_name = group_name
@@ -411,7 +411,7 @@ class CanvasBox(QGraphicsObject):
             connection.widget.setZValue(z_value)
 
     def triggerSignalPositionChanged(self):
-        self.positionChanged.emit(self.m_group_id, self.m_splitted, self.x(), self.y())
+        self.positionChanged.emit(self.m_group_id, self.m_split, self.x(), self.y())
         self.m_will_signal_pos_change = False
 
     @pyqtSlot()
@@ -517,7 +517,7 @@ class CanvasBox(QGraphicsObject):
         act_x_info = menu.addAction("Info")
         act_x_rename = menu.addAction("Rename")
         act_x_sep2 = menu.addSeparator()
-        act_x_split_join = menu.addAction("Join" if self.m_splitted else "Split")
+        act_x_split_join = menu.addAction("Join" if self.m_split else "Split")
 
         if not features.group_info:
             act_x_info.setVisible(False)
@@ -554,7 +554,7 @@ class CanvasBox(QGraphicsObject):
                 elif port.port_mode == PORT_MODE_OUTPUT:
                     haveOuts = True
 
-        if not (self.m_splitted or bool(haveIns and haveOuts)):
+        if not (self.m_split or bool(haveIns and haveOuts)):
             act_x_sep2.setVisible(False)
             act_x_split_join.setVisible(False)
 
@@ -574,7 +574,7 @@ class CanvasBox(QGraphicsObject):
             canvas.callback(ACTION_GROUP_RENAME, self.m_group_id, 0, "")
 
         elif act_selected == act_x_split_join:
-            if self.m_splitted:
+            if self.m_split:
                 canvas.callback(ACTION_GROUP_JOIN, self.m_group_id, 0, "")
             else:
                 canvas.callback(ACTION_GROUP_SPLIT, self.m_group_id, 0, "")

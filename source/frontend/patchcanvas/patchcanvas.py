@@ -827,7 +827,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
 
     for group in canvas.group_list:
         if group.group_id == group_id:
-            if group.split and group.widgets[0].getSplittedMode() != port_mode and group.widgets[1]:
+            if group.split and group.widgets[0].getSplitMode() != port_mode and group.widgets[1]:
                 n = 1
             else:
                 n = 0
