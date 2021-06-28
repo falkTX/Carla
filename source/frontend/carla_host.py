@@ -1225,6 +1225,17 @@ class HostWindow(QMainWindow):
 
         if not self.host.add_plugin(plugin['build'], plugin['type'], plugin['filename'], None,
                                     plugin['label'], plugin['uniqueId'], None, PLUGIN_OPTIONS_NULL):
+            # remove plugin from favorites
+            try:
+                self.fFavoritePlugins.remove(plugin)
+            except ValueError:
+                pass
+            else:
+                settingsDBf = QSafeSettings("falkTX", "CarlaDatabase2")
+                settingsDBf.setValue("PluginDatabase/Favorites", self.fFavoritePlugins)
+                settingsDBf.sync()
+                del settingsDBf
+
             CustomMessageBox(self,
                              QMessageBox.Critical,
                              self.tr("Error"),
