@@ -64,6 +64,7 @@
 # undef MemoryBlock
 # undef Point
 # include "CarlaMacUtils.cpp"
+# include <spawn.h>
 #endif
 
 #ifdef CARLA_OS_WIN
@@ -1836,19 +1837,19 @@ int main(int argc, char* argv[])
     {
         DISCOVERY_OUT("warning", "No plugins found while scanning in arm64 mode, will try x86_64 now");
 
-        const pid_t pid = vfork();
-        if (pid >= 0)
+        cpu_type_t pref = CPU_TYPE_X86_64;
+        pid_t pid = -1;
+
+        posix_spawnattr_t attr;
+        posix_spawnattr_init(&attr);
+        CARLA_SAFE_ASSERT_RETURN(posix_spawnattr_setbinpref_np(&attr, 1, &pref, nullptr) == 0, 1);
+        CARLA_SAFE_ASSERT_RETURN(posix_spawn(&pid, argv[0], nullptr, &attr, argv, nullptr) == 0, 1);
+        posix_spawnattr_destroy(&attr);
+
+        if (pid > 0)
         {
-            if (pid == 0)
-            {
-                execl("/usr/bin/arch", "/usr/bin/arch", "-arch", "x86_64", argv[0], argv[1], argv[2], nullptr);
-                exit(1);
-            }
-            else
-            {
-                int status;
-                waitpid(pid, &status, 0);
-            }
+            int status;
+            waitpid(pid, &status, 0);
         }
     }
 #endif
