@@ -476,7 +476,7 @@ private:
 - (void) setCallback:(CarlaPluginUI::Callback*)cb;
 - (BOOL) acceptsFirstResponder;
 - (BOOL) canBecomeKeyWindow;
-- (BOOL) canBecomeMainWindow;
+- (BOOL) canBecomeMain;
 - (BOOL) windowShouldClose:(id)sender;
 - (NSSize) windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize;
 @end
@@ -518,7 +518,7 @@ private:
     return YES;
 }
 
-- (BOOL)canBecomeMainWindow
+- (BOOL)canBecomeMain
 {
     return NO;
 }
@@ -652,6 +652,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         [fWindow makeKeyAndOrderFront:fWindow];
+        [fWindow orderFrontRegardless];
         [NSApp activateIgnoringOtherApps:YES];
     }
 

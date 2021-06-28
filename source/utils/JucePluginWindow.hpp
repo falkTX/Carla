@@ -45,10 +45,10 @@ public:
     JucePluginWindow(const uintptr_t parentId)
         : DialogWindow("JucePluginWindow", Colour(50, 50, 200), true, false),
           fClosed(false),
+          fShown(false),
           fTransientId(parentId)
     {
         setVisible(false);
-        //setAlwaysOnTop(true);
         setOpaque(true);
         setResizable(false, false);
         setUsingNativeTitleBar(true);
@@ -57,6 +57,7 @@ public:
     void show(Component* const comp)
     {
         fClosed = false;
+        fShown = true;
 
         centreWithSize(comp->getWidth(), comp->getHeight());
         setContentNonOwned(comp, true);
@@ -64,8 +65,12 @@ public:
         if (! isOnDesktop())
             addToDesktop();
 
-        setVisible(true);
+        setAlwaysOnTop(true);
         setTransient();
+        setVisible(true);
+        toFront(true);
+
+        postCommandMessage(0);
     }
 
     void hide()
@@ -95,8 +100,25 @@ protected:
         return true;
     }
 
+    int getDesktopWindowStyleFlags() const override
+    {
+        return ComponentPeer::windowHasDropShadow | ComponentPeer::windowHasTitleBar | ComponentPeer::windowHasCloseButton;
+    }
+
+    void handleCommandMessage(const int comamndId) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(comamndId == 0,);
+
+        if (fShown)
+        {
+            fShown = false;
+            setAlwaysOnTop(false);
+        }
+    }
+
 private:
     volatile bool fClosed;
+    bool fShown;
     const uintptr_t fTransientId;
 
     void setTransient()
