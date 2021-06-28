@@ -165,6 +165,9 @@ ifeq ($(MACOS),true)
 # MacOS linker flags
 BASE_FLAGS += -Wno-deprecated-declarations
 LINK_OPTS   = -fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs
+ifneq ($(SKIP_STRIPPING),true)
+LINK_OPTS += -Wl,-x
+endif
 else
 # Common linker flags
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed
