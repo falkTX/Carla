@@ -823,7 +823,7 @@ def getAndSetPath(parent, lineEdit):
 # Backwards-compatible horizontalAdvance/width call, depending on Qt version
 
 def fontMetricsHorizontalAdvance(fontMetrics, string):
-    if QT_VERSION >= 0x51100:
+    if QT_VERSION >= 0x50b00:
         return fontMetrics.horizontalAdvance(string)
     return fontMetrics.width(string)
 

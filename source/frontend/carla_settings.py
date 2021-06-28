@@ -19,7 +19,7 @@
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (PyQt5)
 
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtCore import pyqtSlot, QT_VERSION, Qt
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ from carla_shared import (
     CARLA_KEY_CANVAS_USE_BEZIER_LINES,
     CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,
     CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS,
-    #CARLA_KEY_CANVAS_EYE_CANDY,
+    CARLA_KEY_CANVAS_EYE_CANDY,
     CARLA_KEY_CANVAS_FANCY_EYE_CANDY,
     CARLA_KEY_CANVAS_USE_OPENGL,
     CARLA_KEY_CANVAS_ANTIALIASING,
@@ -121,7 +121,7 @@ from carla_shared import (
     CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES,
     CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS,
     CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS,
-    #CARLA_DEFAULT_CANVAS_EYE_CANDY,
+    CARLA_DEFAULT_CANVAS_EYE_CANDY,
     CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY,
     CARLA_DEFAULT_CANVAS_USE_OPENGL,
     CARLA_DEFAULT_CANVAS_ANTIALIASING,
@@ -549,9 +549,8 @@ class CarlaSettingsW(QDialog):
         # FIXME, not implemented yet
         self.ui.ch_engine_uis_always_on_top.hide()
 
-        # FIXME broken in Qt5
-        self.ui.cb_canvas_eyecandy.setChecked(False)
-        self.ui.cb_canvas_eyecandy.setEnabled(False)
+        # FIXME broken in some Qt5 versions
+        self.ui.cb_canvas_eyecandy.setEnabled(QT_VERSION >= 0x50c00)
 
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
@@ -605,7 +604,7 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_main_experimental.toggled.connect(self.slot_enableExperimental)
         self.ui.ch_exp_wine_bridges.toggled.connect(self.slot_enableWineBridges)
         self.ui.cb_exp_plugin_bridges.toggled.connect(self.slot_pluginBridgesToggled)
-        #self.ui.cb_canvas_eyecandy.toggled.connect(self.slot_canvasEyeCandyToggled)
+        self.ui.cb_canvas_eyecandy.toggled.connect(self.slot_canvasEyeCandyToggled)
         #self.ui.cb_canvas_fancy_eyecandy.toggled.connect(self.slot_canvasFancyEyeCandyToggled)
         self.ui.cb_canvas_use_opengl.toggled.connect(self.slot_canvasOpenGLToggled)
 
@@ -679,8 +678,9 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_auto_select.setChecked(
             settings.value(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS, bool))
 
-        #self.ui.cb_canvas_eyecandy.setChecked(
-        #    settings.value(CARLA_KEY_CANVAS_EYE_CANDY, CARLA_DEFAULT_CANVAS_EYE_CANDY, bool))
+        if self.ui.cb_canvas_eyecandy.isEnabled():
+            self.ui.cb_canvas_eyecandy.setChecked(
+                settings.value(CARLA_KEY_CANVAS_EYE_CANDY, CARLA_DEFAULT_CANVAS_EYE_CANDY, bool))
 
         self.ui.cb_canvas_fancy_eyecandy.setChecked(
             settings.value(CARLA_KEY_CANVAS_FANCY_EYE_CANDY, CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY, bool))
@@ -935,7 +935,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_CANVAS_USE_BEZIER_LINES,  self.ui.cb_canvas_bezier_lines.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,  self.ui.cb_canvas_hide_groups.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, self.ui.cb_canvas_auto_select.isChecked())
-        #settings.setValue(CARLA_KEY_CANVAS_EYE_CANDY,         self.ui.cb_canvas_eyecandy.isChecked())
+        settings.setValue(CARLA_KEY_CANVAS_EYE_CANDY,         self.ui.cb_canvas_eyecandy.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,   self.ui.cb_canvas_fancy_eyecandy.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_USE_OPENGL,        self.ui.cb_canvas_use_opengl.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   self.ui.cb_canvas_render_hq_aa.isChecked())
@@ -1122,7 +1122,7 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_canvas_bezier_lines.setChecked(CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES)
             self.ui.cb_canvas_hide_groups.setChecked(CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS)
             self.ui.cb_canvas_auto_select.setChecked(CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS)
-            #self.ui.cb_canvas_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_EYE_CANDY)
+            self.ui.cb_canvas_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_EYE_CANDY and self.ui.cb_canvas_eyecandy.isEnabled())
             self.ui.cb_canvas_render_aa.setCheckState(Qt.PartiallyChecked) # CARLA_DEFAULT_CANVAS_ANTIALIASING
             self.ui.cb_canvas_full_repaints.setChecked(CARLA_DEFAULT_CANVAS_FULL_REPAINTS)
 

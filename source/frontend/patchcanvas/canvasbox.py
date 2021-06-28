@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PatchBay Canvas engine using QGraphicsView/Scene
-# Copyright (C) 2010-2020 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2010-2021 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QGraphicsObject, QMenu
 # Backwards-compatible horizontalAdvance/width call, depending on Qt version
 
 def fontHorizontalAdvance(font, string):
-    if QT_VERSION >= 0x51100:
+    if QT_VERSION >= 0x50b00:
         return QFontMetrics(font).horizontalAdvance(string)
     return QFontMetrics(font).width(string)
 
@@ -141,10 +141,7 @@ class CanvasBox(QGraphicsObject):
             self.icon_svg = None
 
         # Shadow
-        # FIXME FX on top of graphic items make them lose high-dpi
-        # See https://bugreports.qt.io/browse/QTBUG-65035
-        # FIXME Random crashes while using Qt's drop shadow, let's just disable it
-        if False and options.eyecandy and canvas.scene.getDevicePixelRatioF() == 1.0:
+        if options.eyecandy and QT_VERSION >= 0x50c00:
             self.shadow = CanvasBoxShadow(self.toGraphicsObject())
             self.shadow.setFakeParent(self)
             self.setGraphicsEffect(self.shadow)
