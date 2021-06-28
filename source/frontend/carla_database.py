@@ -1122,7 +1122,9 @@ class PluginRefreshW(QDialog):
                     self.ui.ch_vst3.setEnabled(False)
                     self.ui.ch_vst3.setVisible(False)
 
-        if not MACOS:
+        if MACOS:
+            self.setWindowModality(Qt.WindowModal)
+        else:
             self.ui.ch_au.setEnabled(False)
             self.ui.ch_au.setVisible(False)
 
@@ -1434,7 +1436,9 @@ class PluginDatabaseW(QDialog):
             self.ui.ch_bridged_wine.setChecked(False)
             self.ui.ch_bridged_wine.setEnabled(False)
 
-        if not MACOS:
+        if MACOS:
+            self.setWindowModality(Qt.WindowModal)
+        else:
             self.ui.ch_au.setChecked(False)
             self.ui.ch_au.setEnabled(False)
             self.ui.ch_au.setVisible(False)

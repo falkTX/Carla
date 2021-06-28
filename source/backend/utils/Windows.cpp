@@ -43,6 +43,19 @@ int carla_cocoa_get_window(void* nsViewPtr)
 #endif
 }
 
+void carla_cocoa_set_transient_window_for(void* nsViewChildPtr, void* nsViewParentPtr)
+{
+    CARLA_SAFE_ASSERT_RETURN(nsViewChildPtr != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(nsViewParentPtr != nullptr,);
+
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
+    NSView* const nsViewChild  = (NSView*)nsViewChildPtr;
+    NSView* const nsViewParent = (NSView*)nsViewParentPtr;
+    [[nsViewParent window] addChildWindow:[nsViewChild window]
+                                  ordered:NSWindowAbove];
+#endif
+}
+
 void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2)
 {
     CARLA_SAFE_ASSERT_RETURN(winId1 != 0,);

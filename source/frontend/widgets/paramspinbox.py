@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, 
 
 import ui_inputdialog_value
 
-from carla_shared import countDecimalPoints
+from carla_shared import countDecimalPoints, MACOS
 
 # ------------------------------------------------------------------------------------------------------------
 # Get a fixed value within min/max bounds
@@ -57,13 +57,17 @@ class CustomInputDialog(QDialog):
         self.ui = ui_inputdialog_value.Ui_Dialog()
         self.ui.setupUi(self)
 
+        decimals = countDecimalPoints(step, stepSmall)
         self.ui.label.setText(label)
-        self.ui.doubleSpinBox.setDecimals(countDecimalPoints(step, stepSmall))
+        self.ui.doubleSpinBox.setDecimals(decimals)
         self.ui.doubleSpinBox.setRange(minimum, maximum)
         self.ui.doubleSpinBox.setSingleStep(step)
         self.ui.doubleSpinBox.setValue(current)
         self.ui.doubleSpinBox.setPrefix(prefix)
         self.ui.doubleSpinBox.setSuffix(suffix)
+
+        if MACOS:
+            self.setWindowModality(Qt.WindowModal)
 
         if not scalePoints:
             self.ui.groupBox.setVisible(False)
@@ -71,13 +75,14 @@ class CustomInputDialog(QDialog):
         else:
             text = "<table>"
             for scalePoint in scalePoints:
-                text += "<tr><td align='right'>%f</td><td align='left'> - %s</td></tr>" % (scalePoint['value'], scalePoint['label'])
+                valuestr = ("%i" if decimals == 0 else "%f") % scalePoint['value']
+                text += "<tr><td align='right'>%s</td><td align='left'> - %s</td></tr>" % (valuestr, scalePoint['label'])
             text += "</table>"
             self.ui.textBrowser.setText(text)
             self.resize(200, 300)
 
         self.fRetValue = current
-
+        self.adjustSize()
         self.accepted.connect(self.slot_setReturnValue)
 
     def returnValue(self):

@@ -214,6 +214,9 @@ class DriverSettingsW(QDialog):
 
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
+        if MACOS:
+            self.setWindowModality(Qt.WindowModal)
+
         # -------------------------------------------------------------------------------------------------------------
         # Load settings
 
@@ -371,6 +374,9 @@ class RuntimeDriverSettingsW(QDialog):
 
         self.adjustSize()
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
+        if MACOS:
+            self.setWindowModality(Qt.WindowModal)
 
         # -------------------------------------------------------------------------------------------------------------
         # Load runtime settings
@@ -553,6 +559,9 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_eyecandy.setEnabled(QT_VERSION >= 0x50c00)
 
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
+        if MACOS:
+            self.setWindowModality(Qt.WindowModal)
 
         # -------------------------------------------------------------------------------------------------------------
         # Load settings

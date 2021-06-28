@@ -305,6 +305,7 @@ CARLA_EXPORT void carla_set_process_name(const char* name);
  * window control */
 
 CARLA_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
+CARLA_EXPORT void carla_cocoa_set_transient_window_for(void* nsViewChild, void* nsViewParent);
 
 CARLA_EXPORT void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2);
 

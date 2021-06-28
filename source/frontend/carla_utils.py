@@ -330,6 +330,9 @@ class CarlaUtils():
         self.lib.carla_cocoa_get_window.argtypes = [c_uintptr]
         self.lib.carla_cocoa_get_window.restype = c_int
 
+        self.lib.carla_cocoa_set_transient_window_for.argtypes = [c_uintptr, c_uintptr]
+        self.lib.carla_cocoa_set_transient_window_for.restype = None
+
         self.lib.carla_x11_reparent_window.argtypes = [c_uintptr, c_uintptr]
         self.lib.carla_x11_reparent_window.restype = None
 
@@ -479,6 +482,9 @@ class CarlaUtils():
 
     def cocoa_get_window(self, winId):
         return self.lib.carla_cocoa_get_window(winId)
+
+    def cocoa_set_transient_window_for(self, childWinId, parentWinId):
+        self.lib.carla_cocoa_set_transient_window_for(childWinId, parentWinId)
 
     def x11_reparent_window(self, winId1, winId2):
         self.lib.carla_x11_reparent_window(winId1, winId2)

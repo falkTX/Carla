@@ -240,6 +240,9 @@ class CarlaAboutW(QDialog):
 
         self.setWindowFlags(flags)
 
+        if MACOS:
+            self.setWindowModality(Qt.WindowModal)
+
 # ------------------------------------------------------------------------------------------------------------
 # JUCE About dialog
 
@@ -261,6 +264,9 @@ class JuceAboutW(QDialog):
             flags |= Qt.MSWindowsFixedSizeDialogHint
 
         self.setWindowFlags(flags)
+
+        if MACOS:
+            self.setWindowModality(Qt.WindowModal)
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Parameter
@@ -737,7 +743,9 @@ class PluginEdit(QDialog):
         self.ui.rb_pan.setEnabled(False)
         self.ui.rb_pan.setVisible(False)
 
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        flags  = self.windowFlags()
+        flags &= ~Qt.WindowContextHelpButtonHint
+        self.setWindowFlags(flags)
 
         self.reloadAll()
 
@@ -1291,6 +1299,12 @@ class PluginEdit(QDialog):
             self.fGeometry = self.saveGeometry()
 
         QDialog.setVisible(self, yesNo)
+
+        if MACOS and yesNo:
+            parent = self.parent()
+            if parent is None:
+                return
+            gCarla.utils.cocoa_set_transient_window_for(self.windowHandle().winId(), parent.windowHandle().winId())
 
     #------------------------------------------------------------------
 
