@@ -475,6 +475,7 @@ def splitGroup(group_id):
     item = None
     group_name = ""
     group_icon = ICON_APPLICATION
+    group_pos = None
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
@@ -492,6 +493,7 @@ def splitGroup(group_id):
             item = group.widgets[0]
             group_name = group.group_name
             group_icon = group.icon
+            group_pos = item.pos()
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
@@ -504,7 +506,7 @@ def splitGroup(group_id):
     port_list_ids = list(item.getPortList())
 
     for port in canvas.port_list:
-        if port.port_id in port_list_ids:
+        if port.group_id == group_id and port.port_id in port_list_ids:
             port_dict = port_dict_t()
             port_dict.group_id = port.group_id
             port_dict.port_id = port.port_id
@@ -516,7 +518,8 @@ def splitGroup(group_id):
             ports_data.append(port_dict)
 
     for connection in canvas.connection_list:
-        if connection.port_out_id in port_list_ids or connection.port_in_id in port_list_ids:
+        if (connection.group_in_id == group_id and port.port_in_id in port_list_ids) or \
+           (connection.group_out_id == group_id and connection.port_out_id in port_list_ids):
             connection_dict = connection_dict_t()
             connection_dict.connection_id = connection.connection_id
             connection_dict.group_in_id = connection.group_in_id
@@ -545,12 +548,20 @@ def splitGroup(group_id):
         addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
 
     for conn in conns_data:
-        connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
+        connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id, True)
 
     if group is not None:
         pos1 = group.widgets[0].pos()
         pos2 = group.widgets[1].pos()
-        valueStr = "%i:%i:%i:%i" % (pos1.x(), pos1.y(), pos2.x(), pos2.y())
+        group2_pos = QPointF(group_pos.x() + group.widgets[1].boundingRect().width() * 3/2, group_pos.y())
+        group.widgets[0].blockSignals(True)
+        group.widgets[0].setPos(group_pos)
+        group.widgets[0].blockSignals(False)
+        group.widgets[1].blockSignals(True)
+        group.widgets[1].setPos(group2_pos)
+        group.widgets[1].checkItemPos()
+        group.widgets[1].blockSignals(False)
+        valueStr = "%i:%i:%i:%i" % (group_pos.x(), group_pos.y(), group2_pos.x(), group2_pos.y())
         CanvasCallback(ACTION_GROUP_POSITION, group_id, 0, valueStr)
 
     QTimer.singleShot(0, canvas.scene.update)
@@ -563,6 +574,7 @@ def joinGroup(group_id):
     s_item = None
     group_name = ""
     group_icon = ICON_APPLICATION
+    group_pos = None
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
@@ -581,6 +593,7 @@ def joinGroup(group_id):
             s_item = group.widgets[1]
             group_name = group.group_name
             group_icon = group.icon
+            group_pos = item.pos()
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
@@ -599,7 +612,7 @@ def joinGroup(group_id):
             port_list_ids.append(port_id)
 
     for port in canvas.port_list:
-        if port.port_id in port_list_ids:
+        if port.group_id == group_id and port.port_id in port_list_ids:
             port_dict = port_dict_t()
             port_dict.group_id = port.group_id
             port_dict.port_id = port.port_id
@@ -611,7 +624,8 @@ def joinGroup(group_id):
             ports_data.append(port_dict)
 
     for connection in canvas.connection_list:
-        if connection.port_out_id in port_list_ids or connection.port_in_id in port_list_ids:
+        if (connection.group_in_id == group_id and port.port_in_id in port_list_ids) or \
+           (connection.group_out_id == group_id and connection.port_out_id in port_list_ids):
             connection_dict = connection_dict_t()
             connection_dict.connection_id = connection.connection_id
             connection_dict.group_in_id = connection.group_in_id
@@ -640,11 +654,14 @@ def joinGroup(group_id):
         addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
 
     for conn in conns_data:
-        connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
+        connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id, True)
 
     if group is not None:
-        pos = group.widgets[0].pos()
-        valueStr = "%i:%i:%i:%i" % (pos.x(), pos.y(), 0, 0)
+        group.widgets[0].blockSignals(True)
+        group.widgets[0].setPos(group_pos)
+        group.widgets[0].checkItemPos()
+        group.widgets[0].blockSignals(False)
+        valueStr = "%i:%i:%i:%i" % (group_pos.x(), group_pos.y(), 0, 0)
         CanvasCallback(ACTION_GROUP_POSITION, group_id, 0, valueStr)
 
     QTimer.singleShot(0, canvas.scene.update)
@@ -896,10 +913,10 @@ def renamePort(group_id, port_id, new_port_name):
     qCritical("PatchCanvas::renamePort(%i, %i, %s) - Unable to find port to rename" % (
               group_id, port_id, new_port_name.encode()))
 
-def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):
-    if canvas.last_connection_id >= connection_id:
-        print("PatchCanvas::connectPorts(%i, %i, %i, %i, %i) - invalid connection id received" % (
-              connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
+def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id, fromSplitOrJoin = False):
+    if canvas.last_connection_id >= connection_id and not fromSplitOrJoin:
+        print("PatchCanvas::connectPorts(%i, %i, %i, %i, %i) - invalid connection id received (last: %i)" % (
+              connection_id, group_out_id, port_out_id, group_in_id, port_in_id, canvas.last_connection_id))
         return
 
     canvas.last_connection_id = connection_id
