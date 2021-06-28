@@ -34,7 +34,7 @@
 // -----------------------------------------------------------------------
 
 struct RawMidiEvent {
-    uint64_t time;
+    uint32_t time;
     uint8_t  size;
     uint8_t  data[MAX_EVENT_DATA_SIZE];
 };
@@ -45,7 +45,7 @@ class AbstractMidiPlayer
 {
 public:
     virtual ~AbstractMidiPlayer() {}
-    virtual void writeMidiEvent(const uint8_t port, const long double timePosFrame, const RawMidiEvent* const event) = 0;
+    virtual void writeMidiEvent(const uint8_t port, const double timePosFrame, const RawMidiEvent* const event) = 0;
 };
 
 // -----------------------------------------------------------------------
@@ -72,7 +72,7 @@ public:
     // -------------------------------------------------------------------
     // add data, time always counts from 0
 
-    void addControl(const uint64_t time, const uint8_t channel, const uint8_t control, const uint8_t value)
+    void addControl(const uint32_t time, const uint8_t channel, const uint8_t control, const uint8_t value)
     {
         RawMidiEvent* const ctrlEvent(new RawMidiEvent());
         ctrlEvent->time    = time;
@@ -84,7 +84,7 @@ public:
         appendSorted(ctrlEvent);
     }
 
-    void addChannelPressure(const uint64_t time, const uint8_t channel, const uint8_t pressure)
+    void addChannelPressure(const uint32_t time, const uint8_t channel, const uint8_t pressure)
     {
         RawMidiEvent* const pressureEvent(new RawMidiEvent());
         pressureEvent->time    = time;
@@ -95,13 +95,13 @@ public:
         appendSorted(pressureEvent);
     }
 
-    void addNote(const uint64_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity, const uint32_t duration)
+    void addNote(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity, const uint32_t duration)
     {
         addNoteOn(time, channel, pitch, velocity);
         addNoteOff(time+duration, channel, pitch, velocity);
     }
 
-    void addNoteOn(const uint64_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity)
+    void addNoteOn(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity)
     {
         RawMidiEvent* const noteOnEvent(new RawMidiEvent());
         noteOnEvent->time    = time;
@@ -113,7 +113,7 @@ public:
         appendSorted(noteOnEvent);
     }
 
-    void addNoteOff(const uint64_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity = 0)
+    void addNoteOff(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity = 0)
     {
         RawMidiEvent* const noteOffEvent(new RawMidiEvent());
         noteOffEvent->time    = time;
@@ -125,7 +125,7 @@ public:
         appendSorted(noteOffEvent);
     }
 
-    void addNoteAftertouch(const uint64_t time, const uint8_t channel, const uint8_t pitch, const uint8_t pressure)
+    void addNoteAftertouch(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t pressure)
     {
         RawMidiEvent* const noteAfterEvent(new RawMidiEvent());
         noteAfterEvent->time    = time;
@@ -137,7 +137,7 @@ public:
         appendSorted(noteAfterEvent);
     }
 
-    void addProgram(const uint64_t time, const uint8_t channel, const uint8_t bank, const uint8_t program)
+    void addProgram(const uint32_t time, const uint8_t channel, const uint8_t bank, const uint8_t program)
     {
         RawMidiEvent* const bankEvent(new RawMidiEvent());
         bankEvent->time    = time;
@@ -156,7 +156,7 @@ public:
         appendSorted(programEvent);
     }
 
-    void addPitchbend(const uint64_t time, const uint8_t channel, const uint8_t lsb, const uint8_t msb)
+    void addPitchbend(const uint32_t time, const uint8_t channel, const uint8_t lsb, const uint8_t msb)
     {
         RawMidiEvent* const pressureEvent(new RawMidiEvent());
         pressureEvent->time    = time;
@@ -168,7 +168,7 @@ public:
         appendSorted(pressureEvent);
     }
 
-    void addRaw(const uint64_t time, const uint8_t* const data, const uint8_t size)
+    void addRaw(const uint32_t time, const uint8_t* const data, const uint8_t size)
     {
         RawMidiEvent* const rawEvent(new RawMidiEvent());
         rawEvent->time = time;
@@ -186,7 +186,7 @@ public:
     // -------------------------------------------------------------------
     // remove data
 
-    void removeRaw(const uint64_t time, const uint8_t* const data, const uint8_t size)
+    void removeRaw(const uint32_t time, const uint8_t* const data, const uint8_t size)
     {
         const CarlaMutexLocker cmlw(fWriteMutex);
 
@@ -211,7 +211,7 @@ public:
             return;
         }
 
-        carla_stderr("MidiPattern::removeRaw(" P_INT64 ", %p, %i) - unable to find event to remove", time, data, size);
+        carla_stderr("MidiPattern::removeRaw(%u, %p, %i) - unable to find event to remove", time, data, size);
     }
 
     // -------------------------------------------------------------------
@@ -231,14 +231,14 @@ public:
     // -------------------------------------------------------------------
     // play on time
 
-    bool play(const uint64_t timePosFrame, const uint32_t frames)
+    bool play(const uint32_t timePosFrame, const uint32_t frames)
     {
         return play(static_cast<long double>(timePosFrame), static_cast<double>(frames));
     }
 
-    bool play(long double timePosFrame, const double frames, const double offset = 0.0)
+    bool play(double timePosFrame, const double frames, const double offset = 0.0)
     {
-        long double ldtime;
+        double ldtime;
 
         const CarlaMutexTryLocker cmtl(fReadMutex);
 
@@ -246,14 +246,14 @@ public:
             return false;
 
         if (fStartTime != 0)
-            timePosFrame += static_cast<long double>(fStartTime);
+            timePosFrame += static_cast<double>(fStartTime);
 
         for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin2(); it.valid(); it.next())
         {
             const RawMidiEvent* const rawMidiEvent(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(rawMidiEvent != nullptr);
 
-            ldtime = static_cast<long double>(rawMidiEvent->time);
+            ldtime = static_cast<double>(rawMidiEvent->time);
 
             if (ldtime < timePosFrame)
                 continue;
@@ -281,7 +281,7 @@ public:
         fMidiPort = port;
     }
 
-    void setStartTime(const uint64_t time) noexcept
+    void setStartTime(const uint32_t time) noexcept
     {
         fStartTime = time;
     }
@@ -327,7 +327,7 @@ public:
             const RawMidiEvent* const rawMidiEvent(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(rawMidiEvent != nullptr);
 
-            wrtn = std::snprintf(dataWrtn, maxTimeSize+6, P_UINT64 ":%u:", rawMidiEvent->time, rawMidiEvent->size);
+            wrtn = std::snprintf(dataWrtn, maxTimeSize+6, "%u:%u:", rawMidiEvent->time, rawMidiEvent->size);
             CARLA_SAFE_ASSERT_BREAK(wrtn > 0);
             dataWrtn += wrtn;
 
@@ -391,7 +391,7 @@ public:
             const long long time = std::atoll(tmpBuf);
             CARLA_SAFE_ASSERT_RETURN(time >= 0,);
 
-            midiEvent.time = static_cast<uint64_t>(time);
+            midiEvent.time = static_cast<uint32_t>(time);
 
             // get size
             needle = std::strchr(dataRead, ':');
@@ -457,7 +457,7 @@ private:
     AbstractMidiPlayer* const kPlayer;
 
     uint8_t  fMidiPort;
-    uint64_t fStartTime;
+    uint32_t fStartTime;
 
     CarlaMutex fReadMutex;
     CarlaMutex fWriteMutex;

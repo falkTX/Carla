@@ -369,7 +369,7 @@ protected:
     // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
 
-    void writeMidiEvent(const uint8_t port, const long double timePosFrame, const RawMidiEvent* const event) override
+    void writeMidiEvent(const uint8_t port, const double timePosFrame, const RawMidiEvent* const event) override
     {
         NativeMidiEvent midiEvent;
 
@@ -521,7 +521,7 @@ private:
 
             writeMessage("midievent-add\n", 14);
 
-            std::snprintf(strBuf, 0xff, P_INT64 "\n", rawMidiEvent->time);
+            std::snprintf(strBuf, 0xff, "%u\n", rawMidiEvent->time);
             writeMessage(strBuf);
 
             std::snprintf(strBuf, 0xff, "%i\n", rawMidiEvent->size);
