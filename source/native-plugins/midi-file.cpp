@@ -275,7 +275,7 @@ protected:
         }
 
         if (fWasPlayingBefore)
-            if (! fMidiOut.play(frame, frames))
+            if (! fMidiOut.play(static_cast<uint32_t>(frame), frames))
                 fNeedsAllNotesOff = true;
 
         fLastFrame = frame;
@@ -406,7 +406,8 @@ private:
                 // const double time = track->getEventTime(i) * sampleRate;
                 CARLA_SAFE_ASSERT_CONTINUE(time >= 0.0);
 
-                fMidiOut.addRaw(static_cast<uint64_t>(time), midiMessage.getRawData(), static_cast<uint8_t>(dataSize));
+                fMidiOut.addRaw(static_cast<uint32_t>(time + 0.5),
+                                midiMessage.getRawData(), static_cast<uint8_t>(dataSize));
             }
         }
 

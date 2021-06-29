@@ -191,7 +191,7 @@ public:
 
 #ifndef CARLA_OS_MAC
         // unused
-        (void)pref;
+        (void)type;
 #endif
     }
 

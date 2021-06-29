@@ -430,10 +430,10 @@ protected:
 
         if (std::strcmp(msg, "midievent-add") == 0)
         {
-            uint64_t time;
+            uint32_t time;
             uint8_t size;
 
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(time), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(time), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsByte(size), true);
             CARLA_SAFE_ASSERT_RETURN(size > 0, true);
 
@@ -451,10 +451,10 @@ protected:
 
         if (std::strcmp(msg, "midievent-remove") == 0)
         {
-            uint64_t time;
+            uint32_t time;
             uint8_t size;
 
-            CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(time), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(time), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsByte(size), true);
             CARLA_SAFE_ASSERT_RETURN(size > 0, true);
 

@@ -233,7 +233,7 @@ public:
 
     bool play(const uint32_t timePosFrame, const uint32_t frames)
     {
-        return play(static_cast<long double>(timePosFrame), static_cast<double>(frames));
+        return play(static_cast<double>(timePosFrame), static_cast<double>(frames));
     }
 
     bool play(double timePosFrame, const double frames, const double offset = 0.0)
