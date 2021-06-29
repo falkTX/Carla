@@ -334,7 +334,7 @@ bool ChildProcess::start (const String& command, Type)
     return activeProcess != nullptr;
 }
 
-bool ChildProcess::start (const StringArray& args)
+bool ChildProcess::start (const StringArray& args, const Type type)
 {
     String escaped;
 
@@ -353,7 +353,7 @@ bool ChildProcess::start (const StringArray& args)
             escaped << ' ';
     }
 
-    return start (escaped.trim());
+    return start (escaped.trim(), type);
 }
 #else
 bool ChildProcess::start (const String& command, const Type type)
