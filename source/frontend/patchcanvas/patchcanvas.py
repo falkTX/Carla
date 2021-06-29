@@ -518,7 +518,7 @@ def splitGroup(group_id):
             ports_data.append(port_dict)
 
     for connection in canvas.connection_list:
-        if (connection.group_in_id == group_id and port.port_in_id in port_list_ids) or \
+        if (connection.group_in_id == group_id and connection.port_in_id in port_list_ids) or \
            (connection.group_out_id == group_id and connection.port_out_id in port_list_ids):
             connection_dict = connection_dict_t()
             connection_dict.connection_id = connection.connection_id
@@ -624,7 +624,7 @@ def joinGroup(group_id):
             ports_data.append(port_dict)
 
     for connection in canvas.connection_list:
-        if (connection.group_in_id == group_id and port.port_in_id in port_list_ids) or \
+        if (connection.group_in_id == group_id and connection.port_in_id in port_list_ids) or \
            (connection.group_out_id == group_id and connection.port_out_id in port_list_ids):
             connection_dict = connection_dict_t()
             connection_dict.connection_id = connection.connection_id
