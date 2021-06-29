@@ -25,6 +25,10 @@
 #include <cstring>
 
 #include <cmath>
+
+#undef max
+#undef min
+
 #include <limits>
 
 #ifdef DISTRHO_PROPER_CPP11_SUPPORT
