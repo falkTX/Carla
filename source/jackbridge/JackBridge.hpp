@@ -98,6 +98,8 @@
 #define JACK_UUID_SIZE 36
 #define JACK_UUID_STRING_SIZE (JACK_UUID_SIZE+1) /* includes trailing null */
 
+#define JACK_TICK_DOUBLE
+
 extern "C" {
 
 enum JackOptions {
@@ -152,7 +154,8 @@ enum JackPositionBits {
     JackPositionTimecode = 0x020,
     JackBBTFrameOffset   = 0x040,
     JackAudioVideoRatio  = 0x080,
-    JackVideoFrameOffset = 0x100
+    JackVideoFrameOffset = 0x100,
+    JackTickDouble       = 0x200
 };
 
 enum JackSessionEventType {
@@ -222,7 +225,8 @@ struct _jack_position {
     jack_nframes_t bbt_offset;
     float          audio_frames_per_video_frame;
     jack_nframes_t video_offset;
-    int32_t        padding[7];
+    double         tick_double;
+    int32_t        padding[5];
     jack_unique_t  unique_2;
 } POST_PACKED_STRUCTURE;
 

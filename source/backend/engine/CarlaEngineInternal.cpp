@@ -262,14 +262,15 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
 
     fillEngineTimeInfo(newFrames);
 
-    pos->valid = JackPositionBBT;
-    pos->bar   = timeInfo.bbt.bar;
-    pos->beat  = timeInfo.bbt.beat;
-    pos->tick  = static_cast<int32_t>(timeInfo.bbt.tick + 0.5);
-    pos->bar_start_tick = timeInfo.bbt.barStartTick;
-    pos->beats_per_bar = timeInfo.bbt.beatsPerBar;
-    pos->beat_type = timeInfo.bbt.beatType;
-    pos->ticks_per_beat = kTicksPerBeat;
+    pos->valid            = static_cast<jack_position_bits_t>(JackPositionBBT|JackTickDouble);
+    pos->bar              = timeInfo.bbt.bar;
+    pos->beat             = timeInfo.bbt.beat;
+    pos->tick             = static_cast<int32_t>(timeInfo.bbt.tick + 0.5);
+    pos->tick_double      = timeInfo.bbt.tick;
+    pos->bar_start_tick   = timeInfo.bbt.barStartTick;
+    pos->beats_per_bar    = timeInfo.bbt.beatsPerBar;
+    pos->beat_type        = timeInfo.bbt.beatType;
+    pos->ticks_per_beat   = kTicksPerBeat;
     pos->beats_per_minute = beatsPerMinute;
 }
 

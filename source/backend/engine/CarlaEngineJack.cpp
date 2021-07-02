@@ -1918,7 +1918,12 @@ public:
             timeInfo.bbt.valid          = true;
             timeInfo.bbt.bar            = jpos.bar;
             timeInfo.bbt.beat           = jpos.beat;
-            timeInfo.bbt.tick           = jpos.tick;
+#ifdef JACK_TICK_DOUBLE
+            if (jpos.valid & JackTickDouble)
+                timeInfo.bbt.tick       = jpos.tick_double;
+            else
+#endif
+                timeInfo.bbt.tick       = jpos.tick;
             timeInfo.bbt.barStartTick   = jpos.bar_start_tick;
             timeInfo.bbt.beatsPerBar    = jpos.beats_per_bar;
             timeInfo.bbt.beatType       = jpos.beat_type;
@@ -2922,7 +2927,12 @@ protected:
                     timeInfo.bbt.valid          = true;
                     timeInfo.bbt.bar            = jpos.bar;
                     timeInfo.bbt.beat           = jpos.beat;
-                    timeInfo.bbt.tick           = jpos.tick;
+#ifdef JACK_TICK_DOUBLE
+                    if (jpos.valid & JackTickDouble)
+                        timeInfo.bbt.tick       = jpos.tick_double;
+                    else
+#endif
+                        timeInfo.bbt.tick       = jpos.tick;
                     timeInfo.bbt.barStartTick   = jpos.bar_start_tick;
                     timeInfo.bbt.beatsPerBar    = jpos.beats_per_bar;
                     timeInfo.bbt.beatType       = jpos.beat_type;
