@@ -464,21 +464,12 @@ private:
 #endif
 
 @interface CarlaPluginWindow : NSWindow
-{
-@public
-    CarlaPluginUI::Callback* callback;
-}
-
 - (id) initWithContentRect:(NSRect)contentRect
                  styleMask:(unsigned int)aStyle
                    backing:(NSBackingStoreType)bufferingType
                      defer:(BOOL)flag;
-- (void) setCallback:(CarlaPluginUI::Callback*)cb;
-- (BOOL) acceptsFirstResponder;
 - (BOOL) canBecomeKeyWindow;
-- (BOOL) canBecomeMain;
-- (BOOL) windowShouldClose:(id)sender;
-- (NSSize) windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize;
+- (BOOL) canBecomeMainWindow;
 @end
 
 @implementation CarlaPluginWindow
@@ -488,8 +479,6 @@ private:
                   backing:(NSBackingStoreType)bufferingType
                     defer:(BOOL)flag
 {
-    callback = nil;
-
     NSWindow* result = [super initWithContentRect:contentRect
                                         styleMask:aStyle
                                           backing:bufferingType
@@ -503,24 +492,40 @@ private:
     (void)flag;
 }
 
-- (void)setCallback:(CarlaPluginUI::Callback*)cb
-{
-    callback = cb;
-}
-
-- (BOOL)acceptsFirstResponder
-{
-    return YES;
-}
-
 - (BOOL)canBecomeKeyWindow
 {
     return YES;
 }
 
-- (BOOL)canBecomeMain
+- (BOOL)canBecomeMainWindow
 {
     return NO;
+}
+
+@end
+
+@interface CarlaPluginWindowDelegate : NSObject<NSWindowDelegate>
+{
+    CarlaPluginUI::Callback* callback;
+    CarlaPluginWindow* window;
+}
+- (instancetype)initWithWindowAndCallback:(CarlaPluginWindow*)window
+                                 callback:(CarlaPluginUI::Callback*)callback2;
+- (BOOL)windowShouldClose:(id)sender;
+@end
+
+@implementation CarlaPluginWindowDelegate
+
+- (instancetype)initWithWindowAndCallback:(CarlaPluginWindow*)window2
+                                 callback:(CarlaPluginUI::Callback*)callback2
+{
+    if ((self = [super init]))
+    {
+        callback = callback2;
+        window = window2;
+    }
+
+  return self;
 }
 
 - (BOOL)windowShouldClose:(id)sender
@@ -534,15 +539,25 @@ private:
     (void)sender;
 }
 
-- (NSSize) windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize
+@end
+
+@interface CarlaPluginView : NSView
+- (void)resizeWithOldSuperviewSize:(NSSize)oldSize;
+@end
+
+@implementation CarlaPluginView
+
+- (void)resizeWithOldSuperviewSize:(NSSize)oldSize
 {
-    if (callback != nil)
-        callback->handlePluginUIResized(frameSize.width, frameSize.height);
+    [super resizeWithOldSuperviewSize:oldSize];
 
-    return frameSize;
-
-    // unused
-    (void)sender;
+    /*
+    for (NSView* subview in [self subviews])
+    {
+        [subview setFrame:NSMakeRect(0, 0, oldSize.width, oldSize.height)];
+        break;
+    }
+    */
 }
 
 @end
@@ -550,17 +565,17 @@ private:
 class CocoaPluginUI : public CarlaPluginUI
 {
 public:
-    CocoaPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
-        : CarlaPluginUI(cb, isResizable),
+    CocoaPluginUI(Callback* const callback, const uintptr_t parentId, const bool isResizable) noexcept
+        : CarlaPluginUI(callback, isResizable),
           fView(nullptr),
           fParentWindow(nullptr),
           fWindow(nullptr)
     {
-        carla_debug("CocoaPluginUI::CocoaPluginUI(%p, " P_UINTPTR, "%s)", cb, parentId, bool2str(isResizable));
+        carla_debug("CocoaPluginUI::CocoaPluginUI(%p, " P_UINTPTR, "%s)", callback, parentId, bool2str(isResizable));
         const CarlaBackend::AutoNSAutoreleasePool arp;
         [NSApplication sharedApplication];
 
-        fView = [[NSView new]retain];
+        fView = [[CarlaPluginView new]retain];
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,)
 
         uint style = NSClosableWindowMask | NSTitledWindowMask;
@@ -569,7 +584,7 @@ public:
             style |= NSResizableWindowMask;
         */
 
-        NSRect frame = NSMakeRect(0, 0, 100, 100);
+        const NSRect frame = NSMakeRect(0, 0, 100, 100);
 
         fWindow = [[[CarlaPluginWindow alloc]
             initWithContentRect:frame
@@ -585,13 +600,16 @@ public:
             return;
         }
 
-        //if (! isResizable)
+        ((NSWindow*)fWindow).delegate = [[[CarlaPluginWindowDelegate alloc] 
+            initWithWindowAndCallback:fWindow
+                             callback:callback] retain];
+
+        // if (! isResizable)
         {
             [fView setAutoresizingMask:NSViewNotSizable];
             [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
         }
 
-        [fWindow setCallback:cb];
         [fWindow setContentView:fView];
         [fWindow makeFirstResponder:fView];
 
