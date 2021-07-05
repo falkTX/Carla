@@ -232,7 +232,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, 0.0f);
 
-        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[static_cast<int>(parameterId)];
         CARLA_SAFE_ASSERT_RETURN(parameter != nullptr, 0.0f);
 
         return parameter->getValue();
@@ -270,7 +270,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
-        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[static_cast<int>(parameterId)];
         CARLA_SAFE_ASSERT_RETURN(parameter != nullptr, false);
 
         std::strncpy(strBuf, parameter->getName(STR_MAX).toRawUTF8(), STR_MAX);
@@ -282,7 +282,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
-        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[static_cast<int>(parameterId)];
         CARLA_SAFE_ASSERT_RETURN(parameter != nullptr, false);
 
         std::strncpy(strBuf, parameter->getCurrentValueAsText().toRawUTF8(), STR_MAX);
@@ -294,7 +294,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
-        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[static_cast<int>(parameterId)];
         CARLA_SAFE_ASSERT_RETURN(parameter != nullptr, false);
 
         std::strncpy(strBuf, parameter->getLabel().toRawUTF8(), STR_MAX);
@@ -355,7 +355,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
-        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[static_cast<int>(parameterId)];
         CARLA_SAFE_ASSERT_RETURN(parameter != nullptr,);
 
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
@@ -372,7 +372,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
-        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[static_cast<int>(parameterId)];
         CARLA_SAFE_ASSERT_RETURN(parameter != nullptr,);
 
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
@@ -646,7 +646,8 @@ public:
 
         for (uint32_t j=0; j < params; ++j)
         {
-            juce::AudioProcessorParameter* const parameter = parameters[j];
+            const int32_t ij = static_cast<int>(j);
+            juce::AudioProcessorParameter* const parameter = parameters[ij];
             CARLA_SAFE_ASSERT_CONTINUE(parameter != nullptr);
 
             pData->param.data[j].type   = PARAMETER_INPUT;
@@ -670,7 +671,7 @@ public:
                 VstParameterProperties prop;
                 carla_zeroStruct(prop);
 
-                if (effect != nullptr && effect->dispatcher(effect, effGetParameterProperties, j, 0, &prop, 0.0f) == 1)
+                if (effect != nullptr && effect->dispatcher(effect, effGetParameterProperties, ij, 0, &prop, 0.0f) == 1)
                 {
                     /**/ if (prop.flags & kVstParameterIsSwitch)
                     {
@@ -1309,15 +1310,17 @@ public:
         {
             if (pData->event.portOut != nullptr)
             {
-                const uint8_t* midiEventData;
-                int midiEventSize, midiEventPosition;
-
-                for (juce::MidiBuffer::Iterator i(fMidiBuffer); i.getNextEvent(midiEventData, midiEventSize, midiEventPosition);)
+                for (juce::MidiBufferIterator it = fMidiBuffer.cbegin(), end = fMidiBuffer.cend(); it != end; ++it)
                 {
-                    CARLA_SAFE_ASSERT_BREAK(midiEventPosition >= 0 && midiEventPosition < static_cast<int>(frames));
-                    CARLA_SAFE_ASSERT_BREAK(midiEventSize > 0);
+                    const juce::MidiMessageMetadata metadata(*it);
+                    CARLA_SAFE_ASSERT_BREAK(metadata.samplePosition >= 0);
+                    CARLA_SAFE_ASSERT_BREAK(metadata.samplePosition < static_cast<int>(frames));
+                    CARLA_SAFE_ASSERT_BREAK(metadata.numBytes > 0);
+                    CARLA_SAFE_ASSERT_CONTINUE(metadata.numBytes <= 0xff);
 
-                    if (! pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(midiEventPosition), static_cast<uint8_t>(midiEventSize), midiEventData))
+                    if (! pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(metadata.samplePosition),
+                                                               static_cast<uint8_t>(metadata.numBytes),
+                                                               metadata.data))
                         break;
                 }
             }
