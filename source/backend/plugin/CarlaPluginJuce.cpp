@@ -1647,16 +1647,27 @@ private:
 
         const int32_t* const set = (const int32_t*)data;
 
+        // chunkMagic
         if (! compareMagic(set[0], "CcnK"))
             return false;
-        if (! compareMagic(set[2], "FBCh") && ! compareMagic(set[2], "FJuc"))
-            return false;
+
+        // version
         if (fxbSwap(set[3]) > 1)
             return false;
 
-        const int32_t chunkSize = fxbSwap(set[39]);
+        // fxMagic, data contents depend on this value
+        if (compareMagic(set[2], "FBCh") || compareMagic(set[2], "FJuc"))
+        {
+            const int32_t chunkSize = fxbSwap(set[39]);
+            return static_cast<std::size_t>(chunkSize + 160) == dataSize;
+        }
+        if (compareMagic(set[2], "FxBk"))
+        {
+            const int32_t numPrograms = fxbSwap(set[6]);
+            return numPrograms >= 1;
+        }
 
-        return static_cast<std::size_t>(chunkSize + 160) == dataSize;
+        return false;
     }
 
     static bool compareMagic(int32_t magic, const char* name) noexcept
