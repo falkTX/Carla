@@ -796,7 +796,7 @@ class HostWindow(QMainWindow):
 
         if not self.host.load_project(self.fProjectFilename):
             self.fIsProjectLoading = False
-            self.projectLoadingFinished()
+            self.projectLoadingFinished(True)
 
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load project"),
                              self.host.get_last_error(),
@@ -821,14 +821,14 @@ class HostWindow(QMainWindow):
         self.ui.rack.setEnabled(False)
         self.ui.graphicsView.setEnabled(False)
 
-    def projectLoadingFinished(self):
+    def projectLoadingFinished(self, refreshCanvas):
         self.ui.rack.setEnabled(True)
         self.ui.graphicsView.setEnabled(True)
 
         if self.fCustomStopAction == self.CUSTOM_ACTION_APP_CLOSE or not self.fWithCanvas:
             return
 
-        if not self.loadExternalCanvasGroupPositionsIfNeeded(self.fProjectFilename):
+        if refreshCanvas and not self.loadExternalCanvasGroupPositionsIfNeeded(self.fProjectFilename):
             QTimer.singleShot(1, self.slot_canvasRefresh)
 
     def loadExternalCanvasGroupPositionsIfNeeded(self, filename):
@@ -1150,7 +1150,7 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_handleProjectLoadFinishedCallback(self):
         self.fIsProjectLoading = False
-        self.projectLoadingFinished()
+        self.projectLoadingFinished(False)
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins
@@ -1309,7 +1309,7 @@ class HostWindow(QMainWindow):
         self.projectLoadingStarted()
 
         if not self.host.remove_all_plugins():
-            self.projectLoadingFinished()
+            self.projectLoadingFinished(True)
             self.fCurrentlyRemovingAllPlugins = False
             CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                    self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
@@ -1470,7 +1470,7 @@ class HostWindow(QMainWindow):
             self.ui.act_plugin_remove_all.setEnabled(False)
             if self.fCurrentlyRemovingAllPlugins:
                 self.fCurrentlyRemovingAllPlugins = False
-                self.projectLoadingFinished()
+                self.projectLoadingFinished(False)
             return
 
         # push all plugins 1 slot back
@@ -1752,7 +1752,7 @@ class HostWindow(QMainWindow):
         if pluginId < 0:
             return
         if pluginId >= self.fPluginCount and pluginId != MAIN_CARLA_PLUGIN_ID:
-            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
+            print("Error mapping plugin to canvas client:", clientName)
             return
 
         if pluginId == MAIN_CARLA_PLUGIN_ID:
@@ -2553,7 +2553,7 @@ class HostWindow(QMainWindow):
         self.fIsProjectLoading = False
         self.killTimers()
         self.removeAllPlugins()
-        self.projectLoadingFinished()
+        self.projectLoadingFinished(False)
 
     @pyqtSlot(int)
     def slot_handleInlineDisplayRedrawCallback(self, pluginId):
