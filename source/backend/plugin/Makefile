@@ -11,8 +11,6 @@ include ../Makefile.mk
 ifeq ($(TESTBUILD),true)
 ifeq ($(USING_JUCE),true)
 BUILD_CXX_FLAGS += -Wno-undef
-# FIXME
-BUILD_CXX_FLAGS += -Wno-deprecated-declarations
 endif
 endif
 

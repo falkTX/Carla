@@ -1,6 +1,6 @@
 /*
  * Carla Juce Plugin
- * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,6 +24,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaProcessUtils.hpp"
 #include "CarlaScopeUtils.hpp"
+#include "CarlaVstUtils.hpp"
 
 #if defined(__clang__)
 # pragma clang diagnostic push
@@ -231,7 +232,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, 0.0f);
 
-        return fInstance->getParameter(static_cast<int>(parameterId));
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        CARLA_SAFE_ASSERT_RETURN(parameter != nullptr, 0.0f);
+
+        return parameter->getValue();
     }
 
     bool getLabel(char* const strBuf) const noexcept override
@@ -266,7 +270,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
-        std::strncpy(strBuf, fInstance->getParameterName(static_cast<int>(parameterId), STR_MAX).toRawUTF8(), STR_MAX);
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        CARLA_SAFE_ASSERT_RETURN(parameter != nullptr, false);
+
+        std::strncpy(strBuf, parameter->getName(STR_MAX).toRawUTF8(), STR_MAX);
         return true;
     }
 
@@ -275,7 +282,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
-        std::strncpy(strBuf, fInstance->getParameterText(static_cast<int>(parameterId), STR_MAX).toRawUTF8(), STR_MAX);
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        CARLA_SAFE_ASSERT_RETURN(parameter != nullptr, false);
+
+        std::strncpy(strBuf, parameter->getCurrentValueAsText().toRawUTF8(), STR_MAX);
         return true;
     }
 
@@ -284,8 +294,37 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
 
-        std::strncpy(strBuf, fInstance->getParameterLabel(static_cast<int>(parameterId)).toRawUTF8(), STR_MAX);
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        CARLA_SAFE_ASSERT_RETURN(parameter != nullptr, false);
+
+        std::strncpy(strBuf, parameter->getLabel().toRawUTF8(), STR_MAX);
         return true;
+    }
+
+    bool getParameterGroupName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, false);
+
+        if (fDesc.pluginFormatName != "VST" && fDesc.pluginFormatName != "VST2")
+            return false;
+
+        AEffect* const effect = (AEffect*)fInstance->getPlatformSpecificData();
+
+        if (effect == nullptr)
+            return false;
+
+        VstParameterProperties prop;
+        carla_zeroStruct(prop);
+
+        if (effect->dispatcher(effect, effGetParameterProperties, static_cast<int32_t>(parameterId), 0, &prop, 0.0f) == 1
+            && prop.category != 0 && prop.categoryLabel[0] != '\0')
+        {
+            std::snprintf(strBuf, STR_MAX, "%d:%s", prop.category, prop.categoryLabel);
+            return true;
+        }
+
+        return false;
     }
 
     // -------------------------------------------------------------------
@@ -316,11 +355,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
-        const float fixedValue(pData->param.getFixedValue(parameterId, value));
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        CARLA_SAFE_ASSERT_RETURN(parameter != nullptr,);
+
+        const float fixedValue = pData->param.getFixedValue(parameterId, value);
 
         try {
-            fInstance->setParameter(static_cast<int>(parameterId), value);
-        } CARLA_SAFE_EXCEPTION("setParameter");
+            parameter->setValue(value);
+        } CARLA_SAFE_EXCEPTION("setValue");
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
@@ -330,11 +372,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
 
-        const float fixedValue(pData->param.getFixedValue(parameterId, value));
+        juce::AudioProcessorParameter* const parameter = fInstance->getParameters()[parameterId];
+        CARLA_SAFE_ASSERT_RETURN(parameter != nullptr,);
+
+        const float fixedValue = pData->param.getFixedValue(parameterId, value);
 
         try {
-            fInstance->setParameter(static_cast<int>(parameterId), value);
-        } CARLA_SAFE_EXCEPTION("setParameter(RT)");
+            parameter->setValue(value);
+        } CARLA_SAFE_EXCEPTION("setValue(RT)");
 
         CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
     }
@@ -510,10 +555,12 @@ public:
         needsCtrlIn = needsCtrlOut = false;
 
         const bool isAU = fDesc.pluginFormatName == "AU" || fDesc.pluginFormatName == "AudioUnit";
+        const bool isVST2 = fDesc.pluginFormatName == "VST" || fDesc.pluginFormatName == "VST2";
         findMaxTotalChannels(fInstance.get(), isAU, aIns, aOuts);
         fInstance->refreshParameterList();
 
-        params = static_cast<uint32_t>(std::max(fInstance->getNumParameters(), 0));
+        const juce::Array<juce::AudioProcessorParameter*>& parameters(fInstance->getParameters());
+        params = static_cast<uint32_t>(std::max(parameters.size(), 0));
 
         if (fInstance->acceptsMidi())
         {
@@ -599,37 +646,91 @@ public:
 
         for (uint32_t j=0; j < params; ++j)
         {
+            juce::AudioProcessorParameter* const parameter = parameters[j];
+            CARLA_SAFE_ASSERT_CONTINUE(parameter != nullptr);
+
             pData->param.data[j].type   = PARAMETER_INPUT;
             pData->param.data[j].index  = static_cast<int32_t>(j);
             pData->param.data[j].rindex = static_cast<int32_t>(j);
 
-            float min, max, def, step, stepSmall, stepLarge;
-
-            // TODO
-            //const int numSteps(fInstance->getParameterNumSteps(static_cast<int>(j)));
-            {
-                min = 0.0f;
-                max = 1.0f;
-                step = 0.001f;
-                stepSmall = 0.0001f;
-                stepLarge = 0.1f;
-            }
-
             pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-#ifndef BUILD_BRIDGE
             pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
-#endif
 
-            if (fInstance->isParameterAutomatable(static_cast<int>(j)))
-            {
+            if (parameter->isAutomatable())
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
 
-                if (fInstance->isMetaParameter(static_cast<int>(j)))
+            const float min = 0.0f;
+            const float max = 1.0f;
+            float def, step, stepSmall, stepLarge;
+
+            if (isVST2)
+            {
+                AEffect* const effect = (AEffect*)fInstance->getPlatformSpecificData();
+
+                VstParameterProperties prop;
+                carla_zeroStruct(prop);
+
+                if (effect != nullptr && effect->dispatcher(effect, effGetParameterProperties, j, 0, &prop, 0.0f) == 1)
+                {
+                    /**/ if (prop.flags & kVstParameterIsSwitch)
+                    {
+                        step = max - min;
+                        stepSmall = step;
+                        stepLarge = step;
+                        pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
+                    }
+                    else if (prop.flags & kVstParameterUsesIntStep)
+                    {
+                        step = static_cast<float>(prop.stepInteger);
+                        stepSmall = static_cast<float>(prop.stepInteger)/10.0f;
+                        stepLarge = static_cast<float>(prop.largeStepInteger);
+                    }
+                    else if (prop.flags & kVstParameterUsesFloatStep)
+                    {
+                        step = prop.stepFloat;
+                        stepSmall = prop.smallStepFloat;
+                        stepLarge = prop.largeStepFloat;
+                    }
+                    else
+                    {
+                        const float range = max - min;
+                        step = range/100.0f;
+                        stepSmall = range/1000.0f;
+                        stepLarge = range/10.0f;
+                    }
+
+                    if ((prop.flags & (kVstParameterIsSwitch|kVstParameterUsesIntStep)) == 0x0)
+                        pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                    if (prop.flags & kVstParameterCanRamp)
+                        pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
+                }
+                else
+                {
+                    const float range = max - min;
+                    step = range/100.0f;
+                    stepSmall = range/1000.0f;
+                    stepLarge = range/10.0f;
+                }
+            }
+            else if (parameter->isBoolean())
+            {
+                step = max - min;
+                stepSmall = step;
+                stepLarge = step;
+                pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
+            }
+            else
+            {
+                const float range = max - min;
+                step = range/100.0f;
+                stepSmall = range/1000.0f;
+                stepLarge = range/10.0f;
+
+                if (! parameter->isMetaParameter())
                     pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
             }
 
-            // FIXME?
-            def = fInstance->getParameterDefaultValue(static_cast<int>(j));
+            def = parameter->getDefaultValue();
 
             if (def < min)
                 def = min;

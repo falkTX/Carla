@@ -1,6 +1,6 @@
 /*
  * Carla VST Plugin
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -375,8 +375,7 @@ public:
             return true;
         }
 
-        strBuf[0] = '\0';
-        return true;
+        return false;
     }
 
     // -------------------------------------------------------------------
@@ -848,7 +847,7 @@ public:
                     max = 1.0f;
                 }
 
-                if (prop.flags & kVstParameterIsSwitch)
+                /**/ if (prop.flags & kVstParameterIsSwitch)
                 {
                     step = max - min;
                     stepSmall = step;
@@ -860,7 +859,6 @@ public:
                     step = static_cast<float>(prop.stepInteger);
                     stepSmall = static_cast<float>(prop.stepInteger)/10.0f;
                     stepLarge = static_cast<float>(prop.largeStepInteger);
-                    pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
                 }
                 else if (prop.flags & kVstParameterUsesFloatStep)
                 {
