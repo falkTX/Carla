@@ -779,7 +779,7 @@ private:
 
 #ifdef CARLA_OS_WIN
 
-#define PUGL_LOCAL_CLOSE_MSG (WM_USER + 50)
+#define CARLA_LOCAL_CLOSE_MSG (WM_USER + 50)
 
 static LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -932,7 +932,7 @@ public:
             switch (msg.message)
             {
             case WM_QUIT:
-            case PUGL_LOCAL_CLOSE_MSG:
+            case CARLA_LOCAL_CLOSE_MSG:
                 fIsVisible = false;
                 CARLA_SAFE_ASSERT_BREAK(fCallback != nullptr);
                 fCallback->handlePluginUIClosed();
@@ -961,7 +961,7 @@ public:
                 }
                 break;
             case WM_QUIT:
-            case PUGL_LOCAL_CLOSE_MSG:
+            case CARLA_LOCAL_CLOSE_MSG:
                 fIsVisible = false;
                 CARLA_SAFE_ASSERT_BREAK(fCallback != nullptr);
                 fCallback->handlePluginUIClosed();
@@ -1045,7 +1045,7 @@ LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_CLOSE:
-        PostMessage(hwnd, PUGL_LOCAL_CLOSE_MSG, wParam, lParam);
+        PostMessage(hwnd, CARLA_LOCAL_CLOSE_MSG, wParam, lParam);
         return 0;
 
 #if 0
