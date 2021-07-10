@@ -819,10 +819,7 @@ public:
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;
 
         if (isResizable)
-        {
-            // not supported right now
-            // winFlags |= WS_SIZEBOX;
-        }
+            winFlags |= WS_SIZEBOX;
 
 #ifdef BUILDING_CARLA_FOR_WINE
         const uint winType = WS_EX_DLGMODALFRAME;
@@ -838,7 +835,8 @@ public:
                                  parent, nullptr,
                                  hInstance, nullptr);
 
-        if (fWindow == nullptr) {
+        if (fWindow == nullptr)
+        {
             const DWORD errorCode = ::GetLastError();
             carla_stderr2("CreateWindowEx failed with error code 0x%x, class name was '%s'",
                           errorCode, fWindowClass.lpszClassName);
@@ -885,6 +883,9 @@ public:
         {
             fFirstShow = false;
             RECT rectChild, rectParent;
+
+            if (fChildWindow != nullptr && GetWindowRect(fChildWindow, &rectChild))
+                setSize(rectChild.right - rectChild.left, rectChild.bottom - rectChild.top, false);
 
             if (fParentWindow != nullptr &&
                 GetWindowRect(fWindow, &rectChild) &&
@@ -950,12 +951,21 @@ public:
         {
             switch (message)
             {
+            case WM_SIZE:
+                if (fChildWindow != nullptr)
+                {
+                    RECT rect;
+                    GetClientRect(fWindow, &rect);
+                    SetWindowPos(fChildWindow, 0, 0, 0, rect.right, rect.bottom,
+                                 SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
+                }
+                break;
             case WM_QUIT:
             case PUGL_LOCAL_CLOSE_MSG:
-                    fIsVisible = false;
-                    CARLA_SAFE_ASSERT_BREAK(fCallback != nullptr);
-                    fCallback->handlePluginUIClosed();
-                    break;
+                fIsVisible = false;
+                CARLA_SAFE_ASSERT_BREAK(fCallback != nullptr);
+                fCallback->handlePluginUIClosed();
+                break;
             }
         }
 
@@ -1005,7 +1015,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(winId != nullptr,);
 
-        fChildWindow = (HWND)fChildWindow;
+        fChildWindow = (HWND)winId;
     }
 
     void* getPtr() const noexcept override
