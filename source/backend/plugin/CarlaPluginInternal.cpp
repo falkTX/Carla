@@ -509,7 +509,7 @@ const MidiProgramData& PluginMidiProgramData::getCurrent() const noexcept
 
 CarlaPlugin::ProtectedData::ExternalNotes::ExternalNotes() noexcept
     : mutex(),
-      dataPool(32, 152),
+      dataPool("CarlaPlugin::ProtectedData::ExternalNotes", 32, 152),
       data(dataPool) {}
 
 CarlaPlugin::ProtectedData::ExternalNotes::~ExternalNotes() noexcept
@@ -633,28 +633,30 @@ void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChan
 // ProtectedData::PostRtEvents
 
 CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents() noexcept
-    : dataPool(512, 512),
+    : dataPool("CarlaPlugin::ProtectedData::PostRtEvents", 512, 512),
       data(dataPool),
       dataPendingRT(dataPool),
       dataMutex(),
-      dataPendingMutex() {}
+      dataPendingMutex(),
+      poolMutex() {}
 
 CarlaPlugin::ProtectedData::PostRtEvents::~PostRtEvents() noexcept
 {
-    dataMutex.lock();
-    dataPendingMutex.lock();
+    const CarlaMutexLocker cml1(dataMutex);
+    const CarlaMutexLocker cml2(dataPendingMutex);
+    const CarlaMutexLocker cml3(poolMutex);
 
     data.clear();
     dataPendingRT.clear();
-
-    dataMutex.unlock();
-    dataPendingMutex.unlock();
 }
 
 void CarlaPlugin::ProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e) noexcept
 {
     CARLA_SAFE_ASSERT_INT_RETURN(dataPendingMutex.tryLock(), e.type,);
-    dataPendingRT.append(e);
+    {
+        const CarlaMutexLocker cml(poolMutex);
+        dataPendingRT.append(e);
+    }
     dataPendingMutex.unlock();
 }
 
@@ -664,7 +666,10 @@ void CarlaPlugin::ProtectedData::PostRtEvents::trySplice() noexcept
 
     if (cmtl.wasLocked() && dataPendingRT.isNotEmpty() && dataMutex.tryLock())
     {
-        dataPendingRT.moveTo(data, true);
+        {
+            const CarlaMutexLocker cml(poolMutex);
+            dataPendingRT.moveTo(data, true);
+        }
         dataMutex.unlock();
     }
 }

@@ -38,8 +38,9 @@ public:
     class Pool
     {
     public:
-        Pool(const std::size_t minPreallocated, const std::size_t maxPreallocated) noexcept
+        Pool(const char* const poolName, const std::size_t minPreallocated, const std::size_t maxPreallocated) noexcept
             : kDataSize(sizeof(typename AbstractLinkedList<T>::Data)),
+              kPoolName(carla_strdup_safe(poolName)),
               fHandle(nullptr)
         {
             rtsafe_memory_pool_create(&fHandle, nullptr, kDataSize, minPreallocated, maxPreallocated);
@@ -50,9 +51,11 @@ public:
         {
             if (fHandle != nullptr)
             {
+                carla_debug("Destroying %s", kPoolName);
                 rtsafe_memory_pool_destroy(fHandle);
                 fHandle = nullptr;
             }
+            delete[] kPoolName;
         }
 
         void* allocate_atomic() const noexcept
@@ -84,6 +87,7 @@ public:
 
     private:
         const std::size_t kDataSize;
+        const char* const kPoolName;
 
         mutable RtMemPool_Handle fHandle;
 

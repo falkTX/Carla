@@ -329,9 +329,11 @@ struct CarlaPlugin::ProtectedData {
 
         struct Access {
             Access(PostRtEvents& e)
-              : data2(e.dataPool)
+              : data2(e.dataPool),
+                poolMutex(e.poolMutex)
             {
-                const CarlaMutexLocker cml(e.dataMutex);
+                const CarlaMutexLocker cml1(e.dataMutex);
+                const CarlaMutexLocker cml2(e.poolMutex);
 
                 if (e.data.isNotEmpty())
                     e.data.moveTo(data2, true);
@@ -339,6 +341,8 @@ struct CarlaPlugin::ProtectedData {
 
             ~Access()
             {
+                const CarlaMutexLocker cml(poolMutex);
+
                 data2.clear();
             }
 
@@ -354,6 +358,7 @@ struct CarlaPlugin::ProtectedData {
 
         private:
             RtLinkedList<PluginPostRtEvent> data2;
+            CarlaMutex& poolMutex;
         };
 
     private:
@@ -361,6 +366,7 @@ struct CarlaPlugin::ProtectedData {
         RtLinkedList<PluginPostRtEvent> data, dataPendingRT;
         CarlaMutex dataMutex;
         CarlaMutex dataPendingMutex;
+        CarlaMutex poolMutex;
 
         CARLA_DECLARE_NON_COPY_CLASS(PostRtEvents)
 

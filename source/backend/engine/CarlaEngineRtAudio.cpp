@@ -1073,7 +1073,7 @@ private:
 
         RtMidiEvents()
             : mutex(),
-              dataPool(512, 512),
+              dataPool("RtMidiEvents", 512, 512),
               data(dataPool),
               dataPending(dataPool) {}
 
