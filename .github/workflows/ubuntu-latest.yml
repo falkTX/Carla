@@ -1,0 +1,19 @@
+name: ubuntu latest
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: make features
+      run: make features
+    - name: make
+      run: make
