@@ -14,5 +14,7 @@
 	<true/>
 	<key>NSRequiresAquaSystemAppearance</key>
 	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Carla requires microphone for audio input.</string>
 </dict>
 </plist>
