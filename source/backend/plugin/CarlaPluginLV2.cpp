@@ -6066,7 +6066,6 @@ public:
         CARLA_SAFE_ASSERT_RETURN(height > 0, 1);
         carla_debug("CarlaPluginLV2::handleUIResize(%i, %i)", width, height);
 
-
         if (fUI.embedded)
         {
             pData->engine->callback(true, true,

@@ -116,7 +116,8 @@ public:
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
         {
-            showCustomUI(false);
+            if (! fUI.isEmbed)
+                showCustomUI(false);
 
             if (fUI.isOpen)
             {
@@ -621,6 +622,45 @@ public:
         }
     }
 
+    void* embedCustomUI(void* const ptr) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI.window == nullptr, nullptr);
+
+        const EngineOptions& opts(pData->engine->getOptions());
+
+        fUI.isEmbed = true;
+        fUI.isOpen = true;
+        fUI.isVisible = true;
+
+        // inform plugin of what UI scale we use
+        dispatcher(effVendorSpecific,
+                   CCONST('P', 'r', 'e', 'S'),
+                   CCONST('A', 'e', 'C', 's'),
+                   nullptr,
+                   opts.uiScale);
+
+        dispatcher(effEditOpen, 0, 0, ptr);
+
+        ERect* vstRect = nullptr;
+        dispatcher(effEditGetRect, 0, 0, &vstRect);
+
+        if (vstRect != nullptr)
+        {
+            const int width = vstRect->right - vstRect->left;
+            const int height = vstRect->bottom - vstRect->top;
+
+            CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
+
+            if (width > 1 && height > 1)
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_EMBED_UI_RESIZED,
+                                        pData->id, width, height,
+                                        0, 0.0f, nullptr);
+        }
+
+        return nullptr;
+    }
+
     void idle() override
     {
         if (fNeedIdle)
@@ -640,6 +680,10 @@ public:
 
             if (fUI.isVisible)
                 dispatcher(effEditIdle);
+        }
+        else if (fUI.isEmbed)
+        {
+            dispatcher(effEditIdle);
         }
 
         CarlaPlugin::uiIdle();
@@ -2159,10 +2203,21 @@ protected:
 #endif
 
         case audioMasterSizeWindow:
-            CARLA_SAFE_ASSERT_BREAK(fUI.window != nullptr);
             CARLA_SAFE_ASSERT_BREAK(index > 0);
             CARLA_SAFE_ASSERT_BREAK(value > 0);
-            fUI.window->setSize(static_cast<uint>(index), static_cast<uint>(value), true);
+
+            if (fUI.isEmbed)
+            {
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_EMBED_UI_RESIZED,
+                                        pData->id, index, static_cast<int>(value),
+                                        0, 0.0f, nullptr);
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT_BREAK(fUI.window != nullptr);
+                fUI.window->setSize(static_cast<uint>(index), static_cast<uint>(value), true);
+            }
             ret = 1;
             break;
 
@@ -2714,18 +2769,20 @@ private:
     } fEvents;
 
     struct UI {
+        bool isEmbed;
         bool isOpen;
         bool isVisible;
         CarlaPluginUI* window;
 
         UI() noexcept
-            : isOpen(false),
+            : isEmbed(false),
+              isOpen(false),
               isVisible(false),
               window(nullptr) {}
 
         ~UI()
         {
-            CARLA_ASSERT(! isVisible);
+            CARLA_ASSERT(isEmbed || ! isVisible);
 
             if (window != nullptr)
             {
