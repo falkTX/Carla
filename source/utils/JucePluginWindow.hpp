@@ -72,7 +72,9 @@ public:
         setVisible(true);
         toFront(true);
 
+#ifndef CARLA_OS_LINUX
         postCommandMessage(0);
+#endif
     }
 
     void hide()
@@ -107,6 +109,7 @@ protected:
         return ComponentPeer::windowHasDropShadow | ComponentPeer::windowHasTitleBar | ComponentPeer::windowHasCloseButton;
     }
 
+#ifndef CARLA_OS_LINUX
     void handleCommandMessage(const int comamndId) override
     {
         CARLA_SAFE_ASSERT_RETURN(comamndId == 0,);
@@ -117,6 +120,7 @@ protected:
             setAlwaysOnTop(false);
         }
     }
+#endif
 
 private:
     volatile bool fClosed;
