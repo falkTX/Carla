@@ -65,7 +65,9 @@ public:
         if (! isOnDesktop())
             addToDesktop();
 
+#ifndef CARLA_OS_LINUX
         setAlwaysOnTop(true);
+#endif
         setTransient();
         setVisible(true);
         toFront(true);
