@@ -58,13 +58,14 @@ static int temporaryErrorHandler(Display*, XErrorEvent*)
 class X11PluginUI : public CarlaPluginUI
 {
 public:
-    X11PluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable, const bool isLV2) noexcept
+    X11PluginUI(Callback* const cb, const uintptr_t parentId,
+                const bool isResizable, const bool canMonitorChildren) noexcept
         : CarlaPluginUI(cb, isResizable),
           fDisplay(nullptr),
           fHostWindow(0),
           fChildWindow(0),
           fChildWindowConfigured(false),
-          fChildWindowMonitoring(isResizable || isLV2),
+          fChildWindowMonitoring(isResizable || canMonitorChildren),
           fIsVisible(false),
           fFirstShow(true),
           fSetSizeCalledAtLeastOnce(false),

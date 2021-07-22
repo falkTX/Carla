@@ -57,7 +57,7 @@ public:
     static CarlaPluginUI* newWindows(Callback*, uintptr_t, bool isResizable);
 #endif
 #ifdef HAVE_X11
-    static CarlaPluginUI* newX11(Callback*, uintptr_t, bool isResizable, bool isLV2);
+    static CarlaPluginUI* newX11(Callback*, uintptr_t, bool isResizable, bool canMonitorChildren);
 #endif
 
 protected:
