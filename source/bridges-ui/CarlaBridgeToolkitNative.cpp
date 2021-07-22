@@ -62,7 +62,7 @@ public:
         fHostUI = CarlaPluginUI::newWindows(this, 0, options.isResizable);
 #elif defined(HAVE_X11) && defined(BRIDGE_X11)
         XInitThreads();
-        fHostUI = CarlaPluginUI::newX11(this, 0, options.isResizable);
+        fHostUI = CarlaPluginUI::newX11(this, 0, options.isResizable, true /* assumes LV2 */);
 #endif
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr, false);
 

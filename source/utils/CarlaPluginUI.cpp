@@ -58,12 +58,13 @@ static int temporaryErrorHandler(Display*, XErrorEvent*)
 class X11PluginUI : public CarlaPluginUI
 {
 public:
-    X11PluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
+    X11PluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable, const bool isLV2) noexcept
         : CarlaPluginUI(cb, isResizable),
           fDisplay(nullptr),
           fHostWindow(0),
           fChildWindow(0),
           fChildWindowConfigured(false),
+          fChildWindowMonitoring(isResizable || isLV2),
           fIsVisible(false),
           fFirstShow(true),
           fSetSizeCalledAtLeastOnce(false),
@@ -77,7 +78,10 @@ public:
         XSetWindowAttributes attr;
         carla_zeroStruct(attr);
 
-        attr.event_mask = KeyPressMask|KeyReleaseMask|FocusChangeMask|StructureNotifyMask|SubstructureNotifyMask;
+        attr.event_mask = KeyPressMask|KeyReleaseMask|FocusChangeMask;
+
+        if (fChildWindowMonitoring)
+            attr.event_mask |= StructureNotifyMask|SubstructureNotifyMask;
 
         fHostWindow = XCreateWindow(fDisplay, RootWindow(fDisplay, screen),
                                     0, 0, 300, 300, 0,
@@ -276,7 +280,7 @@ public:
 
                         fCallback->handlePluginUIResized(width, height);
                     }
-                    else if (event.xconfigure.window == fChildWindow && fChildWindow != 0)
+                    else if (fChildWindowMonitoring && event.xconfigure.window == fChildWindow && fChildWindow != 0)
                     {
                         nextWidth = event.xconfigure.width;
                         nextHeight = event.xconfigure.height;
@@ -314,7 +318,7 @@ public:
 
             if (type != nullptr)
                 XFree(type);
-            else if (fEventProc != nullptr)
+            else if (fEventProc != nullptr && event.type != FocusIn && event.type != FocusOut)
                 fEventProc(&event);
         }
 
@@ -441,6 +445,7 @@ private:
     Window   fHostWindow;
     Window   fChildWindow;
     bool     fChildWindowConfigured;
+    bool     fChildWindowMonitoring;
     bool     fIsVisible;
     bool     fFirstShow;
     bool     fSetSizeCalledAtLeastOnce;
@@ -1384,21 +1389,24 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 // -----------------------------------------------------
 
 #ifdef HAVE_X11
-CarlaPluginUI* CarlaPluginUI::newX11(Callback* cb, uintptr_t parentId, bool isResizable)
+CarlaPluginUI* CarlaPluginUI::newX11(Callback* const cb,
+                                     const uintptr_t parentId,
+                                     const bool isResizable, 
+                                     const bool isLV2)
 {
-    return new X11PluginUI(cb, parentId, isResizable);
+    return new X11PluginUI(cb, parentId, isResizable, isLV2);
 }
 #endif
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUI* CarlaPluginUI::newCocoa(Callback* cb, uintptr_t parentId, bool isResizable)
+CarlaPluginUI* CarlaPluginUI::newCocoa(Callback* const cb, const uintptr_t parentId, const bool isResizable)
 {
     return new CocoaPluginUI(cb, parentId, isResizable);
 }
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUI* CarlaPluginUI::newWindows(Callback* cb, uintptr_t parentId, bool isResizable)
+CarlaPluginUI* CarlaPluginUI::newWindows(Callback* const cb, const uintptr_t parentId, const bool isResizable)
 {
     return new WindowsPluginUI(cb, parentId, isResizable);
 }

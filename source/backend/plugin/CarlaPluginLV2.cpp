@@ -1922,7 +1922,7 @@ public:
 
                     case LV2_UI_X11:
 # ifdef HAVE_X11
-                        fUI.window = CarlaPluginUI::newX11(this, frontendWinId, isUiResizable());
+                        fUI.window = CarlaPluginUI::newX11(this, frontendWinId, isUiResizable(), true);
 # else
                         msg = "UI is only for systems with X11";
 # endif

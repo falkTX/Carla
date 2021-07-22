@@ -51,13 +51,13 @@ public:
 #endif
 
 #ifdef CARLA_OS_MAC
-    static CarlaPluginUI* newCocoa(Callback*, uintptr_t, bool);
+    static CarlaPluginUI* newCocoa(Callback*, uintptr_t, bool isResizable);
 #endif
 #ifdef CARLA_OS_WIN
-    static CarlaPluginUI* newWindows(Callback*, uintptr_t, bool);
+    static CarlaPluginUI* newWindows(Callback*, uintptr_t, bool isResizable);
 #endif
 #ifdef HAVE_X11
-    static CarlaPluginUI* newX11(Callback*, uintptr_t, bool);
+    static CarlaPluginUI* newX11(Callback*, uintptr_t, bool isResizable, bool isLV2);
 #endif
 
 protected:

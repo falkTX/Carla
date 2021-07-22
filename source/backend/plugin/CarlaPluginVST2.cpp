@@ -550,7 +550,7 @@ public:
 #elif defined(CARLA_OS_WIN)
                 fUI.window = CarlaPluginUI::newWindows(this, opts.frontendWinId, false);
 #elif defined(HAVE_X11)
-                fUI.window = CarlaPluginUI::newX11(this, opts.frontendWinId, false);
+                fUI.window = CarlaPluginUI::newX11(this, opts.frontendWinId, false, false);
 #else
                 msg = "Unsupported UI type";
 #endif
