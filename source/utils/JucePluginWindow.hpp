@@ -106,7 +106,7 @@ protected:
 
     int getDesktopWindowStyleFlags() const override
     {
-        return ComponentPeer::windowHasDropShadow | ComponentPeer::windowHasTitleBar | ComponentPeer::windowHasCloseButton;
+        return ComponentPeer::windowAppearsOnTaskbar | ComponentPeer::windowHasDropShadow | ComponentPeer::windowHasTitleBar | ComponentPeer::windowHasCloseButton;
     }
 
 #ifndef CARLA_OS_LINUX
