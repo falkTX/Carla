@@ -671,7 +671,8 @@ def handleInitialCommandLineArguments(file):
             print("")
             print("    --cnprefix\t Set a prefix for client names in multi-client mode.")
             if isinstance(gCarla.nogui, bool):
-                print("    --gdb     \t Run Carla inside gdb.")
+                if X_LIBDIR_X is not None:
+                    print("    --gdb     \t Run Carla inside gdb.")
                 print(" -n,--no-gui  \t Run Carla headless, don't show UI.")
                 print("")
             print(" -h,--help    \t Print this help text and exit.")
