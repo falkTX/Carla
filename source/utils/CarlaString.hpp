@@ -58,12 +58,21 @@ public:
     /*
      * Simple char string.
      */
-    explicit CarlaString(char* const strBuf) noexcept
+    explicit CarlaString(char* const strBuf, const bool reallocData = true) noexcept
         : fBuffer(_null()),
           fBufferLen(0),
           fBufferAlloc(false)
     {
-        _dup(strBuf);
+        if (reallocData || strBuf == nullptr)
+        {
+            _dup(strBuf);
+        }
+        else
+        {
+            fBuffer      = strBuf;
+            fBufferLen   = std::strlen(strBuf);
+            fBufferAlloc = true;
+        }
     }
 
     /*
@@ -909,7 +918,7 @@ CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfte
     std::memcpy(newBuf, strBefore.buffer(), strBeforeLen);
     std::memcpy(newBuf + strBeforeLen, strBufAfter, strBufAfterLen + 1);
 
-    return CarlaString(newBuf);
+    return CarlaString(newBuf, false);
 }
 
 static inline
@@ -929,7 +938,7 @@ CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfte
     std::memcpy(newBuf, strBufBefore, strBufBeforeLen);
     std::memcpy(newBuf + strBufBeforeLen, strAfter.buffer(), strAfterLen + 1);
 
-    return CarlaString(newBuf);
+    return CarlaString(newBuf, false);
 }
 
 // -----------------------------------------------------------------------
