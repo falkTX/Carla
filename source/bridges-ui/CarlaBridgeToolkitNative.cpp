@@ -61,7 +61,7 @@ public:
         const CarlaBridgeFormat::Options& options(fPlugin->getOptions());
 
 #if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
-        initStandaloneApplication();
+        CarlaBackend::initStandaloneApplication();
         fHostUI = CarlaPluginUI::newCocoa(this, 0, options.isStandalone, options.isResizable);
 #elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
         fHostUI = CarlaPluginUI::newWindows(this, 0, options.isStandalone, options.isResizable);

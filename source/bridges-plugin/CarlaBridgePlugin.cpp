@@ -587,7 +587,7 @@ int main(int argc, char* argv[])
     const bool testing = std::getenv("CARLA_BRIDGE_TESTING") != nullptr;
 
 #ifdef CARLA_OS_MAC
-    initStandaloneApplication();
+    CarlaBackend::initStandaloneApplication();
 #endif
 
 #ifdef CARLA_OS_WIN

@@ -22,6 +22,7 @@
 
 #include <sys/xattr.h>
 
+#import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
 
 CARLA_BACKEND_START_NAMESPACE
