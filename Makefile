@@ -491,7 +491,7 @@ endif
 		data/*.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig
 
-	# Adjust PREFIX, LIBDIR and INCLUDEDIR in pkg-config files
+	# Adjust PREFIX, LIBDIR, INCLUDEDIR and VERSION in pkg-config files
 	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
@@ -505,6 +505,12 @@ endif
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
 	sed $(SED_ARGS) 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
+
+	sed $(SED_ARGS) 's?X-VERSION-X?$(VERSION)?' \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
