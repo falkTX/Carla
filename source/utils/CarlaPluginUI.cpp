@@ -313,7 +313,7 @@ public:
                 if (fChildWindow == 0)
                     fChildWindow = getChildWindow();
                 if (fChildWindow != 0)
-                    XSetInputFocus(fDisplay, fChildWindow, RevertToNone, CurrentTime);
+                    XSetInputFocus(fDisplay, fChildWindow, RevertToPointerRoot, CurrentTime);
                 break;
             }
 
