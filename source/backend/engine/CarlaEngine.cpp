@@ -983,7 +983,8 @@ bool CarlaEngine::clonePlugin(const uint id)
 
     if (const CarlaPluginPtr newPlugin = pData->plugins[pluginCountBefore].plugin)
     {
-        newPlugin->cloneLV2Files(*plugin);
+        if (newPlugin->getType() == PLUGIN_LV2)
+            newPlugin->cloneLV2Files(*plugin);
         newPlugin->loadStateSave(plugin->getStateSave(true));
     }
 
