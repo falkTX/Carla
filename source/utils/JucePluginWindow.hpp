@@ -107,13 +107,13 @@ protected:
 
     int getDesktopWindowStyleFlags() const override
     {
-        int flags = 0;
-        flags |= ComponentPeer::windowHasCloseButton;
-        flags |= ComponentPeer::windowHasDropShadow;
-        flags |= ComponentPeer::windowHasTitleBar;
+        int wflags = 0;
+        wflags |= ComponentPeer::windowHasCloseButton;
+        wflags |= ComponentPeer::windowHasDropShadow;
+        wflags |= ComponentPeer::windowHasTitleBar;
         if (fIsStandalone)
-            flags |= ComponentPeer::windowAppearsOnTaskbar;
-        return flags;
+            wflags |= ComponentPeer::windowAppearsOnTaskbar;
+        return wflags;
     }
 
 #ifndef CARLA_OS_LINUX
