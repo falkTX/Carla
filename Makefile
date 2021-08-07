@@ -434,6 +434,7 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(LIBDIR)/carla/styles
 	install -d $(DESTDIR)$(DATADIR)/applications
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/32x32/apps
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
@@ -633,6 +634,10 @@ endif
 	# Install icons, 16x16
 	install -m 644 resources/16x16/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
 	install -m 644 resources/16x16/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
+
+	# Install icons, 32x32
+	install -m 644 resources/32x32/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/32x32/apps
+	install -m 644 resources/32x32/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/32x32/apps
 
 	# Install icons, 48x48
 	install -m 644 resources/48x48/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
