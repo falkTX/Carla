@@ -27,6 +27,10 @@
 #include "CarlaMainLoop.hpp"
 #include "CarlaMIDI.h"
 
+#ifdef CARLA_OS_MAC
+# include "CarlaMacUtils.hpp"
+#endif
+
 #ifdef CARLA_OS_UNIX
 # include <signal.h>
 #endif
@@ -581,6 +585,10 @@ int main(int argc, char* argv[])
     // Initialize OS features
 
     const bool testing = std::getenv("CARLA_BRIDGE_TESTING") != nullptr;
+
+#ifdef CARLA_OS_MAC
+    initStandaloneApplication();
+#endif
 
 #ifdef CARLA_OS_WIN
     OleInitialize(nullptr);

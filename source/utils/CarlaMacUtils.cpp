@@ -1,6 +1,6 @@
 /*
  * Carla macOS utils
- * Copyright (C) 2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,6 +27,12 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
+
+void initStandaloneApplication()
+{
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    [NSApp activateIgnoringOtherApps:YES];
+}
 
 const char* findBinaryInBundle(const char* const bundleDir)
 {

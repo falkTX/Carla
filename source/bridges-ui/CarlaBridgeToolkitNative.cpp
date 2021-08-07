@@ -21,6 +21,10 @@
 #include "CarlaMainLoop.hpp"
 #include "CarlaPluginUI.hpp"
 
+#if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
+# include "CarlaMacUtils.hpp"
+#endif
+
 #if defined(HAVE_X11) && defined(BRIDGE_X11)
 # include <X11/Xlib.h>
 #endif
@@ -57,6 +61,7 @@ public:
         const CarlaBridgeFormat::Options& options(fPlugin->getOptions());
 
 #if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
+        initStandaloneApplication();
         fHostUI = CarlaPluginUI::newCocoa(this, 0, options.isStandalone, options.isResizable);
 #elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
         fHostUI = CarlaPluginUI::newWindows(this, 0, options.isStandalone, options.isResizable);
