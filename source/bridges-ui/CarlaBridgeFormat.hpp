@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -77,6 +77,7 @@ protected:
         uint32_t bgColor;
         uint32_t fgColor;
         float uiScale;
+        bool isStandalone;
         bool useTheme;
         bool useThemeColors;
         const char* windowTitle;
@@ -112,6 +113,11 @@ public:
      */
     struct Options {
         /*!
+         * UI is standalone, not controlled by another application.
+         */
+        bool isStandalone;
+
+        /*!
          * UI is resizable by the user.
          * The UI can still sometimes resize itself internally if this is false.
          */
@@ -142,7 +148,8 @@ public:
          * Constructor for default options.
          */
         Options() noexcept
-            : isResizable(true),
+            : isStandalone(true),
+              isResizable(true),
               useTheme(true),
               useThemeColors(true),
               windowTitle("TestUI"),

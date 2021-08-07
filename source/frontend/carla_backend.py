@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend code
-# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -1044,6 +1044,9 @@ ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 33
 # Mostly useful for JACK multi-client mode.
 # @note MUST include at least one "." (dot).
 ENGINE_OPTION_CLIENT_NAME_PREFIX = 34
+
+# Treat loaded plugins as standalone (that is, there is no host UI to manage them)
+ENGINE_OPTION_PLUGINS_ARE_STANDALONE = 35
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Engine Process Mode

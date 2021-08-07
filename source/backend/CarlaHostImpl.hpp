@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -57,8 +57,8 @@ struct CarlaHostStandalone : CarlaHostHandleImpl {
     FileCallbackFunc   fileCallback;
     void*              fileCallbackPtr;
 
-#ifndef BUILD_BRIDGE
     EngineOptions  engineOptions;
+#ifndef BUILD_BRIDGE
     CarlaLogThread logThread;
     bool           logThreadEnabled;
 #endif
@@ -71,8 +71,8 @@ struct CarlaHostStandalone : CarlaHostHandleImpl {
           engineCallbackPtr(nullptr),
           fileCallback(nullptr),
           fileCallbackPtr(nullptr),
-#ifndef BUILD_BRIDGE
           engineOptions(),
+#ifndef BUILD_BRIDGE
           logThread(),
           logThreadEnabled(false),
 #endif

@@ -253,6 +253,9 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(transientWindowId), true);
         opts.transientWindowId = transientWindowId;
 
+        // we can assume we are not standalone if we got options from controller side
+        opts.isStandalone = true;
+
         fGotOptions = true;
         uiOptionsChanged(opts);
 

@@ -489,7 +489,6 @@ CARLA_EXPORT bool carla_set_engine_about_to_close(CarlaHostHandle handle);
  */
 CARLA_EXPORT void carla_set_engine_callback(CarlaHostHandle handle, EngineCallbackFunc func, void* ptr);
 
-#ifndef BUILD_BRIDGE
 /*!
  * Set an engine option.
  * @param option   Option
@@ -497,7 +496,6 @@ CARLA_EXPORT void carla_set_engine_callback(CarlaHostHandle handle, EngineCallba
  * @param valueStr Value as string
  */
 CARLA_EXPORT void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int value, const char* valueStr);
-#endif
 
 /*!
  * Set the file callback function.

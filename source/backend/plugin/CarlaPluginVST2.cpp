@@ -546,11 +546,11 @@ public:
                 const EngineOptions& opts(pData->engine->getOptions());
 
 #if defined(CARLA_OS_MAC)
-                fUI.window = CarlaPluginUI::newCocoa(this, opts.frontendWinId, false);
+                fUI.window = CarlaPluginUI::newCocoa(this, opts.frontendWinId, opts.pluginsAreStandalone, false);
 #elif defined(CARLA_OS_WIN)
-                fUI.window = CarlaPluginUI::newWindows(this, opts.frontendWinId, false);
+                fUI.window = CarlaPluginUI::newWindows(this, opts.frontendWinId, opts.pluginsAreStandalone, false);
 #elif defined(HAVE_X11)
-                fUI.window = CarlaPluginUI::newX11(this, opts.frontendWinId, false, false);
+                fUI.window = CarlaPluginUI::newX11(this, opts.frontendWinId, opts.pluginsAreStandalone, false, false);
 #else
                 msg = "Unsupported UI type";
 #endif

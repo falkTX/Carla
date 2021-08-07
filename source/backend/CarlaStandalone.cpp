@@ -1,6 +1,6 @@
 /*
  * Carla Standalone
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -388,6 +388,8 @@ static void carla_engine_init_common(const CarlaHostStandalone& standalone, Carl
 # endif
 
     engine->setOption(CB::ENGINE_OPTION_CLIENT_NAME_PREFIX, 0, standalone.engineOptions.clientNamePrefix);
+
+    engine->setOption(CB::ENGINE_OPTION_PLUGINS_ARE_STANDALONE, standalone.engineOptions.pluginsAreStandalone, nullptr);
 #endif // BUILD_BRIDGE
 }
 
@@ -694,7 +696,6 @@ void carla_set_engine_callback(CarlaHostHandle handle, EngineCallbackFunc func, 
         handle->engine->setCallback(func, ptr);
 }
 
-#ifndef BUILD_BRIDGE
 void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int value, const char* valueStr)
 {
     carla_debug("carla_set_engine_option(%p, %i:%s, %i, \"%s\")",
@@ -811,6 +812,7 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
             shandle.engineOptions.audioDevice = carla_strdup_safe(valueStr);
             break;
 
+#ifndef BUILD_BRIDGE
         case CB::ENGINE_OPTION_OSC_ENABLED:
             CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
             shandle.engineOptions.oscEnabled = (value != 0);
@@ -825,6 +827,7 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
             CARLA_SAFE_ASSERT_RETURN(value <= 0 || value >= 1024,);
             shandle.engineOptions.oscPortUDP = value;
             break;
+#endif
 
         case CB::ENGINE_OPTION_FILE_PATH:
             CARLA_SAFE_ASSERT_RETURN(value > CB::FILE_NONE,);
@@ -934,7 +937,7 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
             shandle.engineOptions.frontendWinId = static_cast<uintptr_t>(winId);
         }   break;
 
-# ifndef CARLA_OS_WIN
+#if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
         case CB::ENGINE_OPTION_WINE_EXECUTABLE:
             CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
 
@@ -972,11 +975,13 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
             CARLA_SAFE_ASSERT_RETURN(value >= 1 && value <= 99,);
             shandle.engineOptions.wine.serverRtPrio = value;
             break;
-# endif // CARLA_OS_WIN
+#endif
 
+#ifndef BUILD_BRIDGE
         case CB::ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
             shandle.logThreadEnabled = (value != 0);
             break;
+#endif
 
         case CB::ENGINE_OPTION_CLIENT_NAME_PREFIX:
             if (shandle.engineOptions.clientNamePrefix != nullptr)
@@ -986,13 +991,17 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
                                                    ? carla_strdup_safe(valueStr)
                                                    : nullptr;
             break;
+
+        case CB::ENGINE_OPTION_PLUGINS_ARE_STANDALONE:
+            CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+            shandle.engineOptions.pluginsAreStandalone = (value != 0);
+            break;
         }
     }
 
     if (handle->engine != nullptr)
         handle->engine->setOption(option, value, valueStr);
 }
-#endif // BUILD_BRIDGE
 
 void carla_set_file_callback(CarlaHostHandle handle, FileCallbackFunc func, void* ptr)
 {

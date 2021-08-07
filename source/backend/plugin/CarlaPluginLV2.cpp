@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Plugin
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1892,6 +1892,7 @@ public:
                 if (fUI.type == UI::TYPE_EMBED && fUI.rdfDescriptor->Type != LV2_UI_NONE && fUI.window == nullptr)
                 {
                     const char* msg = nullptr;
+                    const bool isStandalone = pData->engine->getOptions().pluginsAreStandalone;
 
                     switch (fUI.rdfDescriptor->Type)
                     {
@@ -1906,7 +1907,7 @@ public:
 
                     case LV2_UI_COCOA:
 # ifdef CARLA_OS_MAC
-                        fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId, isUiResizable());
+                        fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId, isStandalone, isUiResizable());
 # else
                         msg = "UI is for MacOS only";
 # endif
@@ -1914,7 +1915,7 @@ public:
 
                     case LV2_UI_WINDOWS:
 # ifdef CARLA_OS_WIN
-                        fUI.window = CarlaPluginUI::newWindows(this, frontendWinId, isUiResizable());
+                        fUI.window = CarlaPluginUI::newWindows(this, frontendWinId, isStandalone, isUiResizable());
 # else
                         msg = "UI is for Windows only";
 # endif
@@ -1922,7 +1923,7 @@ public:
 
                     case LV2_UI_X11:
 # ifdef HAVE_X11
-                        fUI.window = CarlaPluginUI::newX11(this, frontendWinId, isUiResizable(), true);
+                        fUI.window = CarlaPluginUI::newX11(this, frontendWinId, isStandalone, isUiResizable(), true);
 # else
                         msg = "UI is only for systems with X11";
 # endif

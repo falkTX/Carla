@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2014-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -57,12 +57,12 @@ public:
         const CarlaBridgeFormat::Options& options(fPlugin->getOptions());
 
 #if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
-        fHostUI = CarlaPluginUI::newCocoa(this, 0, options.isResizable);
+        fHostUI = CarlaPluginUI::newCocoa(this, 0, options.isStandalone, options.isResizable);
 #elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
-        fHostUI = CarlaPluginUI::newWindows(this, 0, options.isResizable);
+        fHostUI = CarlaPluginUI::newWindows(this, 0, options.isStandalone, options.isResizable);
 #elif defined(HAVE_X11) && defined(BRIDGE_X11)
         XInitThreads();
-        fHostUI = CarlaPluginUI::newX11(this, 0, options.isResizable, true /* assumes LV2 */);
+        fHostUI = CarlaPluginUI::newX11(this, 0, options.isStandalone, options.isResizable, true);
 #endif
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr, false);
 

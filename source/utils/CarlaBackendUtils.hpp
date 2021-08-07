@@ -1,6 +1,6 @@
 /*
  * Carla Backend utils
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -360,12 +360,14 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_AUDIO_DRIVER";
     case ENGINE_OPTION_AUDIO_DEVICE:
         return "ENGINE_OPTION_AUDIO_DEVICE";
+#ifndef BUILD_BRIDGE
     case ENGINE_OPTION_OSC_ENABLED:
         return "ENGINE_OPTION_OSC_ENABLED";
     case ENGINE_OPTION_OSC_PORT_UDP:
         return "ENGINE_OPTION_OSC_PORT_UDP";
     case ENGINE_OPTION_OSC_PORT_TCP:
         return "ENGINE_OPTION_OSC_PORT_TCP";
+#endif
     case ENGINE_OPTION_FILE_PATH:
         return "ENGINE_OPTION_FILE_PATH";
     case ENGINE_OPTION_PLUGIN_PATH:
@@ -398,10 +400,14 @@ const char* EngineOption2Str(const EngineOption option) noexcept
     case ENGINE_OPTION_WINE_SERVER_RT_PRIO:
         return "ENGINE_OPTION_WINE_SERVER_RT_PRIO";
 #endif
+#ifndef BUILD_BRIDGE
     case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
         return "ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT";
+#endif
     case ENGINE_OPTION_CLIENT_NAME_PREFIX:
         return "ENGINE_OPTION_CLIENT_NAME_PREFIX";
+    case ENGINE_OPTION_PLUGINS_ARE_STANDALONE:
+        return "ENGINE_OPTION_PLUGINS_ARE_STANDALONE";
     }
 
     carla_stderr("CarlaBackend::EngineOption2Str(%i) - invalid option", option);

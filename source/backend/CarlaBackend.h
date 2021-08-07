@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1368,6 +1368,7 @@ typedef enum {
      */
     ENGINE_OPTION_AUDIO_DEVICE = 14,
 
+#ifndef BUILD_BRIDGE
     /*!
      * Wherever to enable OSC support in the engine.
      */
@@ -1389,6 +1390,7 @@ typedef enum {
      * @note Valid ports begin at 1024 and end at 32767 (inclusive)
      */
     ENGINE_OPTION_OSC_PORT_UDP = 17,
+#endif
 
     /*!
      * Set path used for a specific file type.
@@ -1475,17 +1477,24 @@ typedef enum {
     ENGINE_OPTION_WINE_SERVER_RT_PRIO = 32,
 #endif
 
+#ifndef BUILD_BRIDGE
     /*!
      * Capture console output into debug callbacks.
      */
     ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 33,
+#endif
 
     /*!
      * A prefix to give to all plugin clients created by Carla.
      * Mostly useful for JACK multi-client mode.
      * @note MUST include at least one "." (dot).
      */
-    ENGINE_OPTION_CLIENT_NAME_PREFIX = 34
+    ENGINE_OPTION_CLIENT_NAME_PREFIX = 34,
+
+    /*!
+     * Treat loaded plugins as standalone (that is, there is no host UI to manage them)
+     */
+    ENGINE_OPTION_PLUGINS_ARE_STANDALONE = 35
 
 } EngineOption;
 

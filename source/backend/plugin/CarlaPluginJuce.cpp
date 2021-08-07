@@ -494,7 +494,7 @@ public:
                         uiName += " (GUI)";
                     }
 
-                    fWindow = new JucePluginWindow(opts.frontendWinId);
+                    fWindow = new JucePluginWindow(opts.frontendWinId, opts.pluginsAreStandalone);
                     fWindow->setName(uiName);
                 }
 

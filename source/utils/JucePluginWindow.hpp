@@ -42,8 +42,9 @@ namespace juce {
 class JucePluginWindow : public DialogWindow
 {
 public:
-    JucePluginWindow(const uintptr_t parentId)
+    JucePluginWindow(const uintptr_t parentId, const bool isStandalone)
         : DialogWindow("JucePluginWindow", Colour(50, 50, 200), true, false),
+          fIsStandalone(isStandalone),
           fClosed(false),
           fShown(false),
           fTransientId(parentId)
@@ -106,7 +107,13 @@ protected:
 
     int getDesktopWindowStyleFlags() const override
     {
-        return ComponentPeer::windowHasDropShadow | ComponentPeer::windowHasTitleBar | ComponentPeer::windowHasCloseButton;
+        int flags = 0;
+        flags |= ComponentPeer::windowHasCloseButton;
+        flags |= ComponentPeer::windowHasDropShadow;
+        flags |= ComponentPeer::windowHasTitleBar;
+        if (fIsStandalone)
+            flags |= ComponentPeer::windowAppearsOnTaskbar;
+        return flags;
     }
 
 #ifndef CARLA_OS_LINUX
@@ -123,6 +130,7 @@ protected:
 #endif
 
 private:
+    const bool fIsStandalone;
     volatile bool fClosed;
     bool fShown;
     const uintptr_t fTransientId;

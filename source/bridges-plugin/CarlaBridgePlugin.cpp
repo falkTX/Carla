@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Bridge Plugin
- * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -661,6 +661,7 @@ int main(int argc, char* argv[])
             if (! useBridge)
             {
                 carla_set_active(gHostHandle, 0, true);
+                carla_set_engine_option(gHostHandle, CarlaBackend::ENGINE_OPTION_PLUGINS_ARE_STANDALONE, 1, nullptr);
 
                 if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(gHostHandle, 0))
                 {

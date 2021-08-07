@@ -1,6 +1,6 @@
 /*
  * Carla Plugin UI
- * Copyright (C) 2014-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -59,8 +59,8 @@ class X11PluginUI : public CarlaPluginUI
 {
 public:
     X11PluginUI(Callback* const cb, const uintptr_t parentId,
-                const bool isResizable, const bool canMonitorChildren) noexcept
-        : CarlaPluginUI(cb, isResizable),
+                const bool isStandalone, const bool isResizable, const bool canMonitorChildren) noexcept
+        : CarlaPluginUI(cb, isStandalone, isResizable),
           fDisplay(nullptr),
           fHostWindow(0),
           fChildWindow(0),
@@ -571,8 +571,8 @@ private:
 class CocoaPluginUI : public CarlaPluginUI
 {
 public:
-    CocoaPluginUI(Callback* const callback, const uintptr_t parentId, const bool isResizable) noexcept
-        : CarlaPluginUI(callback, isResizable),
+    CocoaPluginUI(Callback* const callback, const uintptr_t parentId, const bool isStandalone, const bool isResizable) noexcept
+        : CarlaPluginUI(callback, isStandalone, isResizable),
           fView(nullptr),
           fParentWindow(nullptr),
           fWindow(nullptr)
@@ -792,8 +792,8 @@ static LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 class WindowsPluginUI : public CarlaPluginUI
 {
 public:
-    WindowsPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
-        : CarlaPluginUI(cb, isResizable),
+    WindowsPluginUI(Callback* const cb, const uintptr_t parentId, const bool isStandalone, const bool isResizable) noexcept
+        : CarlaPluginUI(cb, isStandalone, isResizable),
           fWindow(nullptr),
           fChildWindow(nullptr),
           fParentWindow(nullptr),
@@ -1392,24 +1392,31 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 #ifdef HAVE_X11
 CarlaPluginUI* CarlaPluginUI::newX11(Callback* const cb,
                                      const uintptr_t parentId,
+                                     const bool isStandalone,
                                      const bool isResizable, 
                                      const bool isLV2)
 {
-    return new X11PluginUI(cb, parentId, isResizable, isLV2);
+    return new X11PluginUI(cb, parentId, isStandalone, isResizable, isLV2);
 }
 #endif
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUI* CarlaPluginUI::newCocoa(Callback* const cb, const uintptr_t parentId, const bool isResizable)
+CarlaPluginUI* CarlaPluginUI::newCocoa(Callback* const cb,
+                                       const uintptr_t parentId,
+                                       const bool isStandalone,
+                                       const bool isResizable)
 {
-    return new CocoaPluginUI(cb, parentId, isResizable);
+    return new CocoaPluginUI(cb, parentId, isStandalone, isResizable);
 }
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUI* CarlaPluginUI::newWindows(Callback* const cb, const uintptr_t parentId, const bool isResizable)
+CarlaPluginUI* CarlaPluginUI::newWindows(Callback* const cb,
+                                         const uintptr_t parentId,
+                                         const bool isStandalone,
+                                         const bool isResizable)
 {
-    return new WindowsPluginUI(cb, parentId, isResizable);
+    return new WindowsPluginUI(cb, parentId, isStandalone, isResizable);
 }
 #endif
 

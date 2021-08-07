@@ -826,6 +826,7 @@ public:
         // ------------------------------------------------------------------------------------------------------------
         // other
 
+        fUiOptions.isStandalone   = opts.isStandalone;
         fUiOptions.useTheme       = opts.useTheme;
         fUiOptions.useThemeColors = opts.useThemeColors;
     }

@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1902,26 +1902,22 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.audioDevice = carla_strdup_safe(valueStr);
         break;
 
+#ifndef BUILD_BRIDGE
     case ENGINE_OPTION_OSC_ENABLED:
         CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
-#ifndef BUILD_BRIDGE
         pData->options.oscEnabled = (value != 0);
-#endif
         break;
 
     case ENGINE_OPTION_OSC_PORT_TCP:
         CARLA_SAFE_ASSERT_RETURN(value <= 0 || value >= 1024,);
-#ifndef BUILD_BRIDGE
         pData->options.oscPortTCP = value;
-#endif
         break;
 
     case ENGINE_OPTION_OSC_PORT_UDP:
         CARLA_SAFE_ASSERT_RETURN(value <= 0 || value >= 1024,);
-#ifndef BUILD_BRIDGE
         pData->options.oscPortUDP = value;
-#endif
         break;
+#endif
 
     case ENGINE_OPTION_FILE_PATH:
         CARLA_SAFE_ASSERT_RETURN(value > FILE_NONE,);
@@ -2116,8 +2112,10 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         break;
 #endif
 
+#ifndef BUILD_BRIDGE
     case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
         break;
+#endif
 
     case ENGINE_OPTION_CLIENT_NAME_PREFIX:
         if (pData->options.clientNamePrefix != nullptr)
@@ -2126,6 +2124,11 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.clientNamePrefix = valueStr != nullptr && valueStr[0] != '\0'
                                         ? carla_strdup_safe(valueStr)
                                         : nullptr;
+        break;
+
+    case ENGINE_OPTION_PLUGINS_ARE_STANDALONE:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        pData->options.pluginsAreStandalone = (value != 0);
         break;
     }
 }
