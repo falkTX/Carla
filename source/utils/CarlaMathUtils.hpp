@@ -1,6 +1,6 @@
 /*
  * Carla math utils
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -285,7 +285,7 @@ void carla_multiply(float data[], const float& multiplier, const std::size_t cou
 // --------------------------------------------------------------------------------------------------------------------
 // Missing functions in old OSX versions.
 
-#if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC) && ! defined(CARLA_PROPER_CPP11_SUPPORT)
+#if ! defined(DISTRHO_UTILS_HPP_INCLUDED) && ! defined(CARLA_PROPER_CPP11_SUPPORT)
 namespace std {
 inline float fmin(float __x, float __y)
   { return __builtin_fminf(__x, __y); }
