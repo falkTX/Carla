@@ -477,8 +477,9 @@ public:
             if (juce::AudioProcessorEditor* const editor = fInstance->createEditorIfNeeded())
             {
                 const EngineOptions& opts(pData->engine->getOptions());
-
+#ifndef CARLA_OS_MAC
                 editor->setScaleFactor(opts.uiScale);
+#endif
 
                 if (fWindow == nullptr)
                 {
