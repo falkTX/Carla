@@ -582,7 +582,10 @@
             <enum>Qt::PlainText</enum>
            </property>
            <property name="pixmap">
-            <pixmap resource="../resources.qrc">:/48x48/canvas.png</pixmap>
+            <pixmap resource="../resources.qrc">:/scalable/canvas.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

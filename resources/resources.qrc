@@ -38,13 +38,13 @@
         <file>48x48/carla.png</file>
         <file>48x48/carla-control.png</file>
 
-        <file>48x48/canvas.png</file>
         <file>48x48/jack.png</file>
         <file>48x48/juce.png</file>
 
         <file>scalable/carla.svg</file>
         <file>scalable/carla-control.svg</file>
 
+        <file>scalable/canvas.svg</file>
         <file>scalable/folder.svgz</file>
         <file>scalable/osc.svgz</file>
         <file>scalable/warning.svgz</file>
