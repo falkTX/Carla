@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,21 +31,21 @@ class CarlaBridgeToolkit
 public:
     virtual ~CarlaBridgeToolkit() {}
 
-    virtual bool init(const int argc, const char* argv[]) = 0;
-    virtual void exec(const bool showUI) = 0;
+    virtual bool init(int argc, const char* argv[]) = 0;
+    virtual void exec(bool showUI) = 0;
     virtual void quit() = 0;
 
     virtual void show() = 0;
     virtual void focus() = 0;
     virtual void hide() = 0;
-    virtual void setChildWindow(void* const ptr) = 0;
-    virtual void setSize(const uint width, const uint height) = 0;
-    virtual void setTitle(const char* const title) = 0;
+    virtual void setChildWindow(void* ptr) = 0;
+    virtual void setSize(uint width, uint height) = 0;
+    virtual void setTitle(const char* title) = 0;
 
-    virtual void* getContainerId() const  { return nullptr; }
+    virtual void* getContainerId() const { return nullptr; }
     virtual void* getContainerId2() const { return nullptr; }
 
-    static CarlaBridgeToolkit* createNew(CarlaBridgeFormat* const format);
+    static CarlaBridgeToolkit* createNew(CarlaBridgeFormat* format);
 
 protected:
     CarlaBridgeFormat* const fPlugin;

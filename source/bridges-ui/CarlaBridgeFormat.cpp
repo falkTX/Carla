@@ -254,7 +254,7 @@ bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
         opts.transientWindowId = transientWindowId;
 
         // we can assume we are not standalone if we got options from controller side
-        opts.isStandalone = true;
+        opts.isStandalone = false;
 
         fGotOptions = true;
         uiOptionsChanged(opts);

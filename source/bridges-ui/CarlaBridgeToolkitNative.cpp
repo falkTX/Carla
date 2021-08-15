@@ -20,6 +20,7 @@
 
 #include "CarlaMainLoop.hpp"
 #include "CarlaPluginUI.hpp"
+#include "CarlaUtils.h"
 
 #if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
 # include "CarlaMacUtils.hpp"
@@ -71,9 +72,12 @@ public:
 #endif
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr, false);
 
+        if (options.isStandalone)
+            fPlugin->setScaleFactor(carla_get_desktop_scale_factor());
+
         fHostUI->setTitle(options.windowTitle.buffer());
 
-#if (defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)) || (defined(HAVE_X11) && defined(BRIDGE_X11))
+#ifndef CARLA_OS_MAC
         if (options.transientWindowId != 0)
         {
             fHostUI->setTransientWinId(options.transientWindowId);
@@ -235,5 +239,6 @@ CARLA_BRIDGE_UI_END_NAMESPACE
 #define CARLA_PLUGIN_UI_CLASS_PREFIX ToolkitNative
 #include "CarlaPluginUI.cpp"
 #include "CarlaMacUtils.cpp"
+#include "utils/Windows.cpp"
 
 // -------------------------------------------------------------------------

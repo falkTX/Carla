@@ -831,6 +831,11 @@ public:
         fUiOptions.useThemeColors = opts.useThemeColors;
     }
 
+    void setScaleFactor(const double scaleFactor) override
+    {
+        fLv2Options.uiScale = static_cast<float>(scaleFactor);
+    }
+
     void uiResized(const uint width, const uint height) override
     {
         if (fHandle != nullptr && fExt.resize != nullptr)

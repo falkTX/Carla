@@ -106,6 +106,11 @@ public:
     /*!
      * TESTING
      */
+    virtual void setScaleFactor(double scaleFactor) = 0;
+
+    /*!
+     * TESTING
+     */
     virtual void uiResized(uint width, uint height) = 0;
 
     /*!
