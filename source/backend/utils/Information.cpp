@@ -45,10 +45,6 @@
 # pragma GCC diagnostic pop
 #endif
 
-#ifdef CARLA_OS_MAC
-# import <AppKit/AppKit.h>
-#endif
-
 #include "water/files/File.h"
 
 // -------------------------------------------------------------------------------------------------------------------

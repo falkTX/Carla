@@ -40,7 +40,7 @@ double carla_get_desktop_scale_factor()
     if (const char* const scale = getenv("QT_SCALE_FACTOR"))
         return std::max(1.0, std::atof(scale));
 
-#ifdef CARLA_OS_MAC
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
     return [NSScreen mainScreen].backingScaleFactor;
 #endif
 
