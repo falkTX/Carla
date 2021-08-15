@@ -43,18 +43,16 @@
 
 // --------------------------------------------------------------------------------------------------------------------
 
-#ifdef USING_JUCE
 static void carla_standalone_juce_init(void);
 static void carla_standalone_juce_idle(void);
 static void carla_standalone_juce_cleanup(void);
-# define carla_juce_init carla_standalone_juce_init
-# define carla_juce_idle carla_standalone_juce_idle
-# define carla_juce_cleanup carla_standalone_juce_cleanup
-# include "utils/JUCE.cpp"
-# undef carla_juce_init
-# undef carla_juce_idle
-# undef carla_juce_cleanup
-#endif
+#define carla_juce_init carla_standalone_juce_init
+#define carla_juce_idle carla_standalone_juce_idle
+#define carla_juce_cleanup carla_standalone_juce_cleanup
+#include "utils/JUCE.cpp"
+#undef carla_juce_init
+#undef carla_juce_idle
+#undef carla_juce_cleanup
 
 // -------------------------------------------------------------------------------------------------------------------
 // Always return a valid string ptr for standalone functions
@@ -2375,6 +2373,7 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 # include "CarlaProcessUtils.cpp"
 # include "CarlaStateUtils.cpp"
 # include "utils/Information.cpp"
+# include "utils/Windows.cpp"
 #endif /* CARLA_PLUGIN_EXPORT */
 
 // --------------------------------------------------------------------------------------------------------------------

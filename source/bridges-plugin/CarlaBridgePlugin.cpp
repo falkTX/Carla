@@ -21,6 +21,7 @@
 
 #include "CarlaEngine.hpp"
 #include "CarlaHost.h"
+#include "CarlaUtils.h"
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaJuceUtils.hpp"
@@ -655,6 +656,17 @@ int main(int argc, char* argv[])
         {
             carla_stderr("Failed to init engine, error was:\n%s", carla_get_last_error(gHostHandle));
             return 1;
+        }
+
+        if (! useBridge && ! testing)
+        {
+#ifdef HAVE_X11
+            if (std::getenv("DISPLAY") != nullptr)
+#endif
+                carla_set_engine_option(gHostHandle,
+                                        CarlaBackend::ENGINE_OPTION_FRONTEND_UI_SCALE,
+                                        static_cast<int>(carla_get_desktop_scale_factor()*1000+0.5),
+                                        nullptr);
         }
 
         // -----------------------------------------------------------------

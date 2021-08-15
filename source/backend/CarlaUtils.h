@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -304,7 +304,10 @@ CARLA_EXPORT void carla_set_process_name(const char* name);
 /* --------------------------------------------------------------------------------------------------------------------
  * window control */
 
-CARLA_EXPORT double carla_get_desktop_scale_factor();
+/*!
+ * Get the global/desktop scale factor.
+ */
+CARLA_EXPORT double carla_get_desktop_scale_factor(void);
 
 CARLA_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
 CARLA_EXPORT void carla_cocoa_set_transient_window_for(void* nsViewChild, void* nsViewParent);

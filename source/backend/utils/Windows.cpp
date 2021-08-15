@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -40,12 +40,14 @@ double carla_get_desktop_scale_factor()
     if (const char* const scale = getenv("QT_SCALE_FACTOR"))
         return std::max(1.0, std::atof(scale));
 
-#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
+#ifdef CARLA_OS_MAC
     return [NSScreen mainScreen].backingScaleFactor;
 #endif
 
     return 1.0;
 }
+
+// -------------------------------------------------------------------------------------------------------------------
 
 int carla_cocoa_get_window(void* nsViewPtr)
 {
