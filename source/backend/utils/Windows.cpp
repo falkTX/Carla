@@ -31,6 +31,22 @@ namespace CB = CarlaBackend;
 
 // -------------------------------------------------------------------------------------------------------------------
 
+double carla_get_desktop_scale_factor()
+{
+    // allow custom scale for testing
+    if (const char* const scale = getenv("DPF_SCALE_FACTOR"))
+        return std::max(1.0, std::atof(scale));
+    // Qt env var for the same
+    if (const char* const scale = getenv("QT_SCALE_FACTOR"))
+        return std::max(1.0, std::atof(scale));
+
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
+    return [NSScreen mainScreen].backingScaleFactor;
+#endif
+
+    return 1.0;
+}
+
 int carla_cocoa_get_window(void* nsViewPtr)
 {
     CARLA_SAFE_ASSERT_RETURN(nsViewPtr != nullptr, 0);

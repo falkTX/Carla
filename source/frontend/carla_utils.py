@@ -327,6 +327,9 @@ class CarlaUtils():
         self.lib.carla_juce_cleanup.argtypes = None
         self.lib.carla_juce_cleanup.restype = None
 
+        self.lib.carla_get_desktop_scale_factor.argtypes = None
+        self.lib.carla_get_desktop_scale_factor.restype = c_double
+
         self.lib.carla_cocoa_get_window.argtypes = [c_uintptr]
         self.lib.carla_cocoa_get_window.restype = c_int
 
@@ -479,6 +482,9 @@ class CarlaUtils():
 
     def juce_cleanup(self):
         self.lib.carla_juce_cleanup()
+
+    def get_desktop_scale_factor(self):
+        return float(self.lib.carla_get_desktop_scale_factor())
 
     def cocoa_get_window(self, winId):
         return self.lib.carla_cocoa_get_window(winId)

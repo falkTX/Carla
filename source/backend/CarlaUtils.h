@@ -304,6 +304,8 @@ CARLA_EXPORT void carla_set_process_name(const char* name);
 /* --------------------------------------------------------------------------------------------------------------------
  * window control */
 
+CARLA_EXPORT double carla_get_desktop_scale_factor();
+
 CARLA_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
 CARLA_EXPORT void carla_cocoa_set_transient_window_for(void* nsViewChild, void* nsViewParent);
 
