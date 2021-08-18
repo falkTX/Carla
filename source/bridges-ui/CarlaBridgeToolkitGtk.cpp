@@ -86,7 +86,7 @@ CARLA_BRIDGE_UI_START_NAMESPACE
 // -------------------------------------------------------------------------
 
 struct GtkLoader {
-    void* lib;
+    lib_t lib;
     gtksym_init init;
     gtksym_main main;
     gtksym_main_level main_level;
