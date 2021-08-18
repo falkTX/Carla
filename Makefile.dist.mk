@@ -19,7 +19,9 @@ ifeq ($(MACOS),true)
 QT5_LIB_PREFIX = lib
 endif
 
+ifeq ($(HAVE_QT5PKG),true)
 QT5_PREFIX = $(shell pkg-config --variable=prefix Qt5OpenGLExtensions)
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -168,7 +170,12 @@ else ifeq ($(WIN32),true)
 TARGETS = Carla-$(VERSION)-win32.zip
 endif
 
+ifeq ($(HAVE_QT5PKG),true)
 dist: $(TARGETS)
+else
+dist:
+	@echo make dist not supported in this configuration
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # create final file

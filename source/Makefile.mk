@@ -321,6 +321,7 @@ HAVE_LIBLO      = $(shell $(PKG_CONFIG) --exists liblo && echo true)
 HAVE_QT4        = $(shell $(PKG_CONFIG) --exists QtCore QtGui && echo true)
 HAVE_QT5        = $(shell $(PKG_CONFIG) --exists Qt5Core Qt5Gui Qt5Widgets && \
                           $(PKG_CONFIG) --variable=qt_config Qt5Core | grep -q -v "static" && echo true)
+HAVE_QT5PKG     = $(shell $(PKG_CONFIG) --exists Qt5OpenGLExtensions && echo true)
 HAVE_SNDFILE    = $(shell $(PKG_CONFIG) --exists sndfile && echo true)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -426,17 +427,17 @@ PYUIC ?= $(PYUIC5)
 
 ifeq ($(HAVE_QT5),true)
 HAVE_THEME = true
-else
-ifeq ($(MACOS),true)
-ifneq ($(MACOS_OLD),true)
-ifeq ($(HAVE_PYQT),true)
-HAVE_THEME = true
-MOC_QT5 ?= moc
-RCC_QT5 ?= rcc
-UIC_QT5 ?= uic
-endif
-endif
-endif
+# else
+# ifeq ($(MACOS),true)
+# ifneq ($(MACOS_OLD),true)
+# ifeq ($(HAVE_PYQT),true)
+# HAVE_THEME = true
+# MOC_QT5 ?= moc
+# RCC_QT5 ?= rcc
+# UIC_QT5 ?= uic
+# endif
+# endif
+# endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

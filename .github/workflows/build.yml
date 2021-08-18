@@ -50,7 +50,7 @@ jobs:
       - name: make
         run: make -j $(nproc)
 
-  mingw-win32:
+  ubuntu-mingw-win32:
     runs-on: ubuntu-20.04
     env:
       CC: i686-w64-mingw32-gcc
@@ -70,7 +70,7 @@ jobs:
       - name: make
         run: make -j $(nproc)
 
-  mingw-win64:
+  ubuntu-mingw-win64:
     runs-on: ubuntu-20.04
     env:
       CC: x86_64-w64-mingw32-gcc
