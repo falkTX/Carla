@@ -1,0 +1,90 @@
+name: build
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+env:
+  DEBIAN_FRONTEND: noninteractive
+  HOMEBREW_NO_AUTO_UPDATE: 1
+
+jobs:
+  macos-10_15:
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up dependencies
+        run: |
+          brew install fluid-synth liblo libmagic libsndfile pkg-config pyqt@5
+      - name: make features
+        run: make features
+      - name: make
+        run: make -j $(sysctl -n hw.logicalcpu)
+
+  ubuntu-18_04:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yq libasound2-dev libfluidsynth-dev libgl1-mesa-dev libgtk2.0-dev libgtk-3-dev liblo-dev libmagic-dev libpulse-dev libqt4-dev libsndfile1-dev libx11-dev pkg-config pyqt5-dev-tools qtbase5-dev
+      - name: make features
+        run: make features
+      - name: make
+        run: make -j $(nproc)
+
+  ubuntu-20_04:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yq libasound2-dev libfluidsynth-dev libgl1-mesa-dev libgtk2.0-dev libgtk-3-dev liblo-dev libmagic-dev libpulse-dev libsndfile1-dev libx11-dev pkg-config pyqt5-dev-tools qtbase5-dev
+      - name: make features
+        run: make features
+      - name: make
+        run: make -j $(nproc)
+
+  mingw-win32:
+    runs-on: ubuntu-20.04
+    env:
+      CC: i686-w64-mingw32-gcc
+      CXX: i686-w64-mingw32-g++
+      EXE_WRAPPER: wine
+      PKG_CONFIG: "false"
+      WINEDEBUG: "-all"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -yq binutils-mingw-w64-i686 g++-mingw-w64-i686 mingw-w64 wine-stable:i386
+      - name: make features
+        run: make features
+      - name: make
+        run: make -j $(nproc)
+
+  mingw-win64:
+    runs-on: ubuntu-20.04
+    env:
+      CC: x86_64-w64-mingw32-gcc
+      CXX: x86_64-w64-mingw32-g++
+      EXE_WRAPPER: wine
+      PKG_CONFIG: "false"
+      WINEDEBUG: "-all"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yq binutils-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64 wine-stable
+      - name: make features
+        run: make features
+      - name: make
+        run: make -j $(nproc)
