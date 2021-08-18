@@ -34,7 +34,8 @@ jobs:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: mingw32
-          install: base-devel make mingw-w64-i686-toolchain mingw-w64-i686-fluidsynth mingw-w64-i686-liblo mingw-w64-i686-libsndfile mingw-w64-i686-pkg-config mingw-w64-i686-python-pyqt5
+          install: base-devel make mingw-w64-i686-toolchain mingw-w64-i686-libsndfile mingw-w64-i686-pkg-config mingw-w64-i686-python-pyqt5
+          # FIXME mingw-w64-i686-fluidsynth mingw-w64-i686-liblo
       - name: make features
         run: make features
       - name: make
@@ -50,7 +51,8 @@ jobs:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: mingw64
-          install: base-devel make mingw-w64-x86_64-toolchain mingw-w64-x86_64-fluidsynth mingw-w64-x86_64-liblo mingw-w64-x86_64-libsndfile mingw-w64-x86_64-pkg-config mingw-w64-x86_64-python-pyqt5
+          install: base-devel make mingw-w64-x86_64-toolchain mingw-w64-x86_64-libsndfile mingw-w64-x86_64-pkg-config mingw-w64-x86_64-python-pyqt5
+          # FIXME mingw-w64-x86_64-fluidsynth mingw-w64-x86_64-liblo
       - name: make features
         run: make features
       - name: make
