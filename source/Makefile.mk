@@ -281,6 +281,8 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
+HAVE_GOBJECT = $(shell $(PKG_CONFIG) --exists glib-2.0 gobject-2.0 && echo true)
+
 ifeq ($(LINUX),true)
 HAVE_ALSA  = $(shell $(PKG_CONFIG) --exists alsa && echo true)
 HAVE_HYLIA = true
@@ -297,11 +299,10 @@ HAVE_HYLIA = true
 endif
 
 ifeq ($(MACOS_OR_WIN32),true)
-HAVE_DGL     = true
+HAVE_DGL = true
 else
-HAVE_DGL     = $(shell $(PKG_CONFIG) --exists gl x11 && echo true)
-HAVE_GOBJECT = $(shell $(PKG_CONFIG) --exists glib-2.0 gobject-2.0 && echo true)
-HAVE_X11     = $(shell $(PKG_CONFIG) --exists x11 && echo true)
+HAVE_DGL = $(shell $(PKG_CONFIG) --exists gl x11 && echo true)
+HAVE_X11 = $(shell $(PKG_CONFIG) --exists x11 && echo true)
 endif
 
 ifeq ($(UNIX),true)

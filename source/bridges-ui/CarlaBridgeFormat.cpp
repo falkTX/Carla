@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -82,14 +82,9 @@ bool CarlaBridgeFormat::libOpen(const char* const filename) noexcept
     CARLA_SAFE_ASSERT_RETURN(fLib == nullptr, false);
 
     fLib = lib_open(filename);
+    fLibFilename = filename;
 
-    if (fLib != nullptr)
-    {
-        fLibFilename = filename;
-        return true;
-    }
-
-    return false;
+    return fLib != nullptr;
 }
 
 void* CarlaBridgeFormat::libSymbol(const char* const symbol) const noexcept

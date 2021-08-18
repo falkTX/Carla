@@ -48,6 +48,11 @@ LINK_COCOA_FLAGS    = $(LINK_FLAGS) -framework Cocoa $(LIBDL_LIBS)
 BUILD_WINDOWS_FLAGS = $(BUILD_CXX_FLAGS) -DBRIDGE_HWND
 LINK_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows
 
+ifeq ($(MACOS),true)
+BUILD_GTK2_FLAGS  += -ObjC++
+BUILD_GTK3_FLAGS  += -ObjC++
+endif
+
 ifeq ($(TESTBUILD),true)
 BUILD_QT4_FLAGS  += -isystem /usr/include/qt4
 BUILD_QT5_FLAGS  += -isystem /usr/include/qt5
@@ -56,7 +61,6 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_GOBJECT),true)
 TARGETS += ui_lv2-gtk2
 endif
@@ -65,6 +69,7 @@ ifeq ($(HAVE_GOBJECT),true)
 TARGETS += ui_lv2-gtk3
 endif
 
+ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_QT4),true)
 TARGETS += ui_lv2-qt4
 endif

@@ -148,12 +148,32 @@ struct GtkLoader {
 # endif
 #endif
     {
+        const char* filename;
+        const char* const filenames[] = {
 #ifdef BRIDGE_GTK3
-        const char* const filename = "libgtk-3.so.0";
+# if defined(CARLA_OS_MAC)
+            "libgtk-3.0.dylib",
+# else
+            "libgtk-3.so.0",
+# endif
 #else
-        const char* const filename = "libgtk-x11-2.0.so.0";
+# if defined(CARLA_OS_MAC)
+            "libgtk-quartz-2.0.dylib",
+            "libgtk-x11-2.0.dylib",
+            "/opt/local/lib/libgtk-quartz-2.0.dylib",
+            "/opt/local/lib/libgtk-x11-2.0.dylib",
+# else
+            "libgtk-x11-2.0.so.0",
+# endif
 #endif
-        lib = lib_open(filename);
+        };
+
+        for (size_t i=0; i<sizeof(filenames)/sizeof(filenames[0]); ++i)
+        {
+            filename = filenames[i];
+            if ((lib = lib_open(filename)) != nullptr)
+                break;
+        }
 
         if (lib == nullptr)
         {
