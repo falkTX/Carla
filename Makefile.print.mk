@@ -149,15 +149,15 @@ endif # MACOS
 	@printf -- "$(tS)---> LV2 UI toolkit support: $(tE)\n"
 	@printf -- "External: $(ANS_YES) (direct)\n"
 ifneq ($(MACOS_OR_WIN32),true)
-ifeq ($(HAVE_GTK2),true)
+ifeq ($(HAVE_GOBJECT),true)
 	@printf -- "Gtk2:     $(ANS_YES) (bridge)\n"
 else
-	@printf -- "Gtk2:     $(ANS_NO)  $(mS)Gtk2 missing$(mE)\n"
+	@printf -- "Gtk2:     $(ANS_NO)  $(mS)gobject missing$(mE)\n"
 endif
-ifeq ($(HAVE_GTK3),true)
+ifeq ($(HAVE_GOBJECT),true)
 	@printf -- "Gtk3:     $(ANS_YES) (bridge)\n"
 else
-	@printf -- "Gtk3:     $(ANS_NO)  $(mS)Gtk3 missing$(mE)\n"
+	@printf -- "Gtk3:     $(ANS_NO)  $(mS)gobject missing$(mE)\n"
 endif
 ifeq ($(HAVE_QT4),true)
 	@printf -- "Qt4:      $(ANS_YES) (bridge)\n"

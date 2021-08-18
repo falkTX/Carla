@@ -27,14 +27,14 @@ LINK_FLAGS       += $(WATER_LIBS) -lpthread
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_GTK2_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK2 $(shell pkg-config --cflags gtk+-2.0)
-LINK_GTK2_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-2.0) $(LIBDL_LIBS)
+BUILD_GTK2_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK2 $(shell pkg-config --cflags glib-2.0 gobject-2.0) $(X11_FLAGS)
+LINK_GTK2_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs glib-2.0 gobject-2.0) $(X11_LIBS) $(LIBDL_LIBS)
 
-BUILD_GTK3_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK3 $(shell pkg-config --cflags gtk+-3.0)
-LINK_GTK3_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-3.0) $(LIBDL_LIBS)
+BUILD_GTK3_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK3 $(shell pkg-config --cflags glib-2.0 gobject-2.0) $(X11_FLAGS)
+LINK_GTK3_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs glib-2.0 gobject-2.0) $(X11_LIBS) $(LIBDL_LIBS)
 
-BUILD_QT4_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_QT4 $(shell pkg-config --cflags QtCore QtGui) -I$(OBJDIR) -I$(CWD)/theme -Wno-unused-variable
-LINK_QT4_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs QtCore QtGui) $(LIBDL_LIBS)
+BUILD_QT4_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_QT4 $(shell pkg-config --cflags QtCore QtGui) $(X11_FLAGS) -I$(OBJDIR) -I$(CWD)/theme -Wno-unused-variable
+LINK_QT4_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs QtCore QtGui) $(X11_LIBS) $(LIBDL_LIBS)
 
 BUILD_QT5_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_QT5 $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets) -I$(OBJDIR) -I$(CWD)/theme
 LINK_QT5_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets) $(LIBDL_LIBS)
@@ -48,17 +48,7 @@ LINK_COCOA_FLAGS    = $(LINK_FLAGS) -framework Cocoa $(LIBDL_LIBS)
 BUILD_WINDOWS_FLAGS = $(BUILD_CXX_FLAGS) -DBRIDGE_HWND
 LINK_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows
 
-ifeq ($(HAVE_X11),true)
-LINK_GTK2_FLAGS += -lX11
-LINK_GTK3_FLAGS += -lX11
-LINK_QT4_FLAGS  += -lX11
-endif
-
 ifeq ($(TESTBUILD),true)
-BUILD_GTK2_FLAGS += -isystem /usr/include/glib-2.0
-BUILD_GTK2_FLAGS += -isystem /usr/include/gtk-2.0
-BUILD_GTK3_FLAGS += -isystem /usr/include/glib-2.0
-BUILD_GTK3_FLAGS += -isystem /usr/include/gtk-3.0
 BUILD_QT4_FLAGS  += -isystem /usr/include/qt4
 BUILD_QT5_FLAGS  += -isystem /usr/include/qt5
 BUILD_QT5_FLAGS  += -isystem /usr/include/x86_64-linux-gnu/qt5
@@ -67,11 +57,11 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifneq ($(MACOS_OR_WIN32),true)
-ifeq ($(HAVE_GTK2),true)
+ifeq ($(HAVE_GOBJECT),true)
 TARGETS += ui_lv2-gtk2
 endif
 
-ifeq ($(HAVE_GTK3),true)
+ifeq ($(HAVE_GOBJECT),true)
 TARGETS += ui_lv2-gtk3
 endif
 
