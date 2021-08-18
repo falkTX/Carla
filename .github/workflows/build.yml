@@ -24,6 +24,32 @@ jobs:
       - name: make
         run: make -j $(sysctl -n hw.logicalcpu)
 
+  msys2-i686:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw32
+          install: mingw-w64-i686-toolchain
+      - name: make features
+        run: make features
+      - name: make
+        run: make
+
+  msys2-x86_64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          install: mingw-w64-x86_64-toolchain
+      - name: make features
+        run: make features
+      - name: make
+        run: make
+
   ubuntu-18_04:
     runs-on: ubuntu-18.04
     steps:
