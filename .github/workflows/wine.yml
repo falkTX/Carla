@@ -25,8 +25,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -yq g++-multilib pkg-config wine-stable wine64-tools
           sudo apt-get install -yq binutils-mingw-w64-i686 binutils-mingw-w64-x86-64 g++-mingw-w64-i686 g++-mingw-w64-x86-64 mingw-w64
-      - name: make wine32
-        run: make wine32 -j $(nproc)
+      #- name: make wine32
+        #run: make wine32 -j $(nproc)
       - name: make wine64
         run: make wine64 -j $(nproc)
       - name: make win32 CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++
@@ -51,8 +51,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -yq g++-multilib pkg-config wine-stable wine64-tools
           sudo apt-get install -yq binutils-mingw-w64-i686 binutils-mingw-w64-x86-64 g++-mingw-w64-i686 g++-mingw-w64-x86-64 mingw-w64
-      - name: make wine32
-        run: make wine32 -j $(nproc)
+      #- name: make wine32
+        #run: make wine32 -j $(nproc)
       - name: make wine64
         run: make wine64 -j $(nproc)
       - name: make win32 CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++
