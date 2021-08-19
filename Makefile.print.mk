@@ -150,6 +150,7 @@ endif # MACOS
 	@printf -- "External: $(ANS_YES) (direct)\n"
 	@printf -- "Gtk2:     $(ANS_YES) (bridge)\n"
 	@printf -- "Gtk3:     $(ANS_YES) (bridge)\n"
+ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_QT4),true)
 	@printf -- "Qt4:      $(ANS_YES) (bridge)\n"
 else
@@ -165,11 +166,11 @@ ifeq ($(HAVE_X11),true)
 else
 	@printf -- "X11:      $(ANS_NO)  $(mS)X11 missing$(mE)\n"
 endif
-else # LINUX
+else # !MACOS_OR_WIN32
 	@printf -- "Qt4:      $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
 	@printf -- "Qt5:      $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
 	@printf -- "X11:      $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
-endif # LINUX
+endif # !MACOS_OR_WIN32
 ifeq ($(MACOS),true)
 	@printf -- "Cocoa:    $(ANS_YES) (direct+bridge)\n"
 else
