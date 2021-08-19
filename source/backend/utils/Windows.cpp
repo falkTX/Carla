@@ -17,7 +17,7 @@
 
 #include "CarlaUtils.h"
 
-#include "CarlaUtils.hpp"
+#include "CarlaMathUtils.hpp"
 
 #if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
 # import <Cocoa/Cocoa.h>
@@ -25,6 +25,7 @@
 
 #ifdef HAVE_X11
 # include <X11/Xlib.h>
+# include <X11/Xresource.h>
 #endif
 
 namespace CB = CarlaBackend;
@@ -42,6 +43,31 @@ double carla_get_desktop_scale_factor()
 
 #if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
     return [NSScreen mainScreen].backingScaleFactor;
+#endif
+#ifdef HAVE_X11
+    if (::Display* const display = XOpenDisplay(nullptr))
+    {
+        XrmInitialize();
+        if (char* const rms = XResourceManagerString(display))
+        {
+            if (const XrmDatabase sdb = XrmGetStringDatabase(rms))
+            {
+                char* type = nullptr;
+                XrmValue ret;
+
+                if (XrmGetResource(sdb, "Xft.dpi", "String", &type, &ret)
+                    && ret.addr != nullptr
+                    && type != nullptr
+                    && std::strncmp("String", type, 6) == 0)
+                {
+                    const double dpi = std::atof(ret.addr);
+                    if (carla_isNotZero(dpi))
+                        return dpi / 96;
+                }
+            }
+        }
+        XCloseDisplay(display);
+    }
 #endif
 
     return 1.0;
