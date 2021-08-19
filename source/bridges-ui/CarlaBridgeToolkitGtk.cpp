@@ -19,65 +19,46 @@
 #include "CarlaBridgeToolkit.hpp"
 #include "CarlaLibUtils.hpp"
 
-#include <glib.h>
-#include <glib-object.h>
-
 #ifdef HAVE_X11
 # include <X11/Xlib.h>
 #endif
 
-// #include <gtk/gtk.h>
+struct GtkHandle;
 
-// #ifdef HAVE_X11
-// # include <gdk/gdkx.h>
-// #endif
-
-// #undef GTK_TYPE_CONTAINER
-// #define GTK_TYPE_CONTAINER (gtk.container_get_type())
-//
-// #undef GTK_TYPE_WINDOW
-// #define GTK_TYPE_WINDOW (gtk.window_get_type())
-
-#define GTK_CONTAINER(G) ((GtkContainer*)G)
-#define GTK_WINDOW(G)    ((GtkWindow*)G)
-
-struct GdkDisplay;
-struct GdkDrawable;
-struct GdkWindow;
-
-struct GtkContainer;
-struct GtkWidget;
-struct GtkWindow;
-
-enum GtkWindowType {
+enum GtkWidgetType {
     GTK_WINDOW_TOPLEVEL
 };
 
+typedef ulong (*gsym_signal_connect_data)(void* instance,
+                                          const char* detailed_signal,
+                                          void (*c_handler)(GtkHandle*, void* data),
+                                          void* data,
+                                          void* destroy_data,
+                                          int connect_flags);
+typedef uint (*gsym_timeout_add)(uint interval, int (*function)(void* user_data), void* data);
 typedef void (*gtksym_init)(int* argc, char*** argv);
 typedef void (*gtksym_main)(void);
 typedef uint (*gtksym_main_level)(void);
 typedef void (*gtksym_main_quit)(void);
-typedef GType (*gtksym_container_get_type)(void) G_GNUC_CONST;
-typedef void (*gtksym_container_add)(GtkContainer* container, GtkWidget* widget);
-typedef void (*gtksym_widget_destroy)(GtkWidget* widget);
-typedef void (*gtksym_widget_hide)(GtkWidget* widget);
-typedef void (*gtksym_widget_show_all)(GtkWidget* widget);
-typedef GType (*gtksym_window_get_type)(void) G_GNUC_CONST;
-typedef GtkWidget* (*gtksym_window_new)(GtkWindowType type);
-typedef void (*gtksym_window_get_position)(GtkWindow* window, int* root_x, int* root_y);
-typedef void (*gtksym_window_get_size)(GtkWindow* window, int* width, int* height);
-typedef void (*gtksym_window_resize)(GtkWindow* window, int width, int height);
-typedef void (*gtksym_window_set_resizable)(GtkWindow* window, int resizable);
-typedef void (*gtksym_window_set_title)(GtkWindow* window, const char* title);
+typedef void (*gtksym_container_add)(GtkHandle* container, GtkHandle* widget);
+typedef void (*gtksym_widget_destroy)(GtkHandle* widget);
+typedef void (*gtksym_widget_hide)(GtkHandle* widget);
+typedef void (*gtksym_widget_show_all)(GtkHandle* widget);
+typedef GtkHandle* (*gtksym_window_new)(GtkWidgetType type);
+typedef void (*gtksym_window_get_position)(GtkHandle* window, int* root_x, int* root_y);
+typedef void (*gtksym_window_get_size)(GtkHandle* window, int* width, int* height);
+typedef void (*gtksym_window_resize)(GtkHandle* window, int width, int height);
+typedef void (*gtksym_window_set_resizable)(GtkHandle* window, int resizable);
+typedef void (*gtksym_window_set_title)(GtkHandle* window, const char* title);
 #ifdef HAVE_X11
-typedef GdkWindow* (*gtksym_widget_get_window)(GtkWidget* widget);
+typedef GtkHandle* (*gtksym_widget_get_window)(GtkHandle* widget);
 # ifdef BRIDGE_GTK3
-typedef GdkDisplay* (*gdksym_window_get_display)(GdkWindow* window);
-typedef Display* (*gdksym_x11_display_get_xdisplay)(GdkDisplay* display);
-typedef Window (*gdksym_x11_window_get_xid)(GdkWindow* window);
+typedef GtkHandle* (*gdksym_window_get_display)(GtkHandle* window);
+typedef Display* (*gdksym_x11_display_get_xdisplay)(GtkHandle* display);
+typedef Window (*gdksym_x11_window_get_xid)(GtkHandle* window);
 # else
-typedef Display* (*gdksym_x11_drawable_get_xdisplay)(GdkDrawable* drawable);
-typedef XID      (*gdksym_x11_drawable_get_xid)(GdkDrawable* drawable);
+typedef Display* (*gdksym_x11_drawable_get_xdisplay)(GtkHandle* drawable);
+typedef XID      (*gdksym_x11_drawable_get_xid)(GtkHandle* drawable);
 # endif
 #endif
 
@@ -87,16 +68,16 @@ CARLA_BRIDGE_UI_START_NAMESPACE
 
 struct GtkLoader {
     lib_t lib;
+    gsym_signal_connect_data signal_connect_data;
+    gsym_timeout_add timeout_add;
     gtksym_init init;
     gtksym_main main;
     gtksym_main_level main_level;
     gtksym_main_quit main_quit;
-    gtksym_container_get_type container_get_type;
     gtksym_container_add container_add;
     gtksym_widget_destroy widget_destroy;
     gtksym_widget_hide widget_hide;
     gtksym_widget_show_all widget_show_all;
-    gtksym_window_get_type window_get_type;
     gtksym_window_new window_new;
     gtksym_window_get_position window_get_position;
     gtksym_window_get_size window_get_size;
@@ -119,16 +100,16 @@ struct GtkLoader {
 
     GtkLoader()
         : lib(nullptr),
+          signal_connect_data(nullptr),
+          timeout_add(nullptr),
           init(nullptr),
           main(nullptr),
           main_level(nullptr),
           main_quit(nullptr),
-          container_get_type(nullptr),
           container_add(nullptr),
           widget_destroy(nullptr),
           widget_hide(nullptr),
           widget_show_all(nullptr),
-          window_get_type(nullptr),
           window_new(nullptr),
           window_get_position(nullptr),
           window_get_size(nullptr),
@@ -186,23 +167,29 @@ struct GtkLoader {
             fprintf(stdout, "%s loaded successfully!\n", filename);
         }
 
+        #define G_LIB_SYMBOL(NAME) \
+            NAME = lib_symbol<gsym_##NAME>(lib, "g_" #NAME); \
+            CARLA_SAFE_ASSERT_RETURN(NAME != nullptr,);
+
         #define GTK_LIB_SYMBOL(NAME) \
             NAME = lib_symbol<gtksym_##NAME>(lib, "gtk_" #NAME); \
             CARLA_SAFE_ASSERT_RETURN(NAME != nullptr,);
 
         #define GDK_LIB_SYMBOL(NAME) \
-            NAME = lib_symbol<gdksym_##NAME>(lib, "gdk_" #NAME);
+            NAME = lib_symbol<gdksym_##NAME>(lib, "gdk_" #NAME); \
+            CARLA_SAFE_ASSERT(NAME != nullptr);
+
+        G_LIB_SYMBOL(signal_connect_data)
+        G_LIB_SYMBOL(timeout_add)
 
         GTK_LIB_SYMBOL(init)
         GTK_LIB_SYMBOL(main)
         GTK_LIB_SYMBOL(main_level)
         GTK_LIB_SYMBOL(main_quit)
-        GTK_LIB_SYMBOL(container_get_type)
         GTK_LIB_SYMBOL(container_add)
         GTK_LIB_SYMBOL(widget_destroy)
         GTK_LIB_SYMBOL(widget_hide)
         GTK_LIB_SYMBOL(widget_show_all)
-        GTK_LIB_SYMBOL(window_get_type)
         GTK_LIB_SYMBOL(window_new)
         GTK_LIB_SYMBOL(window_get_position)
         GTK_LIB_SYMBOL(window_get_size)
@@ -286,7 +273,7 @@ public:
         fWindow = gtk.window_new(GTK_WINDOW_TOPLEVEL);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr, false);
 
-        gtk.window_resize(GTK_WINDOW(fWindow), 30, 30);
+        gtk.window_resize(fWindow, 30, 30);
         gtk.widget_hide(fWindow);
 
         return true;
@@ -300,15 +287,12 @@ public:
 
         const CarlaBridgeFormat::Options& options(fPlugin->getOptions());
 
-        GtkWindow* const gtkWindow(GTK_WINDOW(fWindow));
-        CARLA_SAFE_ASSERT_RETURN(gtkWindow != nullptr,);
-
-        GtkWidget* const widget((GtkWidget*)fPlugin->getWidget());
+        GtkHandle* const widget((GtkHandle*)fPlugin->getWidget());
         CARLA_SAFE_ASSERT_RETURN(widget != nullptr,);
 
-        gtk.container_add(GTK_CONTAINER(fWindow), widget);
-        gtk.window_set_resizable(gtkWindow, options.isResizable);
-        gtk.window_set_title(gtkWindow, options.windowTitle.buffer());
+        gtk.container_add(fWindow, widget);
+        gtk.window_set_resizable(fWindow, options.isResizable);
+        gtk.window_set_title(fWindow, options.windowTitle.buffer());
 
         if (showUI || fNeedsShow)
         {
@@ -316,9 +300,9 @@ public:
             fNeedsShow = false;
         }
 
-        g_timeout_add(30, gtk_ui_timeout, this);
-        g_signal_connect(fWindow, "destroy", G_CALLBACK(gtk_ui_destroy), this);
-        g_signal_connect(fWindow, "realize", G_CALLBACK(gtk_ui_realize), this);
+        gtk.timeout_add(30, gtk_ui_timeout, this);
+        gtk.signal_connect_data(fWindow, "destroy", gtk_ui_destroy, this, nullptr, 0);
+        gtk.signal_connect_data(fWindow, "realize", gtk_ui_realize, this, nullptr, 0);
 
         // First idle
         handleTimeout();
@@ -372,7 +356,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::resize(%i, %i)", width, height);
 
-        gtk.window_resize(GTK_WINDOW(fWindow), static_cast<int>(width), static_cast<int>(height));
+        gtk.window_resize(fWindow, static_cast<int>(width), static_cast<int>(height));
     }
 
     void setTitle(const char* const title) override
@@ -380,7 +364,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::setTitle(\"%s\")", title);
 
-        gtk.window_set_title(GTK_WINDOW(fWindow), title);
+        gtk.window_set_title(fWindow, title);
     }
 
     // ---------------------------------------------------------------------
@@ -388,7 +372,7 @@ public:
 protected:
     GtkLoader gtk;
     bool fNeedsShow;
-    GtkWidget* fWindow;
+    GtkHandle* fWindow;
 
     int fLastX;
     int fLastY;
@@ -419,8 +403,8 @@ protected:
     {
         if (fWindow != nullptr)
         {
-            gtk.window_get_position(GTK_WINDOW(fWindow), &fLastX, &fLastY);
-            gtk.window_get_size(GTK_WINDOW(fWindow), &fLastWidth, &fLastHeight);
+            gtk.window_get_position(fWindow, &fLastX, &fLastY);
+            gtk.window_get_size(fWindow, &fLastWidth, &fLastHeight);
         }
 
         if (fPlugin->isPipeRunning())
@@ -469,11 +453,11 @@ protected:
             return;
 # endif
 
-        GdkWindow* const gdkWindow = gtk.widget_get_window(fWindow);
+        GtkHandle* const gdkWindow = gtk.widget_get_window(fWindow);
         CARLA_SAFE_ASSERT_RETURN(gdkWindow != nullptr,);
 
 # ifdef BRIDGE_GTK3
-        GdkDisplay* const gdkDisplay = gtk.window_get_display(gdkWindow);
+        GtkHandle* const gdkDisplay = gtk.window_get_display(gdkWindow);
         CARLA_SAFE_ASSERT_RETURN(gdkDisplay != nullptr,);
 
         ::Display* const display = gtk.x11_display_get_xdisplay(gdkDisplay);
@@ -482,10 +466,10 @@ protected:
         const ::XID xid = gtk.x11_window_get_xid(gdkWindow);
         CARLA_SAFE_ASSERT_RETURN(xid != 0,);
 # else
-        ::Display* const display = gtk.x11_drawable_get_xdisplay((GdkDrawable*)gdkWindow);
+        ::Display* const display = gtk.x11_drawable_get_xdisplay((GtkHandle*)gdkWindow);
         CARLA_SAFE_ASSERT_RETURN(display != nullptr,);
 
-        const ::XID xid = gtk.x11_drawable_get_xid((GdkDrawable*)gdkWindow);
+        const ::XID xid = gtk.x11_drawable_get_xid((GtkHandle*)gdkWindow);
         CARLA_SAFE_ASSERT_RETURN(xid != 0,);
 # endif
 
@@ -496,14 +480,14 @@ protected:
     // ---------------------------------------------------------------------
 
 private:
-    static void gtk_ui_destroy(GtkWidget*, void* data)
+    static void gtk_ui_destroy(GtkHandle*, void* data)
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
         ((CarlaBridgeToolkitGtk*)data)->handleDestroy();
     }
 
-    static void gtk_ui_realize(GtkWidget*, void* data)
+    static void gtk_ui_realize(GtkHandle*, void* data)
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 

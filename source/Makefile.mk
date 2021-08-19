@@ -281,8 +281,6 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
-HAVE_GOBJECT = $(shell $(PKG_CONFIG) --exists glib-2.0 gobject-2.0 && echo true)
-
 ifeq ($(LINUX),true)
 HAVE_ALSA  = $(shell $(PKG_CONFIG) --exists alsa && echo true)
 HAVE_HYLIA = true

@@ -27,11 +27,11 @@ LINK_FLAGS       += $(WATER_LIBS) -lpthread
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_GTK2_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK2 $(shell pkg-config --cflags glib-2.0 gobject-2.0) $(X11_FLAGS)
-LINK_GTK2_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs glib-2.0 gobject-2.0) $(X11_LIBS) $(LIBDL_LIBS)
+BUILD_GTK2_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK2 $(X11_FLAGS)
+LINK_GTK2_FLAGS     = $(LINK_FLAGS) $(X11_LIBS) $(LIBDL_LIBS)
 
-BUILD_GTK3_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK3 $(shell pkg-config --cflags glib-2.0 gobject-2.0) $(X11_FLAGS)
-LINK_GTK3_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs glib-2.0 gobject-2.0) $(X11_LIBS) $(LIBDL_LIBS)
+BUILD_GTK3_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK3 $(X11_FLAGS)
+LINK_GTK3_FLAGS     = $(LINK_FLAGS) $(X11_LIBS) $(LIBDL_LIBS)
 
 BUILD_QT4_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_QT4 $(shell pkg-config --cflags QtCore QtGui) $(X11_FLAGS) -I$(OBJDIR) -I$(CWD)/theme -Wno-unused-variable
 LINK_QT4_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs QtCore QtGui) $(X11_LIBS) $(LIBDL_LIBS)
@@ -61,13 +61,8 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-ifeq ($(HAVE_GOBJECT),true)
 TARGETS += ui_lv2-gtk2
-endif
-
-ifeq ($(HAVE_GOBJECT),true)
 TARGETS += ui_lv2-gtk3
-endif
 
 ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_QT4),true)
