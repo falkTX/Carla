@@ -68,8 +68,12 @@ CARLA_BRIDGE_UI_START_NAMESPACE
 
 struct GtkLoader {
     lib_t lib;
-    gsym_signal_connect_data signal_connect_data;
+#ifdef CARLA_OS_WIN
+    lib_t glib;
+    lib_t golib;
+#endif
     gsym_timeout_add timeout_add;
+    gsym_signal_connect_data signal_connect_data;
     gtksym_init init;
     gtksym_main main;
     gtksym_main_level main_level;
@@ -100,8 +104,12 @@ struct GtkLoader {
 
     GtkLoader()
         : lib(nullptr),
-          signal_connect_data(nullptr),
+#ifdef CARLA_OS_WIN
+          glib(nullptr),
+          golib(nullptr),
+#endif
           timeout_add(nullptr),
+          signal_connect_data(nullptr),
           init(nullptr),
           main(nullptr),
           main_level(nullptr),
@@ -134,6 +142,8 @@ struct GtkLoader {
 #ifdef BRIDGE_GTK3
 # if defined(CARLA_OS_MAC)
             "libgtk-3.0.dylib",
+# elif defined(CARLA_OS_WIN)
+            "libgtk-3-0.dll",
 # else
             "libgtk-3.so.0",
 # endif
@@ -144,6 +154,13 @@ struct GtkLoader {
             "/opt/homebrew/opt/gtk+/lib/libgtk-quartz-2.0.0.dylib",
             "/opt/local/lib/libgtk-quartz-2.0.dylib",
             "/opt/local/lib/libgtk-x11-2.0.dylib",
+# elif defined(CARLA_OS_WIN)
+            "libgtk-win32-2.0-0.dll",
+#  ifdef CARLA_OS_WIN64
+            "C:\\msys64\\mingw64\\bin\\libgtk-win32-2.0-0.dll",
+#  else
+            "C:\\msys64\\mingw32\\bin\\libgtk-win32-2.0-0.dll",
+#  endif
 # else
             "libgtk-x11-2.0.so.0",
 # endif
@@ -167,9 +184,75 @@ struct GtkLoader {
             fprintf(stdout, "%s loaded successfully!\n", filename);
         }
 
+#ifdef CARLA_OS_WIN
+        const char* gfilename;
+        const char* const gfilenames[] = {
+            "libglib-2.0-0.dll",
+# ifdef CARLA_OS_WIN64
+            "C:\\msys64\\mingw64\\bin\\libglib-2.0-0.dll",
+# else
+            "C:\\msys64\\mingw32\\bin\\libglib-2.0-0.dll",
+# endif
+        };
+
+        for (size_t i=0; i<sizeof(gfilenames)/sizeof(gfilenames[0]); ++i)
+        {
+            gfilename = gfilenames[i];
+            if ((glib = lib_open(gfilename, true)) != nullptr)
+                break;
+        }
+
+        if (glib == nullptr)
+        {
+            fprintf(stderr, "Failed to load glib, reason:\n%s\n", lib_error(gfilename));
+            return;
+        }
+        else
+        {
+            fprintf(stdout, "%s loaded successfully!\n", gfilename);
+        }
+
+        const char* gofilename;
+        const char* const gofilenames[] = {
+            "libgobject-2.0-0.dll",
+# ifdef CARLA_OS_WIN64
+            "C:\\msys64\\mingw64\\bin\\libgobject-2.0-0.dll",
+# else
+            "C:\\msys64\\mingw32\\bin\\libgobject-2.0-0.dll",
+# endif
+        };
+
+        for (size_t i=0; i<sizeof(gofilenames)/sizeof(gofilenames[0]); ++i)
+        {
+            gofilename = gofilenames[i];
+            if ((golib = lib_open(gofilename, true)) != nullptr)
+                break;
+        }
+
+        if (glib == nullptr)
+        {
+            fprintf(stderr, "Failed to load glib, reason:\n%s\n", lib_error(gofilename));
+            return;
+        }
+        else
+        {
+            fprintf(stdout, "%s loaded successfully!\n", gofilename);
+        }
+
+        #define G_LIB_SYMBOL(NAME) \
+            NAME = lib_symbol<gsym_##NAME>(glib, "g_" #NAME); \
+            CARLA_SAFE_ASSERT_RETURN(NAME != nullptr,);
+
+        #define GO_LIB_SYMBOL(NAME) \
+            NAME = lib_symbol<gsym_##NAME>(golib, "g_" #NAME); \
+            CARLA_SAFE_ASSERT_RETURN(NAME != nullptr,);
+#else
         #define G_LIB_SYMBOL(NAME) \
             NAME = lib_symbol<gsym_##NAME>(lib, "g_" #NAME); \
             CARLA_SAFE_ASSERT_RETURN(NAME != nullptr,);
+
+        #define GO_LIB_SYMBOL G_LIB_SYMBOL
+#endif
 
         #define GTK_LIB_SYMBOL(NAME) \
             NAME = lib_symbol<gtksym_##NAME>(lib, "gtk_" #NAME); \
@@ -179,8 +262,8 @@ struct GtkLoader {
             NAME = lib_symbol<gdksym_##NAME>(lib, "gdk_" #NAME); \
             CARLA_SAFE_ASSERT(NAME != nullptr);
 
-        G_LIB_SYMBOL(signal_connect_data)
         G_LIB_SYMBOL(timeout_add)
+        GO_LIB_SYMBOL(signal_connect_data)
 
         GTK_LIB_SYMBOL(init)
         GTK_LIB_SYMBOL(main)
@@ -211,6 +294,8 @@ struct GtkLoader {
 # endif
 #endif
 
+        #undef G_LIB_SYMBOL
+        #undef GO_LIB_SYMBOL
         #undef GDK_LIB_SYMBOL
         #undef GTK_LIB_SYMBOL
     }
@@ -219,6 +304,12 @@ struct GtkLoader {
     {
         if (lib != nullptr)
             lib_close(lib);
+#ifdef CARLA_OS_WIN
+        if (golib != nullptr)
+            lib_close(golib);
+        if (glib != nullptr)
+            lib_close(glib);
+#endif
     }
 
     void main_quit_if_needed()
