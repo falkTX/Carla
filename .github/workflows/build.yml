@@ -64,6 +64,10 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -yq g++-multilib libasound2-dev libfluidsynth-dev libgl1-mesa-dev libgtk2.0-dev libgtk-3-dev liblo-dev libmagic-dev libpulse-dev libqt4-dev libsndfile1-dev libx11-dev pkg-config pyqt5-dev-tools qtbase5-dev
+          # Fix 32bit bridge build
+          sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libfreetype.so.6 /usr/lib/i386-linux-gnu/libfreetype.so
       - name: make features
         run: make features
       - name: make
@@ -79,6 +83,10 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -yq g++-multilib libasound2-dev libfluidsynth-dev libgl1-mesa-dev libgtk2.0-dev libgtk-3-dev liblo-dev libmagic-dev libpulse-dev libsndfile1-dev libx11-dev pkg-config pyqt5-dev-tools qtbase5-dev
+          # Fix 32bit bridge build
+          sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libfreetype.so.6 /usr/lib/i386-linux-gnu/libfreetype.so
       - name: make features
         run: make features
       - name: make

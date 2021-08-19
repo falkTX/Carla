@@ -229,9 +229,9 @@ struct GtkLoader {
                 break;
         }
 
-        if (glib == nullptr)
+        if (golib == nullptr)
         {
-            fprintf(stderr, "Failed to load glib, reason:\n%s\n", lib_error(gofilename));
+            fprintf(stderr, "Failed to load gobject, reason:\n%s\n", lib_error(gofilename));
             return;
         }
         else
