@@ -89,13 +89,23 @@ CPU_ARM_OR_AARCH64=true
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Set PKG_CONFIG (can be overridden by environment variable)
+# Set wherever to build static binaries (Windows only)
 
 ifeq ($(WIN32),true)
-# Build statically on Windows by default
-PKG_CONFIG ?= pkg-config --static
-else
+ifneq ($(MSYSTEM),MINGW32)
+ifneq ($(MSYSTEM),MINGW64)
+STATIC_BINARIES = true
+endif
+endif
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Set PKG_CONFIG (can be overridden by environment variable)
+
 PKG_CONFIG ?= pkg-config
+
+ifeq ($(STATIC_BINARIES),true)
+PKG_CONFIG_FLAGS = --static
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -224,8 +234,7 @@ ifeq ($(MACOS_OLD),true)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS) -DHAVE_CPP11_SUPPORT=0
 endif
 
-ifeq ($(WIN32),true)
-# Always build statically on windows
+ifeq ($(STATIC_BINARIES),true)
 LINK_FLAGS     += -static
 endif
 
@@ -526,10 +535,6 @@ endif
 
 ifeq ($(LINUX_OR_MACOS),true)
 LIBDL_LIBS = -ldl
-endif
-
-ifeq ($(WIN32),true)
-PKG_CONFIG_FLAGS = --static
 endif
 
 ifeq ($(HAVE_DGL),true)
