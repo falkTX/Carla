@@ -63,11 +63,13 @@ jobs:
       - name: Set up dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -yq libasound2-dev libfluidsynth-dev libgl1-mesa-dev libgtk2.0-dev libgtk-3-dev liblo-dev libmagic-dev libpulse-dev libqt4-dev libsndfile1-dev libx11-dev pkg-config pyqt5-dev-tools qtbase5-dev
+          sudo apt-get install -yq g++-multilib libasound2-dev libfluidsynth-dev libgl1-mesa-dev libgtk2.0-dev libgtk-3-dev liblo-dev libmagic-dev libpulse-dev libqt4-dev libsndfile1-dev libx11-dev pkg-config pyqt5-dev-tools qtbase5-dev
       - name: make features
         run: make features
       - name: make
         run: make -j $(nproc)
+      - name: make posix32
+        run: make posix32 -j $(nproc)
 
   ubuntu-20_04:
     runs-on: ubuntu-20.04
@@ -76,11 +78,13 @@ jobs:
       - name: Set up dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -yq libasound2-dev libfluidsynth-dev libgl1-mesa-dev libgtk2.0-dev libgtk-3-dev liblo-dev libmagic-dev libpulse-dev libsndfile1-dev libx11-dev pkg-config pyqt5-dev-tools qtbase5-dev
+          sudo apt-get install -yq g++-multilib libasound2-dev libfluidsynth-dev libgl1-mesa-dev libgtk2.0-dev libgtk-3-dev liblo-dev libmagic-dev libpulse-dev libsndfile1-dev libx11-dev pkg-config pyqt5-dev-tools qtbase5-dev
       - name: make features
         run: make features
       - name: make
         run: make -j $(nproc)
+      - name: make posix32
+        run: make posix32 -j $(nproc)
 
   ubuntu-mingw-win32:
     runs-on: ubuntu-20.04
@@ -101,8 +105,6 @@ jobs:
         run: make features
       - name: make
         run: make -j $(nproc)
-      - name: make wine32
-        run: make wine32
 
   ubuntu-mingw-win64:
     runs-on: ubuntu-20.04
@@ -122,5 +124,3 @@ jobs:
         run: make features
       - name: make
         run: make -j $(nproc)
-      - name: make wine64
-        run: make wine64
