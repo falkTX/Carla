@@ -42,7 +42,7 @@ class RackListItem(QListWidgetItem):
     kRackItemType = QListWidgetItem.UserType + 1
     kMinimumWidth = 620
 
-    def __init__(self, parent, pluginId):
+    def __init__(self, parent, pluginId, useClassicSkin):
         QListWidgetItem.__init__(self, parent, self.kRackItemType)
         self.host = parent.host
 
@@ -67,6 +67,9 @@ class RackListItem(QListWidgetItem):
                 color = None
         else:
             color = None
+
+        if useClassicSkin and not skin:
+            skin = "classic"
 
         self.fOptions = {
             'color'  : color,
@@ -234,8 +237,8 @@ class RackListWidget(QListWidget):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def createItem(self, pluginId):
-        return RackListItem(self, pluginId)
+    def createItem(self, pluginId, useClassicSkin):
+        return RackListItem(self, pluginId, useClassicSkin)
 
     def getPluginCount(self):
         return self.fParent.getPluginCount()

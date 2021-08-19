@@ -101,6 +101,8 @@ jobs:
         run: make features
       - name: make
         run: make -j $(nproc)
+      - name: make wine32
+        run: make wine32
 
   ubuntu-mingw-win64:
     runs-on: ubuntu-20.04
@@ -120,3 +122,5 @@ jobs:
         run: make features
       - name: make
         run: make -j $(nproc)
+      - name: make wine64
+        run: make wine64

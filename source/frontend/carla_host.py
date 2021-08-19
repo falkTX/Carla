@@ -1439,7 +1439,7 @@ class HostWindow(QMainWindow):
             pitem.recreateWidget()
             return
 
-        pitem = self.ui.listWidget.createItem(pluginId)
+        pitem = self.ui.listWidget.createItem(pluginId, self.fSavedSettings[CARLA_KEY_MAIN_CLASSIC_SKIN])
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
 
@@ -1953,10 +1953,12 @@ class HostWindow(QMainWindow):
             QTimer.singleShot(100, self.slot_restoreCanvasScrollbarValues)
 
         # TODO - complete this
+        oldSettings = self.fSavedSettings
 
         self.fSavedSettings = {
             CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      str),
             CARLA_KEY_MAIN_CONFIRM_EXIT:        settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT,        CARLA_DEFAULT_MAIN_CONFIRM_EXIT,        bool),
+            CARLA_KEY_MAIN_CLASSIC_SKIN:        settings.value(CARLA_KEY_MAIN_CLASSIC_SKIN,        CARLA_DEFAULT_MAIN_CLASSIC_SKIN,        bool),
             CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    int),
             CARLA_KEY_MAIN_SYSTEM_ICONS:        settings.value(CARLA_KEY_MAIN_SYSTEM_ICONS,        CARLA_DEFAULT_MAIN_SYSTEM_ICONS,        bool),
             CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        bool),
@@ -1992,6 +1994,14 @@ class HostWindow(QMainWindow):
 
         setEngineSettings(self.host)
         self.restartTimersIfNeeded()
+
+        if oldSettings.get(CARLA_KEY_MAIN_CLASSIC_SKIN, None) not in (self.fSavedSettings[CARLA_KEY_MAIN_CLASSIC_SKIN], None):
+            newSkin = "classic" if self.fSavedSettings[CARLA_KEY_MAIN_CLASSIC_SKIN] else None
+
+            for pitem in self.fPluginList:
+                if pitem is None:
+                    continue
+                pitem.recreateWidget(newSkin = newSkin)
 
         return settings
 
