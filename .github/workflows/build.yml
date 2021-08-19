@@ -38,7 +38,7 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make
+        run: make -j $(nproc)
 
   msys2-x86_64:
     runs-on: windows-latest
