@@ -81,7 +81,14 @@ Func lib_symbol(const lib_t lib, const char* const symbol) noexcept
 
     try {
 #ifdef CARLA_OS_WIN
+# if defined(__GNUC__) && (__GNUC__ >= 9)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wcast-function-type"
+# endif
         return (Func)::GetProcAddress(lib, symbol);
+# if defined(__GNUC__) && (__GNUC__ >= 9)
+#  pragma GCC diagnostic pop
+# endif
 #else
         return (Func)(uintptr_t)::dlsym(lib, symbol);
 #endif
