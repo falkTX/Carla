@@ -1,6 +1,6 @@
 /*
  * Carla common defines
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,9 +32,9 @@
 #endif
 
 /* Set Version */
-#define CARLA_VERSION_HEX    0x020302
-#define CARLA_VERSION_STRING "2.3.2"
-#define CARLA_VERSION_STRMIN "2.3"
+#define CARLA_VERSION_HEX    0x020400
+#define CARLA_VERSION_STRING "2.4.0"
+#define CARLA_VERSION_STRMIN "2.4"
 
 /* Check OS */
 #if defined(WIN64) || defined(_WIN64) || defined(__WIN64__) || defined(_M_ARM64)
