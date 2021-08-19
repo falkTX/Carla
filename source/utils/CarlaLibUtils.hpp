@@ -35,15 +35,17 @@ typedef void* lib_t;
  * May return null, in which case "lib_error" has the error.
  */
 static inline
-lib_t lib_open(const char* const filename) noexcept
+lib_t lib_open(const char* const filename, const bool global = false) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
     try {
 #ifdef CARLA_OS_WIN
         return ::LoadLibraryA(filename);
+        // unused
+        (void)global;
 #else
-        return ::dlopen(filename, RTLD_NOW|RTLD_LOCAL);
+        return ::dlopen(filename, RTLD_NOW|(global ? RTLD_GLOBAL : RTLD_LOCAL));
 #endif
     } CARLA_SAFE_EXCEPTION_RETURN("lib_open", nullptr);
 }

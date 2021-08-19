@@ -160,6 +160,7 @@ struct GtkLoader {
 # if defined(CARLA_OS_MAC)
             "libgtk-quartz-2.0.dylib",
             "libgtk-x11-2.0.dylib",
+            "/opt/homebrew/opt/gtk+/lib/libgtk-quartz-2.0.0.dylib",
             "/opt/local/lib/libgtk-quartz-2.0.dylib",
             "/opt/local/lib/libgtk-x11-2.0.dylib",
 # else
@@ -171,7 +172,7 @@ struct GtkLoader {
         for (size_t i=0; i<sizeof(filenames)/sizeof(filenames[0]); ++i)
         {
             filename = filenames[i];
-            if ((lib = lib_open(filename)) != nullptr)
+            if ((lib = lib_open(filename, true)) != nullptr)
                 break;
         }
 
@@ -303,8 +304,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(gtkWindow != nullptr,);
 
         GtkWidget* const widget((GtkWidget*)fPlugin->getWidget());
-        gtk.container_add(GTK_CONTAINER(fWindow), widget);
+        CARLA_SAFE_ASSERT_RETURN(widget != nullptr,);
 
+        gtk.container_add(GTK_CONTAINER(fWindow), widget);
         gtk.window_set_resizable(gtkWindow, options.isResizable);
         gtk.window_set_title(gtkWindow, options.windowTitle.buffer());
 
