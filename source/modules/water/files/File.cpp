@@ -968,7 +968,14 @@ bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExist
    #ifdef CARLA_OS_WIN
     typedef BOOLEAN (WINAPI* PFUNC)(LPCTSTR, LPCTSTR, DWORD);
 
+# if defined(__GNUC__) && (__GNUC__ >= 9)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wcast-function-type"
+# endif
     const PFUNC pfn = (PFUNC)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateSymbolicLinkA");
+# if defined(__GNUC__) && (__GNUC__ >= 9)
+#  pragma GCC diagnostic pop
+# endif
     CARLA_SAFE_ASSERT_RETURN(pfn != nullptr, false);
 
     return pfn(linkFileToCreate.getFullPathName().toRawUTF8(), fullPath.toRawUTF8(),
