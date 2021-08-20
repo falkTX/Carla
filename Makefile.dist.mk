@@ -64,6 +64,8 @@ _THEME_FILES = \
 
 _CARLA_HOST_FILES = \
 	carla-bridge-lv2$(LIB_EXT) \
+	carla-bridge-lv2-gtk2$(APP_EXT) \
+	carla-bridge-lv2-gtk3$(APP_EXT) \
 	carla-bridge-native$(APP_EXT) \
 	carla-discovery-native$(APP_EXT) \
 	libcarla_utils$(LIB_EXT) \

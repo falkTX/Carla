@@ -328,7 +328,7 @@ HAVE_LIBLO      = $(shell $(PKG_CONFIG) --exists liblo && echo true)
 HAVE_QT4        = $(shell $(PKG_CONFIG) --exists QtCore QtGui && echo true)
 HAVE_QT5        = $(shell $(PKG_CONFIG) --exists Qt5Core Qt5Gui Qt5Widgets && \
                           $(PKG_CONFIG) --variable=qt_config Qt5Core | grep -q -v "static" && echo true)
-HAVE_QT5PKG     = $(shell $(PKG_CONFIG) --silence-errors --variable=prefix Qt5OpenGLExtensions 2>/dev/null && echo true)
+HAVE_QT5PKG     = $(shell $(PKG_CONFIG) --silence-errors --variable=prefix Qt5OpenGLExtensions 1>/dev/null && echo true)
 HAVE_SNDFILE    = $(shell $(PKG_CONFIG) --exists sndfile && echo true)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
