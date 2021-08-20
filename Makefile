@@ -695,6 +695,7 @@ endif
 	$(LINK) ../ui_carla_settings_driver.py $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_inputdialog_value.py     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_midipattern.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_xycontroller.py          $(DESTDIR)$(DATADIR)/carla/resources
 
 	# Install translations
 	$(foreach l,$(I18N_LANGUAGES),install -m 644 \
