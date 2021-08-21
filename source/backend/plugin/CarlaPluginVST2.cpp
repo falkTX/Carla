@@ -628,8 +628,6 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.window == nullptr, nullptr);
 
-        const EngineOptions& opts(pData->engine->getOptions());
-
         fUI.isEmbed = true;
         fUI.isOpen = true;
         fUI.isVisible = true;
@@ -640,7 +638,7 @@ public:
                    CCONST('P', 'r', 'e', 'S'),
                    CCONST('A', 'e', 'C', 's'),
                    nullptr,
-                   opts.uiScale);
+                   pData->engine->getOptions().uiScale);
 #endif
 
         dispatcher(effEditOpen, 0, 0, ptr);
