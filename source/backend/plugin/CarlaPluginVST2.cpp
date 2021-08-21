@@ -569,12 +569,14 @@ public:
                 value = (intptr_t)fUI.window->getDisplay();
 #endif
 
+#ifndef CARLA_OS_MAC
                 // inform plugin of what UI scale we use
                 dispatcher(effVendorSpecific,
                            CCONST('P', 'r', 'e', 'S'),
                            CCONST('A', 'e', 'C', 's'),
                            nullptr,
                            opts.uiScale);
+#endif
 
                 // NOTE: there are far too many broken VST2 plugins, don't bother checking return value
                 if (dispatcher(effEditOpen, 0, value, fUI.window->getPtr()) != 0 || true)
@@ -632,12 +634,14 @@ public:
         fUI.isOpen = true;
         fUI.isVisible = true;
 
+#ifndef CARLA_OS_MAC
         // inform plugin of what UI scale we use
         dispatcher(effVendorSpecific,
                    CCONST('P', 'r', 'e', 'S'),
                    CCONST('A', 'e', 'C', 's'),
                    nullptr,
                    opts.uiScale);
+#endif
 
         dispatcher(effEditOpen, 0, 0, ptr);
 
