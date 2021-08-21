@@ -495,7 +495,11 @@ public:
                         uiName += " (GUI)";
                     }
 
-                    fWindow = new JucePluginWindow(opts.frontendWinId, opts.pluginsAreStandalone);
+                    AEffect* const effect = fDesc.pluginFormatName == "VST" || fDesc.pluginFormatName == "VST2"
+                                          ? (AEffect*)fInstance->getPlatformSpecificData()
+                                          : nullptr;
+
+                    fWindow = new JucePluginWindow(opts.frontendWinId, opts.pluginsAreStandalone, effect);
                     fWindow->setName(uiName);
                 }
 
