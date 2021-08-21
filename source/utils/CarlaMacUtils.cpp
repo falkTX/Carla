@@ -31,7 +31,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 void initStandaloneApplication()
 {
-    [NSApplication sharedApplication];
+    [[NSApplication sharedApplication] retain];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
     [NSApp activateIgnoringOtherApps:YES];
 }

@@ -1,6 +1,6 @@
 /*
  * Carla process utils
- * Copyright (C) 2019-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2019-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,6 +22,10 @@
 
 #ifdef CARLA_OS_LINUX
 # include <sys/prctl.h>
+#endif
+
+#ifdef CARLA_OS_MAC
+# include <dispatch/dispatch.h>
 #endif
 
 #ifdef CARLA_OS_HAIKU
@@ -49,16 +53,39 @@ void carla_setProcessName(const char* const name) noexcept
 #endif
 }
 
+#ifdef CARLA_OS_MAC
+static inline
+void carla_macOS_proc_exit_handler_kill(void*)
+{
+    carla_stdout("Carla bridge parent has died, killing ourselves now");
+    ::kill(::getpid(), SIGKILL);
+}
+static inline
+void carla_macOS_proc_exit_handler_term(void*)
+{
+    carla_stdout("Carla bridge parent has died, terminating ourselves now");
+    ::kill(::getpid(), SIGTERM);
+}
+#endif
+
 /*
  * Set flag to automatically terminate ourselves if parent process dies.
  */
 static inline
 void carla_terminateProcessOnParentExit(const bool kill) noexcept
 {
-#ifdef CARLA_OS_LINUX
-    //
+#if defined(CARLA_OS_LINUX)
     ::prctl(PR_SET_PDEATHSIG, kill ? SIGKILL : SIGTERM);
-    // TODO, osx version too, see https://stackoverflow.com/questions/284325/how-to-make-child-process-die-after-parent-exits
+#elif defined(CARLA_OS_MAC)
+    const dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_PROC,
+                                                            ::getppid(),
+                                                            DISPATCH_PROC_EXIT,
+                                                            nullptr);
+
+    dispatch_source_set_event_handler_f(source, kill ? carla_macOS_proc_exit_handler_kill
+                                                     : carla_macOS_proc_exit_handler_term);
+
+    dispatch_resume(source);
 #endif
 
     // maybe unused
