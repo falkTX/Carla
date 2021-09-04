@@ -523,6 +523,7 @@ endif
 		source/backend/CarlaUtils.h \
 		source/backend/CarlaEngine.hpp \
 		source/backend/CarlaPlugin.hpp \
+		source/backend/CarlaPluginPtr.hpp \
 		source/includes/CarlaNative.h \
 		$(DESTDIR)$(INCLUDEDIR)/carla
 
