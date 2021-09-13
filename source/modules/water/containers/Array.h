@@ -1097,11 +1097,12 @@ private:
     {
         --numUsed;
         ElementType* const e = data.elements + indexToRemove;
-        e->~ElementType();
         const int numberToShift = numUsed - indexToRemove;
 
         if (numberToShift > 0)
             data.moveMemory (e, e + 1, static_cast<size_t>(numberToShift));
+
+          e[numUsed].~ElementType();
 
         minimiseStorageAfterRemoval();
     }
