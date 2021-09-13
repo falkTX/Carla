@@ -143,16 +143,14 @@ public:
 
             size_t i = 0;
 
-            for (; i < numNewElements; ++i)
+            for (; i < numAllocated && i < numNewElements; ++i)
             {
-                if (i < numAllocated)
-                    new (newElements + i) ElementType (std::move (elements[i]));
-                else
-                    new (newElements + i) ElementType ();
+                new (newElements + i) ElementType (std::move (elements[i]));
+                elements[i].~ElementType();
             }
 
-            for (; i < numAllocated; ++i)
-                elements[i].~ElementType();
+            for (; i < numNewElements; ++i)
+                new (newElements + i) ElementType ();
 
             elements = std::move (newElements);
         }
@@ -232,8 +230,6 @@ public:
                 ++target;
                 ++source;
             }
-
-            (--source)->~ElementType();
         }
         else
         {
@@ -243,8 +239,6 @@ public:
                 --target;
                 --source;
             }
-
-            (++source)->~ElementType();
         }
     }
 

@@ -905,18 +905,30 @@ public:
     {
         const int endIndex = jlimit (0, numUsed, startIndex + numberToRemove);
         startIndex = jlimit (0, numUsed, startIndex);
+        numberToRemove = endIndex - startIndex;
 
-        if (endIndex > startIndex)
+        if (numberToRemove > 0)
         {
+#if 1
             ElementType* const e = data.elements + startIndex;
-
-            numberToRemove = endIndex - startIndex;
-            for (int i = 0; i < numberToRemove; ++i)
-                e[i].~ElementType();
 
             const int numToShift = numUsed - endIndex;
             if (numToShift > 0)
                 data.moveMemory (e, e + numberToRemove, numToShift);
+
+            for (int i = 0; i < numberToRemove; ++i)
+                e[numToShift + i].~ElementType();
+#else
+            ElementType* dst = data.elements + startIndex;
+            ElementType* src = dst + numberToRemove;
+
+            const int numToShift = numUsed - endIndex;
+            for (int i = 0; i < numToShift; ++i)
+                data.moveElement (dst++, std::move (*(src++)));
+
+            for (int i = 0; i < numberToRemove; ++i)
+                (dst++)->~ElementType();
+#endif
 
             numUsed -= numberToRemove;
             minimiseStorageAfterRemoval();
