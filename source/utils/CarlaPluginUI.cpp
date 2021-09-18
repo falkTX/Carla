@@ -123,6 +123,9 @@ public:
     {
         CARLA_SAFE_ASSERT(! fIsVisible);
 
+        if (fDisplay == nullptr)
+            return;
+
         if (fIsVisible)
         {
             XUnmapWindow(fDisplay, fHostWindow);
@@ -135,11 +138,8 @@ public:
             fHostWindow = 0;
         }
 
-        if (fDisplay != nullptr)
-        {
-            XCloseDisplay(fDisplay);
-            fDisplay = nullptr;
-        }
+        XCloseDisplay(fDisplay);
+        fDisplay = nullptr;
     }
 
     void show() override
