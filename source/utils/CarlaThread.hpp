@@ -1,6 +1,6 @@
 /*
  * Carla Thread
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -124,6 +124,8 @@ public:
             }
         }
 
+        pthread_attr_setdetachstate(&attr, 1);
+
         const CarlaMutexLocker cml(fLock);
 
         fShouldExit = false;
@@ -145,7 +147,6 @@ public:
 #else
         CARLA_SAFE_ASSERT_RETURN(handle != 0, false);
 #endif
-        pthread_detach(handle);
         _copyFrom(handle);
 
         // wait for thread to start
