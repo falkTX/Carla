@@ -137,6 +137,7 @@ public:
        {
             carla_stdout("CarlaThread with realtime priority failed on creation, going with normal priority instead");
             pthread_attr_init(&attr);
+            pthread_attr_setdetachstate(&attr, 1);
             ok = pthread_create(&handle, &attr, _entryPoint, this) == 0;
             pthread_attr_destroy(&attr);
        }
