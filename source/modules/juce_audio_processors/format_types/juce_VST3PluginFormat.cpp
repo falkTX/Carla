@@ -1588,7 +1588,7 @@ struct VST3ComponentHolder
 
     ~VST3ComponentHolder()
     {
-        terminate();
+        terminate(true);
     }
 
     // transfers ownership to the plugin instance!
@@ -1731,7 +1731,7 @@ struct VST3ComponentHolder
         return true;
     }
 
-    void terminate()
+    void terminate(bool release)
     {
         if (isComponentInitialised)
         {
@@ -1739,7 +1739,8 @@ struct VST3ComponentHolder
             isComponentInitialised = false;
         }
 
-        component = nullptr;
+        if (release)
+            component = nullptr;
     }
 
     //==============================================================================
@@ -1944,7 +1945,7 @@ public:
         if (isControllerInitialised)
             editController->terminate();
 
-        holder->terminate();
+        holder->terminate(false);
 
         componentConnection = nullptr;
         editControllerConnection = nullptr;
@@ -1957,6 +1958,8 @@ public:
         midiMapping = nullptr;
         editController2 = nullptr;
         editController = nullptr;
+
+        holder->terminate(true);
     }
 
     //==============================================================================
