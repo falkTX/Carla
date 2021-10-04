@@ -52,7 +52,7 @@
 #include "CarlaLv2Utils.hpp"
 
 #ifndef USING_JUCE_FOR_VST2
-# include "CarlaVstUtils.hpp"
+# include "CarlaVst2Utils.hpp"
 #endif
 
 #ifdef CARLA_OS_MAC

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -40,7 +40,7 @@
 #include "water/files/File.h"
 
 #include "CarlaMathUtils.hpp"
-#include "CarlaVstUtils.hpp"
+#include "CarlaVst2Utils.hpp"
 
 static uint32_t d_lastBufferSize = 0;
 static double   d_lastSampleRate = 0.0;

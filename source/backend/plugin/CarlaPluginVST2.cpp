@@ -27,7 +27,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaProcessUtils.hpp"
 #include "CarlaScopeUtils.hpp"
-#include "CarlaVstUtils.hpp"
+#include "CarlaVst2Utils.hpp"
 
 #include "CarlaPluginUI.hpp"
 

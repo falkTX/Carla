@@ -24,7 +24,8 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaProcessUtils.hpp"
 #include "CarlaScopeUtils.hpp"
-#include "CarlaVstUtils.hpp"
+#include "CarlaVst2Utils.hpp"
+#include "CarlaVst3Utils.hpp"
 
 #if defined(__clang__)
 # pragma clang diagnostic push
@@ -561,6 +562,7 @@ public:
 
         const bool isAU = fDesc.pluginFormatName == "AU" || fDesc.pluginFormatName == "AudioUnit";
         const bool isVST2 = fDesc.pluginFormatName == "VST" || fDesc.pluginFormatName == "VST2";
+        const bool isVST3 = fDesc.pluginFormatName == "VST3";
         findMaxTotalChannels(fInstance.get(), isAU, aIns, aOuts);
         fInstance->refreshParameterList();
 
@@ -668,6 +670,7 @@ public:
             const float min = 0.0f;
             const float max = 1.0f;
             float def, step, stepSmall, stepLarge;
+            bool hasDetails = false;
 
             if (isVST2)
             {
@@ -678,6 +681,8 @@ public:
 
                 if (effect != nullptr && effect->dispatcher(effect, effGetParameterProperties, ij, 0, &prop, 0.0f) == 1)
                 {
+                    hasDetails = true;
+
                     /**/ if (prop.flags & kVstParameterIsSwitch)
                     {
                         step = max - min;
@@ -710,30 +715,74 @@ public:
                     if (prop.flags & kVstParameterCanRamp)
                         pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
                 }
+            }
+            else if (isVST3)
+            {
+                v3_component** const component = (v3_component**)fInstance->getPlatformSpecificData();
+
+                v3_edit_controller** controller = nullptr;
+                v3_cpp_obj_query_interface(component, v3_edit_controller_iid, &controller);
+
+                if (controller != nullptr)
+                {
+                    v3_param_info info;
+                    if (v3_cpp_obj(controller)->get_parameter_info(controller, static_cast<int32_t>(j), &info) == V3_OK)
+                    {
+                        hasDetails = true;
+
+                        if (info.step_count == 1)
+                        {
+                            step = stepSmall = stepLarge = 1;
+                            pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
+                        }
+                        else if (info.step_count != 0)
+                        {
+                            step = 1.0f / static_cast<float>(info.step_count);
+                            stepSmall = step/10.0f;
+                            stepLarge = std::min(1.0f, step*10.0f);
+                        }
+                        else
+                        {
+                            const float range = max - min;
+                            step = range/100.0f;
+                            stepSmall = range/1000.0f;
+                            stepLarge = range/10.0f;
+                        }
+
+                        if (info.flags & V3_PARAM_READ_ONLY)
+                            pData->param.data[j].type = PARAMETER_OUTPUT;
+                        // TODO V3_PARAM_IS_LIST
+                        if (info.flags & (V3_PARAM_IS_HIDDEN|V3_PARAM_PROGRAM_CHANGE))
+                            pData->param.data[j].hints &= ~PARAMETER_IS_ENABLED;
+
+                        if ((info.flags & (V3_PARAM_IS_LIST|V3_PARAM_IS_HIDDEN|V3_PARAM_PROGRAM_CHANGE)) == 0x0)
+                            if (info.flags & V3_PARAM_CAN_AUTOMATE)
+                                pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                    }
+
+                    v3_cpp_obj_unref(controller);
+                }
+            }
+
+            if (! hasDetails)
+            {
+                if (parameter->isBoolean())
+                {
+                    step = max - min;
+                    stepSmall = step;
+                    stepLarge = step;
+                    pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
+                }
                 else
                 {
                     const float range = max - min;
                     step = range/100.0f;
                     stepSmall = range/1000.0f;
                     stepLarge = range/10.0f;
-                }
-            }
-            else if (parameter->isBoolean())
-            {
-                step = max - min;
-                stepSmall = step;
-                stepLarge = step;
-                pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
-            }
-            else
-            {
-                const float range = max - min;
-                step = range/100.0f;
-                stepSmall = range/1000.0f;
-                stepLarge = range/10.0f;
 
-                if (! parameter->isMetaParameter())
-                    pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                    if (! parameter->isMetaParameter())
+                        pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                }
             }
 
             def = parameter->getDefaultValue();

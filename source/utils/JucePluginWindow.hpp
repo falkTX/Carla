@@ -19,7 +19,7 @@
 #define JUCE_PLUGIN_WINDOW_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
-#include "CarlaVstUtils.hpp"
+#include "CarlaVst2Utils.hpp"
 
 #include "AppConfig.h"
 #include "juce_gui_basics/juce_gui_basics.h"
