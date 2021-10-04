@@ -1,6 +1,6 @@
 /*
- * Carla VST utils
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Carla VST2 utils
+ * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef CARLA_VST_UTILS_HPP_INCLUDED
-#define CARLA_VST_UTILS_HPP_INCLUDED
+#ifndef CARLA_VST2_UTILS_HPP_INCLUDED
+#define CARLA_VST2_UTILS_HPP_INCLUDED
 
 #include "CarlaUtils.hpp"
 
@@ -404,4 +404,4 @@ const char* vstMasterOpcode2str(const int32_t opcode) noexcept
 
 // -----------------------------------------------------------------------
 
-#endif // CARLA_VST_UTILS_HPP_INCLUDED
+#endif // CARLA_VST2_UTILS_HPP_INCLUDED
