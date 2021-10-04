@@ -1047,20 +1047,27 @@ class PluginEdit(QDialog):
         paramOutputList  = []
         paramInputWidth  = 0
         paramOutputWidth = 0
+        unusedParameters = 0
 
         paramInputListFull  = [] # ([params], width)
         paramOutputListFull = [] # ([params], width)
 
-        for i in range(min(parameterCount, self.host.maxParameters)):
-            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-            paramData   = self.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-            paramValue  = self.host.get_current_parameter_value(self.fPluginId, i)
+        for i in range(parameterCount):
+            if i - unusedParameters == self.host.maxParameters:
+                break
+
+            paramData = self.host.get_parameter_data(self.fPluginId, i)
 
             if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
+                unusedParameters += 1
                 continue
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                unusedParameters += 1
                 continue
+
+            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
+            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
+            paramValue  = self.host.get_current_parameter_value(self.fPluginId, i)
 
             parameter = {
                 'type':  paramData['type'],
