@@ -1305,6 +1305,11 @@ struct VST3PluginWindow : public AudioProcessorEditor,
         view = nullptr;
     }
 
+    void* getPlatformSpecificData()
+    {
+        return view;
+    }
+
    #if JUCE_LINUX
     Steinberg::tresult PLUGIN_API queryInterface (const Steinberg::TUID iid, void** obj) override
     {

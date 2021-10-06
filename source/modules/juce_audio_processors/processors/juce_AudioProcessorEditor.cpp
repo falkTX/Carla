@@ -46,6 +46,7 @@ AudioProcessorEditor::~AudioProcessorEditor()
     removeComponentListener (resizeListener.get());
 }
 
+void* AudioProcessorEditor::getPlatformSpecificData()                          { return nullptr; }
 void AudioProcessorEditor::setControlHighlight (ParameterControlHighlightInfo) {}
 int AudioProcessorEditor::getControlParameterIndex (Component&)                { return -1; }
 

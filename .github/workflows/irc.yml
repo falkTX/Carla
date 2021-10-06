@@ -7,10 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     name: IRC notification
     steps:
-    - name: IRC notification
-      uses: Gottox/irc-message-action@v2
-      with:
-        channel: '#kxstudio'
-        nickname: kxstudio-bot
-        message: |-
-          ${{ github.actor }} pushed ${{ github.event.head_commit.message }} ${{ github.event.compare }}
+      - name: Format message
+        id: message
+        run: |
+          message="${{ github.actor }} pushed $(echo '${{ github.event.commits[0].message }}' | head -n 1) ${{ github.event.commits[0].url }}"
+          echo ::set-output name=message::"${message}"
+      - name: IRC notification
+        uses: Gottox/irc-message-action@v2
+        with:
+          channel: '#kxstudio'
+          nickname: kxstudio-bot
+          message: ${{ steps.message.outputs.message }}

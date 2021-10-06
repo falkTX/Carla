@@ -55,6 +55,11 @@ public:
     ~AudioProcessorEditor() override;
 
 
+    /** Returns a pointer to some kind of platform-specific data about the plugin.
+        E.g. For a VST3, this value can be cast to an IPlugView*.
+    */
+    virtual void* getPlatformSpecificData();
+
     //==============================================================================
     /** The AudioProcessor that this editor represents. */
     AudioProcessor& processor;

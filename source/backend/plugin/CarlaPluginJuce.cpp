@@ -496,11 +496,16 @@ public:
                         uiName += " (GUI)";
                     }
 
-                    AEffect* const effect = fDesc.pluginFormatName == "VST" || fDesc.pluginFormatName == "VST2"
-                                          ? (AEffect*)fInstance->getPlatformSpecificData()
-                                          : nullptr;
+                    AEffect* const vst2effect = fDesc.pluginFormatName == "VST" || fDesc.pluginFormatName == "VST2"
+                                              ? (AEffect*)fInstance->getPlatformSpecificData()
+                                              : nullptr;
 
-                    fWindow = new JucePluginWindow(opts.frontendWinId, opts.pluginsAreStandalone, effect);
+                    v3_plugin_view** const vst3view = fDesc.pluginFormatName == "VST3"
+                                                    ? (v3_plugin_view**)editor->getPlatformSpecificData()
+                                                    : nullptr;
+
+                    fWindow = new JucePluginWindow(opts.frontendWinId, opts.pluginsAreStandalone,
+                                                   vst2effect, vst3view);
                     fWindow->setName(uiName);
                 }
 
