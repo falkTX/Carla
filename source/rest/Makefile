@@ -26,7 +26,7 @@ BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules 
 LINK_FLAGS += -Wl,-rpath=$(shell realpath $(CWD)/../bin)
 LINK_FLAGS += -L$(BINDIR) -lcarla_standalone2 -lcarla_utils
 LINK_FLAGS += -lrestbed -lssl -lcrypto
-LINK_FLAGS += -lpthread
+LINK_FLAGS += -pthread
 
 # ----------------------------------------------------------------------------------------------------------------------
 

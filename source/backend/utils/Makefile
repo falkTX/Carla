@@ -49,7 +49,7 @@ LINK_FLAGS += $(X11_LIBS)
 endif
 
 ifneq ($(HAIKU),true)
-LINK_FLAGS += -lpthread
+LINK_FLAGS += -pthread
 endif
 
 ifeq ($(USING_JUCE),true)

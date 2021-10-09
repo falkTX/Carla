@@ -609,7 +609,7 @@ endif
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS   += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
-RTAUDIO_LIBS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa) -lpthread
+RTAUDIO_LIBS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa) -pthread
 RTMIDI_FLAGS    += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags alsa) -D__LINUX_ALSA__
 RTMIDI_LIBS     += $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
 endif
@@ -639,35 +639,35 @@ endif
 endif # USING_JUCE_AUDIO_DEVICES
 
 ifeq ($(BSD),true)
-JACKBRIDGE_LIBS  = -lpthread -lrt
+JACKBRIDGE_LIBS  = -pthread -lrt
 LILV_LIBS        = -lm -lrt
-RTMEMPOOL_LIBS   = -lpthread
-WATER_LIBS       = -lpthread -lrt
+RTMEMPOOL_LIBS   = -pthread
+WATER_LIBS       = -pthread -lrt
 endif
 
 ifeq ($(HAIKU),true)
-JACKBRIDGE_LIBS  = -lpthread
+JACKBRIDGE_LIBS  = -pthread
 LILV_LIBS        = -lm
-RTMEMPOOL_LIBS   = -lpthread
-WATER_LIBS       = -lpthread
+RTMEMPOOL_LIBS   = -pthread
+WATER_LIBS       = -pthread
 endif
 
 ifeq ($(HURD),true)
-JACKBRIDGE_LIBS  = -ldl -lpthread -lrt
+JACKBRIDGE_LIBS  = -ldl -pthread -lrt
 LILV_LIBS        = -ldl -lm -lrt
-RTMEMPOOL_LIBS   = -lpthread -lrt
-WATER_LIBS       = -ldl -lpthread -lrt
+RTMEMPOOL_LIBS   = -pthread -lrt
+WATER_LIBS       = -ldl -pthread -lrt
 endif
 
 ifeq ($(LINUX),true)
 HYLIA_FLAGS      = -DLINK_PLATFORM_LINUX=1
-JACKBRIDGE_LIBS  = -ldl -lpthread -lrt
+JACKBRIDGE_LIBS  = -ldl -pthread -lrt
 LILV_LIBS        = -ldl -lm -lrt
-RTMEMPOOL_LIBS   = -lpthread -lrt
-WATER_LIBS       = -ldl -lpthread -lrt
+RTMEMPOOL_LIBS   = -pthread -lrt
+WATER_LIBS       = -ldl -pthread -lrt
 ifeq ($(USING_JUCE),true)
 JUCE_AUDIO_DEVICES_LIBS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
-JUCE_CORE_LIBS          = -ldl -lpthread -lrt
+JUCE_CORE_LIBS          = -ldl -pthread -lrt
 JUCE_EVENTS_LIBS        = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11)
 JUCE_GRAPHICS_LIBS      = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2)
 JUCE_GUI_BASICS_LIBS    = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11 xext)
@@ -676,9 +676,9 @@ endif # LINUX
 
 ifeq ($(MACOS),true)
 HYLIA_FLAGS      = -DLINK_PLATFORM_MACOSX=1
-JACKBRIDGE_LIBS  = -ldl -lpthread
+JACKBRIDGE_LIBS  = -ldl -pthread
 LILV_LIBS        = -ldl -lm
-RTMEMPOOL_LIBS   = -lpthread
+RTMEMPOOL_LIBS   = -pthread
 WATER_LIBS       = -framework AppKit
 ifeq ($(USING_JUCE),true)
 JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
@@ -696,9 +696,9 @@ endif # MACOS
 ifeq ($(WIN32),true)
 HYLIA_FLAGS      = -DLINK_PLATFORM_WINDOWS=1
 HYLIA_LIBS       = -liphlpapi
-JACKBRIDGE_LIBS  = -lpthread
+JACKBRIDGE_LIBS  = -pthread
 LILV_LIBS        = -lm
-RTMEMPOOL_LIBS   = -lpthread
+RTMEMPOOL_LIBS   = -pthread
 WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 ifeq ($(USING_JUCE),true)
 JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
