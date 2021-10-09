@@ -23,7 +23,7 @@ endif
 
 BUILD_C_FLAGS   += -I$(CWD) -I$(CWD)/includes
 BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils
-LINK_FLAGS      += -lpthread -lrt
+LINK_FLAGS      += -pthread -lrt
 
 # ---------------------------------------------------------------------------------------------------------------------
 

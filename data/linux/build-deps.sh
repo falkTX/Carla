@@ -310,7 +310,7 @@ if [ ! -f fluidsynth-${FLUIDSYNTH_VERSION}/build-done ]; then
     -Denable-floats=ON
   make ${MAKE_ARGS}
   make install
-  sed -i -e "s|-lfluidsynth|-lfluidsynth -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lpthread -lm|" ${PREFIX}/lib/pkgconfig/fluidsynth.pc
+  sed -i -e "s|-lfluidsynth|-lfluidsynth -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -pthread -lm|" ${PREFIX}/lib/pkgconfig/fluidsynth.pc
   touch build-done
   cd ..
 fi

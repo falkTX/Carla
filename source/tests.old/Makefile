@@ -128,7 +128,7 @@ ctypes-test.so: ctypes-test.c .FORCED
 # ---------------------------------------------------------------------------------------------------------------------
 
 CachedPlugins: CachedPlugins.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/juce_core.a $(MODULEDIR)/lilv.a -ldl -lpthread
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/juce_core.a $(MODULEDIR)/lilv.a -ldl -pthread
 ifneq ($(WIN32),true)
 	set -e; ./$@ && valgrind --leak-check=full ./$@
 endif
@@ -146,14 +146,14 @@ ifneq ($(WIN32),true)
 endif
 
 CarlaPipeUtils: CarlaPipeUtils.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/juce_core.a -ldl -lpthread
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/juce_core.a -ldl -pthread
 ifneq ($(WIN32),true)
 	set -e;  valgrind --leak-check=full ./$@
 # 	./$@ &&
 endif
 
 CarlaPipeUtils.exe: CarlaPipeUtils.cpp ../utils/CarlaPipeUtils.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/water.a -lole32 -lshlwapi -lversion -lwsock32 -lwininet -lwinmm -lws2_32 -lpthread -static
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/water.a -lole32 -lshlwapi -lversion -lwsock32 -lwininet -lwinmm -lws2_32 -pthread -static
 
 CarlaUtils1: CarlaUtils1.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
@@ -163,7 +163,7 @@ endif
 
 CarlaUtils2: CarlaUtils2.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
-		 $(MODULEDIR)/juce_core.a $(MODULEDIR)/lilv.a -ldl -lpthread -lrt
+		 $(MODULEDIR)/juce_core.a $(MODULEDIR)/lilv.a -ldl -pthread -lrt
 	set -e; ./$@ && valgrind --leak-check=full ./$@
 
 CarlaUtils3: CarlaUtils3.cpp ../utils/*.hpp
@@ -174,7 +174,7 @@ endif
 
 CarlaUtils4: CarlaUtils4.cpp ../utils/CarlaStateUtils.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
-		$(MODULEDIR)/juce_core.a -ldl -lpthread -lrt
+		$(MODULEDIR)/juce_core.a -ldl -pthread -lrt
 ifneq ($(WIN32),true)
 	set -e; ./$@ && valgrind --leak-check=full ./$@
 endif
@@ -198,7 +198,7 @@ ifneq ($(WIN32),true)
 endif
 
 WineJack: WineJack.cpp
-	$(WINECXX) $< $(BASE_FLAGS) -m32 -ljack -lpthread -o $@
+	$(WINECXX) $< $(BASE_FLAGS) -m32 -ljack -pthread -o $@
 	set -e; ./$@.exe
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -214,11 +214,11 @@ sem: sem.cpp $(MODULEDIR)/jackbridge/*
 # ---------------------------------------------------------------------------------------------------------------------
 
 ChildProcess: ChildProcess.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) $(MODULEDIR)/juce_core.a -ldl -lpthread -lrt -o $@
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) $(MODULEDIR)/juce_core.a -ldl -pthread -lrt -o $@
 	valgrind --leak-check=full ./$@
 
 CarlaMutex: CarlaMutex.cpp ../utils/CarlaMutex.hpp
-	$(CXX) $< -lpthread -o $@
+	$(CXX) $< -pthread -o $@
 	valgrind --leak-check=full ./$@
 
 # ifneq ($(MACOS_OR_WIN32),true)
@@ -241,15 +241,15 @@ EngineEvents: EngineEvents.cpp
 	env LD_LIBRARY_PATH=../backend valgrind ./$@
 
 PipeServer: PipeServer.cpp ../utils/CarlaPipeUtils.hpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -lpthread -o $@
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -pthread -o $@
 	valgrind --leak-check=full ./$@
 
 RtLinkedList: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp $(MODULEDIR)/rtmempool.a
-	$(CXX) $< $(MODULEDIR)/rtmempool.a $(PEDANTIC_CXX_FLAGS) -lpthread -o $@
+	$(CXX) $< $(MODULEDIR)/rtmempool.a $(PEDANTIC_CXX_FLAGS) -pthread -o $@
 	valgrind --leak-check=full ./$@
 
 RtLinkedListGnu: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp $(MODULEDIR)/rtmempool.a
-	$(CXX) $< $(MODULEDIR)/rtmempool.a $(GNU_CXX_FLAGS) -lpthread -o $@
+	$(CXX) $< $(MODULEDIR)/rtmempool.a $(GNU_CXX_FLAGS) -pthread -o $@
 	valgrind --leak-check=full ./$@
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -263,11 +263,11 @@ debug:
 # ---------------------------------------------------------------------------------------------------------------------
 
 DISTRHO: DISTRHO.cpp ../modules/distrho/*.hpp ../modules/distrho/src/*.cpp
-	$(CXX) $< ../modules/dgl.a $(PEDANTIC_CXX_FLAGS) -I../modules/distrho -I../modules/native-plugins/nekobi $(LINK_FLAGS) $(DGL_LIBS) -lpthread -o $@
+	$(CXX) $< ../modules/dgl.a $(PEDANTIC_CXX_FLAGS) -I../modules/distrho -I../modules/native-plugins/nekobi $(LINK_FLAGS) $(DGL_LIBS) -pthread -o $@
 	./DISTRHO
 
 DISTRHO.so: DISTRHO.cpp ../modules/distrho/*.hpp ../modules/distrho/src/*.cpp
-	$(CXX) $< ../modules/dgl.a $(PEDANTIC_CXX_FLAGS) -I../modules/distrho -I../modules/native-plugins/nekobi -DSHARED_DLL $(LINK_FLAGS) $(DGL_LIBS) -lpthread -shared -Wl,--no-undefined -o $@
+	$(CXX) $< ../modules/dgl.a $(PEDANTIC_CXX_FLAGS) -I../modules/distrho -I../modules/native-plugins/nekobi -DSHARED_DLL $(LINK_FLAGS) $(DGL_LIBS) -pthread -shared -Wl,--no-undefined -o $@
 
 DGL: DGL.cpp ../modules/distrho/dgl/src/Window.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@
