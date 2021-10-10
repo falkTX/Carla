@@ -177,3 +177,5 @@ data/windows/Carla.lv2/
 data/windows/Carla_*
 
 data/windows/python/
+
+Makefile.user.mk

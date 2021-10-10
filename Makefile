@@ -24,6 +24,8 @@ endif
 
 VERSION   := 2.4.0
 
+-include Makefile.user.mk
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 all: backend discovery bridges-plugin bridges-ui frontend interposer libjack plugin theme
