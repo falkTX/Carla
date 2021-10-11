@@ -90,6 +90,7 @@ ifeq ($(USING_RTAUDIO),true)
 endif
 
 3RD_LIBS += $(MODULEDIR)/eel2.a
+3RD_LIBS += $(MODULEDIR)/jsusfx.a
 
 ALL_LIBS += $(3RD_LIBS)
 

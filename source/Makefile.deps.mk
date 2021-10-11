@@ -520,6 +520,8 @@ ifeq ($(CPU_I386_OR_X86_64)$(CPU_ARM_OR_AARCH64),)
 EEL2_FLAGS += -DEEL_TARGET_PORTABLE
 endif
 
+JSUSFX_FLAGS  = $(EEL2_FLAGS) -I$(CWD)/modules/jsusfx/source
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(STATIC_PLUGIN_TARGET),true)
