@@ -89,6 +89,8 @@ ifeq ($(USING_RTAUDIO),true)
 3RD_LIBS += $(MODULEDIR)/rtmidi.a
 endif
 
+3RD_LIBS += $(MODULEDIR)/eel2.a
+
 ALL_LIBS += $(3RD_LIBS)
 
 3rd: $(3RD_LIBS)
