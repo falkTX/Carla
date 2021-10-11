@@ -160,7 +160,7 @@ EEL_F NSEEL_CGEN_CALL nseel_int_rand(EEL_F f)
         }
       }
     #endif
-  #elif !defined(__LP64__)
+  #elif !(defined(_WIN64) || defined(__LP64__))
     #define FUNCTION_MARKER "\n.byte 0x89,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90\n"
     #include "asm-nseel-x86-gcc.c"
     void eel_setfp_round()
