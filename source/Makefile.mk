@@ -368,6 +368,7 @@ ifneq ($(WIN32),true)
 
 ifeq ($(shell $(PKG_CONFIG) --exists libmagic && echo true),true)
 HAVE_LIBMAGIC = true
+HAVE_LIBMAGICPKG = true
 else
 # old libmagic versions don't have a pkg-config file, so we need to call the compiler to test it
 CFLAGS_WITHOUT_ARCH = $(subst -arch arm64,,$(CFLAGS))
@@ -555,7 +556,12 @@ LIBLO_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags liblo)
 LIBLO_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs liblo)
 endif
 
-ifeq ($(HAVE_LIBMAGIC),true)
+ifeq ($(HAVE_LIBMAGICPKG),true)
+MAGIC_FLAGS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags libmagic)
+# this is missing in upstream pkg-config
+MAGIC_FLAGS += -I$(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --variable=includedir libmagic)
+MAGIC_LIBS   = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs libmagic)
+else ifeq ($(HAVE_LIBMAGIC),true)
 MAGIC_LIBS += -lmagic
 ifeq ($(LINUX_OR_MACOS),true)
 MAGIC_LIBS += -lz

@@ -18,6 +18,10 @@ TARGETS = \
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
+
+# ---------------------------------------------------------------------------------------------------------------------
+
 STANDALONE_LIBS  = $(MODULEDIR)/carla_engine.a
 STANDALONE_LIBS += $(MODULEDIR)/carla_plugin.a
 STANDALONE_LIBS += $(MODULEDIR)/jackbridge.a

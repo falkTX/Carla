@@ -450,7 +450,7 @@ public:
             v3_cpp_obj(fVst3View)->on_focus (fVst3View, true);
     }
 
-    void focusLost (const FocusChangeType cause)
+    void focusLost (const FocusChangeType cause) override
     {
         if (fVst3View != nullptr)
             v3_cpp_obj(fVst3View)->on_focus (fVst3View, false);
