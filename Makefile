@@ -533,6 +533,7 @@ endif
 		source/backend/CarlaPlugin.hpp \
 		source/backend/CarlaPluginPtr.hpp \
 		source/includes/CarlaNative.h \
+		source/includes/CarlaNativePlugin.h \
 		$(DESTDIR)$(INCLUDEDIR)/carla
 
 	install -m 644 \
