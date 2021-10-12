@@ -25,7 +25,7 @@
 #include "WDL/eel2/ns-eel.h"
 #include "WDL/eel2/ns-eel-int.h"
 
-#ifndef nullptr
+#if __cplusplus < 201103L && !defined(nullptr)
 	#define nullptr NULL
 #endif
 
