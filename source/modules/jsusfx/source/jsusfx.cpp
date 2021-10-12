@@ -27,6 +27,7 @@
 
 #include "WDL/ptrlist.h"
 #include "WDL/assocarray.h"
+#include "WDL/mutex.h"
 
 #define REAPER_GET_INTERFACE(opaque) ((opaque) ? ((JsusFx*)opaque) : nullptr)
 
@@ -1208,12 +1209,24 @@ void JsusFx::releaseCode() {
     NSEEL_VM_remove_all_nonreg_vars(m_vm);
 }
 
+static WDL_Mutex initMutex;
+static volatile bool initFlag = false;
+
 void JsusFx::init() {
+    if (initFlag)
+        return;
+
+    WDL_MutexLock lock(&initMutex);
+    if (initFlag)
+        return;
+
     EEL_string_register();
     EEL_fft_register();
     EEL_mdct_register();
     EEL_string_register();
     EEL_misc_register();
+
+    initFlag = true;
 }
 
 static int dumpvarsCallback(const char *name, EEL_F *val, void *ctx) {
