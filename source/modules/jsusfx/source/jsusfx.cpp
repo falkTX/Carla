@@ -501,6 +501,8 @@ JsusFx::JsusFx(JsusFxPathLibrary &_pathLibrary)
 	
 	numInputs = 0;
 	numOutputs = 0;
+    inputNames.reserve(16);
+    outputNames.reserve(16);
 	
 	numValidInputChannels = 0;
 	
@@ -656,6 +658,9 @@ static char *trim(char *line, bool trimStart, bool trimEnd)
 bool JsusFx::readHeader(JsusFxPathLibrary &pathLibrary, const std::string &path, std::istream &input) {
 	char line[4096];
 	
+	inputNames.clear();
+	outputNames.clear();
+	
     for(int lnumber = 1; ! input.eof(); lnumber++) {
 		input.getline(line, sizeof(line), '\n');
 		
@@ -693,10 +698,30 @@ bool JsusFx::readHeader(JsusFxPathLibrary &pathLibrary, const std::string &path,
 			continue;
 		}
 		else if ( ! strncmp(line, "in_pin:", 7) ) {
-			numInputs++;
+			char *src = line+7;
+			src = trim(src, true, true);
+            if ( ! strncmp(src, "none", 4) ) {
+                inputNames.clear();
+                numInputs = -1;
+            } else {
+                if ( numInputs != -1 ) {
+                    inputNames.push_back(src);
+                    numInputs++;
+                }
+            }
 		}
 		else if ( ! strncmp(line, "out_pin:", 8) ) {
-			numOutputs++;
+			char *src = line+8;
+			src = trim(src, true, true);
+            if ( ! strncmp(src, "none", 4) ) {
+                outputNames.clear();
+                numOutputs = -1;
+            } else {
+                if ( numOutputs != -1 ) {
+                    outputNames.push_back(src);
+                    numOutputs++;
+                }
+            }
 		}
     }
 	
@@ -706,6 +731,9 @@ bool JsusFx::readHeader(JsusFxPathLibrary &pathLibrary, const std::string &path,
 bool JsusFx::readSections(JsusFxPathLibrary &pathLibrary, const std::string &path, std::istream &input, JsusFx_Sections &sections, const int compileFlags) {
     WDL_String * code = nullptr;
     char line[4096];
+	
+	inputNames.clear();
+	outputNames.clear();
 	
 	// are we reading the header or sections?
 	bool isHeader = true;
@@ -840,19 +868,29 @@ bool JsusFx::readSections(JsusFxPathLibrary &pathLibrary, const std::string &pat
                 continue;
             }
             else if ( ! strncmp(line, "in_pin:", 7) ) {
-                if ( ! strncmp(line+7, "none", 4) ) {
+				char *src = line+7;
+				src = trim(src, true, true);
+                if ( ! strncmp(src, "none", 4) ) {
+                    inputNames.clear();
                     numInputs = -1;
                 } else {
-                    if ( numInputs != -1 )
+                    if ( numInputs != -1 ) {
+                        inputNames.push_back(src);
                         numInputs++;
+                    }
                 }
             }
             else if ( ! strncmp(line, "out_pin:", 8) ) {
-                if ( ! strncmp(line+8, "none", 4) ) {
+				char *src = line+8;
+				src = trim(src, true, true);
+                if ( ! strncmp(src, "none", 4) ) {
+                    outputNames.clear();
                     numOutputs = -1;
                 } else {
-                    if ( numOutputs != -1 )
+                    if ( numOutputs != -1 ) {
+                        outputNames.push_back(src);
                         numOutputs++;
+                    }
                 }
             }
         }

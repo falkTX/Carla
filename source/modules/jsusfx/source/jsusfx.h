@@ -197,6 +197,8 @@ public:
     int numInputs;
     int numOutputs;
     int numValidInputChannels;
+    std::vector<std::string> inputNames;
+    std::vector<std::string> outputNames;
 	
 	JsusFxPathLibrary &pathLibrary;
 	
