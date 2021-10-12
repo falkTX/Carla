@@ -271,6 +271,7 @@ struct CARLA_API EngineOptions {
     const char* pathVST3;
     const char* pathSF2;
     const char* pathSFZ;
+    const char* pathJSFX;
 
     const char* binaryDir;
     const char* resourceDir;

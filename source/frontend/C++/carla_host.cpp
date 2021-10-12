@@ -2676,6 +2676,7 @@ QString setEngineSettings(CarlaHost& host)
     QStringList VST3_PATH   = settings.valueStringList(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH);
     QStringList SF2_PATH    = settings.valueStringList(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH);
     QStringList SFZ_PATH    = settings.valueStringList(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH);
+    QStringList JSFX_PATH   = settings.valueStringList(CARLA_KEY_PATHS_JSFX,   CARLA_DEFAULT_JSFX_PATH);
 
     /*
     // TODO
@@ -2686,6 +2687,7 @@ QString setEngineSettings(CarlaHost& host)
     carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
     carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
     carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
+    carla_set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_JSFX,   splitter.join(JSFX_PATH))
     */
 
     //-----------------------------------------------------------------------------------------------------------------

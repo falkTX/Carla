@@ -233,6 +233,7 @@ CARLA_KEY_PATHS_VST2   = "Paths/VST2"
 CARLA_KEY_PATHS_VST3   = "Paths/VST3"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
+CARLA_KEY_PATHS_JSFX   = "Paths/JSFX"
 
 CARLA_KEY_WINE_EXECUTABLE      = "Wine/Executable"     # str
 CARLA_KEY_WINE_AUTO_PREFIX     = "Wine/AutoPrefix"     # bool
@@ -352,6 +353,7 @@ DEFAULT_VST2_PATH   = ""
 DEFAULT_VST3_PATH   = ""
 DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
+DEFAULT_JSFX_PATH    = ""
 
 if WINDOWS:
     splitter = ";"
@@ -387,6 +389,9 @@ if WINDOWS:
     DEFAULT_VST2_PATH    = PROGRAMFILES + "\\VstPlugins"
     DEFAULT_VST2_PATH   += ";" + PROGRAMFILES + "\\Steinberg\\VstPlugins"
 
+    DEFAULT_JSFX_PATH    = APPDATA + "\\REAPER\Effects"
+    #DEFAULT_JSFX_PATH   += ";" + PROGRAMFILES + "\\REAPER\\InstallData\\Effects"
+
     if kIs64bit:
         DEFAULT_VST2_PATH  += ";" + COMMONPROGRAMFILES + "\\VST2"
 
@@ -400,6 +405,7 @@ if WINDOWS:
         DEFAULT_DSSI_PATH   += ";" + PROGRAMFILESx86 + "\\DSSI"
         DEFAULT_VST2_PATH   += ";" + PROGRAMFILESx86 + "\\VstPlugins"
         DEFAULT_VST2_PATH   += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins"
+        #DEFAULT_JSFX_PATH   += ";" + PROGRAMFILESx86 + "\\REAPER\\InstallData\\Effects"
 
     if COMMONPROGRAMFILESx86:
         DEFAULT_VST3_PATH   += COMMONPROGRAMFILESx86 + "\\VST3"
@@ -442,7 +448,12 @@ elif MACOS:
     DEFAULT_VST3_PATH    = HOME + "/Library/Audio/Plug-Ins/VST3"
     DEFAULT_VST3_PATH   += ":/Library/Audio/Plug-Ins/VST3"
 
+    DEFAULT_JSFX_PATH    = HOME + "/Library/Application Support/REAPER/Effects"
+    #DEFAULT_JSFX_PATH   += ":/Applications/REAPER.app/Contents/InstallFiles/Effects"
+
 else:
+    CONFIG_HOME = os.getenv("XDG_CONFIG_HOME", HOME + "/.config")
+
     splitter = ":"
 
     DEFAULT_LADSPA_PATH  = HOME + "/.ladspa"
@@ -477,6 +488,9 @@ else:
 
     DEFAULT_SFZ_PATH     = HOME + "/.sounds/sfz"
     DEFAULT_SFZ_PATH    += ":/usr/share/sounds/sfz"
+
+    DEFAULT_JSFX_PATH    = CONFIG_HOME + "/REAPER/Effects"
+    #DEFAULT_JSFX_PATH   += ":" + "/opt/REAPER/InstallData/Effects"
 
 if not WINDOWS:
     winePrefix = os.getenv("WINEPREFIX")
@@ -525,6 +539,7 @@ if readEnvVars:
     CARLA_DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
     CARLA_DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
+    CARLA_DEFAULT_JSFX_PATH   = os.getenv("JSFX_PATH",   DEFAULT_JSFX_PATH).split(splitter)
 
 else:
     CARLA_DEFAULT_LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
@@ -534,6 +549,7 @@ else:
     CARLA_DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
     CARLA_DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
+    CARLA_DEFAULT_JSFX_PATH   = DEFAULT_JSFX_PATH.split(splitter)
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (cleanup)

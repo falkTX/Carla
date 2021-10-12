@@ -21,6 +21,7 @@
 #include "CarlaString.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLv2Utils.hpp"
+#include "CarlaJsfxUtils.hpp"
 
 #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
 # include "AppConfig.h"
@@ -44,6 +45,7 @@ static bool isCachedPluginType(const CB::PluginType ptype)
     case CB::PLUGIN_LV2:
     case CB::PLUGIN_AU:
     case CB::PLUGIN_SFZ:
+    case CB::PLUGIN_JSFX:
         return true;
     default:
         return false;
@@ -90,6 +92,35 @@ static void findSFZs(const char* const sfzPaths)
 
         if (water::File(*it).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*.sfz") > 0)
             gSFZs.addArray(results);
+    }
+}
+// -------------------------------------------------------------------------------------------------------------------
+
+static water::Array<water::File> gJSFXs;
+
+static void findJSFXs(const char* const jsfxPaths)
+{
+    gJSFXs.clearQuick();
+
+    CARLA_SAFE_ASSERT_RETURN(jsfxPaths != nullptr,);
+
+    if (jsfxPaths[0] == '\0')
+        return;
+
+    const water::StringArray splitPaths(water::StringArray::fromTokens(jsfxPaths, CARLA_OS_SPLIT_STR, ""));
+
+    for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
+    {
+        water::Array<water::File> results;
+
+        if (water::File(*it).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*") > 0)
+        {
+            for (const water::File& file : results)
+            {
+                if (!file.hasFileExtension("jsfx-inc"))
+                    gJSFXs.add(file);
+            }
+        }
     }
 }
 
@@ -626,6 +657,72 @@ static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& fil
 
 // -------------------------------------------------------------------------------------------------------------------
 
+static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const water::File& file)
+{
+    static CarlaCachedPluginInfo info;
+
+    JsusFx::init();
+
+    CarlaJsusFxPathLibrary pathLibrary(file);
+
+    CarlaJsusFx effect(pathLibrary);
+    effect.setQuiet(true);
+
+    static CarlaString name, filename;
+
+    name = file.getFileNameWithoutExtension().toRawUTF8();
+    filename = file.getFullPathName().toRawUTF8();
+
+    if (!effect.readHeader(pathLibrary, filename.buffer()))
+    {
+        info.valid = false;
+        return &info;
+    }
+    if (effect.desc[0] == '\0')
+    {
+        info.valid = false;
+        return &info;
+    }
+
+    info.valid         = true;
+
+    // NOTE: count can be -1 in case of "none"
+    info.audioIns = (effect.numInputs == -1) ? 0 : (uint32_t)effect.numInputs;
+    info.audioOuts = (effect.numOutputs == -1) ? 0 : (uint32_t)effect.numOutputs;
+
+    info.cvIns = 0;
+    info.cvOuts = 0;
+
+    info.midiIns = 1;
+    info.midiOuts = 1;
+
+    info.parameterIns = 0;
+    info.parameterOuts = 0;
+    for (uint32_t sliderIndex = 0; sliderIndex < JsusFx::kMaxSliders; ++sliderIndex)
+    {
+        if (effect.sliders[sliderIndex].exists)
+            ++info.parameterIns;
+    }
+
+    info.category = CB::PLUGIN_CATEGORY_NONE;
+    info.hints    = 0;
+
+#if 0 // TODO(jsfx) when supporting custom graphics
+    if (effect.hasGraphicsSection())
+        info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+    // TODO(jsfx) there should be a way to check this without compiling
+#endif
+
+    info.name      = name.buffer();
+    info.label     = filename.buffer();
+    info.maker     = gCachedPluginsNullCharPtr;
+    info.copyright = gCachedPluginsNullCharPtr;
+
+    return &info;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
 {
     CARLA_SAFE_ASSERT_RETURN(isCachedPluginType(ptype), 0);
@@ -655,6 +752,11 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
     case CB::PLUGIN_SFZ: {
         findSFZs(pluginPath);
         return static_cast<uint>(gSFZs.size());
+    }
+
+    case CB::PLUGIN_JSFX: {
+        findJSFXs(pluginPath);
+        return static_cast<uint>(gJSFXs.size());
     }
 
     default:
@@ -700,6 +802,11 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
     case CB::PLUGIN_SFZ: {
         CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gSFZs.size()));
         return get_cached_plugin_sfz(gSFZs.getUnchecked(static_cast<int>(index)));
+    }
+
+    case CB::PLUGIN_JSFX: {
+        CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gJSFXs.size()));
+        return get_cached_plugin_jsfx(gJSFXs.getUnchecked(static_cast<int>(index)));
     }
 
     default:

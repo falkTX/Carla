@@ -10,7 +10,6 @@
 AR  ?= ar
 CC  ?= gcc
 CXX ?= g++
-NASM ?= nasm
 
 WINECC ?= winegcc
 

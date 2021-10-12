@@ -74,20 +74,23 @@ $(OBJDIR)/%.c.o: %.c
 	@echo "Compiling $<"
 	@$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
-$(OBJDIR)/%.asm.win64.o: %.asm
+$(OBJDIR)/%.asm.win64.o: %.S #%.asm
 	-@mkdir -p $(dir $@)
 	@echo "Compiling $<"
-	@$(NASM) -f win64 -o $@ $<
+	@$(CC) -c -o $@ $<
+#	@$(NASM) -f win64 -o $@ $<
 
-$(OBJDIR)/%.asm.mac64.o: %.asm
+$(OBJDIR)/%.asm.mac64.o: %.S #%.asm
 	-@mkdir -p $(dir $@)
 	@echo "Compiling $<"
-	@$(NASM) -D AMD64ABI -f macho64 --prefix _ -o $@ $<
+	@$(CC) -DAMD64ABI -DPREFIX=_ -c -o $@ $<
+#	@$(NASM) -D AMD64ABI -f macho64 --prefix _ -o $@ $<
 
-$(OBJDIR)/%.asm.posix64.o: %.asm
+$(OBJDIR)/%.asm.posix64.o: %.S #%.asm
 	-@mkdir -p $(dir $@)
 	@echo "Compiling $<"
-	@$(NASM) -D AMD64ABI -f elf64 -o $@ $<
+	@$(CC) -DAMD64ABI -c -o $@ $<
+#	@$(NASM) -D AMD64ABI -f elf64 -o $@ $<
 
 -include $(OBJS:%.o=%.d)
 

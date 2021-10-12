@@ -426,7 +426,8 @@ enum PluginPathIndexes {
     PLUGINPATH_INDEX_VST2,
     PLUGINPATH_INDEX_VST3,
     PLUGINPATH_INDEX_SF2,
-    PLUGINPATH_INDEX_SFZ
+    PLUGINPATH_INDEX_SFZ,
+    PLUGINPATH_INDEX_JSFX
 };
 
 /*
@@ -662,6 +663,7 @@ struct CarlaSettingsW::PrivateData {
         QStringList vst3s   = settings.valueStringList(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH);
         QStringList sf2s    = settings.valueStringList(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH);
         QStringList sfzs    = settings.valueStringList(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH);
+        QStringList jsfxs   = settings.valueStringList(CARLA_KEY_PATHS_JSFX,   CARLA_DEFAULT_JSFX_PATH);
 
         ladspas.sort();
         dssis.sort();
@@ -670,6 +672,7 @@ struct CarlaSettingsW::PrivateData {
         vst3s.sort();
         sf2s.sort();
         sfzs.sort();
+        jsfxs.sort();
 
         for (const QString& ladspa : ladspas)
         {
@@ -711,6 +714,12 @@ struct CarlaSettingsW::PrivateData {
         {
             if (sfz.isEmpty()) continue;
             ui.lw_sfz->addItem(sfz);
+        }
+
+        for (const QString& jsfx : jsfxs)
+        {
+            if (jsfx.isEmpty()) continue;
+            ui.lw_jsfx->addItem(jsfx);
         }
 
         // ------------------------------------------------------------------------------------------------------------
@@ -883,6 +892,7 @@ struct CarlaSettingsW::PrivateData {
         QStringList vst3s;
         QStringList sf2s;
         QStringList sfzs;
+        QStringList jsfxs;
 
         for (int i=0; i < ui.lw_ladspa->count(); ++i)
             ladspas.append(ui.lw_ladspa->item(i)->text());
@@ -905,6 +915,9 @@ struct CarlaSettingsW::PrivateData {
         for (int i=0; i < ui.lw_sfz->count(); ++i)
             sfzs.append(ui.lw_sfz->item(i)->text());
 
+        for (int i=0; i < ui.lw_jsfx->count(); ++i)
+            jsfxs.append(ui.lw_jsfx->item(i)->text());
+
         /* TODO
         host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(ladspas));
         host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(dssis));
@@ -913,6 +926,7 @@ struct CarlaSettingsW::PrivateData {
         host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(vst3s));
         host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(sf2s));
         host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(sfzs));
+        host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_JSFX,   splitter.join(jsfxs));
         */
 
         settings.setValue(CARLA_KEY_PATHS_LADSPA, ladspas);
@@ -922,6 +936,7 @@ struct CarlaSettingsW::PrivateData {
         settings.setValue(CARLA_KEY_PATHS_VST3, vst3s);
         settings.setValue(CARLA_KEY_PATHS_SF2, sf2s);
         settings.setValue(CARLA_KEY_PATHS_SFZ, sfzs);
+        settings.setValue(CARLA_KEY_PATHS_JSFX, jsfxs);
 
         // ------------------------------------------------------------------------------------------------------------
         // Wine
@@ -1147,6 +1162,19 @@ struct CarlaSettingsW::PrivateData {
                     ui.lw_sfz->addItem(path);
                 }
                 break;
+
+            case PLUGINPATH_INDEX_JSFX:
+                paths = CARLA_DEFAULT_JSFX_PATH;
+                paths.sort();
+                ui.lw_jsfx->clear();
+
+                for (const auto& path : paths)
+                {
+                    if (path.isEmpty())
+                        continue;
+                    ui.lw_jsfx->addItem(path);
+                }
+                break;
             }
             break;
         }
@@ -1310,6 +1338,7 @@ CarlaSettingsW::CarlaSettingsW(QWidget* const parent, CarlaHost& host, const boo
     connect(self->ui.lw_vst3, SIGNAL(currentRowChanged(int)), SLOT(slot_pluginPathRowChanged(int)));
     connect(self->ui.lw_sf2, SIGNAL(currentRowChanged(int)), SLOT(slot_pluginPathRowChanged(int)));
     connect(self->ui.lw_sfz, SIGNAL(currentRowChanged(int)), SLOT(slot_pluginPathRowChanged(int)));
+    connect(self->ui.lw_jsfx, SIGNAL(currentRowChanged(int)), SLOT(slot_pluginPathRowChanged(int)));
 
     connect(self->ui.b_filepaths_add, SIGNAL(clicked()), SLOT(slot_addFilePath()));
     connect(self->ui.b_filepaths_remove, SIGNAL(clicked()), SLOT(slot_removeFilePath()));
@@ -1335,6 +1364,7 @@ CarlaSettingsW::CarlaSettingsW(QWidget* const parent, CarlaHost& host, const boo
     self->ui.lw_vst3->setCurrentRow(0);
     self->ui.lw_sf2->setCurrentRow(0);
     self->ui.lw_sfz->setCurrentRow(0);
+    self->ui.lw_jsfx->setCurrentRow(0);
 
     self->ui.lw_files_audio->setCurrentRow(0);
     self->ui.lw_files_midi->setCurrentRow(0);
@@ -1485,6 +1515,9 @@ void CarlaSettingsW::slot_addPluginPath()
     case PLUGINPATH_INDEX_SFZ:
         self->ui.lw_sfz->addItem(newPath);
         break;
+    case PLUGINPATH_INDEX_JSFX:
+        self->ui.lw_jsfx->addItem(newPath);
+        break;
     }
 }
 
@@ -1512,6 +1545,9 @@ void CarlaSettingsW::slot_removePluginPath()
         break;
     case PLUGINPATH_INDEX_SFZ:
         self->ui.lw_sfz->takeItem(self->ui.lw_sfz->currentRow());
+        break;
+    case PLUGINPATH_INDEX_JSFX:
+        self->ui.lw_jsfx->takeItem(self->ui.lw_jsfx->currentRow());
         break;
     }
 }
@@ -1545,6 +1581,9 @@ void CarlaSettingsW::slot_changePluginPath()
     case PLUGINPATH_INDEX_SFZ:
         currentPath = self->ui.lw_sfz->currentItem()->text();
         break;
+    case PLUGINPATH_INDEX_JSFX:
+        currentPath = self->ui.lw_jsfx->currentItem()->text();
+        break;
     }
 
     const QString newPath = QFileDialog::getExistingDirectory(this, tr("Add Path"), currentPath, QFileDialog::ShowDirsOnly);
@@ -1574,6 +1613,9 @@ void CarlaSettingsW::slot_changePluginPath()
         break;
     case PLUGINPATH_INDEX_SFZ:
         self->ui.lw_sfz->currentItem()->setText(newPath);
+        break;
+    case PLUGINPATH_INDEX_JSFX:
+        self->ui.lw_jsfx->currentItem()->setText(newPath);
         break;
     }
 }
@@ -1606,6 +1648,9 @@ void CarlaSettingsW::slot_pluginPathTabChanged(const int index)
         break;
     case PLUGINPATH_INDEX_SFZ:
         row = self->ui.lw_sfz->currentRow();
+        break;
+    case PLUGINPATH_INDEX_JSFX:
+        row = self->ui.lw_jsfx->currentRow();
         break;
     default:
         row = -1;

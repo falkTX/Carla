@@ -65,6 +65,9 @@ STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 endif
 
+STANDALONE_LIBS += $(MODULEDIR)/jsusfx.a
+STANDALONE_LIBS += $(MODULEDIR)/eel2.a
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 STANDALONE_LINK_FLAGS  = $(HYLIA_LIBS)

@@ -263,6 +263,11 @@ protected:
             else
                 carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SFZ", "");
 
+            if (options.pathJSFX != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_JSFX", options.pathJSFX);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_JSFX", "");
+
             if (options.binaryDir != nullptr)
                 carla_setenv("ENGINE_OPTION_PATH_BINARIES", options.binaryDir);
             else

@@ -636,7 +636,12 @@ typedef enum {
     /*!
      * JACK application.
      */
-    PLUGIN_JACK = 12
+    PLUGIN_JACK = 12,
+
+    /*!
+     * JSFX plugin.
+     */
+    PLUGIN_JSFX = 13
 
 } PluginType;
 
