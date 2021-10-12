@@ -3194,6 +3194,23 @@ public:
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
+            if (fUI.type == UI::TYPE_EMBED)
+            {
+                switch (fUI.rdfDescriptor->Type)
+                {
+                case LV2_UI_GTK2:
+                case LV2_UI_GTK3:
+                case LV2_UI_QT4:
+                case LV2_UI_QT5:
+                case LV2_UI_EXTERNAL:
+                case LV2_UI_OLD_EXTERNAL:
+                    break;
+                default:
+                    pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+                    break;
+                }
+            }
+
             if (fUI.type == UI::TYPE_EMBED || fUI.type == UI::TYPE_EXTERNAL)
                 pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
