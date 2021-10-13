@@ -1965,7 +1965,7 @@ uint32_t carla_get_plugin_latency(CarlaHostHandle handle, uint pluginId)
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0);
 
     if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
-         return plugin->getLatency();
+         return plugin->getLatencyInFrames();
 
     return 0;
 }
