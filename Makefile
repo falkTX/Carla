@@ -78,7 +78,7 @@ ifeq ($(USING_JUCE_GUI_EXTRA),true)
 endif
 endif
 
-ifneq ($(USING_JUCE_AUDIO_DEVICES),true)
+ifeq ($(USING_RTAUDIO),true)
 3RD_LIBS += $(MODULEDIR)/rtaudio.a
 3RD_LIBS += $(MODULEDIR)/rtmidi.a
 endif

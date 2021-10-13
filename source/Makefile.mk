@@ -218,6 +218,10 @@ ifeq ($(USING_JUCE_GUI_EXTRA),true)
 BASE_FLAGS += -DUSING_JUCE_GUI_EXTRA
 endif
 
+ifeq ($(USING_RTAUDIO),true)
+BASE_FLAGS += -DUSING_RTAUDIO
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Set app extension
 
