@@ -205,14 +205,18 @@ public:
     JsusFxFileAPI *fileAPI;
     JsusFx_FileInfo fileInfos[kMaxFileInfos];
 	
+
+    struct EventHeader {
+        int offset;
+        int length;
+    };
+
 	// midi receive buffer. pointer is incremented and the size decremented by the appropriate number of bytes whenever midirecv is called from within the script
-	uint8_t *midi;
-    int midiSize;
+    std::vector<uint8_t> midiInput;
+    size_t midiInputReadPos;
 	
 	// midi send buffer. the pointer and capacity stay the same. size is incremented by the number of bytes written by midisend or midisend_buf
-    uint8_t * midiSendBuffer;
-    int midiSendBufferCapacity;
-    int midiSendBufferSize;
+    std::vector<uint8_t> midiOutput;
 	
     JsusFxGfx *gfx;
     int gfx_w;
@@ -230,8 +234,9 @@ public:
     // move slider, normalizeSlider is used to normalize the value to a constant (0 means no normalization)
     void moveSlider(int idx, float value, int normalizeSlider = 0);
 	
-    void setMidi(const void * midi, int numBytes);
-    void setMidiSendBuffer(void * buffer, int maxBytes);
+    bool addInputEvent(int offset, const uint8_t *data, int length);
+    bool addOutputEvent(int offset, const uint8_t *data, int length);
+    bool iterateOutputEvents(size_t &iterPos, int &offset, const uint8_t *&data, int &length);
 	
     void setTransportValues(
     	const double tempo,

@@ -76,104 +76,85 @@ static EEL_F * NSEEL_CGEN_CALL _reaper_spl(void *opaque, EEL_F *n)
 static EEL_F NSEEL_CGEN_CALL _midirecv(void *opaque, INT_PTR np, EEL_F **parms)
 {
 	JsusFx *ctx = REAPER_GET_INTERFACE(opaque);
-	while (ctx->midiSize > 0) {
-		// peek the message type
-		const uint8_t b = ctx->midi[0];
-		if ((b & 0xf0) == 0xf0) {
-			// 0xf0 = system exclusive message
-			
-			// consume the byte
-			ctx->midi++;
-			ctx->midiSize--;
-			
-			// skip until we find a 0xf7 byte
-			for (;;) {
-				// end of data stream?
-				if (ctx->midiSize == 0)
-					break;
-				
-				// consume the byte
-				const uint8_t b = ctx->midi[0];
-				ctx->midi++;
-				ctx->midiSize--;
-				
-				// end of system exclusive message?
-				if (b == 0xf7)
-					break;
-			}
-		}
-		else if (b & 0x80) {
-			// status byte
-			const uint8_t event = b & 0xf0;
-			//const uint8_t channel = b & 0x0f;
-			
-			// consume the byte
-			ctx->midi++;
-			ctx->midiSize--;
-			
-			// data bytes
-			if (ctx->midiSize >= 2) {
-				*parms[0] = 0;
-				*parms[1] = event;
-				if (np >= 4) {
-					*parms[2] = ctx->midi[0];
-					*parms[3] = ctx->midi[1];
-				} else {
-					*parms[2] = ctx->midi[0] + ctx->midi[1] * 256;
-				}
-				ctx->midi += 2;
-				ctx->midiSize -= 2;
-				return 1;
-			} else {
-				ctx->midiSize = 0;
-				return 0;
-			}
-		} else {
-			// data byte without a preceeding status byte? something is wrong here
-            ctx->midiSize--; // decrement this otherwise it is an infinite loop
-			ctx->displayMsg("Inconsistent midi stream %x\n", b);
+	if (ctx->midiInputReadPos >= ctx->midiInput.size())
+		return 0;
+
+	JsusFx::EventHeader event;
+	const uint8_t *data = nullptr;
+
+	while (!data && ctx->midiInputReadPos < ctx->midiInput.size()) {
+		data = &ctx->midiInput[ctx->midiInputReadPos];
+		memcpy(&event, data, sizeof(event));
+		data += sizeof(event);
+		ctx->midiInputReadPos += sizeof(event) + event.length;
+		// pass through the sysex events
+		if (event.length > 3) {
+			ctx->addOutputEvent(event.offset, data, event.length);
+			data = nullptr;
 		}
 	}
-	return 0;
+
+	if (!data)
+		return 0;
+
+	uint8_t msg1 = 0;
+	uint8_t msg2 = 0;
+	uint8_t msg3 = 0;
+
+	switch (event.length)
+	{
+		case 3:
+			msg3 = data[2];
+			// fall through
+		case 2:
+			msg2 = data[1];
+			// fall through
+		case 1:
+			msg1 = data[0];
+			break;
+	}
+
+ 	*parms[0] = event.offset;
+ 	*parms[1] = msg1;
+	if (np >= 4) {
+		*parms[2] = msg2;
+		*parms[3] = msg3;
+	} else {
+		*parms[2] = msg2 + msg3 * 256;
+	}
+
+	return 1;
 }
 
 static EEL_F NSEEL_CGEN_CALL _midisend(void *opaque, INT_PTR np, EEL_F **parms)
 {
 	JsusFx *ctx = REAPER_GET_INTERFACE(opaque);
-	if (ctx->midiSendBufferSize + 3 > ctx->midiSendBufferCapacity) {
-		return 0;
-	} else if (np == 3) {
-		const int offset = (int)*parms[0];
-		(void)offset; // sample offset into current block. not used
-		
-		const uint8_t msg1 = (uint8_t)*parms[1];
-		const uint16_t msg23 = (uint16_t)*parms[2];
-		const uint8_t msg2 = (msg23 >> 0) & 0xff;
-		const uint8_t msg3 = (msg23 >> 8) & 0xff;
-
-		//printf("midi send. cmd=%x, msg2=%d, msg3=%x\n", msg1, msg2, msg3);
-
-		ctx->midiSendBuffer[ctx->midiSendBufferSize++] = msg1;
-		ctx->midiSendBuffer[ctx->midiSendBufferSize++] = msg2;
-		ctx->midiSendBuffer[ctx->midiSendBufferSize++] = msg3;
-
-		return msg1;
+	
+	int offset;
+	uint8_t msg1;
+	uint8_t msg2;
+	uint8_t msg3;
+	
+	if (np == 3) {
+		offset = (int)*parms[0];
+		msg1 = (uint8_t)*parms[1];
+		const unsigned msg23 = (unsigned)*parms[2];
+		msg2 = (uint8_t)(msg23 & 0xff);
+		msg3 = (uint8_t)(msg23 >> 8);
 	} else if (np == 4) {
-		const int offset = (int)*parms[0];
-		(void)offset; // sample offset into current block. not used
-		
-		const uint8_t msg1 = (uint8_t)*parms[1];
-		const uint8_t msg2 = (uint8_t)*parms[2];
-		const uint8_t msg3 = (uint8_t)*parms[3];
-		
-		ctx->midiSendBuffer[ctx->midiSendBufferSize++] = msg1;
-		ctx->midiSendBuffer[ctx->midiSendBufferSize++] = msg2;
-		ctx->midiSendBuffer[ctx->midiSendBufferSize++] = msg3;
-		
-		return msg1;
+		offset = (int)*parms[0];
+		msg1 = (uint8_t)*parms[1];
+		msg2 = (uint8_t)*parms[2];
+		msg3 = (uint8_t)*parms[3];
 	} else {
 		return 0;
 	}
+	
+	const uint8_t data[] = {msg1, msg2, msg3};
+	if (!ctx->addOutputEvent(offset, data, 3))
+		return 0;
+	
+	return msg1;
 }
 
 static EEL_F NSEEL_CGEN_CALL _midisend_buf(void *opaque, INT_PTR np, EEL_F **parms)
@@ -181,21 +162,11 @@ static EEL_F NSEEL_CGEN_CALL _midisend_buf(void *opaque, INT_PTR np, EEL_F **par
 	JsusFx *ctx = REAPER_GET_INTERFACE(opaque);
 	if (np == 3) {
 		const int offset = (int)*parms[0];
-		(void)offset; // sample offset into current block. not used
-		
-		void *buf = (void*)parms[1];
+		const uint8_t *buf = (const uint8_t*)parms[1];
 		const int len = (int)*parms[2];
-		
-	// note : should we auto-detect SysEx messages? Reaper does it, but it seems like a bad idea..
-	//        auto-detection would automagically determine the message's length here by parsing the message stream
-	
-		if (len < 0 || ctx->midiSendBufferSize + len > ctx->midiSendBufferCapacity) {
+		if (!ctx->addOutputEvent(offset, buf, len))
 			return 0;
-		} else {
-			memcpy(&ctx->midiSendBuffer[ctx->midiSendBufferSize], buf, len);
-			ctx->midiSendBufferSize += len;
-			return len;
-		}
+		return len;
 	} else {
 		return 0;
 	}
@@ -479,12 +450,9 @@ JsusFx::JsusFx(JsusFxPathLibrary &_pathLibrary)
 	
     fileAPI = nullptr;
 		
-    midi = nullptr;
-	midiSize = 0;
-	
-	midiSendBuffer = nullptr;
-	midiSendBufferCapacity = 0;
-	midiSendBufferSize = 0;
+    midiInput.reserve(8192);
+    midiOutput.reserve(8192);
+    midiInputReadPos = 0;
 	
 	gfx = nullptr;
     gfx_w = 0;
@@ -1021,15 +989,42 @@ void JsusFx::moveSlider(int idx, float value, int normalizeSlider) {
     computeSlider |= sliders[idx].setValue(value);
 }
 
-void JsusFx::setMidi(const void * _midi, int numBytes) {
-	midi = (uint8_t*)_midi;
-	midiSize = numBytes;
+bool JsusFx::addInputEvent(int offset, const uint8_t *data, int length)
+{
+	EventHeader event;
+	event.offset = offset;
+	event.length = length;
+	std::copy((char*)&event, (char*)&event + sizeof(event), std::back_inserter(midiInput));
+	std::copy(data, data + length, std::back_inserter(midiInput));
+	return true;
 }
 
-void JsusFx::setMidiSendBuffer(void * buffer, int numBytes) {
-	midiSendBuffer = (uint8_t*)buffer;
-	midiSendBufferCapacity = numBytes;
-	midiSendBufferSize = 0;
+bool JsusFx::addOutputEvent(int offset, const uint8_t *data, int length)
+{
+	EventHeader event;
+	event.offset = offset;
+	event.length = length;
+	std::copy((char*)&event, (char*)&event + sizeof(event), std::back_inserter(midiOutput));
+	std::copy(data, data + length, std::back_inserter(midiOutput));
+	return true;
+}
+
+bool JsusFx::iterateOutputEvents(size_t &iterPos, int &offset, const uint8_t *&data, int &length)
+{
+	if (iterPos < midiOutput.size()) {
+		EventHeader event;
+		data = &midiOutput[iterPos];
+		memcpy(&event, data, sizeof(event));
+		data += sizeof(event);
+		iterPos += sizeof(event) + event.length;
+		
+		offset = event.offset;
+		length = event.length;
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
 void JsusFx::setTransportValues(
@@ -1049,6 +1044,9 @@ void JsusFx::setTransportValues(
 }
 
 bool JsusFx::process(const float **input, float **output, int size, int numInputChannels, int numOutputChannels) {
+    midiInputReadPos = 0;
+    midiOutput.clear();
+	
     if ( codeSample == NULL )
         return false;
 
@@ -1070,10 +1068,15 @@ bool JsusFx::process(const float **input, float **output, int size, int numInput
         	output[c][i] = *spl[c];
     }
 	
+	midiInput.clear();
+	
     return true;
 }
 
 bool JsusFx::process64(const double **input, double **output, int size, int numInputChannels, int numOutputChannels) {
+    midiInputReadPos = 0;
+    midiOutput.clear();
+	
     if ( codeSample == NULL )
         return false;
 
@@ -1094,6 +1097,8 @@ bool JsusFx::process64(const double **input, double **output, int size, int numI
     	for (int c = 0; c < numOutputChannels; ++c)
         	output[c][i] = *spl[c];
     }
+	
+	midiInput.clear();
 	
     return true;
 }
