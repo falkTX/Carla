@@ -54,6 +54,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 OBJS          = $(OBJDIR)/JackBridge1.cpp.o          $(OBJDIR)/JackBridge2.cpp.o
+OBJS_min      = $(OBJDIR)/JackBridge2.cpp.o
 OBJS_arm32    = $(OBJDIR)/JackBridge1.cpp.arm32.o    $(OBJDIR)/JackBridge2.cpp.arm32.o
 OBJS_posix32  = $(OBJDIR)/JackBridge1.cpp.posix32.o  $(OBJDIR)/JackBridge2.cpp.posix32.o
 OBJS_posix64  = $(OBJDIR)/JackBridge1.cpp.posix64.o  $(OBJDIR)/JackBridge2.cpp.posix64.o
@@ -69,7 +70,7 @@ OBJS_win32e   = $(OBJDIR)/JackBridgeExport.cpp.win32e.o
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-all: $(MODULEDIR)/$(MODULENAME).a
+all: $(MODULEDIR)/$(MODULENAME).a $(MODULEDIR)/$(MODULENAME).min.a
 
 ifeq ($(WIN32),true)
 posix32:
@@ -109,6 +110,12 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME).min.a: $(OBJS_min)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).min.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 

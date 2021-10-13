@@ -101,7 +101,8 @@ uint CarlaEngine::getDriverCount()
 #ifndef BUILD_BRIDGE
 # ifdef USING_JUCE_AUDIO_DEVICES
     count += getJuceApiCount();
-# else
+# endif
+# ifdef USING_RTAUDIO
     count += getRtAudioApiCount();
 # endif
 #endif
@@ -127,7 +128,8 @@ const char* CarlaEngine::getDriverName(const uint index2)
             return getJuceApiName(index);
         index -= count;
     }
-# else
+# endif
+# ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
@@ -161,7 +163,8 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
             return getJuceApiDeviceNames(index);
         index -= count;
     }
-# else
+# endif
+# ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
@@ -198,7 +201,8 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
             return getJuceDeviceInfo(index, deviceName);
         index -= count;
     }
-# else
+# endif
+# ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
@@ -231,7 +235,8 @@ bool CarlaEngine::showDriverDeviceControlPanel(const uint index2, const char* co
             return showJuceDeviceControlPanel(index, deviceName);
         index -= count;
     }
-# else
+# endif
+# ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
@@ -281,7 +286,8 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newJuce(AUDIO_API_DIRECTSOUND);
     if (std::strcmp(driverName, "WASAPI") == 0 || std::strcmp(driverName, "Windows Audio") == 0)
         return newJuce(AUDIO_API_WASAPI);
-# else
+# endif
+# ifdef USING_RTAUDIO
     // -------------------------------------------------------------------
     // common
 
