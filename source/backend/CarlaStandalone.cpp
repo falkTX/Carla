@@ -1960,6 +1960,18 @@ float carla_get_internal_parameter_value(CarlaHostHandle handle, uint pluginId, 
 
 // --------------------------------------------------------------------------------------------------------------------
 
+uint32_t carla_get_plugin_latency(CarlaHostHandle handle, uint pluginId)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0);
+
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+         return plugin->getLatency();
+
+    return 0;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
 const float* carla_get_peak_values(CarlaHostHandle handle, uint pluginId)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, nullptr);
