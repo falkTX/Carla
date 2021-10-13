@@ -184,4 +184,4 @@ public:
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#endif // CARLA_DSSI_UTILS_HPP_INCLUDED
+#endif // CARLA_JSFX_UTILS_HPP_INCLUDED
