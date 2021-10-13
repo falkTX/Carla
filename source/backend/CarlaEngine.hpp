@@ -1341,6 +1341,7 @@ protected:
      */
     void setPluginPeaksRT(uint pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
 
+public:
     /*!
      * Common save project function for main engine and plugin.
      */
@@ -1351,6 +1352,7 @@ protected:
      */
     bool loadProjectInternal(water::XmlDocument& xmlDoc, bool alwaysLoadConnections);
 
+protected:
     // -------------------------------------------------------------------
     // Helper functions
 

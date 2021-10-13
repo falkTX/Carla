@@ -198,6 +198,10 @@ public:
     void swapWith (MemoryBlock& other) noexcept;
 
     //==============================================================================
+    /** Release this object's data ownership, returning the data pointer. */
+    void* release () noexcept;
+
+    //==============================================================================
     /** Attempts to parse the contents of the block as a zero-terminated UTF8 string. */
     String toString() const;
 
