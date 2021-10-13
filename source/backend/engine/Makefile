@@ -42,7 +42,9 @@ OBJSa = $(OBJS) \
 ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 OBJSa += \
 	$(OBJDIR)/CarlaEngineJuce.cpp.o
-else
+endif
+
+ifeq ($(USING_RTAUDIO),true)
 OBJSa += \
 	$(OBJDIR)/CarlaEngineRtAudio.cpp.o
 endif

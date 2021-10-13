@@ -58,7 +58,7 @@ STANDALONE_LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 endif
 
-ifneq ($(USING_JUCE_AUDIO_DEVICES),true)
+ifeq ($(USING_RTAUDIO),true)
 STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 endif
@@ -93,7 +93,7 @@ STANDALONE_LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
 endif
 
-ifneq ($(USING_JUCE_AUDIO_DEVICES),true)
+ifeq ($(USING_RTAUDIO),true)
 STANDALONE_LINK_FLAGS += $(RTAUDIO_LIBS)
 STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
 endif
