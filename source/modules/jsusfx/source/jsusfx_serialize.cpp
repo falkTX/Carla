@@ -63,7 +63,7 @@ void JsusFxSerializer_Basic::saveSliders(const JsusFx & jsusFx, JsusFxSerializat
 {
 	for (int i = 0; i < jsusFx.kMaxSliders; ++i)
 	{
-		if (jsusFx.sliders[i].exists && jsusFx.sliders[i].getValue() != jsusFx.sliders[i].def)
+		if (jsusFx.sliders[i].exists /*&& jsusFx.sliders[i].getValue() != jsusFx.sliders[i].def*/)
 		{
 			serializationData.addSlider(i, jsusFx.sliders[i].getValue());
 		}
