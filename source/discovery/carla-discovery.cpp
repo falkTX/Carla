@@ -86,6 +86,7 @@
 #ifndef BUILD_BRIDGE
 # include "water/text/StringArray.h"
 # include "CarlaDssiUtils.cpp"
+# include "CarlaJsfxUtils.hpp"
 # include "../backend/utils/CachedPlugins.cpp"
 #else
 # include "CarlaDssiUtils.hpp"
@@ -1655,6 +1656,88 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
 #endif
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
+#ifndef BUILD_BRIDGE
+static void do_jsfx_check(const char* const filename, bool doInit)
+{
+    JsusFx::init();
+
+    // TODO(jsfx) determinine the import search path correctly
+
+    water::File file(filename);
+    CarlaJsusFxPathLibrary pathLibrary(file);
+
+    CarlaJsusFx effect(pathLibrary);
+    effect.setQuiet(true);
+
+    uint hints = 0;
+
+    if (doInit)
+    {
+        int compileFlags =
+            JsusFx::kCompileFlag_CompileSerializeSection |
+            JsusFx::kCompileFlag_CompileGraphicsSection;
+
+        if (!effect.compile(pathLibrary, filename, compileFlags))
+        {
+            DISCOVERY_OUT("error", "Cannot compile the JSFX plugin");
+            return;
+        }
+
+#if 0 // TODO(jsfx) when supporting custom graphics
+        if (effect.hasGraphicsSection())
+            hints |= PLUGIN_HAS_CUSTOM_UI;
+        // TODO(jsfx) there should be a way to check this without compiling
+#endif
+    }
+    else
+    {
+        if (!effect.readHeader(pathLibrary, filename))
+        {
+            DISCOVERY_OUT("error", "Cannot read the JSFX header");
+            return;
+        }
+    }
+
+    // jsusfx lacks validity checks currently,
+    // ensure we have at least the description (required)
+    if (effect.desc[0] == '\0')
+    {
+        DISCOVERY_OUT("error", "The JSFX header is invalid");
+        return;
+    }
+
+    water::String baseName = water::File(filename).getFileNameWithoutExtension();
+
+    // NOTE: count can be -1 in case of "none"
+    uint32_t audioIns = (effect.numInputs == -1) ? 0 : (uint32_t)effect.numInputs;
+    uint32_t audioOuts = (effect.numOutputs == -1) ? 0 : (uint32_t)effect.numOutputs;
+
+    uint32_t midiIns = 1;
+    uint32_t midiOuts = 1;
+
+    uint32_t parameters = 0;
+    for (uint32_t sliderIndex = 0; sliderIndex < JsusFx::kMaxSliders; ++sliderIndex)
+    {
+        if (effect.sliders[sliderIndex].exists)
+            ++parameters;
+    }
+
+    DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("build", BINARY_NATIVE);
+    DISCOVERY_OUT("hints", hints);
+    DISCOVERY_OUT("name", baseName.toRawUTF8());
+    DISCOVERY_OUT("label", filename);
+    DISCOVERY_OUT("audio.ins", audioIns);
+    DISCOVERY_OUT("audio.outs", audioOuts);
+    DISCOVERY_OUT("midi.ins", midiIns);
+    DISCOVERY_OUT("midi.outs", midiOuts);
+    DISCOVERY_OUT("parameters.ins", parameters);
+    DISCOVERY_OUT("end", "------------");
+}
+#endif
+
 // ------------------------------ main entry point ------------------------------
 
 int main(int argc, char* argv[])
@@ -1824,6 +1907,12 @@ int main(int argc, char* argv[])
         DISCOVERY_OUT("error", "AU support not available");
 #endif
          break;
+
+#ifndef BUILD_BRIDGE
+    case PLUGIN_JSFX:
+        do_jsfx_check(filename, doInit);
+        break;
+#endif
 
     case PLUGIN_DLS:
     case PLUGIN_GIG:

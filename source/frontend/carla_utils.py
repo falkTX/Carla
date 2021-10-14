@@ -43,6 +43,7 @@ from carla_backend import (
     PLUGIN_VST2,
     PLUGIN_VST3,
     PLUGIN_AU,
+    PLUGIN_JSFX,
     PLUGIN_DLS,
     PLUGIN_GIG,
     PLUGIN_SF2,
@@ -84,6 +85,8 @@ def getPluginTypeAsString(ptype):
         return "VST3"
     if ptype == PLUGIN_AU:
         return "AU"
+    if ptype == PLUGIN_JSFX:
+        return "JSFX"
     if ptype == PLUGIN_DLS:
         return "DLS"
     if ptype == PLUGIN_GIG:
@@ -120,6 +123,8 @@ def getPluginTypeFromString(stype):
         return PLUGIN_VST3
     if stype in ("au", "audiounit"):
         return PLUGIN_AU
+    if stype == "jsfx":
+        return PLUGIN_JSFX
     if stype == "dls":
         return PLUGIN_DLS
     if stype == "gig":

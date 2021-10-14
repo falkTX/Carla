@@ -514,6 +514,14 @@ JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
 endif # USING_JUCE
 endif # WIN32
 
+EEL2_FLAGS  = -I$(CWD)/modules/eel2/source
+EEL2_FLAGS += -DEELSCRIPT_NO_NET -DEELSCRIPT_NO_LICE -DWDL_FFT_REALSIZE=8
+ifeq ($(CPU_I386_OR_X86_64)$(CPU_ARM_OR_AARCH64),)
+EEL2_FLAGS += -DEEL_TARGET_PORTABLE
+endif
+
+JSUSFX_FLAGS  = $(EEL2_FLAGS) -I$(CWD)/modules/jsusfx/source
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(STATIC_PLUGIN_TARGET),true)

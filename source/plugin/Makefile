@@ -44,6 +44,8 @@ ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 endif
 
+BUILD_CXX_FLAGS += $(JSUSFX_FLAGS)
+
 ifeq ($(HAVE_X11),true)
 BUILD_CXX_FLAGS += $(X11_FLAGS)
 endif
@@ -84,6 +86,9 @@ ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 endif
+
+LIBS += $(MODULEDIR)/jsusfx.a
+LIBS += $(MODULEDIR)/eel2.a
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Link flags
