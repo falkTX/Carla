@@ -425,7 +425,7 @@ class RackListWidget(QListWidget):
         r0,g0,b0,_ = bg_color.getRgb()
         r1,g1,b1,_ = text_color.getRgb()
 
-        self.rail_col = QColor((r0*3+r1)/4, (g0*3+g1)/4, (b0*3+b1)/4)
+        self.rail_col = QColor(int((r0*3+r1)/4), int((g0*3+g1)/4), int((b0*3+b1)/4))
         self.edge_col = (self.rail_col if self.rail_col.blackF() > base_color.blackF() else base_color).darker(115)
 
 # ------------------------------------------------------------------------------------------------------------

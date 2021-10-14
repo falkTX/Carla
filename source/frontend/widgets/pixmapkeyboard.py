@@ -628,7 +628,7 @@ class PixmapKeyboardHArea(QScrollArea):
         self.setWidget(self.keyboard)
 
         self.setEnabled(False)
-        self.setFixedHeight(self.keyboard.height() + self.horizontalScrollBar().height()/2 + 2)
+        self.setFixedHeight(int(self.keyboard.height() + self.horizontalScrollBar().height()/2 + 2))
 
         QTimer.singleShot(0, self.slot_initScrollbarValue)
 
@@ -639,7 +639,7 @@ class PixmapKeyboardHArea(QScrollArea):
 
     @pyqtSlot()
     def slot_initScrollbarValue(self):
-        self.horizontalScrollBar().setValue(self.horizontalScrollBar().maximum()/2)
+        self.horizontalScrollBar().setValue(int(self.horizontalScrollBar().maximum()/2))
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Testing
