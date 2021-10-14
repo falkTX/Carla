@@ -123,6 +123,7 @@ private:
     MemoryBlock internalBlock;
     MemoryBlock& blockToUse;
     size_t position, size;
+    bool usingInternalBlock;
 
     void trimExternalBlockSize();
     char* prepareToWrite (size_t);
