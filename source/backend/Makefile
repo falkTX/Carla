@@ -13,8 +13,10 @@ OBJS_standalone = \
 	$(OBJDIR)/CarlaStandalone.cpp.o \
 	$(OBJDIR)/CarlaStandaloneNSM.cpp.o
 
+ifneq ($(STATIC_PLUGIN_TARGET),true)
 TARGETS = \
 	$(BINDIR)/libcarla_standalone2$(LIB_EXT)
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 

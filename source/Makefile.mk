@@ -222,6 +222,10 @@ ifeq ($(USING_RTAUDIO),true)
 BASE_FLAGS += -DUSING_RTAUDIO
 endif
 
+ifeq ($(STATIC_PLUGIN_TARGET),true)
+BASE_FLAGS += -DSTATIC_PLUGIN_TARGET
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Set app extension
 
