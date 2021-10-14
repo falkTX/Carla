@@ -19,10 +19,13 @@
 #define CARLA_JSFX_UTILS_HPP_INCLUDED
 
 #include "CarlaUtils.hpp"
+#include "CarlaString.hpp"
+#include "CarlaBase64Utils.hpp"
 
 #include "water/files/File.h"
 #include "water/xml/XmlElement.h"
 #include "water/xml/XmlDocument.h"
+#include "water/streams/MemoryInputStream.h"
 #include "water/streams/MemoryOutputStream.h"
 
 #pragma GCC diagnostic push
@@ -129,10 +132,16 @@ public:
         }
 
         std::size_t numVars = data.vars.size();
-        for (std::size_t i = 0; i < numVars; ++i)
+        if (numVars > 0)
         {
-            water::XmlElement *var = new water::XmlElement("Var");
-            var->setAttribute("value", data.vars[i]);
+            water::MemoryOutputStream blob;
+            for (std::size_t i = 0; i < numVars; ++i)
+            {
+                blob.writeFloat(data.vars[i]);
+            }
+            const CarlaString base64 = CarlaString::asBase64(blob.getData(), blob.getDataSize());
+            water::XmlElement *var = new water::XmlElement("Serialization");
+            var->addTextElement(base64.buffer());
             root.addChildElement(var);
         }
 
@@ -166,12 +175,16 @@ public:
                 slider.value = child->getDoubleAttribute("value");
                 data.sliders.push_back(slider);
             }
-            else if (child->getTagName() == "Var")
+            else if (child->getTagName() == "Serialization")
             {
-                CARLA_SAFE_ASSERT_CONTINUE(child->hasAttribute("value"));
-
-                float value = child->getDoubleAttribute("value");
-                data.vars.push_back(value);
+                std::vector<uint8_t> chunk = carla_getChunkFromBase64String(child->getAllSubText().toRawUTF8());
+                water::MemoryInputStream blob(chunk.data(), chunk.size(), false);
+                size_t numVars = chunk.size() / sizeof(float);
+                data.vars.resize(numVars);
+                for (std::size_t i = 0; i < numVars; ++i)
+                {
+                    data.vars[i] = blob.readFloat();
+                }
             }
             else
             {
