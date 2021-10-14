@@ -38,9 +38,8 @@ ALL_LIBS += $(MODULEDIR)/carla_engine.a
 endif
 ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
 ALL_LIBS += $(MODULEDIR)/carla_plugin.a
-ifneq ($(STATIC_PLUGIN_TARGET),true)
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
-else
+ifeq ($(STATIC_PLUGIN_TARGET),true)
 ALL_LIBS += $(MODULEDIR)/jackbridge.min.a
 endif
 ALL_LIBS += $(MODULEDIR)/native-plugins.a
