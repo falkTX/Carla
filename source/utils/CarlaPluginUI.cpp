@@ -48,7 +48,14 @@ typedef void (*EventProcPtr)(XEvent* ev);
 
 static const uint X11Key_Escape = 9;
 static bool gErrorTriggered = false;
+# if defined(__GNUC__) && (__GNUC__ >= 5) && ! defined(__clang__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+# endif
 static pthread_mutex_t gErrorMutex = PTHREAD_MUTEX_INITIALIZER;
+# if defined(__GNUC__) && (__GNUC__ >= 5) && ! defined(__clang__)
+#  pragma GCC diagnostic pop
+# endif
 
 static int temporaryErrorHandler(Display*, XErrorEvent*)
 {
