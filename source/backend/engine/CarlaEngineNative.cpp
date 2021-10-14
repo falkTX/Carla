@@ -160,6 +160,7 @@ public:
           kHasMidiOut(withMidiOut),
           fIsActive(false),
           fIsRunning(false),
+          fUsesEmbed(false),
           fUiServer(this),
           fLastScaleFactor(1.0f),
           fLastProjectFolder(),
@@ -346,7 +347,7 @@ public:
                 {
                     fParameters[rindex] = valuef;
 
-                    if (fUiServer.isPipeRunning())
+                    if (fUsesEmbed || fUiServer.isPipeRunning())
                     {
                         pHost->ui_parameter_changed(pHost->handle, rindex, valuef);
                     }
@@ -1701,6 +1702,9 @@ public:
             return 0;
         case NATIVE_PLUGIN_OPCODE_UI_MIDI_EVENT:
             return 0;
+        case NATIVE_PLUGIN_OPCODE_HOST_USES_EMBED:
+            handlePtr->fUsesEmbed = true;
+            return 0;
         }
 
         return 0;
@@ -1766,7 +1770,7 @@ private:
 
     const bool kIsPatchbay; // rack if false
     const bool kHasMidiOut;
-    bool fIsActive, fIsRunning;
+    bool fIsActive, fIsRunning, fUsesEmbed;
     CarlaEngineNativeUI fUiServer;
 
     float fParameters[kNumInParams+kNumOutParams];
@@ -2881,7 +2885,9 @@ const char*        getJuceApiName(const uint)        { return nullptr; }
 const char* const* getJuceApiDeviceNames(const uint) { return nullptr; }
 const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
 bool               showJuceDeviceControlPanel(const uint, const char* const)   { return false; }
-#else
+#endif
+
+#ifdef USING_RTAUDIO
 CarlaEngine*       newRtAudio(const AudioApi)           { return nullptr; }
 uint               getRtAudioApiCount()                 { return 0;       }
 const char*        getRtAudioApiName(const uint)        { return nullptr; }
