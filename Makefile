@@ -22,7 +22,7 @@ else
 MODULEDIR := $(CURDIR)/build/modules/Release
 endif
 
-VERSION   := 2.4.0
+VERSION   := 2.4.1
 
 -include Makefile.user.mk
 
