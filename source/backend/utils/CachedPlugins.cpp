@@ -178,15 +178,23 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
             lilv_node_free(nameNode);
         }
 
-        if (const char* const author = lilvPlugin.get_author_name().as_string())
-            smaker = author;
+        if (LilvNode* const authorNode = lilv_plugin_get_author_name(lilvPlugin.me))
+        {
+            if (const char* const author = lilv_node_as_string(authorNode))
+                smaker = author;
+            lilv_node_free(authorNode);
+        }
 
         Lilv::Nodes licenseNodes(lilvPlugin.get_value(lv2World.doap_license));
 
         if (licenseNodes.size() > 0)
         {
-            if (const char* const license = licenseNodes.get_first().as_string())
-                slicense = license;
+            if (LilvNode* const licenseNode = lilv_nodes_get_first(licenseNodes.me))
+            {
+                if (const char* const license = lilv_node_as_string(licenseNode))
+                    slicense = license;
+                // lilv_node_free(licenseNode);
+            }
         }
 
         lilv_nodes_free(const_cast<LilvNodes*>(licenseNodes.me));
