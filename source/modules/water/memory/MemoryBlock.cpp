@@ -168,6 +168,13 @@ void MemoryBlock::swapWith (MemoryBlock& other) noexcept
 }
 
 //==============================================================================
+void* MemoryBlock::release () noexcept
+{
+    size = 0;
+    return data.release();
+}
+
+//==============================================================================
 void MemoryBlock::fillWith (const uint8 value) noexcept
 {
     memset (data, (int) value, size);

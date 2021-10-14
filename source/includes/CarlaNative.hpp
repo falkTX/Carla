@@ -566,6 +566,8 @@ public:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
             return handlePtr->uiMIDIEvent(static_cast<uint8_t>(index),
                                           static_cast<uint8_t*>(ptr));
+        case NATIVE_PLUGIN_OPCODE_HOST_USES_EMBED:
+            return 0;
         }
 
         return 0;

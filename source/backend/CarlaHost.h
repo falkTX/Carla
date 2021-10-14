@@ -894,6 +894,13 @@ CARLA_EXPORT float carla_get_current_parameter_value(CarlaHostHandle handle, uin
 CARLA_EXPORT float carla_get_internal_parameter_value(CarlaHostHandle handle, uint pluginId, int32_t parameterId);
 
 /*!
+ * Get a plugin's internal latency, in samples.
+ * @param pluginId    Plugin
+ * @see InternalParameterIndex
+ */
+CARLA_EXPORT uint32_t carla_get_plugin_latency(CarlaHostHandle handle, uint pluginId);
+
+/*!
  * Get a plugin's peak values.
  * @param pluginId Plugin
  */

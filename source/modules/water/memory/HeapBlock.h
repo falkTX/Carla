@@ -253,6 +253,14 @@ public:
         zeromem (data, sizeof (ElementType) * numElements);
     }
 
+    /** Release this object's data ownership, returning the data pointer. */
+    ElementType* release() noexcept
+    {
+        ElementType* const r = data;
+        data = nullptr;
+        return r;
+    }
+
     /** This typedef can be used to get the type of the heapblock's elements. */
     typedef ElementType Type;
 

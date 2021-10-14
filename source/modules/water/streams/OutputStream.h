@@ -27,6 +27,7 @@
 #define WATER_OUTPUTSTREAM_H_INCLUDED
 
 #include "../water.h"
+#include "../text/String.h"
 
 namespace water {
 

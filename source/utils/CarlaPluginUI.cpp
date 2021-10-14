@@ -48,6 +48,7 @@ typedef void (*EventProcPtr)(XEvent* ev);
 
 static const uint X11Key_Escape = 9;
 static bool gErrorTriggered = false;
+static pthread_mutex_t gErrorMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int temporaryErrorHandler(Display*, XErrorEvent*)
 {
@@ -153,47 +154,65 @@ public:
             {
                 if (! fSetSizeCalledAtLeastOnce)
                 {
-                    XSizeHints hints;
-                    carla_zeroStruct(hints);
+                    int width = 0;
+                    int height = 0;
 
-                    if (XGetNormalHints(fDisplay, childWindow, &hints))
+                    XWindowAttributes attrs;
+                    carla_zeroStruct(attrs);
+
+                    pthread_mutex_lock(&gErrorMutex);
+                    const XErrorHandler oldErrorHandler = XSetErrorHandler(temporaryErrorHandler);
+                    gErrorTriggered = false;
+
+                    if (XGetWindowAttributes(fDisplay, childWindow, &attrs))
                     {
-                        int width = 0;
-                        int height = 0;
-
-                        if (hints.flags & PSize)
-                        {
-                            width = hints.width;
-                            height = hints.height;
-                        }
-                        else if (hints.flags & PBaseSize)
-                        {
-                            width = hints.base_width;
-                            height = hints.base_height;
-                        }
-                        else if (hints.flags & PMinSize)
-                        {
-                            width = hints.min_width;
-                            height = hints.min_height;
-                        }
-
-                        if (width > 0 && height > 0)
-                            setSize(static_cast<uint>(width), static_cast<uint>(height), false);
+                        width = attrs.width;
+                        height = attrs.height;
                     }
+
+                    XSetErrorHandler(oldErrorHandler);
+                    pthread_mutex_unlock(&gErrorMutex);
+
+                    if (width == 0 && height == 0)
+                    {
+                        XSizeHints sizeHints;
+                        carla_zeroStruct(sizeHints);
+
+                        if (XGetNormalHints(fDisplay, childWindow, &sizeHints))
+                        {
+                            if (sizeHints.flags & PSize)
+                            {
+                                width = sizeHints.width;
+                                height = sizeHints.height;
+                            }
+                            else if (sizeHints.flags & PBaseSize)
+                            {
+                                width = sizeHints.base_width;
+                                height = sizeHints.base_height;
+                            }
+                        }
+                    }
+
+                    if (width > 1 && height > 1)
+                        setSize(static_cast<uint>(width), static_cast<uint>(height), false);
                 }
 
                 const Atom _xevp = XInternAtom(fDisplay, "_XEventProc", False);
 
-                gErrorTriggered = false;
+                pthread_mutex_lock(&gErrorMutex);
                 const XErrorHandler oldErrorHandler(XSetErrorHandler(temporaryErrorHandler));
+                gErrorTriggered = false;
 
                 Atom actualType;
                 int actualFormat;
                 ulong nitems, bytesAfter;
                 uchar* data = nullptr;
 
-                XGetWindowProperty(fDisplay, childWindow, _xevp, 0, 1, False, AnyPropertyType, &actualType, &actualFormat, &nitems, &bytesAfter, &data);
+                XGetWindowProperty(fDisplay, childWindow, _xevp, 0, 1, False, AnyPropertyType,
+                                   &actualType, &actualFormat, &nitems, &bytesAfter, &data);
+
                 XSetErrorHandler(oldErrorHandler);
+                pthread_mutex_unlock(&gErrorMutex);
 
                 if (nitems == 1 && ! gErrorTriggered)
                 {
@@ -255,8 +274,9 @@ public:
                         {
                             if (! fChildWindowConfigured)
                             {
-                                gErrorTriggered = false;
+                                pthread_mutex_lock(&gErrorMutex);
                                 const XErrorHandler oldErrorHandler = XSetErrorHandler(temporaryErrorHandler);
+                                gErrorTriggered = false;
 
                                 XSizeHints sizeHints;
                                 carla_zeroStruct(sizeHints);
@@ -273,6 +293,7 @@ public:
 
                                 fChildWindowConfigured = true;
                                 XSetErrorHandler(oldErrorHandler);
+                                pthread_mutex_unlock(&gErrorMutex);
                             }
 
                             if (fChildWindow != 0)

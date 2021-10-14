@@ -2049,6 +2049,8 @@ public:
         fUI.handle = fUI.descriptor->instantiate(fUI.descriptor, fRdfDescriptor->URI, fUI.rdfDescriptor->Bundle,
                                                  carla_lv2_ui_write_function, this, &fUI.widget, fFeatures);
 
+        updateUi();
+
         return fUI.widget;
     }
 #endif
