@@ -840,6 +840,7 @@ public:
         fFileAPI = new CarlaJsusFxFileAPI;
         fEffect = new CarlaJsusFx(*fPathLibrary);
         fEffect->fileAPI = fFileAPI;
+        fFileAPI->init(fEffect->m_vm);
         fFilename.assign(filename);
 
         // ---------------------------------------------------------------
