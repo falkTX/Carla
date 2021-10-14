@@ -2806,7 +2806,7 @@ class HostWindow(QMainWindow):
         fg_color = rack_pal.text().color()
         bg_value = 1.0 - bg_color.blackF()
         if bg_value != 0.0 and bg_value < min_value:
-            pad_color = bg_color.lighter(100*min_value/bg_value*value_fix)
+            pad_color = bg_color.lighter(int(100*min_value/bg_value*value_fix))
         else:
             pad_color = QColor.fromHsvF(0.0, 0.0, min_value*value_fix)
 
