@@ -51,6 +51,7 @@ HINSTANCE getCurrentModuleInstanceHandle() noexcept
 # include "maths/Random.cpp"
 # include "memory/MemoryBlock.cpp"
 # include "streams/InputStream.cpp"
+# include "streams/MemoryInputStream.cpp"
 # include "streams/MemoryOutputStream.cpp"
 # include "streams/OutputStream.cpp"
 #endif

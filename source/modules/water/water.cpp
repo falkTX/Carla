@@ -71,6 +71,7 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD, LPVOID)
 
 #include "streams/FileInputSource.cpp"
 #include "streams/InputStream.cpp"
+#include "streams/MemoryInputStream.cpp"
 #include "streams/MemoryOutputStream.cpp"
 #include "streams/OutputStream.cpp"
 
