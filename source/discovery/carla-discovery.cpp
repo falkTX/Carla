@@ -1673,6 +1673,16 @@ static void do_jsfx_check(const char* const filename, bool doInit)
 
     uint hints = 0;
 
+    ///
+    JsusFxFileAPI_Basic fileAPI;
+    effect.fileAPI = &fileAPI;
+    fileAPI.init(effect.m_vm);
+
+    JsusFxGfx gfxAPI;
+    effect.gfx = &gfxAPI;
+    gfxAPI.init(effect.m_vm);
+
+    ///
     if (doInit)
     {
         int compileFlags =

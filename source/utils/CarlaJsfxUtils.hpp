@@ -30,6 +30,7 @@
 #pragma GCC diagnostic ignored "-Wignored-attributes"
 #include "jsusfx.h"
 #include "jsusfx_file.h"
+#include "jsusfx_gfx.h"
 #include "jsusfx_serialize.h"
 #pragma GCC diagnostic pop
 
