@@ -106,7 +106,8 @@ typedef enum {
     NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED     = 4, /** uses ptr                 */
     NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE = 5, /** nothing                  */
     NATIVE_PLUGIN_OPCODE_IDLE                = 6, /** nothing                  */
-    NATIVE_PLUGIN_OPCODE_UI_MIDI_EVENT       = 7  /** uses ptr                 */
+    NATIVE_PLUGIN_OPCODE_UI_MIDI_EVENT       = 7, /** uses ptr                 */
+    NATIVE_PLUGIN_OPCODE_HOST_USES_EMBED     = 8  /** nothing                  */
 } NativePluginDispatcherOpcode;
 
 typedef enum {
