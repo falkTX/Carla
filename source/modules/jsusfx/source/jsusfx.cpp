@@ -126,6 +126,26 @@ static EEL_F NSEEL_CGEN_CALL _midirecv(void *opaque, INT_PTR np, EEL_F **parms)
 	return 1;
 }
 
+// determine the length of a midi message according to its status byte
+// if length is dynamic, returns 0
+unsigned midi_sizeof(uint8_t id)
+{
+	if ((id >> 7) == 0) {
+		return 0;
+	}
+	else if ((id >> 4) != 0b1111) {
+		static const uint8_t sizetable[8] = {
+			3, 3, 3, 3, 2, 2, 3 };
+		return sizetable[(id >> 4) & 0b111];
+	}
+	else {
+		static const uint8_t sizetable[16] = {
+			0, 2, 3, 2, 1, 1, 1, 0,
+			1, 1, 1, 1, 1, 1, 1, 1 };
+		return sizetable[id & 0b1111];
+	}
+}
+
 static EEL_F NSEEL_CGEN_CALL _midisend(void *opaque, INT_PTR np, EEL_F **parms)
 {
 	JsusFx *ctx = REAPER_GET_INTERFACE(opaque);
@@ -151,7 +171,14 @@ static EEL_F NSEEL_CGEN_CALL _midisend(void *opaque, INT_PTR np, EEL_F **parms)
 	}
 	
 	const uint8_t data[] = {msg1, msg2, msg3};
-	if (!ctx->addOutputEvent(offset, data, 3))
+
+	// NOTE(jpc) correct the length of the message
+	// in case it should be less than 3 bytes
+	int length = midi_sizeof(msg1);
+	if (length == 0) // don't know what message this is
+		length = 3;
+
+	if (!ctx->addOutputEvent(offset, data, length))
 		return 0;
 	
 	return msg1;
