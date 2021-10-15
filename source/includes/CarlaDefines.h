@@ -270,7 +270,7 @@ private:                                        \
 #endif
 
 /* Define CARLA_API */
-#ifdef BUILD_BRIDGE
+#if defined(BUILD_BRIDGE) || defined(STATIC_PLUGIN_TARGET)
 # define CARLA_API
 #else
 # if defined(CARLA_OS_WIN) && ! defined(__WINE__)

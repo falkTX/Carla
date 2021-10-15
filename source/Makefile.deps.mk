@@ -509,6 +509,7 @@ WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleau
 ifeq ($(USING_JUCE),true)
 JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
 JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+JUCE_EVENTS_LIBS           = -lole32
 JUCE_GRAPHICS_LIBS         = -lgdi32
 JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
 endif # USING_JUCE
