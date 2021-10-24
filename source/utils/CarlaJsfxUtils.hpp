@@ -86,18 +86,52 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
-class CarlaJsusFxPathLibrary : public JsusFxPathLibrary_Basic
+class CarlaJsfxUnit
 {
 public:
-    explicit CarlaJsusFxPathLibrary(const water::File &file)
-        : JsusFxPathLibrary_Basic(determineDataRoot(file).c_str())
+    CarlaJsfxUnit() = default;
+
+    CarlaJsfxUnit(const water::File& rootPath, const water::File& filePath)
+        : fRootPath(rootPath), fFileId(filePath.getRelativePathFrom(rootPath))
     {
+#ifdef _WIN32
+        fFileId.replaceCharacter('\\', '/');
+#endif
+    }
+
+    explicit operator bool() const
+    {
+        return fFileId.isNotEmpty();
+    }
+
+    const water::File& getRootPath() const
+    {
+        return fRootPath;
+    }
+
+    const water::String& getFileId() const
+    {
+        return fFileId;
+    }
+
+    water::File getFilePath() const
+    {
+        return fRootPath.getChildFile(fFileId);
     }
 
 private:
-    static std::string determineDataRoot(const water::File &file)
+    water::File fRootPath;
+    water::String fFileId;
+};
+
+// -------------------------------------------------------------------------------------------------------------------
+
+class CarlaJsusFxPathLibrary : public JsusFxPathLibrary_Basic
+{
+public:
+    explicit CarlaJsusFxPathLibrary(const CarlaJsfxUnit &unit)
+        : JsusFxPathLibrary_Basic(unit.getRootPath().getFullPathName().toRawUTF8())
     {
-        return file.getParentDirectory().getFullPathName().toRawUTF8();
     }
 };
 

@@ -1664,10 +1664,11 @@ static void do_jsfx_check(const char* const filename, bool doInit)
 {
     JsusFx::init();
 
-    // TODO(jsfx) determinine the import search path correctly
+    const water::File file = File(CharPointer_UTF8(filename));
+    const water::File rootPath(file.getParentDirectory());
 
-    water::File file(filename);
-    CarlaJsusFxPathLibrary pathLibrary(file);
+    const CarlaJsfxUnit unit(rootPath, file);
+    CarlaJsusFxPathLibrary pathLibrary(unit);
 
     CarlaJsusFx effect(pathLibrary);
     effect.setQuiet(true);
@@ -1683,29 +1684,9 @@ static void do_jsfx_check(const char* const filename, bool doInit)
     effect.gfx = &gfxAPI;
     gfxAPI.init(effect.m_vm);
 
-    ///
-    if (doInit)
-    {
-        int compileFlags =
-            JsusFx::kCompileFlag_CompileSerializeSection |
-            JsusFx::kCompileFlag_CompileGraphicsSection;
+    // do not attempt to compile it, because the import path is not known
+    (void)doInit;
 
-        {
-            const CarlaScopedLocale csl;
-            if (!effect.compile(pathLibrary, filename, compileFlags))
-            {
-                DISCOVERY_OUT("error", "Cannot compile the JSFX plugin");
-                return;
-            }
-        }
-
-#if 0 // TODO(jsfx) when supporting custom graphics
-        if (effect.hasGraphicsSection())
-            hints |= PLUGIN_HAS_CUSTOM_UI;
-        // TODO(jsfx) there should be a way to check this without compiling
-#endif
-    }
-    else
     {
         const CarlaScopedLocale csl;
         if (!effect.readHeader(pathLibrary, filename))
