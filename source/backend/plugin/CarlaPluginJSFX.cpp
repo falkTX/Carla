@@ -858,11 +858,13 @@ public:
             if (const char* paths = pData->engine->getOptions().pathJSFX)
                 splitPaths = StringArray::fromTokens(CharPointer_UTF8(paths), CARLA_OS_SPLIT_STR, "");
 
+            File file;
             if (filename && filename[0] != '\0')
+                file = File(CharPointer_UTF8(filename));
+
+            if (file.isNotNull() && file.existsAsFile())
             {
                 // find which engine search path we're in, and use this as the root
-                const File file = File(CharPointer_UTF8(filename));
-
                 for (int i = 0; i < splitPaths.size() && !unit; ++i)
                 {
                     const File currentPath(splitPaths[i]);
