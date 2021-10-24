@@ -97,7 +97,7 @@ static void findSFZs(const char* const sfzPaths)
 }
 // -------------------------------------------------------------------------------------------------------------------
 
-static water::Array<water::File> gJSFXs;
+static water::Array<CarlaJsfxUnit> gJSFXs;
 
 static void findJSFXs(const char* const jsfxPaths)
 {
@@ -113,13 +113,14 @@ static void findJSFXs(const char* const jsfxPaths)
     for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
         water::Array<water::File> results;
+        water::File path(*it);
 
-        if (water::File(*it).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*") > 0)
+        if (path.findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*") > 0)
         {
             for (const water::File& file : results)
             {
                 if (!file.hasFileExtension("jsfx-inc"))
-                    gJSFXs.add(file);
+                    gJSFXs.add(CarlaJsfxUnit(path, file));
             }
         }
     }
@@ -658,25 +659,26 @@ static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& fil
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const water::File& file)
+static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& unit)
 {
     static CarlaCachedPluginInfo info;
 
     JsusFx::init();
 
-    CarlaJsusFxPathLibrary pathLibrary(file);
+    CarlaJsusFxPathLibrary pathLibrary(unit);
 
     CarlaJsusFx effect(pathLibrary);
     effect.setQuiet(true);
 
-    static CarlaString name, filename;
+    static CarlaString name, label;
 
-    name = file.getFileNameWithoutExtension().toRawUTF8();
-    filename = file.getFullPathName().toRawUTF8();
+    const water::File unitFilePath = unit.getFilePath();
+    name = unitFilePath.getFileNameWithoutExtension().toRawUTF8();
+    label = unit.getFileId().toRawUTF8();
 
     {
         const CarlaScopedLocale csl;
-        if (!effect.readHeader(pathLibrary, filename.buffer()))
+        if (!effect.readHeader(pathLibrary, unitFilePath.getFullPathName().toRawUTF8()))
         {
             info.valid = false;
             return &info;
@@ -718,7 +720,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const water::File& fi
 #endif
 
     info.name      = name.buffer();
-    info.label     = filename.buffer();
+    info.label     = label.buffer();
     info.maker     = gCachedPluginsNullCharPtr;
     info.copyright = gCachedPluginsNullCharPtr;
 

@@ -16,7 +16,6 @@
  */
 
 // TODO(jsfx) graphics section
-// TODO(jsfx) set the correct import path
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
@@ -26,6 +25,7 @@
 #include "CarlaUtils.hpp"
 
 #include "water/files/File.h"
+#include "water/text/StringArray.h"
 
 #include <algorithm>
 #include <string>
@@ -35,6 +35,7 @@
 using water::CharPointer_UTF8;
 using water::File;
 using water::String;
+using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -840,27 +841,74 @@ public:
             return false;
         }
 
-        if (filename == nullptr || filename[0] == '\0')
+        if ((filename == nullptr || filename[0] == '\0') &&
+            (label == nullptr || label[0] == '\0'))
         {
-            pData->engine->setLastError("null filename");
+            pData->engine->setLastError("null filename and label");
             return false;
         }
 
         // ---------------------------------------------------------------
 
-        fPathLibrary = new CarlaJsusFxPathLibrary(String(CharPointer_UTF8(filename)));
+        CarlaJsfxUnit unit;
+
+        {
+            StringArray splitPaths;
+
+            if (const char* paths = pData->engine->getOptions().pathJSFX)
+                splitPaths = StringArray::fromTokens(CharPointer_UTF8(paths), CARLA_OS_SPLIT_STR, "");
+
+            if (filename && filename[0] != '\0')
+            {
+                // find which engine search path we're in, and use this as the root
+                const File file = File(CharPointer_UTF8(filename));
+
+                for (int i = 0; i < splitPaths.size() && !unit; ++i)
+                {
+                    const File currentPath(splitPaths[i]);
+                    if (file.isAChildOf(currentPath))
+                        unit = CarlaJsfxUnit(currentPath, file);
+                }
+
+                // if not found in engine search paths, use parent directory as the root
+                if (!unit)
+                    unit = CarlaJsfxUnit(file.getParentDirectory(), file);
+            }
+            else if (label && label[0] != '\0')
+            {
+                // search a matching file in plugin paths
+                for (int i = 0; i < splitPaths.size() && !unit; ++i)
+                {
+                    const File currentPath(splitPaths[i]);
+                    const File currentFile = currentPath.getChildFile(CharPointer_UTF8(label));
+                    const CarlaJsfxUnit currentUnit(currentPath, currentFile);
+                    if (currentUnit.getFilePath().existsAsFile())
+                        unit = currentUnit;
+                }
+            }
+        }
+
+        if (!unit)
+        {
+            pData->engine->setLastError("Cannot locate the JSFX plugin");
+            return false;
+        }
+
+        // ---------------------------------------------------------------
+
+        fPathLibrary = new CarlaJsusFxPathLibrary(unit);
         fFileAPI = new CarlaJsusFxFileAPI;
         fEffect = new CarlaJsusFx(*fPathLibrary);
         fEffect->fileAPI = fFileAPI;
         fFileAPI->init(fEffect->m_vm);
-        fFilename.assign(filename);
+        fFilename.assign(unit.getFilePath().getFullPathName().toRawUTF8());
 
         // ---------------------------------------------------------------
         // get info
 
         {
             const CarlaScopedLocale csl;
-            if (!fEffect->readHeader(*fPathLibrary, filename))
+            if (!fEffect->readHeader(*fPathLibrary, fFilename))
             {
                 pData->engine->setLastError("Cannot read the JSFX header");
                 return false;
@@ -881,11 +929,11 @@ public:
         }
         else
         {
-            String baseName = File(filename).getFileNameWithoutExtension();
+            String baseName = File(fFilename).getFileNameWithoutExtension();
             pData->name = pData->engine->getUniquePluginName(baseName.toRawUTF8());
         }
 
-        pData->filename = carla_strdup(filename);
+        pData->filename = carla_strdup(fFilename.c_str());
 
         // ---------------------------------------------------------------
         // register client
