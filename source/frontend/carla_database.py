@@ -358,11 +358,6 @@ def checkPluginCached(desc, ptype):
         pinfo['filename'] = pinfo['label']
         pinfo['label']    = pinfo['name']
 
-    # TODO(jsfx) what to do here?
-    elif ptype == PLUGIN_JSFX:
-        pinfo['filename'] = pinfo['label']
-        pinfo['label']    = pinfo['name']
-
     return pinfo
 
 def checkPluginLADSPA(filename, tool, wineSettings=None):
