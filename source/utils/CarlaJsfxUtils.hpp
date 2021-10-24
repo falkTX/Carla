@@ -18,6 +18,7 @@
 #ifndef CARLA_JSFX_UTILS_HPP_INCLUDED
 #define CARLA_JSFX_UTILS_HPP_INCLUDED
 
+#include "CarlaDefines.h"
 #include "CarlaUtils.hpp"
 #include "CarlaString.hpp"
 #include "CarlaBase64Utils.hpp"
@@ -94,7 +95,7 @@ public:
     CarlaJsfxUnit(const water::File& rootPath, const water::File& filePath)
         : fRootPath(rootPath), fFileId(filePath.getRelativePathFrom(rootPath))
     {
-#ifdef _WIN32
+#ifdef CARLA_OS_WIN
         fFileId.replaceCharacter('\\', '/');
 #endif
     }
