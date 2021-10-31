@@ -18,6 +18,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
@@ -1689,10 +1690,13 @@ static void do_jsfx_check(const char* const filename, bool doInit)
             JsusFx::kCompileFlag_CompileSerializeSection |
             JsusFx::kCompileFlag_CompileGraphicsSection;
 
-        if (!effect.compile(pathLibrary, filename, compileFlags))
         {
-            DISCOVERY_OUT("error", "Cannot compile the JSFX plugin");
-            return;
+            const CarlaScopedLocale csl;
+            if (!effect.compile(pathLibrary, filename, compileFlags))
+            {
+                DISCOVERY_OUT("error", "Cannot compile the JSFX plugin");
+                return;
+            }
         }
 
 #if 0 // TODO(jsfx) when supporting custom graphics
@@ -1703,6 +1707,7 @@ static void do_jsfx_check(const char* const filename, bool doInit)
     }
     else
     {
+        const CarlaScopedLocale csl;
         if (!effect.readHeader(pathLibrary, filename))
         {
             DISCOVERY_OUT("error", "Cannot read the JSFX header");

@@ -20,6 +20,7 @@
 #include "CarlaNative.h"
 #include "CarlaString.hpp"
 #include "CarlaBackendUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaJsfxUtils.hpp"
 
@@ -673,10 +674,13 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const water::File& fi
     name = file.getFileNameWithoutExtension().toRawUTF8();
     filename = file.getFullPathName().toRawUTF8();
 
-    if (!effect.readHeader(pathLibrary, filename.buffer()))
     {
-        info.valid = false;
-        return &info;
+        const CarlaScopedLocale csl;
+        if (!effect.readHeader(pathLibrary, filename.buffer()))
+        {
+            info.valid = false;
+            return &info;
+        }
     }
     if (effect.desc[0] == '\0')
     {

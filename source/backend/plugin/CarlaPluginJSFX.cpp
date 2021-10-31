@@ -22,6 +22,7 @@
 #include "CarlaEngine.hpp"
 #include "CarlaJsfxUtils.hpp"
 #include "CarlaBackendUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaUtils.hpp"
 
 #include "water/files/File.h"
@@ -287,8 +288,11 @@ public:
             | JsusFx::kCompileFlag_CompileSerializeSection
             ;
 
-        if (!fEffect->compile(*fPathLibrary, fFilename, compileFlags))
-            carla_stderr("Failed to compile JSFX");
+        {
+            const CarlaScopedLocale csl;
+            if (!fEffect->compile(*fPathLibrary, fFilename, compileFlags))
+                carla_stderr("Failed to compile JSFX");
+        }
 
         // initialize the block size and sample rate
         // loading the chunk can invoke @slider which makes computations based on these
@@ -854,10 +858,13 @@ public:
         // ---------------------------------------------------------------
         // get info
 
-        if (!fEffect->readHeader(*fPathLibrary, filename))
         {
-            pData->engine->setLastError("Cannot read the JSFX header");
-            return false;
+            const CarlaScopedLocale csl;
+            if (!fEffect->readHeader(*fPathLibrary, filename))
+            {
+                pData->engine->setLastError("Cannot read the JSFX header");
+                return false;
+            }
         }
 
         // jsusfx lacks validity checks currently,
