@@ -35,7 +35,7 @@
 #define AUTOVARV(name,value) name = NSEEL_VM_regvar(m_vm, #name); *name = value
 
 #define EEL_STRING_GET_CONTEXT_POINTER(opaque) (((JsusFx *)opaque)->m_string_context)
-#ifdef EEL_STRING_STDOUT_WRITE
+#ifndef EEL_STRING_STDOUT_WRITE
   #ifndef EELSCRIPT_NO_STDIO
     #define EEL_STRING_STDOUT_WRITE(x,len) { fwrite(x,len,1,stdout); fflush(stdout); }
   #endif
