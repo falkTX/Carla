@@ -226,10 +226,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        JsusFx_Slider& slider = fEffect->sliders[pData->param.data[parameterId].rindex];
-        slider.setValue(value);
+        int32_t sliderIndex = pData->param.data[parameterId].rindex;
+        fEffect->moveSlider(sliderIndex, value);
 
-        CarlaPlugin::setParameterValue(parameterId, slider.getValue(), sendGui, sendOsc, sendCallback);
+        const JsusFx_Slider& slider = fEffect->sliders[sliderIndex];
+        float newValue = slider.getValue();
+        CarlaPlugin::setParameterValue(parameterId, newValue, sendGui, sendOsc, sendCallback);
     }
 
     void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
@@ -237,10 +239,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        JsusFx_Slider& slider = fEffect->sliders[pData->param.data[parameterId].rindex];
-        slider.setValue(value);
+        int32_t sliderIndex = pData->param.data[parameterId].rindex;
+        fEffect->moveSlider(sliderIndex, value);
 
-        CarlaPlugin::setParameterValueRT(parameterId, slider.getValue(), sendCallbackLater);
+        const JsusFx_Slider& slider = fEffect->sliders[sliderIndex];
+        float newValue = slider.getValue();
+        CarlaPlugin::setParameterValueRT(parameterId, newValue, sendCallbackLater);
     }
 
     void setChunkData(const void* data, std::size_t dataSize) override
