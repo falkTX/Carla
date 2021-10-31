@@ -290,6 +290,10 @@ public:
         if (!fEffect->compile(*fPathLibrary, fFilename, compileFlags))
             carla_stderr("Failed to compile JSFX");
 
+        // initialize the block size and sample rate
+        // loading the chunk can invoke @slider which makes computations based on these
+        fEffect->prepare(pData->engine->getSampleRate(), pData->engine->getBufferSize());
+
         // NOTE: count can be -1 in case of "none"
         uint32_t aIns = (fEffect->numInputs == -1) ? 0 : (uint32_t)fEffect->numInputs;
         uint32_t aOuts = (fEffect->numOutputs == -1) ? 0 : (uint32_t)fEffect->numOutputs;
