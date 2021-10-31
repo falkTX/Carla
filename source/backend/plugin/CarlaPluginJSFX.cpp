@@ -268,7 +268,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
-        carla_debug("CarlaPluginHSFX::reload()");
+        carla_debug("CarlaPluginJSFX::reload()");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
