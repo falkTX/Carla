@@ -996,6 +996,7 @@ void JsusFx::prepare(int sampleRate, int blockSize) {
     *srate = (double) sampleRate;
     *samplesblock = blockSize;
     NSEEL_code_execute(codeInit);
+    computeSlider = true;
 }
 
 void JsusFx::moveSlider(int idx, float value, int normalizeSlider) {
