@@ -1704,8 +1704,6 @@ static void do_jsfx_check(const char* const filename, bool doInit)
         return;
     }
 
-    water::String baseName = water::File(filename).getFileNameWithoutExtension();
-
     // NOTE: count can be -1 in case of "none"
     uint32_t audioIns = (effect.numInputs == -1) ? 0 : (uint32_t)effect.numInputs;
     uint32_t audioOuts = (effect.numOutputs == -1) ? 0 : (uint32_t)effect.numOutputs;
@@ -1723,7 +1721,7 @@ static void do_jsfx_check(const char* const filename, bool doInit)
     DISCOVERY_OUT("init", "-----------");
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("hints", hints);
-    DISCOVERY_OUT("name", baseName.toRawUTF8());
+    DISCOVERY_OUT("name", effect.desc);
     DISCOVERY_OUT("label", filename);
     DISCOVERY_OUT("audio.ins", audioIns);
     DISCOVERY_OUT("audio.outs", audioOuts);

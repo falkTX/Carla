@@ -931,8 +931,7 @@ public:
         }
         else
         {
-            String baseName = File(fFilename).getFileNameWithoutExtension();
-            pData->name = pData->engine->getUniquePluginName(baseName.toRawUTF8());
+            pData->name = carla_strdup(fEffect->desc);
         }
 
         pData->filename = carla_strdup(fFilename.c_str());

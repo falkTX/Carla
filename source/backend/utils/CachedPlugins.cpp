@@ -673,7 +673,6 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& 
     static CarlaString name, label;
 
     const water::File unitFilePath = unit.getFilePath();
-    name = unitFilePath.getFileNameWithoutExtension().toRawUTF8();
     label = unit.getFileId().toRawUTF8();
 
     {
@@ -691,6 +690,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& 
     }
 
     info.valid         = true;
+
+    name = effect.desc;
 
     // NOTE: count can be -1 in case of "none"
     info.audioIns = (effect.numInputs == -1) ? 0 : (uint32_t)effect.numInputs;
