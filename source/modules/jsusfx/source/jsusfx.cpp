@@ -419,7 +419,7 @@ void JsusFxPathLibrary_Basic::addSearchPath(const std::string & path) {
 
 bool JsusFxPathLibrary_Basic::fileExists(const std::string &filename) {
 #ifdef _WIN32
-	std::ifstream is(toWideString(filename));
+	std::ifstream is(toWideString(filename).c_str());
 #else
 	std::ifstream is(filename);
 #endif
@@ -456,7 +456,7 @@ bool JsusFxPathLibrary_Basic::resolveDataPath(const std::string &importPath, std
 
 std::istream* JsusFxPathLibrary_Basic::open(const std::string &path) {
 #ifdef _WIN32
-	std::ifstream *stream = new std::ifstream(toWideString(path));
+	std::ifstream *stream = new std::ifstream(toWideString(path).c_str());
 #else
 	std::ifstream *stream = new std::ifstream(path);
 #endif
