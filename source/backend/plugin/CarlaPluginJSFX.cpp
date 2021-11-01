@@ -283,18 +283,6 @@ public:
 
         // ---------------------------------------------------------------
 
-        // TODO(jsfx) uncomment when implementing these features
-        const int compileFlags = 0
-            //| JsusFx::kCompileFlag_CompileGraphicsSection
-            | JsusFx::kCompileFlag_CompileSerializeSection
-            ;
-
-        {
-            const CarlaScopedLocale csl;
-            if (!fEffect->compile(*fPathLibrary, fFilename, compileFlags))
-                carla_stderr("Failed to compile JSFX");
-        }
-
         // initialize the block size and sample rate
         // loading the chunk can invoke @slider which makes computations based on these
         fEffect->prepare(pData->engine->getSampleRate(), pData->engine->getBufferSize());
@@ -910,9 +898,16 @@ public:
 
         {
             const CarlaScopedLocale csl;
-            if (!fEffect->readHeader(*fPathLibrary, fFilename))
+
+            // TODO(jsfx) uncomment when implementing these features
+            const int compileFlags = 0
+                //| JsusFx::kCompileFlag_CompileGraphicsSection
+                | JsusFx::kCompileFlag_CompileSerializeSection
+                ;
+
+            if (!fEffect->compile(*fPathLibrary, fFilename, compileFlags))
             {
-                pData->engine->setLastError("Cannot read the JSFX header");
+                pData->engine->setLastError("Failed to compile JSFX");
                 return false;
             }
         }
