@@ -28,7 +28,6 @@
 #include "water/text/StringArray.h"
 
 #include <algorithm>
-#include <string>
 #include <cstdio>
 #include <cstring>
 
@@ -216,7 +215,7 @@ public:
 
     bool getLabel(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fFilename.c_str(), STR_MAX);
+        std::strncpy(strBuf, fUnit.getFileId().toRawUTF8(), STR_MAX);
         return true;
     }
 
@@ -838,7 +837,7 @@ public:
 
         // ---------------------------------------------------------------
 
-        CarlaJsfxUnit unit;
+        fUnit = CarlaJsfxUnit();
 
         {
             StringArray splitPaths;
@@ -853,32 +852,32 @@ public:
             if (file.isNotNull() && file.existsAsFile())
             {
                 // find which engine search path we're in, and use this as the root
-                for (int i = 0; i < splitPaths.size() && !unit; ++i)
+                for (int i = 0; i < splitPaths.size() && !fUnit; ++i)
                 {
                     const File currentPath(splitPaths[i]);
                     if (file.isAChildOf(currentPath))
-                        unit = CarlaJsfxUnit(currentPath, file);
+                        fUnit = CarlaJsfxUnit(currentPath, file);
                 }
 
                 // if not found in engine search paths, use parent directory as the root
-                if (!unit)
-                    unit = CarlaJsfxUnit(file.getParentDirectory(), file);
+                if (!fUnit)
+                    fUnit = CarlaJsfxUnit(file.getParentDirectory(), file);
             }
             else if (label && label[0] != '\0')
             {
                 // search a matching file in plugin paths
-                for (int i = 0; i < splitPaths.size() && !unit; ++i)
+                for (int i = 0; i < splitPaths.size() && !fUnit; ++i)
                 {
                     const File currentPath(splitPaths[i]);
                     const File currentFile = currentPath.getChildFile(CharPointer_UTF8(label));
                     const CarlaJsfxUnit currentUnit(currentPath, currentFile);
                     if (currentUnit.getFilePath().existsAsFile())
-                        unit = currentUnit;
+                        fUnit = currentUnit;
                 }
             }
         }
 
-        if (!unit)
+        if (!fUnit)
         {
             pData->engine->setLastError("Cannot locate the JSFX plugin");
             return false;
@@ -886,15 +885,16 @@ public:
 
         // ---------------------------------------------------------------
 
-        fPathLibrary = new CarlaJsusFxPathLibrary(unit);
+        fPathLibrary = new CarlaJsusFxPathLibrary(fUnit);
         fFileAPI = new CarlaJsusFxFileAPI;
         fEffect = new CarlaJsusFx(*fPathLibrary);
         fEffect->fileAPI = fFileAPI;
         fFileAPI->init(fEffect->m_vm);
-        fFilename.assign(unit.getFilePath().getFullPathName().toRawUTF8());
 
         // ---------------------------------------------------------------
         // get info
+
+        const water::String filePath = fUnit.getFilePath().getFullPathName();
 
         {
             const CarlaScopedLocale csl;
@@ -905,7 +905,7 @@ public:
                 | JsusFx::kCompileFlag_CompileSerializeSection
                 ;
 
-            if (!fEffect->compile(*fPathLibrary, fFilename, compileFlags))
+            if (!fEffect->compile(*fPathLibrary, filePath.toRawUTF8(), compileFlags))
             {
                 pData->engine->setLastError("Failed to compile JSFX");
                 return false;
@@ -929,7 +929,7 @@ public:
             pData->name = carla_strdup(fEffect->desc);
         }
 
-        pData->filename = carla_strdup(fFilename.c_str());
+        pData->filename = carla_strdup(filePath.toRawUTF8());
 
         // ---------------------------------------------------------------
         // register client
@@ -972,7 +972,7 @@ private:
     CarlaJsusFxPathLibrary* fPathLibrary = nullptr;
     CarlaJsusFxFileAPI* fFileAPI = nullptr;
     CarlaJsusFx* fEffect = nullptr;
-    std::string fFilename;
+    CarlaJsfxUnit fUnit;
     water::String fChunkText;
 
     struct TransportValues
