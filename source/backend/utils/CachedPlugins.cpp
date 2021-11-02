@@ -670,7 +670,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& 
     CarlaJsusFx effect(pathLibrary);
     effect.setQuiet(true);
 
-    static CarlaString name, label;
+    static CarlaString name, label, maker;
+    CB::PluginCategory category = CB::PLUGIN_CATEGORY_OTHER;
 
     const water::File unitFilePath = unit.getFilePath();
     label = unit.getFileId().toRawUTF8();
@@ -687,6 +688,15 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& 
     {
         info.valid = false;
         return &info;
+    }
+    {
+        water::String author;
+        if (!CarlaJsusFx::parsePseudoTags(unitFilePath, author, category))
+        {
+            info.valid = false;
+            return &info;
+        }
+        maker = author.toRawUTF8();
     }
 
     info.valid         = true;
@@ -711,7 +721,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& 
             ++info.parameterIns;
     }
 
-    info.category = CB::PLUGIN_CATEGORY_NONE;
+    info.category = category;
     info.hints    = 0;
 
 #if 0 // TODO(jsfx) when supporting custom graphics
@@ -722,7 +732,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& 
 
     info.name      = name.buffer();
     info.label     = label.buffer();
-    info.maker     = gCachedPluginsNullCharPtr;
+    info.maker     = maker.buffer();
     info.copyright = gCachedPluginsNullCharPtr;
 
     return &info;
