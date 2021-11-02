@@ -47,6 +47,11 @@
 
 #include <fstream> // to check if files exist
 
+#ifdef _WIN32
+#  include <windows.h>
+static std::wstring toWideString(const std::string &u8str);
+#endif
+
 // Reaper API
 
 static EEL_F * NSEEL_CGEN_CALL _reaper_slider(void *opaque, EEL_F *n)
@@ -413,7 +418,11 @@ void JsusFxPathLibrary_Basic::addSearchPath(const std::string & path) {
 }
 
 bool JsusFxPathLibrary_Basic::fileExists(const std::string &filename) {
+#ifdef _WIN32
+	std::ifstream is(toWideString(filename).c_str());
+#else
 	std::ifstream is(filename);
+#endif
 	return is.is_open();
 }
 
@@ -446,7 +455,11 @@ bool JsusFxPathLibrary_Basic::resolveDataPath(const std::string &importPath, std
 }
 
 std::istream* JsusFxPathLibrary_Basic::open(const std::string &path) {
+#ifdef _WIN32
+	std::ifstream *stream = new std::ifstream(toWideString(path).c_str());
+#else
 	std::ifstream *stream = new std::ifstream(path);
+#endif
 	if ( stream->is_open() == false ) {
 		delete stream;
 		stream = nullptr;
@@ -1291,3 +1304,15 @@ void NSEEL_HOSTSTUB_EnterMutex() { }
 void NSEEL_HOSTSTUB_LeaveMutex() { }
 #endif
 
+#ifdef _WIN32
+static std::wstring toWideString(const std::string &u8str)
+{
+    std::wstring wstr;
+    int wch = MultiByteToWideChar(CP_UTF8, 0, u8str.data(), (int)u8str.size(), nullptr, 0);
+    if (wch != 0) {
+        wstr.resize((size_t)wch);
+        MultiByteToWideChar(CP_UTF8, 0, u8str.data(), (int)u8str.size(), &wstr[0], wch);
+    }
+    return wstr;
+}
+#endif
