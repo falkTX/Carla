@@ -19,11 +19,14 @@
 #define CARLA_JSFX_UTILS_HPP_INCLUDED
 
 #include "CarlaDefines.h"
+#include "CarlaBackend.h"
 #include "CarlaUtils.hpp"
 #include "CarlaString.hpp"
 #include "CarlaBase64Utils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include "water/files/File.h"
+#include "water/files/FileInputStream.h"
 #include "water/xml/XmlElement.h"
 #include "water/xml/XmlDocument.h"
 #include "water/streams/MemoryInputStream.h"
@@ -79,6 +82,78 @@ public:
             ::va_end(args);
             carla_stderr("%s", msgBuf);
         }
+    }
+
+    static bool parsePseudoTags(const water::File& jsfxFile, water::String& author, CarlaBackend::PluginCategory& category)
+    {
+        namespace CB = CarlaBackend;
+
+        water::FileInputStream stream(jsfxFile);
+
+        if (stream.failedToOpen())
+            return false;
+
+        author.clear();
+        category = CB::PLUGIN_CATEGORY_NONE;
+
+        while ((author.isEmpty() || category == CB::PLUGIN_CATEGORY_NONE) && !stream.isExhausted())
+        {
+            const water::String line = stream.readNextLine().trim();
+
+            const water::StringRef authorPrefix = "//author:";
+            const water::StringRef tagsPrefix = "//tags:";
+
+            if (author.isEmpty() && line.startsWith(authorPrefix))
+            {
+                author = line.substring(authorPrefix.length()).trim();
+            }
+            else if (category == CB::PLUGIN_CATEGORY_NONE && line.startsWith(tagsPrefix))
+            {
+                water::StringArray tags;
+                tags.addTokens(line.substring(tagsPrefix.length()), " ", "");
+
+                for (int i = 0; i < tags.size() && category == CB::PLUGIN_CATEGORY_NONE; ++i)
+                {
+                    CB::PluginCategory currentCategory = getCategoryFromTag(tags[i]);
+                    if (currentCategory != CB::PLUGIN_CATEGORY_NONE)
+                        category = currentCategory;
+                }
+            }
+        }
+
+        if (category == CB::PLUGIN_CATEGORY_NONE)
+            category = CB::PLUGIN_CATEGORY_OTHER;
+
+        return true;
+    }
+
+    static CarlaBackend::PluginCategory getCategoryFromTag(const water::String& tag)
+    {
+        if (tag.equalsIgnoreCase("synthesis"))
+            return CarlaBackend::PLUGIN_CATEGORY_SYNTH;
+
+        if (tag.equalsIgnoreCase("delay"))
+            return CarlaBackend::PLUGIN_CATEGORY_DELAY;
+
+        if (tag.equalsIgnoreCase("equalizer"))
+            return CarlaBackend::PLUGIN_CATEGORY_EQ;
+
+        if (tag.equalsIgnoreCase("filter"))
+            return CarlaBackend::PLUGIN_CATEGORY_FILTER;
+
+        if (tag.equalsIgnoreCase("distortion"))
+            return CarlaBackend::PLUGIN_CATEGORY_DISTORTION;
+
+        if (tag.equalsIgnoreCase("dynamics"))
+            return CarlaBackend::PLUGIN_CATEGORY_DYNAMICS;
+
+        if (tag.equalsIgnoreCase("modulation"))
+            return CarlaBackend::PLUGIN_CATEGORY_MODULATOR;
+
+        if (tag.equalsIgnoreCase("utility"))
+            return CarlaBackend::PLUGIN_CATEGORY_UTILITY;
+
+        return CarlaBackend::PLUGIN_CATEGORY_NONE;
     }
 
 private:

@@ -1704,6 +1704,15 @@ static void do_jsfx_check(const char* const filename, bool doInit)
         return;
     }
 
+    // extract author and category from the pseudo-tags
+    water::String author;
+    CB::PluginCategory category = CB::PLUGIN_CATEGORY_OTHER;
+    if (!CarlaJsusFx::parsePseudoTags(water::File(water::CharPointer_UTF8(filename)), author, category))
+    {
+        DISCOVERY_OUT("error", "Cannot scan the JSFX file for pseudo-tags");
+        return;
+    }
+
     // NOTE: count can be -1 in case of "none"
     uint32_t audioIns = (effect.numInputs == -1) ? 0 : (uint32_t)effect.numInputs;
     uint32_t audioOuts = (effect.numOutputs == -1) ? 0 : (uint32_t)effect.numOutputs;
@@ -1721,7 +1730,9 @@ static void do_jsfx_check(const char* const filename, bool doInit)
     DISCOVERY_OUT("init", "-----------");
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("hints", hints);
+    DISCOVERY_OUT("category", getPluginCategoryAsString(category));
     DISCOVERY_OUT("name", effect.desc);
+    DISCOVERY_OUT("maker", author);
     DISCOVERY_OUT("label", filename);
     DISCOVERY_OUT("audio.ins", audioIns);
     DISCOVERY_OUT("audio.outs", audioOuts);
