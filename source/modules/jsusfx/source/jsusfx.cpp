@@ -362,8 +362,9 @@ bool JsusFx_Slider::config(JsusFx &fx, const int index, const char *param, const
 	
 	if ( *tmp != '<' )
 	{
-		fx.displayError("slider info is missing");
-		return false;
+		//NOTE(jpc) slider without <> section, handle it permissively
+		/*fx.displayError("slider info is missing");
+		return false;*/
 	}
 	else
 	{
