@@ -375,13 +375,17 @@ bool JsusFx_Slider::config(JsusFx &fx, const int index, const char *param, const
 						
 						if ( *tmp == '}' )
 						{
+							tmp++;
 							break;
 						}
-						
+						// closing '}' is not required, so be permissive here
+						if ( *tmp == '>' )
+						{
+							break;
+						}
+
 						tmp++;
 					}
-					
-					tmp++;
 				}
 			}
 		}
