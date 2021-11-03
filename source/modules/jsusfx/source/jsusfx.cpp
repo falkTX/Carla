@@ -323,18 +323,14 @@ bool JsusFx_Slider::config(JsusFx &fx, const int index, const char *param, const
 	isEnum = false;
 	
 	bool hasName = false;
-
-	const char *tmp = strchr(buffer, '>');
-	if ( tmp != NULL ) {
-		tmp++;
-		while (*tmp == ' ')
-			tmp++;
-		strncpy(desc, tmp, 64);
-		tmp = 0;
-	} else {
-		desc[0] = 0;
-	}
 	
+	const char *tmp = nextToken(buffer);
+	for (const char *next; *(next = nextToken(tmp)); ) {
+		tmp = (tmp == next) ? (tmp + 1) : next;
+	}
+	strncpy(desc, tmp, 64);
+	desc[63] = '\0';
+
 	tmp = buffer;
 	
 	if ( isalpha(*tmp) ) {
