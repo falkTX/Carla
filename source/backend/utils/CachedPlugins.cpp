@@ -668,7 +668,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& 
     CarlaJsusFxPathLibrary pathLibrary(unit);
 
     CarlaJsusFx effect(pathLibrary);
-    effect.setQuiet(true);
+    effect.setMessagesQuiet(true);
 
     static CarlaString name, label;
 

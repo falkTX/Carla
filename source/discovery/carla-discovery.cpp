@@ -1671,7 +1671,7 @@ static void do_jsfx_check(const char* const filename, bool doInit)
     CarlaJsusFxPathLibrary pathLibrary(unit);
 
     CarlaJsusFx effect(pathLibrary);
-    effect.setQuiet(true);
+    effect.setMessagesQuiet(true);
 
     uint hints = 0;
 
