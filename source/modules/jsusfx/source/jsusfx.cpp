@@ -314,6 +314,7 @@ static const char *nextToken(const char *text) {
 bool JsusFx_Slider::config(JsusFx &fx, const int index, const char *param, const int lnumber) {
 	char buffer[2048];
 	strncpy(buffer, param, 2048);
+	buffer[sizeof(buffer)-1] = '\0';
 	
 	def = min = max = inc = 0;
 	exists = false;
