@@ -300,6 +300,7 @@ public:
             pData->audioOut.createNew(aOuts);
         }
 
+        // count the sliders and establish the mappings between parameter and slider
         uint32_t params = 0;
         uint32_t mapOfParameterToSlider[JsusFx::kMaxSliders];
         for (uint32_t sliderIndex = 0; sliderIndex < JsusFx::kMaxSliders; ++sliderIndex)
@@ -308,7 +309,12 @@ public:
             if (slider.exists)
             {
                 mapOfParameterToSlider[params] = sliderIndex;
+                slider.userData = params;
                 ++params;
+            }
+            else
+            {
+                slider.userData = -1;
             }
         }
 
@@ -827,11 +833,12 @@ public:
         {
             for (int sliderIndex = 0; sliderIndex < JsusFx::kMaxSliders; ++sliderIndex)
             {
-                if (fEffect->sliderHasChanged(sliderIndex))
+                JsusFx_Slider& slider = fEffect->sliders[sliderIndex];
+                if (slider.exists && fEffect->sliderHasChanged(sliderIndex))
                 {
-                    carla_stderr(
-                        "JSFX slider change %d: %f\n",
-                        sliderIndex, *fEffect->sliders[sliderIndex].owner);
+                    uint32_t parameterIndex = (uint32_t)slider.userData;
+                    float newValue = slider.getValue();
+                    setParameterValueRT(parameterIndex, newValue, true);
                 }
             }
         }
