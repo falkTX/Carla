@@ -51,14 +51,19 @@ public:
     {
     }
 
-    void setQuiet(bool quiet)
+    void setMessagesQuiet(bool quiet)
     {
-        fQuiet = quiet;
+        fMessagesQuiet = quiet;
+    }
+
+    void setErrorsQuiet(bool quiet)
+    {
+        fErrorsQuiet = quiet;
     }
 
     void displayMsg(const char* fmt, ...) override
     {
-        if (!fQuiet)
+        if (!fMessagesQuiet)
         {
             char msgBuf[256];
             ::va_list args;
@@ -72,7 +77,7 @@ public:
 
     void displayError(const char* fmt, ...) override
     {
-        if (!fQuiet)
+        if (!fErrorsQuiet)
         {
             char msgBuf[256];
             ::va_list args;
@@ -157,7 +162,8 @@ public:
     }
 
 private:
-    bool fQuiet = false;
+    bool fMessagesQuiet = false;
+    bool fErrorsQuiet = false;
 };
 
 // -------------------------------------------------------------------------------------------------------------------
