@@ -131,6 +131,50 @@ static EEL_F NSEEL_CGEN_CALL _midirecv(void *opaque, INT_PTR np, EEL_F **parms)
 	return 1;
 }
 
+static EEL_F NSEEL_CGEN_CALL _midirecv_buf(void *opaque, INT_PTR np, EEL_F **parms)
+{
+	JsusFx *ctx = REAPER_GET_INTERFACE(opaque);
+	if (ctx->midiInputReadPos >= ctx->midiInput.size())
+		return 0;
+
+	int buf = (int)*parms[1];
+	int recvlen = (int)*parms[2];
+
+	int dcap = 0;
+	EEL_F *dest = NSEEL_VM_getramptr(ctx->m_vm, buf, &dcap);
+	if (!dest)
+		return 0;
+
+	// limit the received length to buffer capacity, preventing overflow
+	if (recvlen > dcap)
+		recvlen = dcap;
+
+	///
+	JsusFx::EventHeader event;
+	const uint8_t *data = nullptr;
+
+	while (!data && ctx->midiInputReadPos < ctx->midiInput.size()) {
+		data = &ctx->midiInput[ctx->midiInputReadPos];
+		memcpy(&event, data, sizeof(event));
+		data += sizeof(event);
+		ctx->midiInputReadPos += sizeof(event) + event.length;
+		// pass through the events which are too large for the buffer
+		if (event.length > recvlen) {
+			ctx->addOutputEvent(event.offset, data, event.length);
+			data = nullptr;
+		}
+	}
+
+	if (!data)
+		return 0;
+
+    ///
+	*parms[0] = event.offset;
+	for (int i = 0; i < event.length; ++i)
+		dest[i] = data[i];
+	return event.length;
+}
+
 // determine the length of a midi message according to its status byte
 // if length is dynamic, returns 0
 unsigned midi_sizeof(uint8_t id)
@@ -543,6 +587,7 @@ JsusFx::JsusFx(JsusFxPathLibrary &_pathLibrary)
 	NSEEL_addfunc_retptr("slider",1,NSEEL_PProc_THIS,&_reaper_slider);
 	NSEEL_addfunc_retptr("spl",1,NSEEL_PProc_THIS,&_reaper_spl);
 	NSEEL_addfunc_varparm("midirecv",3,NSEEL_PProc_THIS,&_midirecv);
+	NSEEL_addfunc_varparm("midirecv_buf",3,NSEEL_PProc_THIS,&_midirecv_buf);
     NSEEL_addfunc_varparm("midisend",3,NSEEL_PProc_THIS,&_midisend);
     NSEEL_addfunc_varparm("midisend_buf",3,NSEEL_PProc_THIS,&_midisend_buf);
 }

@@ -132,6 +132,7 @@ static EEL_F NSEEL_CGEN_CALL _file_mem(void *opaque, EEL_F *_handle, EEL_F *_des
 	
 	const int destOffset = (int)(*_destOffset + 0.001);
 	
+	//TODO(jpc) verify this; suspicious use of RAM pointer, limits not checked
 	EEL_F * dest = NSEEL_VM_getramptr(jsusFx.m_vm, destOffset, nullptr);
 	
 	if (dest == nullptr)
