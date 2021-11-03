@@ -18,9 +18,15 @@
 #pragma once
 
 #include <string.h>
+#include <stdint.h>
 #include <iostream>
 #include <string>
 #include <vector>
+#if __cplusplus < 201103L
+	#include <map>
+#else
+	#include <unordered_map>
+#endif
 
 #include "WDL/eel2/ns-eel.h"
 #include "WDL/eel2/ns-eel-int.h"
@@ -186,6 +192,20 @@ public:
 	
     NSEEL_VMCTX m_vm;
     JsusFx_Slider sliders[kMaxSliders];
+     //NOTE(jpc): slider slot 0 unused, serves to access by 1-indexing without offset
+    //  careful about this!! (especially with code involving bitmasks)
+
+    uint64_t sliderchangebits;
+    //NOTE(jpc) the low bit 0 is for sliders[1], bit 1 for sliders[2], etc.
+    //  don't forget to offset by 1 as necessary
+
+#if __cplusplus < 201103L
+	typedef std::map<EEL_F *, int> VarSliderAssoc;
+#else
+	typedef std::unordered_map<EEL_F *, int> VarSliderAssoc;
+#endif
+	VarSliderAssoc var_slider_assoc; // slider index from variable
+
     char desc[64];
     
     EEL_F *tempo, *play_state, *play_position, *beat_position, *ts_num, *ts_denom;
@@ -246,6 +266,17 @@ public:
     	const double beatPosition,
     	const int timeSignatureNumerator,
     	const int timeSignatureDenumerator);
+	
+	bool hasSliderChanges() const
+	{
+		return sliderchangebits != 0;
+	}
+	bool sliderHasChanged(int sliderIndex)
+	{
+		//NOTE(jpc) see notes about 1-indexing
+		return sliderIndex > 0 && sliderIndex < kMaxSliders &&
+			(sliderchangebits & ((uint64_t)1 << (sliderIndex - 1))) != 0;
+	}
 	
     bool process(const float **input, float **output, int size, int numInputChannels, int numOutputChannels);
     bool process64(const double **input, double **output, int size, int numInputChannels, int numOutputChannels);

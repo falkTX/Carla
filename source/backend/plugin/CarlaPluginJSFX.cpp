@@ -819,6 +819,22 @@ public:
             }
 
         } // End of MIDI Output
+
+        // --------------------------------------------------------------------------------------------------------
+        // Control Output
+
+        if (fEffect->hasSliderChanges())
+        {
+            for (int sliderIndex = 0; sliderIndex < JsusFx::kMaxSliders; ++sliderIndex)
+            {
+                if (fEffect->sliderHasChanged(sliderIndex))
+                {
+                    carla_stderr(
+                        "JSFX slider change %d: %f\n",
+                        sliderIndex, *fEffect->sliders[sliderIndex].owner);
+                }
+            }
+        }
     }
 
     // -------------------------------------------------------------------

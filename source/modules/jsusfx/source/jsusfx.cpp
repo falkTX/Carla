@@ -53,6 +53,7 @@ static WDL_Mutex atomic_mutex;
 #include "WDL/eel2/eel_atomic.h"
 
 #include <fstream> // to check if files exist
+#include <cassert>
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -60,6 +61,32 @@ static std::wstring toWideString(const std::string &u8str);
 #endif
 
 // Reaper API
+
+static EEL_F NSEEL_CGEN_CALL _reaper_sliderchange(void *opaque, INT_PTR np, EEL_F **parms)
+{
+  JsusFx *ctx = REAPER_GET_INTERFACE(opaque);
+
+  assert(np == 1);
+  (void)np;
+
+  uint64_t changebits = 0;
+
+  // does this refer to a slider variable?
+  JsusFx::VarSliderAssoc::iterator it = ctx->var_slider_assoc.find(parms[0]);
+
+  if (it != ctx->var_slider_assoc.end()) { // parameter is a slider
+    int slider = it->second; //NOTE(jpc) see notes about 1-indexing
+    if (slider > 0 && slider < JsusFx::kMaxSliders)
+      changebits = (uint64_t)1 << (it->second - 1);
+  }
+  else { // parameter is a bitmask
+    changebits = (uint64_t)*parms[0];
+  }
+
+  ctx->sliderchangebits |= changebits;
+
+  return 0;
+}
 
 static EEL_F * NSEEL_CGEN_CALL _reaper_slider(void *opaque, EEL_F *n)
 {
@@ -551,6 +578,7 @@ JsusFx::JsusFx(JsusFxPathLibrary &_pathLibrary)
     m_atomic_mutex = new WDL_Mutex;
     eel_string_initvm(m_vm);
     computeSlider = false;
+    sliderchangebits = 0;
     srate = 0;
 	
     pathLibrary = _pathLibrary;
@@ -606,7 +634,7 @@ JsusFx::JsusFx(JsusFxPathLibrary &_pathLibrary)
 	// Reaper API
 	NSEEL_addfunc_varparm("slider_automate",1,NSEEL_PProc_THIS,&__stub); // todo : implement slider_automate. add Reaper api interface?
 	NSEEL_addfunc_varparm("slider_next_chg",2,NSEEL_PProc_THIS,&__stub); // todo : implement slider_next_chg. add Reaper api interface?
-	NSEEL_addfunc_varparm("sliderchange",1,NSEEL_PProc_THIS,&__stub); // todo : implement sliderchange. add Reaper api interface?
+	NSEEL_addfunc_exparms("sliderchange",1,NSEEL_PProc_THIS,&_reaper_sliderchange);
 	NSEEL_addfunc_retptr("slider",1,NSEEL_PProc_THIS,&_reaper_slider);
 	NSEEL_addfunc_retptr("spl",1,NSEEL_PProc_THIS,&_reaper_spl);
 	NSEEL_addfunc_varparm("midirecv",3,NSEEL_PProc_THIS,&_midirecv);
@@ -766,7 +794,7 @@ bool JsusFx::readHeader(JsusFxPathLibrary &pathLibrary, const std::string &path,
 				return false;
 			}
 			trim(slider.desc, false, true);
-			
+			var_slider_assoc[slider.owner] = target;
 			continue;
 		}
 		else if ( ! strncmp(line, "desc:", 5) ) {
@@ -892,7 +920,7 @@ bool JsusFx::readSections(JsusFxPathLibrary &pathLibrary, const std::string &pat
                     return false;
                 }
                 trim(slider.desc, false, true);
-				
+                var_slider_assoc[slider.owner] = target;
                 continue;
             }
             else if ( ! strncmp(line, "desc:", 5) ) {
@@ -1157,6 +1185,8 @@ bool JsusFx::process(const float **input, float **output, int size, int numInput
     midiInputReadPos = 0;
     midiOutput.clear();
 
+    sliderchangebits = 0;
+
     if ( computeSlider ) {
         NSEEL_code_execute(codeSlider);
         computeSlider = false;      
@@ -1186,6 +1216,8 @@ bool JsusFx::process(const float **input, float **output, int size, int numInput
 bool JsusFx::process64(const double **input, double **output, int size, int numInputChannels, int numOutputChannels) {
     midiInputReadPos = 0;
     midiOutput.clear();
+
+    sliderchangebits = 0;
 
     if ( computeSlider ) {
         NSEEL_code_execute(codeSlider);
@@ -1316,6 +1348,7 @@ void JsusFx::releaseCode() {
 	
     for(int i=0;i<kMaxSliders;i++)
     	sliders[i].exists = false;
+    var_slider_assoc.clear();
 	
 	gfx_w = 0;
 	gfx_h = 0;
