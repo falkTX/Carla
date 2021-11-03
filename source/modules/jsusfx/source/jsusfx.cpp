@@ -40,10 +40,17 @@
     #define EEL_STRING_STDOUT_WRITE(x,len) { fwrite(x,len,1,stdout); fflush(stdout); }
   #endif
 #endif
+
+static WDL_Mutex atomic_mutex;
+#define EEL_ATOMIC_SET_SCOPE(opaque) WDL_Mutex *mutex = (opaque ? ((JsusFx*)opaque)->m_atomic_mutex : &atomic_mutex);
+#define EEL_ATOMIC_ENTER mutex->Enter()
+#define EEL_ATOMIC_LEAVE mutex->Leave()
+
 #include "WDL/eel2/eel_strings.h"
 #include "WDL/eel2/eel_misc.h"
 #include "WDL/eel2/eel_fft.h"
 #include "WDL/eel2/eel_mdct.h"
+#include "WDL/eel2/eel_atomic.h"
 
 #include <fstream> // to check if files exist
 
@@ -543,6 +550,7 @@ JsusFx::JsusFx(JsusFxPathLibrary &_pathLibrary)
     NSEEL_VM_SetCustomFuncThis(m_vm,this);
 
     m_string_context = new eel_string_context_state();
+    m_atomic_mutex = new WDL_Mutex;
     eel_string_initvm(m_vm);
     computeSlider = false;
     srate = 0;
@@ -614,6 +622,7 @@ JsusFx::~JsusFx() {
     if (m_vm) 
         NSEEL_VM_free(m_vm);
     delete m_string_context;
+    delete m_atomic_mutex;
 }
 
 bool JsusFx::compileSection(int state, const char *code, int line_offset) {
@@ -1333,6 +1342,7 @@ void JsusFx::init() {
     EEL_mdct_register();
     EEL_string_register();
     EEL_misc_register();
+    EEL_atomic_register();
 
     initFlag = true;
 }

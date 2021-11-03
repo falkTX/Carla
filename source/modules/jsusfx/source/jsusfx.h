@@ -42,6 +42,7 @@ class JsusFx_Slider;
 struct JsusFx_Sections;
 
 class WDL_FastString;
+class WDL_Mutex;
 
 //
 
@@ -267,4 +268,5 @@ public:
     
     // ==============================================================
     eel_string_context_state *m_string_context;
+    WDL_Mutex *m_atomic_mutex;
 };
