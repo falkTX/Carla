@@ -1132,9 +1132,6 @@ void JsusFx::setTransportValues(
 bool JsusFx::process(const float **input, float **output, int size, int numInputChannels, int numOutputChannels) {
     midiInputReadPos = 0;
     midiOutput.clear();
-	
-    if ( codeSample == NULL )
-        return false;
 
     if ( computeSlider ) {
         NSEEL_code_execute(codeSlider);
@@ -1146,12 +1143,15 @@ bool JsusFx::process(const float **input, float **output, int size, int numInput
     *samplesblock = size;
     *num_ch = numValidInputChannels;
     NSEEL_code_execute(codeBlock);
-    for(int i=0;i<size;i++) {
-    	for (int c = 0; c < numInputChannels; ++c)
-        	*spl[c] = input[c][i];
-        NSEEL_code_execute(codeSample);
-    	for (int c = 0; c < numOutputChannels; ++c)
-        	output[c][i] = *spl[c];
+
+    if (codeSample) {
+        for(int i=0;i<size;i++) {
+            for (int c = 0; c < numInputChannels; ++c)
+                *spl[c] = input[c][i];
+            NSEEL_code_execute(codeSample);
+            for (int c = 0; c < numOutputChannels; ++c)
+                output[c][i] = *spl[c];
+        }
     }
 	
 	midiInput.clear();
@@ -1162,9 +1162,6 @@ bool JsusFx::process(const float **input, float **output, int size, int numInput
 bool JsusFx::process64(const double **input, double **output, int size, int numInputChannels, int numOutputChannels) {
     midiInputReadPos = 0;
     midiOutput.clear();
-	
-    if ( codeSample == NULL )
-        return false;
 
     if ( computeSlider ) {
         NSEEL_code_execute(codeSlider);
@@ -1176,12 +1173,15 @@ bool JsusFx::process64(const double **input, double **output, int size, int numI
     *samplesblock = size;
     *num_ch = numValidInputChannels;
     NSEEL_code_execute(codeBlock);
-    for(int i=0;i<size;i++) {
-    	for (int c = 0; c < numInputChannels; ++c)
-        	*spl[c] = input[c][i];
-        NSEEL_code_execute(codeSample);
-    	for (int c = 0; c < numOutputChannels; ++c)
-        	output[c][i] = *spl[c];
+
+    if (codeSample) {
+        for(int i=0;i<size;i++) {
+            for (int c = 0; c < numInputChannels; ++c)
+                *spl[c] = input[c][i];
+            NSEEL_code_execute(codeSample);
+            for (int c = 0; c < numOutputChannels; ++c)
+                output[c][i] = *spl[c];
+        }
     }
 	
 	midiInput.clear();
