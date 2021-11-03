@@ -66,6 +66,8 @@ public:
     std::vector<std::string> enumNames;
     bool isEnum;
 
+	intptr_t userData;
+
     JsusFx_Slider() {
         def = min = max = inc = 0;
         name[0] = 0;
@@ -73,6 +75,7 @@ public:
         exists = false;
         owner = nullptr;
         isEnum = false;
+        userData = 0;
     }
 
     bool config(JsusFx &fx, const int index, const char *param, const int lnumber);
