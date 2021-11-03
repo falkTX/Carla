@@ -22,7 +22,7 @@ else
 MODULEDIR := $(CURDIR)/build/modules/Release
 endif
 
-VERSION   := 2.4.0
+VERSION   := 2.4.1
 
 -include Makefile.user.mk
 
@@ -38,9 +38,8 @@ ALL_LIBS += $(MODULEDIR)/carla_engine.a
 endif
 ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
 ALL_LIBS += $(MODULEDIR)/carla_plugin.a
-ifneq ($(STATIC_PLUGIN_TARGET),true)
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
-else
+ifeq ($(STATIC_PLUGIN_TARGET),true)
 ALL_LIBS += $(MODULEDIR)/jackbridge.min.a
 endif
 ALL_LIBS += $(MODULEDIR)/native-plugins.a
@@ -114,7 +113,7 @@ $(MODULEDIR)/carla_plugin.a: .FORCE
 $(MODULEDIR)/jackbridge.a: .FORCE
 	@$(MAKE) -C source/jackbridge
 
-$(MODULEDIR)/jackbridge.%.a: .FORCE
+$(MODULEDIR)/jackbridge.%.a: $(MODULEDIR)/jackbridge.a
 	@$(MAKE) -C source/jackbridge $*
 
 $(MODULEDIR)/native-plugins.a: .FORCE

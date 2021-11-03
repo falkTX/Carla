@@ -71,7 +71,7 @@ if WINDOWS:
 # ------------------------------------------------------------------------------------------------------------
 # Set Version
 
-VERSION = "2.4.0"
+VERSION = "2.4.1"
 
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP
@@ -359,6 +359,7 @@ if WINDOWS:
     splitter = ";"
 
     APPDATA = os.getenv("APPDATA")
+    LOCALAPPDATA = os.getenv("LOCALAPPDATA", APPDATA)
     PROGRAMFILES = os.getenv("PROGRAMFILES")
     PROGRAMFILESx86 = os.getenv("PROGRAMFILES(x86)")
     COMMONPROGRAMFILES = os.getenv("COMMONPROGRAMFILES")
@@ -396,6 +397,7 @@ if WINDOWS:
         DEFAULT_VST2_PATH  += ";" + COMMONPROGRAMFILES + "\\VST2"
 
     DEFAULT_VST3_PATH    = COMMONPROGRAMFILES + "\\VST3"
+    DEFAULT_VST3_PATH   += ";" + LOCALAPPDATA + "\\Programs\\Common\\VST3"
 
     DEFAULT_SF2_PATH     = APPDATA + "\\SF2"
     DEFAULT_SFZ_PATH     = APPDATA + "\\SFZ"

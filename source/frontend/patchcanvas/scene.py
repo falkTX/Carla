@@ -81,6 +81,7 @@ class PatchScene(QGraphicsScene):
         self.m_cursor_cut = None
         self.m_cursor_zoom = None
 
+        self.setItemIndexMethod(QGraphicsScene.ItemIndexMethod.NoIndex)
         self.selectionChanged.connect(self.slot_selectionChanged)
 
     def getDevicePixelRatioF(self):

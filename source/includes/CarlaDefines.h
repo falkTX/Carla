@@ -32,8 +32,8 @@
 #endif
 
 /* Set Version */
-#define CARLA_VERSION_HEX    0x020400
-#define CARLA_VERSION_STRING "2.4.0"
+#define CARLA_VERSION_HEX    0x020401
+#define CARLA_VERSION_STRING "2.4.1"
 #define CARLA_VERSION_STRMIN "2.4"
 
 /* Check OS */
@@ -270,7 +270,7 @@ private:                                        \
 #endif
 
 /* Define CARLA_API */
-#ifdef BUILD_BRIDGE
+#if defined(BUILD_BRIDGE) || defined(STATIC_PLUGIN_TARGET)
 # define CARLA_API
 #else
 # if defined(CARLA_OS_WIN) && ! defined(__WINE__)

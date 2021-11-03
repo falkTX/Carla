@@ -30,7 +30,8 @@ namespace water {
 
 MemoryOutputStream::MemoryOutputStream (const size_t initialSize)
   : internalBlock(), blockToUse (internalBlock),
-    position (0), size (0)
+    position (0), size (0),
+    usingInternalBlock (true)
 {
     internalBlock.setSize (initialSize, false);
 }
@@ -38,7 +39,8 @@ MemoryOutputStream::MemoryOutputStream (const size_t initialSize)
 MemoryOutputStream::MemoryOutputStream (MemoryBlock& memoryBlockToWriteTo,
                                         const bool appendToExistingBlockContent)
   : internalBlock(), blockToUse (memoryBlockToWriteTo),
-    position (0), size (0)
+    position (0), size (0),
+    usingInternalBlock (false)
 {
     if (appendToExistingBlockContent)
         position = size = memoryBlockToWriteTo.getSize();
@@ -56,7 +58,7 @@ void MemoryOutputStream::flush()
 
 void MemoryOutputStream::trimExternalBlockSize()
 {
-    if (blockToUse != internalBlock)
+    if (! usingInternalBlock)
         blockToUse.setSize (size, false);
 }
 
