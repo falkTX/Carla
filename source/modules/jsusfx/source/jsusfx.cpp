@@ -238,9 +238,22 @@ static EEL_F NSEEL_CGEN_CALL _midisend_buf(void *opaque, INT_PTR np, EEL_F **par
 	JsusFx *ctx = REAPER_GET_INTERFACE(opaque);
 	if (np == 3) {
 		const int offset = (int)*parms[0];
-		const uint8_t *buf = (const uint8_t*)parms[1];
+		const int buf = (int)*parms[1];
 		const int len = (int)*parms[2];
-		if (!ctx->addOutputEvent(offset, buf, len))
+
+		if (len <= 0)
+			return 0;
+
+		int scap = 0;
+		const EEL_F *src = NSEEL_VM_getramptr(ctx->m_vm, buf, &scap);
+		if (scap < len)
+			return 0;
+
+		uint8_t bytes[NSEEL_RAM_ITEMSPERBLOCK]; // 64 kB
+		for (int i = 0; i < len; ++i)
+			bytes[i] = (uint8_t)src[i];
+
+		if (!ctx->addOutputEvent(offset, bytes, len))
 			return 0;
 		return len;
 	} else {
