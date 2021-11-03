@@ -395,6 +395,15 @@ public:
             bool isEnum = slider.isEnum && min == 0.0f && max >= 0.0f &&
                 max + 1.0f == (float)slider.enumNames.size();
 
+            // NOTE: in case of incomplete slider specification without <min,max,step>;
+            //  these are usually output-only sliders.
+            if (min == max)
+            {
+                // replace with a dummy range
+                min = 0.0f;
+                max = 1.0f;
+            }
+
             if (min > max)
                 std::swap(min, max);
 
