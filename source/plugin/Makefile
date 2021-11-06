@@ -361,12 +361,12 @@ else
 $(BINDIR)/CarlaVstShellBridged.dll.so: $(OBJDIR)/carla-vst.cpp.shell.o $(OBJDIR)/carla-vst-export.cpp.dll.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstShellBridged.dll.so"
-	@$(WINECC) $^ $(BUILD_C_FLAGS) $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) symbols/carla-vst.def $(WINE_LINK_FLAGS) -o $@
+	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) symbols/carla-vst.def $(WINE_LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaVstFxShellBridged.dll.so: $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)/carla-vst-export.cpp.dll.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstFxShellBridged.dll.so"
-	@$(WINECC) $^ $(BUILD_C_FLAGS) $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) symbols/carla-vst.def $(WINE_LINK_FLAGS) -o $@
+	@$(WINECC) $^ $(LIBS_START) $(LIBS_wine) $(LIBS_END) $(SHARED) symbols/carla-vst.def $(WINE_LINK_FLAGS) -o $@
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
