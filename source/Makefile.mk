@@ -85,6 +85,10 @@ BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden
 endif
 
+ifeq ($(WITH_LTO),true)
+BASE_FLAGS += -fno-strict-aliasing -flto -ffat-lto-objects
+endif
+
 32BIT_FLAGS = -m32
 64BIT_FLAGS = -m64
 ARM32_FLAGS = -mcpu=cortex-a7 -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -mvectorize-with-neon-quad
