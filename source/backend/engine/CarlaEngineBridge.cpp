@@ -19,9 +19,15 @@
 # error This file should not be compiled if not building bridge
 #endif
 
+// must be first so we can undef CARLA_SAFE_*_RETURN_ERR* macros
+#include "CarlaPluginInternal.hpp"
+#undef CARLA_SAFE_ASSERT_RETURN_ERR
+#undef CARLA_SAFE_ASSERT_RETURN_ERRN
+#undef CARLA_SAFE_EXCEPTION_RETURN_ERR
+#undef CARLA_SAFE_EXCEPTION_RETURN_ERRN
+
 #include "CarlaEngineClient.hpp"
 #include "CarlaEngineInit.hpp"
-#include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
@@ -44,16 +50,6 @@ using water::String;
 using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
-
-// -----------------------------------------------------------------------
-
-// just want to access private options...
-struct CarlaPlugin::ProtectedData {
-    CarlaEngine* const engine;
-    CarlaEngineClient* client;
-    uint id, hints, options;
-    // ...etc
-};
 
 // -----------------------------------------------------------------------
 // Bridge Engine client
