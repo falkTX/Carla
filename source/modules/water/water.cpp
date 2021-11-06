@@ -33,12 +33,14 @@ HINSTANCE getCurrentModuleInstanceHandle() noexcept
     return currentModuleHandle;
 }
 
+# ifndef STATIC_PLUGIN_TARGET
 CARLA_EXPORT
 BOOL WINAPI DllMain(HINSTANCE hInst, DWORD, LPVOID)
 {
     currentModuleHandle = hInst;
     return 1;
 }
+# endif
 #endif
 
 }
