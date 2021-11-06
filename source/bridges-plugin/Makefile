@@ -259,37 +259,37 @@ win64:   $(BINDIR)/$(MODULENAME)-win64.exe
 $(BINDIR)/$(MODULENAME)-native$(APP_EXT): $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-native$(APP_EXT)"
-	@$(CXX) $(OBJS_native) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $(OBJS_native) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-lv2$(LIB_EXT): $(OBJS_lv2) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2$(LIB_EXT)"
-	@$(CXX) $(OBJS_lv2) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(SHARED) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $(OBJS_lv2) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(SHARED) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-arm32: $(OBJS_arm32) $(LIBS_arm32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-arm32"
-	@$(CXX) $(OBJS_arm32) $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
+	@$(CXX) $(OBJS_arm32) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix32: $(OBJS_posix32) $(LIBS_posix32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix32"
-	@$(CXX) $(OBJS_posix32) $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
+	@$(CXX) $(OBJS_posix32) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix64: $(OBJS_posix64) $(LIBS_posix64)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix64"
-	@$(CXX) $(OBJS_posix64) $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
+	@$(CXX) $(OBJS_posix64) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-win32.exe: $(OBJS_win32) $(LIBS_win32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-win32.exe"
-	@$(CXX) $(OBJS_win32) $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(32BIT_FLAGS) -o $@
+	@$(CXX) $(OBJS_win32) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(32BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-win64.exe: $(OBJS_win64) $(LIBS_win64)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-win64.exe"
-	@$(CXX) $(OBJS_win64) $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(64BIT_FLAGS) -o $@
+	@$(CXX) $(OBJS_win64) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(64BIT_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 # native

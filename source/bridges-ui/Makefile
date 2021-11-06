@@ -142,7 +142,7 @@ OBJS_GTK2 = \
 $(BINDIR)/$(MODULENAME)-lv2-gtk2: $(OBJS_GTK2) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-gtk2"
-	@$(CXX) $(OBJS_GTK2) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK2_FLAGS) -o $@
+	@$(CXX) $(OBJS_GTK2) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK2_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-gtk2.o: %.cpp
 	-@mkdir -p $(OBJDIR)
@@ -162,7 +162,7 @@ OBJS_GTK3 = \
 $(BINDIR)/$(MODULENAME)-lv2-gtk3: $(OBJS_GTK3) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-gtk3"
-	@$(CXX) $(OBJS_GTK3) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK3_FLAGS) -o $@
+	@$(CXX) $(OBJS_GTK3) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK3_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-gtk3.o: %.cpp
 	-@mkdir -p $(OBJDIR)
@@ -182,7 +182,7 @@ OBJS_QT4 = \
 $(BINDIR)/$(MODULENAME)-lv2-qt4: $(OBJS_QT4) $(LIBS) $(MODULEDIR)/theme.qt4.a
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-qt4"
-	@$(CXX) $(OBJS_QT4) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt4.a $(LINK_QT4_FLAGS) -o $@
+	@$(CXX) $(OBJS_QT4) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt4.a $(LINK_QT4_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-qt4.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt4.moc $(OBJDIR)/resources.qt4.cpp
 	-@mkdir -p $(OBJDIR)
@@ -212,7 +212,7 @@ OBJS_QT5 = \
 $(BINDIR)/$(MODULENAME)-lv2-qt5: $(OBJS_QT5) $(LIBS) $(MODULEDIR)/theme.qt5.a
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-qt5"
-	@$(CXX) $(OBJS_QT5) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt5.a $(LINK_QT5_FLAGS) -o $@
+	@$(CXX) $(OBJS_QT5) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt5.a $(LINK_QT5_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-qt5.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt5.moc $(OBJDIR)/resources.qt5.cpp
 	-@mkdir -p $(OBJDIR)
@@ -242,7 +242,7 @@ OBJS_X11 = \
 $(BINDIR)/$(MODULENAME)-lv2-x11: $(OBJS_X11) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-x11"
-	@$(CXX) $(OBJS_X11) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_X11_FLAGS) -o $@
+	@$(CXX) $(OBJS_X11) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_X11_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-x11.o: %.cpp
 	-@mkdir -p $(OBJDIR)
@@ -262,7 +262,7 @@ OBJS_COCOA = \
 $(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_COCOA) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-cocoa"
-	@$(CXX) $(OBJS_COCOA) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_COCOA_FLAGS) -o $@
+	@$(CXX) $(OBJS_COCOA) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_COCOA_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-cocoa.o: %.cpp
 	-@mkdir -p $(OBJDIR)
@@ -282,7 +282,7 @@ OBJS_WINDOWS = \
 $(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_WINDOWS) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-windows.exe"
-	@$(CXX) $(OBJS_WINDOWS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_WINDOWS_FLAGS) -o $@
+	@$(CXX) $(OBJS_WINDOWS) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_WINDOWS_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-windows.o: %.cpp
 	-@mkdir -p $(OBJDIR)

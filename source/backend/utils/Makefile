@@ -82,7 +82,7 @@ debug:
 $(BINDIR)/libcarla_utils$(LIB_EXT): $(OBJS) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_utils$(LIB_EXT)"
-	@$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) $(LINK_FLAGS) $(SHARED) -o $@
+	@$(CXX) $(OBJS) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) $(LINK_FLAGS) $(SHARED) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
