@@ -470,7 +470,7 @@ $(OBJDIR)/carla-vst-export.cpp.o: carla-vst-export.cpp $(LIBS)
 $(OBJDIR)/carla-vst-export.cpp.dll.o: carla-vst-export.cpp $(LIBS)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Wine)"
-	@$(WINECC) $< $(BUILD_C_FLAGS) -c -o $@
+	@$(WINECC) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
