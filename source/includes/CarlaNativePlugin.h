@@ -53,6 +53,11 @@ CARLA_EXPORT const NativePluginDescriptor* carla_get_native_patchbay64_plugin(vo
 CARLA_EXPORT const NativePluginDescriptor* carla_get_native_patchbay_cv_plugin(void);
 
 /*!
+ * Get the native plugin descriptor for the carla-patchbay-cv8 plugin.
+ */
+CARLA_EXPORT const NativePluginDescriptor* carla_get_native_patchbay_cv8_plugin(void);
+
+/*!
  * Create a CarlaHostHandle suitable for CarlaHost API calls.
  * Returned value must be freed by the caller when no longer needed.
  */
