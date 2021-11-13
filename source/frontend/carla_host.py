@@ -3376,6 +3376,7 @@ def setEngineSettings(host, oscPort = None):
     VST3_PATH   = settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH, list)
     SF2_PATH    = settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH, list)
     SFZ_PATH    = settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH, list)
+    JSFX_PATH   = settings.value(CARLA_KEY_PATHS_JSFX,   CARLA_DEFAULT_JSFX_PATH, list)
 
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
@@ -3384,6 +3385,7 @@ def setEngineSettings(host, oscPort = None):
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_JSFX,   splitter.join(JSFX_PATH))
 
     # --------------------------------------------------------------------------------------------------------
     # don't continue if plugin

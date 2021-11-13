@@ -86,6 +86,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="ch_jsfx">
+            <property name="text">
+             <string>JSFX</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="Line" name="line_3">
             <property name="lineWidth">
              <number>0</number>
