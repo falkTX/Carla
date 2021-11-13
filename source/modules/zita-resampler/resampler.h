@@ -69,7 +69,6 @@ private:
     unsigned int         _phase;
     unsigned int         _pstep;
     float               *_buff;
-    void                *_dummy [8];
 };
 
 

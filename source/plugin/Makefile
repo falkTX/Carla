@@ -213,6 +213,8 @@ else
 wine: $(BINDIR)/CarlaVstShellBridged.dll.so $(BINDIR)/CarlaVstFxShellBridged.dll.so
 endif
 
+static: $(OBJDIR)/carla-host-plugin.cpp.o
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUNDLES = audiogain files miditools

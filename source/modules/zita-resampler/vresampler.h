@@ -77,7 +77,6 @@ private:
     float               *_buff;
     float               *_c1;
     float               *_c2;
-    void                *_dummy [8];
 };
 
 

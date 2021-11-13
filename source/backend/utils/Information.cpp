@@ -36,7 +36,9 @@
 #ifdef USING_JUCE
 # include "AppConfig.h"
 # include "juce_core/juce_core.h"
-#else
+#endif
+
+#ifdef USING_RTAUDIO
 # include "rtaudio/RtAudio.h"
 # include "rtmidi/RtMidi.h"
 #endif
@@ -94,7 +96,7 @@ const char* carla_get_complete_license_text()
 #endif
         "<li>rtmempool library by Nedko Arnaudov"
         "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
-#ifndef USING_JUCE
+#ifdef USING_RTAUDIO
         "<li>RtAudio v" RTAUDIO_VERSION " and RtMidi v" RTMIDI_VERSION " for native Audio and MIDI support</li>"
 #endif
         "<li>zita-resampler for audio file sample rate resampling</li>"

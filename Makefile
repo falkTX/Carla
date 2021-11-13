@@ -217,6 +217,15 @@ theme: libs
 	@$(MAKE) -C source/theme
 
 # ---------------------------------------------------------------------------------------------------------------------
+# static targets
+
+static-backend: libs
+	@$(MAKE) -C source/backend static
+
+static-plugin: static-backend
+	@$(MAKE) -C source/plugin static
+
+# ---------------------------------------------------------------------------------------------------------------------
 # hacks
 
 msys2fix:
