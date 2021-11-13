@@ -86,7 +86,7 @@ CXXFLAGS   += -fvisibility-inlines-hidden
 endif
 
 ifeq ($(WITH_LTO),true)
-BASE_FLAGS += -fno-strict-aliasing -flto -ffat-lto-objects
+BASE_FLAGS += -fno-strict-aliasing -flto
 endif
 
 32BIT_FLAGS = -m32
