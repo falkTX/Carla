@@ -44,6 +44,8 @@ ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 endif
 
+BUILD_CXX_FLAGS += $(YSFX_FLAGS)
+
 ifeq ($(HAVE_X11),true)
 BUILD_CXX_FLAGS += $(X11_FLAGS)
 endif
@@ -85,6 +87,8 @@ LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 endif
 
+LIBS += $(MODULEDIR)/ysfx.a
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Link flags
 
@@ -113,6 +117,8 @@ ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
 endif
+
+LINK_FLAGS += $(YSFX_GRAPHICS_LIBS)
 
 ifeq ($(MACOS),true)
 SYMBOLS_NATIVE  = -Wl,-exported_symbol,_carla_get_native_rack_plugin

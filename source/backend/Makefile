@@ -65,6 +65,8 @@ STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 endif
 
+STANDALONE_LIBS += $(MODULEDIR)/ysfx.a
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 STANDALONE_LINK_FLAGS  = $(HYLIA_LIBS)
@@ -99,6 +101,8 @@ ifeq ($(USING_RTAUDIO),true)
 STANDALONE_LINK_FLAGS += $(RTAUDIO_LIBS)
 STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
 endif
+
+STANDALONE_LINK_FLAGS += $(YSFX_GRAPHICS_LIBS)
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
 STANDALONE_LINK_FLAGS += $(JACK_LIBS)

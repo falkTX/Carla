@@ -85,6 +85,8 @@ const char* carla_get_complete_license_text()
 #endif
         "<li>SFZero module for SFZ support</li>"
 
+        // TODO mention jsfx
+
         // misc libs
         "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
         "<li>dr_mp3 for mp3 file support</li>"
@@ -187,6 +189,9 @@ const char* const* carla_get_supported_file_extensions()
 
         // SFZ
         "sfz",
+
+        // JSFX
+        "jsfx",
 
         // terminator
         nullptr
