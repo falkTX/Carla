@@ -2551,8 +2551,11 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
     String filename = File(jbinary).getFileName();
 
     int searchFlags = File::findFiles|File::ignoreHiddenFiles;
+
+    if (filename.endsWithIgnoreCase(".vst3"))
+        searchFlags |= File::findDirectories;
 #ifdef CARLA_OS_MAC
-    if (filename.endsWithIgnoreCase(".vst") || filename.endsWithIgnoreCase(".vst3"))
+    else if (filename.endsWithIgnoreCase(".vst"))
         searchFlags |= File::findDirectories;
 #endif
 
