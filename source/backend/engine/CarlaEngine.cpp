@@ -738,7 +738,11 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             break;
 
         case PLUGIN_JACK:
+# ifndef STATIC_PLUGIN_TARGET
             plugin = CarlaPlugin::newJackApp(initializer);
+# else
+            setLastError("Static plugin target does not support JACK applications");
+# endif
             break;
 #else
         case PLUGIN_INTERNAL:

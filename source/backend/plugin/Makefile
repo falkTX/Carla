@@ -30,8 +30,11 @@ OBJS = \
 	$(OBJDIR)/CarlaPluginAU.cpp.o \
 	$(OBJDIR)/CarlaPluginJuce.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
-	$(OBJDIR)/CarlaPluginSFZero.cpp.o \
-	$(OBJDIR)/CarlaPluginJack.cpp.o
+	$(OBJDIR)/CarlaPluginSFZero.cpp.o
+
+ifneq ($(STATIC_PLUGIN_TARGET),true)
+OBJS += $(OBJDIR)/CarlaPluginJack.cpp.o
+endif
 
 TARGETS = \
 	$(MODULEDIR)/carla_plugin.a
