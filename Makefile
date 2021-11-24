@@ -448,6 +448,7 @@ endif
 ifeq ($(HAVE_PYQT),true)
 	# Create directories (gui)
 	install -d $(DESTDIR)$(LIBDIR)/carla/styles
+	install -d $(DESTDIR)$(PREFIX)/share/appdata
 	install -d $(DESTDIR)$(DATADIR)/applications
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/32x32/apps
@@ -504,7 +505,7 @@ endif
 
 	# Install pkg-config files
 	install -m 644 \
-		data/*.pc \
+		data/pkgconfig/*.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig
 
 	# Adjust PREFIX, LIBDIR, INCLUDEDIR and VERSION in pkg-config files
@@ -651,6 +652,10 @@ endif
 ifeq ($(HAVE_LIBLO),true)
 	install -m 644 data/desktop/carla-control.desktop     $(DESTDIR)$(DATADIR)/applications
 endif
+
+	# Install app data
+	sed -e 's?X-VERSION-X?$(VERSION)?' \
+		data/appdata.xml > $(DESTDIR)$(PREFIX)/share/appdata/studio.kx.carla.appdata.xml
 
 	# Install mime package
 	install -m 644 data/carla.xml $(DESTDIR)$(DATADIR)/mime/packages
