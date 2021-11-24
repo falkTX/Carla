@@ -767,7 +767,7 @@ public:
             // ----------------------
             j = FluidSynthReverbOnOff;
             pData->param.data[j].type   = PARAMETER_INPUT;
-            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/ | PARAMETER_IS_BOOLEAN;
+            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMATABLE*/ | PARAMETER_IS_BOOLEAN;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
@@ -780,7 +780,7 @@ public:
             // ----------------------
             j = FluidSynthReverbRoomSize;
             pData->param.data[j].type   = PARAMETER_INPUT;
-            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
+            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMATABLE*/;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
@@ -793,7 +793,7 @@ public:
             // ----------------------
             j = FluidSynthReverbDamp;
             pData->param.data[j].type   = PARAMETER_INPUT;
-            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
+            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMATABLE*/;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
@@ -806,7 +806,7 @@ public:
             // ----------------------
             j = FluidSynthReverbLevel;
             pData->param.data[j].type   = PARAMETER_INPUT;
-            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
+            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMATABLE*/;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.data[j].mappedControlIndex = MIDI_CONTROL_REVERB_SEND_LEVEL;
@@ -820,7 +820,7 @@ public:
             // ----------------------
             j = FluidSynthReverbWidth;
             pData->param.data[j].type   = PARAMETER_INPUT;
-            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
+            pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMATABLE*/;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
@@ -941,7 +941,7 @@ public:
             // ----------------------
             j = FluidSynthVoiceCount;
             pData->param.data[j].type   = PARAMETER_OUTPUT;
-            pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_INTEGER;
+            pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMATABLE | PARAMETER_IS_INTEGER;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
@@ -1295,7 +1295,7 @@ public:
                                 continue;
                             if (pData->param.data[k].hints != PARAMETER_INPUT)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMATABLE) == 0)
                                 continue;
 
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);

@@ -68,7 +68,7 @@ static const NativeParameter* midichannelize_get_parameter_info(NativePluginHand
 
     static NativeParameter param;
 
-    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER;
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMATABLE|NATIVE_PARAMETER_IS_INTEGER;
     param.unit  = NULL;
     param.scalePointCount = 0;
     param.scalePoints     = NULL;

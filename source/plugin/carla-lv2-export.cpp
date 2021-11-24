@@ -685,7 +685,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
         text += "        lv2:minimum " + String::formatted("%f", static_cast<double>(paramInfo->ranges.min)) + " ;\n";
         text += "        lv2:maximum " + String::formatted("%f", static_cast<double>(paramInfo->ranges.max)) + " ;\n";
 
-        if ((paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE) == 0)
+        if ((paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMATABLE) == 0)
             text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
         if (paramInfo->hints & NATIVE_PARAMETER_IS_BOOLEAN)
             text += "        lv2:portProperty lv2:toggled ;\n";

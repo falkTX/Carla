@@ -670,7 +670,7 @@ public:
             pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
 
             if (parameter->isAutomatable())
-                pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                pData->param.data[j].hints |= PARAMETER_IS_AUTOMATABLE;
 
             const float min = 0.0f;
             const float max = 1.0f;
@@ -1138,7 +1138,7 @@ public:
                                 continue;
                             if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMATABLE) == 0)
                                 continue;
 
                             ctrlEvent.handled = true;

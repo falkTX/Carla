@@ -114,7 +114,7 @@ static const NativeParameter* audiogain_get_parameter_info(NativePluginHandle ha
 
     static NativeParameter param;
 
-    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE;
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMATABLE;
     param.unit  = NULL;
     param.scalePointCount = 0;
     param.scalePoints     = NULL;

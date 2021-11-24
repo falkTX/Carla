@@ -502,7 +502,7 @@ protected:
                         continue;
                     if ((paramData->hints & CB::PARAMETER_IS_ENABLED) == 0)
                         continue;
-                    if ((paramData->hints & CB::PARAMETER_IS_AUTOMABLE) == 0)
+                    if ((paramData->hints & CB::PARAMETER_IS_AUTOMATABLE) == 0)
                         continue;
                     if (paramData->hints & CB::PARAMETER_IS_READ_ONLY)
                         continue;

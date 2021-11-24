@@ -309,9 +309,12 @@ static const uint PARAMETER_IS_LOGARITHMIC = 0x004;
 static const uint PARAMETER_IS_ENABLED = 0x010;
 
 /*!
- * Parameter is automable (real-time safe).
+ * Parameter is automatable (real-time safe).
  */
-static const uint PARAMETER_IS_AUTOMABLE = 0x020;
+static const uint PARAMETER_IS_AUTOMATABLE = 0x020;
+
+// for backwards compatibility
+static const uint PARAMETER_IS_AUTOMABLE = PARAMETER_IS_AUTOMATABLE;
 
 /*!
  * Parameter is read-only.

@@ -224,7 +224,7 @@ public:
     Lilv::Node pprop_notAutomatic;
     Lilv::Node pprop_notOnGUI;
     Lilv::Node pprop_trigger;
-    Lilv::Node pprop_nonAutomable;
+    Lilv::Node pprop_nonAutomatable;
 
     // Unit Hints
     Lilv::Node unit_name;
@@ -364,7 +364,7 @@ public:
           pprop_notAutomatic (new_uri(LV2_PORT_PROPS__notAutomatic)),
           pprop_notOnGUI     (new_uri(LV2_PORT_PROPS__notOnGUI)),
           pprop_trigger      (new_uri(LV2_PORT_PROPS__trigger)),
-          pprop_nonAutomable (new_uri(LV2_KXSTUDIO_PROPERTIES__NonAutomable)),
+          pprop_nonAutomatable (new_uri(LV2_KXSTUDIO_PROPERTIES__NonAutomatable)),
 
           unit_name          (new_uri(LV2_UNITS__name)),
           unit_render        (new_uri(LV2_UNITS__render)),
@@ -2020,8 +2020,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     rdfPort->Properties |= LV2_PORT_NOT_ON_GUI;
                 if (lilvPort.has_property(lv2World.pprop_trigger))
                     rdfPort->Properties |= LV2_PORT_TRIGGER;
-                if (lilvPort.has_property(lv2World.pprop_nonAutomable))
-                    rdfPort->Properties |= LV2_PORT_NON_AUTOMABLE;
+                if (lilvPort.has_property(lv2World.pprop_nonAutomatable))
+                    rdfPort->Properties |= LV2_PORT_NON_AUTOMATABLE;
 
                 if (lilvPort.has_property(lv2World.reportsLatency))
                     rdfPort->Designation = LV2_PORT_DESIGNATION_LATENCY;

@@ -45,7 +45,7 @@ protected:
         static NativeParameter param;
 
         param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_ENABLED
-                                                       |NATIVE_PARAMETER_IS_AUTOMABLE
+                                                       |NATIVE_PARAMETER_IS_AUTOMATABLE
                                                        |NATIVE_PARAMETER_IS_INTEGER);
         param.name  = "Page";
         param.unit  = nullptr;

@@ -84,7 +84,7 @@ static const NativeParameter* lfo_get_parameter_info(NativePluginHandle handle, 
     static NativeParameter param;
     static NativeParameterScalePoint paramModes[5];
 
-    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE;
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMATABLE;
     param.scalePointCount = 0;
     param.scalePoints     = NULL;
 

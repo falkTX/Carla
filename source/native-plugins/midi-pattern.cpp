@@ -79,7 +79,7 @@ protected:
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[10];
 
-        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMATABLE|NATIVE_PARAMETER_IS_INTEGER;
 
         switch (index)
         {

@@ -277,7 +277,7 @@ public:
         // Parameters
 
         pData->param.data[0].type   = PARAMETER_OUTPUT;
-        pData->param.data[0].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_INTEGER;
+        pData->param.data[0].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMATABLE | PARAMETER_IS_INTEGER;
         pData->param.data[0].index  = 0;
         pData->param.data[0].rindex = 0;
         pData->param.ranges[0].min = 0.0f;
@@ -462,7 +462,7 @@ public:
                                 continue;
                             if (pData->param.data[k].hints != PARAMETER_INPUT)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMATABLE) == 0)
                                 continue;
 
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);

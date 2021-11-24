@@ -1138,7 +1138,7 @@ public:
                 {
                     pData->param.data[j].type   = PARAMETER_INPUT;
                     pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-                    pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                    pData->param.data[j].hints |= PARAMETER_IS_AUTOMATABLE;
                     pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
                     needsCtrlIn = true;
 
@@ -1172,7 +1172,7 @@ public:
                     else
                     {
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-                        pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                        pData->param.data[j].hints |= PARAMETER_IS_AUTOMATABLE;
                         needsCtrlOut = true;
                     }
                 }
@@ -1712,7 +1712,7 @@ public:
                                 continue;
                             if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMATABLE) == 0)
                                 continue;
 
                             ctrlEvent.handled = true;

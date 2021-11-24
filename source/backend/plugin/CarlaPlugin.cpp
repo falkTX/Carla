@@ -1230,7 +1230,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             if (paramData.hints & PARAMETER_IS_INTEGER)
                 mainStream << "        lv2:portProperty lv2:integer ;\n";
 
-            // TODO logarithmic, enabled (not on gui), automable, samplerate, scalepoints
+            // TODO logarithmic, enabled (not on gui), automatable, samplerate, scalepoints
 
             if (! getParameterName(i, strBufName))
                 strBufName[0] = '\0';

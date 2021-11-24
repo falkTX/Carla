@@ -2872,7 +2872,7 @@ public:
                     else
                     {
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-                        pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                        pData->param.data[j].hints |= PARAMETER_IS_AUTOMATABLE;
                         needsCtrlIn = true;
 
                         if (! LV2_IS_PORT_CAUSES_ARTIFACTS(portProps) &&
@@ -2929,7 +2929,7 @@ public:
                     else
                     {
                         pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-                        pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                        pData->param.data[j].hints |= PARAMETER_IS_AUTOMATABLE;
                         needsCtrlOut = true;
                     }
                 }
@@ -2952,13 +2952,13 @@ public:
                 if (LV2_IS_PORT_ENUMERATION(portProps))
                     pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
 
-                // check if parameter is not enabled or automable
+                // check if parameter is not enabled or automatable
                 if (LV2_IS_PORT_NOT_ON_GUI(portProps))
-                    pData->param.data[j].hints &= ~(PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE);
+                    pData->param.data[j].hints &= ~(PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMATABLE);
                 else if (LV2_IS_PORT_CAUSES_ARTIFACTS(portProps) || LV2_IS_PORT_EXPENSIVE(portProps))
-                    pData->param.data[j].hints &= ~PARAMETER_IS_AUTOMABLE;
-                else if (LV2_IS_PORT_NOT_AUTOMATIC(portProps) || LV2_IS_PORT_NON_AUTOMABLE(portProps))
-                    pData->param.data[j].hints &= ~PARAMETER_IS_AUTOMABLE;
+                    pData->param.data[j].hints &= ~PARAMETER_IS_AUTOMATABLE;
+                else if (LV2_IS_PORT_NOT_AUTOMATIC(portProps) || LV2_IS_PORT_NON_AUTOMATABLE(portProps))
+                    pData->param.data[j].hints &= ~PARAMETER_IS_AUTOMATABLE;
 
                 pData->param.ranges[j].min = min;
                 pData->param.ranges[j].max = max;
@@ -3078,7 +3078,7 @@ public:
             {
                 pData->param.data[j].type   = PARAMETER_INPUT;
                 pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-                pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                pData->param.data[j].hints |= PARAMETER_IS_AUTOMATABLE;
                 pData->param.data[j].hints |= PARAMETER_IS_NOT_SAVED;
                 needsCtrlIn = true;
 
@@ -3095,7 +3095,7 @@ public:
             {
                 pData->param.data[j].type   = PARAMETER_OUTPUT;
                 pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-                pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+                pData->param.data[j].hints |= PARAMETER_IS_AUTOMATABLE;
                 needsCtrlOut = true;
                 hasPatchParameterOutputs = true;
             }
@@ -4029,7 +4029,7 @@ public:
                                 continue;
                             if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
-                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMATABLE) == 0)
                                 continue;
 
                             ctrlEvent.handled = true;

@@ -70,7 +70,7 @@ static const NativeParameter* midichanab_get_parameter_info(NativePluginHandle h
     static const NativeParameterScalePoint scalePoints[2] = { { "Output A", 0 }, { "Output B", 1 } };
     static char paramName[24];
 
-    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMATABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
     param.name  = paramName;
     param.unit  = NULL;
     param.ranges.def       = 0;

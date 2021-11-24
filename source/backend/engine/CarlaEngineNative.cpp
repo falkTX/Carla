@@ -1005,8 +1005,8 @@ protected:
                 hints |= NATIVE_PARAMETER_IS_INTEGER;
             if (paramData.hints & PARAMETER_IS_LOGARITHMIC)
                 hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
-            if (paramData.hints & PARAMETER_IS_AUTOMABLE)
-                hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
+            if (paramData.hints & PARAMETER_IS_AUTOMATABLE)
+                hints |= NATIVE_PARAMETER_IS_AUTOMATABLE;
             if (paramData.hints & PARAMETER_USES_SAMPLERATE)
                 hints |= NATIVE_PARAMETER_USES_SAMPLE_RATE;
             if (paramData.hints & PARAMETER_USES_SCALEPOINTS)

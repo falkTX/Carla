@@ -126,7 +126,7 @@ protected:
         {
         case kParameterLooping:
             param.name  = "Loop Mode";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_BOOLEAN);
             param.ranges.def = 1.0f;
@@ -135,7 +135,7 @@ protected:
             break;
         case kParameterHostSync:
             param.name  = "Host Sync";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_BOOLEAN);
 #ifdef __MOD_DEVICES__
@@ -148,7 +148,7 @@ protected:
             break;
         case kParameterVolume:
             param.name  = "Volume";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED);
             param.ranges.def = 100.0f;
             param.ranges.min = 0.0f;
@@ -159,7 +159,7 @@ protected:
             break;
         case kParameterEnabled:
             param.name  = "Enabled";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_BOOLEAN|
                                                             NATIVE_PARAMETER_USES_DESIGNATION);
@@ -170,7 +170,7 @@ protected:
             break;
         case kParameterInfoChannels:
             param.name  = "Num Channels";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_INTEGER|
                                                             NATIVE_PARAMETER_IS_OUTPUT);
@@ -180,7 +180,7 @@ protected:
             break;
         case kParameterInfoBitRate:
             param.name  = "Bit Rate";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_INTEGER|
                                                             NATIVE_PARAMETER_IS_OUTPUT);
@@ -190,7 +190,7 @@ protected:
             break;
         case kParameterInfoBitDepth:
             param.name  = "Bit Depth";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_INTEGER|
                                                             NATIVE_PARAMETER_IS_OUTPUT);
@@ -200,7 +200,7 @@ protected:
             break;
         case kParameterInfoSampleRate:
             param.name  = "Sample Rate";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_INTEGER|
                                                             NATIVE_PARAMETER_IS_OUTPUT);
@@ -210,7 +210,7 @@ protected:
             break;
         case kParameterInfoLength:
             param.name  = "Length";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_OUTPUT);
             param.ranges.def = 0.0f;
@@ -220,7 +220,7 @@ protected:
             break;
         case kParameterInfoPosition:
             param.name  = "Position";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_OUTPUT);
             param.ranges.def = 0.0f;
@@ -230,7 +230,7 @@ protected:
             break;
         case kParameterInfoPoolFill:
             param.name  = "Pool Fill";
-            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMABLE|
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
                                                             NATIVE_PARAMETER_IS_ENABLED|
                                                             NATIVE_PARAMETER_IS_OUTPUT);
             param.ranges.def = 0.0f;

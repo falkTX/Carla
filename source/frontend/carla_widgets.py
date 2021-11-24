@@ -68,7 +68,7 @@ from carla_backend import (
     PARAMETER_PANNING,
     PARAMETER_CTRL_CHANNEL,
     PARAMETER_IS_ENABLED,
-    PARAMETER_IS_AUTOMABLE,
+    PARAMETER_IS_AUTOMATABLE,
     PARAMETER_IS_READ_ONLY,
     PARAMETER_USES_SCALEPOINTS,
     PARAMETER_USES_CUSTOM_TEXT,
@@ -327,7 +327,7 @@ class PluginParameter(QWidget):
                 self.ui.widget.setReadOnly(True)
                 self.ui.tb_options.setEnabled(False)
 
-            elif not pHints & PARAMETER_IS_AUTOMABLE:
+            elif not pHints & PARAMETER_IS_AUTOMATABLE:
                 self.ui.l_status.setEnabled(False)
                 self.ui.tb_options.setEnabled(False)
 

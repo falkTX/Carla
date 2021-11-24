@@ -70,7 +70,7 @@ static const NativeParameter* midichanfilter_get_parameter_info(NativePluginHand
     static const NativeParameterScalePoint scalePoints[2] = { { "Off", 0.0f }, { "On", 1.0f } };
     static char paramName[24];
 
-    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMATABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
     param.name  = paramName;
     param.unit  = NULL;
     param.ranges.def       = 1.0f;

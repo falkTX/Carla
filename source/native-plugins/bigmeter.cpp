@@ -53,7 +53,7 @@ protected:
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[3];
 
-        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMATABLE;
 
         param.name = nullptr;
         param.unit = nullptr;

@@ -236,7 +236,7 @@ protected:
             const uint32_t paramHints = fPlugin.getParameterHints(index);
 
             if (paramHints & kParameterIsAutomable)
-                nativeParamHints |= ::NATIVE_PARAMETER_IS_AUTOMABLE;
+                nativeParamHints |= ::NATIVE_PARAMETER_IS_AUTOMATABLE;
             if (paramHints & kParameterIsBoolean)
                 nativeParamHints |= ::NATIVE_PARAMETER_IS_BOOLEAN;
             if (paramHints & kParameterIsInteger)

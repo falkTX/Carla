@@ -300,8 +300,8 @@ PARAMETER_IS_LOGARITHMIC = 0x004
 # It can be viewed, changed and stored.
 PARAMETER_IS_ENABLED = 0x010
 
-# Parameter is automable (real-time safe).
-PARAMETER_IS_AUTOMABLE = 0x020
+# Parameter is automatable (real-time safe).
+PARAMETER_IS_AUTOMATABLE = 0x020
 
 # Parameter is read-only.
 # It cannot be changed.
