@@ -299,7 +299,7 @@ if WINDOWS:
     CARLA_DEFAULT_AUDIO_DRIVER = "DirectSound"
 elif MACOS:
     CARLA_DEFAULT_AUDIO_DRIVER = "CoreAudio"
-elif os.path.exists("/usr/bin/jackd") or os.path.exists("/usr/bin/jackdbus"):
+elif os.path.exists("/usr/bin/jackd") or os.path.exists("/usr/bin/jackdbus") or os.path.exists("/usr/bin/pw-jack"):
     CARLA_DEFAULT_AUDIO_DRIVER = "JACK"
 else:
     CARLA_DEFAULT_AUDIO_DRIVER = "PulseAudio"
