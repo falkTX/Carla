@@ -60,11 +60,10 @@ BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections -DBUILDING_CARL
 endif
 
 ifeq ($(WIN32),true)
-# mingw has issues with this specific optimization
-# See https://github.com/falkTX/Carla/issues/696
-BASE_OPTS  += -fno-rerun-cse-after-loop
-# See https://github.com/falkTX/Carla/issues/855
-BASE_OPTS  += -mstackrealign
+# Assume we want posix
+BASE_FLAGS += -posix
+# Needed for windows, see https://github.com/falkTX/Carla/issues/855
+BASE_FLAGS += -mstackrealign
 ifeq ($(BUILDING_FOR_WINE),true)
 BASE_FLAGS += -DBUILDING_CARLA_FOR_WINE
 endif
