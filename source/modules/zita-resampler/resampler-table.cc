@@ -132,17 +132,3 @@ void Resampler_table::destroy (Resampler_table *T)
     }
     _mutex.unlock ();
 }
-
-
-void Resampler_table::print_list (void)
-{
-    Resampler_table *P;
-
-    printf ("Resampler table\n----\n");
-    for (P = _list; P; P = P->_next)
-    {
-	printf ("refc = %3d   fr = %10.6lf  hl = %4d  np = %4d\n", P->_refc, P->_fr, P->_hl, P->_np);
-    }
-    printf ("----\n\n");
-}
-

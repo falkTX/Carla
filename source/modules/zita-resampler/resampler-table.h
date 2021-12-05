@@ -44,10 +44,6 @@ private:
 
 class Resampler_table
 {
-public:
-
-    static void print_list (void);
-
 private:
 
     Resampler_table (double fr, unsigned int hl, unsigned int np);
