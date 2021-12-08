@@ -464,6 +464,11 @@ static const char* const CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/c
 static const char* const CUSTOM_DATA_TYPE_CHUNK = "http://kxstudio.sf.net/ns/carla/chunk";
 
 /*!
+ * Path type URI.
+ */
+static const char* const CUSTOM_DATA_TYPE_PATH = "http://kxstudio.sf.net/ns/carla/path";
+
+/*!
  * Property type URI.
  */
 static const char* const CUSTOM_DATA_TYPE_PROPERTY = "http://kxstudio.sf.net/ns/carla/property";

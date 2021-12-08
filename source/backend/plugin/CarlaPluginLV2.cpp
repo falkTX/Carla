@@ -1536,6 +1536,19 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("CarlaPluginLV2::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_PATH) == 0)
+        {
+            if (std::strcmp(key, "file") != 0)
+                return;
+
+            CARLA_SAFE_ASSERT_RETURN(fFilePathURI.isNotEmpty(),);
+            CARLA_SAFE_ASSERT_RETURN(value[0] != '\0',);
+
+            carla_stdout("LV2 file path to send: '%s'", value);
+            writeAtomPath(value, getCustomURID(fFilePathURI));
+            return;
+        }
+
         if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
             return CarlaPlugin::setCustomData(type, key, value, sendGui);
 

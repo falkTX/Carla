@@ -795,8 +795,16 @@ public:
         if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
             return CarlaPlugin::setCustomData(type, key, value, sendGui);
 
-        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0 && std::strcmp(type, CUSTOM_DATA_TYPE_CHUNK) != 0)
-            return carla_stderr2("CarlaPluginNative::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_PATH) == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(key, "file") == 0,);
+            CARLA_SAFE_ASSERT_RETURN(value[0] != '\0',);
+        }
+        else if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0 && std::strcmp(type, CUSTOM_DATA_TYPE_CHUNK) != 0)
+        {
+            return carla_stderr2("CarlaPluginNative::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid xa",
+                                 type, key, value, bool2str(sendGui));
+        }
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_CHUNK) == 0)
         {
