@@ -317,8 +317,9 @@ private:                                        \
 
 /* Useful typedefs */
 typedef unsigned char uchar;
-typedef unsigned long int ulong;
 typedef unsigned short int ushort;
 typedef unsigned int uint;
+typedef unsigned long int ulong;
+typedef unsigned long long int ulonglong;
 
 #endif /* CARLA_DEFINES_H_INCLUDED */

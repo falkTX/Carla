@@ -99,7 +99,7 @@ jobs:
         run: make posix32 -j $(nproc)
 
   ubuntu-mingw-win32:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-18.04
     env:
       CC: i686-w64-mingw32-gcc
       CXX: i686-w64-mingw32-g++
