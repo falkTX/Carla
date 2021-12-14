@@ -250,7 +250,7 @@ class ScalableDial(QDial):
     def setPrecision(self, value, isInteger):
         self.fPrecision = value
         self.fIsInteger = isInteger
-        QDial.setMaximum(self, value)
+        QDial.setMaximum(self, int(value))
 
     def setMinimum(self, value):
         self.fMinimum = value
@@ -437,7 +437,7 @@ class ScalableDial(QDial):
                     painter.setBrush(colorBlue)
                     painter.setPen(QPen(colorBlue, 3))
 
-                painter.drawArc(4.0, 4.0, 26.0, 26.0, startAngle, spanAngle)
+                painter.drawArc(QRectF(4.0, 4.0, 26.0, 26.0), int(startAngle), int(spanAngle))
 
             # Custom knobs (L and R)
             elif self.fCustomPaintMode in (self.CUSTOM_PAINT_MODE_CARLA_L, self.CUSTOM_PAINT_MODE_CARLA_R):
@@ -466,7 +466,7 @@ class ScalableDial(QDial):
                     spanAngle  = 255.0*16*(1.0-normValue)
 
                 painter.setPen(QPen(color, 2.5))
-                painter.drawArc(3.5, 3.5, 22.0, 22.0, startAngle, spanAngle)
+                painter.drawArc(QRectF(3.5, 3.5, 22.0, 22.0), int(startAngle), int(spanAngle))
 
             # Custom knobs (Color)
             elif self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_COLOR:
@@ -491,7 +491,7 @@ class ScalableDial(QDial):
 
                 painter.setBrush(color)
                 painter.setPen(QPen(color, 3))
-                painter.drawArc(4.0, 4.8, 26.0, 26.0, startAngle, spanAngle)
+                painter.drawArc(QRectF(4.0, 4.8, 26.0, 26.0), int(startAngle), int(spanAngle))
 
             # Custom knobs (Zita)
             elif self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_ZITA:
