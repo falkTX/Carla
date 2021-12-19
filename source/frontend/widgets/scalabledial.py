@@ -270,7 +270,7 @@ class ScalableDial(QDial):
             self.fRealValue = self.fMinimum
 
         elif value >= self.fMaximum:
-            qtValue = self.fPrecision
+            qtValue = int(self.fPrecision)
             self.fRealValue = self.fMaximum
 
         else:
