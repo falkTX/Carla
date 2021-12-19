@@ -64,7 +64,7 @@ static const pthread_t kNullThread = {nullptr, 0};
 static const pthread_t kNullThread = 0;
 #endif
 
-// -----------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginVST2 : public CarlaPlugin,
                         private CarlaPluginUI::Callback
@@ -2967,7 +2967,7 @@ CarlaPluginVST2* CarlaPluginVST2::sLastCarlaPluginVST2 = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -2989,6 +2989,6 @@ CarlaPluginPtr CarlaPlugin::newVST2(const Initializer& init)
     return plugin;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
