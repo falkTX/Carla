@@ -1433,7 +1433,7 @@ public:
                     }
                 }
 
-                // Volume (and buffer copy)
+                // Volume
                 if (doVolume)
                 {
                     for (uint32_t k=0; k < frames; ++k)

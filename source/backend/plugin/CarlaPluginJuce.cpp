@@ -1362,6 +1362,81 @@ public:
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
             carla_copyFloats(outBuffer[i], fAudioBuffer.getReadPointer(static_cast<int>(i)), frames);
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        // --------------------------------------------------------------------------------------------------------
+        // Post-processing (dry/wet, volume and balance)
+
+        {
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
+            const bool isMono    = (pData->audioIn.count == 1);
+
+            bool isPair;
+            float bufValue, oldBufLeft[doBalance ? frames : 1];
+
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            {
+                // Dry/Wet
+                if (doDryWet)
+                {
+                    const uint32_t c = isMono ? 0 : i;
+
+                    for (uint32_t k=0; k < frames; ++k)
+                    {
+                        bufValue = inBuffer[c][k];
+                        outBuffer[i][k] = (outBuffer[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
+                    }
+                }
+
+                // Balance
+                if (doBalance)
+                {
+                    isPair = (i % 2 == 0);
+
+                    if (isPair)
+                    {
+                        CARLA_ASSERT(i+1 < pData->audioOut.count);
+                        carla_copyFloats(oldBufLeft, outBuffer[i], frames);
+                    }
+
+                    float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
+                    float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
+
+                    for (uint32_t k=0; k < frames; ++k)
+                    {
+                        if (isPair)
+                        {
+                            // left
+                            outBuffer[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
+                            outBuffer[i][k] += outBuffer[i+1][k] * (1.0f - balRangeR);
+                        }
+                        else
+                        {
+                            // right
+                            outBuffer[i][k]  = outBuffer[i][k] * balRangeR;
+                            outBuffer[i][k] += oldBufLeft[k]   * balRangeL;
+                        }
+                    }
+                }
+
+                // Volume
+                if (doVolume)
+                {
+                    for (uint32_t k=0; k < frames; ++k)
+                        outBuffer[i][k] *= pData->postProc.volume;
+                }
+            }
+
+        } // End of Post-processing
+#else // BUILD_BRIDGE_ALTERNATIVE_ARCH
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        {
+            for (uint32_t k=0; k < frames; ++k)
+                audioOut[i][k] *= pData->postProc.volume;
+        }
+#endif
+
         // --------------------------------------------------------------------------------------------------------
         // Midi out
 
