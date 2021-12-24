@@ -543,10 +543,12 @@ CARLA_EXPORT void carla_clear_project_filename(CarlaHostHandle handle);
 
 /*!
  * Connect two patchbay ports.
- * @param groupIdA Output group
- * @param portIdA  Output port
- * @param groupIdB Input group
- * @param portIdB  Input port
+ * @param groupIdA Output (source) group
+ * @param portIdA  Output (source) port
+ * @param groupIdB Input (target) group
+ * @param portIdB  Input (target) port
+ * @note The group corresponds to the client Id received in the engine callback
+ * for ENGINE_CALLBACK_PATCHBAY_PORT_ADDED.
  * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
  */
 CARLA_EXPORT bool carla_patchbay_connect(CarlaHostHandle handle, bool external, uint groupIdA, uint portIdA, uint groupIdB, uint portIdB);
