@@ -1429,12 +1429,6 @@ public:
             }
 
         } // End of Post-processing
-#else // BUILD_BRIDGE_ALTERNATIVE_ARCH
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
-        {
-            for (uint32_t k=0; k < frames; ++k)
-                audioOut[i][k] *= pData->postProc.volume;
-        }
 #endif
 
         // --------------------------------------------------------------------------------------------------------
