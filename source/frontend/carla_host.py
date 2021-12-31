@@ -3491,7 +3491,7 @@ def runHostWithoutUI(host):
 
     projectFile = getInitialProjectFile(True)
 
-    if not isinstance(gCarla.nogui, int):
+    if gCarla.nogui is True:
         oscPort = None
 
         if not projectFile:
