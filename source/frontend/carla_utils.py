@@ -48,6 +48,7 @@ from carla_backend import (
     PLUGIN_SF2,
     PLUGIN_SFZ,
     PLUGIN_JACK,
+    PLUGIN_JSFX,
     PLUGIN_CATEGORY_NONE,
     PLUGIN_CATEGORY_SYNTH,
     PLUGIN_CATEGORY_DELAY,
@@ -94,6 +95,8 @@ def getPluginTypeAsString(ptype):
         return "SFZ"
     if ptype == PLUGIN_JACK:
         return "JACK"
+    if ptype == PLUGIN_JSFX:
+        return "JSFX"
 
     print("getPluginTypeAsString(%i) - invalid type" % ptype)
     return "Unknown"
@@ -130,6 +133,8 @@ def getPluginTypeFromString(stype):
         return PLUGIN_SFZ
     if stype == "jack":
         return PLUGIN_JACK
+    if stype == "jsfx":
+        return PLUGIN_JSFX
 
     print("getPluginTypeFromString(\"%s\") - invalid string type" % stype)
     return PLUGIN_NONE

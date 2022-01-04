@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -705,6 +705,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             plugin = CarlaPlugin::newAU(initializer);
             break;
 
+        case PLUGIN_JSFX:
+            setLastError("Not implemented yet");
+            break;
+
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         case PLUGIN_INTERNAL:
             plugin = CarlaPlugin::newNative(initializer);
@@ -1221,6 +1225,9 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     if (extension == "sfz")
         return addPlugin(PLUGIN_SFZ, filename, baseName, baseName, 0, nullptr);
+
+    if (extension == "jsfx")
+        return addPlugin(PLUGIN_JSFX, filename, baseName, baseName, 0, nullptr);
 
     // -------------------------------------------------------------------
 
@@ -1970,7 +1977,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         break;
     case ENGINE_OPTION_PLUGIN_PATH:
         CARLA_SAFE_ASSERT_RETURN(value > PLUGIN_NONE,);
-        CARLA_SAFE_ASSERT_RETURN(value <= PLUGIN_SFZ,);
+        CARLA_SAFE_ASSERT_RETURN(value <= PLUGIN_JSFX,);
 
         switch (value)
         {
@@ -2029,6 +2036,14 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
                 pData->options.pathSFZ = carla_strdup_safe(valueStr);
             else
                 pData->options.pathSFZ = nullptr;
+            break;
+        case PLUGIN_JSFX:
+            if (pData->options.pathJSFX != nullptr)
+                delete[] pData->options.pathJSFX;
+            if (valueStr != nullptr)
+                pData->options.pathJSFX = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathJSFX = nullptr;
             break;
         default:
             return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Invalid plugin type",
@@ -2332,6 +2347,7 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
             outSettings << "  <VST3_PATH>"   << xmlSafeString(options.pathVST3,   true) << "</VST3_PATH>\n";
             outSettings << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
             outSettings << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
+            outSettings << "  <JSFX_PATH>"   << xmlSafeString(options.pathJSFX,   true) << "</JSFX_PATH>\n";
         }
 
         outSettings << " </EngineSettings>\n";
@@ -2748,6 +2764,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     value    = PLUGIN_SFZ;
                     valueStr = text.toRawUTF8();
                 }
+                else if (tag == "JSFX_PATH")
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_JSFX;
+                    valueStr = text.toRawUTF8();
+                }
             }
 
             if (option == -1)
@@ -2760,7 +2782,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     continue;
                 if (tag == "VST3_PATH" || tag == "AU_PATH")
                     continue;
-                if (tag == "SF2_PATH" || tag == "SFZ_PATH")
+                if (tag == "SF2_PATH" || tag == "SFZ_PATH" || tag == "JSFX_PATH")
                     continue;
 
                 // hmm something is wrong..
@@ -2956,6 +2978,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             case PLUGIN_VST2:
             case PLUGIN_VST3:
             case PLUGIN_SFZ:
+            case PLUGIN_JSFX:
                 if (stateSave.binary != nullptr && stateSave.binary[0] != '\0' &&
                     ! (File::isAbsolutePath(stateSave.binary) && File(stateSave.binary).exists()))
                 {
@@ -2969,6 +2992,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     case PLUGIN_VST3:   searchPath = pData->options.pathVST3;   break;
                     case PLUGIN_SF2:    searchPath = pData->options.pathSF2;    break;
                     case PLUGIN_SFZ:    searchPath = pData->options.pathSFZ;    break;
+                    case PLUGIN_JSFX:   searchPath = pData->options.pathJSFX;   break;
                     default:            searchPath = nullptr;                   break;
                     }
 
@@ -2989,6 +3013,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                             case PLUGIN_VST3:   searchPath = std::getenv("VST3_PATH");   break;
                             case PLUGIN_SF2:    searchPath = std::getenv("SF2_PATH");    break;
                             case PLUGIN_SFZ:    searchPath = std::getenv("SFZ_PATH");    break;
+                            case PLUGIN_JSFX:   searchPath = std::getenv("JSFX_PATH");   break;
                             default:            searchPath = nullptr;                    break;
                             }
 

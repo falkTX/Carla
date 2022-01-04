@@ -484,6 +484,9 @@ PLUGIN_SFZ = 11
 # JACK application.
 PLUGIN_JACK = 12
 
+# JSFX plugin.
+PLUGIN_JSFX = 13
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Category
 # Plugin category, which describes the functionality of a plugin.

@@ -44,6 +44,7 @@ static bool isCachedPluginType(const CB::PluginType ptype)
     case CB::PLUGIN_LV2:
     case CB::PLUGIN_AU:
     case CB::PLUGIN_SFZ:
+    case CB::PLUGIN_JSFX:
         return true;
     default:
         return false;

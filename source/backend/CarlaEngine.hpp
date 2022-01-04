@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -271,6 +271,7 @@ struct CARLA_API EngineOptions {
     const char* pathVST3;
     const char* pathSF2;
     const char* pathSFZ;
+    const char* pathJSFX;
 
     const char* binaryDir;
     const char* resourceDir;
