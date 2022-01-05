@@ -79,13 +79,13 @@ const char* carla_get_complete_license_text()
         "<li>AU plugin support (using JUCE)</li>"
 #endif
 
+        "<li>JSFX plugin support (using ysfx)</li>"
+
         // Sample kit libraries
 #if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
         "<li>FluidSynth library v" FLUIDSYNTH_VERSION " for SF2/3 support</li>"
 #endif
         "<li>SFZero module for SFZ support</li>"
-
-        // TODO mention jsfx
 
         // misc libs
         "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
