@@ -257,7 +257,7 @@ protected:
                 carla_stdout("XRUN! remaining time: " P_INT64 ", old: " P_INT64 ", new: " P_INT64 ")",
                              remainingTime, oldTime, newTime);
             }
-            else
+            else if (remainingTime >= 1000)
             {
                 CARLA_SAFE_ASSERT_CONTINUE(remainingTime < 1000000); // 1 sec
                 carla_msleep(static_cast<uint>(remainingTime / 1000));
