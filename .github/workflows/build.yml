@@ -81,6 +81,11 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
       - name: Set up dependencies
         run: |
           sudo dpkg --add-architecture i386
@@ -99,7 +104,7 @@ jobs:
         run: make posix32 -j $(nproc)
 
   ubuntu-mingw-win32:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       CC: i686-w64-mingw32-gcc
       CXX: i686-w64-mingw32-g++
@@ -108,6 +113,11 @@ jobs:
       WINEDEBUG: "-all"
     steps:
       - uses: actions/checkout@v2
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
       - name: Set up dependencies
         run: |
           sudo dpkg --add-architecture i386
@@ -128,6 +138,11 @@ jobs:
       WINEDEBUG: "-all"
     steps:
       - uses: actions/checkout@v2
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
       - name: Set up dependencies
         run: |
           sudo apt-get update -qq
