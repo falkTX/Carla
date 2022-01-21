@@ -1311,7 +1311,9 @@ protected:
             {
                 if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
                     if (plugin->isEnabled())
-                        uiServerCallback(ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
+                        uiServerCallback(ENGINE_CALLBACK_PLUGIN_ADDED, i, plugin->getType(),
+                                         0, 0, 0.0f,
+                                         plugin->getName());
             }
 
             if (kIsPatchbay)

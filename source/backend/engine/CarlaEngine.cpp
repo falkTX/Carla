@@ -832,7 +832,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         plugin->setEnabled(true);
 
         ++pData->curPluginCount;
-        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0, 0.0f, plugin->getName());
+        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, id, plugin->getType(), 0, 0, 0.0f, plugin->getName());
 
         if (getType() != kEngineTypeBridge)
             plugin->setActive(true, true, true);
@@ -2888,7 +2888,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                         plugin->setEnabled(true);
 
                         ++pData->curPluginCount;
-                        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
+                        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, plugin->getType(),
+                                 0, 0, 0.0f,
+                                 plugin->getName());
 
                         if (isPatchbay)
                             pData->graph.addPlugin(plugin);
@@ -2941,7 +2943,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                         plugin->setEnabled(true);
 
                         ++pData->curPluginCount;
-                        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
+                        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, plugin->getType(),
+                                 0, 0, 0.0f,
+                                 plugin->getName());
 
                         if (isPatchbay)
                             pData->graph.addPlugin(plugin);
@@ -3089,7 +3093,9 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     plugin->setEnabled(true);
 
                     ++pData->curPluginCount;
-                    callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0, 0.0f, plugin->getName());
+                    callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, plugin->getType(),
+                             0, 0, 0.0f,
+                             plugin->getName());
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                     if (isPatchbay)

@@ -854,6 +854,7 @@ typedef enum {
     /*!
      * A plugin has been added.
      * @a pluginId Plugin Id
+     * @a value1   Plugin type
      * @a valueStr Plugin name
      */
     ENGINE_CALLBACK_PLUGIN_ADDED = 1,

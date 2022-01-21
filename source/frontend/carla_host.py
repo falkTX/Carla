@@ -165,6 +165,7 @@ class HostWindow(QMainWindow):
         self.fProjectFilename  = ""
         self.fIsProjectLoading = False
         self.fCurrentlyRemovingAllPlugins = False
+        self.fHasLoadedLv2Plugins = False
 
         self.fLastTransportBPM   = 0.0
         self.fLastTransportFrame = 0
@@ -1182,6 +1183,7 @@ class HostWindow(QMainWindow):
             self.fPluginDatabaseDialog = PluginDatabaseW(self.fParentOrSelf, self.host,
                                                          self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
         dialog = self.fPluginDatabaseDialog
+        dialog.hasLoadedLv2Plugins = self.fHasLoadedLv2Plugins
 
         ret = dialog.exec_()
 
@@ -1431,8 +1433,8 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Plugins (host callbacks)
 
-    @pyqtSlot(int, str)
-    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
+    @pyqtSlot(int, int, str)
+    def slot_handlePluginAddedCallback(self, pluginId, pluginType, pluginName):
         if pluginId != self.fPluginCount:
             print("ERROR: pluginAdded mismatch Id:", pluginId, self.fPluginCount)
             pitem = self.getPluginItem(pluginId)
@@ -1444,6 +1446,9 @@ class HostWindow(QMainWindow):
         self.fPluginCount += 1
 
         self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
+
+        if pluginType == PLUGIN_LV2:
+            self.fHasLoadedLv2Plugins = True
 
     @pyqtSlot(int)
     def slot_handlePluginRemovedCallback(self, pluginId):
@@ -3041,7 +3046,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valuef, value
     if action == ENGINE_CALLBACK_DEBUG:
         host.DebugCallback.emit(pluginId, value1, value2, value3, valuef, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_ADDED:
-        host.PluginAddedCallback.emit(pluginId, valueStr)
+        host.PluginAddedCallback.emit(pluginId, value1, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_REMOVED:
         host.PluginRemovedCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PLUGIN_RENAMED:

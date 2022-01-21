@@ -147,6 +147,7 @@ typedef struct _CarlaCachedPluginInfo {
  * Do not call this for any other plugin formats.
  *
  * @note if this carla build uses JUCE, then you must call carla_juce_init beforehand
+ * @note for AU plugins, you cannot call this outside the main thread
  */
 CARLA_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath);
 
@@ -154,6 +155,7 @@ CARLA_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pl
  * Get information about a cached plugin.
  *
  * @note if this carla build uses JUCE, then you must call carla_juce_init beforehand
+ * @note for AU plugins, you cannot call this outside the main thread
  */
 CARLA_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint index);
 
