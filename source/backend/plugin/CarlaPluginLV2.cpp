@@ -955,7 +955,39 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    // nothing
+    uint getAudioPortHints(bool isOutput, uint32_t portIndex) const noexcept override
+    {
+        uint hints = 0x0;
+
+        for (uint32_t i=0, j=0; i<fRdfDescriptor->PortCount; ++i)
+        {
+            LV2_RDF_Port& port(fRdfDescriptor->Ports[i]);
+
+            if (! LV2_IS_PORT_AUDIO(port.Types))
+                continue;
+
+            if (isOutput)
+            {
+                if (! LV2_IS_PORT_OUTPUT(port.Types))
+                    continue;
+            }
+            else
+            {
+                if (! LV2_IS_PORT_INPUT(port.Types))
+                    continue;
+            }
+
+            if (j++ != portIndex)
+                continue;
+
+            if (LV2_IS_PORT_SIDECHAIN(port.Properties))
+                hints |= AUDIO_PORT_IS_SIDECHAIN;
+
+            break;
+        }
+
+        return hints;
+    }
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)

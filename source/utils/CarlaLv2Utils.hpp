@@ -113,8 +113,9 @@ typedef std::map<double,const LilvScalePoint*> LilvScalePointMap;
 #define LV2_UI__makeSONameResident LV2_UI_PREFIX "makeSONameResident"
 
 // TODO: update LV2 headers once again
-#define LV2_CORE__Parameter LV2_CORE_PREFIX "Parameter" ///< http://lv2plug.in/ns/lv2core#Parameter
-#define LV2_CORE__enabled   LV2_CORE_PREFIX "enabled"   ///< http://lv2plug.in/ns/lv2core#enabled
+#define LV2_CORE__Parameter   LV2_CORE_PREFIX "Parameter"   ///< http://lv2plug.in/ns/lv2core#Parameter
+#define LV2_CORE__enabled     LV2_CORE_PREFIX "enabled"     ///< http://lv2plug.in/ns/lv2core#enabled
+#define LV2_CORE__isSideChain LV2_CORE_PREFIX "isSideChain" ///< http://lv2plug.in/ns/lv2core#isSideChain
 
 // --------------------------------------------------------------------------------------------------------------------
 // Custom Atom types
@@ -213,6 +214,7 @@ public:
     Lilv::Node pprop_optional;
     Lilv::Node pprop_enumeration;
     Lilv::Node pprop_integer;
+    Lilv::Node pprop_isSideChain;
     Lilv::Node pprop_sampleRate;
     Lilv::Node pprop_toggled;
     Lilv::Node pprop_artifacts;
@@ -353,6 +355,7 @@ public:
           pprop_optional     (new_uri(LV2_CORE__connectionOptional)),
           pprop_enumeration  (new_uri(LV2_CORE__enumeration)),
           pprop_integer      (new_uri(LV2_CORE__integer)),
+          pprop_isSideChain  (new_uri(LV2_CORE__isSideChain)),
           pprop_sampleRate   (new_uri(LV2_CORE__sampleRate)),
           pprop_toggled      (new_uri(LV2_CORE__toggled)),
           pprop_artifacts    (new_uri(LV2_PORT_PROPS__causesArtifacts)),
@@ -1997,6 +2000,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     rdfPort->Properties |= LV2_PORT_ENUMERATION;
                 if (lilvPort.has_property(lv2World.pprop_integer))
                     rdfPort->Properties |= LV2_PORT_INTEGER;
+                if (lilvPort.has_property(lv2World.pprop_isSideChain))
+                    rdfPort->Properties |= LV2_PORT_SIDECHAIN;
                 if (lilvPort.has_property(lv2World.pprop_sampleRate))
                     rdfPort->Properties |= LV2_PORT_SAMPLE_RATE;
                 if (lilvPort.has_property(lv2World.pprop_toggled))

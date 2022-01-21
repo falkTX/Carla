@@ -725,6 +725,14 @@ CARLA_EXPORT const CarlaPortCountInfo* carla_get_midi_port_count_info(CarlaHostH
 CARLA_EXPORT const CarlaPortCountInfo* carla_get_parameter_count_info(CarlaHostHandle handle, uint pluginId);
 
 /*!
+ * Get hints about an audio port.
+ * @param pluginId  Plugin
+ * @param isOutput  Whether port is output, input otherwise
+ * @param portIndex Port index, related to input or output
+ */
+CARLA_EXPORT uint carla_get_audio_port_hints(CarlaHostHandle handle, uint pluginId, bool isOutput, uint32_t portIndex);
+
+/*!
  * Get parameter information from a plugin.
  * @param pluginId    Plugin
  * @param parameterId Parameter index

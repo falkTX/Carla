@@ -276,6 +276,24 @@ static const uint PLUGIN_OPTIONS_NULL = 0x10000;
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------
+ * Audio Port Hints */
+
+/*!
+ * @defgroup AudioPortHints Audio Port Hints
+ *
+ * Various audio port hints.
+ * @see CarlaPlugin::getAudioPortHints() and carla_get_audio_port_hints()
+ * @{
+ */
+
+/*!
+ * Audio port should be used as sidechan.
+ */
+static const uint AUDIO_PORT_IS_SIDECHAIN = 0x1;
+
+/** @} */
+
+/* ------------------------------------------------------------------------------------------------------------
  * Parameter Hints */
 
 /*!

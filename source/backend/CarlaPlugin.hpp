@@ -238,6 +238,11 @@ public:
     int32_t getCurrentMidiProgram() const noexcept;
 
     /*!
+     * Get hints about an audio port.
+     */
+    virtual uint getAudioPortHints(bool isOutput, uint32_t portIndex) const noexcept;
+
+    /*!
      * Get the parameter data of @a parameterId.
      */
     const ParameterData& getParameterData(uint32_t parameterId) const noexcept;
@@ -447,7 +452,7 @@ public:
     bool loadStateFromFile(const char* filename);
 
     /*!
-     * Export this plugin as LV2.
+     * Export this plugin as its own LV2 plugin, using a carla wrapper around it for the LV2 functionality.
      */
     bool exportAsLV2(const char* lv2path);
 

@@ -1584,6 +1584,22 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(CarlaHostHandle h
 
 // --------------------------------------------------------------------------------------------------------------------
 
+uint carla_get_audio_port_hints(CarlaHostHandle handle, uint pluginId, bool isOutput, uint32_t portIndex)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0x0);
+
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(portIndex < (isOutput ? plugin->getAudioOutCount() : plugin->getAudioInCount()), 0x0);
+
+        return plugin->getAudioPortHints(isOutput, portIndex);
+    }
+
+    return 0x0;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
 const ParameterData* carla_get_parameter_data(CarlaHostHandle handle, uint pluginId, uint32_t parameterId)
 {
     static ParameterData retParamData;

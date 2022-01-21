@@ -242,6 +242,11 @@ int32_t CarlaPlugin::getCurrentMidiProgram() const noexcept
     return pData->midiprog.current;
 }
 
+uint CarlaPlugin::getAudioPortHints(bool, uint32_t) const noexcept
+{
+    return 0x0;
+}
+
 const ParameterData& CarlaPlugin::getParameterData(const uint32_t parameterId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, kParameterDataNull);
