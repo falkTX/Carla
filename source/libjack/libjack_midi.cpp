@@ -27,7 +27,9 @@ jack_nframes_t jack_midi_get_event_count(void* buf)
     const JackMidiPortBufferBase* const jbasebuf((const JackMidiPortBufferBase*)buf);
     CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr, 0);
     CARLA_SAFE_ASSERT_RETURN(jbasebuf->isInput, 0);
-    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, 0);
+
+    if (jbasebuf->isDummy)
+        return 0;
 
     const JackMidiPortBufferOnStack* const jmidibuf((const JackMidiPortBufferOnStack*)jbasebuf);
 
@@ -40,7 +42,7 @@ int jack_midi_event_get(jack_midi_event_t* ev, void* buf, uint32_t index)
     const JackMidiPortBufferBase* const jbasebuf((const JackMidiPortBufferBase*)buf);
     CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr, EFAULT);
     CARLA_SAFE_ASSERT_RETURN(jbasebuf->isInput, EFAULT);
-    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, EFAULT);
+    CARLA_SAFE_ASSERT_RETURN(!jbasebuf->isDummy, EFAULT);
 
     const JackMidiPortBufferOnStack* const jmidibuf((const JackMidiPortBufferOnStack*)jbasebuf);
 
@@ -58,7 +60,7 @@ void jack_midi_clear_buffer(void* buf)
     CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(! jbasebuf->isInput,);
 
-    if (! jbasebuf->isValid)
+    if (jbasebuf->isDummy)
         return;
 
     JackMidiPortBufferOnStack* const jmidibuf((JackMidiPortBufferOnStack*)jbasebuf);
@@ -86,8 +88,10 @@ jack_midi_data_t* jack_midi_event_reserve(void* buf, jack_nframes_t frame, size_
     JackMidiPortBufferBase* const jbasebuf((JackMidiPortBufferBase*)buf);
     CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr, nullptr);
     CARLA_SAFE_ASSERT_RETURN(! jbasebuf->isInput, nullptr);
-    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, nullptr);
     CARLA_SAFE_ASSERT_RETURN(size < JackMidiPortBufferBase::kMaxEventSize, nullptr);
+
+    if (jbasebuf->isDummy)
+        return nullptr;
 
     // broken jack applications, wow...
     if (size == 0)
@@ -114,8 +118,10 @@ int jack_midi_event_write(void* buf, jack_nframes_t frame, const jack_midi_data_
     JackMidiPortBufferBase* const jbasebuf((JackMidiPortBufferBase*)buf);
     CARLA_SAFE_ASSERT_RETURN(jbasebuf != nullptr, EFAULT);
     CARLA_SAFE_ASSERT_RETURN(! jbasebuf->isInput, EINVAL);
-    CARLA_SAFE_ASSERT_RETURN(jbasebuf->isValid, EINVAL);
     CARLA_SAFE_ASSERT_RETURN(size < JackMidiPortBufferBase::kMaxEventSize, ENOBUFS);
+
+    if (jbasebuf->isDummy)
+        return EINVAL;
 
     // broken jack applications, wow...
     if (size == 0)
