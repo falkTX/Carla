@@ -2573,7 +2573,8 @@ public:
             case kPluginBridgeNonRtServerResizeEmbedUI: {
                 const uint width = fShmNonRtServerControl.readUInt();
                 const uint height = fShmNonRtServerControl.readUInt();
-                pData->engine->callback(true, true, ENGINE_CALLBACK_EMBED_UI_RESIZED, pData->id, width, height,
+                pData->engine->callback(true, true, ENGINE_CALLBACK_EMBED_UI_RESIZED, pData->id,
+                                        static_cast<int>(width), static_cast<int>(height),
                                         0, 0.0f, nullptr);
             }   break;
 

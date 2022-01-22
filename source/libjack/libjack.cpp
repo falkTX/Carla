@@ -1275,6 +1275,10 @@ bool CarlaJackAppClient::handleNonRtData()
         case kPluginBridgeNonRtClientUiNoteOff:
             break;
 
+        case kPluginBridgeNonRtClientEmbedUI:
+            fShmNonRtClientControl.readULong();
+            break;
+
         case kPluginBridgeNonRtClientQuit:
             ret = true;
             break;
