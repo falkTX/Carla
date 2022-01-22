@@ -351,7 +351,7 @@ public:
                 fEventProc(&event);
         }
 
-        if (nextWidth != 0 && nextHeight != 0)
+        if (nextWidth != 0 && nextHeight != 0 && fChildWindow != 0)
         {
             XSizeHints sizeHints;
             carla_zeroStruct(sizeHints);
