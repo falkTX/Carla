@@ -1533,7 +1533,8 @@ public:
             case kPluginBridgeNonRtServerMidiProgramData:
             case kPluginBridgeNonRtServerSetCustomData:
             case kPluginBridgeNonRtServerVersion:
-            case kPluginBridgeNonRtServerEmbedUI:
+            case kPluginBridgeNonRtServerRespEmbedUI:
+            case kPluginBridgeNonRtServerResizeEmbedUI:
                 break;
 
             case kPluginBridgeNonRtServerSetChunkDataFile:

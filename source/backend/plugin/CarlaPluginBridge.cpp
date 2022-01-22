@@ -2132,8 +2132,12 @@ public:
                 pData->hints   = hints | PLUGIN_IS_BRIDGE;
                 pData->options = optionEn;
 
+               #ifdef HAVE_X11
                 if (fBridgeVersion < 9)
+               #endif
+                {
                     pData->hints &= ~PLUGIN_HAS_CUSTOM_EMBED_UI;
+                }
 
                 fInfo.category = static_cast<PluginCategory>(category);
                 fInfo.optionsAvailable = optionAv;
@@ -2562,15 +2566,23 @@ public:
                 fSaved = true;
                 break;
 
-            case kPluginBridgeNonRtServerEmbedUI:
+            case kPluginBridgeNonRtServerRespEmbedUI:
                 fPendingEmbedCustomUI = fShmNonRtServerControl.readULong();
                 break;
+
+            case kPluginBridgeNonRtServerResizeEmbedUI: {
+                const uint width = fShmNonRtServerControl.readUInt();
+                const uint height = fShmNonRtServerControl.readUInt();
+                pData->engine->callback(true, true, ENGINE_CALLBACK_EMBED_UI_RESIZED, pData->id, width, height,
+                                        0, 0.0f, nullptr);
+            }   break;
 
             case kPluginBridgeNonRtServerUiClosed:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->transientTryCounter = 0;
 #endif
-                pData->engine->callback(true, true, ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0, 0.0f, nullptr);
+                pData->engine->callback(true, true, ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id,
+                                        0, 0, 0, 0.0f, nullptr);
                 break;
 
             case kPluginBridgeNonRtServerError: {

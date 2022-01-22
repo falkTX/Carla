@@ -711,6 +711,18 @@ public:
             }
             break;
 
+        case ENGINE_CALLBACK_EMBED_UI_RESIZED: {
+            CARLA_SAFE_ASSERT_BREAK(value1 > 1);
+            CARLA_SAFE_ASSERT_BREAK(value2 > 1);
+
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerResizeEmbedUI);
+            fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
+            fShmNonRtServerControl.writeUInt(static_cast<uint>(value2));
+            fShmNonRtServerControl.commitWrite();
+        }   break;
+
         case ENGINE_CALLBACK_RELOAD_PARAMETERS:
             if (const CarlaPluginPtr plugin = pData->plugins[0].plugin)
             {
@@ -1108,7 +1120,7 @@ public:
 
                 const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
-                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerEmbedUI);
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerRespEmbedUI);
                 fShmNonRtServerControl.writeULong(reinterpret_cast<uint64_t>(resp));
                 fShmNonRtServerControl.commitWrite();
                 break;

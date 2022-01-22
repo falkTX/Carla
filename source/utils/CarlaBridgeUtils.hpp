@@ -202,8 +202,10 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerError";
     case kPluginBridgeNonRtServerVersion:
         return "kPluginBridgeNonRtServerVersion";
-    case kPluginBridgeNonRtServerEmbedUI:
-        return "kPluginBridgeNonRtServerEmbedUI";
+    case kPluginBridgeNonRtServerRespEmbedUI:
+        return "kPluginBridgeNonRtServerRespEmbedUI";
+    case kPluginBridgeNonRtServerResizeEmbedUI:
+        return "kPluginBridgeNonRtServerResizeEmbedUI";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtServerOpcode2str%i) - invalid opcode", opcode);

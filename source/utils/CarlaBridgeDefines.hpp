@@ -118,7 +118,8 @@ enum PluginBridgeNonRtServerOpcode {
     // stuff added in API 7
     kPluginBridgeNonRtServerVersion,            // uint
     // stuff added in API 9
-    kPluginBridgeNonRtServerEmbedUI,            // ulong
+    kPluginBridgeNonRtServerRespEmbedUI,        // ulong
+    kPluginBridgeNonRtServerResizeEmbedUI,      // uint/width, uint/height
 };
 
 // used for kPluginBridgeNonRtServerPortName
