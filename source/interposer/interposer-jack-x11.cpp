@@ -214,6 +214,8 @@ static int carlaWindowMap(Display* const display, const Window window, const Win
 
         if (! isMainWindow)
         {
+            carla_debug("carlaWindowMap(%p, %lu, %i) - not main window, ignoring", display, window, fallbackFnType);
+
             // this has always bothered me...
             if (gCurrentlyMappedWindow != 0 && gCurrentWindowMapped && gCurrentWindowVisible)
                 XSetTransientForHint(display, window, gCurrentlyMappedWindow);
@@ -232,9 +234,11 @@ static int carlaWindowMap(Display* const display, const Window window, const Win
         {
             // ignore requests against the current mapped window
             if (gCurrentlyMappedWindow == window)
+            {
+                carla_debug("carlaWindowMap(%p, %lu, %i) - asked to show window, ignoring it",
+                            display, window, fallbackFnType);
                 return 0;
-            if (gInterposedSessionManager != LIBJACK_SESSION_MANAGER_NSM || ! gSupportsOptionalGui)
-                return 0;
+            }
 
             // we already have a mapped window, with carla visible button on, should be a dialog of sorts..
             if (gCurrentWindowMapped && gCurrentWindowVisible)
@@ -245,7 +249,10 @@ static int carlaWindowMap(Display* const display, const Window window, const Win
 
             // ignore empty windows created after the main one
             if (numItems == 0)
+            {
+                carla_debug("carlaWindowMap(%p, %lu, %i) - ignoring empty window", display, window, fallbackFnType);
                 break;
+            }
 
             carla_stdout("NOTICE: XMapWindow now showing previous window");
             switch (gCurrentWindowType)
