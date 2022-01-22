@@ -420,6 +420,7 @@ public:
           fTimedError(false),
           fBufferSize(engine->getBufferSize()),
           fProcWaitTime(0),
+          fPendingEmbedCustomUI(0),
           fBridgeBinary(),
           fBridgeThread(engine, this),
           fShmAudioPool(),
@@ -1034,6 +1035,44 @@ public:
             pData->transientTryCounter = 0;
         }
 #endif
+    }
+
+    void* embedCustomUI(void* const ptr) override
+    {
+        if (fBridgeVersion < 9)
+            return nullptr;
+
+        fPendingEmbedCustomUI = 0;
+
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientEmbedUI);
+            fShmNonRtClientControl.writeULong(reinterpret_cast<uint64_t>(ptr));
+            fShmNonRtClientControl.commitWrite();
+        }
+
+        const uint32_t timeoutEnd = Time::getMillisecondCounter() + 15*1000; // 15 secs
+        const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
+
+        for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
+        {
+            pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+
+            if (needsEngineIdle)
+                pData->engine->idle();
+
+            if (fPendingEmbedCustomUI != 0)
+            {
+                if (fPendingEmbedCustomUI == 1)
+                    fPendingEmbedCustomUI = 0;
+                break;
+            }
+
+            carla_msleep(20);
+        }
+
+        return reinterpret_cast<void*>(fPendingEmbedCustomUI);
     }
 
     void idle() override
@@ -2093,6 +2132,9 @@ public:
                 pData->hints   = hints | PLUGIN_IS_BRIDGE;
                 pData->options = optionEn;
 
+                if (fBridgeVersion < 9)
+                    pData->hints &= ~PLUGIN_HAS_CUSTOM_EMBED_UI;
+
                 fInfo.category = static_cast<PluginCategory>(category);
                 fInfo.optionsAvailable = optionAv;
             }   break;
@@ -2520,6 +2562,10 @@ public:
                 fSaved = true;
                 break;
 
+            case kPluginBridgeNonRtServerEmbedUI:
+                fPendingEmbedCustomUI = fShmNonRtServerControl.readULong();
+                break;
+
             case kPluginBridgeNonRtServerUiClosed:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->transientTryCounter = 0;
@@ -2792,6 +2838,7 @@ private:
     bool fTimedError;
     uint fBufferSize;
     uint fProcWaitTime;
+    uint64_t fPendingEmbedCustomUI;
 
     CarlaString             fBridgeBinary;
     CarlaPluginBridgeThread fBridgeThread;

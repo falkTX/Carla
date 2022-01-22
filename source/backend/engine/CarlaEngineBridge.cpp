@@ -1096,9 +1096,27 @@ public:
                     plugin->showCustomUI(false);
                 break;
 
+            case kPluginBridgeNonRtClientEmbedUI: {
+                const uint64_t winId = fShmNonRtClientControl.readULong();
+                uint64_t resp = 0;
+
+                if (plugin->isEnabled())
+                    resp = reinterpret_cast<uint64_t>(plugin->embedCustomUI(reinterpret_cast<void*>(winId)));
+
+                if (resp == 0)
+                    resp = 1;
+
+                const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerEmbedUI);
+                fShmNonRtServerControl.writeULong(reinterpret_cast<uint64_t>(resp));
+                fShmNonRtServerControl.commitWrite();
+                break;
+            }
+
             case kPluginBridgeNonRtClientUiParameterChange: {
-                const uint32_t index(fShmNonRtClientControl.readUInt());
-                const float    value(fShmNonRtClientControl.readFloat());
+                const uint32_t index = fShmNonRtClientControl.readUInt();
+                const float    value = fShmNonRtClientControl.readFloat();
 
                 if (plugin->isEnabled())
                     plugin->uiParameterChange(index, value);

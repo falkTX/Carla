@@ -1009,6 +1009,7 @@ public:
 #endif
             {
                 pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+                pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
             }
 
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
