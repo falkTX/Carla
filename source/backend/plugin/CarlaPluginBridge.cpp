@@ -930,9 +930,14 @@ public:
             return;
         }
 
-        const uint32_t typeLen(static_cast<uint32_t>(std::strlen(type)));
-        const uint32_t keyLen(static_cast<uint32_t>(std::strlen(key)));
-        const uint32_t valueLen(static_cast<uint32_t>(std::strlen(value)));
+        const uint32_t typeLen  = static_cast<uint32_t>(std::strlen(type));
+        const uint32_t keyLen   = static_cast<uint32_t>(std::strlen(key));
+        const uint32_t valueLen = static_cast<uint32_t>(std::strlen(value));
+
+        /*
+        if (valueLen > 16384)
+            fShmNonRtClientControl.waitIfDataIsReachingLimit();
+        */
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -948,7 +953,31 @@ public:
             fShmNonRtClientControl.writeUInt(valueLen);
 
             if (valueLen > 0)
-                fShmNonRtClientControl.writeCustomData(value, valueLen);
+            {
+                if (valueLen > 16384)
+                {
+                    String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
+
+                    filePath += CARLA_OS_SEP_STR ".CarlaCustomData_";
+                    filePath += fShmAudioPool.getFilenameSuffix();
+
+                    if (File(filePath).replaceWithText(value))
+                    {
+                        const uint32_t ulength = static_cast<uint32_t>(filePath.length());
+
+                        fShmNonRtClientControl.writeUInt(ulength);
+                        fShmNonRtClientControl.writeCustomData(filePath.toRawUTF8(), ulength);
+                    }
+                    else
+                    {
+                        fShmNonRtClientControl.writeUInt(0);
+                    }
+                }
+                else
+                {
+                    fShmNonRtClientControl.writeCustomData(value, valueLen);
+                }
+            }
 
             fShmNonRtClientControl.commitWrite();
         }
@@ -972,7 +1001,7 @@ public:
 
         if (File(filePath).replaceWithText(dataBase64.buffer()))
         {
-            const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
+            const uint32_t ulength = static_cast<uint32_t>(filePath.length());
 
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
@@ -2481,33 +2510,72 @@ public:
                 // uint/size, str[], uint/size, str[], uint/size, str[]
 
                 // type
-                const uint32_t typeSize(fShmNonRtServerControl.readUInt());
+                const uint32_t typeSize = fShmNonRtServerControl.readUInt();
                 char type[typeSize+1];
                 carla_zeroChars(type, typeSize+1);
                 fShmNonRtServerControl.readCustomData(type, typeSize);
 
                 // key
-                const uint32_t keySize(fShmNonRtServerControl.readUInt());
+                const uint32_t keySize = fShmNonRtServerControl.readUInt();
                 char key[keySize+1];
                 carla_zeroChars(key, keySize+1);
                 fShmNonRtServerControl.readCustomData(key, keySize);
 
                 // value
-                const uint32_t valueSize(fShmNonRtServerControl.readUInt());
-                char value[valueSize+1];
-                carla_zeroChars(value, valueSize+1);
+                const uint32_t valueSize = fShmNonRtServerControl.readUInt();
 
-                if (valueSize > 0)
-                    fShmNonRtServerControl.readCustomData(value, valueSize);
+                // special case for big values
+                if (valueSize > 16384)
+                {
+                    const uint32_t bigValueFilePathSize = fShmNonRtServerControl.readUInt();
+                    char bigValueFilePath[bigValueFilePathSize+1];
+                    carla_zeroChars(bigValueFilePath, bigValueFilePathSize+1);
+                    fShmNonRtServerControl.readCustomData(bigValueFilePath, bigValueFilePathSize);
 
-                CarlaPlugin::setCustomData(type, key, value, false);
+                    String realBigValueFilePath(bigValueFilePath);
+
+#ifndef CARLA_OS_WIN
+                    // Using Wine, fix temp dir
+                    if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
+                    {
+                        const StringArray driveLetterSplit(StringArray::fromTokens(realBigValueFilePath, ":/", ""));
+                        carla_stdout("big value save path BEFORE => %s", realBigValueFilePath.toRawUTF8());
+
+                        realBigValueFilePath  = fWinePrefix;
+                        realBigValueFilePath += "/drive_";
+                        realBigValueFilePath += driveLetterSplit[0].toLowerCase();
+                        realBigValueFilePath += driveLetterSplit[1];
+
+                        realBigValueFilePath  = realBigValueFilePath.replace("\\", "/");
+                        carla_stdout("big value save path AFTER => %s", realBigValueFilePath.toRawUTF8());
+                    }
+#endif
+
+                    const File bigValueFile(realBigValueFilePath);
+                    CARLA_SAFE_ASSERT_BREAK(bigValueFile.existsAsFile());
+
+                    CarlaPlugin::setCustomData(type, key, bigValueFile.loadFileAsString().toRawUTF8(), false);
+
+                    bigValueFile.deleteFile();
+                }
+                else
+                {
+                    char value[valueSize+1];
+                    carla_zeroChars(value, valueSize+1);
+
+                    if (valueSize > 0)
+                        fShmNonRtServerControl.readCustomData(value, valueSize);
+
+                    CarlaPlugin::setCustomData(type, key, value, false);
+                }
+
             }   break;
 
             case kPluginBridgeNonRtServerSetChunkDataFile: {
                 // uint/size, str[] (filename)
 
                 // chunkFilePath
-                const uint32_t chunkFilePathSize(fShmNonRtServerControl.readUInt());
+                const uint32_t chunkFilePathSize = fShmNonRtServerControl.readUInt();
                 char chunkFilePath[chunkFilePathSize+1];
                 carla_zeroChars(chunkFilePath, chunkFilePathSize+1);
                 fShmNonRtServerControl.readCustomData(chunkFilePath, chunkFilePathSize);
@@ -2531,7 +2599,7 @@ public:
                 }
 #endif
 
-                File chunkFile(realChunkFilePath);
+                const File chunkFile(realChunkFilePath);
                 CARLA_SAFE_ASSERT_BREAK(chunkFile.existsAsFile());
 
                 fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
