@@ -256,6 +256,7 @@ public:
     Lilv::Node patch_readable;
     Lilv::Node patch_writable;
     Lilv::Node pg_group;
+    Lilv::Node pg_sideChainOf;
     Lilv::Node preset_preset;
     Lilv::Node state_state;
 
@@ -394,6 +395,7 @@ public:
           patch_readable     (new_uri(LV2_PATCH__readable)),
           patch_writable     (new_uri(LV2_PATCH__writable)),
           pg_group           (new_uri(LV2_PORT_GROUPS__group)),
+          pg_sideChainOf     (new_uri(LV2_PORT_GROUPS__sideChainOf)),
           preset_preset      (new_uri(LV2_PRESETS__Preset)),
           state_state        (new_uri(LV2_STATE__state)),
 
@@ -2030,6 +2032,18 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                 if (lilvPort.has_property(lv2World.reportsLatency))
                     rdfPort->Designation = LV2_PORT_DESIGNATION_LATENCY;
+
+                // check if sidechain (some plugins use sidechain groups instead of isSidechain)
+                if (LilvNode* const portGroupNode = lilvPort.get(lv2World.pg_group.me))
+                {
+                    if (LilvNode* const portSideChainOfNode = lilv_world_get(lv2World.me, portGroupNode,
+                                                                             lv2World.pg_sideChainOf.me, nullptr))
+                    {
+                        rdfPort->Properties |= LV2_PORT_SIDECHAIN;
+                        lilv_node_free(portSideChainOfNode);
+                    }
+                    lilv_node_free(portGroupNode);
+                }
 
                 // no port properties set, check if using old/invalid ones
                 if (rdfPort->Properties == 0x0)
