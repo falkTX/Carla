@@ -522,7 +522,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             if (std::strcmp(stateCustomData->type, CUSTOM_DATA_TYPE_CHUNK) == 0 || len >= 128+6)
                             {
                                 CARLA_SAFE_ASSERT_CONTINUE(len >= 6);
-                                cText = cText.substring(1, len - 6);
+                                cText = cText.substring(1, len - 5);
                             }
 
                             stateCustomData->value = xmlSafeStringCharDup(cText, false);
