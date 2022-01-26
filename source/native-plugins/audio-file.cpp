@@ -87,6 +87,7 @@ public:
           fVolume(1.0f),
           fPool(),
           fReader(),
+          fFilename(),
           fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
           fPreviewData()
 #ifndef __MOD_DEVICES__
@@ -686,6 +687,15 @@ protected:
     }
 #endif
 
+    void sampleRateChanged(double) override
+    {
+        if (char* const filename = fFilename.releaseBufferPointer())
+        {
+            loadFilename(filename);
+            std::free(filename);
+        }
+    }
+
     // -------------------------------------------------------------------
 
 private:
@@ -705,6 +715,7 @@ private:
 
     AudioFilePool   fPool;
     AudioFileReader fReader;
+    CarlaString     fFilename;
 
     NativeMidiPrograms fPrograms;
     float fPreviewData[108];
@@ -755,6 +766,7 @@ private:
         fInternalTransportFrame = 0;
         fPool.destroy();
         fReader.destroy();
+        fFilename.clear();
 
         if (filename == nullptr || *filename == '\0')
         {
@@ -781,6 +793,7 @@ private:
             }
 
             fDoProcess = true;
+            fFilename = filename;
             hostSendPreviewBufferData('f', previewDataSize, fPreviewData);
         }
         else
