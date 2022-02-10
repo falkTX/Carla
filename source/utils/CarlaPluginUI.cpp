@@ -341,7 +341,13 @@ public:
                 if (fChildWindow == 0)
                     fChildWindow = getChildWindow();
                 if (fChildWindow != 0)
-                    XSetInputFocus(fDisplay, fChildWindow, RevertToPointerRoot, CurrentTime);
+                {
+                    XWindowAttributes wa;
+                    carla_zeroStruct(wa);
+
+                    if (XGetWindowAttributes(fDisplay, fChildWindow, &wa) && wa.map_state == IsViewable)
+                        XSetInputFocus(fDisplay, fChildWindow, RevertToPointerRoot, CurrentTime);
+                }
                 break;
             }
 
