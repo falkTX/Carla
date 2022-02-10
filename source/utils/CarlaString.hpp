@@ -819,7 +819,7 @@ public:
         std::memcpy(newBuf, fBuffer, fBufferLen);
         std::memcpy(newBuf + fBufferLen, strBuf, strBufLen + 1);
 
-        return CarlaString(newBuf);
+        return CarlaString(newBuf, false);
     }
 
     CarlaString operator+(const CarlaString& str) noexcept
