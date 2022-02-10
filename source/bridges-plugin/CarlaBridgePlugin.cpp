@@ -585,6 +585,7 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Initialize OS features
 
+    const bool dummy = std::getenv("CARLA_BRIDGE_DUMMY") != nullptr;
     const bool testing = std::getenv("CARLA_BRIDGE_TESTING") != nullptr;
 
 #ifdef CARLA_OS_MAC
@@ -609,32 +610,35 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Set ourselves with high priority
 
-#ifdef CARLA_OS_LINUX
-    // reset scheduler to normal mode
-    struct sched_param sparam;
-    carla_zeroStruct(sparam);
-    sched_setscheduler(0, SCHED_OTHER|SCHED_RESET_ON_FORK, &sparam);
-
-    // try niceness first, if it fails, try SCHED_RR
-    if (nice(-5) < 0)
+    if (!dummy && !testing)
     {
-        sparam.sched_priority = (sched_get_priority_max(SCHED_RR) + sched_get_priority_min(SCHED_RR*7)) / 8;
+#ifdef CARLA_OS_LINUX
+        // reset scheduler to normal mode
+        struct sched_param sparam;
+        carla_zeroStruct(sparam);
+        sched_setscheduler(0, SCHED_OTHER|SCHED_RESET_ON_FORK, &sparam);
 
-        if (sparam.sched_priority > 0)
+        // try niceness first, if it fails, try SCHED_RR
+        if (nice(-5) < 0)
         {
-            if (sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &sparam) < 0 && ! testing)
+            sparam.sched_priority = (sched_get_priority_max(SCHED_RR) + sched_get_priority_min(SCHED_RR*7)) / 8;
+
+            if (sparam.sched_priority > 0)
             {
-                CarlaString error(std::strerror(errno));
-                carla_stderr("Failed to set high priority, error %i: %s", errno, error.buffer());
+                if (sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &sparam) < 0)
+                {
+                    CarlaString error(std::strerror(errno));
+                    carla_stderr("Failed to set high priority, error %i: %s", errno, error.buffer());
+                }
             }
         }
-    }
 #endif
 
 #ifdef CARLA_OS_WIN
-    if (! SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) && ! testing)
-        carla_stderr("Failed to set high priority.");
+        if (! SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS))
+            carla_stderr("Failed to set high priority.");
 #endif
+    }
 
     // ---------------------------------------------------------------------
     // Listen for ctrl+c or sigint/sigterm events

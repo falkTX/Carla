@@ -212,7 +212,13 @@ protected:
         const int64_t cycleTime = static_cast<int64_t>(
             static_cast<double>(bufferSize) / pData->sampleRate * 1000000 + 0.5);
 
-        carla_stdout("CarlaEngineDummy audio thread started, cycle time: " P_INT64 "ms", cycleTime / 1000);
+        int delay = 0;
+        if (const char* const delaystr = std::getenv("CARLA_BRIDGE_DUMMY"))
+            if ((delay = atoi(delaystr)) == 1)
+                delay = 0;
+
+        carla_stdout("CarlaEngineDummy audio thread started, cycle time: " P_INT64 "ms, delay %ds",
+                     cycleTime / 1000, delay);
 
         float* audioIns[2] = {
             (float*)std::malloc(sizeof(float)*bufferSize),
@@ -236,6 +242,7 @@ protected:
 
         while (! shouldThreadExit())
         {
+            carla_sleep(delay);
             oldTime = getTimeInMicroseconds();
 
             const PendingRtEventsRunner prt(this, bufferSize, true);

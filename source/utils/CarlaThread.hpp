@@ -87,10 +87,13 @@ public:
     /*
      * Start the thread.
      */
-    bool startThread(const bool withRealtimePriority = false) noexcept
+    bool startThread(bool withRealtimePriority = false) noexcept
     {
         // check if already running
         CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(), true);
+
+        if (withRealtimePriority && std::getenv("CARLA_BRIDGE_DUMMY") != nullptr)
+            withRealtimePriority = false;
 
         pthread_t handle;
 
