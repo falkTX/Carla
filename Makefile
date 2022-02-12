@@ -389,15 +389,17 @@ clean:
 	$(MAKE) clean -C source/backend
 	$(MAKE) clean -C source/bridges-plugin
 	$(MAKE) clean -C source/bridges-ui
+	$(MAKE) clean -C source/modules
+	$(MAKE) clean -C source/native-plugins
+	$(MAKE) clean -C source/plugin
+ifneq ($(STATIC_PLUGIN_TARGET),true)
 	$(MAKE) clean -C source/discovery
 	$(MAKE) clean -C source/frontend
 	$(MAKE) clean -C source/interposer
 	$(MAKE) clean -C source/libjack
-	$(MAKE) clean -C source/modules
-	$(MAKE) clean -C source/native-plugins
-	$(MAKE) clean -C source/plugin
 	$(MAKE) clean -C source/tests
 	$(MAKE) clean -C source/theme
+endif
 	rm -f *~ source/*~
 
 distclean: clean
