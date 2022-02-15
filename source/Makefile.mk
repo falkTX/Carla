@@ -230,6 +230,13 @@ BASE_FLAGS += -DSTATIC_PLUGIN_TARGET
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Allow custom namespace
+
+ifneq ($(CARLA_BACKEND_NAMESPACE),)
+BASE_FLAGS += -DCARLA_BACKEND_NAMESPACE=$(CARLA_BACKEND_NAMESPACE)
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Set app extension
 
 ifeq ($(WIN32),true)

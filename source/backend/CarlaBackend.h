@@ -28,10 +28,14 @@
 
 #define STR_MAX 0xFF
 
+#ifndef CARLA_BACKEND_NAMESPACE
+# define CARLA_BACKEND_NAMESPACE CarlaBackend
+#endif
+
 #ifdef __cplusplus
-# define CARLA_BACKEND_START_NAMESPACE namespace CarlaBackend {
+# define CARLA_BACKEND_START_NAMESPACE namespace CARLA_BACKEND_NAMESPACE {
 # define CARLA_BACKEND_END_NAMESPACE }
-# define CARLA_BACKEND_USE_NAMESPACE using namespace CarlaBackend;
+# define CARLA_BACKEND_USE_NAMESPACE using namespace CARLA_BACKEND_NAMESPACE;
 # include <algorithm>
 # include <cmath>
 # include <limits>
