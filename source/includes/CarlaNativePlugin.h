@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -79,8 +79,8 @@ CARLA_EXPORT void carla_host_handle_free(CarlaHostHandle handle);
  * Get the internal CarlaEngine instance.
  * @deprecated Please use carla_create_native_plugin_host_handle instead
  */
-CARLA_EXPORT CarlaBackend::CarlaEngine* carla_get_native_plugin_engine(const NativePluginDescriptor* desc,
-                                                                       NativePluginHandle handle);
+CARLA_EXPORT CARLA_BACKEND_NAMESPACE::CarlaEngine* carla_get_native_plugin_engine(const NativePluginDescriptor* desc,
+                                                                                  NativePluginHandle handle);
 #endif
 
 #endif /* CARLA_NATIVE_PLUGIN_H_INCLUDED */

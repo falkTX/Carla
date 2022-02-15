@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,26 +21,26 @@
 #include "CarlaBackend.h"
 
 #ifdef __cplusplus
-using CarlaBackend::BinaryType;
-using CarlaBackend::PluginType;
-using CarlaBackend::PluginCategory;
-using CarlaBackend::InternalParameterIndex;
-using CarlaBackend::EngineCallbackOpcode;
-using CarlaBackend::NsmCallbackOpcode;
-using CarlaBackend::EngineOption;
-using CarlaBackend::EngineProcessMode;
-using CarlaBackend::EngineTransportMode;
-using CarlaBackend::FileCallbackOpcode;
-using CarlaBackend::EngineCallbackFunc;
-using CarlaBackend::FileCallbackFunc;
-using CarlaBackend::ParameterData;
-using CarlaBackend::ParameterRanges;
-using CarlaBackend::MidiProgramData;
-using CarlaBackend::CustomData;
-using CarlaBackend::EngineDriverDeviceInfo;
-using CarlaBackend::CarlaEngine;
-using CarlaBackend::CarlaEngineClient;
-using CarlaBackend::CarlaPlugin;
+using CARLA_BACKEND_NAMESPACE::BinaryType;
+using CARLA_BACKEND_NAMESPACE::PluginType;
+using CARLA_BACKEND_NAMESPACE::PluginCategory;
+using CARLA_BACKEND_NAMESPACE::InternalParameterIndex;
+using CARLA_BACKEND_NAMESPACE::EngineCallbackOpcode;
+using CARLA_BACKEND_NAMESPACE::NsmCallbackOpcode;
+using CARLA_BACKEND_NAMESPACE::EngineOption;
+using CARLA_BACKEND_NAMESPACE::EngineProcessMode;
+using CARLA_BACKEND_NAMESPACE::EngineTransportMode;
+using CARLA_BACKEND_NAMESPACE::FileCallbackOpcode;
+using CARLA_BACKEND_NAMESPACE::EngineCallbackFunc;
+using CARLA_BACKEND_NAMESPACE::FileCallbackFunc;
+using CARLA_BACKEND_NAMESPACE::ParameterData;
+using CARLA_BACKEND_NAMESPACE::ParameterRanges;
+using CARLA_BACKEND_NAMESPACE::MidiProgramData;
+using CARLA_BACKEND_NAMESPACE::CustomData;
+using CARLA_BACKEND_NAMESPACE::EngineDriverDeviceInfo;
+using CARLA_BACKEND_NAMESPACE::CarlaEngine;
+using CARLA_BACKEND_NAMESPACE::CarlaEngineClient;
+using CARLA_BACKEND_NAMESPACE::CarlaPlugin;
 #endif
 
 /*!

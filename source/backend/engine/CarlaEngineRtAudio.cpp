@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -459,7 +459,7 @@ public:
 
     const char* getCurrentDriverName() const noexcept override
     {
-        return CarlaBackend::getRtAudioApiName(fAudio.getCurrentApi());
+        return CARLA_BACKEND_NAMESPACE::getRtAudioApiName(fAudio.getCurrentApi());
     }
 
     // -------------------------------------------------------------------
@@ -1192,7 +1192,7 @@ const char* getRtAudioApiName(const uint index)
 
     CARLA_SAFE_ASSERT_RETURN(index < gRtAudioApis.size(), nullptr);
 
-    return CarlaBackend::getRtAudioApiName(gRtAudioApis[index]);
+    return CARLA_BACKEND_NAMESPACE::getRtAudioApiName(gRtAudioApis[index]);
 }
 
 const char* const* getRtAudioApiDeviceNames(const uint index)

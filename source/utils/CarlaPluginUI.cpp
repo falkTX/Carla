@@ -626,7 +626,7 @@ public:
           fWindow(nullptr)
     {
         carla_debug("CocoaPluginUI::CocoaPluginUI(%p, " P_UINTPTR, "%s)", callback, parentId, bool2str(isResizable));
-        const CarlaBackend::AutoNSAutoreleasePool arp;
+        const CARLA_BACKEND_NAMESPACE::AutoNSAutoreleasePool arp;
         [NSApplication sharedApplication];
 
         fView = [[NSView new]retain];

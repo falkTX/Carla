@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1444,8 +1444,8 @@ CARLA_BACKEND_END_NAMESPACE
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-using CarlaBackend::CarlaJackAppClient;
-using CarlaBackend::JackClientState;
+using CARLA_BACKEND_NAMESPACE::CarlaJackAppClient;
+using CARLA_BACKEND_NAMESPACE::JackClientState;
 
 static CarlaJackAppClient gClient;
 

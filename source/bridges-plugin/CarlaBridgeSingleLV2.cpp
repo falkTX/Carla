@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Single Plugin
- * Copyright (C) 2017-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -48,7 +48,7 @@
 #include "water/files/File.h"
 
 template<>
-void Lv2PluginBaseClass<CarlaBackend::EngineTimeInfo>::clearTimeData() noexcept
+void Lv2PluginBaseClass<CARLA_BACKEND_NAMESPACE::EngineTimeInfo>::clearTimeData() noexcept
 {
     fLastPositionData.clear();
     fTimeInfo.clear();
@@ -566,7 +566,7 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-using CarlaBackend::CarlaEngineSingleLV2;
+using CARLA_BACKEND_NAMESPACE::CarlaEngineSingleLV2;
 
 // --------------------------------------------------------------------------------------------------------------------
 // LV2 DSP functions

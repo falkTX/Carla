@@ -21,8 +21,8 @@
 #include "CarlaBackend.h"
 
 #ifdef __cplusplus
-using CarlaBackend::PluginCategory;
-using CarlaBackend::PluginType;
+using CARLA_BACKEND_NAMESPACE::PluginCategory;
+using CARLA_BACKEND_NAMESPACE::PluginType;
 #endif
 
 /*!
