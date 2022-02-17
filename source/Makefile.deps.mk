@@ -452,10 +452,10 @@ WATER_LIBS       = -pthread -lrt
 endif
 
 ifeq ($(HAIKU),true)
-JACKBRIDGE_LIBS  = -pthread
+JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
-RTMEMPOOL_LIBS   = -pthread
-WATER_LIBS       = -pthread
+RTMEMPOOL_LIBS   = -lpthread
+WATER_LIBS       = -lpthread
 endif
 
 ifeq ($(HURD),true)
