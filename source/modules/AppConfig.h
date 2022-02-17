@@ -31,8 +31,6 @@
 # define APPCONFIG_OS_LINUX
 #elif defined(__FreeBSD__)
 # define APPCONFIG_OS_FREEBSD
-#else
-# error Unsupported platform!
 #endif
 
 #if defined(APPCONFIG_OS_WIN32) || defined(APPCONFIG_OS_WIN64)
