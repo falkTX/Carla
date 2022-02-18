@@ -388,7 +388,7 @@ def checkAllPluginsAU(tool):
 # Separate Thread for Plugin Search
 
 class SearchPluginsThread(QThread):
-    pluginLook = pyqtSignal(int, str)
+    pluginLook = pyqtSignal(float, str)
 
     def __init__(self, parent, pathBinaries):
         QThread.__init__(self, parent)
