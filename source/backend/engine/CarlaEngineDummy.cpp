@@ -242,7 +242,9 @@ protected:
 
         while (! shouldThreadExit())
         {
-            carla_sleep(delay);
+            if (delay > 0)
+                carla_sleep(static_cast<uint>(delay));
+
             oldTime = getTimeInMicroseconds();
 
             const PendingRtEventsRunner prt(this, bufferSize, true);
