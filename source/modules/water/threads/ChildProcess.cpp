@@ -146,9 +146,11 @@ public:
 
         switch (type)
         {
+# ifdef __MAC_10_12
         case TypeARM:
             pref = CPU_TYPE_ARM64;
             break;
+# endif
         case TypeIntel:
             pref = CPU_TYPE_X86_64;
             break;
