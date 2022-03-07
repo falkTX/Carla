@@ -74,19 +74,19 @@ debug:
 $(TARGET): $(OBJS)
 	-@mkdir -p $(BINDIR)/jack
 	@echo "Linking libjack.so.0"
-	@$(CXX) $^ $(SHARED) $(LINK_FLAGS) $(LIBJACK_LIBS) -o $@
+	$(SILENT)$(CXX) $^ $(SHARED) $(LINK_FLAGS) $(LIBJACK_LIBS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/%.c.o: %.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

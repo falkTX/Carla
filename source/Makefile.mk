@@ -267,6 +267,19 @@ LIBS_END   = -Wl,--no-whole-archive -Wl,--end-group
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Handle the verbosity switch
+
+SILENT =
+
+ifeq ($(VERBOSE),1)
+else ifeq ($(VERBOSE),y)
+else ifeq ($(VERBOSE),yes)
+else ifeq ($(VERBOSE),true)
+else
+SILENT = @
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Set shared library CLI arg
 
 ifeq ($(MACOS),true)

@@ -130,7 +130,7 @@ doxygen: CarlaBackend.doxygen
 $(BINDIR)/libcarla_standalone2$(LIB_EXT): $(OBJS_standalone) $(STANDALONE_LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_standalone2$(LIB_EXT)"
-	@$(CXX) $(OBJS_standalone) $(BUILD_CXX_FLAGS) $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_LINK_FLAGS) $(SHARED) -o $@
+	$(SILENT)$(CXX) $(OBJS_standalone) $(BUILD_CXX_FLAGS) $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_LINK_FLAGS) $(SHARED) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -138,13 +138,13 @@ ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaStandalone.cpp.o: CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 -include $(OBJS_standalone:%.o=%.d)
 

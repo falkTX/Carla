@@ -259,37 +259,37 @@ win64:   $(BINDIR)/$(MODULENAME)-win64.exe
 $(BINDIR)/$(MODULENAME)-native$(APP_EXT): $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-native$(APP_EXT)"
-	@$(CXX) $(OBJS_native) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_native) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-lv2$(LIB_EXT): $(OBJS_lv2) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2$(LIB_EXT)"
-	@$(CXX) $(OBJS_lv2) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(SHARED) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_lv2) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(SHARED) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-arm32: $(OBJS_arm32) $(LIBS_arm32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-arm32"
-	@$(CXX) $(OBJS_arm32) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_arm32) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix32: $(OBJS_posix32) $(LIBS_posix32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix32"
-	@$(CXX) $(OBJS_posix32) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_posix32) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix64: $(OBJS_posix64) $(LIBS_posix64)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix64"
-	@$(CXX) $(OBJS_posix64) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_posix64) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-win32.exe: $(OBJS_win32) $(LIBS_win32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-win32.exe"
-	@$(CXX) $(OBJS_win32) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(32BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_win32) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(32BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-win64.exe: $(OBJS_win64) $(LIBS_win64)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-win64.exe"
-	@$(CXX) $(OBJS_win64) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(64BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_win64) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(LINK_FLAGS) $(EXTRA_LINK_FLAGS) $(64BIT_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 # native
@@ -298,48 +298,48 @@ ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginVST2.cpp.o: $(CWD)/backend/plugin/CarlaPluginVST2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginVST2.cpp (bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaPluginJuce.cpp.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginJuce.cpp (bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
 else
 $(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 endif
 
 $(OBJDIR)/CarlaBridgeSingleLV2.cpp.o: CarlaBridgeSingleLV2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaPlug%.cpp.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPlug$*.cpp (bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 # arm32
@@ -347,22 +347,22 @@ $(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
 $(OBJDIR)/CarlaBridgePlugin.cpp.arm32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (arm32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.arm32.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (arm32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaEng%.cpp.arm32.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (arm32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaPlug%.cpp.arm32.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPlug$*.cpp (arm32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------
 # posix32
@@ -371,43 +371,43 @@ ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginVST2.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginVST2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginVST2.cpp (posix32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaPluginJuce.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginJuce.cpp (posix32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.posix32.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (posix32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
 else
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.posix32.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (posix32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 endif
 
 $(OBJDIR)/CarlaEng%.cpp.posix32.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (posix32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaPlug%.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPlug$*.cpp (posix32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 # posix64
@@ -416,43 +416,43 @@ ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginVST2.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginVST2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginVST2.cpp (posix64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaPluginJuce.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginJuce.cpp (posix64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix64.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.posix64.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (posix64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
 else
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix64.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.posix64.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (posix64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 endif
 
 $(OBJDIR)/CarlaEng%.cpp.posix64.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (posix64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaPlug%.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPlug$*.cpp (posix64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 # win32
@@ -460,22 +460,22 @@ $(OBJDIR)/CarlaPlug%.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 $(OBJDIR)/CarlaBridgePlugin.cpp.win32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (win32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaEng%.cpp.win32.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (win32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaPlug%.cpp.win32.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPlug$*.cpp (win32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.win32.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (win32 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 # win64
@@ -483,22 +483,22 @@ $(OBJDIR)/CarlaStandalone.cpp.win32.o: $(CWD)/backend/CarlaStandalone.cpp
 $(OBJDIR)/CarlaBridgePlugin.cpp.win64.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (win64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaEng%.cpp.win64.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (win64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaPlug%.cpp.win64.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPlug$*.cpp (win64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.win64.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (win64 bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

@@ -173,59 +173,59 @@ win64:   $(BINDIR)/$(MODULENAME)-win64.exe
 $(BINDIR)/$(MODULENAME)-native: $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-native"
-	@$(CXX) $< $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-native.exe: $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-native.exe"
-	@$(CXX) $< $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-arm32: $(OBJS_arm32) $(LIBS_arm32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix32"
-	@$(CXX) $< $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
+	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix32: $(OBJS_posix32) $(LIBS_posix32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix32"
-	@$(CXX) $< $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix64: $(OBJS_posix64) $(LIBS_posix64)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix64"
-	@$(CXX) $< $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-win32.exe: $(OBJS_win32) $(LIBS_win32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-win32.exe"
-	@$(CXX) $< $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-win64.exe: $(OBJS_win64) $(LIBS_win64)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-win64.exe"
-	@$(CXX) $< $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/$(MODULENAME).cpp.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
 $(OBJDIR)/$(MODULENAME).cpp.%32.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/$(MODULENAME).cpp.%64.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/$(MODULENAME).cpp.arm32.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (ARM32)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

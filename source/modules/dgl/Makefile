@@ -62,31 +62,31 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).wine.a: $(OBJS_wine)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).wine.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/%.cpp.o: src/%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp-wine.o: src/%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Wine)"
-	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_FLAGS) -c -o $@
+	$(SILENT)$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_FLAGS) -c -o $@
 
 $(OBJDIR)/Window.mm.o: src/Window.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 
 -include $(OBJS:%.o=%.d)
 -include $(OBJS_wine:%.o=%.d)

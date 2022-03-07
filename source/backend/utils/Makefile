@@ -82,7 +82,7 @@ debug:
 $(BINDIR)/libcarla_utils$(LIB_EXT): $(OBJS) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_utils$(LIB_EXT)"
-	@$(CXX) $(OBJS) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) $(LINK_FLAGS) $(SHARED) -o $@
+	$(SILENT)$(CXX) $(OBJS) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) $(LINK_FLAGS) $(SHARED) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -90,13 +90,13 @@ ifeq ($(MACOS),true)
 $(OBJDIR)/Windows.cpp.o: Windows.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 -include $(OBJS:%.o=%.d)
 

@@ -111,143 +111,143 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).min.a: $(OBJS_min)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).min.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).arm32.a: $(OBJS_arm32)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).arm32.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).posix32.a: $(OBJS_posix32)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).posix32.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).posix64.a: $(OBJS_posix64)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).posix64.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).win32.a: $(OBJS_win32)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).win32.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).win64.a: $(OBJS_win64)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).win64.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(MODULEDIR)/$(MODULENAME).posix32e.a: $(OBJS_posix32e)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).posix32e.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).posix64e.a: $(OBJS_posix64e)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).posix64e.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).win32e.a: $(OBJS_win32e)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).win32e.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).win64e.a: $(OBJS_win64e)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).win64e.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(MODULEDIR)/$(MODULENAME)-wine32.dll$(LIB_EXT): $(OBJS_wine32) JackBridgeExport.def
 	-@mkdir -p $(MODULEDIR)
 	@echo "Linking $(MODULENAME)-wine32.dll$(LIB_EXT)"
-	@$(WINECC) $^ $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
+	$(SILENT)$(WINECC) $^ $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
 
 $(MODULEDIR)/$(MODULENAME)-wine64.dll$(LIB_EXT): $(OBJS_wine64) JackBridgeExport.def
 	-@mkdir -p $(MODULEDIR)
 	@echo "Linking $(MODULENAME)-wine64.dll$(LIB_EXT)"
-	@$(WINECC) $^ $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
+	$(SILENT)$(WINECC) $^ $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/JackBridge1.cpp.o: JackBridge1.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling JackBridge1.cpp"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/JackBridge2.cpp.o: JackBridge2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling JackBridge2.cpp"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/JackBridgeExport.cpp.%32e.o: JackBridgeExport.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -fpermissive -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -fpermissive -c -o $@
 
 $(OBJDIR)/JackBridgeExport.cpp.%64e.o: JackBridgeExport.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -fpermissive -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -fpermissive -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/%.cpp.arm32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (arm32)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.posix32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix32)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.posix64.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix64)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.win32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (win32)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.win64.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (win64)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.wine32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (wine32)"
-	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_32BIT_FLAGS) -c -o $@
+	$(SILENT)$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.wine64.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (wine64)"
-	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_64BIT_FLAGS) -c -o $@
+	$(SILENT)$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_64BIT_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
