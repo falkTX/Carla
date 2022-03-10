@@ -84,6 +84,12 @@ BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden
 endif
 
+ifneq ($(MACOS),true)
+ifneq ($(WIN32),true)
+BASE_FLAGS += -fno-gnu-unique
+endif
+endif
+
 ifeq ($(WITH_LTO),true)
 BASE_FLAGS += -fno-strict-aliasing -flto
 endif
