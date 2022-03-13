@@ -2403,7 +2403,7 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-#ifndef CARLA_PLUGIN_EXPORT
+#ifndef CARLA_PLUGIN_BUILD
 # define CARLA_PLUGIN_UI_CLASS_PREFIX Standalone
 # include "CarlaPluginUI.cpp"
 # undef CARLA_PLUGIN_UI_CLASS_PREFIX
@@ -2415,6 +2415,6 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 # include "CarlaStateUtils.cpp"
 # include "utils/Information.cpp"
 # include "utils/Windows.cpp"
-#endif /* CARLA_PLUGIN_EXPORT */
+#endif /* CARLA_PLUGIN_BUILD */
 
 // --------------------------------------------------------------------------------------------------------------------

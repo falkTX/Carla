@@ -707,7 +707,7 @@ static const void* lv2ui_extension_data(const char* uri)
 // --------------------------------------------------------------------------------------------------------------------
 // Startup code
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const LV2_Descriptor* lv2_descriptor(uint32_t index)
 {
     carla_debug("lv2_descriptor(%i)", index);
@@ -745,7 +745,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     return &desc;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);

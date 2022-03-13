@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_nframes_t jack_frames_since_cycle_start(const jack_client_t* client)
 {
     const JackClientState* const jclient = (const JackClientState*)client;
@@ -31,7 +31,7 @@ jack_nframes_t jack_frames_since_cycle_start(const jack_client_t* client)
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_nframes_t jack_frame_time(const jack_client_t* client)
 {
     const JackClientState* const jclient = (const JackClientState*)client;
@@ -41,7 +41,7 @@ jack_nframes_t jack_frame_time(const jack_client_t* client)
     return static_cast<jack_nframes_t>(jclient->server.position.usecs);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_nframes_t jack_last_frame_time(const jack_client_t* client)
 {
     const JackClientState* const jclient = (const JackClientState*)client;
@@ -50,7 +50,7 @@ jack_nframes_t jack_last_frame_time(const jack_client_t* client)
     return static_cast<jack_nframes_t>(jclient->server.monotonic_frame);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_get_cycle_times(const jack_client_t *client,
                          jack_nframes_t *current_frames,
                          jack_time_t    *current_usecs,
@@ -76,7 +76,7 @@ int jack_get_cycle_times(const jack_client_t *client,
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_time_t jack_frames_to_time(const jack_client_t* client, jack_nframes_t frames)
 {
     const JackClientState* const jclient = (const JackClientState*)client;
@@ -85,7 +85,7 @@ jack_time_t jack_frames_to_time(const jack_client_t* client, jack_nframes_t fram
     return static_cast<jack_time_t>(static_cast<double>(frames) / jclient->server.sampleRate * 1000000.0);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_nframes_t jack_time_to_frames(const jack_client_t* client, jack_time_t time)
 {
     const JackClientState* const jclient = (const JackClientState*)client;
@@ -94,7 +94,7 @@ jack_nframes_t jack_time_to_frames(const jack_client_t* client, jack_time_t time
     return static_cast<jack_nframes_t>(static_cast<double>(time) / 1000000.0 * jclient->server.sampleRate);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_time_t jack_get_time(void)
 {
     timespec t;

@@ -343,42 +343,42 @@ static int carlaWindowUnmap(Display* const display, const Window window, const W
 // --------------------------------------------------------------------------------------------------------------------
 // Our custom X11 functions
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XMapWindow(Display* display, Window window)
 {
     carla_debug("XMapWindow(%p, %lu)", display, window);
     return carlaWindowMap(display, window, WindowMapNormal);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XMapRaised(Display* display, Window window)
 {
     carla_debug("XMapRaised(%p, %lu)", display, window);
     return carlaWindowMap(display, window, WindowMapRaised);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XMapSubwindows(Display* display, Window window)
 {
     carla_debug("XMapSubwindows(%p, %lu)", display, window);
     return carlaWindowMap(display, window, WindowMapSubwindows);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XUnmapWindow(Display* display, Window window)
 {
     carla_debug("XUnmapWindow(%p, %lu)", display, window);
     return carlaWindowUnmap(display, window, WindowUnmapNormal);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XDestroyWindow(Display* display, Window window)
 {
     carla_debug("XDestroyWindow(%p, %lu)", display, window);
     return carlaWindowUnmap(display, window, WindowUnmapDestroy);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XNextEvent(Display* display, XEvent* event)
 {
     const int ret = real_XNextEvent(display, event);
@@ -421,7 +421,7 @@ int XNextEvent(Display* display, XEvent* event)
 // --------------------------------------------------------------------------------------------------------------------
 // Full control helper
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_carla_interposed_action(uint action, uint value, void* ptr)
 {
     carla_debug("jack_carla_interposed_action(%i, %i, %p)", action, value, ptr);

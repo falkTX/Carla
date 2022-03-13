@@ -1460,7 +1460,7 @@ CARLA_BACKEND_END_NAMESPACE
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_client_t* jack_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)
 {
     carla_debug("%s(%s, 0x%x, %p)", __FUNCTION__, client_name, options, status);
@@ -1482,13 +1482,13 @@ jack_client_t* jack_client_open(const char* client_name, jack_options_t options,
     (void)options;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_client_t* jack_client_new(const char* client_name)
 {
     return jack_client_open(client_name, JackNullOption, nullptr);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_client_close(jack_client_t* client)
 {
     carla_debug("%s(%p)", __FUNCTION__, client);
@@ -1500,7 +1500,7 @@ int jack_client_close(jack_client_t* client)
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_activate(jack_client_t* client)
 {
     carla_debug("%s(%p)", __FUNCTION__, client);
@@ -1511,7 +1511,7 @@ int jack_activate(jack_client_t* client)
     return gClient.activateClient(jclient) ? 0 : 1;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_deactivate(jack_client_t* client)
 {
     carla_debug("%s(%p)", __FUNCTION__, client);
@@ -1524,7 +1524,7 @@ int jack_deactivate(jack_client_t* client)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 char* jack_get_client_name_by_uuid(jack_client_t* const client, const char* const uuidstr)
 {
     carla_debug("%s(%p, %s)", __FUNCTION__, client, uuidstr);
@@ -1557,7 +1557,7 @@ char* jack_get_client_name_by_uuid(jack_client_t* const client, const char* cons
     return strdup(clientName);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 char* jack_get_uuid_for_client_name(jack_client_t* client, const char* name)
 {
     carla_debug("%s(%p, %s)", __FUNCTION__, client, name);
@@ -1591,7 +1591,7 @@ char* jack_get_uuid_for_client_name(jack_client_t* client, const char* name)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 pthread_t jack_client_thread_id(jack_client_t* client)
 {
     carla_debug("%s(%p)", __FUNCTION__, client);
@@ -1615,7 +1615,7 @@ pthread_t jack_client_thread_id(jack_client_t* client)
 
 CARLA_BACKEND_USE_NAMESPACE
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_client_real_time_priority(jack_client_t* client)
 {
     carla_debug("%s(%p)", __FUNCTION__, client);
@@ -1638,7 +1638,7 @@ int jack_client_create_thread(jack_client_t* client, pthread_t* thread, int prio
 
 typedef void (*JackSessionCallback)(jack_session_event_t*, void*);
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_session_callback(jack_client_t* client, JackSessionCallback callback, void* arg)
 {
     carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);

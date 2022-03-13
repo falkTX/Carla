@@ -269,19 +269,22 @@ private:                                        \
     static void* operator new(std::size_t);
 #endif
 
+/* CARLA_VISIBLE_SYMBOL */
+#if defined(CARLA_OS_WIN) && ! defined(__WINE__)
+# ifdef BUILDING_CARLA
+#  define CARLA_VISIBLE_SYMBOL __declspec (dllexport)
+# else
+#  define CARLA_VISIBLE_SYMBOL __declspec (dllimport)
+# endif
+#else
+# define CARLA_VISIBLE_SYMBOL __attribute__ ((visibility("default")))
+#endif
+
 /* Define CARLA_API */
 #if defined(BUILD_BRIDGE) || defined(STATIC_PLUGIN_TARGET)
 # define CARLA_API
 #else
-# if defined(CARLA_OS_WIN) && ! defined(__WINE__)
-#  ifdef BUILDING_CARLA
-#   define CARLA_API __declspec (dllexport)
-#  else
-#   define CARLA_API __declspec (dllimport)
-#  endif
-# else
-#  define CARLA_API __attribute__ ((visibility("default")))
-# endif
+# define CARLA_API CARLA_VISIBLE_SYMBOL
 #endif
 
 /* Define CARLA_EXTERN_C */
@@ -291,15 +294,13 @@ private:                                        \
 # define CARLA_EXTERN_C
 #endif
 
-/* Define CARLA_EXPORT */
+/* Define CARLA_*_EXPORT */
 #ifdef BUILD_BRIDGE
-# define CARLA_EXPORT CARLA_EXTERN_C
+# define CARLA_API_EXPORT CARLA_EXTERN_C
+# define CARLA_PLUGIN_EXPORT CARLA_EXTERN_C
 #else
-# if defined(CARLA_OS_WIN) && ! defined(__WINE__)
-#  define CARLA_EXPORT CARLA_EXTERN_C CARLA_API
-# else
-#  define CARLA_EXPORT CARLA_EXTERN_C CARLA_API
-# endif
+# define CARLA_API_EXPORT CARLA_EXTERN_C CARLA_API
+# define CARLA_PLUGIN_EXPORT CARLA_EXTERN_C CARLA_VISIBLE_SYMBOL
 #endif
 
 /* Define CARLA_OS_SEP */

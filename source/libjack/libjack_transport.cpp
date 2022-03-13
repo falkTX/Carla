@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_engine_takeover_timebase(jack_client_t* client)
 {
     carla_debug("%s(%p)", __FUNCTION__, client);
@@ -33,7 +33,7 @@ int jack_engine_takeover_timebase(jack_client_t* client)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_release_timebase(jack_client_t* client)
 {
     carla_debug("%s(%p)", __FUNCTION__, client);
@@ -43,7 +43,7 @@ int jack_release_timebase(jack_client_t* client)
     (void)client;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_sync_callback(jack_client_t* client, JackSyncCallback callback, void* arg)
 {
     carla_debug("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
@@ -58,14 +58,14 @@ int jack_set_sync_callback(jack_client_t* client, JackSyncCallback callback, voi
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_sync_timeout(jack_client_t* client, jack_time_t timeout)
 {
     carla_stderr2("%s(%p, " P_UINT64 ")", __FUNCTION__, client, timeout);
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_timebase_callback(jack_client_t* client, int conditional, JackTimebaseCallback callback, void* arg)
 {
     carla_debug("%s(%p, %i, %p, %p)", __FUNCTION__, client, conditional, callback, arg);
@@ -77,14 +77,14 @@ int jack_set_timebase_callback(jack_client_t* client, int conditional, JackTimeb
     (void)arg;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_transport_locate(jack_client_t* client, jack_nframes_t frame)
 {
     carla_stderr2("%s(%p, %u)", __FUNCTION__, client, frame);
     return ENOSYS;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_transport_state_t jack_transport_query(const jack_client_t* client, jack_position_t* pos)
 {
     if (const JackClientState* const jclient = (const JackClientState*)client)
@@ -103,7 +103,7 @@ jack_transport_state_t jack_transport_query(const jack_client_t* client, jack_po
     return JackTransportStopped;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_nframes_t jack_get_current_transport_frame(const jack_client_t* client)
 {
     if (const JackClientState* const jclient = (const JackClientState*)client)
@@ -112,20 +112,20 @@ jack_nframes_t jack_get_current_transport_frame(const jack_client_t* client)
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_transport_reposition(jack_client_t* client, const jack_position_t* pos)
 {
     carla_stderr2("%s(%p, %p)", __FUNCTION__, client, pos);
     return ENOSYS;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_transport_start(jack_client_t* client)
 {
     carla_stderr2("%s(%p)", __FUNCTION__, client);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_transport_stop(jack_client_t* client)
 {
     carla_stderr2("%s(%p)", __FUNCTION__, client);
@@ -133,13 +133,13 @@ void jack_transport_stop(jack_client_t* client)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_get_transport_info(jack_client_t* client, void* tinfo)
 {
     carla_stderr2("%s(%p, %p)", __FUNCTION__, client, tinfo);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_set_transport_info(jack_client_t* client, void* tinfo)
 {
     carla_stderr2("%s(%p, %p)", __FUNCTION__, client, tinfo);

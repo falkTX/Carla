@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@ CARLA_BACKEND_USE_NAMESPACE
 
 //extern void (*jack_error_callback)(const char *msg) JACK_OPTIONAL_WEAK_EXPORT;
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_set_error_function(void (*func)(const char *))
 {
     carla_stderr2("%s(%p)", __FUNCTION__, func);
@@ -31,7 +31,7 @@ void jack_set_error_function(void (*func)(const char *))
 
 //extern void (*jack_info_callback)(const char *msg) JACK_OPTIONAL_WEAK_EXPORT;
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_set_info_function(void (*func)(const char *))
 {
     carla_stderr2("%s(%p)", __FUNCTION__, func);

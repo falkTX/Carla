@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -2925,7 +2925,7 @@ CARLA_BACKEND_END_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_API_EXPORT
 void carla_register_native_plugin_carla();
 
 void carla_register_native_plugin_carla()
@@ -2994,7 +2994,7 @@ const NativePluginDescriptor* carla_get_native_patchbay_cv32_plugin()
 // -----------------------------------------------------------------------
 // Extra stuff for linking purposes
 
-#ifdef CARLA_PLUGIN_EXPORT
+#ifdef CARLA_PLUGIN_BUILD
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -3033,6 +3033,6 @@ CARLA_BACKEND_END_NAMESPACE
 #include "CarlaProcessUtils.cpp"
 #include "CarlaStateUtils.cpp"
 
-#endif /* CARLA_PLUGIN_EXPORT */
+#endif /* CARLA_PLUGIN_BUILD */
 
 // -----------------------------------------------------------------------

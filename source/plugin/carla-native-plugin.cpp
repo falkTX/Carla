@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 // Expose info functions as needed
 
-#ifndef CARLA_PLUGIN_EXPORT
+#ifndef CARLA_PLUGIN_BUILD
 # include "utils/Information.cpp"
 #endif
 

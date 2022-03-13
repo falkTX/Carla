@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@ static const char* allocate_port_name(const char* const prefixOrFullName, const 
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char** jack_get_ports(jack_client_t* const client,
                             const char* const port_name,
                             const char* const port_type,
@@ -232,7 +232,7 @@ const char** jack_get_ports(jack_client_t* const client,
     return nullptr;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
 {
     carla_debug("%s(%p, %s)", __FUNCTION__, client, name);
@@ -334,7 +334,7 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
     return nullptr;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_port_t* jack_port_by_id(jack_client_t* client, jack_port_id_t port_id)
 {
     carla_debug("%s(%p, %u)", __FUNCTION__, client, port_id);
@@ -353,7 +353,7 @@ jack_port_t* jack_port_by_id(jack_client_t* client, jack_port_id_t port_id)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char** jack_port_get_connections(const jack_port_t* port)
 {
     carla_stderr2("%s(%p)", __FUNCTION__, port);
@@ -368,7 +368,7 @@ const char** jack_port_get_connections(const jack_port_t* port)
     return nullptr;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char** jack_port_get_all_connections(const jack_client_t* client, const jack_port_t* port)
 {
     carla_stdout("%s(%p, %p) WIP", __FUNCTION__, client, port);

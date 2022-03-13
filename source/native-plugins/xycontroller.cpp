@@ -1,6 +1,6 @@
 /*
  * XY Controller UI, taken from Cadence
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -275,10 +275,10 @@ static const NativePluginDescriptor notesDesc = {
 
 // -----------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_API_EXPORT
 void carla_register_native_plugin_xycontroller();
 
-CARLA_EXPORT
+CARLA_API_EXPORT
 void carla_register_native_plugin_xycontroller()
 {
     carla_register_native_plugin(&notesDesc);

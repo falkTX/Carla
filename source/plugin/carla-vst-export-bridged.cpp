@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -40,14 +40,14 @@ static HINSTANCE getCurrentModuleInstanceHandle() noexcept
     return currentModuleHandle;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 BOOL WINAPI DllMain(HINSTANCE hInst, DWORD, LPVOID)
 {
     currentModuleHandle = hInst;
     return 1;
 }
 
-CARLA_EXPORT __cdecl
+CARLA_PLUGIN_EXPORT __cdecl
 const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 {
     static MainCallback sCallback = nullptr;

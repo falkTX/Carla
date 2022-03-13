@@ -209,7 +209,7 @@ void carla_pipe_client_destroy(CarlaPipeClientHandle handle)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#ifndef CARLA_PLUGIN_EXPORT
+#ifndef CARLA_PLUGIN_BUILD
 # include "CarlaPipeUtils.cpp"
 #endif
 

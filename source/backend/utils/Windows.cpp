@@ -19,7 +19,7 @@
 
 #include "CarlaMathUtils.hpp"
 
-#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_BUILD)
 # import <Cocoa/Cocoa.h>
 #endif
 
@@ -41,7 +41,7 @@ double carla_get_desktop_scale_factor()
     if (const char* const scale = getenv("QT_SCALE_FACTOR"))
         return std::max(1.0, std::atof(scale));
 
-#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_BUILD)
     return [NSScreen mainScreen].backingScaleFactor;
 #endif
 #ifdef HAVE_X11
@@ -79,7 +79,7 @@ int carla_cocoa_get_window(void* nsViewPtr)
 {
     CARLA_SAFE_ASSERT_RETURN(nsViewPtr != nullptr, 0);
 
-#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_BUILD)
     NSView* const nsView = (NSView*)nsViewPtr;
     return [[nsView window] windowNumber];
 #else
@@ -92,7 +92,7 @@ void carla_cocoa_set_transient_window_for(void* nsViewChildPtr, void* nsViewPare
     CARLA_SAFE_ASSERT_RETURN(nsViewChildPtr != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(nsViewParentPtr != nullptr,);
 
-#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_EXPORT)
+#if defined(CARLA_OS_MAC) && !defined(CARLA_PLUGIN_BUILD)
     NSView* const nsViewChild  = (NSView*)nsViewChildPtr;
     NSView* const nsViewParent = (NSView*)nsViewParentPtr;
     [[nsViewParent window] addChildWindow:[nsViewChild window]

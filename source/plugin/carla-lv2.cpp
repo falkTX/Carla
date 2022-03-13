@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1494,7 +1494,7 @@ static const void* lv2ui_extension_data(const char* uri)
 // -----------------------------------------------------------------------
 // Startup code
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const LV2_Descriptor* lv2_descriptor(uint32_t index)
 {
     carla_debug("lv2_descriptor(%i)", index);
@@ -1545,7 +1545,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
 }
 
 #ifdef HAVE_PYQT
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);
