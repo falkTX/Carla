@@ -22,7 +22,7 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(sysctl -n hw.logicalcpu)
+        run: make WITH_LTO=true -j $(sysctl -n hw.logicalcpu)
 
   msys2-i686:
     runs-on: windows-latest
@@ -38,7 +38,7 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)
 
   msys2-x86_64:
     runs-on: windows-latest
@@ -54,7 +54,7 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)
 
   ubuntu-18_04:
     runs-on: ubuntu-18.04
@@ -73,9 +73,9 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)
       - name: make posix32
-        run: make posix32 -j $(nproc)
+        run: make WITH_LTO=true posix32 -j $(nproc)
 
   ubuntu-20_04:
     runs-on: ubuntu-20.04
@@ -99,9 +99,9 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)
       - name: make posix32
-        run: make posix32 -j $(nproc)
+        run: make WITH_LTO=true posix32 -j $(nproc)
 
   ubuntu-mingw-win32:
     runs-on: ubuntu-20.04
@@ -126,7 +126,7 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)
 
   ubuntu-mingw-win64:
     runs-on: ubuntu-20.04
@@ -150,4 +150,4 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)

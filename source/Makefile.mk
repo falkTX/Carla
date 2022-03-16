@@ -92,6 +92,7 @@ endif
 
 ifeq ($(WITH_LTO),true)
 BASE_FLAGS += -fno-strict-aliasing -flto
+LINK_OPTS  += -fno-strict-aliasing -flto -Werror=odr -Werror=lto-type-mismatch
 endif
 
 32BIT_FLAGS = -m32

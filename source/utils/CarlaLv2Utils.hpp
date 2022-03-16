@@ -1861,6 +1861,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         for (uint i = 0; i < numPorts; ++i)
         {
             Lilv::Port lilvPort(lilvPlugin.get_port_by_index(i));
+            CARLA_SAFE_ASSERT_CONTINUE(lilvPort.me != nullptr);
+
             LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[i]);
 
             // --------------------------------------------------------------------------------------------------------
