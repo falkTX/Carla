@@ -1005,6 +1005,11 @@ public:
     */
     CharPointer_UTF8 toUTF8() const;
 
+   #ifdef CARLA_OS_WIN
+    /** Convert string to UTF-16, Windows only */
+    std::wstring toUTF16() const;
+   #endif
+
     /** Returns a pointer to a UTF-8 version of this string.
 
         Because it returns a reference to the string's internal data, the pointer

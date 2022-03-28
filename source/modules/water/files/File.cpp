@@ -980,18 +980,7 @@ namespace WindowsFileHelpers
 {
     DWORD getAtts (const String& path)
     {
-        if (path.isEmpty())
-            return 0;
-
-        const int len = MultiByteToWideChar(CP_UTF8, 0, path.toUTF8(), path.length()+1, nullptr, 0);
-        CARLA_SAFE_ASSERT_RETURN(len > 0, 0);
-
-        WCHAR* const wpath = new WCHAR [len];
-        MultiByteToWideChar (CP_UTF8, 0, path.toUTF8(), path.length(), wpath, len);
-
-        const DWORD atts = GetFileAttributesW (wpath);
-        delete[] wpath;
-        return atts;
+        return GetFileAttributesW (path.toUTF16().c_str());
     }
 
     int64 fileTimeToTime (const FILETIME* const ft)
@@ -1072,7 +1061,7 @@ int64 File::getSize() const
 {
     WIN32_FILE_ATTRIBUTE_DATA attributes;
 
-    if (GetFileAttributesEx (fullPath.toUTF8(), GetFileExInfoStandard, &attributes))
+    if (GetFileAttributesExW (fullPath.toUTF16().c_str(), GetFileExInfoStandard, &attributes))
         return (((int64) attributes.nFileSizeHigh) << 32) | attributes.nFileSizeLow;
 
     return 0;
@@ -1083,8 +1072,8 @@ bool File::deleteFile() const
     if (! exists())
         return true;
 
-    return isDirectory() ? RemoveDirectory (fullPath.toUTF8()) != 0
-                         : DeleteFile (fullPath.toUTF8()) != 0;
+    return isDirectory() ? RemoveDirectoryW (fullPath.toUTF16().c_str()) != 0
+                         : DeleteFileW (fullPath.toUTF16().c_str()) != 0;
 }
 
 File File::getLinkedTarget() const
@@ -1094,12 +1083,12 @@ File File::getLinkedTarget() const
 
 bool File::copyInternal (const File& dest) const
 {
-    return CopyFile (fullPath.toUTF8(), dest.getFullPathName().toUTF8(), false) != 0;
+    return CopyFileW (fullPath.toUTF16().c_str(), dest.getFullPathName().toUTF16().c_str(), false) != 0;
 }
 
 bool File::moveInternal (const File& dest) const
 {
-    return MoveFile (fullPath.toUTF8(), dest.getFullPathName().toUTF8()) != 0;
+    return MoveFileW (fullPath.toUTF16().c_str(), dest.getFullPathName().toUTF16().c_str()) != 0;
 }
 
 bool File::replaceInternal (const File& dest) const
@@ -1107,14 +1096,15 @@ bool File::replaceInternal (const File& dest) const
     void* lpExclude = 0;
     void* lpReserved = 0;
 
-    return ReplaceFile (dest.getFullPathName().toUTF8(), fullPath.toUTF8(),
-                        0, REPLACEFILE_IGNORE_MERGE_ERRORS, lpExclude, lpReserved) != 0;
+    return ReplaceFileW (dest.getFullPathName().toUTF16().c_str(),
+                         fullPath.toUTF16().c_str(),
+                         0, REPLACEFILE_IGNORE_MERGE_ERRORS, lpExclude, lpReserved) != 0;
 }
 
 Result File::createDirectoryInternal (const String& fileName) const
 {
-    return CreateDirectory (fileName.toUTF8(), 0) ? Result::ok()
-                                                  : getResultForLastError();
+    return CreateDirectoryW (fileName.toUTF16().c_str(), 0) ? Result::ok()
+                                                            : getResultForLastError();
 }
 
 File File::getCurrentWorkingDirectory()
@@ -1132,12 +1122,12 @@ File File::getCurrentWorkingDirectory()
 
 bool File::setAsCurrentWorkingDirectory() const
 {
-    return SetCurrentDirectory (getFullPathName().toUTF8()) != FALSE;
+    return SetCurrentDirectoryW (getFullPathName().toUTF16().c_str()) != FALSE;
 }
 
 bool File::isSymbolicLink() const
 {
-    return (GetFileAttributes (fullPath.toUTF8()) & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+    return (GetFileAttributesW (fullPath.toUTF16().c_str()) & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
 }
 
 File File::getSpecialLocation (const SpecialLocationType type)
@@ -1152,10 +1142,15 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
         case tempDirectory:
         {
-            CHAR dest [2048];
-            dest[0] = 0;
-            GetTempPath ((DWORD) numElementsInArray (dest), dest);
-            return File (String (dest));
+            WCHAR wdest [2048];
+            CHAR adest [2048];
+            wdest[0] = 0;
+            GetTempPathW ((DWORD) numElementsInArray (wdest), wdest);
+
+            if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
+                return File (String (adest));
+
+            return File();
         }
 
         case currentExecutableFile:
@@ -1193,22 +1188,33 @@ public:
                Time* const modTime, Time* const creationTime, bool* const isReadOnly)
     {
         using namespace WindowsFileHelpers;
-        WIN32_FIND_DATA findData;
+        WIN32_FIND_DATAW findData;
 
         if (handle == INVALID_HANDLE_VALUE)
         {
-            handle = FindFirstFile (directoryWithWildCard.toUTF8(), &findData);
+            handle = FindFirstFileW (directoryWithWildCard.toUTF16().c_str(), &findData);
 
             if (handle == INVALID_HANDLE_VALUE)
                 return false;
         }
         else
         {
-            if (FindNextFile (handle, &findData) == 0)
+            if (FindNextFileW (handle, &findData) == 0)
                 return false;
         }
 
-        filenameFound = findData.cFileName;
+        const size_t wlen = wcslen(findData.cFileName);
+        CARLA_SAFE_ASSERT_RETURN (wlen > 0, false);
+
+        const int len = WideCharToMultiByte (CP_UTF8, 0, findData.cFileName, (int) wlen, nullptr, 0, nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN (len > 0, false);
+
+        if (CHAR* const path = new CHAR [len])
+        {
+            WideCharToMultiByte (CP_UTF8, 0, findData.cFileName, (int) wlen, path, len, nullptr, nullptr);
+            filenameFound = path;
+            delete[] path;
+        }
 
         if (isDir != nullptr)         *isDir        = ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
         if (isReadOnly != nullptr)    *isReadOnly   = ((findData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0);
