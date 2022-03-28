@@ -966,20 +966,8 @@ bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExist
     }
 
    #ifdef CARLA_OS_WIN
-    typedef BOOLEAN (WINAPI* PFUNC)(LPCTSTR, LPCTSTR, DWORD);
-
-# if defined(__GNUC__) && (__GNUC__ >= 9)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wcast-function-type"
-# endif
-    const PFUNC pfn = (PFUNC)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateSymbolicLinkA");
-# if defined(__GNUC__) && (__GNUC__ >= 9)
-#  pragma GCC diagnostic pop
-# endif
-    CARLA_SAFE_ASSERT_RETURN(pfn != nullptr, false);
-
-    return pfn(linkFileToCreate.getFullPathName().toRawUTF8(), fullPath.toRawUTF8(),
-               isDirectory() ? 0x1 /*SYMBOLIC_LINK_FLAG_DIRECTORY*/ : 0x0) != FALSE;
+    carla_stderr("File::createSymbolicLink failed, unsupported");
+    return false;
    #else
     // one common reason for getting an error here is that the file already exists
     return symlink(fullPath.toRawUTF8(), linkFileToCreate.getFullPathName().toRawUTF8()) != -1;
@@ -992,7 +980,18 @@ namespace WindowsFileHelpers
 {
     DWORD getAtts (const String& path)
     {
-        return GetFileAttributes (path.toUTF8());
+        if (path.isEmpty())
+            return 0;
+
+        const int len = MultiByteToWideChar(CP_UTF8, 0, path.toUTF8(), path.length()+1, nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(len > 0, 0);
+
+        WCHAR* const wpath = new WCHAR [len];
+        MultiByteToWideChar (CP_UTF8, 0, path.toUTF8(), path.length(), wpath, len);
+
+        const DWORD atts = GetFileAttributesW (wpath);
+        delete[] wpath;
+        return atts;
     }
 
     int64 fileTimeToTime (const FILETIME* const ft)
