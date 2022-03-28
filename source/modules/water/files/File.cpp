@@ -1006,20 +1006,30 @@ namespace WindowsFileHelpers
 
     File getSpecialFolderPath (int type)
     {
-        CHAR path [MAX_PATH + 256];
+        WCHAR wpath [MAX_PATH + 256];
 
-        if (SHGetSpecialFolderPath (0, path, type, FALSE))
-            return File (String (path));
+        if (SHGetSpecialFolderPathW (nullptr, wpath, type, FALSE))
+        {
+            CHAR apath [MAX_PATH + 256];
+
+            if (WideCharToMultiByte (CP_UTF8, 0, wpath, -1, apath, numElementsInArray (apath), nullptr, nullptr))
+                return File (String (apath));
+        }
 
         return File();
     }
 
     File getModuleFileName (HINSTANCE moduleHandle)
     {
-        CHAR dest [MAX_PATH + 256];
-        dest[0] = 0;
-        GetModuleFileName (moduleHandle, dest, (DWORD) numElementsInArray (dest));
-        return File (String (dest));
+        WCHAR wdest [MAX_PATH + 256];
+        CHAR adest [MAX_PATH + 256];
+        wdest[0] = 0;
+        GetModuleFileNameW (moduleHandle, wdest, (DWORD) numElementsInArray (wdest));
+
+        if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
+            return File (String (adest));
+
+        return File();
     }
 }
 
@@ -1110,10 +1120,15 @@ Result File::createDirectoryInternal (const String& fileName) const
 
 File File::getCurrentWorkingDirectory()
 {
-    CHAR dest [MAX_PATH + 256];
-    dest[0] = 0;
-    GetCurrentDirectory ((DWORD) numElementsInArray (dest), dest);
-    return File (String (dest));
+    WCHAR wdest [MAX_PATH + 256];
+    CHAR adest [MAX_PATH + 256];
+    wdest[0] = 0;
+    GetCurrentDirectoryW ((DWORD) numElementsInArray (wdest), wdest);
+
+    if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
+        return File (String (adest));
+
+    return File();
 }
 
 bool File::setAsCurrentWorkingDirectory() const
