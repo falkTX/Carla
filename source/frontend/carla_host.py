@@ -542,6 +542,7 @@ class HostWindow(QMainWindow):
         self.ui.keyboard.noteOff.connect(self.slot_noteOff)
 
         self.ui.tabWidget.currentChanged.connect(self.slot_tabChanged)
+        self.ui.toolBar.visibilityChanged.connect(self.slot_toolbarVisibilityChanged)
 
         if withCanvas:
             self.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
@@ -1919,8 +1920,10 @@ class HostWindow(QMainWindow):
 
             showToolbar = settings.value("ShowToolbar", True, bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+            self.ui.toolBar.blockSignals(True)
             self.ui.toolBar.setEnabled(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
+            self.ui.toolBar.blockSignals(False)
 
             #if settings.contains("SplitterState"):
                 #self.ui.splitter.restoreState(settings.value("SplitterState", b""))
@@ -2035,8 +2038,10 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(bool)
     def slot_showToolbar(self, yesNo):
+        self.ui.toolBar.blockSignals(True)
         self.ui.toolBar.setEnabled(yesNo)
         self.ui.toolBar.setVisible(yesNo)
+        self.ui.toolBar.blockSignals(False)
 
     @pyqtSlot(bool)
     def slot_showCanvasMeters(self, yesNo):
@@ -2471,6 +2476,13 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Misc
+
+    @pyqtSlot(bool)
+    def slot_toolbarVisibilityChanged(self, visible):
+        self.ui.toolBar.blockSignals(True)
+        self.ui.toolBar.setEnabled(visible)
+        self.ui.toolBar.blockSignals(False)
+        self.ui.act_settings_show_toolbar.setChecked(visible)
 
     @pyqtSlot(int)
     def slot_tabChanged(self, index):
