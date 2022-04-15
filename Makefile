@@ -22,7 +22,8 @@ else
 MODULEDIR := $(CURDIR)/build/modules/Release
 endif
 
-VERSION   := 2.4.2
+# see also source/frontend/carla_shared.py and source/includes/CarlaDefines.h
+VERSION   := 2.4.3
 
 -include Makefile.user.mk
 
@@ -657,7 +658,7 @@ endif
 
 	# Install app data
 	sed -e 's?X-VERSION-X?$(VERSION)?' \
-		data/appdata.xml > $(DESTDIR)$(PREFIX)/share/appdata/studio.kx.carla.appdata.xml
+		data/appdata.xml.in > $(DESTDIR)$(PREFIX)/share/appdata/studio.kx.carla.appdata.xml
 
 	# Install mime package
 	install -m 644 data/carla.xml $(DESTDIR)$(DATADIR)/mime/packages
