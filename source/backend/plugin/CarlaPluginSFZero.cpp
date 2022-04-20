@@ -471,7 +471,7 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
                         {
-                            fSynth.handleController(event.channel+1, ctrlEvent.param, int(ctrlEvent.normalizedValue*127.0f));
+                            fSynth.handleController(event.channel+1, ctrlEvent.param, int(ctrlEvent.normalizedValue*127.0f + 0.5f));
                         }
 
                         break;

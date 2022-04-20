@@ -50,7 +50,7 @@ uint8_t EngineControlEvent::convertToMidiData(const uint8_t channel, uint8_t dat
             if (midiValue >= 0)
                 data[2] = uint8_t(midiValue);
             else
-                data[2] = uint8_t(carla_fixedValue<float>(0.0f, 1.0f, normalizedValue) * static_cast<float>(MAX_MIDI_VALUE-1));
+                data[2] = uint8_t(carla_fixedValue<float>(0.0f, 1.0f, normalizedValue) * static_cast<float>(MAX_MIDI_VALUE-1) + 0.5f);
         }
         return 3;
 

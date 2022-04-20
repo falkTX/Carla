@@ -1732,7 +1732,7 @@ public:
                             seqEvent.type = SND_SEQ_EVENT_CONTROLLER;
                             seqEvent.data.control.channel = event.channel;
                             seqEvent.data.control.param   = ctrlEvent.param;
-                            seqEvent.data.control.value   = int8_t(ctrlEvent.normalizedValue*127.0f);
+                            seqEvent.data.control.value   = int8_t(ctrlEvent.normalizedValue*127.0f + 0.5f);
                         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
