@@ -47,6 +47,12 @@ Optional for extended LV2 UIs support: (Linux only)
  - Qt4
  - Qt5
 
+Optional for Linux VST3 support:
+
+ - freetype2
+ - Xcursor
+ - Xext
+
 Optional for extra samplers support:
 
  - FluidSynth (SF2/3)
@@ -66,7 +72,7 @@ To find out which dependencies are missing.
 Under Debian based systems, you can use this command to install everything:
 ```
 sudo apt install python3-pyqt5.qtsvg python3-rdflib pyqt5-dev-tools \
-  libmagic-dev liblo-dev libasound2-dev libpulse-dev libx11-dev \
+  libmagic-dev liblo-dev libasound2-dev libpulse-dev libx11-dev libxcursor-dev libxext-dev \
   libgtk2.0-dev libgtk-3-dev libqt4-dev qtbase5-dev libfluidsynth-dev
 ```
 
