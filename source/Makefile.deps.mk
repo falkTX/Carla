@@ -474,9 +474,9 @@ WATER_LIBS       = -ldl -pthread -lrt
 ifeq ($(USING_JUCE),true)
 JUCE_AUDIO_DEVICES_LIBS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
 JUCE_CORE_LIBS          = -ldl -pthread -lrt
-JUCE_EVENTS_LIBS        = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11)
+JUCE_EVENTS_LIBS        =
 JUCE_GRAPHICS_LIBS      = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2)
-JUCE_GUI_BASICS_LIBS    = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11 xcursor xext)
+JUCE_GUI_BASICS_LIBS    =
 endif # USING_JUCE
 endif # LINUX
 
