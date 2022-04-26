@@ -1151,7 +1151,7 @@ public:
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = uint8_t(ctrlEvent.param);
-                            midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f);
+                            midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f + 0.5f);
 
                             fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
                         }
@@ -1173,7 +1173,7 @@ public:
                             fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
 
                             midiData[1] = MIDI_CONTROL_BANK_SELECT__LSB;
-                            midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f);
+                            midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f + 0.5f);
                             fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
                         }
                         break;
@@ -1190,7 +1190,7 @@ public:
                         {
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
-                            midiData[1] = uint8_t(ctrlEvent.normalizedValue*127.0f);
+                            midiData[1] = uint8_t(ctrlEvent.normalizedValue*127.0f + 0.5f);
                             fMidiBuffer.addEvent(midiData, 2, static_cast<int>(event.time));
                         }
                         break;

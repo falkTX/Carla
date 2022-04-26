@@ -4092,7 +4092,7 @@ public:
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = uint8_t(ctrlEvent.param);
-                            midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f);
+                            midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f + 0.5f);
 
                             const uint32_t mtime(isSampleAccurate ? startTime : eventTime);
 
