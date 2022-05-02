@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -104,22 +97,31 @@ void ComponentBoundsConstrainer::setBoundsForComponent (Component* component,
 {
     jassert (component != nullptr);
 
-    Rectangle<int> limits, bounds (targetBounds);
-    BorderSize<int> border;
+    auto bounds = targetBounds;
 
-    if (auto* parent = component->getParentComponent())
+    auto limits = [&]() -> Rectangle<int>
     {
-        limits.setSize (parent->getWidth(), parent->getHeight());
-    }
-    else
+        if (auto* parent = component->getParentComponent())
+            return { parent->getWidth(), parent->getHeight() };
+
+        const auto globalBounds = component->localAreaToGlobal (targetBounds - component->getPosition());
+
+        if (auto* display = Desktop::getInstance().getDisplays().getDisplayForPoint (globalBounds.getCentre()))
+            return component->getLocalArea (nullptr, display->userArea) + component->getPosition();
+
+        const auto max = std::numeric_limits<int>::max();
+        return { max, max };
+    }();
+
+    auto border = [&]() -> BorderSize<int>
     {
-        if (auto* peer = component->getPeer())
-            border = peer->getFrameSize();
+        if (component->getParentComponent() == nullptr)
+            if (auto* peer = component->getPeer())
+                if (const auto frameSize = peer->getFrameSizeIfPresent())
+                    return *frameSize;
 
-        auto screenBounds = Desktop::getInstance().getDisplays().findDisplayForPoint (targetBounds.getCentre()).userArea;
-
-        limits = component->getLocalArea (nullptr, screenBounds) + component->getPosition();
-    }
+        return {};
+    }();
 
     border.addTo (bounds);
 

@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -35,11 +28,12 @@
 
   ID:                 juce_gui_extra
   vendor:             juce
-  version:            6.0.4
+  version:            6.1.6
   name:               JUCE extended GUI classes
   description:        Miscellaneous GUI classes for specialised tasks.
   website:            http://www.juce.com/juce
   license:            GPL/Commercial
+  minimumCppStandard: 14
 
   dependencies:       juce_gui_basics
   OSXFrameworks:      WebKit
@@ -105,7 +99,6 @@
 #include "embedding/juce_NSViewComponent.h"
 #include "embedding/juce_UIViewComponent.h"
 #include "embedding/juce_XEmbedComponent.h"
-#include "embedding/juce_ScopedDPIAwarenessDisabler.h"
 #include "embedding/juce_HWNDComponent.h"
 #include "misc/juce_AppleRemote.h"
 #include "misc/juce_BubbleMessageComponent.h"
@@ -115,9 +108,7 @@
 #include "misc/juce_PushNotifications.h"
 #include "misc/juce_RecentlyOpenedFilesList.h"
 #include "misc/juce_SplashScreen.h"
-#if !JUCE_MAC || MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_8
 #include "misc/juce_SystemTrayIconComponent.h"
-#endif
 #include "misc/juce_WebBrowserComponent.h"
 #include "misc/juce_LiveConstantEditor.h"
 #include "misc/juce_AnimatedAppComponent.h"

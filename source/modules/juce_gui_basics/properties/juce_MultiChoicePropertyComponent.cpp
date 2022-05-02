@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -111,10 +104,11 @@ class MultiChoicePropertyComponent::MultiChoiceRemapperSourceWithDefault    : pu
                                                                               private Value::Listener
 {
 public:
-    MultiChoiceRemapperSourceWithDefault (ValueWithDefault* vwd, var v, int c, ToggleButton* b)
-        : valueWithDefault (vwd),
+    MultiChoiceRemapperSourceWithDefault (const ValueTreePropertyWithDefault& val,
+                                          var v, int c, ToggleButton* b)
+        : value (val),
           varToControl (v),
-          sourceValue (valueWithDefault->getPropertyAsValue()),
+          sourceValue (value.getPropertyAsValue()),
           maxChoices (c),
           buttonToControl (b)
     {
@@ -123,16 +117,13 @@ public:
 
     var getValue() const override
     {
-        if (valueWithDefault == nullptr)
-            return {};
-
-        auto v = valueWithDefault->get();
+        auto v = value.get();
 
         if (auto* arr = v.getArray())
         {
             if (arr->contains (varToControl))
             {
-                updateButtonTickColour (buttonToControl, valueWithDefault->isUsingDefault());
+                updateButtonTickColour (buttonToControl, value.isUsingDefault());
                 return true;
             }
         }
@@ -142,14 +133,11 @@ public:
 
     void setValue (const var& newValue) override
     {
-        if (valueWithDefault == nullptr)
-            return;
-
-        auto v = valueWithDefault->get();
+        auto v = value.get();
 
         OptionalScopedPointer<Array<var>> arrayToControl;
 
-        if (valueWithDefault->isUsingDefault())
+        if (value.isUsingDefault())
             arrayToControl.set (new Array<var>(), true); // use an empty array so the default values are overwritten
         else
             arrayToControl.set (v.getArray(), false);
@@ -160,7 +148,7 @@ public:
 
             bool newState = newValue;
 
-            if (valueWithDefault->isUsingDefault())
+            if (value.isUsingDefault())
             {
                 if (auto* defaultArray = v.getArray())
                 {
@@ -182,10 +170,10 @@ public:
             StringComparator c;
             temp.sort (c);
 
-            *valueWithDefault = temp;
+            value = temp;
 
             if (temp.size() == 0)
-                valueWithDefault->resetToDefault();
+                value.resetToDefault();
         }
     }
 
@@ -194,7 +182,7 @@ private:
     void valueChanged (Value&) override { sendChangeMessage (true); }
 
     //==============================================================================
-    WeakReference<ValueWithDefault> valueWithDefault;
+    ValueTreePropertyWithDefault value;
     var varToControl;
     Value sourceValue;
 
@@ -215,12 +203,11 @@ int MultiChoicePropertyComponent::getTotalButtonsHeight (int numButtons)
 MultiChoicePropertyComponent::MultiChoicePropertyComponent (const String& propertyName,
                                                             const StringArray& choices,
                                                             const Array<var>& correspondingValues)
-: PropertyComponent (propertyName, jmin (getTotalButtonsHeight (choices.size()), collapsedHeight))
+    : PropertyComponent (propertyName, jmin (getTotalButtonsHeight (choices.size()), collapsedHeight))
 {
     // The array of corresponding values must contain one value for each of the items in
     // the choices array!
-    jassert (choices.size() == correspondingValues.size());
-    ignoreUnused (correspondingValues);
+    jassertquiet (choices.size() == correspondingValues.size());
 
     for (auto choice : choices)
         addAndMakeVisible (choiceButtons.add (new ToggleButton (choice)));
@@ -262,31 +249,25 @@ MultiChoicePropertyComponent::MultiChoicePropertyComponent (const Value& valueTo
                                                                                                maxChoices)));
 }
 
-MultiChoicePropertyComponent::MultiChoicePropertyComponent (ValueWithDefault& valueToControl,
+MultiChoicePropertyComponent::MultiChoicePropertyComponent (const ValueTreePropertyWithDefault& valueToControl,
                                                             const String& propertyName,
                                                             const StringArray& choices,
                                                             const Array<var>& correspondingValues,
                                                             int maxChoices)
     : MultiChoicePropertyComponent (propertyName, choices, correspondingValues)
 {
-    valueWithDefault = &valueToControl;
+    value = valueToControl;
 
     // The value to control must be an array!
-    jassert (valueWithDefault->get().isArray());
+    jassert (value.get().isArray());
 
     for (int i = 0; i < choiceButtons.size(); ++i)
-        choiceButtons[i]->getToggleStateValue().referTo (Value (new MultiChoiceRemapperSourceWithDefault (valueWithDefault,
+        choiceButtons[i]->getToggleStateValue().referTo (Value (new MultiChoiceRemapperSourceWithDefault (value,
                                                                                                           correspondingValues[i],
                                                                                                           maxChoices,
                                                                                                           choiceButtons[i])));
 
-    valueWithDefault->onDefaultChange = [this] { repaint(); };
-}
-
-MultiChoicePropertyComponent::~MultiChoicePropertyComponent()
-{
-    if (valueWithDefault != nullptr)
-        valueWithDefault->onDefaultChange = nullptr;
+    value.onDefaultChange = [this] { repaint(); };
 }
 
 void MultiChoicePropertyComponent::paint (Graphics& g)
@@ -362,13 +343,10 @@ void MultiChoicePropertyComponent::lookAndFeelChanged()
     auto iconColour = findColour (TextEditor::backgroundColourId).contrasting();
     expandButton.setColours (iconColour, iconColour.darker(), iconColour.darker());
 
-    if (valueWithDefault != nullptr)
-    {
-        auto usingDefault = valueWithDefault->isUsingDefault();
+    const auto usingDefault = value.isUsingDefault();
 
-        for (auto* button : choiceButtons)
-            updateButtonTickColour (button, usingDefault);
-    }
+    for (auto* button : choiceButtons)
+        updateButtonTickColour (button, usingDefault);
 }
 
 } // namespace juce

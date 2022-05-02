@@ -45,6 +45,7 @@ STANDALONE_LIBS += $(MODULEDIR)/hylia.a
 endif
 
 ifeq ($(USING_JUCE),true)
+STANDALONE_LIBS += $(MODULEDIR)/carla_juce.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_devices.a

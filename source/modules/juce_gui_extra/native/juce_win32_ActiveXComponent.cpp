@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -151,6 +144,8 @@ namespace ActiveXHelpers
 
         JUCE_COMRESULT QueryInterface (REFIID type, void** result)
         {
+            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+
             if (type == __uuidof (IOleInPlaceSite))
             {
                 inplaceSite->AddRef();
@@ -159,6 +154,8 @@ namespace ActiveXHelpers
             }
 
             return ComBaseClassHelper <IOleClientSite>::QueryInterface (type, result);
+
+            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
         }
 
         JUCE_COMRESULT SaveObject()                                  { return E_NOTIMPL; }
@@ -184,6 +181,8 @@ namespace ActiveXHelpers
 
     static HWND getHWND (const ActiveXControlComponent* const component)
     {
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+
         HWND hwnd = {};
         const IID iid = __uuidof (IOleWindow);
 
@@ -194,6 +193,8 @@ namespace ActiveXHelpers
         }
 
         return hwnd;
+
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
     }
 
     static void offerActiveXMouseEventToPeer (ComponentPeer* peer, HWND hwnd, UINT message, LPARAM lParam)
@@ -216,8 +217,8 @@ namespace ActiveXHelpers
                                         { (float) (GET_X_LPARAM (lParam) + activeXRect.left - peerRect.left),
                                           (float) (GET_Y_LPARAM (lParam) + activeXRect.top  - peerRect.top) },
                                         ComponentPeer::getCurrentModifiersRealtime(),
-                                        MouseInputSource::invalidPressure,
-                                        MouseInputSource::invalidOrientation,
+                                        MouseInputSource::defaultPressure,
+                                        MouseInputSource::defaultOrientation,
                                         getMouseEventTime());
                 break;
             }
@@ -229,10 +230,8 @@ namespace ActiveXHelpers
 }
 
 //==============================================================================
-class ActiveXControlComponent::Pimpl  : public ComponentMovementWatcher
-                                     #if JUCE_WIN_PER_MONITOR_DPI_AWARE
-                                      , public ComponentPeer::ScaleFactorListener
-                                     #endif
+class ActiveXControlComponent::Pimpl  : public ComponentMovementWatcher,
+                                        public ComponentPeer::ScaleFactorListener
 {
 public:
     Pimpl (HWND hwnd, ActiveXControlComponent& activeXComp)
@@ -243,7 +242,7 @@ public:
     {
     }
 
-    ~Pimpl()
+    ~Pimpl() override
     {
         if (control != nullptr)
         {
@@ -254,25 +253,19 @@ public:
         clientSite->Release();
         storage->Release();
 
-       #if JUCE_WIN_PER_MONITOR_DPI_AWARE
-        for (int i = 0; i < ComponentPeer::getNumPeers(); ++i)
-            if (auto* peer = ComponentPeer::getPeer (i))
-                peer->removeScaleFactorListener (this);
-        #endif
+        if (currentPeer != nullptr)
+            currentPeer->removeScaleFactorListener (this);
     }
 
     void setControlBounds (Rectangle<int> newBounds) const
     {
         if (controlHWND != nullptr)
         {
-           #if JUCE_WIN_PER_MONITOR_DPI_AWARE
             if (auto* peer = owner.getTopLevelComponent()->getPeer())
                 newBounds = (newBounds.toDouble() * peer->getPlatformScaleFactor()).toNearestInt();
-           #endif
 
             MoveWindow (controlHWND, newBounds.getX(), newBounds.getY(), newBounds.getWidth(), newBounds.getHeight(), TRUE);
         }
-
     }
 
     void setControlVisible (bool shouldBeVisible) const
@@ -292,12 +285,15 @@ public:
 
     void componentPeerChanged() override
     {
+        if (currentPeer != nullptr)
+            currentPeer->removeScaleFactorListener (this);
+
         componentMovedOrResized (true, true);
 
-       #if JUCE_WIN_PER_MONITOR_DPI_AWARE
-        if (auto* peer = owner.getTopLevelComponent()->getPeer())
-            peer->addScaleFactorListener (this);
-       #endif
+        currentPeer = owner.getTopLevelComponent()->getPeer();
+
+        if (currentPeer != nullptr)
+            currentPeer->addScaleFactorListener (this);
     }
 
     using ComponentMovementWatcher::componentVisibilityChanged;
@@ -308,12 +304,10 @@ public:
         componentPeerChanged();
     }
 
-   #if JUCE_WIN_PER_MONITOR_DPI_AWARE
     void nativeScaleFactorChanged (double /*newScaleFactor*/) override
     {
         componentMovedOrResized (true, true);
     }
-   #endif
 
     // intercepts events going to an activeX control, so we can sneakily use the mouse events
     static LRESULT CALLBACK activeXHookWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -358,6 +352,7 @@ public:
     }
 
     ActiveXControlComponent& owner;
+    ComponentPeer* currentPeer = nullptr;
     HWND controlHWND = {};
     IStorage* storage = nullptr;
     ActiveXHelpers::JuceIOleClientSite* clientSite = nullptr;
@@ -394,9 +389,13 @@ bool ActiveXControlComponent::createControl (const void* controlIID)
 
         std::unique_ptr<Pimpl> newControl (new Pimpl (hwnd, *this));
 
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+
         HRESULT hr = OleCreate (*(const IID*) controlIID, __uuidof (IOleObject), 1 /*OLERENDER_DRAW*/, nullptr,
                                 newControl->clientSite, newControl->storage,
                                 (void**) &(newControl->control));
+
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
         if (hr == S_OK)
         {
@@ -479,6 +478,7 @@ intptr_t ActiveXControlComponent::offerEventToActiveXControlStatic (void* ptr)
     return S_FALSE;
 }
 
+LRESULT juce_offerEventToActiveXControl (::MSG& msg);
 LRESULT juce_offerEventToActiveXControl (::MSG& msg)
 {
     if (msg.message >= WM_KEYFIRST && msg.message <= WM_KEYLAST)

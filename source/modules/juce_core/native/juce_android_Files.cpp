@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -479,7 +479,7 @@ struct AndroidContentUriOutputStream :  public OutputStream
     int64 pos = 0;
 };
 
-OutputStream* juce_CreateContentURIOutputStream (const URL& url)
+static OutputStream* juce_CreateContentURIOutputStream (const URL& url)
 {
     auto stream = AndroidContentUriResolver::getStreamForContentUri (url, false);
 

@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -186,12 +179,6 @@ public:
         @see getDragSourceCustomData, DragAndDropContainer::startDragging
     */
     virtual var getDragSourceDescription (const SparseSet<int>& currentlySelectedRows);
-
-private:
-   #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
-    // This method's signature has changed to take a MouseEvent parameter - please update your code!
-    JUCE_DEPRECATED_WITH_BODY (virtual int backgroundClicked(), { return 0; })
-   #endif
 };
 
 
@@ -333,7 +320,6 @@ public:
     /** @internal */
     void resized() override;
 
-
 private:
     //==============================================================================
     class Header;
@@ -344,6 +330,7 @@ private:
     int columnIdNowBeingDragged = 0;
     bool autoSizeOptionsShown = true;
 
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
     void updateColumnComponents() const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TableListBox)

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -562,7 +562,7 @@ private:
         }
     }
 
-    template<typename A, typename B>
+    template <typename A, typename B>
     void checkEqual (const ArrayBase<A, DummyCriticalSection>& a,
                      const ArrayBase<B, DummyCriticalSection>& b)
     {
@@ -572,7 +572,7 @@ private:
             expect (a[i] == b[i]);
     }
 
-    template<typename A, typename B>
+    template <typename A, typename B>
     void checkEqual (ArrayBase<A, DummyCriticalSection>& a,
                      std::vector<B>& b)
     {
@@ -582,7 +582,7 @@ private:
             expect (a[i] == b[(size_t) i]);
     }
 
-    template<typename A, typename B, typename C>
+    template <typename A, typename B, typename C>
     void checkEqual (ArrayBase<A, DummyCriticalSection>& a,
                      ArrayBase<B, DummyCriticalSection>& b,
                      std::vector<C>& c)

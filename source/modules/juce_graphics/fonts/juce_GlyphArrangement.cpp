@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -25,6 +18,14 @@
 
 namespace juce
 {
+
+static constexpr bool isNonBreakingSpace (const juce_wchar c)
+{
+    return c == 0x00a0
+        || c == 0x2007
+        || c == 0x202f
+        || c == 0x2060;
+}
 
 PositionedGlyph::PositionedGlyph() noexcept
     : character (0), glyph (0), x (0), y (0), w (0), whitespace (false)
@@ -37,8 +38,6 @@ PositionedGlyph::PositionedGlyph (const Font& font_, juce_wchar character_, int 
       x (anchorX), y (baselineY), w (width), whitespace (whitespace_)
 {
 }
-
-PositionedGlyph::~PositionedGlyph() {}
 
 static void drawGlyphWithFont (Graphics& g, int glyph, const Font& font, AffineTransform t)
 {
@@ -63,7 +62,7 @@ void PositionedGlyph::createPath (Path& path) const
 {
     if (! isWhitespace())
     {
-        if (auto* t = font.getTypeface())
+        if (auto t = font.getTypefacePtr())
         {
             Path p;
             t->getOutlineForGlyph (glyph, p);
@@ -78,7 +77,7 @@ bool PositionedGlyph::hitTest (float px, float py) const
 {
     if (getBounds().contains (px, py) && ! isWhitespace())
     {
-        if (auto* t = font.getTypeface())
+        if (auto t = font.getTypefacePtr())
         {
             Path p;
             t->getOutlineForGlyph (glyph, p);
@@ -168,7 +167,7 @@ void GlyphArrangement::addCurtailedLineOfText (const Font& font, const String& t
             }
 
             auto thisX = xOffsets.getUnchecked (i);
-            bool isWhitespace = t.isWhitespace();
+            auto isWhitespace = isNonBreakingSpace (*t) || t.isWhitespace();
 
             glyphs.add (PositionedGlyph (font, t.getAndAdvance(),
                                          newGlyphs.getUnchecked(i),
@@ -545,7 +544,7 @@ void GlyphArrangement::spreadOutLine (int start, int num, float targetWidth)
 
 static bool isBreakableGlyph (const PositionedGlyph& g) noexcept
 {
-    return g.isWhitespace() || g.getCharacter() == '-';
+    return ! isNonBreakingSpace (g.getCharacter()) && (g.isWhitespace() || g.getCharacter() == '-');
 }
 
 void GlyphArrangement::splitLines (const String& text, Font font, int startIndex,

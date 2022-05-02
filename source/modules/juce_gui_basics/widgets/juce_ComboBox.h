@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -272,7 +265,10 @@ public:
     /** Returns the PopupMenu object associated with the ComboBox.
         Can be useful for adding sub-menus to the ComboBox standard PopupMenu
     */
-    PopupMenu* getRootMenu() { return &currentMenu; }
+    PopupMenu* getRootMenu() noexcept { return &currentMenu; }
+
+    /** Returns the PopupMenu object associated with the ComboBox. */
+    const PopupMenu* getRootMenu() const noexcept { return &currentMenu; }
 
     //==============================================================================
     /**
@@ -417,11 +413,14 @@ public:
     /** @internal */
     void parentHierarchyChanged() override;
 
+    //==============================================================================
+   #ifndef DOXYGEN
     // These methods' bool parameters have changed: see their new method signatures.
-    JUCE_DEPRECATED (void clear (bool));
-    JUCE_DEPRECATED (void setSelectedId (int, bool));
-    JUCE_DEPRECATED (void setSelectedItemIndex (int, bool));
-    JUCE_DEPRECATED (void setText (const String&, bool));
+    [[deprecated]] void clear (bool);
+    [[deprecated]] void setSelectedId (int, bool);
+    [[deprecated]] void setSelectedItemIndex (int, bool);
+    [[deprecated]] void setText (const String&, bool);
+   #endif
 
 private:
     //==============================================================================
@@ -442,6 +441,7 @@ private:
     String textWhenNothingSelected, noChoicesMessage;
     EditableState labelEditableState = editableUnknown;
 
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
     PopupMenu::Item* getItemForId (int) const noexcept;
     PopupMenu::Item* getItemForIndex (int) const noexcept;
     bool selectIfEnabled (int index);

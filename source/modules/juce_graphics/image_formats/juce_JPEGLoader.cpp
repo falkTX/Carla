@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -26,7 +19,7 @@
 namespace juce
 {
 
-JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4365)
+JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4365 6240 6326 6386 6385 28182 28183 6387 6011 6001)
 
 namespace jpeglibNamespace
 {
@@ -251,9 +244,9 @@ bool JPEGImageFormat::canUnderstand (InputStream& in)
 
 Image JPEGImageFormat::decodeImage (InputStream& in)
 {
-#if JUCE_USING_COREIMAGE_LOADER
+   #if JUCE_USING_COREIMAGE_LOADER
     return juce_loadWithCoreImage (in);
-#else
+   #else
     using namespace jpeglibNamespace;
     using namespace JPEGHelpers;
 
@@ -356,7 +349,7 @@ Image JPEGImageFormat::decodeImage (InputStream& in)
     }
 
     return image;
-#endif
+   #endif
 }
 
 bool JPEGImageFormat::writeImageToStream (const Image& image, OutputStream& out)

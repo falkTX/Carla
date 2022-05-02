@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -103,6 +96,16 @@ public:
     */
     MouseCursor (const Image& image, int hotSpotX, int hotSpotY, float scaleFactor);
 
+    /** Creates a custom cursor from an image.
+
+        @param image    the image to use for the cursor - if this is bigger than the
+                        system can manage, it might get scaled down first, and might
+                        also have to be turned to black-and-white if it can't do colour
+                        cursors.
+        @param hotSpot the position of the cursor's hotspot within the image
+    */
+    MouseCursor (const ScaledImage& image, Point<int> hotSpot);
+
     //==============================================================================
     /** Creates a copy of another cursor object. */
     MouseCursor (const MouseCursor&);
@@ -166,15 +169,13 @@ public:
 private:
     //==============================================================================
     class SharedCursorHandle;
-    friend class SharedCursorHandle;
-    SharedCursorHandle* cursorHandle = nullptr;
+    std::shared_ptr<SharedCursorHandle> cursorHandle;
+
+    class PlatformSpecificHandle;
 
     friend class MouseInputSourceInternal;
     void showInWindow (ComponentPeer*) const;
-    void* getHandle() const noexcept;
-
-    static void* createStandardMouseCursor (MouseCursor::StandardCursorType);
-    static void deleteMouseCursor (void* cursorHandle, bool isStandard);
+    PlatformSpecificHandle* getHandle() const noexcept;
 
     JUCE_LEAK_DETECTOR (MouseCursor)
 };

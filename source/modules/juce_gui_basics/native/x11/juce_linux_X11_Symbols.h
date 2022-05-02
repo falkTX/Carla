@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -29,10 +22,10 @@ namespace juce
 //==============================================================================
 namespace ReturnHelpers
 {
-    template<typename Type>
+    template <typename Type>
     Type returnDefaultConstructedAnyType()               { return {}; }
 
-    template<>
+    template <>
     inline void returnDefaultConstructedAnyType<void>()  {}
 }
 
@@ -236,6 +229,10 @@ public:
     JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XGetGeometry, xGetGeometry,
                                          (::Display*, ::Drawable, ::Window*, int*, int*, unsigned int*, unsigned int*, unsigned int*, unsigned int*),
                                          Status)
+
+    JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XGetImage, xGetImage,
+                                         (::Display*, ::Drawable, int, int, unsigned int, unsigned int, unsigned long, int),
+                                         XImage*)
 
     JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XGetInputFocus, xGetInputFocus,
                                          (::Display*, ::Window*, int*),
@@ -449,9 +446,17 @@ public:
                                          (char**, int, XTextProperty*),
                                          Status)
 
+    JUCE_GENERATE_FUNCTION_WITH_DEFAULT (Xutf8TextListToTextProperty, xutf8TextListToTextProperty,
+                                         (::Display*, char**, int, XICCEncodingStyle, XTextProperty*),
+                                         int)
+
     JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XSync, xSync,
                                          (::Display*, Bool),
                                          void)
+
+    JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XSynchronize, xSynchronize,
+                                         (::Display*, Bool),
+                                         int)
 
     JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XTranslateCoordinates, xTranslateCoordinates,
                                          (::Display*, ::Window, ::Window, int, int, int*, int*, ::Window*),
@@ -575,7 +580,7 @@ public:
    #endif
 
     //==============================================================================
-    JUCE_DECLARE_SINGLETON_SINGLETHREADED_MINIMAL (X11Symbols)
+    JUCE_DECLARE_SINGLETON (X11Symbols, false)
 
 private:
     X11Symbols() = default;

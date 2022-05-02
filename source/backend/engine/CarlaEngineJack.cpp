@@ -30,20 +30,7 @@
 #include "jackey.h"
 
 #ifdef USING_JUCE
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-# endif
-
-# include "AppConfig.h"
-# include "juce_events/juce_events.h"
-
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
+# include "carla_juce/carla_juce.h"
 #endif
 
 #ifdef __SSE2_MATH__
@@ -4631,7 +4618,7 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
         mode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
 
 #ifdef USING_JUCE
-    juce::initialiseJuce_GUI();
+    CarlaJUCE::initialiseJuce_GUI();
 #endif
 
     CarlaEngineJack* const engine = new CarlaEngineJack();
@@ -4660,7 +4647,7 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
 
     delete engine;
 #ifdef USING_JUCE
-    juce::shutdownJuce_GUI();
+    CarlaJUCE::shutdownJuce_GUI();
 #endif
     return 1;
 }
@@ -4679,7 +4666,7 @@ void jack_finish(void *arg)
     delete engine;
 
 #ifdef USING_JUCE
-    juce::shutdownJuce_GUI();
+    CarlaJUCE::shutdownJuce_GUI();
 #endif
 }
 

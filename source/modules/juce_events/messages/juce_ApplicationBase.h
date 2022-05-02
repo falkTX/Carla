@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -309,7 +309,7 @@ private:
 
 
 //==============================================================================
-#if JUCE_CATCH_UNHANDLED_EXCEPTIONS || defined (DOXYGEN)
+#if JUCE_CATCH_UNHANDLED_EXCEPTIONS || DOXYGEN
 
  /** The JUCE_TRY/JUCE_CATCH_EXCEPTION wrappers can be used to pass any uncaught exceptions to
      the JUCEApplicationBase::sendUnhandledException() method.

@@ -33,6 +33,10 @@
 
 #include "water/files/File.h"
 
+#ifdef USING_JUCE
+# include "carla_juce/carla_juce.h"
+#endif
+
 #define CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(cond, msg, ret) \
     if (! (cond)) {                                              \
         carla_stderr2("%s: " msg, __FUNCTION__);                 \
@@ -40,21 +44,6 @@
             ((CarlaHostStandalone*)handle)->lastError = msg;     \
         return ret;                                              \
     }
-
-// --------------------------------------------------------------------------------------------------------------------
-
-#ifdef USING_JUCE
-static void carla_standalone_juce_init(void);
-static void carla_standalone_juce_idle(void);
-static void carla_standalone_juce_cleanup(void);
-# define carla_juce_init carla_standalone_juce_init
-# define carla_juce_idle carla_standalone_juce_idle
-# define carla_juce_cleanup carla_standalone_juce_cleanup
-# include "utils/JUCE.cpp"
-# undef carla_juce_init
-# undef carla_juce_idle
-# undef carla_juce_cleanup
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 // Always return a valid string ptr for standalone functions
@@ -413,7 +402,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
 #endif
 
 #ifdef USING_JUCE
-    carla_standalone_juce_init();
+    CarlaJUCE::initialiseJuce_GUI();
 #endif
 
     CarlaHostStandalone& shandle((CarlaHostStandalone&)*handle);
@@ -463,7 +452,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
         shandle.engine = nullptr;
         delete engine;
 #ifdef USING_JUCE
-        carla_standalone_juce_cleanup();
+        CarlaJUCE::shutdownJuce_GUI();
 #endif
         return false;
     }
@@ -543,7 +532,7 @@ bool carla_engine_close(CarlaHostHandle handle)
     delete engine;
 
 #ifdef USING_JUCE
-    carla_standalone_juce_cleanup();
+    CarlaJUCE::shutdownJuce_GUI();
 #endif
     return closed;
 }
@@ -556,7 +545,7 @@ void carla_engine_idle(CarlaHostHandle handle)
 
 #ifdef USING_JUCE
     if (handle->isStandalone)
-        carla_standalone_juce_idle();
+        CarlaJUCE::idleJuce_GUI();
 #endif
 }
 

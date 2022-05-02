@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -196,7 +196,7 @@ void PropertySet::restoreFromXml (const XmlElement& xml)
     const ScopedLock sl (lock);
     clear();
 
-    forEachXmlChildElementWithTagName (xml, e, "VALUE")
+    for (auto* e : xml.getChildWithTagNameIterator ("VALUE"))
     {
         if (e->hasAttribute ("name")
              && e->hasAttribute ("val"))

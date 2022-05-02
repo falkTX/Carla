@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -579,8 +572,6 @@ ValueTree::ValueTree() noexcept
 {
 }
 
-JUCE_DECLARE_DEPRECATED_STATIC (const ValueTree ValueTree::invalid;)
-
 ValueTree::ValueTree (const Identifier& type)  : object (new ValueTree::SharedObject (type))
 {
     jassert (type.toString().isNotEmpty()); // All objects must be given a sensible type name!
@@ -949,19 +940,16 @@ void ValueTree::moveChild (int currentIndex, int newIndex, UndoManager* undoMana
 //==============================================================================
 void ValueTree::createListOfChildren (OwnedArray<ValueTree>& list) const
 {
-    jassert (object != nullptr);
-
-    for (auto* o : object->children)
-    {
-        jassert (o != nullptr);
-        list.add (new ValueTree (*o));
-    }
+    if (object != nullptr)
+        for (auto* o : object->children)
+            if (o != nullptr)
+                list.add (new ValueTree (*o));
 }
 
 void ValueTree::reorderChildren (const OwnedArray<ValueTree>& newOrder, UndoManager* undoManager)
 {
-    jassert (object != nullptr);
-    object->reorderChildren (newOrder, undoManager);
+    if (object != nullptr)
+        object->reorderChildren (newOrder, undoManager);
 }
 
 //==============================================================================
@@ -1003,7 +991,7 @@ ValueTree ValueTree::fromXml (const XmlElement& xml)
         ValueTree v (xml.getTagName());
         v.object->properties.setFromXmlAttributes (xml);
 
-        forEachXmlChildElement (xml, e)
+        for (auto* e : xml.getChildIterator())
             v.appendChild (fromXml (*e), nullptr);
 
         return v;
@@ -1100,6 +1088,18 @@ void ValueTree::Listener::valueTreeChildOrderChanged (ValueTree&, int, int)     
 void ValueTree::Listener::valueTreeParentChanged     (ValueTree&)                    {}
 void ValueTree::Listener::valueTreeRedirected        (ValueTree&)                    {}
 
+//==============================================================================
+#if JUCE_ALLOW_STATIC_NULL_VARIABLES
+
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4996)
+
+const ValueTree ValueTree::invalid;
+
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+JUCE_END_IGNORE_WARNINGS_MSVC
+
+#endif
 
 //==============================================================================
 //==============================================================================

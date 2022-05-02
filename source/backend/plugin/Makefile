@@ -75,7 +75,12 @@ $(OBJDIR)/CarlaPluginVST2.cpp.o: CarlaPluginVST2.cpp
 $(OBJDIR)/CarlaPluginJuce.cpp.o: CarlaPluginJuce.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
+else
+$(OBJDIR)/CarlaPluginJuce.cpp.o: CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp

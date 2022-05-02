@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -108,7 +108,7 @@ public:
     */
     static std::unique_ptr<MidiInput> openDevice (const String& deviceIdentifier, MidiInputCallback* callback);
 
-   #if JUCE_LINUX || JUCE_MAC || JUCE_IOS || DOXYGEN
+   #if JUCE_LINUX || JUCE_BSD || JUCE_MAC || JUCE_IOS || DOXYGEN
     /** This will try to create a new midi input device (only available on Linux, macOS and iOS).
 
         This will attempt to create a new midi input device with the specified name for other
@@ -157,12 +157,14 @@ public:
     void setName (const String& newName) noexcept    { deviceInfo.name = newName; }
 
     //==============================================================================
-    /** Deprecated. */
+   #ifndef DOXYGEN
+    [[deprecated ("Use getAvailableDevices instead.")]]
     static StringArray getDevices();
-    /** Deprecated. */
+    [[deprecated ("Use getDefaultDevice instead.")]]
     static int getDefaultDeviceIndex();
-    /** Deprecated. */
+    [[deprecated ("Use openDevice that takes a device identifier instead.")]]
     static std::unique_ptr<MidiInput> openDevice (int, MidiInputCallback*);
+   #endif
 
     /** @internal */
     class Pimpl;
@@ -268,7 +270,7 @@ public:
     */
     static std::unique_ptr<MidiOutput> openDevice (const String& deviceIdentifier);
 
-   #if JUCE_LINUX || JUCE_MAC || JUCE_IOS || DOXYGEN
+   #if JUCE_LINUX || JUCE_BSD || JUCE_MAC || JUCE_IOS || DOXYGEN
     /** This will try to create a new midi output device (only available on Linux, macOS and iOS).
 
         This will attempt to create a new midi output device with the specified name that other
@@ -347,12 +349,14 @@ public:
     bool isBackgroundThreadRunning() const noexcept  { return isThreadRunning(); }
 
     //==============================================================================
-    /** Deprecated. */
+   #ifndef DOXYGEN
+    [[deprecated ("Use getAvailableDevices instead.")]]
     static StringArray getDevices();
-    /** Deprecated. */
+    [[deprecated ("Use getDefaultDevice instead.")]]
     static int getDefaultDeviceIndex();
-    /** Deprecated. */
+    [[deprecated ("Use openDevice that takes a device identifier instead.")]]
     static std::unique_ptr<MidiOutput> openDevice (int);
+   #endif
 
     /** @internal */
     class Pimpl;

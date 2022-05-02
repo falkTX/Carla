@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,44 +25,82 @@ AudioPluginFormatManager::~AudioPluginFormatManager() {}
 //==============================================================================
 void AudioPluginFormatManager::addDefaultFormats()
 {
+   #if JUCE_PLUGINHOST_VST && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX || JUCE_BSD || JUCE_IOS)
+    #define HAS_VST 1
+   #else
+    #define HAS_VST 0
+   #endif
+
+   #if JUCE_PLUGINHOST_VST3 && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX || JUCE_BSD)
+    #define HAS_VST3 1
+   #else
+    #define HAS_VST3 0
+   #endif
+
+   #if JUCE_PLUGINHOST_AU && (JUCE_MAC || JUCE_IOS)
+    #define HAS_AU 1
+   #else
+    #define HAS_AU 0
+   #endif
+
+   #if JUCE_PLUGINHOST_LADSPA && (JUCE_LINUX || JUCE_BSD)
+    #define HAS_LADSPA 1
+   #else
+    #define HAS_LADSPA 0
+   #endif
+
+   #if JUCE_PLUGINHOST_LV2 && (JUCE_MAC || JUCE_LINUX || JUCE_BSD || JUCE_WINDOWS)
+    #define HAS_LV2 1
+   #else
+    #define HAS_LV2 0
+   #endif
+
    #if JUCE_DEBUG
     // you should only call this method once!
     for (auto* format : formats)
     {
         ignoreUnused (format);
 
-       #if JUCE_PLUGINHOST_VST && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX || JUCE_IOS)
+       #if HAS_VST
         jassert (dynamic_cast<VSTPluginFormat*> (format) == nullptr);
        #endif
 
-       #if JUCE_PLUGINHOST_VST3 && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX)
+       #if HAS_VST3
         jassert (dynamic_cast<VST3PluginFormat*> (format) == nullptr);
        #endif
 
-       #if JUCE_PLUGINHOST_AU && (JUCE_MAC || JUCE_IOS)
+       #if HAS_AU
         jassert (dynamic_cast<AudioUnitPluginFormat*> (format) == nullptr);
        #endif
 
-       #if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX
+       #if HAS_LADSPA
         jassert (dynamic_cast<LADSPAPluginFormat*> (format) == nullptr);
+       #endif
+
+       #if HAS_LV2
+        jassert (dynamic_cast<LV2PluginFormat*> (format) == nullptr);
        #endif
     }
    #endif
 
-   #if JUCE_PLUGINHOST_AU && (JUCE_MAC || JUCE_IOS)
+   #if HAS_AU
     formats.add (new AudioUnitPluginFormat());
    #endif
 
-   #if JUCE_PLUGINHOST_VST && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX || JUCE_IOS)
+   #if HAS_VST
     formats.add (new VSTPluginFormat());
    #endif
 
-   #if JUCE_PLUGINHOST_VST3 && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX)
+   #if HAS_VST3
     formats.add (new VST3PluginFormat());
    #endif
 
-   #if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX
+   #if HAS_LADSPA
     formats.add (new LADSPAPluginFormat());
+   #endif
+
+   #if HAS_LV2
+    formats.add (new LV2PluginFormat());
    #endif
 }
 

@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -26,75 +19,8 @@
 namespace juce
 {
 
-struct NSViewResizeWatcher
-{
-    NSViewResizeWatcher() : callback (nil) {}
-
-    virtual ~NSViewResizeWatcher()
-    {
-        // must call detachViewWatcher() first
-        jassert (callback == nil);
-    }
-
-    void attachViewWatcher (NSView* view)
-    {
-        static ViewFrameChangeCallbackClass cls;
-        callback = [cls.createInstance() init];
-        ViewFrameChangeCallbackClass::setTarget (callback, this);
-
-        [[NSNotificationCenter defaultCenter]  addObserver: callback
-                                                  selector: @selector (frameChanged:)
-                                                      name: NSViewFrameDidChangeNotification
-                                                    object: view];
-    }
-
-    void detachViewWatcher()
-    {
-        if (callback != nil)
-        {
-            [[NSNotificationCenter defaultCenter] removeObserver: callback];
-            [callback release];
-            callback = nil;
-        }
-    }
-
-    virtual void viewResized() = 0;
-
-private:
-    id callback;
-
-    //==============================================================================
-    struct ViewFrameChangeCallbackClass   : public ObjCClass<NSObject>
-    {
-        ViewFrameChangeCallbackClass()  : ObjCClass<NSObject> ("JUCE_NSViewCallback_")
-        {
-            addIvar<NSViewResizeWatcher*> ("target");
-            addMethod (@selector (frameChanged:),  frameChanged, "v@:@");
-            registerClass();
-        }
-
-        static void setTarget (id self, NSViewResizeWatcher* c)
-        {
-            object_setInstanceVariable (self, "target", c);
-        }
-
-    private:
-        static void frameChanged (id self, SEL, NSNotification*)
-        {
-            if (auto* target = getIvar<NSViewResizeWatcher*> (self, "target"))
-                target->viewResized();
-        }
-
-        JUCE_DECLARE_NON_COPYABLE (ViewFrameChangeCallbackClass)
-    };
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NSViewResizeWatcher)
-};
-
-//==============================================================================
 class NSViewAttachment  : public ReferenceCountedObject,
-                          public ComponentMovementWatcher,
-                          private NSViewResizeWatcher
+                          public ComponentMovementWatcher
 {
 public:
     NSViewAttachment (NSView* v, Component& comp)
@@ -108,13 +34,10 @@ public:
 
         if (owner.isShowing())
             componentPeerChanged();
-
-        attachViewWatcher (view);
     }
 
     ~NSViewAttachment() override
     {
-        detachViewWatcher();
         removeFromParent();
         [view release];
     }
@@ -124,9 +47,8 @@ public:
         ComponentMovementWatcher::componentMovedOrResized (comp, wasMoved, wasResized);
 
         // The ComponentMovementWatcher version of this method avoids calling
-        // us when the top-level comp is resized, but for an NSView we need to know this
-        // because with inverted coordinates, we need to update the position even if the
-        // top-left pos hasn't changed
+        // us when the top-level comp is resized, but if we're listening to the
+        // top-level comp we still want the NSView to track its size.
         if (comp.isOnDesktop() && wasResized)
             componentMovedOrResized (wasMoved, wasResized);
     }
@@ -135,9 +57,10 @@ public:
     {
         if (auto* peer = owner.getTopLevelComponent()->getPeer())
         {
-            auto r = makeNSRect (peer->getAreaCoveredBy (owner));
-            r.origin.y = [[view superview] frame].size.height - (r.origin.y + r.size.height);
-            [view setFrame: r];
+            const auto newArea = peer->getAreaCoveredBy (owner);
+
+            if (convertToRectInt ([view frame]) != newArea)
+                [view setFrame: makeNSRect (newArea)];
         }
     }
 
@@ -169,11 +92,6 @@ public:
         componentPeerChanged();
     }
 
-    void viewResized() override
-    {
-        owner.childBoundsChanged (nullptr);
-    }
-
     void updateAlpha()
     {
         [view setAlphaValue: (CGFloat) owner.getAlpha()];
@@ -186,6 +104,7 @@ public:
 private:
     Component& owner;
     ComponentPeer* currentPeer;
+    NSViewFrameWatcher frameWatcher { view, [this] { owner.childBoundsChanged (nullptr); } };
 
     void removeFromParent()
     {
@@ -198,8 +117,8 @@ private:
 };
 
 //==============================================================================
-NSViewComponent::NSViewComponent() {}
-NSViewComponent::~NSViewComponent() {}
+NSViewComponent::NSViewComponent() = default;
+NSViewComponent::~NSViewComponent() = default;
 
 void NSViewComponent::setView (void* view)
 {
@@ -226,8 +145,15 @@ void NSViewComponent::resizeToFitView()
 {
     if (attachment != nullptr)
     {
-        auto r = [static_cast<NSViewAttachment*> (attachment.get())->view frame];
+        auto* view = static_cast<NSViewAttachment*> (attachment.get())->view;
+        auto r = [view frame];
         setBounds (Rectangle<int> ((int) r.size.width, (int) r.size.height));
+
+        if (auto* peer = getTopLevelComponent()->getPeer())
+        {
+            const auto position = peer->getAreaCoveredBy (*this).getPosition();
+            [view setFrameOrigin: convertToCGPoint (position)];
+        }
     }
 }
 

@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -289,7 +282,7 @@ public:
     void generate (const Font& newFont, int glyphNumber)
     {
         font = newFont;
-        auto* typeface = newFont.getTypeface();
+        auto typeface = newFont.getTypefacePtr();
         snapToIntegerCoordinate = typeface->isHinted();
         glyph = glyphNumber;
 
@@ -430,19 +423,19 @@ namespace GradientPixelIterators
 
             if (vertical)
             {
-                scale = roundToInt ((numEntries << (int) numScaleBits) / (double) (p2.y - p1.y));
+                scale = roundToInt ((double) ((int64_t) numEntries << (int) numScaleBits) / (double) (p2.y - p1.y));
                 start = roundToInt (p1.y * (float) scale);
             }
             else if (horizontal)
             {
-                scale = roundToInt ((numEntries << (int) numScaleBits) / (double) (p2.x - p1.x));
+                scale = roundToInt ((double) ((int64_t) numEntries << (int) numScaleBits) / (double) (p2.x - p1.x));
                 start = roundToInt (p1.x * (float) scale);
             }
             else
             {
                 grad = (p2.getY() - p1.y) / (double) (p1.x - p2.x);
                 yTerm = p1.getY() - p1.x / grad;
-                scale = roundToInt ((numEntries << (int) numScaleBits) / (yTerm * grad - (p2.y * grad - p2.x)));
+                scale = roundToInt ((double) ((int64_t) numEntries << (int) numScaleBits) / (yTerm * grad - (p2.y * grad - p2.x)));
                 grad *= scale;
             }
         }
@@ -2567,7 +2560,7 @@ public:
                 auto t = transform.getTransformWith (AffineTransform::scale (fontHeight * font.getHorizontalScale(), fontHeight)
                                                                      .followedBy (trans));
 
-                std::unique_ptr<EdgeTable> et (font.getTypeface()->getEdgeTableForGlyph (glyphNumber, t, fontHeight));
+                std::unique_ptr<EdgeTable> et (font.getTypefacePtr()->getEdgeTableForGlyph (glyphNumber, t, fontHeight));
 
                 if (et != nullptr)
                     fillShape (*new EdgeTableRegionType (*et), false);

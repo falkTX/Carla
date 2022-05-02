@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -135,7 +128,11 @@ public:
         return face.typeface;
     }
 
-    Typeface::Ptr defaultFace;
+    Typeface::Ptr getDefaultFace() const noexcept
+    {
+        const ScopedReadLock slr (lock);
+        return defaultFace;
+    }
 
 private:
     struct CachedFace
@@ -151,6 +148,7 @@ private:
         Typeface::Ptr typeface;
     };
 
+    Typeface::Ptr defaultFace;
     ReadWriteLock lock;
     Array<CachedFace> faces;
     size_t counter = 0;
@@ -182,7 +180,7 @@ class Font::SharedFontInternal  : public ReferenceCountedObject
 {
 public:
     SharedFontInternal() noexcept
-        : typeface (TypefaceCache::getInstance()->defaultFace),
+        : typeface (TypefaceCache::getInstance()->getDefaultFace()),
           typefaceName (Font::getDefaultSansSerifFontName()),
           typefaceStyle (Font::getDefaultStyle()),
           height (FontValues::defaultFontHeight)
@@ -196,7 +194,7 @@ public:
           underline ((styleFlags & underlined) != 0)
     {
         if (styleFlags == plain)
-            typeface = TypefaceCache::getInstance()->defaultFace;
+            typeface = TypefaceCache::getInstance()->getDefaultFace();
     }
 
     SharedFontInternal (const String& name, int styleFlags, float fontHeight) noexcept
@@ -206,7 +204,7 @@ public:
           underline ((styleFlags & underlined) != 0)
     {
         if (styleFlags == plain && typefaceName.isEmpty())
-            typeface = TypefaceCache::getInstance()->defaultFace;
+            typeface = TypefaceCache::getInstance()->getDefaultFace();
     }
 
     SharedFontInternal (const String& name, const String& style, float fontHeight) noexcept
@@ -238,20 +236,134 @@ public:
     {
     }
 
-    bool operator== (const SharedFontInternal& other) const noexcept
+    auto tie() const
     {
-        return height == other.height
-                && underline == other.underline
-                && horizontalScale == other.horizontalScale
-                && kerning == other.kerning
-                && typefaceName == other.typefaceName
-                && typefaceStyle == other.typefaceStyle;
+        return std::tie (height, underline, horizontalScale, kerning, typefaceName, typefaceStyle);
     }
 
+    bool operator== (const SharedFontInternal& other) const noexcept
+    {
+        return tie() == other.tie();
+    }
+
+    bool operator< (const SharedFontInternal& other) const noexcept
+    {
+        return tie() < other.tie();
+    }
+
+    /*  The typeface and ascent data members may be read/set from multiple threads
+        simultaneously, e.g. in the case that two Font instances reference the same
+        SharedFontInternal and call getTypefacePtr() simultaneously.
+
+        We lock in functions that modify the typeface or ascent in order to
+        ensure thread safety.
+    */
+
+    Typeface::Ptr getTypefacePtr (const Font& f)
+    {
+        const ScopedLock lock (mutex);
+
+        if (typeface == nullptr)
+        {
+            typeface = TypefaceCache::getInstance()->findTypefaceFor (f);
+            jassert (typeface != nullptr);
+        }
+
+        return typeface;
+    }
+
+    void checkTypefaceSuitability (const Font& f)
+    {
+        const ScopedLock lock (mutex);
+
+        if (typeface != nullptr && ! typeface->isSuitableForFont (f))
+            typeface = nullptr;
+    }
+
+    float getAscent (const Font& f)
+    {
+        const ScopedLock lock (mutex);
+
+        if (ascent == 0.0f)
+            ascent = getTypefacePtr (f)->getAscent();
+
+        return height * ascent;
+    }
+
+    /*  We do not need to lock in these functions, as it's guaranteed
+        that these data members can only change if there is a single Font
+        instance referencing the shared state.
+    */
+
+    String getTypefaceName() const          { return typefaceName; }
+    String getTypefaceStyle() const         { return typefaceStyle; }
+    float getHeight() const                 { return height; }
+    float getHorizontalScale() const        { return horizontalScale; }
+    float getKerning() const                { return kerning; }
+    bool getUnderline() const               { return underline; }
+
+    /*  This shared state may be shared between two or more Font instances that are being
+        read/modified from multiple threads.
+        Before modifying a shared instance you *must* call dupeInternalIfShared to
+        ensure that only one Font instance is pointing to the SharedFontInternal instance
+        during the modification.
+    */
+
+    void setTypeface (Typeface::Ptr x)
+    {
+        jassert (getReferenceCount() == 1);
+        typeface = std::move (x);
+    }
+
+    void setTypefaceName (String x)
+    {
+        jassert (getReferenceCount() == 1);
+        typefaceName = std::move (x);
+    }
+
+    void setTypefaceStyle (String x)
+    {
+        jassert (getReferenceCount() == 1);
+        typefaceStyle = std::move (x);
+    }
+
+    void setHeight (float x)
+    {
+        jassert (getReferenceCount() == 1);
+        height = x;
+    }
+
+    void setHorizontalScale (float x)
+    {
+        jassert (getReferenceCount() == 1);
+        horizontalScale = x;
+    }
+
+    void setKerning (float x)
+    {
+        jassert (getReferenceCount() == 1);
+        kerning = x;
+    }
+
+    void setAscent (float x)
+    {
+        jassert (getReferenceCount() == 1);
+        ascent = x;
+    }
+
+    void setUnderline (bool x)
+    {
+        jassert (getReferenceCount() == 1);
+        underline = x;
+    }
+
+private:
     Typeface::Ptr typeface;
     String typefaceName, typefaceStyle;
-    float height, horizontalScale = 1.0f, kerning = 0, ascent = 0;
+    float height = 0.0f, horizontalScale = 1.0f, kerning = 0.0f, ascent = 0.0f;
     bool underline = false;
+
+    CriticalSection mutex;
 };
 
 //==============================================================================
@@ -291,9 +403,7 @@ Font& Font::operator= (Font&& other) noexcept
     return *this;
 }
 
-Font::~Font() noexcept
-{
-}
+Font::~Font() noexcept = default;
 
 bool Font::operator== (const Font& other) const noexcept
 {
@@ -306,6 +416,11 @@ bool Font::operator!= (const Font& other) const noexcept
     return ! operator== (other);
 }
 
+bool Font::compare (const Font& a, const Font& b) noexcept
+{
+    return *a.font < *b.font;
+}
+
 void Font::dupeInternalIfShared()
 {
     if (font->getReferenceCount() > 1)
@@ -314,8 +429,7 @@ void Font::dupeInternalIfShared()
 
 void Font::checkTypefaceSuitability()
 {
-    if (font->typeface != nullptr && ! font->typeface->isSuitableForFont (*this))
-        font->typeface = nullptr;
+    font->checkTypefaceSuitability (*this);
 }
 
 //==============================================================================
@@ -346,30 +460,30 @@ const String& Font::getDefaultSerifFontName()           { return getFontPlacehol
 const String& Font::getDefaultMonospacedFontName()      { return getFontPlaceholderNames().mono; }
 const String& Font::getDefaultStyle()                   { return getFontPlaceholderNames().regular; }
 
-const String& Font::getTypefaceName() const noexcept    { return font->typefaceName; }
-const String& Font::getTypefaceStyle() const noexcept   { return font->typefaceStyle; }
+String Font::getTypefaceName() const noexcept           { return font->getTypefaceName(); }
+String Font::getTypefaceStyle() const noexcept          { return font->getTypefaceStyle(); }
 
 void Font::setTypefaceName (const String& faceName)
 {
-    if (faceName != font->typefaceName)
+    if (faceName != font->getTypefaceName())
     {
         jassert (faceName.isNotEmpty());
 
         dupeInternalIfShared();
-        font->typefaceName = faceName;
-        font->typeface = nullptr;
-        font->ascent = 0;
+        font->setTypefaceName (faceName);
+        font->setTypeface (nullptr);
+        font->setAscent (0);
     }
 }
 
 void Font::setTypefaceStyle (const String& typefaceStyle)
 {
-    if (typefaceStyle != font->typefaceStyle)
+    if (typefaceStyle != font->getTypefaceStyle())
     {
         dupeInternalIfShared();
-        font->typefaceStyle = typefaceStyle;
-        font->typeface = nullptr;
-        font->ascent = 0;
+        font->setTypefaceStyle (typefaceStyle);
+        font->setTypeface (nullptr);
+        font->setAscent (0);
     }
 }
 
@@ -382,18 +496,17 @@ Font Font::withTypefaceStyle (const String& newStyle) const
 
 StringArray Font::getAvailableStyles() const
 {
-    return findAllTypefaceStyles (getTypeface()->getName());
+    return findAllTypefaceStyles (getTypefacePtr()->getName());
+}
+
+Typeface::Ptr Font::getTypefacePtr() const
+{
+    return font->getTypefacePtr (*this);
 }
 
 Typeface* Font::getTypeface() const
 {
-    if (font->typeface == nullptr)
-    {
-        font->typeface = TypefaceCache::getInstance()->findTypefaceFor (*this);
-        jassert (font->typeface != nullptr);
-    }
-
-    return font->typeface.get();
+    return getTypefacePtr().get();
 }
 
 //==============================================================================
@@ -435,7 +548,7 @@ Font Font::withHeight (const float newHeight) const
 
 float Font::getHeightToPointsFactor() const
 {
-    return getTypeface()->getHeightToPointsFactor();
+    return getTypefacePtr()->getHeightToPointsFactor();
 }
 
 Font Font::withPointHeight (float heightInPoints) const
@@ -449,10 +562,10 @@ void Font::setHeight (float newHeight)
 {
     newHeight = FontValues::limitFontHeight (newHeight);
 
-    if (font->height != newHeight)
+    if (font->getHeight() != newHeight)
     {
         dupeInternalIfShared();
-        font->height = newHeight;
+        font->setHeight (newHeight);
         checkTypefaceSuitability();
     }
 }
@@ -461,18 +574,18 @@ void Font::setHeightWithoutChangingWidth (float newHeight)
 {
     newHeight = FontValues::limitFontHeight (newHeight);
 
-    if (font->height != newHeight)
+    if (font->getHeight() != newHeight)
     {
         dupeInternalIfShared();
-        font->horizontalScale *= (font->height / newHeight);
-        font->height = newHeight;
+        font->setHorizontalScale (font->getHorizontalScale() * (font->getHeight() / newHeight));
+        font->setHeight (newHeight);
         checkTypefaceSuitability();
     }
 }
 
 int Font::getStyleFlags() const noexcept
 {
-    int styleFlags = font->underline ? underlined : plain;
+    int styleFlags = font->getUnderline() ? underlined : plain;
 
     if (isBold())    styleFlags |= bold;
     if (isItalic())  styleFlags |= italic;
@@ -492,10 +605,10 @@ void Font::setStyleFlags (const int newFlags)
     if (getStyleFlags() != newFlags)
     {
         dupeInternalIfShared();
-        font->typeface = nullptr;
-        font->typefaceStyle = FontStyleHelpers::getStyleName (newFlags);
-        font->underline = (newFlags & underlined) != 0;
-        font->ascent = 0;
+        font->setTypeface (nullptr);
+        font->setTypefaceStyle (FontStyleHelpers::getStyleName (newFlags));
+        font->setUnderline ((newFlags & underlined) != 0);
+        font->setAscent (0);
     }
 }
 
@@ -506,14 +619,14 @@ void Font::setSizeAndStyle (float newHeight,
 {
     newHeight = FontValues::limitFontHeight (newHeight);
 
-    if (font->height != newHeight
-         || font->horizontalScale != newHorizontalScale
-         || font->kerning != newKerningAmount)
+    if (font->getHeight() != newHeight
+         || font->getHorizontalScale() != newHorizontalScale
+         || font->getKerning() != newKerningAmount)
     {
         dupeInternalIfShared();
-        font->height = newHeight;
-        font->horizontalScale = newHorizontalScale;
-        font->kerning = newKerningAmount;
+        font->setHeight (newHeight);
+        font->setHorizontalScale (newHorizontalScale);
+        font->setKerning (newKerningAmount);
         checkTypefaceSuitability();
     }
 
@@ -527,14 +640,14 @@ void Font::setSizeAndStyle (float newHeight,
 {
     newHeight = FontValues::limitFontHeight (newHeight);
 
-    if (font->height != newHeight
-         || font->horizontalScale != newHorizontalScale
-         || font->kerning != newKerningAmount)
+    if (font->getHeight() != newHeight
+         || font->getHorizontalScale() != newHorizontalScale
+         || font->getKerning() != newKerningAmount)
     {
         dupeInternalIfShared();
-        font->height = newHeight;
-        font->horizontalScale = newHorizontalScale;
-        font->kerning = newKerningAmount;
+        font->setHeight (newHeight);
+        font->setHorizontalScale (newHorizontalScale);
+        font->setKerning (newKerningAmount);
         checkTypefaceSuitability();
     }
 
@@ -551,18 +664,18 @@ Font Font::withHorizontalScale (const float newHorizontalScale) const
 void Font::setHorizontalScale (const float scaleFactor)
 {
     dupeInternalIfShared();
-    font->horizontalScale = scaleFactor;
+    font->setHorizontalScale (scaleFactor);
     checkTypefaceSuitability();
 }
 
 float Font::getHorizontalScale() const noexcept
 {
-    return font->horizontalScale;
+    return font->getHorizontalScale();
 }
 
 float Font::getExtraKerningFactor() const noexcept
 {
-    return font->kerning;
+    return font->getKerning();
 }
 
 Font Font::withExtraKerningFactor (const float extraKerning) const
@@ -575,16 +688,16 @@ Font Font::withExtraKerningFactor (const float extraKerning) const
 void Font::setExtraKerningFactor (const float extraKerning)
 {
     dupeInternalIfShared();
-    font->kerning = extraKerning;
+    font->setKerning (extraKerning);
     checkTypefaceSuitability();
 }
 
 Font Font::boldened() const                 { return withStyle (getStyleFlags() | bold); }
 Font Font::italicised() const               { return withStyle (getStyleFlags() | italic); }
 
-bool Font::isBold() const noexcept          { return FontStyleHelpers::isBold   (font->typefaceStyle); }
-bool Font::isItalic() const noexcept        { return FontStyleHelpers::isItalic (font->typefaceStyle); }
-bool Font::isUnderlined() const noexcept    { return font->underline; }
+bool Font::isBold() const noexcept          { return FontStyleHelpers::isBold   (font->getTypefaceStyle()); }
+bool Font::isItalic() const noexcept        { return FontStyleHelpers::isItalic (font->getTypefaceStyle()); }
+bool Font::isUnderlined() const noexcept    { return font->getUnderline(); }
 
 void Font::setBold (const bool shouldBeBold)
 {
@@ -603,20 +716,17 @@ void Font::setItalic (const bool shouldBeItalic)
 void Font::setUnderline (const bool shouldBeUnderlined)
 {
     dupeInternalIfShared();
-    font->underline = shouldBeUnderlined;
+    font->setUnderline (shouldBeUnderlined);
     checkTypefaceSuitability();
 }
 
 float Font::getAscent() const
 {
-    if (font->ascent == 0.0f)
-        font->ascent = getTypeface()->getAscent();
-
-    return font->height * font->ascent;
+    return font->getAscent (*this);
 }
 
-float Font::getHeight() const noexcept      { return font->height; }
-float Font::getDescent() const              { return font->height - getAscent(); }
+float Font::getHeight() const noexcept      { return font->getHeight(); }
+float Font::getDescent() const              { return font->getHeight() - getAscent(); }
 
 float Font::getHeightInPoints() const       { return getHeight()  * getHeightToPointsFactor(); }
 float Font::getAscentInPoints() const       { return getAscent()  * getHeightToPointsFactor(); }
@@ -629,35 +739,27 @@ int Font::getStringWidth (const String& text) const
 
 float Font::getStringWidthFloat (const String& text) const
 {
-    // This call isn't thread-safe when there's a message thread running
-    jassert (MessageManager::getInstanceWithoutCreating() == nullptr
-               || MessageManager::getInstanceWithoutCreating()->currentThreadHasLockedMessageManager());
+    auto w = getTypefacePtr()->getStringWidth (text);
 
-    auto w = getTypeface()->getStringWidth (text);
+    if (font->getKerning() != 0.0f)
+        w += font->getKerning() * (float) text.length();
 
-    if (font->kerning != 0.0f)
-        w += font->kerning * (float) text.length();
-
-    return w * font->height * font->horizontalScale;
+    return w * font->getHeight() * font->getHorizontalScale();
 }
 
 void Font::getGlyphPositions (const String& text, Array<int>& glyphs, Array<float>& xOffsets) const
 {
-    // This call isn't thread-safe when there's a message thread running
-    jassert (MessageManager::getInstanceWithoutCreating() == nullptr
-               || MessageManager::getInstanceWithoutCreating()->currentThreadHasLockedMessageManager());
-
-    getTypeface()->getGlyphPositions (text, glyphs, xOffsets);
+    getTypefacePtr()->getGlyphPositions (text, glyphs, xOffsets);
 
     if (auto num = xOffsets.size())
     {
-        auto scale = font->height * font->horizontalScale;
+        auto scale = font->getHeight() * font->getHorizontalScale();
         auto* x = xOffsets.getRawDataPointer();
 
-        if (font->kerning != 0.0f)
+        if (font->getKerning() != 0.0f)
         {
             for (int i = 0; i < num; ++i)
-                x[i] = (x[i] + (float) i * font->kerning) * scale;
+                x[i] = (x[i] + (float) i * font->getKerning()) * scale;
         }
         else
         {

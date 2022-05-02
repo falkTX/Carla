@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -40,6 +33,11 @@ DrawableImage::DrawableImage (const DrawableImage& other)
     setBounds (other.getBounds());
 }
 
+DrawableImage::DrawableImage (const Image& imageToUse)
+{
+    setImageInternal (imageToUse);
+}
+
 DrawableImage::~DrawableImage()
 {
 }
@@ -52,13 +50,8 @@ std::unique_ptr<Drawable> DrawableImage::createCopy() const
 //==============================================================================
 void DrawableImage::setImage (const Image& imageToUse)
 {
-    if (image != imageToUse)
-    {
-        image = imageToUse;
-        setBounds (image.getBounds());
-        setBoundingBox (image.getBounds().toFloat());
+    if (setImageInternal (imageToUse))
         repaint();
-    }
 }
 
 void DrawableImage::setOpacity (const float newOpacity)
@@ -131,6 +124,26 @@ bool DrawableImage::hitTest (int x, int y)
 Path DrawableImage::getOutlineAsPath() const
 {
     return {}; // not applicable for images
+}
+
+//==============================================================================
+bool DrawableImage::setImageInternal (const Image& imageToUse)
+{
+    if (image != imageToUse)
+    {
+        image = imageToUse;
+        setBounds (image.getBounds());
+        setBoundingBox (image.getBounds().toFloat());
+        return true;
+    }
+
+    return false;
+}
+
+//==============================================================================
+std::unique_ptr<AccessibilityHandler> DrawableImage::createAccessibilityHandler()
+{
+    return std::make_unique<AccessibilityHandler> (*this, AccessibilityRole::image);
 }
 
 } // namespace juce

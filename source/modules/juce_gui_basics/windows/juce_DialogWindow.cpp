@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -27,15 +20,15 @@ namespace juce
 {
 
 DialogWindow::DialogWindow (const String& name, Colour colour,
-                            const bool escapeCloses, const bool onDesktop)
+                            const bool escapeCloses, const bool onDesktop,
+                            const float scale)
     : DocumentWindow (name, colour, DocumentWindow::closeButton, onDesktop),
+      desktopScale (scale),
       escapeKeyTriggersCloseButton (escapeCloses)
 {
 }
 
-DialogWindow::~DialogWindow()
-{
-}
+DialogWindow::~DialogWindow() = default;
 
 bool DialogWindow::escapeKeyPressed()
 {
@@ -78,7 +71,10 @@ class DefaultDialogWindow   : public DialogWindow
 public:
     DefaultDialogWindow (LaunchOptions& options)
         : DialogWindow (options.dialogTitle, options.dialogBackgroundColour,
-                        options.escapeKeyTriggersCloseButton, true)
+                        options.escapeKeyTriggersCloseButton, true,
+                        options.componentToCentreAround != nullptr
+                            ? Component::getApproximateScaleFactorForComponent (options.componentToCentreAround)
+                            : 1.0f)
     {
         setUsingNativeTitleBar (options.useNativeTitleBar);
         setAlwaysOnTop (juce_areThereAnyAlwaysOnTopWindows());
@@ -117,7 +113,7 @@ DialogWindow* DialogWindow::LaunchOptions::launchAsync()
     return d;
 }
 
-#if JUCE_MODAL_LOOPS_PERMITTED || DOXYGEN
+#if JUCE_MODAL_LOOPS_PERMITTED
 int DialogWindow::LaunchOptions::runModal()
 {
     return launchAsync()->runModalLoop();
@@ -170,5 +166,11 @@ int DialogWindow::showModalDialog (const String& dialogTitle,
     return o.runModal();
 }
 #endif
+
+//==============================================================================
+std::unique_ptr<AccessibilityHandler> DialogWindow::createAccessibilityHandler()
+{
+    return std::make_unique<AccessibilityHandler> (*this, AccessibilityRole::dialogWindow);
+}
 
 } // namespace juce

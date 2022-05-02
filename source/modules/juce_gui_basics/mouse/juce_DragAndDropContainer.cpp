@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -35,16 +28,17 @@ class DragAndDropContainer::DragImageComponent  : public Component,
                                                   private Timer
 {
 public:
-    DragImageComponent (const Image& im,
+    DragImageComponent (const ScaledImage& im,
                         const var& desc,
                         Component* const sourceComponent,
                         const MouseInputSource* draggingSource,
                         DragAndDropContainer& ddc,
                         Point<int> offset)
         : sourceDetails (desc, sourceComponent, Point<int>()),
-          image (im), owner (ddc),
+          image (im),
+          owner (ddc),
           mouseDragSource (draggingSource->getComponentUnderMouse()),
-          imageOffset (offset),
+          imageOffset (transformOffsetCoordinates (sourceComponent, offset)),
           originalInputSourceIndex (draggingSource->getIndex()),
           originalInputSourceType (draggingSource->getType())
     {
@@ -83,7 +77,7 @@ public:
             g.fillAll (Colours::white);
 
         g.setOpacity (1.0f);
-        g.drawImageAt (image, 0, 0);
+        g.drawImage (image.getImage(), getLocalBounds().toFloat());
     }
 
     void mouseUp (const MouseEvent& e) override
@@ -164,7 +158,7 @@ public:
         forceMouseCursorUpdate();
     }
 
-    void updateImage (const Image& newImage)
+    void updateImage (const ScaledImage& newImage)
     {
         image = newImage;
         updateSize();
@@ -218,7 +212,7 @@ public:
     DragAndDropTarget::SourceDetails sourceDetails;
 
 private:
-    Image image;
+    ScaledImage image;
     DragAndDropContainer& owner;
     WeakReference<Component> mouseDragSource, currentlyOverComp;
     const Point<int> imageOffset;
@@ -229,7 +223,8 @@ private:
 
     void updateSize()
     {
-        setSize (image.getWidth(), image.getHeight());
+        const auto bounds = image.getScaledBounds().toNearestInt();
+        setSize (bounds.getWidth(), bounds.getHeight());
     }
 
     void forceMouseCursorUpdate()
@@ -261,6 +256,11 @@ private:
         }
 
         return nullptr;
+    }
+
+    Point<int> transformOffsetCoordinates (const Component* const sourceComponent, Point<int> offsetInSource) const
+    {
+        return getLocalPoint (sourceComponent, offsetInSource) - getLocalPoint (sourceComponent, Point<int>());
     }
 
     DragAndDropTarget* findTarget (Point<int> screenPos, Point<int>& relativePos,
@@ -383,17 +383,13 @@ private:
 
 
 //==============================================================================
-DragAndDropContainer::DragAndDropContainer()
-{
-}
+DragAndDropContainer::DragAndDropContainer() = default;
 
-DragAndDropContainer::~DragAndDropContainer()
-{
-}
+DragAndDropContainer::~DragAndDropContainer() = default;
 
 void DragAndDropContainer::startDragging (const var& sourceDescription,
                                           Component* sourceComponent,
-                                          Image dragImage,
+                                          const ScaledImage& dragImage,
                                           const bool allowDraggingToExternalWindows,
                                           const Point<int>* imageOffsetFromMouse,
                                           const MouseInputSource* inputSourceCausingDrag)
@@ -409,55 +405,53 @@ void DragAndDropContainer::startDragging (const var& sourceDescription,
         return;
     }
 
-    auto lastMouseDown = draggingSource->getLastMouseDownPosition().roundToInt();
-    Point<int> imageOffset;
+    const auto lastMouseDown = draggingSource->getLastMouseDownPosition().roundToInt();
 
-    if (dragImage.isNull())
+    struct ImageAndOffset
     {
-        dragImage = sourceComponent->createComponentSnapshot (sourceComponent->getLocalBounds())
-                       .convertedToFormat (Image::ARGB);
+        ScaledImage image;
+        Point<double> offset;
+    };
 
-        dragImage.multiplyAllAlphas (0.6f);
-
-        auto lo = 150;
-        auto hi = 400;
-
-        auto relPos = sourceComponent->getLocalPoint (nullptr, lastMouseDown);
-        auto clipped = dragImage.getBounds().getConstrainedPoint (relPos);
-        Random random;
-
-        for (auto y = dragImage.getHeight(); --y >= 0;)
-        {
-            auto dy = (y - clipped.getY()) * (y - clipped.getY());
-
-            for (auto x = dragImage.getWidth(); --x >= 0;)
-            {
-                auto dx = x - clipped.getX();
-                auto distance = roundToInt (std::sqrt (dx * dx + dy));
-
-                if (distance > lo)
-                {
-                    auto alpha = (distance > hi) ? 0
-                                                 : (float) (hi - distance) / (float) (hi - lo)
-                                                     + random.nextFloat() * 0.008f;
-
-                    dragImage.multiplyAlphaAt (x, y, alpha);
-                }
-            }
-        }
-
-        imageOffset = clipped;
-    }
-    else
+    const auto imageToUse = [&]() -> ImageAndOffset
     {
-        if (imageOffsetFromMouse == nullptr)
-            imageOffset = dragImage.getBounds().getCentre();
-        else
-            imageOffset = dragImage.getBounds().getConstrainedPoint (-*imageOffsetFromMouse);
-    }
+        if (! dragImage.getImage().isNull())
+            return { dragImage, imageOffsetFromMouse != nullptr ? dragImage.getScaledBounds().getConstrainedPoint (-imageOffsetFromMouse->toDouble())
+                                                                : dragImage.getScaledBounds().getCentre() };
 
-    auto* dragImageComponent = dragImageComponents.add (new DragImageComponent (dragImage, sourceDescription, sourceComponent,
-                                                                                draggingSource, *this, imageOffset));
+        const auto scaleFactor = 2.0;
+        auto image = sourceComponent->createComponentSnapshot (sourceComponent->getLocalBounds(), true, (float) scaleFactor)
+                                    .convertedToFormat (Image::ARGB);
+        image.multiplyAllAlphas (0.6f);
+
+        const auto relPos = sourceComponent->getLocalPoint (nullptr, lastMouseDown).toDouble();
+        const auto clipped = (image.getBounds().toDouble() / scaleFactor).getConstrainedPoint (relPos);
+
+        Image fade (Image::SingleChannel, image.getWidth(), image.getHeight(), true);
+        Graphics fadeContext (fade);
+
+        ColourGradient gradient;
+        gradient.isRadial = true;
+        gradient.point1 = clipped.toFloat() * scaleFactor;
+        gradient.point2 = gradient.point1 + Point<float> (0.0f, scaleFactor * 400.0f);
+        gradient.addColour (0.0, Colours::white);
+        gradient.addColour (0.375, Colours::white);
+        gradient.addColour (1.0, Colours::transparentWhite);
+
+        fadeContext.setGradientFill (gradient);
+        fadeContext.fillAll();
+
+        Image composite (Image::ARGB, image.getWidth(), image.getHeight(), true);
+        Graphics compositeContext (composite);
+
+        compositeContext.reduceClipRegion (fade, {});
+        compositeContext.drawImageAt (image, 0, 0);
+
+        return { ScaledImage (composite, scaleFactor), clipped };
+    }();
+
+    auto* dragImageComponent = dragImageComponents.add (new DragImageComponent (imageToUse.image, sourceDescription, sourceComponent,
+                                                                                draggingSource, *this, imageToUse.offset.roundToInt()));
 
     if (allowDraggingToExternalWindows)
     {
@@ -522,7 +516,7 @@ var DragAndDropContainer::getDragDescriptionForIndex (int index) const
     return dragImageComponents.getUnchecked (index)->sourceDetails.description;
 }
 
-void DragAndDropContainer::setCurrentDragImage (const Image& newImage)
+void DragAndDropContainer::setCurrentDragImage (const ScaledImage& newImage)
 {
     // If you are performing drag and drop in a multi-touch environment then
     // you should use the setDragImageForIndex() method instead!
@@ -531,7 +525,7 @@ void DragAndDropContainer::setCurrentDragImage (const Image& newImage)
     dragImageComponents[0]->updateImage (newImage);
 }
 
-void DragAndDropContainer::setDragImageForIndex (int index, const Image& newImage)
+void DragAndDropContainer::setDragImageForIndex (int index, const ScaledImage& newImage)
 {
     if (isPositiveAndBelow (index, dragImageComponents.size()))
         dragImageComponents.getUnchecked (index)->updateImage (newImage);

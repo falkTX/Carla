@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -79,8 +79,8 @@ public:
 private:
     //==============================================================================
     OptionalScopedPointer<InputStream> source;
-    int bufferSize;
-    int64 position, lastReadPos = 0, bufferStart, bufferOverlap = 128;
+    Range<int64> bufferedRange;
+    int64 position, bufferLength, lastReadPos = 0, bufferOverlap = 128;
     HeapBlock<char> buffer;
     bool ensureBuffered();
 

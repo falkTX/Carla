@@ -69,6 +69,7 @@ ifeq ($(HAVE_QT5),true)
 endif
 
 ifeq ($(USING_JUCE),true)
+3RD_LIBS += $(MODULEDIR)/carla_juce.a
 3RD_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 3RD_LIBS += $(MODULEDIR)/juce_audio_devices.a
@@ -260,6 +261,7 @@ LIBS_POSIX32 += $(MODULEDIR)/rtmempool.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/water.posix32.a
 
 ifeq ($(USING_JUCE),true)
+LIBS_POSIX32 += $(MODULEDIR)/carla_juce.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_audio_basics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_audio_processors.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_data_structures.posix32.a
@@ -285,6 +287,7 @@ LIBS_POSIX64 += $(MODULEDIR)/rtmempool.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/water.posix64.a
 
 ifeq ($(USING_JUCE),true)
+LIBS_POSIX64 += $(MODULEDIR)/carla_juce.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_audio_basics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_audio_processors.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_data_structures.posix64.a
@@ -309,6 +312,7 @@ LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
 LIBS_WIN32 += $(MODULEDIR)/water.win32.a
 
 ifeq ($(USING_JUCE),true)
+LIBS_WIN32 += $(MODULEDIR)/carla_juce.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_audio_basics.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_audio_processors.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_data_structures.win32.a
@@ -345,6 +349,7 @@ LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
 LIBS_WIN64 += $(MODULEDIR)/water.win64.a
 
 ifeq ($(USING_JUCE),true)
+LIBS_WIN64 += $(MODULEDIR)/carla_juce.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_audio_basics.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_audio_processors.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_data_structures.win64.a

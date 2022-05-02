@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -136,10 +136,9 @@ struct Atomic  final
 
     //==============================================================================
    #ifndef DOXYGEN
-    /* This method has been deprecated as there is no equivalent method in
-       std::atomic. Use compareAndSetBool instead.
-    */
-    JUCE_DEPRECATED (Type compareAndSetValue (Type, Type) noexcept);
+    [[deprecated ("This method has been deprecated as there is no equivalent method in "
+                 "std::atomic. Use compareAndSetBool instead.")]]
+    Type compareAndSetValue (Type, Type) noexcept;
    #endif
 };
 

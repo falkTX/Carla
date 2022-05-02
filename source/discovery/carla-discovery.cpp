@@ -21,39 +21,11 @@
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
-#ifdef BUILD_BRIDGE
-# undef HAVE_FLUIDSYNTH
-#endif
-
-#ifdef USING_JUCE
-# if defined(__clang__)
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wfloat-equal"
-#  pragma clang diagnostic ignored "-Wimplicit-int-float-conversion"
-# elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Wdouble-promotion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wfloat-equal"
-# endif
-# include "../backend/utils/JUCE.cpp"
-# include "AppConfig.h"
-# include "juce_audio_processors/juce_audio_processors.h"
-# if JUCE_PLUGINHOST_VST
-#  define USING_JUCE_FOR_VST2
-# endif
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
-#endif
-
 #include "CarlaLadspaUtils.hpp"
+#include "CarlaDssiUtils.hpp"
 #include "CarlaLv2Utils.hpp"
-
-#ifndef USING_JUCE_FOR_VST2
-# include "CarlaVst2Utils.hpp"
-#endif
+#include "CarlaVst2Utils.hpp"
+#include "CarlaVst3Utils.hpp"
 
 #ifdef CARLA_OS_MAC
 # define Component CocoaComponent
@@ -75,6 +47,10 @@
 # include <objbase.h>
 #endif
 
+#ifdef BUILD_BRIDGE
+# undef HAVE_FLUIDSYNTH
+#endif
+
 #ifdef HAVE_FLUIDSYNTH
 # include <fluidsynth.h>
 #endif
@@ -87,8 +63,19 @@
 # include "water/text/StringArray.h"
 # include "CarlaDssiUtils.cpp"
 # include "../backend/utils/CachedPlugins.cpp"
-#else
-# include "CarlaDssiUtils.hpp"
+#endif
+
+#ifdef USING_JUCE
+# include "carla_juce/carla_juce.h"
+# pragma GCC diagnostic ignored "-Wdouble-promotion"
+# pragma GCC diagnostic ignored "-Wduplicated-branches"
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wfloat-equal"
+# include "juce_audio_processors/juce_audio_processors.h"
+# if JUCE_PLUGINHOST_VST
+#  define USING_JUCE_FOR_VST2
+# endif
+# pragma GCC diagnostic pop
 #endif
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
@@ -170,7 +157,7 @@ static void do_cached_check(const PluginType type)
 
 # ifdef USING_JUCE
     if (type == PLUGIN_AU)
-        carla_juce_init();
+        CarlaJUCE::initialiseJuce_GUI();
 # endif
 
     const uint count = carla_get_cached_plugin_count(type, plugPath);
@@ -185,7 +172,7 @@ static void do_cached_check(const PluginType type)
 
 # ifdef USING_JUCE
     if (type == PLUGIN_AU)
-        carla_juce_cleanup();
+        CarlaJUCE::shutdownJuce_GUI();
 # endif
 }
 #endif
@@ -1420,7 +1407,7 @@ static bool do_juce_check(const char* const filename_, const char* const stype, 
     CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0, false) // FIXME
     carla_debug("do_juce_check(%s, %s, %s)", filename_, stype, bool2str(doInit));
 
-    carla_juce_init();
+    CarlaJUCE::initialiseJuce_GUI();
 
     juce::String filename;
 
@@ -1512,7 +1499,7 @@ static bool do_juce_check(const char* const filename_, const char* const stype, 
             if (std::unique_ptr<juce::AudioPluginInstance> instance
                     = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
             {
-                carla_juce_idle();
+                CarlaJUCE::idleJuce_GUI();
 
                 findMaxTotalChannels(instance.get(), audioIns, audioOuts);
                 instance->refreshParameterList();
@@ -1535,7 +1522,7 @@ static bool do_juce_check(const char* const filename_, const char* const stype, 
         DISCOVERY_OUT("name", desc->descriptiveName);
         DISCOVERY_OUT("label", desc->name);
         DISCOVERY_OUT("maker", desc->manufacturerName);
-        DISCOVERY_OUT("uniqueId", desc->uid);
+        DISCOVERY_OUT("uniqueId", desc->uniqueId);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
         DISCOVERY_OUT("midi.ins", midiIns);
@@ -1544,8 +1531,8 @@ static bool do_juce_check(const char* const filename_, const char* const stype, 
         DISCOVERY_OUT("end", "------------");
     }
 
-    carla_juce_idle();
-    carla_juce_cleanup();
+    CarlaJUCE::idleJuce_GUI();
+    CarlaJUCE::shutdownJuce_GUI();
     return false;
 }
 #endif // USING_JUCE_FOR_VST2

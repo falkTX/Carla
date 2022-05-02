@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -98,21 +91,28 @@ public:
 
 private:
     //==============================================================================
-    MenuBarModel* model;
+    class AccessibleItemComponent;
 
-    StringArray menuNames;
-    Array<int> xPositions;
-    Point<int> lastMousePos;
-    int itemUnderMouse, currentPopupIndex, topLevelIndexClicked;
+    //==============================================================================
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
+    void timerCallback() override;
 
     int getItemAt (Point<int>);
-    void setItemUnderMouse (int index);
-    void setOpenItem (int index);
+    void setItemUnderMouse (int);
+    void setOpenItem (int);
     void updateItemUnderMouse (Point<int>);
-    void timerCallback() override;
-    void repaintMenuItem (int index);
-    void menuDismissed (int topLevelIndex, int itemId);
-    static void menuBarMenuDismissedCallback (int, MenuBarComponent*, int);
+    void repaintMenuItem (int);
+    void menuDismissed (int, int);
+
+    void updateItemComponents (const StringArray&);
+    int indexOfItemComponent (AccessibleItemComponent*) const;
+
+    //==============================================================================
+    MenuBarModel* model = nullptr;
+    std::vector<std::unique_ptr<AccessibleItemComponent>> itemComponents;
+
+    Point<int> lastMousePos;
+    int itemUnderMouse = -1, currentPopupIndex = -1, topLevelIndexClicked = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MenuBarComponent)
 };

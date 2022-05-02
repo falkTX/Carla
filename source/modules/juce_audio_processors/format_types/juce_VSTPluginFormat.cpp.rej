@@ -1,0 +1,193 @@
+--- modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp
++++ modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp
+@@ -2358,56 +2356,56 @@ private:
+                 if (currentPlayHead->getCurrentPosition (position))
+                 {
+ 
+-                    vstHostTime.samplePos          = (double) position.timeInSamples;
+-                    vstHostTime.tempo              = position.bpm;
+-                    vstHostTime.timeSigNumerator   = position.timeSigNumerator;
+-                    vstHostTime.timeSigDenominator = position.timeSigDenominator;
+-                    vstHostTime.ppqPos             = position.ppqPosition;
+-                    vstHostTime.barStartPos        = position.ppqPositionOfLastBarStart;
+-                    vstHostTime.flags |= Vst2::kVstTempoValid
+-                                           | Vst2::kVstTimeSigValid
+-                                           | Vst2::kVstPpqPosValid
+-                                           | Vst2::kVstBarsValid;
++                    vstHostTime.samplePosition           = (double) position.timeInSamples;
++                    vstHostTime.tempoBPM                 = position.bpm;
++                    vstHostTime.timeSignatureNumerator   = position.timeSigNumerator;
++                    vstHostTime.timeSignatureDenominator = position.timeSigDenominator;
++                    vstHostTime.musicalPosition          = position.ppqPosition;
++                    vstHostTime.lastBarPosition          = position.ppqPositionOfLastBarStart;
++                    vstHostTime.flags |= Vst2::vstTimingInfoFlagTempoValid
++                                           | Vst2::vstTimingInfoFlagTimeSignatureValid
++                                           | Vst2::vstTimingInfoFlagMusicalPositionValid
++                                           | Vst2::vstTimingInfoFlagLastBarPositionValid;
+ 
+                     int32 newTransportFlags = 0;
+-                    if (position.isPlaying)     newTransportFlags |= Vst2::kVstTransportPlaying;
+-                    if (position.isRecording)   newTransportFlags |= Vst2::kVstTransportRecording;
++                    if (position.isPlaying)     newTransportFlags |= Vst2::vstTimingInfoFlagCurrentlyPlaying;
++                    if (position.isRecording)   newTransportFlags |= Vst2::vstTimingInfoFlagCurrentlyRecording;
+ 
+-                    if (newTransportFlags != (vstHostTime.flags & (Vst2::kVstTransportPlaying
+-                                                                   | Vst2::kVstTransportRecording)))
+-                        vstHostTime.flags = (vstHostTime.flags & ~(Vst2::kVstTransportPlaying | Vst2::kVstTransportRecording)) | newTransportFlags | Vst2::kVstTransportChanged;
++                    if (newTransportFlags != (vstHostTime.flags & (Vst2::vstTimingInfoFlagCurrentlyPlaying
++                                                                   | Vst2::vstTimingInfoFlagCurrentlyRecording)))
++                        vstHostTime.flags = (vstHostTime.flags & ~(Vst2::vstTimingInfoFlagCurrentlyPlaying | Vst2::vstTimingInfoFlagCurrentlyRecording)) | newTransportFlags | Vst2::vstTimingInfoFlagTransportChanged;
+                     else
+-                        vstHostTime.flags &= ~Vst2::kVstTransportChanged;
++                        vstHostTime.flags &= ~Vst2::vstTimingInfoFlagTransportChanged;
+ 
+                     switch (position.frameRate)
+                     {
+-                        case AudioPlayHead::fps24:       setHostTimeFrameRate (Vst2::kVstSmpte24fps, 24.0, position.timeInSeconds); break;
+-                        case AudioPlayHead::fps25:       setHostTimeFrameRate (Vst2::kVstSmpte25fps, 25.0, position.timeInSeconds); break;
+-                        case AudioPlayHead::fps30:       setHostTimeFrameRate (Vst2::kVstSmpte30fps, 30.0, position.timeInSeconds); break;
+-                        case AudioPlayHead::fps60:       setHostTimeFrameRate (Vst2::kVstSmpte60fps, 60.0, position.timeInSeconds); break;
+-
+-                        case AudioPlayHead::fps23976:    setHostTimeFrameRateDrop (Vst2::kVstSmpte239fps,      24.0, position.timeInSeconds); break;
+-                        case AudioPlayHead::fps2997:     setHostTimeFrameRateDrop (Vst2::kVstSmpte2997fps,     30.0, position.timeInSeconds); break;
+-                        case AudioPlayHead::fps2997drop: setHostTimeFrameRateDrop (Vst2::kVstSmpte2997dfps, 30.0, position.timeInSeconds); break;
+-                        case AudioPlayHead::fps30drop:   setHostTimeFrameRateDrop (Vst2::kVstSmpte30dfps,   30.0, position.timeInSeconds); break;
+-                        case AudioPlayHead::fps60drop:   setHostTimeFrameRateDrop (Vst2::kVstSmpte599fps,      60.0, position.timeInSeconds); break;
++                        case AudioPlayHead::fps24:       setHostTimeFrameRate (Vst2::vstSmpteRateFps24, 24.0, position.timeInSeconds); break;
++                        case AudioPlayHead::fps25:       setHostTimeFrameRate (Vst2::vstSmpteRateFps25, 25.0, position.timeInSeconds); break;
++                        case AudioPlayHead::fps30:       setHostTimeFrameRate (Vst2::vstSmpteRateFps30, 30.0, position.timeInSeconds); break;
++                        case AudioPlayHead::fps60:       setHostTimeFrameRate (Vst2::vstSmpteRateFps60, 60.0, position.timeInSeconds); break;
++
++                        case AudioPlayHead::fps23976:    setHostTimeFrameRateDrop (Vst2::vstSmpteRateFps239,      24.0, position.timeInSeconds); break;
++                        case AudioPlayHead::fps2997:     setHostTimeFrameRateDrop (Vst2::vstSmpteRateFps2997,     30.0, position.timeInSeconds); break;
++                        case AudioPlayHead::fps2997drop: setHostTimeFrameRateDrop (Vst2::vstSmpteRateFps2997drop, 30.0, position.timeInSeconds); break;
++                        case AudioPlayHead::fps30drop:   setHostTimeFrameRateDrop (Vst2::vstSmpteRateFps30drop,   30.0, position.timeInSeconds); break;
++                        case AudioPlayHead::fps60drop:   setHostTimeFrameRateDrop (Vst2::vstSmpteRateFps599,      60.0, position.timeInSeconds); break;
+                         default: break;
+                     }
+ 
+                     if (position.isLooping)
+                     {
+-                        vstHostTime.cycleStartPos = position.ppqLoopStart;
+-                        vstHostTime.cycleEndPos   = position.ppqLoopEnd;
+-                        vstHostTime.flags |= (Vst2::kVstCyclePosValid | Vst2::kVstTransportCycleActive);
++                        vstHostTime.loopStartPosition = position.ppqLoopStart;
++                        vstHostTime.loopEndPosition   = position.ppqLoopEnd;
++                        vstHostTime.flags |= (Vst2::vstTimingInfoFlagLoopPositionValid | Vst2::vstTimingInfoFlagLoopActive);
+                     }
+                     else
+                     {
+-                        vstHostTime.flags &= ~(Vst2::kVstCyclePosValid | Vst2::kVstTransportCycleActive);
++                        vstHostTime.flags &= ~(Vst2::vstTimingInfoFlagLoopPositionValid | Vst2::vstTimingInfoFlagLoopActive);
+                     }
+                 }
+             }
+ 
+-            vstHostTime.nanoSeconds = getVSTHostTimeNanoseconds();
++            vstHostTime.systemTimeNanoseconds = getVSTHostTimeNanoseconds();
+ 
+             if (wantsMidiMessages)
+             {
+@@ -2950,11 +2948,11 @@ public:
+         setScaleFactorAndDispatchMessage (newScaleFactor);
+ 
+        #if JUCE_WINDOWS
+-        Vst2::ERect* rect = nullptr;
+-        dispatch (Vst2::effEditGetRect, 0, 0, &rect, 0);
++        Vst2::VstEditorBounds* rect = nullptr;
++        dispatch (Vst2::plugInOpcodeGetEditorBounds, 0, 0, &rect, 0);
+ 
+-        if (! isWindowSizeCorrectForPlugin (roundToInt ((rect->right - rect->left) / nativeScaleFactor),
+-                                            roundToInt ((rect->bottom - rect->top) / nativeScaleFactor)))
++        if (! isWindowSizeCorrectForPlugin (roundToInt ((rect->rightmost - rect->leftmost) / nativeScaleFactor),
++                                            roundToInt ((rect->lower - rect->upper) / nativeScaleFactor)))
+             return;
+        #endif
+ 
+@@ -3134,15 +3132,15 @@ private:
+             dpiDisabler.reset (new ScopedDPIAwarenessDisabler());
+        #endif
+ 
+-        Vst2::ERect* rect = nullptr;
+-        dispatch (Vst2::effEditGetRect, 0, 0, &rect, 0);
++        Vst2::VstEditorBounds* rect = nullptr;
++        dispatch (Vst2::plugInOpcodeGetEditorBounds, 0, 0, &rect, 0);
+ 
+        #if JUCE_WINDOWS && JUCE_WIN_PER_MONITOR_DPI_AWARE
+         // some plug-ins are fussy about this
+         dpiDisabler.reset (nullptr);
+        #endif
+ 
+-        dispatch (Vst2::effEditOpen, 0, 0, getWindowHandle(), 0);
++        dispatch (Vst2::plugInOpcodeOpenEditor, 0, 0, getWindowHandle(), 0);
+ 
+        #if JUCE_WINDOWS && JUCE_WIN_PER_MONITOR_DPI_AWARE
+         if (! pluginRespondsToDPIChanges)
+@@ -3150,11 +3148,11 @@ private:
+        #endif
+ 
+         // do this before and after like in the steinberg example
+-        dispatch (Vst2::effEditGetRect, 0, 0, &rect, 0);
+-        dispatch (Vst2::effGetProgram, 0, 0, nullptr, 0); // also in steinberg code
++        dispatch (Vst2::plugInOpcodeGetEditorBounds, 0, 0, &rect, 0);
++        dispatch (Vst2::plugInOpcodeGetCurrentProgram, 0, 0, nullptr, 0); // also in steinberg code
+ 
+         // Install keyboard hooks
+-        pluginWantsKeys = (dispatch (Vst2::effKeysRequired, 0, 0, nullptr, 0) == 0);
++        pluginWantsKeys = (dispatch (Vst2::plugInOpcodeKeyboardFocusRequired, 0, 0, nullptr, 0) == 0);
+ 
+        #if JUCE_WINDOWS
+         originalWndProc = 0;
+@@ -3410,17 +3408,17 @@ private:
+             if (owner.isOpen)
+             {
+                 owner.isOpen = false;
+-                owner.dispatch (Vst2::effEditClose, 0, 0, 0, 0);
+-                owner.dispatch (Vst2::effEditSleep, 0, 0, 0, 0);
++                owner.dispatch (Vst2::plugInOpcodeCloseEditor, 0, 0, 0, 0);
++                owner.dispatch (Vst2::plugInOpcodeSleepEditor, 0, 0, 0, 0);
+             }
+         }
+ 
+         bool getEmbeddedViewSize (int& w, int& h) override
+         {
+-            Vst2::ERect* rect = nullptr;
+-            owner.dispatch (Vst2::effEditGetRect, 0, 0, &rect, 0);
+-            w = rect->right - rect->left;
+-            h = rect->bottom - rect->top;
++            Vst2::VstEditorBounds* rect = nullptr;
++            owner.dispatch (Vst2::plugInOpcodeGetEditorBounds, 0, 0, &rect, 0);
++            w = rect->rightmost - rect->leftmost;
++            h = rect->lower - rect->upper;
+             return true;
+         }
+ 
+@@ -3430,7 +3428,7 @@ private:
+             {
+                 alreadyInside = true;
+                 getTopLevelComponent()->toFront (true);
+-                owner.dispatch (Vst2::effEditMouse, x, y, 0, 0);
++                owner.dispatch (Vst2::plugInOpcodeGetMouse, x, y, 0, 0);
+                 alreadyInside = false;
+             }
+             else
+@@ -3444,13 +3442,13 @@ private:
+             if (auto* peer = getPeer())
+             {
+                 auto pos = peer->globalToLocal (getScreenPosition());
+-                Vst2::ERect r;
+-                r.left   = (int16) pos.getX();
+-                r.top    = (int16) pos.getY();
+-                r.right  = (int16) (r.left + getWidth());
+-                r.bottom = (int16) (r.top + getHeight());
++                Vst2::VstEditorBounds r;
++                r.leftmost  = (int16) pos.getX();
++                r.upper     = (int16) pos.getY();
++                r.rightmost = (int16) (r.leftmost + getWidth());
++                r.lower     = (int16) (r.upper + getHeight());
+ 
+-                owner.dispatch (Vst2::effEditDraw, 0, 0, &r, 0);
++                owner.dispatch (Vst2::plugInOpcodeDrawEditor, 0, 0, &r, 0);
+             }
+         }
+ 

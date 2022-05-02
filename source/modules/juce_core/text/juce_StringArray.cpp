@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -89,10 +89,6 @@ StringArray& StringArray::operator= (StringArray&& other) noexcept
     return *this;
 }
 
-StringArray::~StringArray()
-{
-}
-
 bool StringArray::operator== (const StringArray& other) const noexcept
 {
     return strings == other.strings;
@@ -128,6 +124,11 @@ const String& StringArray::operator[] (int index) const noexcept
 }
 
 String& StringArray::getReference (int index) noexcept
+{
+    return strings.getReference (index);
+}
+
+const String& StringArray::getReference (int index) const noexcept
 {
     return strings.getReference (index);
 }

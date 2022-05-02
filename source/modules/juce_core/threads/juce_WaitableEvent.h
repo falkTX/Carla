@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -19,10 +19,6 @@
 
   ==============================================================================
 */
-
-#if JUCE_MINGW && !defined(_GLIBCXX_HAS_GTHREADS)
-#include "mingw-std-threads/mingw.condition_variable.h"
-#endif
 
 namespace juce
 {

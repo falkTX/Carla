@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -231,8 +231,6 @@ public:
 
     //==============================================================================
    #ifndef DOXYGEN
-    // There are now lambda-based call functions that can be used to replace these old method-based versions.
-    // We'll eventually deprecate these old ones, so please begin moving your code to use lambdas!
     void call (void (ListenerClass::*callbackFunction) ())
     {
         call ([=] (ListenerClass& l) { (l.*callbackFunction)(); });

@@ -51,29 +51,14 @@
 #endif
 
 #ifdef USING_JUCE
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-# endif
-# include "AppConfig.h"
-# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-#  include "juce_gui_basics/juce_gui_basics.h"
-# else
-#  include "juce_events/juce_events.h"
-# endif
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
+# include "carla_juce/carla_juce.h"
 #endif
-
-#include "jackbridge/JackBridge.hpp"
 
 #include "water/files/File.h"
 #include "water/misc/Time.h"
+
+// must be last
+#include "jackbridge/JackBridge.hpp"
 
 using CARLA_BACKEND_NAMESPACE::CarlaEngine;
 using CARLA_BACKEND_NAMESPACE::EngineCallbackOpcode;
@@ -152,52 +137,6 @@ static void gIdle()
         }
     }
 }
-
- // -------------------------------------------------------------------------
-
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-class CarlaJuceApp : public juce::JUCEApplication,
-                     private juce::Timer
-{
-public:
-    CarlaJuceApp()  {}
-    ~CarlaJuceApp() {}
-
-    void initialise(const juce::String&) override
-    {
-        startTimer(8);
-    }
-
-    void shutdown() override
-    {
-        gCloseNow = true;
-        stopTimer();
-    }
-
-    const juce::String getApplicationName() override
-    {
-        return "CarlaPlugin";
-    }
-
-    const juce::String getApplicationVersion() override
-    {
-        return CARLA_VERSION_STRING;
-    }
-
-    void timerCallback() override
-    {
-        gIdle();
-
-        if (gCloseNow)
-        {
-            quit();
-            gCloseNow = false;
-        }
-    }
-};
-
-static juce::JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp(); }
-#endif
 
 // -------------------------------------------------------------------------
 
@@ -290,12 +229,7 @@ public:
         gIsInitiated = true;
 
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-# ifndef CARLA_OS_WIN
-        static const int argc = 0;
-        static const char* argv[] = {};
-# endif
-        juce::JUCEApplicationBase::createInstance = &juce_CreateApplication;
-        juce::JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
+        CarlaJUCE::setupAndUseMainApplication();
 #else
         int64_t timeToEnd = 0;
 
@@ -353,7 +287,7 @@ private:
     CarlaEngine* fEngine;
 
 #ifdef USING_JUCE
-    const juce::ScopedJuceInitialiser_GUI fJuceInitialiser;
+    const CarlaJUCE::ScopedJuceInitialiser_GUI fJuceInitialiser;
 #endif
 
     bool fUsingBridge;

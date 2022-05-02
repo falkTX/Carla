@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -227,11 +220,11 @@ public:
     }
 
    #ifndef DOXYGEN
-    // This class now has a move operator, so if you're trying to move them around, you
-    // should use that, or if you really need to swap two groups, just call std::swap.
-    // However, remember that swapping a group that's already owned by an AudioProcessor
-    // will most likely crash the host, so don't do that.
-    JUCE_DEPRECATED_WITH_BODY (void swapWith (AudioProcessorParameterGroup& other), { std::swap (*this, other); })
+    [[deprecated ("This class now has a move operator, so if you're trying to move them around, you "
+                 "should use that, or if you really need to swap two groups, just call std::swap. "
+                 "However, remember that swapping a group that's already owned by an AudioProcessor "
+                 "will most likely crash the host, so don't do that.")]]
+    void swapWith (AudioProcessorParameterGroup& other)  { std::swap (*this, other); }
    #endif
 
 private:

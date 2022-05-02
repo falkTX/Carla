@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -133,6 +126,8 @@ public:
         friend class AudioProcessorGraph;
         template <typename Float>
         friend struct GraphRenderSequence;
+        template <typename Float>
+        friend struct RenderSequenceBuilder;
 
         struct Connection
         {
@@ -154,17 +149,24 @@ public:
         void unprepare();
 
         template <typename Sample>
-        void processBlock (AudioBuffer<Sample>& audio, MidiBuffer& midi)
+        void callProcessFunction (AudioBuffer<Sample>& audio,
+                                  MidiBuffer& midi,
+                                  void (AudioProcessor::* function) (AudioBuffer<Sample>&, MidiBuffer&))
         {
             const ScopedLock lock (processorLock);
-            processor->processBlock (audio, midi);
+            (processor.get()->*function) (audio, midi);
+        }
+
+        template <typename Sample>
+        void processBlock (AudioBuffer<Sample>& audio, MidiBuffer& midi)
+        {
+            callProcessFunction (audio, midi, &AudioProcessor::processBlock);
         }
 
         template <typename Sample>
         void processBlockBypassed (AudioBuffer<Sample>& audio, MidiBuffer& midi)
         {
-            const ScopedLock lock (processorLock);
-            processor->processBlockBypassed (audio, midi);
+            callProcessFunction (audio, midi, &AudioProcessor::processBlockBypassed);
         }
 
         CriticalSection processorLock;
@@ -355,10 +357,8 @@ public:
         bool acceptsMidi() const override;
         bool producesMidi() const override;
 
-       #if ! JUCE_AUDIOPROCESSOR_NO_GUI
         bool hasEditor() const override;
         AudioProcessorEditor* createEditor() override;
-       #endif
 
         int getNumPrograms() override;
         int getCurrentProgram() override;
@@ -394,10 +394,8 @@ public:
     bool acceptsMidi() const override;
     bool producesMidi() const override;
 
-   #if ! JUCE_AUDIOPROCESSOR_NO_GUI
     bool hasEditor() const override                         { return false; }
     AudioProcessorEditor* createEditor() override           { return nullptr; }
-   #endif
     int getNumPrograms() override                           { return 0; }
     int getCurrentProgram() override                        { return 0; }
     void setCurrentProgram (int) override                   { }
@@ -407,6 +405,24 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 private:
+    struct PrepareSettings
+    {
+        ProcessingPrecision precision = ProcessingPrecision::singlePrecision;
+        double sampleRate             = 0.0;
+        int blockSize                 = 0;
+        bool valid                    = false;
+
+        using Tied = std::tuple<const ProcessingPrecision&,
+                                const double&,
+                                const int&,
+                                const bool&>;
+
+        Tied tie() const noexcept { return std::tie (precision, sampleRate, blockSize, valid); }
+
+        bool operator== (const PrepareSettings& other) const noexcept { return tie() == other.tie(); }
+        bool operator!= (const PrepareSettings& other) const noexcept { return tie() != other.tie(); }
+    };
+
     //==============================================================================
     ReferenceCountedArray<Node> nodes;
     NodeID lastNodeID = {};
@@ -416,11 +432,14 @@ private:
     std::unique_ptr<RenderSequenceFloat> renderSequenceFloat;
     std::unique_ptr<RenderSequenceDouble> renderSequenceDouble;
 
+    PrepareSettings prepareSettings;
+
     friend class AudioGraphIOProcessor;
 
     std::atomic<bool> isPrepared { false };
 
     void topologyChanged();
+    void unprepare();
     void handleAsyncUpdate() override;
     void clearRenderingSequence();
     void buildRenderingSequence();

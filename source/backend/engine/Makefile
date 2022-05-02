@@ -108,6 +108,11 @@ $(OBJDIR)/CarlaEngineJack.cpp.o: CarlaEngineJack.cpp
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(JACK_FLAGS) -c -o $@
 endif
 
+$(OBJDIR)/CarlaEngineJuce.cpp.o: CarlaEngineJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
+
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"

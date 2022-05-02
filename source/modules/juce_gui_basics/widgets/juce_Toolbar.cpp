@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -163,7 +156,7 @@ public:
         {
             auto* tc = bar.items.getUnchecked(i);
 
-            if (dynamic_cast<Spacer*> (tc) == nullptr && ! tc->isVisible())
+            if (tc != nullptr && dynamic_cast<Spacer*> (tc) == nullptr && ! tc->isVisible())
             {
                 oldIndexes.insert (0, i);
                 addAndMakeVisible (tc, 0);
@@ -243,10 +236,7 @@ private:
 Toolbar::Toolbar()
 {
     lookAndFeelChanged();
-    addChildComponent (missingItemsButton.get());
-
-    missingItemsButton->setAlwaysOnTop (true);
-    missingItemsButton->onClick = [this] { showMissingItems(); };
+    initMissingItemButton();
 }
 
 Toolbar::~Toolbar()
@@ -534,6 +524,16 @@ void Toolbar::updateAllItemPositions (bool animate)
 }
 
 //==============================================================================
+void Toolbar::initMissingItemButton()
+{
+    if (missingItemsButton == nullptr)
+        return;
+
+    addChildComponent (*missingItemsButton);
+    missingItemsButton->setAlwaysOnTop (true);
+    missingItemsButton->onClick = [this] { showMissingItems(); };
+}
+
 void Toolbar::showMissingItems()
 {
     jassert (missingItemsButton->isShowing());
@@ -542,7 +542,7 @@ void Toolbar::showMissingItems()
     {
         PopupMenu m;
         auto comp = std::make_unique<MissingItemsComponent> (*this, getThickness());
-        m.addCustomItem (1, std::move (comp));
+        m.addCustomItem (1, std::move (comp), nullptr, TRANS ("Additional Items"));
         m.showMenuAsync (PopupMenu::Options().withTargetComponent (missingItemsButton.get()));
     }
 }
@@ -643,6 +643,7 @@ void Toolbar::itemDropped (const SourceDetails& dragSourceDetails)
 void Toolbar::lookAndFeelChanged()
 {
     missingItemsButton.reset (getLookAndFeel().createToolbarMissingItemsButton (*this));
+    initMissingItemButton();
 }
 
 void Toolbar::mouseDown (const MouseEvent&) {}
@@ -807,6 +808,12 @@ void Toolbar::showCustomisationDialog (ToolbarItemFactory& factory, const int op
 
     (new CustomisationDialog (factory, *this, optionFlags))
         ->enterModalState (true, nullptr, true);
+}
+
+//==============================================================================
+std::unique_ptr<AccessibilityHandler> Toolbar::createAccessibilityHandler()
+{
+    return std::make_unique<AccessibilityHandler> (*this, AccessibilityRole::group);
 }
 
 } // namespace juce

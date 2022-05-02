@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -45,6 +38,26 @@ public:
     virtual void globalFocusChanged (Component* focusedComponent) = 0;
 };
 
+//==============================================================================
+/**
+    Classes can implement this interface and register themselves with the Desktop class
+    to receive callbacks when the operating system dark mode setting changes. The
+    Desktop::isDarkModeActive() method can then be used to query the current setting.
+
+    @see Desktop::addDarkModeSettingListener, Desktop::removeDarkModeSettingListener,
+         Desktop::isDarkModeActive
+
+    @tags{GUI}
+*/
+class JUCE_API  DarkModeSettingListener
+{
+public:
+    /** Destructor. */
+    virtual ~DarkModeSettingListener() = default;
+
+    /** Callback to indicate that the dark mode setting has changed. */
+    virtual void darkModeSettingChanged() = 0;
+};
 
 //==============================================================================
 /**
@@ -135,21 +148,49 @@ public:
     */
     void addGlobalMouseListener (MouseListener* listener);
 
-    /** Unregisters a MouseListener that was added with the addGlobalMouseListener()
-        method.
+    /** Unregisters a MouseListener that was added with addGlobalMouseListener().
 
         @see addGlobalMouseListener
     */
     void removeGlobalMouseListener (MouseListener* listener);
 
     //==============================================================================
-    /** Registers a MouseListener that will receive a callback whenever the focused
+    /** Registers a FocusChangeListener that will receive a callback whenever the focused
         component changes.
+
+        @see removeFocusChangeListener
     */
     void addFocusChangeListener (FocusChangeListener* listener);
 
-    /** Unregisters a listener that was added with addFocusChangeListener(). */
+    /** Unregisters a FocusChangeListener that was added with addFocusChangeListener().
+
+        @see addFocusChangeListener
+    */
     void removeFocusChangeListener (FocusChangeListener* listener);
+
+    //==============================================================================
+    /** Registers a DarkModeSettingListener that will receive a callback when the
+        operating system dark mode setting changes. To query whether dark mode is on
+        use the isDarkModeActive() method.
+
+        @see isDarkModeActive, removeDarkModeSettingListener
+    */
+    void addDarkModeSettingListener (DarkModeSettingListener* listener);
+
+    /** Unregisters a DarkModeSettingListener that was added with addDarkModeSettingListener().
+
+        @see addDarkModeSettingListener
+    */
+    void removeDarkModeSettingListener (DarkModeSettingListener* listener);
+
+    /** True if the operating system "dark mode" is active.
+
+        To receive a callback when this setting changes implement the DarkModeSettingListener
+        interface and use the addDarkModeSettingListener() to register a listener.
+
+        @see addDarkModeSettingListener, removeDarkModeSettingListener
+    */
+    bool isDarkModeActive() const;
 
     //==============================================================================
     /** Takes a component and makes it full-screen, removing the taskbar, dock, etc.
@@ -325,6 +366,10 @@ public:
     bool isOrientationEnabled (DisplayOrientation orientation) const noexcept;
 
     //==============================================================================
+    /** Returns the Displays object representing the connected displays.
+
+        @see Displays
+    */
     const Displays& getDisplays() const noexcept        { return *displays; }
 
     //==============================================================================
@@ -342,10 +387,15 @@ public:
     /** True if the OS supports semitransparent windows */
     static bool canUseSemiTransparentWindows() noexcept;
 
-   #if JUCE_MAC
-    /** OSX-specific function to check for the "dark" title-bar and menu mode. */
-    static bool isOSXDarkModeActive();
+   #if JUCE_MAC && ! defined (DOXYGEN)
+    [[deprecated ("This macOS-specific method has been deprecated in favour of the cross-platform "
+                  " isDarkModeActive() method.")]]
+    static bool isOSXDarkModeActive()  { return Desktop::getInstance().isDarkModeActive(); }
    #endif
+
+    //==============================================================================
+    /** Returns true on a headless system where there are no connected displays. */
+    bool isHeadless() const noexcept;
 
 private:
     //==============================================================================
@@ -362,6 +412,7 @@ private:
 
     ListenerList<MouseListener> mouseListeners;
     ListenerList<FocusChangeListener> focusListeners;
+    ListenerList<DarkModeSettingListener> darkModeSettingListeners;
 
     Array<Component*> desktopComponents;
     Array<ComponentPeer*> peers;
@@ -377,6 +428,8 @@ private:
 
     std::unique_ptr<LookAndFeel> defaultLookAndFeel;
     WeakReference<LookAndFeel> currentLookAndFeel;
+
+    std::unique_ptr<FocusOutline> focusOutline;
 
     Component* kioskModeComponent = nullptr;
     Rectangle<int> kioskComponentOriginalBounds;
@@ -400,6 +453,7 @@ private:
     void setKioskComponent (Component*, bool shouldBeEnabled, bool allowMenusAndBars);
 
     void triggerFocusCallback();
+    void updateFocusOutline();
     void handleAsyncUpdate() override;
 
     static Point<float> getMousePositionFloat();
@@ -409,6 +463,14 @@ private:
     Desktop();
     ~Desktop() override;
 
+    //==============================================================================
+    class NativeDarkModeChangeDetectorImpl;
+    std::unique_ptr<NativeDarkModeChangeDetectorImpl> nativeDarkModeChangeDetectorImpl;
+
+    static std::unique_ptr<NativeDarkModeChangeDetectorImpl> createNativeDarkModeChangeDetectorImpl();
+    void darkModeChanged();
+
+    //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Desktop)
 };
 

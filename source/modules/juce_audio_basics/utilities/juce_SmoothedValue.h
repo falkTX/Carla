@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -57,8 +57,6 @@ public:
     //==============================================================================
     /** Constructor. */
     SmoothedValueBase() = default;
-
-    virtual ~SmoothedValueBase() {}
 
     //==============================================================================
     /** Returns true if the current value is currently being interpolated. */
@@ -330,9 +328,8 @@ public:
     }
 
     //==============================================================================
-    /** THIS FUNCTION IS DEPRECATED.
-
-        Use `setTargetValue (float)` and `setCurrentAndTargetValue()` instead:
+   #ifndef DOXYGEN
+    /** Using the new methods:
 
         lsv.setValue (x, false); -> lsv.setTargetValue (x);
         lsv.setValue (x, true);  -> lsv.setCurrentAndTargetValue (x);
@@ -340,7 +337,8 @@ public:
         @param newValue     The new target value
         @param force        If true, the value will be set immediately, bypassing the ramp
     */
-    JUCE_DEPRECATED_WITH_BODY (void setValue (FloatType newValue, bool force = false) noexcept,
+    [[deprecated ("Use setTargetValue and setCurrentAndTargetValue instead.")]]
+    void setValue (FloatType newValue, bool force = false) noexcept
     {
         if (force)
         {
@@ -349,7 +347,8 @@ public:
         }
 
         setTargetValue (newValue);
-    })
+    }
+   #endif
 
 private:
     //==============================================================================
@@ -510,7 +509,7 @@ public:
             expect (referenceData.getSample (0, 10) < sv.getTargetValue());
             expectWithinAbsoluteError (referenceData.getSample (0, 11),
                                        sv.getTargetValue(),
-                                       1.0e-7f);
+                                       2.0e-7f);
 
             auto getUnitData = [] (int numSamplesToGenerate)
             {
@@ -528,7 +527,7 @@ public:
                 for (int i = 0; i < test.getNumSamples(); ++i)
                     expectWithinAbsoluteError (test.getSample (0, i),
                                                reference.getSample (0, i),
-                                               1.0e-7f);
+                                               2.0e-7f);
             };
 
             auto testData = getUnitData (numSamples);

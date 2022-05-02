@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -22,37 +22,6 @@
 
 namespace juce
 {
-
-WinRTWrapper::ScopedHString::ScopedHString (String str)
-{
-    if (WinRTWrapper::getInstance()->isInitialised())
-        WinRTWrapper::getInstance()->createHString (str.toWideCharPointer(),
-                                                    static_cast<uint32_t> (str.length()),
-                                                    &hstr);
-}
-
-WinRTWrapper::ScopedHString::~ScopedHString()
-{
-    if (WinRTWrapper::getInstance()->isInitialised() && hstr != nullptr)
-        WinRTWrapper::getInstance()->deleteHString (hstr);
-}
-
-WinRTWrapper::~WinRTWrapper()
-{
-    if (winRTHandle != nullptr)
-        ::FreeLibrary (winRTHandle);
-
-    clearSingletonInstance();
-}
-
-String WinRTWrapper::hStringToString (HSTRING hstr)
-{
-    if (isInitialised())
-        if (const wchar_t* str = getHStringRawBuffer (hstr, nullptr))
-            return String (str);
-
-    return {};
-}
 
 WinRTWrapper::WinRTWrapper()
 {
@@ -75,6 +44,38 @@ WinRTWrapper::WinRTWrapper()
     HRESULT status = roInitialize (1);
     initialised = ! (status != S_OK && status != S_FALSE && status != 0x80010106L);
 }
+
+WinRTWrapper::~WinRTWrapper()
+{
+    if (winRTHandle != nullptr)
+        ::FreeLibrary (winRTHandle);
+
+    clearSingletonInstance();
+}
+
+WinRTWrapper::ScopedHString::ScopedHString (String str)
+{
+    if (WinRTWrapper::getInstance()->isInitialised())
+        WinRTWrapper::getInstance()->createHString (str.toWideCharPointer(),
+                                                    static_cast<uint32_t> (str.length()),
+                                                    &hstr);
+}
+
+WinRTWrapper::ScopedHString::~ScopedHString()
+{
+    if (WinRTWrapper::getInstance()->isInitialised() && hstr != nullptr)
+        WinRTWrapper::getInstance()->deleteHString (hstr);
+}
+
+String WinRTWrapper::hStringToString (HSTRING hstr)
+{
+    if (isInitialised())
+        if (const wchar_t* str = getHStringRawBuffer (hstr, nullptr))
+            return String (str);
+
+    return {};
+}
+
 
 JUCE_IMPLEMENT_SINGLETON (WinRTWrapper)
 

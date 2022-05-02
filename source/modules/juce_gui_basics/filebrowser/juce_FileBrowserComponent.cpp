@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -441,7 +434,7 @@ void FileBrowserComponent::browserRootChanged (const File&) {}
 
 bool FileBrowserComponent::keyPressed (const KeyPress& key)
 {
-   #if JUCE_LINUX || JUCE_WINDOWS
+   #if JUCE_LINUX || JUCE_BSD || JUCE_WINDOWS
     if (key.getModifiers().isCommandDown()
          && (key.getKeyCode() == 'H' || key.getKeyCode() == 'h'))
     {
@@ -605,7 +598,7 @@ void FileBrowserComponent::getRoots (StringArray& rootNames, StringArray& rootPa
 
 void FileBrowserComponent::timerCallback()
 {
-    const bool isProcessActive = Process::isForegroundProcess();
+    const auto isProcessActive = isForegroundOrEmbeddedProcess (this);
 
     if (wasProcessActive != isProcessActive)
     {
@@ -614,6 +607,12 @@ void FileBrowserComponent::timerCallback()
         if (isProcessActive && fileList != nullptr)
             refresh();
     }
+}
+
+//==============================================================================
+std::unique_ptr<AccessibilityHandler> FileBrowserComponent::createAccessibilityHandler()
+{
+    return std::make_unique<AccessibilityHandler> (*this, AccessibilityRole::group);
 }
 
 } // namespace juce

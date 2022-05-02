@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -33,30 +33,264 @@ using MenuTrackingChangedCallback = void (*)(bool);
 MenuTrackingChangedCallback menuTrackingChangedCallback = nullptr;
 
 //==============================================================================
+struct AppDelegateClass   : public ObjCClass<NSObject>
+{
+    AppDelegateClass()  : ObjCClass<NSObject> ("JUCEAppDelegate_")
+    {
+        addMethod (@selector (applicationWillFinishLaunching:), applicationWillFinishLaunching);
+        addMethod (@selector (applicationShouldTerminate:),     applicationShouldTerminate);
+        addMethod (@selector (applicationWillTerminate:),       applicationWillTerminate);
+        addMethod (@selector (application:openFile:),           application_openFile);
+        addMethod (@selector (application:openFiles:),          application_openFiles);
+        addMethod (@selector (applicationDidBecomeActive:),     applicationDidBecomeActive);
+        addMethod (@selector (applicationDidResignActive:),     applicationDidResignActive);
+        addMethod (@selector (applicationWillUnhide:),          applicationWillUnhide);
+
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
+        addMethod (@selector (getUrl:withReplyEvent:),          getUrl_withReplyEvent);
+        addMethod (@selector (broadcastMessageCallback:),       broadcastMessageCallback);
+        addMethod (@selector (mainMenuTrackingBegan:),          mainMenuTrackingBegan);
+        addMethod (@selector (mainMenuTrackingEnded:),          mainMenuTrackingEnded);
+        addMethod (@selector (dummyMethod),                     dummyMethod);
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+       #if JUCE_PUSH_NOTIFICATIONS
+        //==============================================================================
+        addIvar<NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate>*> ("pushNotificationsDelegate");
+
+        addMethod (@selector (applicationDidFinishLaunching:),                                applicationDidFinishLaunching);
+
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
+        addMethod (@selector (setPushNotificationsDelegate:),                                 setPushNotificationsDelegate);
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+        addMethod (@selector (application:didRegisterForRemoteNotificationsWithDeviceToken:), registeredForRemoteNotifications);
+        addMethod (@selector (application:didFailToRegisterForRemoteNotificationsWithError:), failedToRegisterForRemoteNotifications);
+        addMethod (@selector (application:didReceiveRemoteNotification:),                     didReceiveRemoteNotification);
+       #endif
+
+        registerClass();
+    }
+
+private:
+    static void applicationWillFinishLaunching (id self, SEL, NSNotification*)
+    {
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
+        [[NSAppleEventManager sharedAppleEventManager] setEventHandler: self
+                                                           andSelector: @selector (getUrl:withReplyEvent:)
+                                                         forEventClass: kInternetEventClass
+                                                            andEventID: kAEGetURL];
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+    }
+
+   #if JUCE_PUSH_NOTIFICATIONS
+    static void applicationDidFinishLaunching (id self, SEL, NSNotification* notification)
+    {
+        if (notification.userInfo != nil)
+        {
+            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+            // NSUserNotification is deprecated from macOS 11, but there doesn't seem to be a
+            // replacement for NSApplicationLaunchUserNotificationKey returning a non-deprecated type
+            NSUserNotification* userNotification = notification.userInfo[NSApplicationLaunchUserNotificationKey];
+            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+            if (userNotification != nil && userNotification.userInfo != nil)
+                didReceiveRemoteNotification (self, nil, [NSApplication sharedApplication], userNotification.userInfo);
+        }
+    }
+   #endif
+
+    static NSApplicationTerminateReply applicationShouldTerminate (id /*self*/, SEL, NSApplication*)
+    {
+        if (auto* app = JUCEApplicationBase::getInstance())
+        {
+            app->systemRequestedQuit();
+
+            if (! MessageManager::getInstance()->hasStopMessageBeenSent())
+                return NSTerminateCancel;
+        }
+
+        return NSTerminateNow;
+    }
+
+    static void applicationWillTerminate (id /*self*/, SEL, NSNotification*)
+    {
+        JUCEApplicationBase::appWillTerminateByForce();
+    }
+
+    static BOOL application_openFile (id /*self*/, SEL, NSApplication*, NSString* filename)
+    {
+        if (auto* app = JUCEApplicationBase::getInstance())
+        {
+            app->anotherInstanceStarted (quotedIfContainsSpaces (filename));
+            return YES;
+        }
+
+        return NO;
+    }
+
+    static void application_openFiles (id /*self*/, SEL, NSApplication*, NSArray* filenames)
+    {
+        if (auto* app = JUCEApplicationBase::getInstance())
+        {
+            StringArray files;
+
+            for (NSString* f in filenames)
+                files.add (quotedIfContainsSpaces (f));
+
+            if (files.size() > 0)
+                app->anotherInstanceStarted (files.joinIntoString (" "));
+        }
+    }
+
+    static void applicationDidBecomeActive (id /*self*/, SEL, NSNotification*)  { focusChanged(); }
+    static void applicationDidResignActive (id /*self*/, SEL, NSNotification*)  { focusChanged(); }
+    static void applicationWillUnhide      (id /*self*/, SEL, NSNotification*)  { focusChanged(); }
+
+    static void broadcastMessageCallback (id /*self*/, SEL, NSNotification* n)
+    {
+        NSDictionary* dict = (NSDictionary*) [n userInfo];
+        auto messageString = nsStringToJuce ((NSString*) [dict valueForKey: nsStringLiteral ("message")]);
+        MessageManager::getInstance()->deliverBroadcastMessage (messageString);
+    }
+
+    static void mainMenuTrackingBegan (id /*self*/, SEL, NSNotification*)
+    {
+        if (menuTrackingChangedCallback != nullptr)
+            menuTrackingChangedCallback (true);
+    }
+
+    static void mainMenuTrackingEnded (id /*self*/, SEL, NSNotification*)
+    {
+        if (menuTrackingChangedCallback != nullptr)
+            menuTrackingChangedCallback (false);
+    }
+
+    static void dummyMethod (id /*self*/, SEL) {}   // (used as a way of running a dummy thread)
+
+    static void focusChanged()
+    {
+        if (appFocusChangeCallback != nullptr)
+            (*appFocusChangeCallback)();
+    }
+
+    static void getUrl_withReplyEvent (id /*self*/, SEL, NSAppleEventDescriptor* event, NSAppleEventDescriptor*)
+    {
+        if (auto* app = JUCEApplicationBase::getInstance())
+            app->anotherInstanceStarted (quotedIfContainsSpaces ([[event paramDescriptorForKeyword: keyDirectObject] stringValue]));
+    }
+
+    static String quotedIfContainsSpaces (NSString* file)
+    {
+        String s (nsStringToJuce (file));
+        s = s.unquoted().replace ("\"", "\\\"");
+
+        if (s.containsChar (' '))
+            s = s.quoted();
+
+        return s;
+    }
+
+   #if JUCE_PUSH_NOTIFICATIONS
+    //==============================================================================
+    static void setPushNotificationsDelegate (id self, SEL, NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate>* delegate)
+    {
+        object_setInstanceVariable (self, "pushNotificationsDelegate", delegate);
+    }
+
+    static NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate>* getPushNotificationsDelegate (id self)
+    {
+        return getIvar<NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate>*> (self, "pushNotificationsDelegate");
+    }
+
+    static void registeredForRemoteNotifications (id self, SEL, NSApplication* application, NSData* deviceToken)
+    {
+        auto* delegate = getPushNotificationsDelegate (self);
+
+        SEL selector = @selector (application:didRegisterForRemoteNotificationsWithDeviceToken:);
+
+        if (delegate != nil && [delegate respondsToSelector: selector])
+        {
+            NSInvocation* invocation = [NSInvocation invocationWithMethodSignature: [delegate methodSignatureForSelector: selector]];
+            [invocation setSelector: selector];
+            [invocation setTarget: delegate];
+            [invocation setArgument: &application atIndex:2];
+            [invocation setArgument: &deviceToken atIndex:3];
+
+            [invocation invoke];
+        }
+    }
+
+    static void failedToRegisterForRemoteNotifications (id self, SEL, NSApplication* application, NSError* error)
+    {
+        auto* delegate = getPushNotificationsDelegate (self);
+
+        SEL selector =  @selector (application:didFailToRegisterForRemoteNotificationsWithError:);
+
+        if (delegate != nil && [delegate respondsToSelector: selector])
+        {
+            NSInvocation* invocation = [NSInvocation invocationWithMethodSignature: [delegate methodSignatureForSelector: selector]];
+            [invocation setSelector: selector];
+            [invocation setTarget: delegate];
+            [invocation setArgument: &application atIndex:2];
+            [invocation setArgument: &error       atIndex:3];
+
+            [invocation invoke];
+        }
+    }
+
+    static void didReceiveRemoteNotification (id self, SEL, NSApplication* application, NSDictionary* userInfo)
+    {
+        auto* delegate = getPushNotificationsDelegate (self);
+
+        SEL selector =  @selector (application:didReceiveRemoteNotification:);
+
+        if (delegate != nil && [delegate respondsToSelector: selector])
+        {
+            NSInvocation* invocation = [NSInvocation invocationWithMethodSignature: [delegate methodSignatureForSelector: selector]];
+            [invocation setSelector: selector];
+            [invocation setTarget: delegate];
+            [invocation setArgument: &application atIndex:2];
+            [invocation setArgument: &userInfo    atIndex:3];
+
+            [invocation invoke];
+        }
+    }
+   #endif
+};
+
+// This is declared at file scope, so that it's guaranteed to be
+// constructed before and destructed after `appDelegate` (below)
+static AppDelegateClass appDelegateClass;
+
+//==============================================================================
 struct AppDelegate
 {
 public:
     AppDelegate()
     {
-        static AppDelegateClass cls;
-        delegate = [cls.createInstance() init];
+        delegate = [appDelegateClass.createInstance() init];
 
         NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
 
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
         [center addObserver: delegate selector: @selector (mainMenuTrackingBegan:)
                        name: NSMenuDidBeginTrackingNotification object: nil];
         [center addObserver: delegate selector: @selector (mainMenuTrackingEnded:)
                        name: NSMenuDidEndTrackingNotification object: nil];
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
         if (JUCEApplicationBase::isStandaloneApp())
         {
             [NSApp setDelegate: delegate];
 
+            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
             [[NSDistributedNotificationCenter defaultCenter] addObserver: delegate
                                                                 selector: @selector (broadcastMessageCallback:)
                                                                     name: getBroadcastEventName()
                                                                   object: nil
                                                       suspensionBehavior: NSNotificationSuspensionBehaviorDeliverImmediately];
+            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
         }
         else
         {
@@ -95,225 +329,6 @@ public:
 
     MessageQueue messageQueue;
     id delegate;
-
-private:
-    //==============================================================================
-    struct AppDelegateClass   : public ObjCClass<NSObject>
-    {
-        AppDelegateClass()  : ObjCClass<NSObject> ("JUCEAppDelegate_")
-        {
-            addMethod (@selector (applicationWillFinishLaunching:), applicationWillFinishLaunching, "v@:@");
-            addMethod (@selector (getUrl:withReplyEvent:),          getUrl_withReplyEvent,          "v@:@@");
-            addMethod (@selector (applicationShouldTerminate:),     applicationShouldTerminate,     "I@:@");
-            addMethod (@selector (applicationWillTerminate:),       applicationWillTerminate,       "v@:@");
-            addMethod (@selector (application:openFile:),           application_openFile,           "c@:@@");
-            addMethod (@selector (application:openFiles:),          application_openFiles,          "v@:@@");
-            addMethod (@selector (applicationDidBecomeActive:),     applicationDidBecomeActive,     "v@:@");
-            addMethod (@selector (applicationDidResignActive:),     applicationDidResignActive,     "v@:@");
-            addMethod (@selector (applicationWillUnhide:),          applicationWillUnhide,          "v@:@");
-            addMethod (@selector (broadcastMessageCallback:),       broadcastMessageCallback,       "v@:@");
-            addMethod (@selector (mainMenuTrackingBegan:),          mainMenuTrackingBegan,          "v@:@");
-            addMethod (@selector (mainMenuTrackingEnded:),          mainMenuTrackingEnded,          "v@:@");
-            addMethod (@selector (dummyMethod),                     dummyMethod,                    "v@:");
-
-           #if JUCE_PUSH_NOTIFICATIONS
-            //==============================================================================
-            addIvar<NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate>*> ("pushNotificationsDelegate");
-
-            addMethod (@selector (applicationDidFinishLaunching:),                                applicationDidFinishLaunching,          "v@:@");
-            addMethod (@selector (setPushNotificationsDelegate:),                                 setPushNotificationsDelegate,           "v@:@");
-            addMethod (@selector (application:didRegisterForRemoteNotificationsWithDeviceToken:), registeredForRemoteNotifications,       "v@:@@");
-            addMethod (@selector (application:didFailToRegisterForRemoteNotificationsWithError:), failedToRegisterForRemoteNotifications, "v@:@@");
-            addMethod (@selector (application:didReceiveRemoteNotification:),                     didReceiveRemoteNotification,           "v@:@@");
-           #endif
-
-            registerClass();
-        }
-
-    private:
-        static void applicationWillFinishLaunching (id self, SEL, NSNotification*)
-        {
-            [[NSAppleEventManager sharedAppleEventManager] setEventHandler: self
-                                                               andSelector: @selector (getUrl:withReplyEvent:)
-                                                             forEventClass: kInternetEventClass
-                                                                andEventID: kAEGetURL];
-        }
-
-       #if JUCE_PUSH_NOTIFICATIONS
-        static void applicationDidFinishLaunching (id self, SEL, NSNotification* notification)
-        {
-            if (notification.userInfo != nil)
-            {
-                JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
-                // NSUserNotification is deprecated from macOS 11, but there doesn't seem to be a
-                // replacement for NSApplicationLaunchUserNotificationKey returning a non-deprecated type
-                NSUserNotification* userNotification = notification.userInfo[NSApplicationLaunchUserNotificationKey];
-                JUCE_END_IGNORE_WARNINGS_GCC_LIKE
-
-                if (userNotification != nil && userNotification.userInfo != nil)
-                    didReceiveRemoteNotification (self, nil, [NSApplication sharedApplication], userNotification.userInfo);
-            }
-        }
-       #endif
-
-        static NSApplicationTerminateReply applicationShouldTerminate (id /*self*/, SEL, NSApplication*)
-        {
-            if (auto* app = JUCEApplicationBase::getInstance())
-            {
-                app->systemRequestedQuit();
-
-                if (! MessageManager::getInstance()->hasStopMessageBeenSent())
-                    return NSTerminateCancel;
-            }
-
-            return NSTerminateNow;
-        }
-
-        static void applicationWillTerminate (id /*self*/, SEL, NSNotification*)
-        {
-            JUCEApplicationBase::appWillTerminateByForce();
-        }
-
-        static BOOL application_openFile (id /*self*/, SEL, NSApplication*, NSString* filename)
-        {
-            if (auto* app = JUCEApplicationBase::getInstance())
-            {
-                app->anotherInstanceStarted (quotedIfContainsSpaces (filename));
-                return YES;
-            }
-
-            return NO;
-        }
-
-        static void application_openFiles (id /*self*/, SEL, NSApplication*, NSArray* filenames)
-        {
-            if (auto* app = JUCEApplicationBase::getInstance())
-            {
-                StringArray files;
-
-                for (NSString* f in filenames)
-                    files.add (quotedIfContainsSpaces (f));
-
-                if (files.size() > 0)
-                    app->anotherInstanceStarted (files.joinIntoString (" "));
-            }
-        }
-
-        static void applicationDidBecomeActive (id /*self*/, SEL, NSNotification*)  { focusChanged(); }
-        static void applicationDidResignActive (id /*self*/, SEL, NSNotification*)  { focusChanged(); }
-        static void applicationWillUnhide      (id /*self*/, SEL, NSNotification*)  { focusChanged(); }
-
-        static void broadcastMessageCallback (id /*self*/, SEL, NSNotification* n)
-        {
-            NSDictionary* dict = (NSDictionary*) [n userInfo];
-            auto messageString = nsStringToJuce ((NSString*) [dict valueForKey: nsStringLiteral ("message")]);
-            MessageManager::getInstance()->deliverBroadcastMessage (messageString);
-        }
-
-        static void mainMenuTrackingBegan (id /*self*/, SEL, NSNotification*)
-        {
-            if (menuTrackingChangedCallback != nullptr)
-                (*menuTrackingChangedCallback) (true);
-        }
-
-        static void mainMenuTrackingEnded (id /*self*/, SEL, NSNotification*)
-        {
-            if (menuTrackingChangedCallback != nullptr)
-                (*menuTrackingChangedCallback) (false);
-        }
-
-        static void dummyMethod (id /*self*/, SEL) {}   // (used as a way of running a dummy thread)
-
-        static void focusChanged()
-        {
-            if (appFocusChangeCallback != nullptr)
-                (*appFocusChangeCallback)();
-        }
-
-        static void getUrl_withReplyEvent (id /*self*/, SEL, NSAppleEventDescriptor* event, NSAppleEventDescriptor*)
-        {
-            if (auto* app = JUCEApplicationBase::getInstance())
-                app->anotherInstanceStarted (quotedIfContainsSpaces ([[event paramDescriptorForKeyword: keyDirectObject] stringValue]));
-        }
-
-        static String quotedIfContainsSpaces (NSString* file)
-        {
-            String s (nsStringToJuce (file));
-            s = s.unquoted().replace ("\"", "\\\"");
-
-            if (s.containsChar (' '))
-                s = s.quoted();
-
-            return s;
-        }
-
-       #if JUCE_PUSH_NOTIFICATIONS
-        //==============================================================================
-        static void setPushNotificationsDelegate (id self, SEL, NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate>* delegate)
-        {
-            object_setInstanceVariable (self, "pushNotificationsDelegate", delegate);
-        }
-
-        static NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate>* getPushNotificationsDelegate (id self)
-        {
-            return getIvar<NSObject<NSApplicationDelegate, NSUserNotificationCenterDelegate>*> (self, "pushNotificationsDelegate");
-        }
-
-        static void registeredForRemoteNotifications (id self, SEL, NSApplication* application, NSData* deviceToken)
-        {
-            auto* delegate = getPushNotificationsDelegate (self);
-
-            SEL selector = NSSelectorFromString (@"application:didRegisterForRemoteNotificationsWithDeviceToken:");
-
-            if (delegate != nil && [delegate respondsToSelector: selector])
-            {
-                NSInvocation* invocation = [NSInvocation invocationWithMethodSignature: [delegate methodSignatureForSelector: selector]];
-                [invocation setSelector: selector];
-                [invocation setTarget: delegate];
-                [invocation setArgument: &application atIndex:2];
-                [invocation setArgument: &deviceToken atIndex:3];
-
-                [invocation invoke];
-            }
-        }
-
-        static void failedToRegisterForRemoteNotifications (id self, SEL, NSApplication* application, NSError* error)
-        {
-            auto* delegate = getPushNotificationsDelegate (self);
-
-            SEL selector = NSSelectorFromString (@"application:didFailToRegisterForRemoteNotificationsWithError:");
-
-            if (delegate != nil && [delegate respondsToSelector: selector])
-            {
-                NSInvocation* invocation = [NSInvocation invocationWithMethodSignature: [delegate methodSignatureForSelector: selector]];
-                [invocation setSelector: selector];
-                [invocation setTarget: delegate];
-                [invocation setArgument: &application atIndex:2];
-                [invocation setArgument: &error       atIndex:3];
-
-                [invocation invoke];
-            }
-        }
-
-        static void didReceiveRemoteNotification (id self, SEL, NSApplication* application, NSDictionary* userInfo)
-        {
-            auto* delegate = getPushNotificationsDelegate (self);
-
-            SEL selector = NSSelectorFromString (@"application:didReceiveRemoteNotification:");
-
-            if (delegate != nil && [delegate respondsToSelector: selector])
-            {
-                NSInvocation* invocation = [NSInvocation invocationWithMethodSignature: [delegate methodSignatureForSelector: selector]];
-                [invocation setSelector: selector];
-                [invocation setTarget: delegate];
-                [invocation setArgument: &application atIndex:2];
-                [invocation setArgument: &userInfo    atIndex:3];
-
-                [invocation invoke];
-            }
-        }
-       #endif
-    };
 };
 
 //==============================================================================
@@ -326,9 +341,6 @@ void MessageManager::runDispatchLoop()
             // must only be called by the message thread!
             jassert (isThisTheMessageThread());
 
-          #if JUCE_PROJUCER_LIVE_BUILD
-            runDispatchLoopUntil (std::numeric_limits<int>::max());
-          #else
            #if JUCE_CATCH_UNHANDLED_EXCEPTIONS
             @try
             {
@@ -346,7 +358,6 @@ void MessageManager::runDispatchLoop()
            #else
             [NSApp run];
            #endif
-          #endif
         }
     }
 }
@@ -359,10 +370,6 @@ static void shutdownNSApp()
 
 void MessageManager::stopDispatchLoop()
 {
-   #if JUCE_PROJUCER_LIVE_BUILD
-    quitMessagePosted = true;
-   #else
-
     if (isThisTheMessageThread())
     {
         quitMessagePosted = true;
@@ -378,7 +385,6 @@ void MessageManager::stopDispatchLoop()
 
         (new QuitCallback())->post();
     }
-   #endif
 }
 
 #if JUCE_MODAL_LOOPS_PERMITTED
@@ -423,17 +429,16 @@ void initialiseNSApplication()
     }
 }
 
-static AppDelegate* appDelegate = nullptr;
+static std::unique_ptr<AppDelegate> appDelegate;
 
 void MessageManager::doPlatformSpecificInitialisation()
 {
     if (appDelegate == nil)
-        appDelegate = new AppDelegate();
+        appDelegate.reset (new AppDelegate());
 }
 
 void MessageManager::doPlatformSpecificShutdown()
 {
-    delete appDelegate;
     appDelegate = nullptr;
 }
 
@@ -455,8 +460,8 @@ void MessageManager::broadcastMessage (const String& message)
 }
 
 // Special function used by some plugin classes to re-post carbon events
-void __attribute__ ((visibility("default"))) repostCurrentNSEvent();
-void __attribute__ ((visibility("default"))) repostCurrentNSEvent()
+void repostCurrentNSEvent();
+void repostCurrentNSEvent()
 {
     struct EventReposter  : public CallbackMessage
     {
@@ -487,8 +492,10 @@ struct MountedVolumeListChangeDetector::Pimpl
 
         NSNotificationCenter* nc = [[NSWorkspace sharedWorkspace] notificationCenter];
 
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
         [nc addObserver: delegate selector: @selector (changed:) name: NSWorkspaceDidMountNotification   object: nil];
         [nc addObserver: delegate selector: @selector (changed:) name: NSWorkspaceDidUnmountNotification object: nil];
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
     }
 
     ~Pimpl()
@@ -506,7 +513,11 @@ private:
         ObserverClass()  : ObjCClass<NSObject> ("JUCEDriveObserver_")
         {
             addIvar<Pimpl*> ("owner");
-            addMethod (@selector (changed:), changed, "v@:@");
+
+            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
+            addMethod (@selector (changed:), changed);
+            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
             addProtocol (@protocol (NSTextInput));
             registerClass();
         }

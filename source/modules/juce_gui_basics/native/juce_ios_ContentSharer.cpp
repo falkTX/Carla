@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -25,6 +18,10 @@
 
 namespace juce
 {
+
+#if ! defined (__IPHONE_10_0) || __IPHONE_OS_VERSION_MAX_ALLOWED < __IPHONE_10_0
+ using UIActivityType = NSString*;
+#endif
 
 class ContentSharer::ContentSharerNativeImpl    : public ContentSharer::Pimpl,
                                                   private Component
@@ -120,7 +117,7 @@ private:
 
         controller.get().modalTransitionStyle = UIModalTransitionStyleCoverVertical;
 
-        auto bounds = Desktop::getInstance().getDisplays().getMainDisplay().userArea;
+        auto bounds = Desktop::getInstance().getDisplays().getPrimaryDisplay()->userArea;
         setBounds (bounds);
 
         setAlwaysOnTop (true);
@@ -172,7 +169,7 @@ private:
     {
         PopoverDelegateClass()  : ObjCClass<NSObject<UIPopoverPresentationControllerDelegate>> ("PopoverDelegateClass_")
         {
-            addMethod (@selector (popoverPresentationController:willRepositionPopoverToRect:inView:), willRepositionPopover, "v@:@@@");
+            addMethod (@selector (popoverPresentationController:willRepositionPopoverToRect:inView:), willRepositionPopover);
 
             registerClass();
         }
@@ -191,8 +188,8 @@ private:
 
     ContentSharer& owner;
     UIViewComponentPeer* peer = nullptr;
-    std::unique_ptr<UIActivityViewController, NSObjectDeleter> controller;
-    std::unique_ptr<NSObject<UIPopoverPresentationControllerDelegate>, NSObjectDeleter> popoverDelegate;
+    NSUniquePtr<UIActivityViewController> controller;
+    NSUniquePtr<NSObject<UIPopoverPresentationControllerDelegate>> popoverDelegate;
 
     bool succeeded = false;
     String errorDescription;

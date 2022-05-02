@@ -78,6 +78,12 @@ LIBS_win64   += $(MODULEDIR)/water.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 
 ifeq ($(USING_JUCE),true)
+LIBS_native  += $(MODULEDIR)/carla_juce.a
+LIBS_posix32 += $(MODULEDIR)/carla_juce.posix32.a
+LIBS_posix64 += $(MODULEDIR)/carla_juce.posix64.a
+LIBS_win32   += $(MODULEDIR)/carla_juce.win32.a
+LIBS_win64   += $(MODULEDIR)/carla_juce.win64.a
+
 LIBS_native  += $(MODULEDIR)/juce_audio_basics.a
 LIBS_posix32 += $(MODULEDIR)/juce_audio_basics.posix32.a
 LIBS_posix64 += $(MODULEDIR)/juce_audio_basics.posix64.a
@@ -303,7 +309,7 @@ $(OBJDIR)/CarlaPluginVST2.cpp.o: $(CWD)/backend/plugin/CarlaPluginVST2.cpp
 $(OBJDIR)/CarlaPluginJuce.cpp.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginJuce.cpp (bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
@@ -315,6 +321,11 @@ $(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
 else
+$(OBJDIR)/CarlaPluginJuce.cpp.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -std=gnu++14 -c -o $@
+
 $(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (bridge)"

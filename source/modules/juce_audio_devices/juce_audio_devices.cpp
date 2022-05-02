@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -45,9 +45,15 @@
 
 #include "juce_audio_devices.h"
 
-#include "native/juce_MidiDataConcatenator.h"
+#include "audio_io/juce_SampleRateHelpers.cpp"
 
 //==============================================================================
+#if JUCE_MAC || JUCE_IOS
+ #include <juce_audio_basics/midi/ump/juce_UMP.h>
+ #include "midi_io/ump/juce_UMPBytestreamInputHandler.h"
+ #include "midi_io/ump/juce_UMPU32InputHandler.h"
+#endif
+
 #if JUCE_MAC
  #define Point CarbonDummyPointName
  #define Component CarbonDummyCompName
@@ -58,7 +64,7 @@
  #undef Component
 
  #include "native/juce_mac_CoreAudio.cpp"
- #include "native/juce_mac_CoreMidi.cpp"
+ #include "native/juce_mac_CoreMidi.mm"
 
 #elif JUCE_IOS
  #import <AudioToolbox/AudioToolbox.h>
@@ -70,7 +76,7 @@
  #endif
 
  #include "native/juce_ios_Audio.cpp"
- #include "native/juce_mac_CoreMidi.cpp"
+ #include "native/juce_mac_CoreMidi.mm"
 
 //==============================================================================
 #elif JUCE_WINDOWS
@@ -106,6 +112,7 @@
   JUCE_END_IGNORE_WARNINGS_MSVC
  #endif
 
+ #include <juce_audio_basics/midi/juce_MidiDataConcatenator.h>
  #include "native/juce_win32_Midi.cpp"
 
  #if JUCE_ASIO
@@ -133,7 +140,7 @@
  #endif
 
 //==============================================================================
-#elif JUCE_LINUX
+#elif JUCE_LINUX || JUCE_BSD
  #if JUCE_ALSA
   /* Got an include error here? If so, you've either not got ALSA installed, or you've
      not got your paths set up correctly to find its header files.
@@ -160,19 +167,21 @@
   #include "native/juce_linux_JackAudio.cpp"
  #endif
 
- #if JUCE_BELA
+ #if (JUCE_LINUX && JUCE_BELA)
   /* Got an include error here? If so, you've either not got the bela headers
      installed, or you've not got your paths set up correctly to find its header
      files.
   */
   #include <Bela.h>
   #include <Midi.h>
+  #include <juce_audio_basics/midi/juce_MidiDataConcatenator.h>
   #include "native/juce_linux_Bela.cpp"
  #endif
 
  #undef SIZEOF
 
  #if ! JUCE_BELA
+  #include <juce_audio_basics/midi/juce_MidiDataConcatenator.h>
   #include "native/juce_linux_Midi.cpp"
  #endif
 
@@ -180,6 +189,8 @@
 #elif JUCE_ANDROID
 
  #include "native/juce_android_Audio.cpp"
+
+ #include <juce_audio_basics/midi/juce_MidiDataConcatenator.h>
  #include "native/juce_android_Midi.cpp"
 
  #if JUCE_USE_ANDROID_OPENSLES || JUCE_USE_ANDROID_OBOE

@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -127,14 +120,14 @@ private:
         clearSingletonInstance();
     }
 
-    template<typename FuncPtr>
+    template <typename FuncPtr>
     struct SymbolBinding
     {
         FuncPtr& func;
         const char* name;
     };
 
-    template<typename FuncPtr>
+    template <typename FuncPtr>
     SymbolBinding<FuncPtr> makeSymbolBinding (FuncPtr& func, const char* name)
     {
         return { func, name };
@@ -152,7 +145,7 @@ private:
         return false;
     }
 
-    template<typename FuncPtr, typename... Args>
+    template <typename FuncPtr, typename... Args>
     bool loadSymbols (DynamicLibrary& lib, SymbolBinding<FuncPtr> binding, Args... args)
     {
         return loadSymbols (lib, binding) && loadSymbols (lib, args...);
@@ -907,21 +900,14 @@ private:
 //==============================================================================
 WebBrowserComponent::WebBrowserComponent (const bool unloadWhenHidden)
     : browser (new Pimpl (*this)),
-      unloadPageWhenBrowserIsHidden (unloadWhenHidden)
+      unloadPageWhenHidden (unloadWhenHidden)
 {
     ignoreUnused (blankPageShown);
-    ignoreUnused (unloadPageWhenBrowserIsHidden);
+    ignoreUnused (unloadPageWhenHidden);
 
     setOpaque (true);
 
     browser->init();
-}
-
-WebBrowserComponent::WebBrowserComponent (bool unloadWhenHidden,
-                                          const File&,
-                                          const File&)
-    : WebBrowserComponent (unloadWhenHidden)
-{
 }
 
 WebBrowserComponent::~WebBrowserComponent()

@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -29,6 +22,8 @@ namespace juce
 #if (JUCE_MAC || JUCE_IOS) && USE_COREGRAPHICS_RENDERING && JUCE_USE_COREIMAGE_LOADER
  Image juce_loadWithCoreImage (InputStream& input);
 #else
+
+JUCE_BEGIN_IGNORE_WARNINGS_MSVC (6385)
 
 //==============================================================================
 class GIFLoader
@@ -113,7 +108,8 @@ private:
 
     bool getSizeFromHeader (int& w, int& h)
     {
-        char b[6];
+        // Add an extra byte for the zero terminator
+        char b[7]{};
 
         if (input.read (b, 6) == 6
              && (strncmp ("GIF87a", b, 6) == 0
@@ -411,6 +407,8 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE (GIFLoader)
 };
+
+JUCE_END_IGNORE_WARNINGS_MSVC
 
 #endif
 

@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -27,7 +20,8 @@ namespace juce
 {
 
 //==============================================================================
-class FileChooser::NonNative    : public FileChooser::Pimpl
+class FileChooser::NonNative    : public std::enable_shared_from_this<NonNative>,
+                                  public FileChooser::Pimpl
 {
 public:
     NonNative (FileChooser& fileChooser, int flags, FilePreviewComponent* preview)
@@ -50,7 +44,15 @@ public:
     void launch() override
     {
         dialogBox.centreWithDefaultSize (nullptr);
-        dialogBox.enterModalState (true, ModalCallbackFunction::create ([this] (int r) { modalStateFinished (r); }), true);
+
+        const std::weak_ptr<NonNative> ref (shared_from_this());
+        auto* callback = ModalCallbackFunction::create ([ref] (int r)
+        {
+            if (auto locked = ref.lock())
+                locked->modalStateFinished (r);
+        });
+
+        dialogBox.enterModalState (true, callback, true);
     }
 
     void runModally() override
@@ -158,7 +160,7 @@ bool FileChooser::showDialog (const int flags, FilePreviewComponent* const previ
 {
     FocusRestorer focusRestorer;
 
-    pimpl.reset (createPimpl (flags, previewComp));
+    pimpl = createPimpl (flags, previewComp);
     pimpl->runModally();
 
     // ensure that the finished function was invoked
@@ -179,12 +181,11 @@ void FileChooser::launchAsync (int flags, std::function<void (const FileChooser&
 
     asyncCallback = std::move (callback);
 
-    pimpl.reset (createPimpl (flags, previewComp));
+    pimpl = createPimpl (flags, previewComp);
     pimpl->launch();
 }
 
-
-FileChooser::Pimpl* FileChooser::createPimpl (int flags, FilePreviewComponent* previewComp)
+std::shared_ptr<FileChooser::Pimpl> FileChooser::createPimpl (int flags, FilePreviewComponent* previewComp)
 {
     results.clear();
 
@@ -214,10 +215,8 @@ FileChooser::Pimpl* FileChooser::createPimpl (int flags, FilePreviewComponent* p
     {
         return showPlatformDialog (*this, flags, previewComp);
     }
-    else
-    {
-        return new NonNative (*this, flags, previewComp);
-    }
+
+    return std::make_unique<NonNative> (*this, flags, previewComp);
 }
 
 Array<File> FileChooser::getResults() const noexcept

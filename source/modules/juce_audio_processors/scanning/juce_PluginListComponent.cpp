@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -262,7 +255,7 @@ static bool canShowFolderForPlugin (KnownPluginList& list, int index)
 static void showFolderForPlugin (KnownPluginList& list, int index)
 {
     if (canShowFolderForPlugin (list, index))
-        File (list.getTypes()[index].fileOrIdentifier).getParentDirectory().startAsProcess();
+        File (list.getTypes()[index].fileOrIdentifier).revealToUser();
 }
 
 void PluginListComponent::removeMissingPlugins()
@@ -387,11 +380,18 @@ public:
     Scanner (PluginListComponent& plc, AudioPluginFormat& format, const StringArray& filesOrIdentifiers,
              PropertiesFile* properties, bool allowPluginsWhichRequireAsynchronousInstantiation, int threads,
              const String& title, const String& text)
-        : owner (plc), formatToScan (format), filesOrIdentifiersToScan (filesOrIdentifiers), propertiesToUse (properties),
-          pathChooserWindow (TRANS("Select folders to scan..."), String(), AlertWindow::NoIcon),
-          progressWindow (title, text, AlertWindow::NoIcon),
-          numThreads (threads), allowAsync (allowPluginsWhichRequireAsynchronousInstantiation)
+        : owner (plc),
+          formatToScan (format),
+          filesOrIdentifiersToScan (filesOrIdentifiers),
+          propertiesToUse (properties),
+          pathChooserWindow (TRANS("Select folders to scan..."), String(), MessageBoxIconType::NoIcon),
+          progressWindow (title, text, MessageBoxIconType::NoIcon),
+          numThreads (threads),
+          allowAsync (allowPluginsWhichRequireAsynchronousInstantiation)
     {
+        const auto blacklisted = owner.list.getBlacklistedFiles();
+        initiallyBlacklistedFiles = std::set<String> (blacklisted.begin(), blacklisted.end());
+
         FileSearchPath path (formatToScan.getDefaultLocationsToSearch());
 
         // You need to use at least one thread when scanning plug-ins asynchronously
@@ -443,9 +443,11 @@ private:
     FileSearchPathListComponent pathList;
     String pluginBeingScanned;
     double progress = 0;
-    int numThreads;
-    bool allowAsync, finished = false, timerReentrancyCheck = false;
+    const int numThreads;
+    bool allowAsync, timerReentrancyCheck = false;
+    std::atomic<bool> finished { false };
     std::unique_ptr<ThreadPool> pool;
+    std::set<String> initiallyBlacklistedFiles;
 
     static void startScanCallback (int result, AlertWindow* alert, Scanner* scanner)
     {
@@ -467,7 +469,7 @@ private:
 
             if (isStupidPath (f))
             {
-                AlertWindow::showOkCancelBox (AlertWindow::WarningIcon,
+                AlertWindow::showOkCancelBox (MessageBoxIconType::WarningIcon,
                                               TRANS("Plugin Scanning"),
                                               TRANS("If you choose to scan folders that contain non-plugin files, "
                                                     "then scanning may take a long time, and can cause crashes when "
@@ -557,14 +559,24 @@ private:
 
     void finishedScan()
     {
-        owner.scanFinished (scanner != nullptr ? scanner->getFailedFiles()
-                                               : StringArray());
+        const auto blacklisted = owner.list.getBlacklistedFiles();
+        std::set<String> allBlacklistedFiles (blacklisted.begin(), blacklisted.end());
+
+        std::vector<String> newBlacklistedFiles;
+        std::set_difference (allBlacklistedFiles.begin(), allBlacklistedFiles.end(),
+                             initiallyBlacklistedFiles.begin(), initiallyBlacklistedFiles.end(),
+                             std::back_inserter (newBlacklistedFiles));
+
+        owner.scanFinished (scanner != nullptr ? scanner->getFailedFiles() : StringArray(),
+                            newBlacklistedFiles);
     }
 
     void timerCallback() override
     {
         if (timerReentrancyCheck)
             return;
+
+        progress = scanner->getProgress();
 
         if (pool == nullptr)
         {
@@ -586,10 +598,7 @@ private:
     bool doNextScan()
     {
         if (scanner->scanNextFile (true, pluginBeingScanned))
-        {
-            progress = scanner->getProgress();
             return true;
-        }
 
         finished = true;
         return false;
@@ -632,21 +641,33 @@ bool PluginListComponent::isScanning() const noexcept
     return currentScanner != nullptr;
 }
 
-void PluginListComponent::scanFinished (const StringArray& failedFiles)
+void PluginListComponent::scanFinished (const StringArray& failedFiles,
+                                        const std::vector<String>& newBlacklistedFiles)
 {
-    StringArray shortNames;
+    StringArray warnings;
 
-    for (auto& f : failedFiles)
-        shortNames.add (File::createFileWithoutCheckingPath (f).getFileName());
+    const auto addWarningText = [&warnings] (const auto& range, const auto& prefix)
+    {
+        if (range.size() == 0)
+            return;
+
+        StringArray names;
+
+        for (auto& f : range)
+            names.add (File::createFileWithoutCheckingPath (f).getFileName());
+
+        warnings.add (prefix + ":\n\n" + names.joinIntoString (", "));
+    };
+
+    addWarningText (newBlacklistedFiles,  TRANS ("The following files encountered fatal errors during validation"));
+    addWarningText (failedFiles,          TRANS ("The following files appeared to be plugin files, but failed to load correctly"));
 
     currentScanner.reset(); // mustn't delete this before using the failed files array
 
-    if (shortNames.size() > 0)
-        AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon,
+    if (! warnings.isEmpty())
+        AlertWindow::showMessageBoxAsync (MessageBoxIconType::InfoIcon,
                                           TRANS("Scan complete"),
-                                          TRANS("Note that the following files appeared to be plugin files, but failed to load correctly")
-                                            + ":\n\n"
-                                            + shortNames.joinIntoString (", "));
+                                          warnings.joinIntoString ("\n\n"));
 }
 
 } // namespace juce

@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -40,16 +33,23 @@ static bool exeIsAvailable (String executable)
     return false;
 }
 
+static bool isSet (int flags, int toCheck)
+{
+    return (flags & toCheck) != 0;
+}
+
 class FileChooser::Native    : public FileChooser::Pimpl,
                                private Timer
 {
 public:
     Native (FileChooser& fileChooser, int flags)
         : owner (fileChooser),
-          isDirectory         ((flags & FileBrowserComponent::canSelectDirectories)   != 0),
-          isSave              ((flags & FileBrowserComponent::saveMode)               != 0),
-          selectMultipleFiles ((flags & FileBrowserComponent::canSelectMultipleItems) != 0),
-          warnAboutOverwrite  ((flags & FileBrowserComponent::warnAboutOverwriting)   != 0)
+          // kdialog/zenity only support opening either files or directories.
+          // Files should take precedence, if requested.
+          isDirectory         (isSet (flags, FileBrowserComponent::canSelectDirectories) && ! isSet (flags, FileBrowserComponent::canSelectFiles)),
+          isSave              (isSet (flags, FileBrowserComponent::saveMode)),
+          selectMultipleFiles (isSet (flags, FileBrowserComponent::canSelectMultipleItems)),
+          warnAboutOverwrite  (isSet (flags, FileBrowserComponent::warnAboutOverwriting))
     {
         const File previousWorkingDirectory (File::getCurrentWorkingDirectory());
 
@@ -67,6 +67,7 @@ public:
 
     void runModally() override
     {
+       #if JUCE_MODAL_LOOPS_PERMITTED
         child.start (args, ChildProcess::wantStdOut);
 
         while (child.isRunning())
@@ -74,6 +75,9 @@ public:
                 break;
 
         finish (false);
+       #else
+        jassertfalse;
+       #endif
     }
 
     void launch() override
@@ -211,9 +215,12 @@ private:
         }
         else
         {
-            if (isDirectory)  args.add ("--directory");
-            if (isSave)       args.add ("--save");
+            if (isSave)
+                args.add ("--save");
         }
+
+        if (isDirectory)
+            args.add ("--directory");
 
         if (owner.filters.isNotEmpty() && owner.filters != "*" && owner.filters != "*.*")
         {
@@ -254,10 +261,10 @@ bool FileChooser::isPlatformDialogAvailable()
    #endif
 }
 
-FileChooser::Pimpl* FileChooser::showPlatformDialog (FileChooser& owner, int flags, FilePreviewComponent*)
+std::shared_ptr<FileChooser::Pimpl> FileChooser::showPlatformDialog (FileChooser& owner, int flags, FilePreviewComponent*)
 {
 #if JUCE_MODAL_LOOPS_PERMITTED
-    return new Native (owner, flags);
+    return std::make_shared<Native> (owner, flags);
 #else
     return nullptr;
 #endif

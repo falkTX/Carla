@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -151,10 +144,8 @@ public:
 
         if (currentFileChooser != nullptr)
         {
-            WeakReference<Native> myself (this);
-
             startAndroidActivityForResult (LocalRef<jobject> (env->NewLocalRef (intent.get())), /*READ_REQUEST_CODE*/ 42,
-                                           [myself] (int requestCode, int resultCode, LocalRef<jobject> intentData) mutable
+                                           [myself = WeakReference<Native> { this }] (int requestCode, int resultCode, LocalRef<jobject> intentData) mutable
                                            {
                                                if (myself != nullptr)
                                                    myself->onActivityResult (requestCode, resultCode, intentData);
@@ -219,11 +210,11 @@ private:
 
 FileChooser::Native* FileChooser::Native::currentFileChooser = nullptr;
 
-FileChooser::Pimpl* FileChooser::showPlatformDialog (FileChooser& owner, int flags,
-                                                     FilePreviewComponent*)
+std::shared_ptr<FileChooser::Pimpl> FileChooser::showPlatformDialog (FileChooser& owner, int flags,
+                                                                     FilePreviewComponent*)
 {
     if (FileChooser::Native::currentFileChooser == nullptr)
-        return new FileChooser::Native (owner, flags);
+        return std::make_shared<FileChooser::Native> (owner, flags);
 
     // there can only be one file chooser on Android at a once
     jassertfalse;

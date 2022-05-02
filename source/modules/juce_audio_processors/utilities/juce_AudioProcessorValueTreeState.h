@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -25,6 +18,60 @@
 
 namespace juce
 {
+
+/** Advanced properties of an AudioProcessorValueTreeState::Parameter.
+
+    The members here have the same meaning as the similarly-named member functions of
+    AudioParameterFloatAttributes.
+
+    @see AudioParameterFloatAttributes, RangedAudioParameterAttributes
+*/
+class AudioProcessorValueTreeStateParameterAttributes
+{
+    using This            = AudioProcessorValueTreeStateParameterAttributes;
+    using StringFromValue = AudioParameterFloatAttributes::StringFromValue;
+    using ValueFromString = AudioParameterFloatAttributes::ValueFromString;
+    using Category        = AudioParameterFloatAttributes::Category;
+
+public:
+    /** @see RangedAudioParameterAttributes::withStringFromValueFunction() */
+    JUCE_NODISCARD auto withStringFromValueFunction (StringFromValue x) const { return withMember (*this, &This::attributes, attributes.withStringFromValueFunction (std::move (x))); }
+    /** @see RangedAudioParameterAttributes::withValueFromStringFunction() */
+    JUCE_NODISCARD auto withValueFromStringFunction (ValueFromString x) const { return withMember (*this, &This::attributes, attributes.withValueFromStringFunction (std::move (x))); }
+    /** @see RangedAudioParameterAttributes::withLabel() */
+    JUCE_NODISCARD auto withLabel (String x)                            const { return withMember (*this, &This::attributes, attributes.withLabel                   (std::move (x))); }
+    /** @see RangedAudioParameterAttributes::withCategory() */
+    JUCE_NODISCARD auto withCategory (Category x)                       const { return withMember (*this, &This::attributes, attributes.withCategory                (std::move (x))); }
+    /** @see RangedAudioParameterAttributes::withMeta() */
+    JUCE_NODISCARD auto withMeta (bool x)                               const { return withMember (*this, &This::attributes, attributes.withMeta                    (std::move (x))); }
+    /** @see RangedAudioParameterAttributes::withAutomatable() */
+    JUCE_NODISCARD auto withAutomatable (bool x)                        const { return withMember (*this, &This::attributes, attributes.withAutomatable             (std::move (x))); }
+    /** @see RangedAudioParameterAttributes::withInverted() */
+    JUCE_NODISCARD auto withInverted (bool x)                           const { return withMember (*this, &This::attributes, attributes.withInverted                (std::move (x))); }
+
+    /** Pass 'true' if this parameter has discrete steps, or 'false' if the parameter is continuous.
+
+        Using an AudioParameterChoice or AudioParameterInt might be a better choice than setting this flag.
+    */
+    JUCE_NODISCARD auto withDiscrete (bool x)                           const { return withMember (*this, &This::discrete,   std::move (x)); }
+
+    /** Pass 'true' if this parameter only has two valid states.
+
+        Using an AudioParameterBool might be a better choice than setting this flag.
+    */
+    JUCE_NODISCARD auto withBoolean (bool x)                            const { return withMember (*this, &This::boolean,    std::move (x)); }
+
+    /** @returns all attributes that might also apply to an AudioParameterFloat */
+    JUCE_NODISCARD const auto& getAudioParameterFloatAttributes()       const { return attributes; }
+    /** @returns 'true' if this parameter has discrete steps, or 'false' if the parameter is continuous. */
+    JUCE_NODISCARD const auto& getDiscrete()                            const { return discrete; }
+    /** @returns 'true' if this parameter only has two valid states. */
+    JUCE_NODISCARD const auto& getBoolean()                             const { return boolean; }
+
+private:
+    AudioParameterFloatAttributes attributes;
+    bool discrete = false, boolean = false;
+};
 
 /**
     This class contains a ValueTree that is used to manage an AudioProcessor's entire state.
@@ -175,7 +222,7 @@ public:
                        std::make_unique<AudioParameterInt> ("b", "Parameter B", 0, 5, 2) })
         @endcode
 
-        To add parameters programatically you can call `add` repeatedly on a
+        To add parameters programmatically you can call `add` repeatedly on a
         ParameterLayout instance:
 
         @code
@@ -222,9 +269,8 @@ public:
     ~AudioProcessorValueTreeState() override;
 
     //==============================================================================
-    /** This function is deprecated and will be removed in a future version of JUCE!
-
-        Previous calls to
+   #ifndef DOXYGEN
+    /** Previous calls to
 
         @code
         createAndAddParameter (paramID1, paramName1, ...);
@@ -256,18 +302,21 @@ public:
         Calling this will create and add a special type of AudioProcessorParameter to the
         AudioProcessor to which this state is attached.
     */
-    JUCE_DEPRECATED (RangedAudioParameter* createAndAddParameter (const String& parameterID,
-                                                                  const String& parameterName,
-                                                                  const String& labelText,
-                                                                  NormalisableRange<float> valueRange,
-                                                                  float defaultValue,
-                                                                  std::function<String (float)> valueToTextFunction,
-                                                                  std::function<float (const String&)> textToValueFunction,
-                                                                  bool isMetaParameter = false,
-                                                                  bool isAutomatableParameter = true,
-                                                                  bool isDiscrete = false,
-                                                                  AudioProcessorParameter::Category parameterCategory = AudioProcessorParameter::genericParameter,
-                                                                  bool isBoolean = false));
+    [[deprecated ("This function is deprecated and will be removed in a future version of JUCE! "
+                 "See the method docs for a code example of the replacement methods.")]]
+    RangedAudioParameter* createAndAddParameter (const String& parameterID,
+                                                 const String& parameterName,
+                                                 const String& labelText,
+                                                 NormalisableRange<float> valueRange,
+                                                 float defaultValue,
+                                                 std::function<String (float)> valueToTextFunction,
+                                                 std::function<float (const String&)> textToValueFunction,
+                                                 bool isMetaParameter = false,
+                                                 bool isAutomatableParameter = true,
+                                                 bool isDiscrete = false,
+                                                 AudioProcessorParameter::Category parameterCategory = AudioProcessorParameter::genericParameter,
+                                                 bool isBoolean = false);
+   #endif
 
     /** This function adds a parameter to the attached AudioProcessor and that parameter will
         be managed by this AudioProcessorValueTreeState object.
@@ -396,24 +445,65 @@ public:
     class Parameter final  : public AudioParameterFloat
     {
     public:
-        Parameter (const String& parameterID,
+        /** Constructs a parameter instance.
+
+            Example usage:
+            @code
+            using Parameter = AudioProcessorValueTreeState::Parameter;
+            using Attributes = AudioProcessorValueTreeStateParameterAttributes;
+
+            auto parameter = std::make_unique<Parameter> (ParameterID { "uniqueID", 1 },
+                                                          "Name",
+                                                          NormalisableRange<float> { 0.0f, 100.0f },
+                                                          50.0f,
+                                                          Attributes().withStringFromValueFunction (myStringFromValueFunction)
+                                                                      .withValueFromStringFunction (myValueFromStringFunction)
+                                                                      .withLabel ("%"));
+            @endcode
+
+            @param parameterID      The globally-unique identifier of this parameter
+            @param parameterName    The user-facing name of this parameter
+            @param valueRange       The valid range of values for this parameter
+            @param defaultValue     The initial parameter value
+            @param attributes       Further advanced settings to customise the behaviour of this parameter
+        */
+        Parameter (const ParameterID& parameterID,
+                   const String& parameterName,
+                   NormalisableRange<float> valueRange,
+                   float defaultValue,
+                   const AudioProcessorValueTreeStateParameterAttributes& attributes = {});
+
+        [[deprecated ("Prefer the signature taking an Attributes argument")]]
+        Parameter (const ParameterID& parameterID,
                    const String& parameterName,
                    const String& labelText,
                    NormalisableRange<float> valueRange,
-                   float defaultValue,
+                   float defaultParameterValue,
                    std::function<String (float)> valueToTextFunction,
                    std::function<float (const String&)> textToValueFunction,
                    bool isMetaParameter = false,
                    bool isAutomatableParameter = true,
                    bool isDiscrete = false,
                    AudioProcessorParameter::Category parameterCategory = AudioProcessorParameter::genericParameter,
-                   bool isBoolean = false);
+                   bool isBoolean = false)
+            : Parameter (parameterID,
+                         parameterName,
+                         valueRange,
+                         defaultParameterValue,
+                         AudioProcessorValueTreeStateParameterAttributes().withLabel (labelText)
+                                                                          .withStringFromValueFunction ([valueToTextFunction] (float v, int) { return valueToTextFunction (v); })
+                                                                          .withValueFromStringFunction (std::move (textToValueFunction))
+                                                                          .withMeta (isMetaParameter)
+                                                                          .withAutomatable (isAutomatableParameter)
+                                                                          .withDiscrete (isDiscrete)
+                                                                          .withCategory (parameterCategory)
+                                                                          .withBoolean (isBoolean))
+        {
+        }
 
         float getDefaultValue() const override;
         int getNumSteps() const override;
 
-        bool isMetaParameter() const override;
-        bool isAutomatable() const override;
         bool isDiscrete() const override;
         bool isBoolean() const override;
 
@@ -423,7 +513,7 @@ public:
         std::function<void()> onValueChanged;
 
         const float unsnappedDefault;
-        const bool metaParameter, automatable, discrete, boolean;
+        const bool discrete, boolean;
         std::atomic<float> lastValue { -1.0f };
 
         friend class AudioProcessorValueTreeState::ParameterAdapter;
@@ -499,18 +589,18 @@ public:
 
 private:
     //==============================================================================
-    /** This method was introduced to allow you to use AudioProcessorValueTreeState parameters in
-        an AudioProcessorParameterGroup, but there is now a much nicer way to achieve this.
+    /** Code that looks like this:
 
-        Code that looks like this
         @code
         auto paramA = apvts.createParameter ("a", "Parameter A", {}, { -100, 100 }, ...);
         auto paramB = apvts.createParameter ("b", "Parameter B", {}, { 0, 5 }, ...);
         addParameterGroup (std::make_unique<AudioProcessorParameterGroup> ("g1", "Group 1", " | ", std::move (paramA), std::move (paramB)));
         apvts.state = ValueTree (Identifier ("PARAMETERS"));
         @endcode
+
         can instead create the APVTS like this, avoiding the two-step initialization process and leveraging one of JUCE's
-        pre-built parameter types (or your own custom type derived from RangedAudioParameter)
+        pre-built parameter types (or your own custom type derived from RangedAudioParameter):
+
         @code
         using Parameter = AudioProcessorValueTreeState::Parameter;
         YourAudioProcessor()
@@ -520,9 +610,12 @@ private:
                            std::make_unique<Parameter> ("b", "Parameter B", "", NormalisableRange<float> (0, 5), ...)) })
         @endcode
     */
-    JUCE_DEPRECATED (std::unique_ptr<RangedAudioParameter> createParameter (const String&, const String&, const String&, NormalisableRange<float>,
-                                                                            float, std::function<String (float)>, std::function<float (const String&)>,
-                                                                            bool, bool, bool, AudioProcessorParameter::Category, bool));
+    [[deprecated ("This method was introduced to allow you to use AudioProcessorValueTreeState parameters in "
+                 "an AudioProcessorParameterGroup, but there is now a much nicer way to achieve this. See the "
+                 "method docs for a code example.")]]
+    std::unique_ptr<RangedAudioParameter> createParameter (const String&, const String&, const String&, NormalisableRange<float>,
+                                                           float, std::function<String (float)>, std::function<float (const String&)>,
+                                                           bool, bool, bool, AudioProcessorParameter::Category, bool);
 
     //==============================================================================
    #if JUCE_UNIT_TESTS

@@ -73,6 +73,7 @@ LIBS += $(MODULEDIR)/hylia.a
 endif
 
 ifeq ($(USING_JUCE),true)
+LIBS += $(MODULEDIR)/carla_juce.a
 LIBS += $(MODULEDIR)/juce_audio_basics.a
 LIBS += $(MODULEDIR)/juce_audio_processors.a
 LIBS += $(MODULEDIR)/juce_core.a

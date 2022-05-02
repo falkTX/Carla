@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -35,11 +28,12 @@
 
   ID:                 juce_data_structures
   vendor:             juce
-  version:            6.0.4
+  version:            6.1.6
   name:               JUCE data model helper classes
   description:        Classes for undo/redo management, and smart data structures.
   website:            http://www.juce.com/juce
   license:            GPL/Commercial
+  minimumCppStandard: 14
 
   dependencies:       juce_events
 
@@ -60,6 +54,6 @@
 #include "values/juce_ValueTree.h"
 #include "values/juce_ValueTreeSynchroniser.h"
 #include "values/juce_CachedValue.h"
-#include "values/juce_ValueWithDefault.h"
+#include "values/juce_ValueTreePropertyWithDefault.h"
 #include "app_properties/juce_PropertiesFile.h"
 #include "app_properties/juce_ApplicationProperties.h"

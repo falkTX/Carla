@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -422,10 +415,10 @@ struct PushNotificationsDelegate
 
         id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
 
-        SEL selector = NSSelectorFromString (@"setPushNotificationsDelegateToUse:");
-
-        if ([appDelegate respondsToSelector: selector])
-            [appDelegate performSelector: selector withObject: delegate.get()];
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
+        if ([appDelegate respondsToSelector: @selector (setPushNotificationsDelegateToUse:)])
+            [appDelegate performSelector: @selector (setPushNotificationsDelegateToUse:) withObject: delegate.get()];
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
     }
 
     virtual ~PushNotificationsDelegate() {}
@@ -467,9 +460,9 @@ struct PushNotificationsDelegate
 
 protected:
    #if defined (__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-    std::unique_ptr<NSObject<UIApplicationDelegate, UNUserNotificationCenterDelegate>, NSObjectDeleter> delegate;
+    NSUniquePtr<NSObject<UIApplicationDelegate, UNUserNotificationCenterDelegate>> delegate;
    #else
-    std::unique_ptr<NSObject<UIApplicationDelegate>, NSObjectDeleter> delegate;
+    NSUniquePtr<NSObject<UIApplicationDelegate>> delegate;
    #endif
 
 private:
@@ -486,19 +479,19 @@ private:
         {
             addIvar<PushNotificationsDelegate*> ("self");
 
-            addMethod (@selector (application:didRegisterUserNotificationSettings:),                                                 didRegisterUserNotificationSettings,                            "v@:@@");
-            addMethod (@selector (application:didRegisterForRemoteNotificationsWithDeviceToken:),                                    registeredForRemoteNotifications,                               "v@:@@");
-            addMethod (@selector (application:didFailToRegisterForRemoteNotificationsWithError:),                                    failedToRegisterForRemoteNotifications,                         "v@:@@");
-            addMethod (@selector (application:didReceiveRemoteNotification:),                                                        didReceiveRemoteNotification,                                   "v@:@@");
-            addMethod (@selector (application:didReceiveRemoteNotification:fetchCompletionHandler:),                                 didReceiveRemoteNotificationFetchCompletionHandler,             "v@:@@@");
-            addMethod (@selector (application:handleActionWithIdentifier:forRemoteNotification:withResponseInfo:completionHandler:), handleActionForRemoteNotificationCompletionHandler,             "v@:@@@@@");
-            addMethod (@selector (application:didReceiveLocalNotification:),                                                         didReceiveLocalNotification,                                    "v@:@@");
-            addMethod (@selector (application:handleActionWithIdentifier:forLocalNotification:completionHandler:),                   handleActionForLocalNotificationCompletionHandler,              "v@:@@@@");
-            addMethod (@selector (application:handleActionWithIdentifier:forLocalNotification:withResponseInfo:completionHandler:),  handleActionForLocalNotificationWithResponseCompletionHandler,  "v@:@@@@@");
+            addMethod (@selector (application:didRegisterUserNotificationSettings:),                                                 didRegisterUserNotificationSettings);
+            addMethod (@selector (application:didRegisterForRemoteNotificationsWithDeviceToken:),                                    registeredForRemoteNotifications);
+            addMethod (@selector (application:didFailToRegisterForRemoteNotificationsWithError:),                                    failedToRegisterForRemoteNotifications);
+            addMethod (@selector (application:didReceiveRemoteNotification:),                                                        didReceiveRemoteNotification);
+            addMethod (@selector (application:didReceiveRemoteNotification:fetchCompletionHandler:),                                 didReceiveRemoteNotificationFetchCompletionHandler);
+            addMethod (@selector (application:handleActionWithIdentifier:forRemoteNotification:withResponseInfo:completionHandler:), handleActionForRemoteNotificationCompletionHandler);
+            addMethod (@selector (application:didReceiveLocalNotification:),                                                         didReceiveLocalNotification);
+            addMethod (@selector (application:handleActionWithIdentifier:forLocalNotification:completionHandler:),                   handleActionForLocalNotificationCompletionHandler);
+            addMethod (@selector (application:handleActionWithIdentifier:forLocalNotification:withResponseInfo:completionHandler:),  handleActionForLocalNotificationWithResponseCompletionHandler);
 
            #if defined (__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-            addMethod (@selector (userNotificationCenter:willPresentNotification:withCompletionHandler:),                            willPresentNotificationWithCompletionHandler,                   "v@:@@@");
-            addMethod (@selector (userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:),                     didReceiveNotificationResponseWithCompletionHandler,            "v@:@@@");
+            addMethod (@selector (userNotificationCenter:willPresentNotification:withCompletionHandler:),                            willPresentNotificationWithCompletionHandler);
+            addMethod (@selector (userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:),                     didReceiveNotificationResponseWithCompletionHandler);
            #endif
 
             registerClass();

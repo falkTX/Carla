@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -76,7 +76,7 @@ public:
     {
     }
 
-    /** Initalises from a null-terminated raw array of values.
+    /** Initialises from a null-terminated raw array of values.
         @param data   the data to copy from
     */
     template <typename TypeToCreateFrom>
@@ -86,7 +86,7 @@ public:
             add (*data++);
     }
 
-    /** Initalises from a raw array of values.
+    /** Initialises from a raw array of values.
         @param data         the data to copy from
         @param numValues    the number of values in the array
     */
@@ -96,30 +96,30 @@ public:
         values.addArray (data, numValues);
     }
 
-    /** Initalises an Array of size 1 containing a single element. */
+    /** Initialises an Array of size 1 containing a single element. */
     Array (const ElementType& singleElementToAdd)
     {
         add (singleElementToAdd);
     }
 
-    /** Initalises an Array of size 1 containing a single element. */
+    /** Initialises an Array of size 1 containing a single element. */
     Array (ElementType&& singleElementToAdd)
     {
         add (std::move (singleElementToAdd));
     }
 
-    /** Initalises an Array from a list of items. */
+    /** Initialises an Array from a list of items. */
     template <typename... OtherElements>
-    Array (const ElementType& firstNewElement, OtherElements... otherElements)
+    Array (const ElementType& firstNewElement, OtherElements&&... otherElements)
     {
-        values.add (firstNewElement, otherElements...);
+        values.add (firstNewElement, std::forward<OtherElements> (otherElements)...);
     }
 
-    /** Initalises an Array from a list of items. */
+    /** Initialises an Array from a list of items. */
     template <typename... OtherElements>
-    Array (ElementType&& firstNewElement, OtherElements... otherElements)
+    Array (ElementType&& firstNewElement, OtherElements&&... otherElements)
     {
-        values.add (std::move (firstNewElement), otherElements...);
+        values.add (std::move (firstNewElement), std::forward<OtherElements> (otherElements)...);
     }
 
     template <typename TypeToCreateFrom>
@@ -433,18 +433,18 @@ public:
 
     /** Appends multiple new elements at the end of the array. */
     template <typename... OtherElements>
-    void add (const ElementType& firstNewElement, OtherElements... otherElements)
+    void add (const ElementType& firstNewElement, OtherElements&&... otherElements)
     {
         const ScopedLockType lock (getLock());
-        values.add (firstNewElement, otherElements...);
+        values.add (firstNewElement, std::forward<OtherElements> (otherElements)...);
     }
 
     /** Appends multiple new elements at the end of the array. */
     template <typename... OtherElements>
-    void add (ElementType&& firstNewElement, OtherElements... otherElements)
+    void add (ElementType&& firstNewElement, OtherElements&&... otherElements)
     {
         const ScopedLockType lock (getLock());
-        values.add (std::move (firstNewElement), otherElements...);
+        values.add (std::move (firstNewElement), std::forward<OtherElements> (otherElements)...);
     }
 
     /** Inserts a new element into the array at a given position.
@@ -1125,9 +1125,9 @@ public:
 
     //==============================================================================
    #ifndef DOXYGEN
-    // Note that the swapWithArray method has been replaced by a more flexible templated version,
-    // and renamed "swapWith" to be more consistent with the names used in other classes.
-    JUCE_DEPRECATED_WITH_BODY (void swapWithArray (Array& other) noexcept, { swapWith (other); })
+    [[deprecated ("This method has been replaced by a more flexible templated version and renamed "
+                 "to swapWith to be more consistent with the names used in other classes.")]]
+    void swapWithArray (Array& other) noexcept { swapWith (other); }
    #endif
 
 private:

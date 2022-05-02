@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -23,7 +16,7 @@
   ==============================================================================
 */
 
-#if JUCE_PLUGINHOST_LADSPA && JUCE_LINUX
+#if JUCE_PLUGINHOST_LADSPA && (JUCE_LINUX || JUCE_BSD)
 
 #include "ladspa.h"
 
@@ -113,7 +106,7 @@ private:
 };
 
 //==============================================================================
-class LADSPAPluginInstance     : public AudioPluginInstance
+class LADSPAPluginInstance final    : public AudioPluginInstance
 {
 public:
     LADSPAPluginInstance (const LADSPAModuleHandle::Ptr& m)
@@ -197,7 +190,7 @@ public:
             }
         }
 
-        setParameterTree (std::move (newTree));
+        setHostedParameterTree (std::move (newTree));
 
         for (auto* param : getParameters())
             if (auto* ladspaParam = dynamic_cast<LADSPAParameter*> (param))
@@ -220,7 +213,7 @@ public:
     {
         desc.name = getName();
         desc.fileOrIdentifier = module->file.getFullPathName();
-        desc.uid = getUID();
+        desc.uniqueId = desc.deprecatedUid = getUID();
         desc.lastFileModTime = module->file.getLastModificationTime();
         desc.lastInfoUpdateTime = Time::getCurrentTime();
         desc.pluginFormatName = "LADSPA";
@@ -374,7 +367,7 @@ public:
         destData.setSize ((size_t) numParameters * sizeof (float));
         destData.fillWith (0);
 
-        auto* p = (float*) ((char*) destData.getData());
+        auto* p = unalignedPointerCast<float*> (destData.getData());
 
         for (int i = 0; i < numParameters; ++i)
             if (auto* param = getParameters()[i])
@@ -516,6 +509,11 @@ private:
 
         bool isAutomatable() const override                            { return automatable; }
 
+        String getParameterID() const override
+        {
+            return String (paramID);
+        }
+
         static float scaledValue (float low, float high, float alpha, bool useLog) noexcept
         {
             if (useLog && low > 0 && high > 0)
@@ -583,7 +581,7 @@ void LADSPAPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& res
 
     PluginDescription desc;
     desc.fileOrIdentifier = fileOrIdentifier;
-    desc.uid = 0;
+    desc.uniqueId = desc.deprecatedUid = 0;
 
     auto createdInstance = createInstanceFromDescription (desc, 44100.0, 512);
     auto instance = dynamic_cast<LADSPAPluginInstance*> (createdInstance.get());
@@ -600,7 +598,7 @@ void LADSPAPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& res
         {
             if (auto* plugin = instance->module->moduleMain ((size_t) uid))
             {
-                desc.uid = uid;
+                desc.uniqueId = desc.deprecatedUid = uid;
                 desc.name = plugin->Name != nullptr ? plugin->Name : "Unknown";
 
                 if (! arrayContainsPlugin (results, desc))
@@ -631,7 +629,7 @@ void LADSPAPluginFormat::createPluginInstance (const PluginDescription& desc,
 
         if (module != nullptr)
         {
-            shellLADSPAUIDToCreate = desc.uid;
+            shellLADSPAUIDToCreate = desc.uniqueId != 0 ? desc.uniqueId : desc.deprecatedUid;
 
             result.reset (new LADSPAPluginInstance (module));
 

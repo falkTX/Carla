@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -44,26 +37,24 @@ public:
         DestroyWindow (hwnd);
     }
 
-    using ComponentMovementWatcher::componentMovedOrResized;
-
     void componentMovedOrResized (bool wasMoved, bool wasResized) override
     {
-        auto* topComponent = owner.getTopLevelComponent();
-
-        if (auto* peer = owner.getPeer())
+        if (auto* peer = owner.getTopLevelComponent()->getPeer())
         {
-            auto pos = topComponent->getLocalPoint (&owner, Point<int>());
+            auto area = (peer->getAreaCoveredBy (owner).toFloat() * peer->getPlatformScaleFactor()).getSmallestIntegerContainer();
 
-            auto scaled = (Rectangle<int> (pos.x, pos.y, owner.getWidth(), owner.getHeight()).toDouble()
-                            * peer->getPlatformScaleFactor()).getSmallestIntegerContainer();
+            UINT flagsToSend =  SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER;
 
-            DWORD windowFlags = SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER;
-            if (! wasMoved)    windowFlags |= SWP_NOMOVE;
-            if (! wasResized)  windowFlags |= SWP_NOSIZE;
+            if (! wasMoved)   flagsToSend |= SWP_NOMOVE;
+            if (! wasResized) flagsToSend |= SWP_NOSIZE;
 
-            SetWindowPos (hwnd, nullptr, scaled.getX(), scaled.getY(), scaled.getWidth(), scaled.getHeight(), windowFlags);
+            ScopedThreadDPIAwarenessSetter threadDpiAwarenessSetter { hwnd };
+
+            SetWindowPos (hwnd, nullptr, area.getX(), area.getY(), area.getWidth(), area.getHeight(), flagsToSend);
         }
     }
+
+    using ComponentMovementWatcher::componentMovedOrResized;
 
     void componentPeerChanged() override
     {
@@ -85,12 +76,12 @@ public:
             InvalidateRect (hwnd, nullptr, 0);
      }
 
-    using ComponentMovementWatcher::componentVisibilityChanged;
-
     void componentVisibilityChanged() override
     {
         componentPeerChanged();
     }
+
+    using ComponentMovementWatcher::componentVisibilityChanged;
 
     void componentBroughtToFront (Component& comp) override
     {
@@ -101,11 +92,13 @@ public:
     {
         if (auto* peer = owner.getPeer())
         {
+            ScopedThreadDPIAwarenessSetter threadDpiAwarenessSetter { hwnd };
+
             RECT r;
             GetWindowRect (hwnd, &r);
+            Rectangle<int> windowRectangle (r.right - r.left, r.bottom - r.top);
 
-            return (Rectangle<int>::leftTopRightBottom (r.left, r.top, r.right, r.bottom).toDouble()
-                     / peer->getPlatformScaleFactor()).getSmallestIntegerContainer();
+            return (windowRectangle.toFloat() / peer->getPlatformScaleFactor()).toNearestInt();
         }
 
         return {};
@@ -120,7 +113,10 @@ private:
         {
             auto windowFlags = GetWindowLongPtr (hwnd, -16);
 
-            windowFlags &= ~(WS_POPUP | WS_CHILD);
+            using FlagType = decltype (windowFlags);
+
+            windowFlags &= ~(FlagType) WS_POPUP;
+            windowFlags |= (FlagType) WS_CHILD;
 
             SetWindowLongPtr (hwnd, -16, windowFlags);
             SetParent (hwnd, (HWND) currentPeer->getNativeHandle());
@@ -131,7 +127,8 @@ private:
 
     void removeFromParent()
     {
-        SetParent (hwnd, NULL);
+        ShowWindow (hwnd, SW_HIDE);
+        SetParent (hwnd, nullptr);
     }
 
     Component& owner;
@@ -141,11 +138,10 @@ private:
 };
 
 //==============================================================================
-HWNDComponent::HWNDComponent()
-{
-}
-
+HWNDComponent::HWNDComponent()  {}
 HWNDComponent::~HWNDComponent() {}
+
+void HWNDComponent::paint (Graphics&) {}
 
 void HWNDComponent::setHWND (void* hwnd)
 {
@@ -167,6 +163,12 @@ void HWNDComponent::resizeToFit()
 {
     if (pimpl != nullptr)
         setBounds (pimpl->getHWNDBounds());
+}
+
+void HWNDComponent::updateHWNDBounds()
+{
+    if (pimpl != nullptr)
+        pimpl->componentMovedOrResized (true, true);
 }
 
 } // namespace juce

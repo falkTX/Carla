@@ -10,8 +10,7 @@ include ../Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I$(CWD)/includes/vst3sdk -I..
-
+BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I$(CWD)/includes/vst3sdk -I.. -std=gnu++14
 
 # needed by vst3
 ifeq ($(DEBUG),true)
@@ -21,13 +20,13 @@ BUILD_CXX_FLAGS += -DRELEASE
 endif
 
 # needed by vst3 on mingw
-ifeq ($(WIN32),true)
-BUILD_CXX_FLAGS += -D_NATIVE_WCHAR_T_DEFINED -D__wchar_t=wchar_t -fpermissive -Wno-unknown-pragmas
-# needed for bloated juce
-ifeq ($(DEBUG),true)
-BUILD_CXX_FLAGS += -Wa,-mbig-obj
-endif
-endif
+# ifeq ($(WIN32),true)
+# BUILD_CXX_FLAGS += -D_NATIVE_WCHAR_T_DEFINED -D__wchar_t=wchar_t -fpermissive -Wno-unknown-pragmas
+# # needed for bloated juce
+# ifeq ($(DEBUG),true)
+# BUILD_CXX_FLAGS += -Wa,-mbig-obj
+# endif
+# endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 

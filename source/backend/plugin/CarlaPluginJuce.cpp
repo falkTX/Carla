@@ -27,26 +27,18 @@
 #include "CarlaVst2Utils.hpp"
 #include "CarlaVst3Utils.hpp"
 
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wfloat-equal"
-# pragma clang diagnostic ignored "-Wimplicit-int-float-conversion"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wconversion"
-# pragma GCC diagnostic ignored "-Wdouble-promotion"
-# pragma GCC diagnostic ignored "-Weffc++"
-# pragma GCC diagnostic ignored "-Wfloat-equal"
-#endif
-
 #define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
-#include "AppConfig.h"
+
+#include "carla_juce/carla_juce.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
+#pragma GCC diagnostic ignored "-Wduplicated-branches"
+#pragma GCC diagnostic ignored "-Weffc++"
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #include "juce_audio_processors/juce_audio_processors.h"
 #include "juce_gui_basics/juce_gui_basics.h"
-
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-# pragma GCC diagnostic pop
-#endif
+#pragma GCC diagnostic pop
 
 #include "JucePluginWindow.hpp"
 
@@ -114,7 +106,8 @@ public:
           fPosInfo(),
           fChunk(),
           fFormatName(),
-          fWindow()
+          fWindow(),
+          fNeedsUpdate(false)
     {
         carla_debug("CarlaPluginJuce::CarlaPluginJuce(%p, %i)", engine, id);
 
@@ -167,7 +160,17 @@ public:
 
     int64_t getUniqueId() const noexcept override
     {
-        return fDesc.uid;
+        return fDesc.uniqueId;
+    }
+
+    uint32_t getLatencyInFrames() const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr, 0);
+
+        const int latency = fInstance->getLatencySamples();
+        CARLA_SAFE_ASSERT_RETURN(latency >= 0, 0);
+
+        return static_cast<uint32_t>(latency);
     }
 
     // -------------------------------------------------------------------
@@ -500,9 +503,9 @@ public:
                                               ? (AEffect*)fInstance->getPlatformSpecificData()
                                               : nullptr;
 
-                    v3_plugin_view** const vst3view = fDesc.pluginFormatName == "VST3"
+                    v3_plugin_view** const vst3view = /*fDesc.pluginFormatName == "VST3"
                                                     ? (v3_plugin_view**)editor->getPlatformSpecificData()
-                                                    : nullptr;
+                                                    :*/ nullptr;
 
                     fWindow = new JucePluginWindow(opts.frontendWinId, opts.pluginsAreStandalone,
                                                    vst2effect, vst3view);
@@ -871,10 +874,8 @@ public:
         if (mOuts > 0)
             pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
 
-        fInstance->setPlayConfigDetails(static_cast<int>(aIns),
-                                        static_cast<int>(aOuts),
-                                        pData->engine->getSampleRate(),
-                                        static_cast<int>(pData->engine->getBufferSize()));
+        fInstance->setRateAndBufferSizeDetails(pData->engine->getSampleRate(),
+                                               static_cast<int>(pData->engine->getBufferSize()));
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -1489,6 +1490,20 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Misc
+
+    void idle() override
+    {
+        if (fNeedsUpdate)
+        {
+            fNeedsUpdate = false;
+            pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0f, nullptr);
+        }
+
+        CarlaPlugin::idle();
+    }
+
+    // -------------------------------------------------------------------
     // Plugin buffers
 
     // nothing
@@ -1518,9 +1533,10 @@ protected:
         CarlaPlugin::setParameterValue(static_cast<uint32_t>(index), fixedValue, false, true, true);
     }
 
-    void audioProcessorChanged(juce::AudioProcessor*) override
+    void audioProcessorChanged(juce::AudioProcessor*, const ChangeDetails& details) override
     {
-        pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0f, nullptr);
+        if (details.parameterInfoChanged || details.programChanged)
+            fNeedsUpdate = true;
     }
 
     void audioProcessorParameterChangeGestureBegin(juce::AudioProcessor*, int index) override
@@ -1669,7 +1685,7 @@ public:
         }
 
         if (uniqueId != 0)
-            fDesc.uid = static_cast<int>(uniqueId);
+            fDesc.uniqueId = static_cast<int>(uniqueId);
 
         juce::String error;
 
@@ -1768,6 +1784,8 @@ private:
     juce::String            fFormatName;
 
     CarlaScopedPointer<JucePluginWindow> fWindow;
+
+    bool fNeedsUpdate;
 
     bool isJuceSaveFormat(const void* const data, const std::size_t dataSize)
     {

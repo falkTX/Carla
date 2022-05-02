@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -61,7 +54,7 @@ private:
 ScrollBar::ScrollBar (bool shouldBeVertical)  : vertical (shouldBeVertical)
 {
     setRepaintsOnMouseActivity (true);
-    setFocusContainer (true);
+    setFocusContainerType (FocusContainerType::keyboardFocusContainer);
 }
 
 ScrollBar::~ScrollBar()
@@ -173,7 +166,7 @@ void ScrollBar::removeListener (Listener* listener)
 void ScrollBar::handleAsyncUpdate()
 {
     auto start = visibleRange.getStart(); // (need to use a temp variable for VC7 compatibility)
-    listeners.call ([=] (Listener& l) { l.scrollBarMoved (this, start); });
+    listeners.call ([this, start] (Listener& l) { l.scrollBarMoved (this, start); });
 }
 
 //==============================================================================
@@ -438,6 +431,40 @@ bool ScrollBar::getVisibility() const noexcept
 
     return (! autohides) || (totalRange.getLength() > visibleRange.getLength()
                                     && visibleRange.getLength() > 0.0);
+}
+
+//==============================================================================
+std::unique_ptr<AccessibilityHandler> ScrollBar::createAccessibilityHandler()
+{
+    class ValueInterface  : public AccessibilityRangedNumericValueInterface
+    {
+    public:
+        explicit ValueInterface (ScrollBar& scrollBarToWrap)  : scrollBar (scrollBarToWrap) {}
+
+        bool isReadOnly() const override          { return false; }
+
+        double getCurrentValue() const override   { return scrollBar.getCurrentRangeStart(); }
+        void setValue (double newValue) override  { scrollBar.setCurrentRangeStart (newValue); }
+
+        AccessibleValueRange getRange() const override
+        {
+            if (scrollBar.getRangeLimit().isEmpty())
+                return {};
+
+            return { { scrollBar.getMinimumRangeLimit(), scrollBar.getMaximumRangeLimit() },
+                     scrollBar.getSingleStepSize() };
+        }
+
+    private:
+        ScrollBar& scrollBar;
+
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ValueInterface)
+    };
+
+    return std::make_unique<AccessibilityHandler> (*this,
+                                                   AccessibilityRole::scrollBar,
+                                                   AccessibilityActions{},
+                                                   AccessibilityHandler::Interfaces { std::make_unique<ValueInterface> (*this) });
 }
 
 } // namespace juce

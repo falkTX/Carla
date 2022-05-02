@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -20,6 +20,10 @@
   ==============================================================================
 */
 
+#if JUCE_BSD
+extern char** environ;
+#endif
+
 namespace juce
 {
 
@@ -36,7 +40,7 @@ bool File::isOnCDRomDrive() const
     struct statfs buf;
 
     return statfs (getFullPathName().toUTF8(), &buf) == 0
-             && buf.f_type == (short) U_ISOFS_SUPER_MAGIC;
+             && buf.f_type == (unsigned int) U_ISOFS_SUPER_MAGIC;
 }
 
 bool File::isOnHardDisk() const
@@ -135,7 +139,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
         case invokedExecutableFile:
             if (juce_argv != nullptr && juce_argc > 0)
-                return File (CharPointer_UTF8 (juce_argv[0]));
+                return File (String (CharPointer_UTF8 (juce_argv[0])));
             // Falls through
             JUCE_FALLTHROUGH
 
@@ -149,8 +153,12 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
         case hostApplicationPath:
         {
+           #if JUCE_BSD
+            return juce_getExecutableFile();
+           #else
             const File f ("/proc/self/exe");
             return f.isSymbolicLink() ? f.getLinkedTarget() : juce_getExecutableFile();
+           #endif
         }
 
         default:
@@ -191,25 +199,29 @@ static bool isFileExecutable (const String& filename)
 
 bool Process::openDocument (const String& fileName, const String& parameters)
 {
-    auto cmdString = fileName.replace (" ", "\\ ", false);
-    cmdString << " " << parameters;
-
-    if (cmdString.startsWithIgnoreCase ("file:")
-         || File::createFileWithoutCheckingPath (fileName).isDirectory()
-         || ! isFileExecutable (fileName))
+    const auto cmdString = [&]
     {
-        StringArray cmdLines;
-
-        for (auto browserName : { "xdg-open", "/etc/alternatives/x-www-browser", "firefox", "mozilla",
-                                  "google-chrome", "chromium-browser", "opera", "konqueror" })
+        if (fileName.startsWithIgnoreCase ("file:")
+            || File::createFileWithoutCheckingPath (fileName).isDirectory()
+            || ! isFileExecutable (fileName))
         {
-            cmdLines.add (String (browserName) + " " + cmdString.trim());
+            const auto singleCommand = fileName.trim().quoted();
+
+            StringArray cmdLines;
+
+            for (auto browserName : { "xdg-open", "/etc/alternatives/x-www-browser", "firefox", "mozilla",
+                                      "google-chrome", "chromium-browser", "opera", "konqueror" })
+            {
+                cmdLines.add (String (browserName) + " " + singleCommand);
+            }
+
+            return cmdLines.joinIntoString (" || ");
         }
 
-        cmdString = cmdLines.joinIntoString (" || ");
-    }
+        return (fileName.replace (" ", "\\ ", false) + " " + parameters).trim();
+    }();
 
-    const char* const argv[4] = { "/bin/sh", "-c", cmdString.toUTF8(), nullptr };
+    const char* const argv[] = { "/bin/sh", "-c", cmdString.toUTF8(), nullptr };
 
 #if JUCE_USE_VFORK
     const auto cpid = vfork();
@@ -224,7 +236,7 @@ bool Process::openDocument (const String& fileName, const String& parameters)
 #endif
 
         // Child process
-        if (execvp (argv[0], (char**) argv) < 0)
+        if (execve (argv[0], (char**) argv, environ) < 0)
             _exit (0);
     }
 
