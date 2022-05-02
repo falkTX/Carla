@@ -80,9 +80,7 @@ endif
 3RD_LIBS += $(MODULEDIR)/juce_events.a
 3RD_LIBS += $(MODULEDIR)/juce_graphics.a
 3RD_LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 3RD_LIBS += $(MODULEDIR)/juce_gui_extra.a
-endif
 endif
 
 ifeq ($(USING_RTAUDIO),true)
@@ -269,9 +267,7 @@ LIBS_POSIX32 += $(MODULEDIR)/juce_core.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_events.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_graphics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_basics.posix32.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_extra.posix32.a
-endif
 endif
 
 posix32: $(LIBS_POSIX32)
@@ -295,9 +291,7 @@ LIBS_POSIX64 += $(MODULEDIR)/juce_core.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_events.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_graphics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_basics.posix64.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
-endif
 endif
 
 posix64: $(LIBS_POSIX64)
@@ -320,9 +314,7 @@ LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_events.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_graphics.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_gui_basics.win32.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_WIN32 += $(MODULEDIR)/juce_gui_extra.win32.a
-endif
 endif
 
 LIBS_WINE32 = $(LIBS_WIN32) $(MODULEDIR)/jackbridge.win32e.a
@@ -357,9 +349,7 @@ LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_events.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_graphics.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_gui_basics.win64.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_WIN64 += $(MODULEDIR)/juce_gui_extra.win64.a
-endif
 endif
 
 LIBS_WINE64 = $(LIBS_WIN64) $(MODULEDIR)/jackbridge.win64e.a

@@ -49,6 +49,7 @@
 #define JUCE_MODULE_AVAILABLE_juce_events                1
 #define JUCE_MODULE_AVAILABLE_juce_graphics              1
 #define JUCE_MODULE_AVAILABLE_juce_gui_basics            1
+#define JUCE_MODULE_AVAILABLE_juce_gui_extra             1
 
 // always disabled
 #define JUCE_MODULE_AVAILABLE_juce_audio_formats         0
@@ -63,12 +64,6 @@
 # define JUCE_MODULE_AVAILABLE_juce_audio_devices        1
 #else
 # define JUCE_MODULE_AVAILABLE_juce_audio_devices        0
-#endif
-
-#ifdef USING_JUCE_GUI_EXTRA
-# define JUCE_MODULE_AVAILABLE_juce_gui_extra            1
-#else
-# define JUCE_MODULE_AVAILABLE_juce_gui_extra            0
 #endif
 
 // misc

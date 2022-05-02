@@ -34,6 +34,12 @@ endif
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
 
+ifeq ($(USING_JUCE),true)
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
+endif
+endif
+
 32BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 64BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 ARM32_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -133,12 +139,12 @@ LIBS_win32   += $(MODULEDIR)/juce_gui_basics.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_gui_basics.win64.a
 LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
 
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
 LIBS_posix32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 LIBS_posix64 += $(MODULEDIR)/juce_gui_extra.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_gui_extra.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_gui_extra.win64.a
 LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
-endif
 endif
 
 ifeq ($(JACKBRIDGE_DIRECT),true)

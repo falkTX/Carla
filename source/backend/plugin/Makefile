@@ -14,6 +14,12 @@ BUILD_CXX_FLAGS += -Wno-undef
 endif
 endif
 
+ifeq ($(USING_JUCE),true)
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
+endif
+endif
+
 BUILD_CXX_FLAGS += $(MAGIC_FLAGS)
 
 # ---------------------------------------------------------------------------------------------------------------------

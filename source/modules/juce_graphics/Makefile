@@ -19,6 +19,10 @@ endif
 # BUILD_CXX_FLAGS += -Wno-missing-field-initializers -Wno-strict-overflow
 # endif
 
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -I../mingw-std-threads
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)

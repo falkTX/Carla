@@ -28,6 +28,10 @@ endif
 # endif
 # endif
 
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -I../mingw-std-threads
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)

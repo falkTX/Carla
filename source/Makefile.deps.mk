@@ -316,12 +316,6 @@ ifeq ($(HAVE_JUCE_LINUX_DEPS),true)
 USING_JUCE = true
 endif
 
-ifeq ($(USING_JUCE),true)
-ifeq ($(LINUX_OR_MACOS),true)
-USING_JUCE_GUI_EXTRA = true
-endif
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Set USING_RTAUDIO
 
@@ -559,9 +553,7 @@ STATIC_CARLA_PLUGIN_LIBS += $(JUCE_CORE_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(JUCE_EVENTS_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(JUCE_GRAPHICS_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(JUCE_GUI_BASICS_LIBS)
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 STATIC_CARLA_PLUGIN_LIBS += $(JUCE_GUI_EXTRA_LIBS)
-endif
 endif
 
 ifeq ($(EXTERNAL_PLUGINS),true)
