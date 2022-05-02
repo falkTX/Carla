@@ -62,8 +62,11 @@
  #include <vfw.h>
  #include <commdlg.h>
  #include <commctrl.h>
- #include <UIAutomation.h>
  #include <sapi.h>
+
+ #if JUCE_MSVC
+  #include <UIAutomation.h>
+ #endif
 
  #if JUCE_WEB_BROWSER
   #include <exdisp.h>
@@ -279,13 +282,15 @@ namespace juce
  #include "native/juce_mac_MouseCursor.mm"
 
 #elif JUCE_WINDOWS
- #include "native/accessibility/juce_win32_ComInterfaces.h"
- #include "native/accessibility/juce_win32_WindowsUIAWrapper.h"
- #include "native/accessibility/juce_win32_AccessibilityElement.h"
- #include "native/accessibility/juce_win32_UIAHelpers.h"
- #include "native/accessibility/juce_win32_UIAProviders.h"
- #include "native/accessibility/juce_win32_AccessibilityElement.cpp"
- #include "native/accessibility/juce_win32_Accessibility.cpp"
+ #if JUCE_MSVC
+  #include "native/accessibility/juce_win32_ComInterfaces.h"
+  #include "native/accessibility/juce_win32_WindowsUIAWrapper.h"
+  #include "native/accessibility/juce_win32_AccessibilityElement.h"
+  #include "native/accessibility/juce_win32_UIAHelpers.h"
+  #include "native/accessibility/juce_win32_UIAProviders.h"
+  #include "native/accessibility/juce_win32_AccessibilityElement.cpp"
+  #include "native/accessibility/juce_win32_Accessibility.cpp"
+ #endif
  #include "native/juce_win32_Windowing.cpp"
  #include "native/juce_win32_DragAndDrop.cpp"
  #include "native/juce_win32_FileChooser.cpp"
