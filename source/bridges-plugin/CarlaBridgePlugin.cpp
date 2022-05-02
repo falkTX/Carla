@@ -229,7 +229,7 @@ public:
         gIsInitiated = true;
 
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-        CarlaJUCE::setupAndUseMainApplication();
+        CarlaJUCE::setupAndUseMainApplication(gIdle, &gCloseNow);
 #else
         int64_t timeToEnd = 0;
 

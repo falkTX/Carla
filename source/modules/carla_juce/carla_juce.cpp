@@ -123,6 +123,9 @@ void dispatchMessageManagerMessages()
 #endif
 
 #ifdef USE_STANDALONE_JUCE_APPLICATION
+static std::function<void()> sIdleFn;
+static volatile bool* sClosedSignalPtr;
+
 class CarlaJuceApp : public juce::JUCEApplication,
                      private juce::Timer
 {
@@ -137,7 +140,7 @@ public:
 
     void shutdown() override
     {
-        gCloseNow = true;
+        *sClosedSignalPtr = true;
         stopTimer();
     }
 
@@ -153,23 +156,26 @@ public:
 
     void timerCallback() override
     {
-        gIdle();
+        sIdleFn();
 
-        if (gCloseNow)
+        if (*sClosedSignalPtr)
         {
             quit();
-            gCloseNow = false;
+            *sClosedSignalPtr = false;
         }
     }
 };
 
-void setupAndUseMainApplication()
+static juce::JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp(); }
+
+void setupAndUseMainApplication(std::function<void()> idleFn, volatile bool* closedSignalPtr)
 {
 #ifndef CARLA_OS_WIN
     static const int argc = 0;
     static const char* argv[] = {};
 #endif
-    static juce::JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp(); }
+    sIdleFn = idleFn;
+    sClosedSignalPtr = closedSignalPtr;
     juce::JUCEApplicationBase::createInstance = &juce_CreateApplication;
     juce::JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
 }

@@ -29,6 +29,10 @@
 # endif
 #endif
 
+#ifdef USE_STANDALONE_JUCE_APPLICATION
+# include <functional>
+#endif
+
 namespace juce {
 class MessageManager;
 }
@@ -58,7 +62,7 @@ void dispatchMessageManagerMessages();
 #endif
 
 #ifdef USE_STANDALONE_JUCE_APPLICATION
-void setupAndUseMainApplication();
+void setupAndUseMainApplication(std::function<void()> idleFn, volatile bool* closedSignalPtr);
 #endif
 
 } // namespace CarlaJUCE
