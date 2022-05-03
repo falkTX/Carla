@@ -352,11 +352,7 @@
 
 #define JUCE_INCLUDE_JPEGLIB_CODE 1
 
-#ifdef APPCONFIG_OS_MAC
-# define USE_COREGRAPHICS_RENDERING 1
-#else
-# define USE_COREGRAPHICS_RENDERING 0
-#endif
+#define USE_COREGRAPHICS_RENDERING 0
 
 // --------------------------------------------------------------------------------------------------------------------
 // juce_gui_basics
