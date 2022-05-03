@@ -233,6 +233,15 @@ BASE_FLAGS += -DSTATIC_PLUGIN_TARGET
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
+# JUCE requires vista or later
+
+ifeq ($(USING_JUCE),true)
+ifeq ($(WIN32),true)
+BASE_FLAGS += -D_WIN32_WINNT=0x0600
+endif
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Allow custom namespace
 
 ifneq ($(CARLA_BACKEND_NAMESPACE),)
