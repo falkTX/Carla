@@ -233,9 +233,10 @@ BASE_FLAGS += -DSTATIC_PLUGIN_TARGET
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# JUCE requires vista or later
+# Custom build flags for JUCE
 
 ifeq ($(USING_JUCE),true)
+BUILD_CXX_FLAGS += -DJUCE_APP_CONFIG_HEADER='"AppConfig.h"'
 ifeq ($(WIN32),true)
 BASE_FLAGS += -D_WIN32_WINNT=0x0600
 endif

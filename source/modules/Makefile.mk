@@ -13,10 +13,6 @@ endif
 
 include $(CWD)/Makefile.mk
 
-ifeq ($(USING_JUCE),true)
-BUILD_CXX_FLAGS += -DJUCE_APP_CONFIG_HEADER='<AppConfig.h>'
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin
