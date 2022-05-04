@@ -22,8 +22,18 @@
 
 #include <sys/xattr.h>
 
+#ifdef __MAC_10_12
+# define Component CocoaComponent
+# define MemoryBlock CocoaMemoryBlock
+# define Point CocoaPoint
+#endif
+
 #import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
+
+#undef Component
+#undef MemoryBlock
+#undef Point
 
 CARLA_BACKEND_START_NAMESPACE
 
