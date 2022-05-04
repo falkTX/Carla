@@ -1089,6 +1089,7 @@ public:
 
         auto dispatchRectangles = [this] ()
         {
+           #if USE_COREGRAPHICS_RENDERING
             if (@available (macOS 10.14, *))
             {
                 if (metalRenderer != nullptr)
@@ -1101,6 +1102,7 @@ public:
                                                              deferredRepaints);
                 }
             }
+           #endif
 
             for (auto& i : deferredRepaints)
                 [view setNeedsDisplayInRect: makeNSRect (i)];
@@ -1900,7 +1902,9 @@ private:
     CVDisplayLinkRef displayLink = nullptr;
     dispatch_source_t displaySource = nullptr;
 
+   #if USE_COREGRAPHICS_RENDERING
     std::unique_ptr<CoreGraphicsMetalLayerRenderer> metalRenderer;
+   #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NSViewComponentPeer)
 };
