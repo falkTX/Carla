@@ -371,10 +371,12 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)
+ifeq ($(USING_JUCE),true)
 $(OBJDIR)/carla-host-plugin.cpp.o: carla-host-plugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
+endif
 endif
 
 $(OBJDIR)/carla-%-plugin.cpp.o: carla-%-plugin.cpp
