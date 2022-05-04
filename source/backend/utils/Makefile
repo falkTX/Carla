@@ -84,6 +84,11 @@ $(BINDIR)/libcarla_utils$(LIB_EXT): $(OBJS) $(LIBS)
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)
+$(OBJDIR)/CachedPlugins.cpp.o: CachedPlugins.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
+
 $(OBJDIR)/Windows.cpp.o: Windows.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
