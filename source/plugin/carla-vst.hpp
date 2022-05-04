@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@ struct VstObject {
     NativePlugin* plugin;
 };
 
-CarlaUILauncher* createUILauncher(intptr_t winId, const NativePluginDescriptor* d, NativePluginHandle h);
+CarlaUILauncher* createUILauncher(uintptr_t winId, const NativePluginDescriptor* d, NativePluginHandle h);
 void idleUILauncher(CarlaUILauncher* ui);
 void destoryUILauncher(CarlaUILauncher* ui);
 

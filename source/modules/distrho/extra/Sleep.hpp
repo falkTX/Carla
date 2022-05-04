@@ -20,6 +20,9 @@
 #include "../DistrhoUtils.hpp"
 
 #ifdef DISTRHO_OS_WINDOWS
+# ifndef NOMINMAX
+#  define NOMINMAX
+# endif
 # include <winsock2.h>
 # include <windows.h>
 #else

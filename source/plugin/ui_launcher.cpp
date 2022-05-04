@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin UI launcher
- * Copyright (C) 2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,8 +15,10 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "dgl/Application.hpp"
-#include "dgl/ImageWidgets.hpp"
+#include "dgl/OpenGL.hpp"
+#include "dgl/src/pugl.hpp"
+#include "dgl/src/WindowPrivateData.hpp"
+
 #include "CarlaNative.h"
 #include "ui_launcher_res.hpp"
 #include "CarlaDefines.h"
@@ -25,24 +27,71 @@
 
 START_NAMESPACE_DGL
 
-class CarlaButtonWidget : public Widget,
-                          private ImageButton::Callback
+class PluginApplication : public Application
 {
 public:
-    CarlaButtonWidget(Window& parent, const NativePluginDescriptor* const d, const NativePluginHandle h)
-      : Widget(parent),
+    explicit PluginApplication()
+        : Application(false)
+    {
+        setClassName("CarlaPluginWrapper");
+    }
+};
+
+class PluginWindow : public Window
+{
+public:
+    explicit PluginWindow(PluginApplication& app, const uintptr_t winId)
+        : Window(app, winId, ui_launcher_res::carla_uiWidth, ui_launcher_res::carla_uiHeight, 0.0, false, false, false)
+    {
+        // this is called just before creating UI, ensuring proper context to it
+        if (pData->view != nullptr && pData->initPost())
+            puglBackendEnter(pData->view);
+    }
+
+    ~PluginWindow()
+    {
+        if (pData->view != nullptr)
+            puglBackendLeave(pData->view);
+    }
+
+    // called right before deleting UI, ensuring correct context
+    void enterContextForDeletion()
+    {
+        if (pData->view != nullptr)
+            puglBackendEnter(pData->view);
+    }
+
+    // called after creating UI, restoring proper context
+    void leaveContextAfterCreation()
+    {
+        if (pData->view != nullptr)
+            puglBackendLeave(pData->view);
+    }
+};
+
+class CarlaButtonWidget : public TopLevelWidget,
+                          private OpenGLImageButton::Callback
+{
+public:
+    explicit CarlaButtonWidget(PluginWindow& parent, const NativePluginDescriptor* const d, const NativePluginHandle h)
+      : TopLevelWidget(parent),
         startButtonImage(ui_launcher_res::carla_uiData,
                          ui_launcher_res::carla_uiWidth,
                          ui_launcher_res::carla_uiHeight,
-                         GL_BGR),
+                         kImageFormatBGR),
         startButton(this, startButtonImage),
         descriptor(d),
-        handle(h)
+        handle(h),
+        pluginWindow(parent)
     {
         startButton.setCallback(this);
-        setSize(startButtonImage.getSize());
-        parent.setSize(startButtonImage.getSize());
 
+        pluginWindow.leaveContextAfterCreation();
+    }
+
+    ~CarlaButtonWidget() override
+    {
+        pluginWindow.enterContextForDeletion();
     }
 
 protected:
@@ -50,7 +99,7 @@ protected:
     {
     }
 
-    void imageButtonClicked(ImageButton* imageButton, int) override
+    void imageButtonClicked(OpenGLImageButton* imageButton, int) override
     {
         if (imageButton != &startButton)
             return;
@@ -60,10 +109,11 @@ protected:
     }
 
 private:
-    Image startButtonImage;
-    ImageButton startButton;
+    OpenGLImage startButtonImage;
+    OpenGLImageButton startButton;
     const NativePluginDescriptor* const descriptor;
     const NativePluginHandle handle;
+    PluginWindow& pluginWindow;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaButtonWidget);
 };
@@ -72,18 +122,20 @@ END_NAMESPACE_DGL
 
 // --------------------------------------------------------------------------------------------------------------------
 
+USE_NAMESPACE_DGL
+
 struct CarlaUILauncher {
-    DGL_NAMESPACE::Application app;
-    DGL_NAMESPACE::Window window;
+    PluginApplication app;
+    PluginWindow window;
     CarlaButtonWidget widget;
 
-    CarlaUILauncher(const intptr_t winId, const NativePluginDescriptor* const d, const NativePluginHandle h)
+    CarlaUILauncher(const uintptr_t winId, const NativePluginDescriptor* const d, const NativePluginHandle h)
       : app(),
         window(app, winId),
         widget(window, d, h) {}
 };
 
-CarlaUILauncher* createUILauncher(const intptr_t winId,
+CarlaUILauncher* createUILauncher(const uintptr_t winId,
                                   const NativePluginDescriptor* const d,
                                   const NativePluginHandle h)
 {

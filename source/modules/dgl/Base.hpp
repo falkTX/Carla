@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -20,7 +20,7 @@
 #include "../distrho/extra/LeakDetector.hpp"
 #include "../distrho/extra/ScopedPointer.hpp"
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Define namespace
 
 #ifndef DGL_NAMESPACE
@@ -31,124 +31,48 @@
 #define END_NAMESPACE_DGL }
 #define USE_NAMESPACE_DGL using namespace DGL_NAMESPACE;
 
-#ifdef DISTRHO_OS_WINDOWS
-// -----------------------------------------------------------------------
-// Fix OpenGL includes for Windows, based on glfw code
-
-#ifndef APIENTRY
-# define APIENTRY __stdcall
-# define DGL_APIENTRY_DEFINED
-#endif // APIENTRY
-
-/* We need WINGDIAPI defined */
-#ifndef WINGDIAPI
-# if defined(_MSC_VER) || defined(__BORLANDC__) || defined(__POCC__)
-#  define WINGDIAPI __declspec(dllimport)
-# elif defined(__LCC__)
-#  define WINGDIAPI __stdcall
-# else
-#  define WINGDIAPI extern
-# endif
-# define DGL_WINGDIAPI_DEFINED
-#endif // WINGDIAPI
-
-/* Some <GL/glu.h> files also need CALLBACK defined */
-#ifndef CALLBACK
-# if defined(_MSC_VER)
-#  if (defined(_M_MRX000) || defined(_M_IX86) || defined(_M_ALPHA) || defined(_M_PPC)) && !defined(MIDL_PASS)
-#   define CALLBACK __stdcall
-#  else
-#   define CALLBACK
-#  endif
-# else
-#  define CALLBACK __stdcall
-# endif
-# define DGL_CALLBACK_DEFINED
-#endif // CALLBACK
-
-/* Most GL/glu.h variants on Windows need wchar_t */
-#include <cstddef>
-
-#endif // DISTRHO_OS_WINDOWS
-
-// -----------------------------------------------------------------------
-// OpenGL includes
-
-#ifdef DISTRHO_OS_MAC
-# include <OpenGL/gl.h>
-#else
-# ifndef DISTRHO_OS_WINDOWS
-#  define GL_GLEXT_PROTOTYPES
-# endif
-# include <GL/gl.h>
-# include <GL/glext.h>
-#endif
-
-// -----------------------------------------------------------------------
-// Missing OpenGL defines
-
-#if defined(GL_BGR_EXT) && ! defined(GL_BGR)
-# define GL_BGR GL_BGR_EXT
-#endif
-
-#if defined(GL_BGRA_EXT) && ! defined(GL_BGRA)
-# define GL_BGRA GL_BGRA_EXT
-#endif
-
-#ifndef GL_CLAMP_TO_BORDER
-# define GL_CLAMP_TO_BORDER 0x812D
-#endif
-
-#ifdef DISTRHO_OS_WINDOWS
-// -----------------------------------------------------------------------
-// Fix OpenGL includes for Windows, based on glfw code
-
-#ifdef DGL_APIENTRY_DEFINED
-# undef APIENTRY
-# undef DGL_APIENTRY_DEFINED
-#endif
-
-#ifdef DGL_WINGDIAPI_DEFINED
-# undef WINGDIAPI
-# undef DGL_WINGDIAPI_DEFINED
-#endif
-
-#ifdef DGL_CALLBACK_DEFINED
-# undef CALLBACK
-# undef DGL_CALLBACK_DEFINED
-#endif
-
-#endif // DISTRHO_OS_WINDOWS
-
 START_NAMESPACE_DGL
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Base DGL enums
-
-/**
-   Convenience symbols for ASCII control characters.
- */
-enum Char {
-    kCharBackspace = 0x08,
-    kCharEscape    = 0x1B,
-    kCharDelete    = 0x7F
-};
 
 /**
    Keyboard modifier flags.
  */
 enum Modifier {
-    kModifierShift   = 1 << 0, /**< Shift key */
-    kModifierControl = 1 << 1, /**< Control key */
-    kModifierAlt     = 1 << 2, /**< Alt/Option key */
-    kModifierSuper   = 1 << 3  /**< Mod4/Command/Windows key */
+    kModifierShift   = 1u << 0u, ///< Shift key
+    kModifierControl = 1u << 1u, ///< Control key
+    kModifierAlt     = 1u << 2u, ///< Alt/Option key
+    kModifierSuper   = 1u << 3u  ///< Mod4/Command/Windows key
 };
 
 /**
-   Special (non-Unicode) keyboard keys.
+   Keyboard key codepoints.
+
+   All keys are identified by a Unicode code point in Widget::KeyboardEvent::key.
+   This enumeration defines constants for special keys that do not have a standard
+   code point, and some convenience constants for control characters.
+   Note that all keys are handled in the same way, this enumeration is just for
+   convenience when writing hard-coded key bindings.
+
+   Keys that do not have a standard code point use values in the Private Use
+   Area in the Basic Multilingual Plane (`U+E000` to `U+F8FF`).
+   Applications must take care to not interpret these values beyond key detection,
+   the mapping used here is arbitrary and specific to DPF.
  */
 enum Key {
-    kKeyF1 = 1,
+    // Convenience symbols for ASCII control characters
+    kKeyBackspace = 0x08,
+    kKeyEscape    = 0x1B,
+    kKeyDelete    = 0x7F,
+
+    // Backwards compatibility with old DPF
+    kCharBackspace DISTRHO_DEPRECATED_BY("kKeyBackspace") = kKeyBackspace,
+    kCharEscape    DISTRHO_DEPRECATED_BY("kKeyEscape") = kKeyEscape,
+    kCharDelete    DISTRHO_DEPRECATED_BY("kKeyDelete") = kKeyDelete,
+
+    // Unicode Private Use Area
+    kKeyF1 = 0xE000,
     kKeyF2,
     kKeyF3,
     kKeyF4,
@@ -170,25 +94,92 @@ enum Key {
     kKeyEnd,
     kKeyInsert,
     kKeyShift,
+    kKeyShiftL = kKeyShift,
+    kKeyShiftR,
     kKeyControl,
+    kKeyControlL = kKeyControl,
+    kKeyControlR,
     kKeyAlt,
-    kKeySuper
+    kKeyAltL = kKeyAlt,
+    kKeyAltR,
+    kKeySuper,
+    kKeySuperL = kKeySuper,
+    kKeySuperR,
+    kKeyMenu,
+    kKeyCapsLock,
+    kKeyScrollLock,
+    kKeyNumLock,
+    kKeyPrintScreen,
+    kKeyPause
 };
 
-// -----------------------------------------------------------------------
+/**
+   Common flags for all events.
+ */
+enum EventFlag {
+    kFlagSendEvent = 1, ///< Event is synthetic
+    kFlagIsHint    = 2  ///< Event is a hint (not direct user input)
+};
+
+/**
+   Reason for a crossing event.
+ */
+enum CrossingMode {
+    kCrossingNormal, ///< Crossing due to pointer motion
+    kCrossingGrab,   ///< Crossing due to a grab
+    kCrossingUngrab  ///< Crossing due to a grab release
+};
+
+/**
+   A mouse cursor type.
+
+   This is a portable subset of mouse cursors that exist on X11, MacOS, and Windows.
+*/
+enum MouseCursor {
+  kMouseCursorArrow,       ///< Default pointing arrow
+  kMouseCursorCaret,       ///< Caret (I-Beam) for text entry
+  kMouseCursorCrosshair,   ///< Cross-hair
+  kMouseCursorHand,        ///< Hand with a pointing finger
+  kMouseCursorNotAllowed,  ///< Operation not allowed
+  kMouseCursorLeftRight,   ///< Left/right arrow for horizontal resize
+  kMouseCursorUpDown,      ///< Up/down arrow for vertical resize
+  kMouseCursorDiagonal,    ///< Top-left to bottom-right arrow for diagonal resize
+  kMouseCursorAntiDiagonal ///< Bottom-left to top-right arrow for diagonal resize
+};
+
+/**
+   Scroll direction.
+
+   Describes the direction of a scroll event along with whether the scroll is a "smooth" scroll.
+   The discrete directions are for devices like mouse wheels with constrained axes,
+   while a smooth scroll is for those with arbitrary scroll direction freedom, like some touchpads.
+*/
+enum ScrollDirection {
+  kScrollUp,    ///< Scroll up
+  kScrollDown,  ///< Scroll down
+  kScrollLeft,  ///< Scroll left
+  kScrollRight, ///< Scroll right
+  kScrollSmooth ///< Smooth scroll in any direction
+};
+
+// --------------------------------------------------------------------------------------------------------------------
 // Base DGL classes
+
+/**
+   Graphics context, definition depends on build type.
+ */
+struct GraphicsContext {};
 
 /**
    Idle callback.
  */
-class IdleCallback
+struct IdleCallback
 {
-public:
     virtual ~IdleCallback() {}
     virtual void idleCallback() = 0;
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 END_NAMESPACE_DGL
 
@@ -198,6 +189,6 @@ END_NAMESPACE_DGL
   using namespace DGL_NAMESPACE;
 #endif
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #endif // DGL_BASE_HPP_INCLUDED

@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -14,78 +14,280 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "DistrhoUIInternal.hpp"
+#include "src/DistrhoPluginChecks.h"
+#include "src/DistrhoDefines.h"
 
-#ifdef HAVE_DGL
-# include "src/WidgetPrivateData.hpp"
+#if !defined(DGL_FILE_BROWSER_DISABLED) && !defined(DISTRHO_OS_MAC)
+# define DISTRHO_PUGL_NAMESPACE_MACRO_HELPER(NS, SEP, FUNCTION) NS ## SEP ## FUNCTION
+# define DISTRHO_PUGL_NAMESPACE_MACRO(NS, FUNCTION) DISTRHO_PUGL_NAMESPACE_MACRO_HELPER(NS, _, FUNCTION)
+# define DISTRHO_FILE_BROWSER_DIALOG_EXTRA_NAMESPACE Plugin
+# define x_fib_add_recent          DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_add_recent)
+# define x_fib_cfg_buttons         DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_cfg_buttons)
+# define x_fib_cfg_filter_callback DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_cfg_filter_callback)
+# define x_fib_close               DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_close)
+# define x_fib_configure           DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_configure)
+# define x_fib_filename            DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_filename)
+# define x_fib_free_recent         DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_free_recent)
+# define x_fib_handle_events       DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_handle_events)
+# define x_fib_load_recent         DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_load_recent)
+# define x_fib_recent_at           DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_recent_at)
+# define x_fib_recent_count        DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_recent_count)
+# define x_fib_recent_file         DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_recent_file)
+# define x_fib_save_recent         DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_save_recent)
+# define x_fib_show                DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_show)
+# define x_fib_status              DISTRHO_PUGL_NAMESPACE_MACRO(Plugin, x_fib_status)
+# include "../extra/FileBrowserDialog.cpp"
 #endif
+
+#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+# if defined(DISTRHO_OS_WINDOWS)
+#  include <winsock2.h>
+#  include <windows.h>
+# elif defined(HAVE_X11)
+#  include <X11/Xresource.h>
+# endif
+#else
+# include "src/TopLevelWidgetPrivateData.hpp"
+# include "src/WindowPrivateData.hpp"
+#endif
+
+#include "DistrhoUIPrivateData.hpp"
 
 START_NAMESPACE_DISTRHO
 
 /* ------------------------------------------------------------------------------------------------------------
  * Static data, see DistrhoUIInternal.hpp */
 
-double      d_lastUiSampleRate = 0.0;
-void*       d_lastUiDspPtr     = nullptr;
-#ifdef HAVE_DGL
-Window*     d_lastUiWindow     = nullptr;
+const char* g_nextBundlePath  = nullptr;
+#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+uintptr_t   g_nextWindowId    = 0;
+double      g_nextScaleFactor = 1.0;
 #endif
-uintptr_t   g_nextWindowId     = 0;
-const char* g_nextBundlePath   = nullptr;
+
+#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+/* ------------------------------------------------------------------------------------------------------------
+ * get global scale factor */
+
+#ifdef DISTRHO_OS_MAC
+double getDesktopScaleFactor(uintptr_t parentWindowHandle);
+#else
+static double getDesktopScaleFactor(const uintptr_t parentWindowHandle)
+{
+    // allow custom scale for testing
+    if (const char* const scale = getenv("DPF_SCALE_FACTOR"))
+        return std::max(1.0, std::atof(scale));
+
+#if defined(DISTRHO_OS_WINDOWS)
+    if (const HMODULE Shcore = LoadLibraryA("Shcore.dll"))
+    {
+        typedef HRESULT(WINAPI* PFN_GetProcessDpiAwareness)(HANDLE, DWORD*);
+        typedef HRESULT(WINAPI* PFN_GetScaleFactorForMonitor)(HMONITOR, DWORD*);
+
+# if defined(__GNUC__) && (__GNUC__ >= 9)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wcast-function-type"
+# endif
+        const PFN_GetProcessDpiAwareness GetProcessDpiAwareness
+            = (PFN_GetProcessDpiAwareness)GetProcAddress(Shcore, "GetProcessDpiAwareness");
+        const PFN_GetScaleFactorForMonitor GetScaleFactorForMonitor
+            = (PFN_GetScaleFactorForMonitor)GetProcAddress(Shcore, "GetScaleFactorForMonitor");
+# if defined(__GNUC__) && (__GNUC__ >= 9)
+#  pragma GCC diagnostic pop
+# endif
+
+        DWORD dpiAware = 0;
+        if (GetProcessDpiAwareness && GetScaleFactorForMonitor
+            && GetProcessDpiAwareness(NULL, &dpiAware) == 0 && dpiAware != 0)
+        {
+            const HMONITOR hMon = parentWindowHandle != 0
+                                ? MonitorFromWindow((HWND)parentWindowHandle, MONITOR_DEFAULTTOPRIMARY)
+                                : MonitorFromPoint(POINT{0,0}, MONITOR_DEFAULTTOPRIMARY);
+
+            DWORD scaleFactor = 0;
+            if (GetScaleFactorForMonitor(hMon, &scaleFactor) == 0 && scaleFactor != 0)
+            {
+                FreeLibrary(Shcore);
+                return static_cast<double>(scaleFactor) / 100.0;
+            }
+        }
+
+        FreeLibrary(Shcore);
+    }
+#elif defined(HAVE_X11)
+    ::Display* const display = XOpenDisplay(nullptr);
+    DISTRHO_SAFE_ASSERT_RETURN(display != nullptr, 1.0);
+
+    XrmInitialize();
+
+    if (char* const rms = XResourceManagerString(display))
+    {
+        if (const XrmDatabase sdb = XrmGetStringDatabase(rms))
+        {
+            char* type = nullptr;
+            XrmValue ret;
+
+            if (XrmGetResource(sdb, "Xft.dpi", "String", &type, &ret)
+                && ret.addr != nullptr
+                && type != nullptr
+                && std::strncmp("String", type, 6) == 0)
+            {
+                if (const double dpi = std::atof(ret.addr))
+                {
+                    XCloseDisplay(display);
+                    return dpi / 96;
+                }
+            }
+        }
+    }
+
+    XCloseDisplay(display);
+#endif
+
+    return 1.0;
+
+    // might be unused
+    (void)parentWindowHandle;
+}
+#endif // !DISTRHO_OS_MAC
+
+#endif
+
+/* ------------------------------------------------------------------------------------------------------------
+ * UI::PrivateData special handling */
+
+UI::PrivateData* UI::PrivateData::s_nextPrivateData = nullptr;
+
+#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+ExternalWindow::PrivateData
+#else
+PluginWindow&
+#endif
+UI::PrivateData::createNextWindow(UI* const ui, const uint width, const uint height)
+{
+    UI::PrivateData* const pData = s_nextPrivateData;
+#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+    pData->window = new PluginWindow(ui, pData->app);
+    ExternalWindow::PrivateData ewData;
+    ewData.parentWindowHandle = pData->winId;
+    ewData.width = width;
+    ewData.height = height;
+    ewData.scaleFactor = pData->scaleFactor != 0.0 ? pData->scaleFactor : getDesktopScaleFactor(pData->winId);
+    ewData.title = DISTRHO_PLUGIN_NAME;
+    ewData.isStandalone = DISTRHO_UI_IS_STANDALONE;
+    return ewData;
+#else
+    pData->window = new PluginWindow(ui, pData->app, pData->winId, width, height, pData->scaleFactor);
+
+    // If there are no callbacks, this is most likely a temporary window, so ignore idle callbacks
+    if (pData->callbacksPtr == nullptr)
+        pData->window->setIgnoreIdleCallbacks();
+
+    return pData->window.getObject();
+#endif
+}
 
 /* ------------------------------------------------------------------------------------------------------------
  * UI */
 
-#ifdef HAVE_DGL
-UI::UI(uint width, uint height)
-    : UIWidget(*d_lastUiWindow),
-      pData(new PrivateData())
+UI::UI(const uint width, const uint height, const bool automaticallyScaleAndSetAsMinimumSize)
+    : UIWidget(UI::PrivateData::createNextWindow(this, width, height)),
+      uiData(UI::PrivateData::s_nextPrivateData)
 {
-    ((UIWidget*)this)->pData->needsFullViewport = false;
+#if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+    if (width != 0 && height != 0)
+    {
+        Widget::setSize(width, height);
 
-    if (width > 0 && height > 0)
-        setSize(width, height);
-}
+        if (automaticallyScaleAndSetAsMinimumSize)
+            setGeometryConstraints(width, height, true, true, true);
+    }
 #else
-UI::UI(uint width, uint height)
-    : UIWidget(width, height),
-      pData(new PrivateData()) {}
+    // unused
+    (void)automaticallyScaleAndSetAsMinimumSize;
 #endif
+}
 
 UI::~UI()
 {
-    delete pData;
 }
 
 /* ------------------------------------------------------------------------------------------------------------
  * Host state */
 
+bool UI::isResizable() const noexcept
+{
+#if DISTRHO_UI_USER_RESIZABLE
+# if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+    return true;
+# else
+    return uiData->window->isResizable();
+# endif
+#else
+    return false;
+#endif
+}
+
+uint UI::getBackgroundColor() const noexcept
+{
+    return uiData->bgColor;
+}
+
+uint UI::getForegroundColor() const noexcept
+{
+    return uiData->fgColor;
+}
+
 double UI::getSampleRate() const noexcept
 {
-    return pData->sampleRate;
+    return uiData->sampleRate;
+}
+
+const char* UI::getBundlePath() const noexcept
+{
+    return uiData->bundlePath;
 }
 
 void UI::editParameter(uint32_t index, bool started)
 {
-    pData->editParamCallback(index + pData->parameterOffset, started);
+    uiData->editParamCallback(index + uiData->parameterOffset, started);
 }
 
 void UI::setParameterValue(uint32_t index, float value)
 {
-    pData->setParamCallback(index + pData->parameterOffset, value);
+    uiData->setParamCallback(index + uiData->parameterOffset, value);
 }
 
 #if DISTRHO_PLUGIN_WANT_STATE
 void UI::setState(const char* key, const char* value)
 {
-    pData->setStateCallback(key, value);
+    uiData->setStateCallback(key, value);
+}
+#endif
+
+#if DISTRHO_PLUGIN_WANT_STATE
+bool UI::requestStateFile(const char* key)
+{
+    return uiData->fileRequestCallback(key);
 }
 #endif
 
 #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
 void UI::sendNote(uint8_t channel, uint8_t note, uint8_t velocity)
 {
-    pData->sendNoteCallback(channel, note, velocity);
+    uiData->sendNoteCallback(channel, note, velocity);
+}
+#endif
+
+#ifndef DGL_FILE_BROWSER_DISABLED
+bool UI::openFileBrowser(const FileBrowserOptions& options)
+{
+# if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+    // TODO
+    return false;
+    (void)options;
+# else
+    return getWindow().openFileBrowser(options);
+# endif
 }
 #endif
 
@@ -95,17 +297,22 @@ void UI::sendNote(uint8_t channel, uint8_t note, uint8_t velocity)
 
 void* UI::getPluginInstancePointer() const noexcept
 {
-    return pData->dspPtr;
+    return uiData->dspPtr;
 }
 #endif
 
 #if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 /* ------------------------------------------------------------------------------------------------------------
- * External UI helpers */
+ * External UI helpers (static calls) */
 
 const char* UI::getNextBundlePath() noexcept
 {
     return g_nextBundlePath;
+}
+
+double UI::getNextScaleFactor() noexcept
+{
+    return g_nextScaleFactor;
 }
 
 # if DISTRHO_PLUGIN_HAS_EMBED_UI
@@ -114,16 +321,33 @@ uintptr_t UI::getNextWindowId() noexcept
     return g_nextWindowId;
 }
 # endif
-#endif
+#endif // DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 
 /* ------------------------------------------------------------------------------------------------------------
  * DSP/Plugin Callbacks (optional) */
 
-void UI::sampleRateChanged(double) {}
+void UI::sampleRateChanged(double)
+{
+}
 
-#ifdef HAVE_DGL
 /* ------------------------------------------------------------------------------------------------------------
  * UI Callbacks (optional) */
+
+void UI::uiScaleFactorChanged(double)
+{
+}
+
+#if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+void UI::uiFocus(bool, DGL_NAMESPACE::CrossingMode)
+{
+}
+
+void UI::uiReshape(uint, uint)
+{
+    // NOTE this must be the same as Window::onReshape
+    pData->fallbackOnResize();
+}
+#endif // !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 
 #ifndef DGL_FILE_BROWSER_DISABLED
 void UI::uiFileBrowserSelected(const char*)
@@ -131,24 +355,44 @@ void UI::uiFileBrowserSelected(const char*)
 }
 #endif
 
-void UI::uiReshape(uint width, uint height)
-{
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0.0, static_cast<GLdouble>(width), static_cast<GLdouble>(height), 0.0, 0.0, 1.0);
-    glViewport(0, 0, static_cast<GLsizei>(width), static_cast<GLsizei>(height));
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-}
-
 /* ------------------------------------------------------------------------------------------------------------
  * UI Resize Handling, internal */
 
+#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+void UI::sizeChanged(const uint width, const uint height)
+{
+    UIWidget::sizeChanged(width, height);
+
+    uiData->setSizeCallback(width, height);
+}
+#else
 void UI::onResize(const ResizeEvent& ev)
 {
-    pData->setSizeCallback(ev.size.getWidth(), ev.size.getHeight());
+    UIWidget::onResize(ev);
+
+#ifndef DISTRHO_PLUGIN_TARGET_VST3
+    if (uiData->initializing)
+        return;
+
+    const uint width = ev.size.getWidth();
+    const uint height = ev.size.getHeight();
+    uiData->setSizeCallback(width, height);
+#endif
+}
+
+// NOTE: only used for VST3
+void UI::requestSizeChange(const uint width, const uint height)
+{
+# ifdef DISTRHO_PLUGIN_TARGET_VST3
+    if (uiData->initializing)
+        uiData->window->setSizeForVST3(width, height);
+    else
+        uiData->setSizeCallback(width, height);
+# else
+    // unused
+    (void)width;
+    (void)height;
+# endif
 }
 #endif
 

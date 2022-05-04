@@ -2,39 +2,61 @@
 
 set -e
 
-cp    -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/dgl/*.hpp /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/
-cp -r -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/dgl/src   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/
-cp -r -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/distrho/* /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/distrho/ || true
+cp    -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/dgl/*.hpp     /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/
+cp -r -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/dgl/src/*.cpp /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/src/
+cp -r -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/dgl/src/*.hpp /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/src/
+cp -r -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/distrho/*.cpp /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/
+cp -r -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/distrho/*.hpp /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/
+cp -r -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/distrho/*.h   /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/
 
-rm -r /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/src/resources
-rm -r /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/src/sofd
-rm    /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/src/Resources.*
+cp -r -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/dgl/src/pugl-upstream/include /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/src/pugl-upstream/
+cp -r -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/dgl/src/pugl-upstream/src     /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/src/pugl-upstream/
+cp -r -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/dgl/src/pugl-upstream/AUTHORS /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/src/pugl-upstream/
+cp -r -v /Shared/Personal/FOSS/GIT/DISTRHO/DPF/dgl/src/pugl-upstream/COPYING /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/src/pugl-upstream/
 
-rm    /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/distrho/src/DistrhoPlugin{Jack,LADSPA+DSSI,LV2,LV2export,VST}.cpp
-rm    /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/distrho/src/DistrhoUI{DSSI,LV2}.cpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/Cairo.hpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/Vulkan.hpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/src/Cairo.cpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/src/Vulkan.cpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/dgl/src/Resources.{cpp,hpp}
 
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_mini-series/plugins/3BandEQ/{*.cpp,*.hpp,*.h}       /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/3bandeq/
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_mini-series/plugins/3BandSplitter/{*.cpp,*.hpp,*.h} /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/3bandsplitter/
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_mini-series/plugins/PingPongPan/{*.cpp,*.hpp,*.h}   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/pingpongpan/
+# rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/*.cpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/*.mm
+rm -r /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/src/jackbridge
+rm -r /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/src/travesty
+rm -r /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/src/vst
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/DistrhoInfo.hpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/src/DistrhoPlugin{JACK,LADSPA+DSSI,LV2,LV2export,VST2,VST3}.cpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/src/DistrhoPluginVST3.hpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/src/DistrhoUI{DSSI,LV2,VST3}.cpp
+rm -r /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/extra/sofd
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/extra/FileBrowserDialog.{cpp,hpp}
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/extra/LibraryUtils.hpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/extra/RingBuffer.hpp
+rm    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/distrho/extra/ScopedSafeLocale.hpp
+
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/DISTRHO_mini-series/plugins/3BandEQ/{*.cpp,*.hpp,*.h}       /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/3bandeq/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/DISTRHO_mini-series/plugins/3BandSplitter/{*.cpp,*.hpp,*.h} /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/3bandsplitter/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/DISTRHO_mini-series/plugins/PingPongPan/{*.cpp,*.hpp,*.h}   /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/pingpongpan/
 # 
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_nekobi/plugins/Nekobi/{*.cpp,*.hpp,*.h}             /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/nekobi/
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_nekobi/plugins/Nekobi/nekobee-src/{*.c,*.h}         /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/nekobi/nekobee-src/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/DISTRHO_nekobi/plugins/Nekobi/{*.cpp,*.hpp,*.h}             /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/nekobi/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/DISTRHO_nekobi/plugins/Nekobi/nekobee-src/{*.c,*.h}         /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/nekobi/nekobee-src/
 # 
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_prom/plugins/ProM/{*.cpp,*.hpp,*.h}                 /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/prom/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/DISTRHO_prom/plugins/ProM/{*.cpp,*.hpp,*.h}                 /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/prom/
 # 
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/GrooveJuice/{*.cpp,*.hpp,*.hxx,*.h}    /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/groovejuice/
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/PowerJuice/{*.cpp,*.hpp,*.h}           /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/powerjuice/
-# # cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/PowerJuiceX2/{*.cpp,*.hpp,*.hxx,*.h}   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/powerjuicex2/
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/SegmentJuice/{*.cpp,*.hpp,*.hxx,*.h}   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/segmentjuice/
-# # cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/StutterJuice/{*.cpp,*.hpp,*.hxx,*.h}   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/stutterjuice/
-# # cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/TriggerJuice/{*.cpp,*.hpp,*.hxx,*.h}   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/triggerjuice/
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/VectorJuice/{*.cpp,*.hpp,*.h}          /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/vectorjuice/
-# cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/JuicePlugins/plugins/WobbleJuice/{*.cpp,*.hpp,*.hxx,*.h}    /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/wobblejuice/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/JuicePlugins/plugins/GrooveJuice/{*.cpp,*.hpp,*.hxx,*.h}    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/groovejuice/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/JuicePlugins/plugins/PowerJuice/{*.cpp,*.hpp,*.h}           /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/powerjuice/
+# # cp -v /Shared/Personal/FOSS/GIT/DISTRHO/JuicePlugins/plugins/PowerJuiceX2/{*.cpp,*.hpp,*.hxx,*.h}   /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/powerjuicex2/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/JuicePlugins/plugins/SegmentJuice/{*.cpp,*.hpp,*.hxx,*.h}   /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/segmentjuice/
+# # cp -v /Shared/Personal/FOSS/GIT/DISTRHO/JuicePlugins/plugins/StutterJuice/{*.cpp,*.hpp,*.hxx,*.h}   /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/stutterjuice/
+# # cp -v /Shared/Personal/FOSS/GIT/DISTRHO/JuicePlugins/plugins/TriggerJuice/{*.cpp,*.hpp,*.hxx,*.h}   /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/triggerjuice/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/JuicePlugins/plugins/VectorJuice/{*.cpp,*.hpp,*.h}          /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/vectorjuice/
+# cp -v /Shared/Personal/FOSS/GIT/DISTRHO/JuicePlugins/plugins/WobbleJuice/{*.cpp,*.hpp,*.hxx,*.h}    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/wobblejuice/
 # 
-# cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamComp/{*.cpp,*.hpp,*.h}                   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/zamcomp/
-# cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamCompX2/{*.cpp,*.hpp,*.h}                 /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/zamcompx2/
-# cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamEQ2/{*.cpp,*.hpp,*.h}                    /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/zameq2/
-# cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamSynth/{*.cpp,*.hpp,*.h}                  /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/zamsynth/
-# cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZamTube/{*.cpp,*.hpp,*.h}                   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/zamtube/
-# cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZaMultiComp/{*.cpp,*.hpp,*.h}               /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/zamulticomp/
-# cp -v /home/falktx/FOSS/GIT-mine/zam-plugins-DPF/plugins/ZaMultiCompX2/{*.cpp,*.hpp,*.h}             /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/zamulticompx2/
+# cp -v /Shared/Personal/FOSS/GIT/zam-plugins-DPF/plugins/ZamComp/{*.cpp,*.hpp,*.h}                   /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/zamcomp/
+# cp -v /Shared/Personal/FOSS/GIT/zam-plugins-DPF/plugins/ZamCompX2/{*.cpp,*.hpp,*.h}                 /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/zamcompx2/
+# cp -v /Shared/Personal/FOSS/GIT/zam-plugins-DPF/plugins/ZamEQ2/{*.cpp,*.hpp,*.h}                    /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/zameq2/
+# cp -v /Shared/Personal/FOSS/GIT/zam-plugins-DPF/plugins/ZamSynth/{*.cpp,*.hpp,*.h}                  /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/zamsynth/
+# cp -v /Shared/Personal/FOSS/GIT/zam-plugins-DPF/plugins/ZamTube/{*.cpp,*.hpp,*.h}                   /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/zamtube/
+# cp -v /Shared/Personal/FOSS/GIT/zam-plugins-DPF/plugins/ZaMultiComp/{*.cpp,*.hpp,*.h}               /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/zamulticomp/
+# cp -v /Shared/Personal/FOSS/GIT/zam-plugins-DPF/plugins/ZaMultiCompX2/{*.cpp,*.hpp,*.h}             /Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/native-plugins/zamulticompx2/

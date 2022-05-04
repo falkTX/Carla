@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -18,119 +18,43 @@
 #define DGL_WIDGET_PRIVATE_DATA_HPP_INCLUDED
 
 #include "../Widget.hpp"
-#include "../Window.hpp"
 
-#include <vector>
+#include <list>
 
 START_NAMESPACE_DGL
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 struct Widget::PrivateData {
     Widget* const self;
-    Window& parent;
-    Point<int> absolutePos;
-    Size<uint> size;
-    std::vector<Widget*> subWidgets;
-
+    TopLevelWidget* const topLevelWidget;
+    Widget* const parentWidget;
     uint id;
-    bool needsFullViewport;
     bool needsScaling;
-    bool skipDisplay;
     bool visible;
+    Size<uint> size;
+    std::list<SubWidget*> subWidgets;
 
-    PrivateData(Widget* const s, Window& p, Widget* groupWidget, bool addToSubWidgets)
-        : self(s),
-          parent(p),
-          absolutePos(0, 0),
-          size(0, 0),
-          subWidgets(),
-          id(0),
-          needsFullViewport(false),
-          needsScaling(false),
-          skipDisplay(false),
-          visible(true)
-    {
-        if (addToSubWidgets && groupWidget != nullptr)
-        {
-            skipDisplay = true;
-            groupWidget->pData->subWidgets.push_back(self);
-        }
-    }
+    // called via TopLevelWidget
+    explicit PrivateData(Widget* const s, TopLevelWidget* const tlw);
+    // called via SubWidget
+    explicit PrivateData(Widget* const s, Widget* const pw);
+    ~PrivateData();
 
-    ~PrivateData()
-    {
-        subWidgets.clear();
-    }
+    void displaySubWidgets(uint width, uint height, double autoScaleFactor);
 
-    void display(const uint width, const uint height, const bool renderingSubWidget)
-    {
-        if ((skipDisplay && ! renderingSubWidget) || size.isInvalid() || ! visible)
-            return;
+    bool giveKeyboardEventForSubWidgets(const KeyboardEvent& ev);
+    bool giveCharacterInputEventForSubWidgets(const CharacterInputEvent& ev);
+    bool giveMouseEventForSubWidgets(MouseEvent& ev);
+    bool giveMotionEventForSubWidgets(MotionEvent& ev);
+    bool giveScrollEventForSubWidgets(ScrollEvent& ev);
 
-        bool needsDisableScissor = false;
+    static TopLevelWidget* findTopLevelWidget(Widget* const w);
 
-        // reset color
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-        if (needsFullViewport || (absolutePos.isZero() && size == Size<uint>(width, height)))
-        {
-            // full viewport size
-            glViewport(0, 0, static_cast<GLsizei>(width), static_cast<GLsizei>(height));
-        }
-        else if (needsScaling)
-        {
-            // limit viewport to widget bounds
-            glViewport(absolutePos.getX(),
-                       static_cast<int>(height - self->getHeight()) - absolutePos.getY(),
-                       static_cast<GLsizei>(self->getWidth()),
-                       static_cast<GLsizei>(self->getHeight()));
-        }
-        else
-        {
-            // only set viewport pos
-            glViewport(absolutePos.getX(),
-                       /*static_cast<int>(height - self->getHeight())*/ - absolutePos.getY(),
-                       static_cast<GLsizei>(width),
-                       static_cast<GLsizei>(height));
-
-            // then cut the outer bounds
-            glScissor(absolutePos.getX(),
-                      static_cast<int>(height - self->getHeight()) - absolutePos.getY(),
-                      static_cast<GLsizei>(self->getWidth()),
-                      static_cast<GLsizei>(self->getHeight()));
-
-            glEnable(GL_SCISSOR_TEST);
-            needsDisableScissor = true;
-        }
-
-        // display widget
-        self->onDisplay();
-
-        if (needsDisableScissor)
-        {
-            glDisable(GL_SCISSOR_TEST);
-            needsDisableScissor = false;
-        }
-
-        displaySubWidgets(width, height);
-    }
-
-    void displaySubWidgets(const uint width, const uint height)
-    {
-        for (std::vector<Widget*>::iterator it = subWidgets.begin(); it != subWidgets.end(); ++it)
-        {
-            Widget* const widget(*it);
-            DISTRHO_SAFE_ASSERT_CONTINUE(widget->pData != this);
-
-            widget->pData->display(width, height, true);
-        }
-    }
-
-    DISTRHO_DECLARE_NON_COPY_STRUCT(PrivateData)
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 END_NAMESPACE_DGL
 

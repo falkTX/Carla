@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -24,8 +24,21 @@
 # include "src/DistrhoUIDSSI.cpp"
 #elif defined(DISTRHO_PLUGIN_TARGET_LV2)
 # include "src/DistrhoUILV2.cpp"
-#elif defined(DISTRHO_PLUGIN_TARGET_VST)
+#elif defined(DISTRHO_PLUGIN_TARGET_VST2)
+// nothing
+#elif defined(DISTRHO_PLUGIN_TARGET_VST3)
+# include "src/DistrhoUIVST3.cpp"
+#elif defined(DISTRHO_PLUGIN_TARGET_SHARED) || defined(DISTRHO_PLUGIN_TARGET_STATIC)
 // nothing
 #else
 # error unsupported format
+#endif
+
+#if !DISTRHO_PLUGIN_WANT_DIRECT_ACCESS && !DISTRHO_PLUGIN_TARGET_JACK && !DISTRHO_PLUGIN_TARGET_VST2 && !DISTRHO_PLUGIN_TARGET_VST3
+# ifdef DISTRHO_PLUGIN_TARGET_DSSI
+#  define DISTRHO_IS_STANDALONE 1
+# else
+#  define DISTRHO_IS_STANDALONE 0
+# endif
+# include "src/DistrhoUtils.cpp"
 #endif

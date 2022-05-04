@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -19,91 +19,102 @@
 
 #include "Geometry.hpp"
 
-#include <vector>
-
-// -----------------------------------------------------------------------
-// Forward class names
-
-#ifdef DISTRHO_DEFINES_H_INCLUDED
-START_NAMESPACE_DISTRHO
-class UI;
-END_NAMESPACE_DISTRHO
-#endif
-
 START_NAMESPACE_DGL
 
-class Application;
-class ImageSlider;
-class NanoWidget;
-class Window;
-class StandaloneWindow;
+// --------------------------------------------------------------------------------------------------------------------
+// Forward class names
 
-// -----------------------------------------------------------------------
+class Application;
+class SubWidget;
+class TopLevelWidget;
+class Window;
+
+// --------------------------------------------------------------------------------------------------------------------
 
 /**
    Base DGL Widget class.
 
    This is the base Widget class, from which all widgets are built.
 
-   All widgets have a parent Window where they'll be drawn.
-   This parent is never changed during the widget lifetime.
+   All widgets have a parent widget where they'll be drawn, this can be the top-level widget or a group widget.
+   This parent is never changed during a widget's lifetime.
 
-   Widgets receive events in relative coordinates.
-   (0, 0) means its top-left position.
+   Widgets receive events in relative coordinates. (0, 0) means its top-left position.
 
-   Windows paint widgets in the order they are constructed.
-   Early widgets are drawn first, at the bottom, then newer ones on top.
-   Events are sent in the inverse order so that the top-most widget gets
+   The top-level widget will draw subwidgets in the order they are constructed.
+   Early subwidgets are drawn first, at the bottom, then newer ones on top.
+   Events are sent in the inverse order so that the top-most widgets get
    a chance to catch the event and stop its propagation.
 
-   All widget event callbacks do nothing by default.
+   All widget event callbacks do nothing by default and onDisplay MUST be reimplemented by subclasses.
+
+   @note It is not possible to subclass this Widget class directly, you must use SubWidget or TopLevelWidget instead.
  */
 class Widget
 {
 public:
    /**
       Base event data.
-      @a mod  The currently active keyboard modifiers, @see Modifier.
-      @a time The timestamp (if any).
+      These are the fields present on all Widget events.
+
+      @a mod  Currently active keyboard modifiers, @see Modifier.
+      @a mod  Event flags, @see EventFlag.
+      @a time Event timestamp (if any).
     */
     struct BaseEvent {
-        uint     mod;
-        uint32_t time;
+        uint mod;
+        uint flags;
+        uint time;
 
-        /** Constuctor */
-        BaseEvent() noexcept : mod(0x0), time(0) {}
+        /** Constructor */
+        BaseEvent() noexcept : mod(0x0), flags(0x0), time(0) {}
         /** Destuctor */
         virtual ~BaseEvent() noexcept {}
     };
 
    /**
       Keyboard event.
-      @a press True if the key was pressed, false if released.
-      @a key   Unicode point of the key pressed.
+
+      This event represents low-level key presses and releases.
+      This can be used for "direct" keyboard handing like key bindings, but must not be interpreted as text input.
+
+      Keys are represented portably as Unicode code points, using the "natural" code point for the key.
+      The @a key field is the code for the pressed key, without any modifiers applied.
+      For example, a press or release of the 'A' key will have `key` 97 ('a')
+      regardless of whether shift or control are being held.
+
+      Alternatively, the raw @a keycode can be used to work directly with physical keys,
+      but note that this value is not portable and differs between platforms and hardware.
+
+      @a press   True if the key was pressed, false if released.
+      @a key     Unicode point of the key pressed.
+      @a keycode Raw keycode.
       @see onKeyboard
     */
     struct KeyboardEvent : BaseEvent {
         bool press;
         uint key;
+        uint keycode;
 
-        /** Constuctor */
+        /** Constructor */
         KeyboardEvent() noexcept
             : BaseEvent(),
               press(false),
-              key(0) {}
+              key(0),
+              keycode(0) {}
     };
 
    /**
       Special keyboard event.
-      @a press True if the key was pressed, false if released.
-      @a key   The key pressed.
-      @see onSpecial
+
+      DEPRECATED This used to be part of DPF due to pugl, but now deprecated and simply non-functional.
+      All events go through KeyboardEvent or CharacterInputEvent, use those instead.
     */
-    struct SpecialEvent : BaseEvent {
+    struct DISTRHO_DEPRECATED_BY("KeyboardEvent") SpecialEvent : BaseEvent {
         bool press;
         Key  key;
 
-        /** Constuctor */
+        /** Constructor */
         SpecialEvent() noexcept
             : BaseEvent(),
               press(false),
@@ -111,54 +122,107 @@ public:
     };
 
    /**
-      Mouse event.
-      @a button The button number (1 = left, 2 = middle, 3 = right).
-      @a press  True if the button was pressed, false if released.
-      @a pos    The widget-relative coordinates of the pointer.
+      Character input event.
+
+      This event represents text input, usually as the result of a key press.
+      The text is given both as a Unicode character code and a UTF-8 string.
+
+      Note that this event is generated by the platform's input system,
+      so there is not necessarily a direct correspondence between text events and physical key presses.
+      For example, with some input methods a sequence of several key presses will generate a single character.
+
+      @a keycode   Raw key code.
+      @a character Unicode character code.
+      @a string    UTF-8 string.
+      @see onCharacterInput
+    */
+    struct CharacterInputEvent : BaseEvent {
+        uint keycode;
+        uint character;
+        char string[8];
+
+        /** Constructor */
+        CharacterInputEvent() noexcept
+            : BaseEvent(),
+              keycode(0),
+              character(0),
+#ifdef DISTRHO_PROPER_CPP11_SUPPORT
+              string{'\0','\0','\0','\0','\0','\0','\0','\0'} {}
+#else
+              string() { std::memset(string, 0, sizeof(string)); }
+#endif
+    };
+
+   /**
+      Mouse press or release event.
+
+      @a button      The button number starting from 1 (1 = left, 2 = middle, 3 = right).
+      @a press       True if the button was pressed, false if released.
+      @a pos         The widget-relative coordinates of the pointer.
+      @a absolutePos The absolute coordinates of the pointer.
       @see onMouse
     */
     struct MouseEvent : BaseEvent {
-        int  button;
+        uint button;
         bool press;
-        Point<int> pos;
+        Point<double> pos;
+        Point<double> absolutePos;
 
-        /** Constuctor */
+        /** Constructor */
         MouseEvent() noexcept
             : BaseEvent(),
               button(0),
               press(false),
-              pos(0, 0) {}
+              pos(0.0, 0.0),
+              absolutePos(0.0, 0.0) {}
     };
 
    /**
       Mouse motion event.
-      @a pos The widget-relative coordinates of the pointer.
+
+      @a pos         The widget-relative coordinates of the pointer.
+      @a absolutePos The absolute coordinates of the pointer.
       @see onMotion
     */
     struct MotionEvent : BaseEvent {
-        Point<int> pos;
+        Point<double> pos;
+        Point<double> absolutePos;
 
-        /** Constuctor */
+        /** Constructor */
         MotionEvent() noexcept
             : BaseEvent(),
-              pos(0, 0) {}
+              pos(0.0, 0.0),
+              absolutePos(0.0, 0.0) {}
     };
 
    /**
       Mouse scroll event.
-      @a pos   The widget-relative coordinates of the pointer.
-      @a delta The scroll distance.
+
+      The scroll distance is expressed in "lines",
+      an arbitrary unit that corresponds to a single tick of a detented mouse wheel.
+      For example, `delta.y` = 1.0 scrolls 1 line up.
+      Some systems and devices support finer resolution and/or higher values for fast scrolls,
+      so programs should handle any value gracefully.
+
+      @a pos         The widget-relative coordinates of the pointer.
+      @a absolutePos The absolute coordinates of the pointer.
+      @a delta       The scroll distance.
+      @a direction   The direction of the scroll or "smooth".
       @see onScroll
     */
     struct ScrollEvent : BaseEvent {
-        Point<int> pos;
-        Point<float> delta;
+        Point<double> pos;
+        Point<double> absolutePos;
+        Point<double> delta;
+        ScrollDirection direction;
 
-        /** Constuctor */
+        /** Constructor */
         ScrollEvent() noexcept
             : BaseEvent(),
-              pos(0, 0),
-              delta(0.0f, 0.0f) {}
+              pos(0.0, 0.0),
+              absolutePos(0.0, 0.0),
+              delta(0.0, 0.0),
+              direction(kScrollSmooth) {}
     };
 
    /**
@@ -171,22 +235,40 @@ public:
         Size<uint> size;
         Size<uint> oldSize;
 
-        /** Constuctor */
+        /** Constructor */
         ResizeEvent() noexcept
             : size(0, 0),
               oldSize(0, 0) {}
     };
 
    /**
-      Constructor.
+      Widget position changed event.
+      @a pos    The new absolute position of the widget.
+      @a oldPos The previous absolute position of the widget.
+      @see onPositionChanged
     */
-    explicit Widget(Window& parent);
+    struct PositionChangedEvent {
+        Point<int> pos;
+        Point<int> oldPos;
+
+        /** Constructor */
+        PositionChangedEvent() noexcept
+            : pos(0, 0),
+              oldPos(0, 0) {}
+    };
+
+private:
+   /**
+      Private constructor, reserved for TopLevelWidget class.
+    */
+    explicit Widget(TopLevelWidget* topLevelWidget);
 
    /**
-      Constructor for a subwidget.
+      Private constructor, reserved for SubWidget class.
     */
-    explicit Widget(Widget* groupWidget);
+    explicit Widget(Widget* widgetToGroupTo);
 
+public:
    /**
       Destructor.
     */
@@ -199,9 +281,9 @@ public:
     bool isVisible() const noexcept;
 
    /**
-      Set widget visible (or not) according to @a yesNo.
+      Set widget visible (or not) according to @a visible.
     */
-    void setVisible(bool yesNo);
+    void setVisible(bool visible);
 
    /**
       Show widget.
@@ -228,7 +310,7 @@ public:
    /**
       Get size.
     */
-    const Size<uint>& getSize() const noexcept;
+    const Size<uint> getSize() const noexcept;
 
    /**
       Set width.
@@ -251,67 +333,6 @@ public:
     void setSize(const Size<uint>& size) noexcept;
 
    /**
-      Get absolute X.
-    */
-    int getAbsoluteX() const noexcept;
-
-   /**
-      Get absolute Y.
-    */
-    int getAbsoluteY() const noexcept;
-
-   /**
-      Get absolute position.
-    */
-    const Point<int>& getAbsolutePos() const noexcept;
-
-   /**
-      Set absolute X.
-    */
-    void setAbsoluteX(int x) noexcept;
-
-   /**
-      Set absolute Y.
-    */
-    void setAbsoluteY(int y) noexcept;
-
-   /**
-      Set absolute position using @a x and @a y values.
-    */
-    void setAbsolutePos(int x, int y) noexcept;
-
-   /**
-      Set absolute position.
-    */
-    void setAbsolutePos(const Point<int>& pos) noexcept;
-
-   /**
-      Get this widget's window application.
-      Same as calling getParentWindow().getApp().
-    */
-    Application& getParentApp() const noexcept;
-
-   /**
-      Get parent window, as passed in the constructor.
-    */
-    Window& getParentWindow() const noexcept;
-
-   /**
-      Check if this widget contains the point defined by @a x and @a y.
-    */
-    bool contains(int x, int y) const noexcept;
-
-   /**
-      Check if this widget contains the point @a pos.
-    */
-    bool contains(const Point<int>& pos) const noexcept;
-
-   /**
-      Tell this widget's window to repaint itself.
-    */
-    void repaint() noexcept;
-
-   /**
       Get the Id associated with this widget.
       @see setId
     */
@@ -323,9 +344,47 @@ public:
     */
     void setId(uint id) noexcept;
 
+   /**
+      Get the application associated with this widget's window.
+      This is the same as calling `getTopLevelWidget()->getApp()`.
+    */
+    Application& getApp() const noexcept;
+
+   /**
+      Get the window associated with this widget.
+      This is the same as calling `getTopLevelWidget()->getWindow()`.
+    */
+    Window& getWindow() const noexcept;
+
+   /**
+      Get the graphics context associated with this widget's window.
+      GraphicsContext is an empty struct and needs to be casted into a different type in order to be usable,
+      for example GraphicsContext.
+      @see CairoSubWidget, CairoTopLevelWidget
+    */
+    const GraphicsContext& getGraphicsContext() const noexcept;
+
+   /**
+      Get top-level widget, as passed directly in the constructor
+      or going up the chain of group widgets until it finds the top-level one.
+    */
+    TopLevelWidget* getTopLevelWidget() const noexcept;
+
+   /**
+      Request repaint of this widget's area to the window this widget belongs to.
+      On the raw Widget class this function does nothing.
+    */
+    virtual void repaint() noexcept;
+
+    DISTRHO_DEPRECATED_BY("getApp()")
+    Application& getParentApp() const noexcept { return getApp(); }
+
+    DISTRHO_DEPRECATED_BY("getWindow()")
+    Window& getParentWindow() const noexcept { return getWindow(); }
+
 protected:
    /**
-      A function called to draw the view contents with OpenGL.
+      A function called to draw the widget contents.
     */
     virtual void onDisplay() = 0;
 
@@ -336,10 +395,10 @@ protected:
     virtual bool onKeyboard(const KeyboardEvent&);
 
    /**
-      A function called when a special key is pressed or released.
+      A function called when an UTF-8 character is received.
       @return True to stop event propagation, false otherwise.
     */
-    virtual bool onSpecial(const SpecialEvent&);
+    virtual bool onCharacterInput(const CharacterInputEvent&);
 
    /**
       A function called when a mouse button is pressed or released.
@@ -364,25 +423,34 @@ protected:
     */
     virtual void onResize(const ResizeEvent&);
 
+   /**
+      A function called when a special key is pressed or released.
+      DEPRECATED use onKeyboard or onCharacterInput
+    */
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    virtual bool onSpecial(const SpecialEvent&) { return false; }
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+# pragma GCC diagnostic pop
+#endif
+
 private:
     struct PrivateData;
     PrivateData* const pData;
-
-   /** @internal */
-    explicit Widget(Widget* groupWidget, bool addToSubWidgets);
-
-    friend class ImageSlider;
-    friend class NanoWidget;
-    friend class Window;
-    friend class StandaloneWindow;
-#ifdef DISTRHO_DEFINES_H_INCLUDED
-    friend class DISTRHO_NAMESPACE::UI;
-#endif
+    friend class SubWidget;
+    friend class TopLevelWidget;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Widget)
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 END_NAMESPACE_DGL
 

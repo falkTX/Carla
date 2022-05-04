@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -88,33 +88,70 @@ public:
     /*
      * Start the thread.
      */
-    bool startThread() noexcept
+    bool startThread(const bool withRealtimePriority = false) noexcept
     {
         // check if already running
         DISTRHO_SAFE_ASSERT_RETURN(! isThreadRunning(), true);
+
+        pthread_t handle;
+
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+
+        struct sched_param sched_param;
+        std::memset(&sched_param, 0, sizeof(sched_param));
+
+        if (withRealtimePriority)
+        {
+            sched_param.sched_priority = 80;
+
+#ifndef DISTRHO_OS_HAIKU
+            if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)          == 0  &&
+                pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0  &&
+# ifndef DISTRHO_OS_WINDOWS
+               (pthread_attr_setschedpolicy(&attr, SCHED_FIFO)              == 0  ||
+                pthread_attr_setschedpolicy(&attr, SCHED_RR)                == 0) &&
+# endif
+                pthread_attr_setschedparam(&attr, &sched_param)             == 0)
+            {
+                d_stdout("Thread setup with realtime priority successful");
+            }
+            else
+#endif
+            {
+                d_stdout("Thread setup with realtime priority failed, going with normal priority instead");
+                pthread_attr_destroy(&attr);
+                pthread_attr_init(&attr);
+            }
+        }
 
         const MutexLocker ml(fLock);
 
         fShouldExit = false;
 
-        pthread_t handle;
+        bool ok = pthread_create(&handle, &attr, _entryPoint, this) == 0;
+        pthread_attr_destroy(&attr);
 
-        if (pthread_create(&handle, nullptr, _entryPoint, this) == 0)
-        {
+        if (withRealtimePriority && !ok)
+       {
+            d_stdout("Thread with realtime priority failed on creation, going with normal priority instead");
+            pthread_attr_init(&attr);
+            ok = pthread_create(&handle, &attr, _entryPoint, this) == 0;
+            pthread_attr_destroy(&attr);
+       }
+
+        DISTRHO_SAFE_ASSERT_RETURN(ok, false);
 #ifdef PTW32_DLLPORT
-            DISTRHO_SAFE_ASSERT_RETURN(handle.p != nullptr, false);
+        DISTRHO_SAFE_ASSERT_RETURN(handle.p != nullptr, false);
 #else
-            DISTRHO_SAFE_ASSERT_RETURN(handle != 0, false);
+        DISTRHO_SAFE_ASSERT_RETURN(handle != 0, false);
 #endif
-            pthread_detach(handle);
-            _copyFrom(handle);
+        pthread_detach(handle);
+        _copyFrom(handle);
 
-            // wait for thread to start
-            fSignal.wait();
-            return true;
-        }
-
-        return false;
+        // wait for thread to start
+        fSignal.wait();
+        return true;
     }
 
     /*
@@ -161,10 +198,7 @@ public:
                 _copyTo(threadId);
                 _init();
 
-                try {
-                    pthread_cancel(threadId);
-                } DISTRHO_SAFE_EXCEPTION("pthread_cancel");
-
+                pthread_detach(threadId);
                 return false;
             }
         }
@@ -192,6 +226,14 @@ public:
     }
 
     /*
+     * Returns the Id/handle of the thread.
+     */
+    pthread_t getThreadId() const noexcept
+    {
+        return fHandle;
+    }
+
+    /*
      * Changes the name of the caller thread.
      */
     static void setCurrentThreadName(const char* const name) noexcept
@@ -201,7 +243,7 @@ public:
 #ifdef DISTRHO_OS_LINUX
         prctl(PR_SET_NAME, name, 0, 0, 0);
 #endif
-#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
+#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012 && !defined(DISTRHO_OS_GNU_HURD)
         pthread_setname_np(pthread_self(), name);
 #endif
     }
@@ -259,7 +301,8 @@ private:
      */
     void _runEntryPoint() noexcept
     {
-        setCurrentThreadName(fName);
+        if (fName.isNotEmpty())
+            setCurrentThreadName(fName);
 
         // report ready
         fSignal.signal();
@@ -281,7 +324,7 @@ private:
         return nullptr;
     }
 
-    DISTRHO_DECLARE_NON_COPY_CLASS(Thread)
+    DISTRHO_DECLARE_NON_COPYABLE(Thread)
 };
 
 // -----------------------------------------------------------------------
