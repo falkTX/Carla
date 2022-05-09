@@ -86,19 +86,6 @@ File& File::operator= (const File& other)
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-File::File (File&& other) noexcept
-    : fullPath (static_cast<String&&> (other.fullPath))
-{
-}
-
-File& File::operator= (File&& other) noexcept
-{
-    fullPath = static_cast<String&&> (other.fullPath);
-    return *this;
-}
-#endif
-
 bool File::isNull() const
 {
     return fullPath.isEmpty();

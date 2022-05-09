@@ -32,18 +32,12 @@
 // Compiler support
 
 #if (__cplusplus >= 201103L || defined (__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
- #define WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
-
  #if (__GNUC__ * 100 + __GNUC_MINOR__) >= 407 && ! defined (WATER_DELETED_FUNCTION)
   #define WATER_DELETED_FUNCTION = delete
  #endif
 #endif
 
 #ifdef __clang__
- #if __has_feature (cxx_implicit_moves) && __clang_major__ >= 9
-  #define WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
- #endif
-
  #if __has_feature (cxx_deleted_functions)
   #define WATER_DELETED_FUNCTION = delete
  #endif

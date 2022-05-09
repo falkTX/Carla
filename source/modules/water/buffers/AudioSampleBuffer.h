@@ -205,39 +205,6 @@ public:
     */
     ~AudioSampleBuffer() noexcept {}
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    /** Move constructor */
-    AudioSampleBuffer (AudioSampleBuffer&& other) noexcept
-        : numChannels (other.numChannels),
-          size (other.size),
-          allocatedBytes (other.allocatedBytes),
-          channels (other.channels),
-          allocatedData (static_cast<HeapBlock<char>&&> (other.allocatedData)),
-          isClear (other.isClear)
-    {
-        std::memcpy (preallocatedChannelSpace, other.preallocatedChannelSpace, sizeof (preallocatedChannelSpace));
-        other.numChannels = 0;
-        other.size = 0;
-        other.allocatedBytes = 0;
-    }
-
-    /** Move assignment */
-    AudioSampleBuffer& operator= (AudioSampleBuffer&& other) noexcept
-    {
-        numChannels = other.numChannels;
-        size = other.size;
-        allocatedBytes = other.allocatedBytes;
-        channels = other.channels;
-        allocatedData = static_cast<HeapBlock<char>&&> (other.allocatedData);
-        isClear = other.isClear;
-        memcpy (preallocatedChannelSpace, other.preallocatedChannelSpace, sizeof (preallocatedChannelSpace));
-        other.numChannels = 0;
-        other.size = 0;
-        other.allocatedBytes = 0;
-        return *this;
-    }
-   #endif
-
     //==============================================================================
     /** Returns the number of channels of audio data that this buffer contains.
         @see getSampleData

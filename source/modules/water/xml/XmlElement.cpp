@@ -133,31 +133,6 @@ XmlElement& XmlElement::operator= (const XmlElement& other)
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-XmlElement::XmlElement (XmlElement&& other) noexcept
-    : nextListItem      (static_cast<LinkedListPointer<XmlElement>&&> (other.nextListItem)),
-      firstChildElement (static_cast<LinkedListPointer<XmlElement>&&> (other.firstChildElement)),
-      attributes        (static_cast<LinkedListPointer<XmlAttributeNode>&&> (other.attributes)),
-      tagName           (static_cast<String&&> (other.tagName))
-{
-}
-
-XmlElement& XmlElement::operator= (XmlElement&& other) noexcept
-{
-    wassert (this != &other); // hopefully the compiler should make this situation impossible!
-
-    removeAllAttributes();
-    deleteAllChildElements();
-
-    nextListItem      = static_cast<LinkedListPointer<XmlElement>&&> (other.nextListItem);
-    firstChildElement = static_cast<LinkedListPointer<XmlElement>&&> (other.firstChildElement);
-    attributes        = static_cast<LinkedListPointer<XmlAttributeNode>&&> (other.attributes);
-    tagName           = static_cast<String&&> (other.tagName);
-
-    return *this;
-}
-#endif
-
 void XmlElement::copyChildrenAndAttributesFrom (const XmlElement& other)
 {
     wassert (firstChildElement.get() == nullptr);

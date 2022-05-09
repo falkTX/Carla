@@ -32,16 +32,6 @@ Identifier::~Identifier() noexcept {}
 
 Identifier::Identifier (const Identifier& other) noexcept  : name (other.name) {}
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-Identifier::Identifier (Identifier&& other) noexcept : name (static_cast<String&&> (other.name)) {}
-
-Identifier& Identifier::operator= (Identifier&& other) noexcept
-{
-    name = static_cast<String&&> (other.name);
-    return *this;
-}
-#endif
-
 Identifier& Identifier::operator= (const Identifier& other) noexcept
 {
     name = other.name;

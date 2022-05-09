@@ -81,15 +81,6 @@ public:
             new (data.elements + i) ElementType (other.data.elements[i]);
     }
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    Array (Array<ElementType>&& other) noexcept
-        : data (static_cast<ArrayAllocationBase<ElementType>&&> (other.data)),
-          numUsed (other.numUsed)
-    {
-        other.numUsed = 0;
-    }
-   #endif
-
     /** Initalises from a null-terminated C array of values.
 
         @param values   the array to copy from
@@ -136,17 +127,6 @@ public:
 
         return *this;
     }
-
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    Array& operator= (Array&& other) noexcept
-    {
-        deleteAllElements();
-        data = static_cast<ArrayAllocationBase<ElementType>&&> (other.data);
-        numUsed = other.numUsed;
-        other.numUsed = 0;
-        return *this;
-    }
-   #endif
 
     //==============================================================================
     /** Compares this array to another one.
@@ -379,22 +359,6 @@ public:
         new (data.elements + numUsed++) ElementType (newElement);
         return true;
     }
-
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    /** Appends a new element at the end of the array.
-
-        @param newElement       the new object to add to the array
-        @see set, insert, addIfNotAlreadyThere, addSorted, addUsingDefaultSort, addArray
-    */
-    bool add (ElementType&& newElement) noexcept
-    {
-        if (! data.ensureAllocatedSize (static_cast<size_t>(numUsed + 1)))
-            return false;
-
-        new (data.elements + numUsed++) ElementType (static_cast<ElementType&&> (newElement));
-        return true;
-    }
-   #endif
 
     /** Inserts a new element into the array at a given position.
 

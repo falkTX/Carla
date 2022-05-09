@@ -113,11 +113,6 @@ public:
     /** Copies this message from another one. */
     MidiMessage& operator= (const MidiMessage& other);
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    MidiMessage (MidiMessage&&) noexcept;
-    MidiMessage& operator= (MidiMessage&&) noexcept;
-   #endif
-
     //==============================================================================
     /** Returns a pointer to the raw midi data.
         @see getRawDataSize

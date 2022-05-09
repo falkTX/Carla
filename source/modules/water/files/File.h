@@ -89,11 +89,6 @@ public:
     /** Copies from another file object. */
     File& operator= (const File& otherFile);
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    File (File&&) noexcept;
-    File& operator= (File&&) noexcept;
-   #endif
-
     //==============================================================================
     /** Checks whether the file actually exists.
 

@@ -45,19 +45,6 @@ Result& Result::operator= (const Result& other)
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-Result::Result (Result&& other) noexcept
-    : errorMessage (static_cast<String&&> (other.errorMessage))
-{
-}
-
-Result& Result::operator= (Result&& other) noexcept
-{
-    errorMessage = static_cast<String&&> (other.errorMessage);
-    return *this;
-}
-#endif
-
 bool Result::operator== (const Result& other) const noexcept
 {
     return errorMessage == other.errorMessage;

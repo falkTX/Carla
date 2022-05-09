@@ -50,11 +50,6 @@ public:
     /** Replaces this set with a copy of another set. */
     NamedValueSet& operator= (const NamedValueSet&);
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    NamedValueSet (NamedValueSet&&) noexcept;
-    NamedValueSet& operator= (NamedValueSet&&) noexcept;
-   #endif
-
     /** Destructor. */
     ~NamedValueSet() noexcept;
 
@@ -67,27 +62,6 @@ public:
         NamedValue() noexcept : name(), value() {}
         NamedValue (const Identifier& n, const var& v) : name (n), value (v) {}
         NamedValue (const NamedValue& other) : name (other.name), value (other.value) {}
-
-    #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-        NamedValue (NamedValue&& other) noexcept
-        : name (static_cast<Identifier&&> (other.name)),
-          value (static_cast<var&&> (other.value))
-        {
-        }
-
-        NamedValue (Identifier&& n, var&& v) noexcept
-        : name (static_cast<Identifier&&> (n)),
-          value (static_cast<var&&> (v))
-        {
-        }
-
-        NamedValue& operator= (NamedValue&& other) noexcept
-        {
-            name = static_cast<Identifier&&> (other.name);
-            value = static_cast<var&&> (other.value);
-            return *this;
-        }
-     #endif
 
         bool operator== (const NamedValue& other) const noexcept   { return name == other.name && value == other.value; }
         bool operator!= (const NamedValue& other) const noexcept   { return ! operator== (other); }
@@ -123,14 +97,6 @@ public:
                     value was already set the value passed-in.
     */
     bool set (const Identifier& name, const var& newValue);
-
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    /** Changes or adds a named value.
-        @returns    true if a value was changed or added; false if the
-                    value was already set the value passed-in.
-    */
-    bool set (const Identifier& name, var&& newValue);
-   #endif
 
     /** Returns true if the set contains an item with the specified name. */
     bool contains (const Identifier& name) const noexcept;

@@ -69,13 +69,6 @@ public:
     var& operator= (const char* value);
     var& operator= (const String& value);
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    var (var&&) noexcept;
-    var (String&&);
-    var& operator= (var&&) noexcept;
-    var& operator= (String&&);
-   #endif
-
     void swapWith (var& other) noexcept;
 
     /** Returns a var object that can be used where you need the javascript "undefined" value. */
