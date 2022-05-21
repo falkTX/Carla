@@ -39,7 +39,7 @@
 /* Check OS */
 #if defined(WIN64) || defined(_WIN64) || defined(__WIN64__) || defined(_M_ARM64)
 # define CARLA_OS_WIN64
-#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_M_ARM)
 # define CARLA_OS_WIN32
 #elif defined(__APPLE__)
 # define CARLA_OS_MAC

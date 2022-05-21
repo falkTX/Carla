@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -132,8 +132,9 @@ struct v3_event {
  */
 
 struct v3_event_list {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	uint32_t (V3_API* get_event_count)(void* self);
 	v3_result (V3_API* get_event)(void* self, int32_t idx, struct v3_event* event);
 	v3_result (V3_API* add_event)(void* self, struct v3_event* event);
@@ -141,5 +142,17 @@ struct v3_event_list {
 
 static constexpr const v3_tuid v3_event_list_iid =
 	V3_ID(0x3A2C4214, 0x346349FE, 0xB2C4F397, 0xB9695A44);
+
+#ifdef __cplusplus
+
+/**
+ * C++ variants
+ */
+
+struct v3_event_list_cpp : v3_funknown {
+	v3_event_list list;
+};
+
+#endif
 
 #include "align_pop.h"

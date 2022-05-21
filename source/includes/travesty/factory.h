@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -37,8 +37,9 @@ struct v3_class_info {
 };
 
 struct v3_plugin_factory {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API *get_factory_info)(void* self, struct v3_factory_info*);
 	int32_t (V3_API *num_classes)(void* self);
 	v3_result (V3_API *get_class_info)(void* self, int32_t idx, struct v3_class_info*);
@@ -70,8 +71,9 @@ struct v3_class_info_2 {
 };
 
 struct v3_plugin_factory_2 {
+#ifndef __cplusplus
 	struct v3_plugin_factory;
-
+#endif
 	v3_result (V3_API *get_class_info_2)(void* self, int32_t idx, struct v3_class_info_2*);
 };
 
@@ -98,8 +100,9 @@ struct v3_class_info_3 {
 };
 
 struct v3_plugin_factory_3 {
+#ifndef __cplusplus
 	struct v3_plugin_factory_2;
-
+#endif
 	v3_result (V3_API *get_class_info_utf16)(void* self, int32_t idx, struct v3_class_info_3*);
 	v3_result (V3_API *set_host_context)(void* self, struct v3_funknown** host);
 };
@@ -118,5 +121,27 @@ struct v3_plugin_factory_cpp : v3_funknown {
 	v3_plugin_factory_2 v2;
 	v3_plugin_factory_3 v3;
 };
+
+template<> inline
+constexpr v3_plugin_factory_2* v3_cpp_obj(v3_plugin_factory_2** obj)
+{
+	/**
+	 * this ugly piece of code is required due to C++ assuming `reinterpret_cast` by default,
+	 * but we need everything to be `static_cast` for it to be `constexpr` compatible.
+	 */
+	return static_cast<v3_plugin_factory_2*>(
+		static_cast<void*>(static_cast<uint8_t*>(static_cast<void*>(*obj)) + sizeof(void*)*7));
+}
+
+template<> inline
+constexpr v3_plugin_factory_3* v3_cpp_obj(v3_plugin_factory_3** obj)
+{
+	/**
+	 * this ugly piece of code is required due to C++ assuming `reinterpret_cast` by default,
+	 * but we need everything to be `static_cast` for it to be `constexpr` compatible.
+	 */
+	return static_cast<v3_plugin_factory_3*>(
+		static_cast<void*>(static_cast<uint8_t*>(static_cast<void*>(*obj)) + sizeof(void*)*8));
+}
 
 #endif

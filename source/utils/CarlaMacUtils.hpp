@@ -43,6 +43,8 @@ const char* findBinaryInBundle(const char* const bundleDir);
  */
 bool removeFileFromQuarantine(const char* const filename);
 
+// --------------------------------------------------------------------------------------------------------------------
+
 /*
  * ...
  */
@@ -53,6 +55,17 @@ public:
 
 private:
     void* const pool;
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct BundleLoader {
+    CFBundleRef ref;
+    CFBundleRefNum refNum;
+
+    BundleLoader() noexcept;
+    ~BundleLoader();
+    bool load(const char* const filename);
 };
 
 // --------------------------------------------------------------------------------------------------------------------

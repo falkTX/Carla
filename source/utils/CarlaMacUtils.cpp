@@ -92,6 +92,42 @@ AutoNSAutoreleasePool::~AutoNSAutoreleasePool()
 
 // --------------------------------------------------------------------------------------------------------------------
 
+BundleLoader::BundleLoader() noexcept
+    : ref(nullptr),
+      refNum(0) {}
+
+BundleLoader::~BundleLoader()
+{
+    if (ref == nullptr)
+        return;
+
+    CFBundleCloseBundleResourceMap(ref, refNum);
+    CFBundleUnloadExecutable(ref);
+    CFRelease(ref);
+}
+
+bool BundleLoader::load(const char* const filename)
+{
+    const CFURLRef urlRef = CFURLCreateFromFileSystemRepresentation(0, (const UInt8*)filename, (CFIndex)std::strlen(filename), true);
+    CARLA_SAFE_ASSERT_RETURN(urlRef != nullptr, false);
+
+    ref = CFBundleCreate(kCFAllocatorDefault, urlRef);
+    CFRelease(urlRef);
+    CARLA_SAFE_ASSERT_RETURN(ref != nullptr, false);
+
+    if (! CFBundleLoadExecutable(ref))
+    {
+        CFRelease(ref);
+        ref = nullptr;
+        return false;
+    }
+
+    refNum = CFBundleOpenBundleResourceMap(ref);
+    return true;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
 CARLA_BACKEND_END_NAMESPACE
 
 #endif // CARLA_OS_MAC

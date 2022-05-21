@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -24,33 +24,8 @@
  * deal with C vs C++ differences
  */
 
-#ifdef __cplusplus
-
-/**
- * cast object into its proper C++ type.
- * this is needed because `struct v3_funknown;` on a C++ class does not inherit `v3_funknown`'s fields.
- * we can use this as a little helper for keeping both C and C++ compatiblity.
- * specialized templated calls are defined where required
- * (that is, object inherits from something other than `v3_funknown`)
- *
- * example usage: `v3_cpp_obj(obj)->method(obj, args...);`
- */
-template<class T> static inline
-constexpr T* v3_cpp_obj(T** obj)
-{
-	/**
-	 * this ugly piece of code is required due to C++ assuming `reinterpret_cast` by default,
-	 * but we need everything to be `static_cast` for it to be `constexpr` compatible.
-	 */
-	return static_cast<T*>(static_cast<void*>(static_cast<uint8_t*>(static_cast<void*>(*obj)) + sizeof(void*)*3));
-}
-
-#else
-
-# ifndef constexpr
-#  define constexpr
-# endif
-
+#if !defined(__cplusplus) && !defined(constexpr)
+# define constexpr
 #endif
 
 /**
@@ -177,8 +152,9 @@ static constexpr const v3_tuid v3_funknown_iid =
  */
 
 struct v3_plugin_base {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* initialize)(void* self, struct v3_funknown** context);
 	v3_result (V3_API* terminate)(void* self);
 };
@@ -187,6 +163,27 @@ static constexpr const v3_tuid v3_plugin_base_iid =
 	V3_ID(0x22888DDB, 0x156E45AE, 0x8358B348, 0x08190625);
 
 #ifdef __cplusplus
+
+/**
+ * cast object into its proper C++ type.
+ * this is needed because `struct v3_funknown;` on a C++ class does not inherit `v3_funknown`'s fields.
+ *
+ * we can use this as a little helper for keeping both C and C++ compatiblity.
+ * specialized templated calls are defined where required
+ * (that is, object inherits from something other than `v3_funknown`)
+ *
+ * example usage: `v3_cpp_obj(obj)->method(obj, args...);`
+ */
+
+template<class T> static inline
+constexpr T* v3_cpp_obj(T** obj)
+{
+	/**
+	 * this ugly piece of code is required due to C++ assuming `reinterpret_cast` by default,
+	 * but we need everything to be `static_cast` for it to be `constexpr` compatible.
+	 */
+	return static_cast<T*>(static_cast<void*>(static_cast<uint8_t*>(static_cast<void*>(*obj)) + sizeof(void*)*3));
+}
 
 /**
  * helper C++ functions to manually call v3_funknown methods on an object.
@@ -208,6 +205,20 @@ template<class T> static inline
 uint32_t v3_cpp_obj_unref(T** obj)
 {
 	return static_cast<v3_funknown*>(static_cast<void*>(*obj))->unref(obj);
+}
+
+template<class T> static inline
+v3_result v3_cpp_obj_initialize(T** obj, v3_funknown** context)
+{
+	return static_cast<v3_plugin_base*>(
+		static_cast<void*>(static_cast<uint8_t*>(static_cast<void*>(*obj)) + sizeof(void*)*3))->initialize(obj, context);
+}
+
+template<class T> static inline
+v3_result v3_cpp_obj_terminate(T** obj)
+{
+	return static_cast<v3_plugin_base*>(
+		static_cast<void*>(static_cast<uint8_t*>(static_cast<void*>(*obj)) + sizeof(void*)*3))->terminate(obj);
 }
 
 #endif
