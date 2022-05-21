@@ -1831,6 +1831,9 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
     }
 
     // unref interfaces
+    if (factory3 != nullptr)
+        v3_cpp_obj_unref(factory3);
+
     if (factory2 != nullptr)
         v3_cpp_obj_unref(factory2);
 
