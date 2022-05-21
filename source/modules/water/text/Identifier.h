@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -56,13 +56,13 @@ public:
         Because this name may need to be used in contexts such as script variables or XML
         tags, it must only contain ascii letters and digits, or the underscore character.
     */
-    Identifier (const String& name);
+    Identifier (const std::string& name);
 
     /** Creates an identifier with a specified name.
         Because this name may need to be used in contexts such as script variables or XML
         tags, it must only contain ascii letters and digits, or the underscore character.
     */
-    Identifier (String::CharPointerType nameStart, String::CharPointerType nameEnd);
+    Identifier (const char* nameStart, const char* nameEnd);
 
     /** Creates a copy of another identifier. */
     Identifier (const Identifier& other) noexcept;
@@ -80,43 +80,37 @@ public:
     inline bool operator!= (const Identifier& other) const noexcept     { return name != other.name; }
 
     /** Compares the identifier with a string. */
-    inline bool operator== (StringRef other) const noexcept             { return name == other; }
+    inline bool operator== (const char* other) const noexcept           { return name == other; }
 
     /** Compares the identifier with a string. */
-    inline bool operator!= (StringRef other) const noexcept             { return name != other; }
+    inline bool operator!= (const char* other) const noexcept           { return name != other; }
 
     /** Compares the identifier with a string. */
-    inline bool operator<  (StringRef other) const noexcept             { return name <  other; }
+    inline bool operator<  (const char* other) const noexcept           { return name <  other; }
 
     /** Compares the identifier with a string. */
-    inline bool operator<= (StringRef other) const noexcept             { return name <= other; }
+    inline bool operator<= (const char* other) const noexcept           { return name <= other; }
 
     /** Compares the identifier with a string. */
-    inline bool operator>  (StringRef other) const noexcept             { return name >  other; }
+    inline bool operator>  (const char* other) const noexcept           { return name >  other; }
 
     /** Compares the identifier with a string. */
-    inline bool operator>= (StringRef other) const noexcept             { return name >= other; }
+    inline bool operator>= (const char* other) const noexcept           { return name >= other; }
 
     /** Returns this identifier as a string. */
-    const String& toString() const noexcept                             { return name; }
+    const std::string& toString() const noexcept                        { return name; }
 
     /** Returns this identifier as a StringRef. */
-    operator StringRef() const noexcept                                 { return name; }
+    operator StringRef() const noexcept                                 { return StringRef(name.c_str()); }
 
     /** Returns true if this Identifier is not null */
-    bool isValid() const noexcept                                       { return name.isNotEmpty(); }
+    bool isValid() const noexcept                                       { return !name.empty(); }
 
     /** Returns true if this Identifier is null */
-    bool isNull() const noexcept                                        { return name.isEmpty(); }
-
-    /** Checks a given string for characters that might not be valid in an Identifier.
-        Since Identifiers are used as a script variables and XML attributes, they should only contain
-        alphanumeric characters, underscores, or the '-' and ':' characters.
-    */
-    static bool isValidIdentifier (const String& possibleIdentifier) noexcept;
+    bool isNull() const noexcept                                        { return name.empty(); }
 
 private:
-    String name;
+    std::string name;
 };
 
 }

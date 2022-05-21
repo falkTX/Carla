@@ -296,7 +296,7 @@ public:
 
         @see getAttributeValue, getStringAttribute
     */
-    const String& getAttributeName (int attributeIndex) const noexcept;
+    const std::string& getAttributeName (int attributeIndex) const noexcept;
 
     /** Returns the value of one of the elements attributes.
 
