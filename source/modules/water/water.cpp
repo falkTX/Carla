@@ -38,7 +38,7 @@ CARLA_PLUGIN_EXPORT
 BOOL WINAPI DllMain (HINSTANCE hInst, DWORD reason, LPVOID)
 {
     if (reason == DLL_PROCESS_ATTACH)
-        hInstance = hInst;
+        currentModuleHandle = hInst;
     return 1;
 }
 # endif
