@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,6 +18,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaMathUtils.hpp"
+
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
@@ -36,7 +37,6 @@
 # undef MemoryBlock
 # undef Point
 # include "CarlaMacUtils.cpp"
-# include <spawn.h>
 # if defined(USING_JUCE) && defined(__aarch64__)
 #  include <spawn.h>
 # endif
@@ -60,7 +60,6 @@
 #include "water/files/File.h"
 
 #ifndef BUILD_BRIDGE
-# include "water/text/StringArray.h"
 # include "CarlaDssiUtils.cpp"
 # include "../backend/utils/CachedPlugins.cpp"
 #endif
@@ -80,9 +79,7 @@
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
-using water::CharPointer_UTF8;
 using water::File;
-using water::StringArray;
 
 CARLA_BACKEND_USE_NAMESPACE
 
@@ -734,26 +731,28 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
     const Lilv::Plugins lilvPlugins(lv2World.get_all_plugins());
 
     // Get all plugin URIs in this bundle
-    water::StringArray URIs;
+    CarlaStringList URIs;
 
     LILV_FOREACH(plugins, it, lilvPlugins)
     {
         Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, it));
 
         if (const char* const uri = lilvPlugin.get_uri().as_string())
-            URIs.addIfNotAlreadyThere(water::String(uri));
+            URIs.appendUnique(uri);
     }
 
-    if (URIs.size() == 0)
+    if (URIs.isEmpty())
     {
         DISCOVERY_OUT("warning", "LV2 Bundle doesn't provide any plugins");
         return;
     }
 
     // Get & check every plugin-instance
-    for (int i=0, count=URIs.size(); i < count; ++i)
+    for (CarlaStringList::Itenerator it=URIs.begin2(); it.valid(); it.next())
     {
-        const char* const URI = URIs[i].toRawUTF8();
+        const char* const URI = it.getValue(nullptr);
+        CARLA_SAFE_ASSERT_CONTINUE(URI != nullptr);
+
         CarlaScopedPointer<const LV2_RDF_Descriptor> rdfDescriptor(lv2_rdf_new(URI, false));
 
         if (rdfDescriptor == nullptr || rdfDescriptor->URI == nullptr)
@@ -1380,8 +1379,8 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter, int& maxTot
 {
     filter->enableAllBuses();
 
-    int numInputBuses  = filter->getBusCount(true);
-    int numOutputBuses = filter->getBusCount(false);
+    const int numInputBuses  = filter->getBusCount(true);
+    const int numOutputBuses = filter->getBusCount(false);
 
     if (numInputBuses > 1 || numOutputBuses > 1)
     {
@@ -1540,8 +1539,7 @@ static bool do_juce_check(const char* const filename_, const char* const stype, 
 static void do_fluidsynth_check(const char* const filename, const PluginType type, const bool doInit)
 {
 #ifdef HAVE_FLUIDSYNTH
-    const water::String jfilename = water::String(water::CharPointer_UTF8(filename));
-    const water::File file(jfilename);
+    const water::File file(filename);
 
     if (! file.existsAsFile())
     {
