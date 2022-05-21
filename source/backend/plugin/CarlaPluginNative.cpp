@@ -25,7 +25,6 @@
 #include "water/misc/Time.h"
 #include "water/text/StringArray.h"
 
-using water::jmax;
 using water::String;
 using water::StringArray;
 

@@ -30,6 +30,8 @@
 #include "../misc/Result.h"
 #include "../text/String.h"
 
+#include <vector>
+
 namespace water {
 
 //==============================================================================
@@ -492,7 +494,7 @@ public:
 
         @see getNumberOfChildFiles, DirectoryIterator
     */
-    int findChildFiles (Array<File>& results,
+    int findChildFiles (std::vector<File>& results,
                         int whatToLookFor,
                         bool searchRecursively,
                         const String& wildCardPattern = "*") const;

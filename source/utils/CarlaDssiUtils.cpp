@@ -45,7 +45,7 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
         if (! checkLabel.endsWithChar('_')) checkLabel += "_";
         if (! checkSName.endsWithChar('_')) checkSName += "_";
 
-        water::Array<water::File> results;
+        std::vector<water::File> results;
 
         for (int i=water::File(pluginDir).findChildFiles(results,
                                                          water::File::findFiles|water::File::ignoreHiddenFiles, false); --i >= 0;)

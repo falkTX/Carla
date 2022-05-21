@@ -72,11 +72,11 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static water::Array<water::File> gSFZs;
+static std::vector<water::File> gSFZs;
 
 static void findSFZs(const char* const sfzPaths)
 {
-    gSFZs.clearQuick();
+    gSFZs.clear();
 
     CARLA_SAFE_ASSERT_RETURN(sfzPaths != nullptr,);
 
@@ -87,10 +87,13 @@ static void findSFZs(const char* const sfzPaths)
 
     for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        water::Array<water::File> results;
+        std::vector<water::File> results;
 
         if (water::File(*it).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*.sfz") > 0)
-            gSFZs.addArray(results);
+        {
+            gSFZs.reserve(gSFZs.size() + results.size());
+            gSFZs.insert(gSFZs.end(), results.begin(), results.end());
+        }
     }
 }
 
@@ -699,8 +702,8 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 #endif
 
     case CB::PLUGIN_SFZ: {
-        CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gSFZs.size()));
-        return get_cached_plugin_sfz(gSFZs.getUnchecked(static_cast<int>(index)));
+        CARLA_SAFE_ASSERT_BREAK(index < gSFZs.size());
+        return get_cached_plugin_sfz(gSFZs[index]);
     }
 
     default:

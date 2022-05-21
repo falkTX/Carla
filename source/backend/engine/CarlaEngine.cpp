@@ -2579,7 +2579,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
         searchFlags |= File::findDirectories;
 #endif
 
-    Array<File> results;
+    std::vector<File> results;
     for (const String *it=searchPaths.begin(), *end=searchPaths.end(); it != end; ++it)
     {
         const File path(*it);
@@ -2587,8 +2587,8 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
         results.clear();
         path.findChildFiles(results, searchFlags, true, filename);
 
-        if (results.size() > 0)
-            return results.getFirst().getFullPathName();
+        if (!results.empty())
+            return results.front().getFullPathName();
     }
 
     // try changing extension
@@ -2612,8 +2612,8 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
         results.clear();
         path.findChildFiles(results, searchFlags, true, filename);
 
-        if (results.size() > 0)
-            return results.getFirst().getFullPathName();
+        if (!results.empty())
+            return results.front().getFullPathName();
     }
 
     return String();
