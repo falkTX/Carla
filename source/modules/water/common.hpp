@@ -47,7 +47,7 @@ Result getResultForLastError()
                     nullptr, GetLastError(), MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
                     messageBuffer, (DWORD) numElementsInArray (messageBuffer) - 1, nullptr);
 
-    return Result::fail (String (messageBuffer));
+    return Result::fail (messageBuffer);
 }
 
 static inline
