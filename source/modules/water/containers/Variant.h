@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -26,7 +26,7 @@
 #ifndef WATER_VARIANT_H_INCLUDED
 #define WATER_VARIANT_H_INCLUDED
 
-#include "../water.h"
+#include "../text/String.h"
 
 namespace water {
 

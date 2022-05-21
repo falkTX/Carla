@@ -1,7 +1,7 @@
 /*
  * Cross-platform C++ library for Carla, based on Juce v4
  * Copyright (C) 2015 ROLI Ltd.
- * Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -26,6 +26,12 @@
 #endif
 
 #include <cerrno>
+
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+namespace std {
+using strerror;
+}
+#endif
 
 //==============================================================================
 namespace water
@@ -58,11 +64,7 @@ HINSTANCE getCurrentModuleInstanceHandle() noexcept;
 static inline
 Result getResultForErrno()
 {
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    return Result::fail (String (std::strerror (errno)));
-#else
-    return Result::fail (String (strerror (errno)));
-#endif
+    return Result::fail (std::strerror (errno));
 }
 
 static inline
