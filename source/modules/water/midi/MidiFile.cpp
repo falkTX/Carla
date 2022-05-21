@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -32,27 +32,6 @@ namespace water {
 
 namespace MidiFileHelpers
 {
-    static void writeVariableLengthInt (OutputStream& out, unsigned int v)
-    {
-        unsigned int buffer = v & 0x7f;
-
-        while ((v >>= 7) != 0)
-        {
-            buffer <<= 8;
-            buffer |= ((v & 0x7f) | 0x80);
-        }
-
-        for (;;)
-        {
-            out.writeByte ((char) buffer);
-
-            if (buffer & 0x80)
-                buffer >>= 8;
-            else
-                break;
-        }
-    }
-
     static bool parseMidiHeader (const uint8* &data, short& timeFormat, short& fileType, short& numberOfTracks) noexcept
     {
         unsigned int ch = ByteOrder::bigEndianInt (data);
@@ -370,88 +349,6 @@ void MidiFile::convertTimestampTicksToSeconds()
             }
         }
     }
-}
-
-//==============================================================================
-bool MidiFile::writeTo (OutputStream& out, int midiFileType)
-{
-    wassert (midiFileType >= 0 && midiFileType <= 2);
-
-    if (! out.writeIntBigEndian ((int) ByteOrder::bigEndianInt ("MThd"))) return false;
-    if (! out.writeIntBigEndian (6))                                      return false;
-    if (! out.writeShortBigEndian ((short) midiFileType))                 return false;
-    if (! out.writeShortBigEndian ((short) tracks.size()))                return false;
-    if (! out.writeShortBigEndian (timeFormat))                           return false;
-
-    for (size_t i = 0; i < tracks.size(); ++i)
-        if (! writeTrack (out, i))
-            return false;
-
-    out.flush();
-    return true;
-}
-
-bool MidiFile::writeTrack (OutputStream& mainOut, const int trackNum)
-{
-    MemoryOutputStream out;
-    const MidiMessageSequence& ms = *tracks.getUnchecked (trackNum);
-
-    int lastTick = 0;
-    uint8 lastStatusByte = 0;
-    bool endOfTrackEventWritten = false;
-
-    for (int i = 0; i < ms.getNumEvents(); ++i)
-    {
-        const MidiMessage& mm = ms.getEventPointer(i)->message;
-
-        if (mm.isEndOfTrackMetaEvent())
-            endOfTrackEventWritten = true;
-
-        const int tick = roundToInt (mm.getTimeStamp());
-        const int delta = jmax (0, tick - lastTick);
-        MidiFileHelpers::writeVariableLengthInt (out, (uint32) delta);
-        lastTick = tick;
-
-        const uint8* data = mm.getRawData();
-        int dataSize = mm.getRawDataSize();
-
-        const uint8 statusByte = data[0];
-
-        if (statusByte == lastStatusByte
-             && (statusByte & 0xf0) != 0xf0
-             && dataSize > 1
-             && i > 0)
-        {
-            ++data;
-            --dataSize;
-        }
-        else if (statusByte == 0xf0)  // Write sysex message with length bytes.
-        {
-            out.writeByte ((char) statusByte);
-
-            ++data;
-            --dataSize;
-
-            MidiFileHelpers::writeVariableLengthInt (out, (uint32) dataSize);
-        }
-
-        out.write (data, (size_t) dataSize);
-        lastStatusByte = statusByte;
-    }
-
-    if (! endOfTrackEventWritten)
-    {
-        out.writeByte (0); // (tick delta)
-        const MidiMessage m (MidiMessage::endOfTrack());
-        out.write (m.getRawData(), (size_t) m.getRawDataSize());
-    }
-
-    if (! mainOut.writeIntBigEndian ((int) ByteOrder::bigEndianInt ("MTrk"))) return false;
-    if (! mainOut.writeIntBigEndian ((int) out.getDataSize()))                return false;
-
-    mainOut << out;
-
-    return true;
 }
 
 }
