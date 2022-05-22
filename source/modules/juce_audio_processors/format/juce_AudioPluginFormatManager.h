@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -101,6 +108,22 @@ public:
     void createPluginInstanceAsync (const PluginDescription& description,
                                     double initialSampleRate, int initialBufferSize,
                                     AudioPluginFormat::PluginCreationCallback callback);
+
+    /** Tries to create an ::ARAFactoryWrapper for this description.
+
+        The result of the operation will be wrapped into an ARAFactoryResult,
+        which will be passed to a callback object supplied by the caller.
+
+        The operation may fail, in which case the callback will be called with
+        with a result object where ARAFactoryResult::araFactory.get() will return
+        a nullptr.
+
+        In case of success the returned ::ARAFactoryWrapper will ensure that
+        modules required for the correct functioning of the ARAFactory will remain
+        loaded for the lifetime of the object.
+    */
+    void createARAFactoryAsync (const PluginDescription& description,
+                                AudioPluginFormat::ARAFactoryCreationCallback callback) const;
 
     /** Checks that the file or component for this plugin actually still exists.
         (This won't try to load the plugin)

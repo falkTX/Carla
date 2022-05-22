@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -1208,10 +1215,6 @@ struct VSTPluginInstance final   : public AudioPluginInstance,
 
         wantsMidiMessages = pluginCanDo ("receiveVstMidiEvent") > 0 || isSynthPlugin();
 
-       #if JUCE_MAC && JUCE_SUPPORT_CARBON
-        usesCocoaNSView = ((unsigned int) pluginCanDo ("hasCockosViewAsConfig") & 0xffff0000ul) == 0xbeef0000ul;
-       #endif
-
         setLatencySamples (vstEffect->latency);
     }
 
@@ -1949,7 +1952,6 @@ struct VSTPluginInstance final   : public AudioPluginInstance,
     ModuleHandle::Ptr vstModule;
 
     std::unique_ptr<VSTPluginFormat::ExtraFunctions> extraFunctions;
-    bool usesCocoaNSView = false;
 
 private:
     //==============================================================================
@@ -2719,18 +2721,8 @@ public:
        #elif JUCE_MAC
         ignoreUnused (recursiveResize, pluginRefusesToResize, alreadyInside);
 
-        #if JUCE_SUPPORT_CARBON
-        if (! plug.usesCocoaNSView)
-        {
-            carbonWrapper.reset (new CarbonWrapperComponent (*this));
-            addAndMakeVisible (carbonWrapper.get());
-        }
-        else
-        #endif
-        {
-            cocoaWrapper.reset (new NSViewComponentWithParent (plugin));
-            addAndMakeVisible (cocoaWrapper.get());
-        }
+        cocoaWrapper.reset (new NSViewComponentWithParent (plugin));
+        addAndMakeVisible (cocoaWrapper.get());
        #endif
 
         activeVSTWindows.add (this);
@@ -2756,9 +2748,6 @@ public:
         closePluginWindow();
 
        #if JUCE_MAC
-        #if JUCE_SUPPORT_CARBON
-        carbonWrapper.reset();
-        #endif
         cocoaWrapper.reset();
        #endif
 
@@ -2787,11 +2776,6 @@ public:
         setSize (correctedBounds.getWidth(), correctedBounds.getHeight());
 
       #if JUCE_MAC
-       #if JUCE_SUPPORT_CARBON
-        if (carbonWrapper != nullptr)
-            carbonWrapper->setSize (correctedBounds.getWidth(), correctedBounds.getHeight());
-       #endif
-
         if (cocoaWrapper != nullptr)
             cocoaWrapper->setSize (correctedBounds.getWidth(), correctedBounds.getHeight());
       #endif
@@ -2807,25 +2791,19 @@ public:
 
     void visibilityChanged() override
     {
-        if (cocoaWrapper != nullptr)
-        {
-            if (isShowing())
-                openPluginWindow ((NSView*) cocoaWrapper->getView());
-            else
-                closePluginWindow();
-        }
+        if (isShowing())
+            openPluginWindow ((NSView*) cocoaWrapper->getView());
+        else
+            closePluginWindow();
     }
 
     void childBoundsChanged (Component*) override
     {
-        if (cocoaWrapper != nullptr)
-        {
-            auto w = cocoaWrapper->getWidth();
-            auto h = cocoaWrapper->getHeight();
+        auto w = cocoaWrapper->getWidth();
+        auto h = cocoaWrapper->getHeight();
 
-            if (w != getWidth() || h != getHeight())
-                setSize (w, h);
-        }
+        if (w != getWidth() || h != getHeight())
+            setSize (w, h);
     }
 
     void parentHierarchyChanged() override { visibilityChanged(); }
@@ -3304,86 +3282,6 @@ private:
 
     //==============================================================================
     #if JUCE_MAC
-     #if JUCE_SUPPORT_CARBON
-      struct CarbonWrapperComponent   : public CarbonViewWrapperComponent
-      {
-          CarbonWrapperComponent (VSTPluginWindow& w)  : owner (w)
-          {
-              keepPluginWindowWhenHidden = w.shouldAvoidDeletingWindow();
-              setRepaintsChildHIViewWhenCreated (w.shouldRepaintCarbonWindowWhenCreated());
-          }
-
-          ~CarbonWrapperComponent()
-          {
-              deleteWindow();
-          }
-
-          HIViewRef attachView (WindowRef windowRef, HIViewRef /*rootView*/) override
-          {
-              owner.openPluginWindow (windowRef);
-              return {};
-          }
-
-          void removeView (HIViewRef) override
-          {
-              if (owner.isOpen)
-              {
-                  owner.isOpen = false;
-                  owner.dispatch (Vst2::plugInOpcodeCloseEditor, 0, 0, 0, 0);
-                  owner.dispatch (Vst2::plugInOpcodeSleepEditor, 0, 0, 0, 0);
-              }
-          }
-
-          bool getEmbeddedViewSize (int& w, int& h) override
-          {
-              Vst2::VstEditorBounds* rect = nullptr;
-              owner.dispatch (Vst2::plugInOpcodeGetEditorBounds, 0, 0, &rect, 0);
-              w = rect->rightmost - rect->leftmost;
-              h = rect->lower - rect->upper;
-              return true;
-          }
-
-          void handleMouseDown (int x, int y) override
-          {
-              if (! alreadyInside)
-              {
-                  alreadyInside = true;
-                  getTopLevelComponent()->toFront (true);
-                  owner.dispatch (Vst2::plugInOpcodeGetMouse, x, y, 0, 0);
-                  alreadyInside = false;
-              }
-              else
-              {
-                  PostEvent (::mouseDown, 0);
-              }
-          }
-
-          void handlePaint() override
-          {
-              if (auto* peer = getPeer())
-              {
-                  auto pos = peer->globalToLocal (getScreenPosition());
-                  Vst2::VstEditorBounds r;
-                  r.leftmost  = (int16) pos.getX();
-                  r.upper     = (int16) pos.getY();
-                  r.rightmost = (int16) (r.leftmost + getWidth());
-                  r.lower     = (int16) (r.upper + getHeight());
-
-                  owner.dispatch (Vst2::plugInOpcodeDrawEditor, 0, 0, &r, 0);
-              }
-          }
-
-      private:
-          VSTPluginWindow& owner;
-          bool alreadyInside = false;
-
-          JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CarbonWrapperComponent)
-      };
-
-      friend struct CarbonWrapperComponent;
-      std::unique_ptr<CarbonWrapperComponent> carbonWrapper;
-     #endif
-
       std::unique_ptr<NSViewComponentWithParent> cocoaWrapper;
 
       void resized() override

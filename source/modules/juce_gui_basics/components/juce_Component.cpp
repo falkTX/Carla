@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -745,6 +752,16 @@ void Component::addToDesktop (int styleWanted, void* nativeWindowToAttachTo)
             peer->setConstrainer (currentConstrainer);
 
             repaint();
+
+           #if JUCE_LINUX
+            // Creating the peer Image on Linux will change the reported position of the window. If
+            // the Image creation is interleaved with the coming configureNotifyEvents the window
+            // will appear in the wrong position. To avoid this, we force the Image creation here,
+            // before handling any of the configureNotifyEvents. The Linux implementation of
+            // performAnyPendingRepaintsNow() will force update the peer position if necessary.
+            peer->performAnyPendingRepaintsNow();
+           #endif
+
             internalHierarchyChanged();
 
             if (auto* handler = getAccessibilityHandler())

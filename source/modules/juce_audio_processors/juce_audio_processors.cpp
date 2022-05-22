@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -27,7 +34,9 @@
 
 #define JUCE_CORE_INCLUDE_NATIVE_HEADERS 1
 #define JUCE_CORE_INCLUDE_OBJC_HELPERS 1
-#define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
+ #define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
+#endif
 #define JUCE_GUI_BASICS_INCLUDE_SCOPED_THREAD_DPI_AWARENESS_SETTER 1
 #define JUCE_GRAPHICS_INCLUDE_COREGRAPHICS_HELPERS 1
 
@@ -36,14 +45,7 @@
 #include <juce_core/containers/juce_Optional.h>
 
 //==============================================================================
-#if JUCE_MAC
- #if JUCE_SUPPORT_CARBON && (JUCE_PLUGINHOST_VST || JUCE_PLUGINHOST_AU)
-  #include <Carbon/Carbon.h>
-  #include <juce_gui_extra/native/juce_mac_CarbonViewWrapperComponent.h>
- #endif
-#endif
-
-#if (JUCE_PLUGINHOST_VST || JUCE_PLUGINHOST_VST3) && (JUCE_LINUX || JUCE_BSD)
+#if (JUCE_PLUGINHOST_VST || JUCE_PLUGINHOST_VST3) && (JUCE_LINUX || JUCE_BSD) && ! JUCE_AUDIOPROCESSOR_NO_GUI
  #include <X11/Xlib.h>
  #include <X11/Xutil.h>
  #include <sys/utsname.h>
@@ -202,17 +204,23 @@ private:
 #include "format_types/juce_LegacyAudioParameter.cpp"
 #include "processors/juce_AudioProcessor.cpp"
 #include "processors/juce_AudioPluginInstance.cpp"
-#include "processors/juce_AudioProcessorEditor.cpp"
 #include "processors/juce_AudioProcessorGraph.cpp"
-#include "processors/juce_GenericAudioProcessorEditor.cpp"
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
+ #include "processors/juce_AudioProcessorEditor.cpp"
+ #include "processors/juce_GenericAudioProcessorEditor.cpp"
+#endif
 #include "processors/juce_PluginDescription.cpp"
+#include "format_types/juce_ARACommon.cpp"
 #include "format_types/juce_LADSPAPluginFormat.cpp"
 #include "format_types/juce_VSTPluginFormat.cpp"
 #include "format_types/juce_VST3PluginFormat.cpp"
 #include "format_types/juce_AudioUnitPluginFormat.mm"
-#include "scanning/juce_KnownPluginList.cpp"
-#include "scanning/juce_PluginDirectoryScanner.cpp"
-#include "scanning/juce_PluginListComponent.cpp"
+#include "format_types/juce_ARAHosting.cpp"
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
+ #include "scanning/juce_KnownPluginList.cpp"
+ #include "scanning/juce_PluginDirectoryScanner.cpp"
+ #include "scanning/juce_PluginListComponent.cpp"
+#endif
 #include "processors/juce_AudioProcessorParameterGroup.cpp"
 #include "utilities/juce_AudioProcessorParameterWithID.cpp"
 #include "utilities/juce_RangedAudioParameter.cpp"
@@ -220,14 +228,22 @@ private:
 #include "utilities/juce_AudioParameterInt.cpp"
 #include "utilities/juce_AudioParameterBool.cpp"
 #include "utilities/juce_AudioParameterChoice.cpp"
-#include "utilities/juce_ParameterAttachments.cpp"
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
+ #include "utilities/juce_ParameterAttachments.cpp"
+#endif
 #include "utilities/juce_AudioProcessorValueTreeState.cpp"
 #include "utilities/juce_PluginHostType.cpp"
 #include "utilities/juce_NativeScaleFactorNotifier.cpp"
+#include "utilities/ARA/juce_ARA_utils.cpp"
 
 #include "format_types/juce_LV2PluginFormat.cpp"
 
 #if JUCE_UNIT_TESTS
  #include "format_types/juce_VST3PluginFormat_test.cpp"
  #include "format_types/juce_LV2PluginFormat_test.cpp"
+#endif
+
+#if JUCE_AUDIOPROCESSOR_NO_GUI
+// commonly used classes in DSP code
+namespace juce { Colour::Colour(juce::uint32) noexcept {} }
 #endif

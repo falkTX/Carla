@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -1387,35 +1394,7 @@ public:
         // has a Z label). Therefore, we need to query the current keyboard
         // layout to figure out what character the key would have produced
         // if the shift key was not pressed
-        String unmodified;
-
-       #if JUCE_SUPPORT_CARBON
-        if (auto currentKeyboard = CFUniquePtr<TISInputSourceRef> (TISCopyCurrentKeyboardInputSource()))
-        {
-            if (auto layoutData = (CFDataRef) TISGetInputSourceProperty (currentKeyboard,
-                                                                         kTISPropertyUnicodeKeyLayoutData))
-            {
-                if (auto* layoutPtr = (const UCKeyboardLayout*) CFDataGetBytePtr (layoutData))
-                {
-                    UInt32 keysDown = 0;
-                    UniChar buffer[4];
-                    UniCharCount actual;
-
-                    if (UCKeyTranslate (layoutPtr, [ev keyCode], kUCKeyActionDown, 0, LMGetKbdType(),
-                                        kUCKeyTranslateNoDeadKeysBit, &keysDown, sizeof (buffer) / sizeof (UniChar),
-                                        &actual, buffer) == 0)
-                        unmodified = String (CharPointer_UTF16 (reinterpret_cast<CharPointer_UTF16::CharType*> (buffer)), 4);
-                }
-            }
-        }
-
-        // did the above layout conversion fail
-        if (unmodified.isEmpty())
-       #endif
-        {
-            unmodified = nsStringToJuce ([ev charactersIgnoringModifiers]);
-        }
-
+        String unmodified = nsStringToJuce ([ev charactersIgnoringModifiers]);
         auto keyCode = (int) unmodified[0];
 
         if (keyCode == 0x19) // (backwards-tab)
@@ -1630,7 +1609,7 @@ public:
 
     void textInputRequired (Point<int>, TextInputTarget&) override {}
 
-    void dismissPendingTextInput() override
+    void closeInputMethodContext() override
     {
         stringBeingComposed.clear();
         const auto* inputContext = [NSTextInputContext currentInputContext];

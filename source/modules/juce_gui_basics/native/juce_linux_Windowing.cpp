@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -85,14 +92,8 @@ public:
     }
 
     //==============================================================================
-    void setBounds (const Rectangle<int>& newBounds, bool isNowFullScreen) override
+    void forceSetBounds (const Rectangle<int>& correctedNewBounds, bool isNowFullScreen)
     {
-        const auto correctedNewBounds = newBounds.withSize (jmax (1, newBounds.getWidth()),
-                                                            jmax (1, newBounds.getHeight()));
-
-        if (bounds == correctedNewBounds && fullScreen == isNowFullScreen)
-            return;
-
         bounds = correctedNewBounds;
 
         updateScaleFactorFromNewBounds (bounds, false);
@@ -111,6 +112,15 @@ public:
             updateBorderSize();
             handleMovedOrResized();
         }
+    }
+
+    void setBounds (const Rectangle<int>& newBounds, bool isNowFullScreen) override
+    {
+        const auto correctedNewBounds = newBounds.withSize (jmax (1, newBounds.getWidth()),
+                                                            jmax (1, newBounds.getHeight()));
+
+        if (bounds != correctedNewBounds || fullScreen != isNowFullScreen)
+            forceSetBounds (correctedNewBounds, isNowFullScreen);
     }
 
     Point<int> getScreenPosition (bool physical) const
@@ -370,7 +380,13 @@ public:
         else if (! windowBorder
                  || ((*windowBorder).getTopAndBottom() == 0 && (*windowBorder).getLeftAndRight() == 0))
         {
-            windowBorder = XWindowSystem::getInstance()->getBorderSize (windowH);
+            windowBorder = [&]()
+            {
+                if (auto unscaledBorderSize = XWindowSystem::getInstance()->getBorderSize (windowH))
+                    return OptionalBorderSize { (*unscaledBorderSize).multipliedBy (1.0 / currentScaleFactor) };
+
+                return OptionalBorderSize {};
+            }();
         }
     }
 
@@ -430,12 +446,31 @@ private:
 
             if (! totalArea.isEmpty())
             {
-                if (image.isNull() || image.getWidth() < totalArea.getWidth()
+                const auto wasImageNull = image.isNull();
+
+                if (wasImageNull || image.getWidth() < totalArea.getWidth()
                      || image.getHeight() < totalArea.getHeight())
                 {
                     image = XWindowSystem::getInstance()->createImage (isSemiTransparentWindow,
                                                                        totalArea.getWidth(), totalArea.getHeight(),
                                                                        useARGBImagesForRendering);
+                    if (wasImageNull)
+                    {
+                        // After calling createImage() XWindowSystem::getWindowBounds() will return
+                        // changed coordinates that look like the result of some position
+                        // defaulting mechanism. If we handle a configureNotifyEvent after
+                        // createImage() and before we would issue new, valid coordinates, we will
+                        // apply these default, unwanted coordinates to our window. To avoid that
+                        // we immediately send another positioning message to guarantee that the
+                        // next configureNotifyEvent will read valid values.
+                        //
+                        // This issue only occurs right after peer creation, when the image is
+                        // null. Updating when only the width or height is changed would lead to
+                        // incorrect behaviour.
+                        peer.forceSetBounds (ScalingHelpers::scaledScreenPosToUnscaled (peer.component,
+                                                                                        peer.component.getBoundsInParent()),
+                                             peer.isFullScreen());
+                    }
                 }
 
                 startTimer (repaintTimerPeriod);

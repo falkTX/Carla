@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -44,10 +51,6 @@
  #import <IOKit/pwr_mgt/IOPMLib.h>
  #import <MetalKit/MetalKit.h>
 
- #if JUCE_SUPPORT_CARBON
-  #import <Carbon/Carbon.h> // still needed for SetSystemUIMode()
- #endif
-
 #elif JUCE_IOS
  #if JUCE_PUSH_NOTIFICATIONS && defined (__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
   #import <UserNotifications/UserNotifications.h>
@@ -63,6 +66,7 @@
  #include <commdlg.h>
  #include <commctrl.h>
  #include <sapi.h>
+ #include <Dxgi.h>
 
  #if JUCE_MSVC
   #include <UIAutomation.h>
@@ -79,6 +83,7 @@
   #pragma comment(lib, "vfw32.lib")
   #pragma comment(lib, "imm32.lib")
   #pragma comment(lib, "comctl32.lib")
+  #pragma comment(lib, "dxgi.lib")
 
   #if JUCE_OPENGL
    #pragma comment(lib, "OpenGL32.Lib")

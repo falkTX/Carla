@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -24,7 +31,7 @@ namespace juce
     Base class for audio processing classes or plugins.
 
     This is intended to act as a base class of audio processor that is general enough
-    to be wrapped as a VST, AU, RTAS, etc, or used internally.
+    to be wrapped as a VST, AU, AAX, etc, or used internally.
 
     It is also used by the plugin hosting code as the wrapper around an instance
     of a loaded plugin.
@@ -69,6 +76,12 @@ public:
     {
         singlePrecision,
         doublePrecision
+    };
+
+    enum class Realtime
+    {
+        no,
+        yes
     };
 
     using ChangeDetails = AudioProcessorListener::ChangeDetails;
@@ -916,11 +929,27 @@ public:
     */
     bool isNonRealtime() const noexcept                                 { return nonRealtime; }
 
+    /** Returns no if the processor is being run in an offline mode for rendering.
+
+        If the processor is being run live on realtime signals, this returns yes.
+        If the mode is unknown, this will assume it's realtime and return yes.
+
+        This value may be unreliable until the prepareToPlay() method has been called,
+        and could change each time prepareToPlay() is called.
+
+        @see setNonRealtime()
+    */
+    Realtime isRealtime() const noexcept
+    {
+        return isNonRealtime() ? Realtime::no : Realtime::yes;
+    }
+
     /** Called by the host to tell this processor whether it's being used in a non-realtime
         capacity for offline rendering or bouncing.
     */
     virtual void setNonRealtime (bool isNonRealtime) noexcept;
 
+   #if ! JUCE_AUDIOPROCESSOR_NO_GUI
     //==============================================================================
     /** Creates the processor's GUI.
 
@@ -970,6 +999,7 @@ public:
         This may call createEditor() internally to create the component.
     */
     AudioProcessorEditor* createEditorIfNeeded();
+   #endif
 
     //==============================================================================
     /** Returns the default number of steps for a parameter.
@@ -1231,9 +1261,11 @@ public:
 
     virtual CurveData getResponseCurve (CurveData::Type /*curveType*/) const      { return {}; }
 
+   #if ! JUCE_AUDIOPROCESSOR_NO_GUI
     //==============================================================================
     /** Not for public use - this is called before deleting an editor component. */
     void editorBeingDeleted (AudioProcessorEditor*) noexcept;
+   #endif
 
     /** Flags to indicate the type of plugin context in which a processor is being used. */
     enum WrapperType
@@ -1243,7 +1275,6 @@ public:
         wrapperType_VST3,
         wrapperType_AudioUnit,
         wrapperType_AudioUnitv3,
-        wrapperType_RTAS,
         wrapperType_AAX,
         wrapperType_Standalone,
         wrapperType_Unity,
@@ -1264,7 +1295,9 @@ public:
     struct TrackProperties
     {
         String name;    // The name of the track - this will be empty if the track name is not known
+       #if ! JUCE_AUDIOPROCESSOR_NO_GUI
         Colour colour;  // The colour of the track - this will be transparentBlack if the colour is not known
+       #endif
 
         // other properties may be added in the future
     };
@@ -1513,7 +1546,9 @@ private:
 
     //==============================================================================
     Array<AudioProcessorListener*> listeners;
+   #if ! JUCE_AUDIOPROCESSOR_NO_GUI
     Component::SafePointer<AudioProcessorEditor> activeEditor;
+   #endif
     double currentSampleRate = 0;
     int blockSize = 0, latencySamples = 0;
     bool suspended = false;

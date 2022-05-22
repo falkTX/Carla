@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -30,12 +37,11 @@ namespace juce
 namespace lv2_host
 {
 
-template <typename Struct, typename Member, typename Value>
-auto with (Struct&& s, Member&& member, Value&& value) noexcept
+template <typename Struct, typename Value>
+auto with (Struct s, Value Struct::* member, Value value) noexcept
 {
-    auto copy = std::forward<Struct> (s);
-    copy.*member = std::forward<Value> (value);
-    return copy;
+    s.*member = std::move (value);
+    return s;
 }
 
 /*  Converts a void* to an LV2_Atom* if the buffer looks like it holds a well-formed Atom, or
@@ -1682,7 +1688,7 @@ private:
 template <size_t Alignment>
 static SingleSizeAlignedStorage<Alignment> grow (SingleSizeAlignedStorage<Alignment> storage, size_t size)
 {
-    if (storage.size() <= size)
+    if (size <= storage.size())
         return storage;
 
     SingleSizeAlignedStorage<Alignment> newStorage { jmax (size, (storage.size() * 3) / 2) };
@@ -2122,6 +2128,8 @@ private:
     JUCE_LEAK_DETECTOR (PortMap)
 };
 
+struct FreeString { void operator() (void* ptr) const noexcept { lilv_free (ptr); } };
+
 class PluginState
 {
 public:
@@ -2140,7 +2148,6 @@ public:
 
     std::string toString (LilvWorld* world, LV2_URID_Map* map, LV2_URID_Unmap* unmap, const char* uri) const
     {
-        struct FreeString { void operator() (void* ptr) const noexcept { lilv_free (ptr); } };
         std::unique_ptr<char, FreeString> result { lilv_state_to_string (world,
                                                                          map,
                                                                          unmap,
@@ -2256,17 +2263,16 @@ struct UiDescriptorLibrary
 class UiDescriptorArgs
 {
 public:
-    const char* libraryPath = nullptr;
-    const char* uiUri       = nullptr;
+    String libraryPath;
+    String uiUri;
 
-    auto withLibraryPath (const char* v) const noexcept { return with (&UiDescriptorArgs::libraryPath, v); }
-    auto withUiUri       (const char* v) const noexcept { return with (&UiDescriptorArgs::uiUri,       v); }
+    auto withLibraryPath (String v) const noexcept { return with (&UiDescriptorArgs::libraryPath, v); }
+    auto withUiUri       (String v) const noexcept { return with (&UiDescriptorArgs::uiUri,       v); }
 
 private:
-    template <typename Member>
-    UiDescriptorArgs with (Member&& member, const char* value) const noexcept
+    UiDescriptorArgs with (String UiDescriptorArgs::* member, String value) const noexcept
     {
-        return juce::lv2_host::with (*this, std::forward<Member> (member), value);
+        return juce::lv2_host::with (*this, member, std::move (value));
     }
 };
 
@@ -2280,7 +2286,7 @@ public:
 
     explicit UiDescriptor (const UiDescriptorArgs& args)
         : library (args.libraryPath),
-          descriptor (extractUiDescriptor (library, args.uiUri))
+          descriptor (extractUiDescriptor (library, args.uiUri.toRawUTF8()))
     {}
 
     void portEvent (LV2UI_Handle ui,
@@ -2342,8 +2348,7 @@ private:
     JUCE_LEAK_DETECTOR (UiDescriptor)
 };
 
-enum class UpdateUi         { no, yes };
-enum class UpdateProcessor  { no, yes };
+enum class Update { no, yes };
 
 /*  A bit like the FlaggedFloatCache used by the VST3 host/client.
 
@@ -2366,12 +2371,12 @@ public:
 
     size_t size() const noexcept { return values.size(); }
 
-    void set (size_t index, float value, UpdateUi updateUi, UpdateProcessor updateProcessor)
+    void set (size_t index, float value, Update update)
     {
         jassert (index < size());
         values[index].store (value, std::memory_order_relaxed);
-        needsUiUpdate       .set (index, updateUi        == UpdateUi::yes        ? 1 : 0);
-        needsProcessorUpdate.set (index, updateProcessor == UpdateProcessor::yes ? 1 : 0);
+        needsUiUpdate       .set (index, update == Update::yes ? 1 : 0);
+        needsProcessorUpdate.set (index, update == Update::yes ? 1 : 0);
     }
 
     float get (size_t index) const noexcept
@@ -2431,18 +2436,18 @@ public:
 
     void setValue (float f) override
     {
-        cache.set ((size_t) getParameterIndex(), range.convertFrom0to1 (f), UpdateUi::yes, UpdateProcessor::yes);
+        cache.set ((size_t) getParameterIndex(), range.convertFrom0to1 (f), Update::yes);
     }
 
-    void setDenormalisedValueFromUi (float denormalised)
+    void setDenormalisedValue (float denormalised)
     {
-        cache.set ((size_t) getParameterIndex(), denormalised, UpdateUi::no, UpdateProcessor::yes);
+        cache.set ((size_t) getParameterIndex(), denormalised, Update::yes);
         sendValueChangedMessageToListeners (range.convertTo0to1 (denormalised));
     }
 
     void setDenormalisedValueWithoutTriggeringUpdate (float denormalised)
     {
-        cache.set ((size_t) getParameterIndex(), denormalised, UpdateUi::no, UpdateProcessor::no);
+        cache.set ((size_t) getParameterIndex(), denormalised, Update::no);
         sendValueChangedMessageToListeners (range.convertTo0to1 (denormalised));
     }
 
@@ -2564,19 +2569,24 @@ private:
 class UiInstanceArgs
 {
 public:
-    const char* bundlePath = nullptr;
-    const char* pluginUri  = nullptr;
+    File bundlePath;
+    URL pluginUri;
 
-    auto withBundlePath (const char* v) const noexcept { return with (&UiInstanceArgs::bundlePath, v); }
-    auto withPluginUri  (const char* v) const noexcept { return with (&UiInstanceArgs::pluginUri,  v); }
+    auto withBundlePath (File v) const noexcept { return with (&UiInstanceArgs::bundlePath, std::move (v)); }
+    auto withPluginUri  (URL v)  const noexcept { return with (&UiInstanceArgs::pluginUri,  std::move (v)); }
 
 private:
     template <typename Member>
-    UiInstanceArgs with (Member&& member, const char* value) const noexcept
+    UiInstanceArgs with (Member UiInstanceArgs::* member, Member value) const noexcept
     {
-        return juce::lv2_host::with (*this, std::forward<Member> (member), value);
+        return juce::lv2_host::with (*this, member, std::move (value));
     }
 };
+
+static File bundlePathFromUri (const char* uri)
+{
+    return File { std::unique_ptr<char, FreeString> { lilv_file_uri_parse (uri, nullptr) }.get() };
+}
 
 /*
     Creates and holds a UI instance for a plugin with a specific URI, using the provided descriptor.
@@ -2665,14 +2675,14 @@ private:
     using Instance = std::unique_ptr<void, void (*) (LV2UI_Handle)>;
     using Idle = int (*) (LV2UI_Handle);
 
-    Instance makeInstance (const char* pluginUri, const char* bundlePath, const LV2_Feature* const* features)
+    Instance makeInstance (const URL& pluginUri, const File& bundlePath, const LV2_Feature* const* features)
     {
         if (descriptor->get() == nullptr)
             return { nullptr, [] (LV2UI_Handle) {} };
 
         return Instance { descriptor->get()->instantiate (descriptor->get(),
-                                                          pluginUri,
-                                                          bundlePath,
+                                                          pluginUri.toString (false).toRawUTF8(),
+                                                          File::addTrailingSeparator (bundlePath.getFullPathName()).toRawUTF8(),
                                                           writeFunction,
                                                           this,
                                                           &widget,
@@ -2752,10 +2762,9 @@ public:
     auto withSampleRate         (float v) const { return with (&UiFeaturesDataOptions::sampleRate,         v); }
 
 private:
-    template <typename Member, typename Value>
-    UiFeaturesDataOptions with (Member&& member, Value&& value) const
+    UiFeaturesDataOptions with (float UiFeaturesDataOptions::* member, float value) const
     {
-        return juce::lv2_host::with (*this, std::forward<Member> (member), std::forward<Value> (value));
+        return juce::lv2_host::with (*this, member, value);
     }
 };
 
@@ -3034,8 +3043,8 @@ public:
                                                   *this,
                                                   touchListener,
                                                   &uiDescriptor,
-                                                  UiInstanceArgs{}.withBundlePath (uiBundleUri.toRawUTF8())
-                                                                  .withPluginUri (instance.instance.getUri()),
+                                                  UiInstanceArgs{}.withBundlePath (bundlePathFromUri (uiBundleUri.toRawUTF8()))
+                                                                  .withPluginUri (URL (instance.instance.getUri())),
                                                   viewComponent.getWidget(),
                                                   instance,
                                                   opts)),
@@ -3167,14 +3176,6 @@ private:
     }
 
     float getEffectiveScale() const     { return nativeScaleFactor * userScaleFactor; }
-
-    float getTopLevelDesktopScale() const
-    {
-        if (auto* comp = getTopLevelComponent())
-            return comp->getDesktopScaleFactor();
-
-        return 1.0f;
-    }
 
     // If possible, try to keep platform-specific handing restricted to the implementation of
     // ViewComponent. Keep the interface of ViewComponent consistent on all platforms.
@@ -4107,11 +4108,14 @@ static SupportedParameter getInfoForPatchParameter (World& worldIn,
             jassertfalse; // A ScalePoint must have both a rdfs:label and a rdf:value
     }
 
+    const auto minimum = getValue (LV2_CORE__minimum, 0.0f);
+    const auto maximum = getValue (LV2_CORE__maximum, 1.0f);
+
     return { { std::move (parsedScalePoints),
                "des:" + String::fromUTF8 (property.getTyped()),
-               getValue (LV2_CORE__default, 0.0f),
-               getValue (LV2_CORE__minimum, 0.0f),
-               getValue (LV2_CORE__maximum, 1.0f),
+               getValue (LV2_CORE__default, (minimum + maximum) * 0.5f),
+               minimum,
+               maximum,
                typeUrid == urids.mLV2_ATOM__Bool || hasPortProperty (LV2_CORE__toggled),
                typeUrid == urids.mLV2_ATOM__Int || typeUrid == urids.mLV2_ATOM__Long,
                hasPortProperty (LV2_CORE__enumeration) },
@@ -4402,7 +4406,8 @@ public:
                                                            numSamples,
                                                            sampleRate);
 
-        setStateInformation (mb.getData(), (int) mb.getSize());
+        // prepareToPlay is *guaranteed* not to be called concurrently with processBlock
+        setStateInformationImpl (mb.getData(), (int) mb.getSize(), ConcurrentWithAudioCallback::no);
 
         jassert (numSamples == instance->features.getMaxBlockSize());
 
@@ -4487,7 +4492,8 @@ public:
             return;
 
         lastAppliedPreset = newProgram;
-        applyStateWithAppropriateLocking (loadStateWithUri (presetUris[(size_t) newProgram]));
+        applyStateWithAppropriateLocking (loadStateWithUri (presetUris[(size_t) newProgram]),
+                                          ConcurrentWithAudioCallback::yes);
     }
 
     const String getProgramName (int program) override
@@ -4524,16 +4530,7 @@ public:
 
     void setStateInformation (const void* data, int size) override
     {
-        JUCE_ASSERT_MESSAGE_THREAD;
-
-        if (data == nullptr || size == 0)
-            return;
-
-        auto begin = static_cast<const char*> (data);
-        std::vector<char> copy (begin, begin + size);
-        copy.push_back (0);
-        auto mapFeature = instance->symap->getMapFeature();
-        applyStateWithAppropriateLocking (PluginState { lilv_state_new_from_string (world->get(), &mapFeature, copy.data()) });
+        setStateInformationImpl (data, size, ConcurrentWithAudioCallback::yes);
     }
 
     void setNonRealtime (bool newValue) noexcept override
@@ -4573,6 +4570,8 @@ public:
     AudioProcessorParameter* getBypassParameter() const override { return bypassParam; }
 
 private:
+    enum class ConcurrentWithAudioCallback { no, yes };
+
     LV2AudioPluginInstance (std::shared_ptr<World> worldIn,
                             const Plugin& pluginIn,
                             std::unique_ptr<InstanceWithSupports>&& in,
@@ -4593,7 +4592,22 @@ private:
                           std::move (uiDescriptorIn),
                           [this] { postChangedParametersToUi(); })
     {
-        applyStateWithAppropriateLocking (std::move (stateToApply));
+        applyStateWithAppropriateLocking (std::move (stateToApply), ConcurrentWithAudioCallback::no);
+    }
+
+    void setStateInformationImpl (const void* data, int size, ConcurrentWithAudioCallback concurrent)
+    {
+        JUCE_ASSERT_MESSAGE_THREAD;
+
+        if (data == nullptr || size == 0)
+            return;
+
+        auto begin = static_cast<const char*> (data);
+        std::vector<char> copy (begin, begin + size);
+        copy.push_back (0);
+        auto mapFeature = instance->symap->getMapFeature();
+        applyStateWithAppropriateLocking (PluginState { lilv_state_new_from_string (world->get(), &mapFeature, copy.data()) },
+                                          concurrent);
     }
 
     // This does *not* destroy the editor component.
@@ -4691,13 +4705,13 @@ private:
         return instance.get();
     }
 
-    void applyStateWithAppropriateLocking (PluginState&& state)
+    void applyStateWithAppropriateLocking (PluginState&& state, ConcurrentWithAudioCallback concurrent)
     {
         PortMap portStateManager (instance->ports);
 
         // If a plugin supports threadSafeRestore, its restore method is thread-safe
         // and may be called concurrently with audio class functions.
-        if (hasThreadSafeRestore)
+        if (hasThreadSafeRestore || concurrent == ConcurrentWithAudioCallback::no)
         {
             state.restore (*instance, portStateManager);
         }
@@ -4841,7 +4855,7 @@ private:
 
             if (auto* param = parameterValues.getParamByPortIndex (header.portIndex))
             {
-                param->setDenormalisedValueFromUi (value);
+                param->setDenormalisedValue (value);
             }
             else if (auto* port = controlPortStructure.getControlPortByIndex (header.portIndex))
             {
