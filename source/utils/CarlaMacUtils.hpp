@@ -22,20 +22,12 @@
 # error wrong include
 #endif
 
-#ifdef __MAC_10_12
-# define Component CocoaComponent
-# define MemoryBlock CocoaMemoryBlock
-# define Point CocoaPoint
-#endif
-
-#import <Foundation/Foundation.h>
-
-#undef Component
-#undef MemoryBlock
-#undef Point
-
 #include "CarlaBackend.h"
- 
+
+// don't include Foundation.h here
+typedef struct __CFBundle CFBundleRef;
+typedef int32_t CFBundleRefNum;
+
 CARLA_BACKEND_START_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
