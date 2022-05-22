@@ -1483,6 +1483,7 @@ private:
     WindowsDeleteStringFuncPtr deleteHString;
 };
 
+#if 0
 //==============================================================================
 static HMONITOR getMonitorFromOutput (ComSmartPtr<IDXGIOutput> output)
 {
@@ -1717,18 +1718,23 @@ private:
     }
 
     //==============================================================================
+   #if 0
     std::vector<ComSmartPtr<IDXGIAdapter>> adapters;
     Threads threads;
+   #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VBlankDispatcher)
     JUCE_DECLARE_NON_MOVEABLE (VBlankDispatcher)
 };
 
 JUCE_IMPLEMENT_SINGLETON (VBlankDispatcher)
+#endif
 
 //==============================================================================
 class HWNDComponentPeer  : public ComponentPeer,
+                          #if 0
                            private VBlankListener,
+                          #endif
                            private Timer
                           #if JUCE_MODULE_AVAILABLE_juce_audio_plugin_client
                            , public ModifierKeyReceiver
@@ -1769,13 +1775,19 @@ public:
             return ModifierKeys::currentModifiers;
         };
 
+       #if 0
         if (updateCurrentMonitor())
             VBlankDispatcher::getInstance()->updateDisplay (*this, currentMonitor);
+       #else
+        updateCurrentMonitor();
+       #endif
     }
 
     ~HWNDComponentPeer() override
     {
+       #if 0
         VBlankDispatcher::getInstance()->removeListener (*this);
+       #endif
 
         // do this first to avoid messages arriving for this window before it's destroyed
         JuceWindowIdentifier::setAsJUCEWindow (hwnd, false);
@@ -2176,11 +2188,13 @@ public:
         }
     }
 
+   #if 0
     //==============================================================================
     void onVBlank() override
     {
         dispatchDeferredRepaints();
     }
+   #endif
 
     //==============================================================================
     static HWNDComponentPeer* getOwnerOfWindow (HWND h) noexcept
@@ -3779,8 +3793,12 @@ private:
 
         handleMovedOrResized();
 
+       #if 0
         if (updateCurrentMonitor())
             VBlankDispatcher::getInstance()->updateDisplay (*this, currentMonitor);
+       #else
+        updateCurrentMonitor();
+       #endif
 
         return ! dontRepaint; // to allow non-accelerated openGL windows to draw themselves correctly.
     }
@@ -3936,10 +3954,14 @@ private:
                                                                                               .getDisplayForRect (component.getScreenBounds())->userArea),
                           SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_NOSENDCHANGING);
 
+       #if 0
         auto* dispatcher = VBlankDispatcher::getInstance();
         dispatcher->reconfigureDisplays();
         updateCurrentMonitor();
         dispatcher->updateDisplay (*this, currentMonitor);
+       #else
+        updateCurrentMonitor();
+       #endif
     }
 
     //==============================================================================
