@@ -1,6 +1,6 @@
 /*
  * Carla macOS utils
- * Copyright (C) 2018-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,18 +22,7 @@
 
 #include <sys/xattr.h>
 
-#ifdef __MAC_10_12
-# define Component CocoaComponent
-# define MemoryBlock CocoaMemoryBlock
-# define Point CocoaPoint
-#endif
-
 #import <Cocoa/Cocoa.h>
-#import <Foundation/Foundation.h>
-
-#undef Component
-#undef MemoryBlock
-#undef Point
 
 CARLA_BACKEND_START_NAMESPACE
 
