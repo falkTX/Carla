@@ -238,5 +238,5 @@ namespace juce
 #include "audio_io/juce_AudioIODeviceType.cpp"
 #include "midi_io/juce_MidiMessageCollector.cpp"
 #include "midi_io/juce_MidiDevices.cpp"
-#include "sources/juce_AudioSourcePlayer.cpp"
-#include "sources/juce_AudioTransportSource.cpp"
+// #include "sources/juce_AudioSourcePlayer.cpp"
+// #include "sources/juce_AudioTransportSource.cpp"

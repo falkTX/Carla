@@ -201,47 +201,47 @@ private:
 #include "utilities/juce_FlagCache.h"
 #include "format/juce_AudioPluginFormat.cpp"
 #include "format/juce_AudioPluginFormatManager.cpp"
-#include "format_types/juce_LegacyAudioParameter.cpp"
+// #include "format_types/juce_LegacyAudioParameter.cpp"
 #include "processors/juce_AudioProcessor.cpp"
 #include "processors/juce_AudioPluginInstance.cpp"
-#include "processors/juce_AudioProcessorGraph.cpp"
+// #include "processors/juce_AudioProcessorGraph.cpp"
 #if ! JUCE_AUDIOPROCESSOR_NO_GUI
  #include "processors/juce_AudioProcessorEditor.cpp"
- #include "processors/juce_GenericAudioProcessorEditor.cpp"
+//  #include "processors/juce_GenericAudioProcessorEditor.cpp"
 #endif
 #include "processors/juce_PluginDescription.cpp"
-#include "format_types/juce_ARACommon.cpp"
-#include "format_types/juce_LADSPAPluginFormat.cpp"
+// #include "format_types/juce_ARACommon.cpp"
+// #include "format_types/juce_LADSPAPluginFormat.cpp"
 #include "format_types/juce_VSTPluginFormat.cpp"
 #include "format_types/juce_VST3PluginFormat.cpp"
-#include "format_types/juce_AudioUnitPluginFormat.mm"
-#include "format_types/juce_ARAHosting.cpp"
+// #include "format_types/juce_AudioUnitPluginFormat.mm"
+// #include "format_types/juce_ARAHosting.cpp"
 #if ! JUCE_AUDIOPROCESSOR_NO_GUI
  #include "scanning/juce_KnownPluginList.cpp"
- #include "scanning/juce_PluginDirectoryScanner.cpp"
- #include "scanning/juce_PluginListComponent.cpp"
+//  #include "scanning/juce_PluginDirectoryScanner.cpp"
+//  #include "scanning/juce_PluginListComponent.cpp"
 #endif
 #include "processors/juce_AudioProcessorParameterGroup.cpp"
 #include "utilities/juce_AudioProcessorParameterWithID.cpp"
-#include "utilities/juce_RangedAudioParameter.cpp"
-#include "utilities/juce_AudioParameterFloat.cpp"
-#include "utilities/juce_AudioParameterInt.cpp"
-#include "utilities/juce_AudioParameterBool.cpp"
-#include "utilities/juce_AudioParameterChoice.cpp"
-#if ! JUCE_AUDIOPROCESSOR_NO_GUI
- #include "utilities/juce_ParameterAttachments.cpp"
-#endif
-#include "utilities/juce_AudioProcessorValueTreeState.cpp"
-#include "utilities/juce_PluginHostType.cpp"
+// #include "utilities/juce_RangedAudioParameter.cpp"
+// #include "utilities/juce_AudioParameterFloat.cpp"
+// #include "utilities/juce_AudioParameterInt.cpp"
+// #include "utilities/juce_AudioParameterBool.cpp"
+// #include "utilities/juce_AudioParameterChoice.cpp"
+// #if ! JUCE_AUDIOPROCESSOR_NO_GUI
+//  #include "utilities/juce_ParameterAttachments.cpp"
+// #endif
+// #include "utilities/juce_AudioProcessorValueTreeState.cpp"
+// #include "utilities/juce_PluginHostType.cpp"
 #include "utilities/juce_NativeScaleFactorNotifier.cpp"
-#include "utilities/ARA/juce_ARA_utils.cpp"
-
-#include "format_types/juce_LV2PluginFormat.cpp"
-
-#if JUCE_UNIT_TESTS
- #include "format_types/juce_VST3PluginFormat_test.cpp"
- #include "format_types/juce_LV2PluginFormat_test.cpp"
-#endif
+// #include "utilities/ARA/juce_ARA_utils.cpp"
+// 
+// #include "format_types/juce_LV2PluginFormat.cpp"
+// 
+// #if JUCE_UNIT_TESTS
+//  #include "format_types/juce_VST3PluginFormat_test.cpp"
+//  #include "format_types/juce_LV2PluginFormat_test.cpp"
+// #endif
 
 #if JUCE_AUDIOPROCESSOR_NO_GUI
 // commonly used classes in DSP code

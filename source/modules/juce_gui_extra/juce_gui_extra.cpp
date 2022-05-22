@@ -122,22 +122,22 @@
 #endif
 
 //==============================================================================
-#include "documents/juce_FileBasedDocument.cpp"
-#include "code_editor/juce_CodeDocument.cpp"
-#include "code_editor/juce_CodeEditorComponent.cpp"
-#include "code_editor/juce_CPlusPlusCodeTokeniser.cpp"
-#include "code_editor/juce_XMLCodeTokeniser.cpp"
-#include "code_editor/juce_LuaCodeTokeniser.cpp"
-#include "misc/juce_BubbleMessageComponent.cpp"
-#include "misc/juce_ColourSelector.cpp"
-#include "misc/juce_KeyMappingEditorComponent.cpp"
-#include "misc/juce_PreferencesPanel.cpp"
-#include "misc/juce_PushNotifications.cpp"
-#include "misc/juce_RecentlyOpenedFilesList.cpp"
-#include "misc/juce_SplashScreen.cpp"
-#include "misc/juce_SystemTrayIconComponent.cpp"
-#include "misc/juce_LiveConstantEditor.cpp"
-#include "misc/juce_AnimatedAppComponent.cpp"
+// #include "documents/juce_FileBasedDocument.cpp"
+// #include "code_editor/juce_CodeDocument.cpp"
+// #include "code_editor/juce_CodeEditorComponent.cpp"
+// #include "code_editor/juce_CPlusPlusCodeTokeniser.cpp"
+// #include "code_editor/juce_XMLCodeTokeniser.cpp"
+// #include "code_editor/juce_LuaCodeTokeniser.cpp"
+// #include "misc/juce_BubbleMessageComponent.cpp"
+// #include "misc/juce_ColourSelector.cpp"
+// #include "misc/juce_KeyMappingEditorComponent.cpp"
+// #include "misc/juce_PreferencesPanel.cpp"
+// #include "misc/juce_PushNotifications.cpp"
+// #include "misc/juce_RecentlyOpenedFilesList.cpp"
+// #include "misc/juce_SplashScreen.cpp"
+// #include "misc/juce_SystemTrayIconComponent.cpp"
+// #include "misc/juce_LiveConstantEditor.cpp"
+// #include "misc/juce_AnimatedAppComponent.cpp"
 
 //==============================================================================
 #if JUCE_MAC || JUCE_IOS

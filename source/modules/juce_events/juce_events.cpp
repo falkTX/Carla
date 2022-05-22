@@ -61,13 +61,13 @@
 #include "broadcasters/juce_ActionBroadcaster.cpp"
 #include "broadcasters/juce_AsyncUpdater.cpp"
 #include "broadcasters/juce_ChangeBroadcaster.cpp"
-#include "timers/juce_MultiTimer.cpp"
+// #include "timers/juce_MultiTimer.cpp"
 #include "timers/juce_Timer.cpp"
-#include "interprocess/juce_InterprocessConnection.cpp"
-#include "interprocess/juce_InterprocessConnectionServer.cpp"
-#include "interprocess/juce_ConnectedChildProcess.cpp"
-#include "interprocess/juce_NetworkServiceDiscovery.cpp"
-#include "native/juce_ScopedLowPowerModeDisabler.cpp"
+// #include "interprocess/juce_InterprocessConnection.cpp"
+// #include "interprocess/juce_InterprocessConnectionServer.cpp"
+// #include "interprocess/juce_ConnectedChildProcess.cpp"
+// #include "interprocess/juce_NetworkServiceDiscovery.cpp"
+// #include "native/juce_ScopedLowPowerModeDisabler.cpp"
 
 //==============================================================================
 #if JUCE_MAC || JUCE_IOS
