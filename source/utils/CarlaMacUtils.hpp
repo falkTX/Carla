@@ -26,7 +26,6 @@
 
 // don't include Foundation.h here
 typedef struct __CFBundle CFBundleRef;
-typedef int32_t CFBundleRefNum;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -64,12 +63,14 @@ private:
 // --------------------------------------------------------------------------------------------------------------------
 
 struct BundleLoader {
-    CFBundleRef ref;
-    CFBundleRefNum refNum;
-
-    BundleLoader() noexcept;
+    BundleLoader();
     ~BundleLoader();
     bool load(const char* const filename);
+    CFBundleRef& getRef() const noexcept;
+
+private:
+    struct PrivateData;
+    PrivateData* const pData;
 };
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -1004,10 +1004,10 @@ static void do_vst2_check(lib_t& libHandle, const char* const filename, const bo
             return;
         }
 
-        vstFn = (VST_Function)CFBundleGetFunctionPointerForName(bundleLoader.ref, CFSTR("main_macho"));
+        vstFn = (VST_Function)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR("main_macho"));
 
         if (vstFn == nullptr)
-            vstFn = (VST_Function)CFBundleGetFunctionPointerForName(bundleLoader.ref, CFSTR("VSTPluginMain"));
+            vstFn = (VST_Function)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR("VSTPluginMain"));
 
         if (vstFn == nullptr)
         {
@@ -1465,9 +1465,9 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             return;
         }
 
-        v3_entry = (V3_ENTRYFN)CFBundleGetFunctionPointerForName(bundleLoader.ref, CFSTR(V3_ENTRYFNNAME));
-        v3_exit = (V3_EXITFN)CFBundleGetFunctionPointerForName(bundleLoader.ref, CFSTR(V3_EXITFNNAME));
-        v3_get = (V3_GETFN)CFBundleGetFunctionPointerForName(bundleLoader.ref, CFSTR(V3_GETFNNAME));
+        v3_entry = (V3_ENTRYFN)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR(V3_ENTRYFNNAME));
+        v3_exit = (V3_EXITFN)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR(V3_EXITFNNAME));
+        v3_get = (V3_GETFN)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR(V3_GETFNNAME));
 #else
         water::String binaryfilename = filename;
 
