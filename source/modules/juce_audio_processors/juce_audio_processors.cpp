@@ -214,7 +214,7 @@ private:
 // #include "format_types/juce_LADSPAPluginFormat.cpp"
 #include "format_types/juce_VSTPluginFormat.cpp"
 #include "format_types/juce_VST3PluginFormat.cpp"
-// #include "format_types/juce_AudioUnitPluginFormat.mm"
+#include "format_types/juce_AudioUnitPluginFormat.mm"
 // #include "format_types/juce_ARAHosting.cpp"
 #if ! JUCE_AUDIOPROCESSOR_NO_GUI
  #include "scanning/juce_KnownPluginList.cpp"
@@ -237,11 +237,11 @@ private:
 // #include "utilities/ARA/juce_ARA_utils.cpp"
 // 
 // #include "format_types/juce_LV2PluginFormat.cpp"
-// 
-// #if JUCE_UNIT_TESTS
-//  #include "format_types/juce_VST3PluginFormat_test.cpp"
-//  #include "format_types/juce_LV2PluginFormat_test.cpp"
-// #endif
+ 
+#if JUCE_UNIT_TESTS
+ #include "format_types/juce_VST3PluginFormat_test.cpp"
+ #include "format_types/juce_LV2PluginFormat_test.cpp"
+#endif
 
 #if JUCE_AUDIOPROCESSOR_NO_GUI
 // commonly used classes in DSP code

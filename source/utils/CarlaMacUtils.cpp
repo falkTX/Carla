@@ -144,7 +144,7 @@ bool BundleLoader::load(const char* const filename)
     return pData->load(filename);
 }
 
-CFBundleRef& BundleLoader::getRef() const noexcept
+CFBundleRef BundleLoader::getRef() const noexcept
 {
     return pData->ref;
 }

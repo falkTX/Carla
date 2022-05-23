@@ -25,7 +25,7 @@
 #include "CarlaBackend.h"
 
 // don't include Foundation.h here
-typedef struct __CFBundle CFBundleRef;
+typedef struct __CFBundle* CFBundleRef;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -66,7 +66,7 @@ struct BundleLoader {
     BundleLoader();
     ~BundleLoader();
     bool load(const char* const filename);
-    CFBundleRef& getRef() const noexcept;
+    CFBundleRef getRef() const noexcept;
 
 private:
     struct PrivateData;
