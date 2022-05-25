@@ -410,6 +410,7 @@ class SearchPluginsThread(QThread):
         self.fCheckAU     = False
         self.fCheckSF2    = False
         self.fCheckSFZ    = False
+        self.fCheckJSFX   = False
 
         if WINDOWS:
             toolNative = "carla-discovery-native.exe"
@@ -447,7 +448,7 @@ class SearchPluginsThread(QThread):
         self.fCheckWin32   = win32
         self.fCheckWin64   = win64
 
-    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst2, vst3, au, sf2, sfz):
+    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst2, vst3, au, sf2, sfz, jsfx):
         self.fCheckLADSPA = ladspa
         self.fCheckDSSI   = dssi
         self.fCheckLV2    = lv2
@@ -456,6 +457,7 @@ class SearchPluginsThread(QThread):
         self.fCheckAU     = au and MACOS
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
+        self.fCheckJSFX   = jsfx
 
     def stop(self):
         self.fContinueChecking = False
@@ -521,6 +523,12 @@ class SearchPluginsThread(QThread):
             if self.fCheckSF2: self.fCurCount += 1
         else:
             self.fCheckSF2 = False
+
+        if self.fCheckJSFX:
+            if self.fCheckNative:
+                self.fCurCount += 1
+            else:
+                self.fCheckJSFX = False
 
         if self.fCurCount == 0:
             return
@@ -719,6 +727,11 @@ class SearchPluginsThread(QThread):
         if self.fCheckSFZ:
             kits = self._checkSfzCached()
             settingsDB.setValue("Plugins/SFZ", kits)
+            settingsDB.sync()
+
+        if self.fCheckJSFX:
+            kits = self._checkJsfxCached()
+            settingsDB.setValue("Plugins/JSFX", kits)
             settingsDB.sync()
 
     def _checkLADSPA(self, OS, tool, isWine=False):
@@ -994,6 +1007,36 @@ class SearchPluginsThread(QThread):
         self.fLastCheckValue += self.fCurPercentValue
         return sfzKits
 
+    def _checkJsfxCached(self):
+        settings  = QSafeSettings("falkTX", "Carla2")
+        PLUG_PATH = splitter.join(settings.value(CARLA_KEY_PATHS_JSFX, CARLA_DEFAULT_JSFX_PATH, list))
+        del settings
+
+        jsfxPlugins = []
+        self._pluginLook(self.fLastCheckValue, "JSFX plugins...")
+
+        count = gCarla.utils.get_cached_plugin_count(PLUGIN_JSFX, PLUG_PATH)
+
+        if not self.fContinueChecking:
+            return jsfxPlugins
+
+        for i in range(count):
+            descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_JSFX, i)
+
+            percent = ( float(i) / count ) * self.fCurPercentValue
+            self._pluginLook(self.fLastCheckValue + percent, descInfo['label'])
+
+            if not descInfo['valid']:
+                continue
+
+            jsfxPlugins.append(checkPluginCached(descInfo, PLUGIN_JSFX))
+
+            if not self.fContinueChecking:
+                break
+
+        self.fLastCheckValue += self.fCurPercentValue
+        return jsfxPlugins
+
     def _pluginLook(self, percent, plugin):
         self.pluginLook.emit(percent, plugin)
 
@@ -1227,6 +1270,7 @@ class PluginRefreshW(QDialog):
         self.ui.ch_au.clicked.connect(self.slot_checkTools)
         self.ui.ch_sf2.clicked.connect(self.slot_checkTools)
         self.ui.ch_sfz.clicked.connect(self.slot_checkTools)
+        self.ui.ch_jsfx.clicked.connect(self.slot_checkTools)
         self.fThread.pluginLook.connect(self.slot_handlePluginLook)
         self.fThread.finished.connect(self.slot_handlePluginThreadFinished)
 
@@ -1267,6 +1311,9 @@ class PluginRefreshW(QDialog):
         check = settings.value("PluginDatabase/SearchSFZ", False, bool) and self.ui.ch_sfz.isEnabled()
         self.ui.ch_sfz.setChecked(check)
 
+        check = settings.value("PluginDatabase/SearchJSFX", True, bool) and self.ui.ch_jsfx.isEnabled()
+        self.ui.ch_jsfx.setChecked(check)
+
         check = settings.value("PluginDatabase/SearchNative", True, bool) and self.ui.ch_native.isEnabled()
         self.ui.ch_native.setChecked(check)
 
@@ -1297,6 +1344,7 @@ class PluginRefreshW(QDialog):
         settings.setValue("PluginDatabase/SearchAU", self.ui.ch_au.isChecked())
         settings.setValue("PluginDatabase/SearchSF2", self.ui.ch_sf2.isChecked())
         settings.setValue("PluginDatabase/SearchSFZ", self.ui.ch_sfz.isChecked())
+        settings.setValue("PluginDatabase/SearchJSFX", self.ui.ch_jsfx.isChecked())
         settings.setValue("PluginDatabase/SearchNative", self.ui.ch_native.isChecked())
         settings.setValue("PluginDatabase/SearchPOSIX32", self.ui.ch_posix32.isChecked())
         settings.setValue("PluginDatabase/SearchPOSIX64", self.ui.ch_posix64.isChecked())
@@ -1326,13 +1374,14 @@ class PluginRefreshW(QDialog):
                                                   self.ui.ch_posix32.isChecked(), self.ui.ch_posix64.isChecked(),
                                                   self.ui.ch_win32.isChecked(), self.ui.ch_win64.isChecked())
 
-        ladspa, dssi, lv2, vst, vst3, au, sf2, sfz = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
-                                                      self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
-                                                      self.ui.ch_vst3.isChecked(), self.ui.ch_au.isChecked(),
-                                                      self.ui.ch_sf2.isChecked(), self.ui.ch_sfz.isChecked())
+        ladspa, dssi, lv2, vst, vst3, au, sf2, sfz, jsfx = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
+                                                            self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
+                                                            self.ui.ch_vst3.isChecked(), self.ui.ch_au.isChecked(),
+                                                            self.ui.ch_sf2.isChecked(), self.ui.ch_sfz.isChecked(),
+                                                            self.ui.ch_jsfx.isChecked())
 
         self.fThread.setSearchBinaryTypes(native, posix32, posix64, win32, win64)
-        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, vst3, au, sf2, sfz)
+        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, vst3, au, sf2, sfz, jsfx)
         self.fThread.start()
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -1352,7 +1401,8 @@ class PluginRefreshW(QDialog):
         enabled2 = bool(self.ui.ch_ladspa.isChecked() or self.ui.ch_dssi.isChecked() or
                         self.ui.ch_lv2.isChecked() or self.ui.ch_vst.isChecked() or
                         self.ui.ch_vst3.isChecked() or self.ui.ch_au.isChecked() or
-                        self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked())
+                        self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked() or
+                        self.ui.ch_jsfx.isChecked())
 
         self.ui.b_start.setEnabled(enabled1 and enabled2)
 
@@ -1512,6 +1562,7 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_vst.clicked.connect(self.slot_checkFilters)
         self.ui.ch_vst3.clicked.connect(self.slot_checkFilters)
         self.ui.ch_au.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_jsfx.clicked.connect(self.slot_checkFilters)
         self.ui.ch_kits.clicked.connect(self.slot_checkFilters)
         self.ui.ch_effects.clicked.connect(self.slot_checkFilters)
         self.ui.ch_instruments.clicked.connect(self.slot_checkFilters)
@@ -1704,6 +1755,7 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_dssi.setChecked(True)
         self.ui.ch_lv2.setChecked(True)
         self.ui.ch_vst.setChecked(True)
+        self.ui.ch_jsfx.setChecked(True)
         self.ui.ch_kits.setChecked(True)
 
         self.ui.ch_instruments.setChecked(True)
@@ -1762,6 +1814,7 @@ class PluginDatabaseW(QDialog):
         settings.setValue("PluginDatabase/ShowVST2", self.ui.ch_vst.isChecked())
         settings.setValue("PluginDatabase/ShowVST3", self.ui.ch_vst3.isChecked())
         settings.setValue("PluginDatabase/ShowAU", self.ui.ch_au.isChecked())
+        settings.setValue("PluginDatabase/ShowJSFX", self.ui.ch_jsfx.isChecked())
         settings.setValue("PluginDatabase/ShowKits", self.ui.ch_kits.isChecked())
         settings.setValue("PluginDatabase/ShowNative", self.ui.ch_native.isChecked())
         settings.setValue("PluginDatabase/ShowBridged", self.ui.ch_bridged.isChecked())
@@ -1822,6 +1875,7 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_vst.setChecked(settings.value("PluginDatabase/ShowVST2", True, bool))
         self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/ShowVST3", (MACOS or WINDOWS), bool))
         self.ui.ch_au.setChecked(settings.value("PluginDatabase/ShowAU", MACOS, bool))
+        self.ui.ch_jsfx.setChecked(settings.value("PluginDatabase/ShowJSFX", True, bool))
         self.ui.ch_kits.setChecked(settings.value("PluginDatabase/ShowKits", True, bool))
         self.ui.ch_native.setChecked(settings.value("PluginDatabase/ShowNative", True, bool))
         self.ui.ch_bridged.setChecked(settings.value("PluginDatabase/ShowBridged", True, bool))
@@ -1897,6 +1951,7 @@ class PluginDatabaseW(QDialog):
         hideVST2     = not self.ui.ch_vst.isChecked()
         hideVST3     = not self.ui.ch_vst3.isChecked()
         hideAU       = not self.ui.ch_au.isChecked()
+        hideJSFX     = not self.ui.ch_jsfx.isChecked()
         hideKits     = not self.ui.ch_kits.isChecked()
 
         hideNative  = not self.ui.ch_native.isChecked()
@@ -1973,6 +2028,8 @@ class PluginDatabaseW(QDialog):
                 self.ui.tableWidget.hideRow(i)
             elif hideAU and ptype == PLUGIN_AU:
                 self.ui.tableWidget.hideRow(i)
+            elif hideJSFX and ptype == PLUGIN_JSFX:
+                self.ui.tableWidget.hideRow(i)
             elif hideNative and isNative:
                 self.ui.tableWidget.hideRow(i)
             elif hideBridged and isBridged:
@@ -2012,7 +2069,7 @@ class PluginDatabaseW(QDialog):
     def _addPluginToTable(self, plugin, ptype):
         if plugin['API'] != PLUGIN_QUERY_API_VERSION:
             return
-        if ptype in (self.tr("Internal"), "LV2", "SF2", "SFZ"):
+        if ptype in (self.tr("Internal"), "LV2", "SF2", "SFZ", "JSFX"):
             plugin['build'] = BINARY_NATIVE
 
         index = self.fLastTableIndex
@@ -2048,6 +2105,7 @@ class PluginDatabaseW(QDialog):
         #elif ptype == PLUGIN_SFZ:
             #ptypeStr   = "SFZ"
             #ptypeStrTr = ptypeStr
+        # TODO(jsfx) what to do here?
         else:
             return 0
 
@@ -2160,6 +2218,11 @@ class PluginDatabaseW(QDialog):
         auPlugins32 = settingsDB.value("Plugins/AU_posix32", [], list) if MACOS else []
 
         # ----------------------------------------------------------------------------------------------------
+        # JSFX
+
+        jsfxPlugins = settingsDB.value("Plugins/JSFX", [], list)
+
+        # ----------------------------------------------------------------------------------------------------
         # Kits
 
         sf2s = settingsDB.value("Plugins/SF2", [], list)
@@ -2173,6 +2236,7 @@ class PluginDatabaseW(QDialog):
         vstCount    = 0
         vst3Count   = 0
         au32Count   = 0
+        jsfxCount   = len(jsfxPlugins)
         sf2Count    = 0
         sfzCount    = len(sfzs)
 
@@ -2195,15 +2259,15 @@ class PluginDatabaseW(QDialog):
             sf2Count += len(plugins)
 
         self.ui.tableWidget.setRowCount(self.fLastTableIndex +
-                                        ladspaCount + dssiCount + vstCount + vst3Count + au32Count +
+                                        ladspaCount + dssiCount + vstCount + vst3Count + au32Count + jsfxCount +
                                         sf2Count + sfzCount)
 
         if MACOS:
-            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3 and %i AudioUnit plugins, plus %i Sound Kits" % (
-                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, auCount+au32Count, sf2Count+sfzCount)))
+            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3, %i AudioUnit plugins and %i JSFX plugins, plus %i Sound Kits" % (
+                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, auCount+au32Count, jsfxCount, sf2Count+sfzCount)))
         else:
-            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2 and %i VST3 plugins, plus %i Sound Kits" % (
-                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, sf2Count+sfzCount)))
+            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3 plugins and %i JSFX plugins, plus %i Sound Kits" % (
+                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, jsfxCount, sf2Count+sfzCount)))
 
         # ----------------------------------------------------------------------------------------------------
         # now add all plugins to the table
@@ -2227,6 +2291,9 @@ class PluginDatabaseW(QDialog):
         for plugins in auPlugins32:
             for plugin in plugins:
                 self._addPluginToTable(plugin, "AU")
+
+        for plugin in jsfxPlugins:
+            self._addPluginToTable(plugin, "JSFX")
 
         for sf2 in sf2s:
             for sf2_i in sf2:

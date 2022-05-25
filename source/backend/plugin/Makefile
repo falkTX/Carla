@@ -34,6 +34,7 @@ OBJS = \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST3.cpp.o \
 	$(OBJDIR)/CarlaPluginAU.cpp.o \
+	$(OBJDIR)/CarlaPluginJSFX.cpp.o \
 	$(OBJDIR)/CarlaPluginJuce.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
 	$(OBJDIR)/CarlaPluginSFZero.cpp.o
@@ -71,6 +72,11 @@ $(OBJDIR)/CarlaPluginFluidSynth.cpp.o: CarlaPluginFluidSynth.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaPluginJSFX.cpp.o: CarlaPluginJSFX.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(YSFX_FLAGS) -c -o $@
 
 ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginVST2.cpp.o: CarlaPluginVST2.cpp

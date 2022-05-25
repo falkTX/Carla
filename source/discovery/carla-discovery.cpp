@@ -18,6 +18,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
@@ -54,6 +55,7 @@
 
 #ifndef BUILD_BRIDGE
 # include "CarlaDssiUtils.cpp"
+# include "CarlaJsfxUtils.hpp"
 # include "../backend/utils/CachedPlugins.cpp"
 #endif
 
@@ -2112,6 +2114,67 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
 #endif
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
+#ifndef BUILD_BRIDGE
+static void do_jsfx_check(const char* const filename, bool doInit)
+{
+    const water::File file = File(CharPointer_UTF8(filename));
+
+    ysfx_config_u config(ysfx_config_new());
+
+    ysfx_register_builtin_audio_formats(config.get());
+    ysfx_guess_file_roots(config.get(), filename);
+    ysfx_set_log_reporter(config.get(), &CarlaJsfxLogging::logErrorsOnly);
+
+    ysfx_u effect(ysfx_new(config.get()));
+
+    uint hints = 0;
+
+    // do not attempt to compile it, because the import path is not known
+    (void)doInit;
+
+    if (! ysfx_load_file(effect.get(), filename, 0))
+    {
+        DISCOVERY_OUT("error", "Cannot read the JSFX header");
+        return;
+    }
+
+    const char* const name = ysfx_get_name(effect.get());
+
+    // author and category are extracted from the pseudo-tags
+    const char* const author = ysfx_get_author(effect.get());
+    const CB::PluginCategory category = CarlaJsfxCategories::getFromEffect(effect.get());
+
+    const uint32_t audioIns = ysfx_get_num_inputs(effect.get());
+    const uint32_t audioOuts = ysfx_get_num_outputs(effect.get());
+
+    const uint32_t midiIns = 1;
+    const uint32_t midiOuts = 1;
+
+    uint32_t parameters = 0;
+    for (uint32_t sliderIndex = 0; sliderIndex < ysfx_max_sliders; ++sliderIndex)
+    {
+        if (ysfx_slider_exists(effect.get(), sliderIndex))
+            ++parameters;
+    }
+
+    DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("build", BINARY_NATIVE);
+    DISCOVERY_OUT("hints", hints);
+    DISCOVERY_OUT("category", getPluginCategoryAsString(category));
+    DISCOVERY_OUT("name", name);
+    DISCOVERY_OUT("maker", author);
+    DISCOVERY_OUT("label", filename);
+    DISCOVERY_OUT("audio.ins", audioIns);
+    DISCOVERY_OUT("audio.outs", audioOuts);
+    DISCOVERY_OUT("midi.ins", midiIns);
+    DISCOVERY_OUT("midi.outs", midiOuts);
+    DISCOVERY_OUT("parameters.ins", parameters);
+    DISCOVERY_OUT("end", "------------");
+}
+#endif
+
 // ------------------------------ main entry point ------------------------------
 
 int main(int argc, char* argv[])
@@ -2281,6 +2344,12 @@ int main(int argc, char* argv[])
         DISCOVERY_OUT("error", "AU support not available");
 #endif
          break;
+
+#ifndef BUILD_BRIDGE
+    case PLUGIN_JSFX:
+        do_jsfx_check(filename, doInit);
+        break;
+#endif
 
     case PLUGIN_DLS:
     case PLUGIN_GIG:

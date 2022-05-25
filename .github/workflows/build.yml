@@ -65,11 +65,12 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update -qq
           sudo apt-get install -yq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libqt4-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
-          sudo apt-get install -yq g++-multilib libfreetype6:i386 libx11-6:i386 libxext6:i386
+          sudo apt-get install -yq g++-multilib libfreetype6:i386 libfontconfig1:i386 libx11-6:i386 libxext6:i386
           # Fix 32bit bridge build
           sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
           sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
           sudo ln -s /usr/lib/i386-linux-gnu/libfreetype.so.6 /usr/lib/i386-linux-gnu/libfreetype.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libfontconfig.so.1 /usr/lib/i386-linux-gnu/libfontconfig.so
       - name: make features
         run: make features
       - name: make
@@ -91,11 +92,12 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update -qq
           sudo apt-get install -yq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
-          sudo apt-get install -yq g++-multilib libfreetype6:i386 libx11-6:i386 libxext6:i386
+          sudo apt-get install -yq g++-multilib libfreetype6:i386 libfontconfig1:i386 libx11-6:i386 libxext6:i386
           # Fix 32bit bridge build
           sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
           sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
           sudo ln -s /usr/lib/i386-linux-gnu/libfreetype.so.6 /usr/lib/i386-linux-gnu/libfreetype.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libfontconfig.so.1 /usr/lib/i386-linux-gnu/libfontconfig.so
       - name: make features
         run: make features
       - name: make

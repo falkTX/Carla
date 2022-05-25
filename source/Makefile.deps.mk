@@ -509,6 +509,14 @@ JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
 endif # USING_JUCE
 endif # WIN32
 
+YSFX_FLAGS = -I$(CWD)/modules/ysfx/include
+ifeq ($(MACOS),true)
+YSFX_GRAPHICS_LIBS = -framework Cocoa -framework Carbon -framework Metal -framework Foundation
+else ifneq ($(WIN32),true)
+YSFX_GRAPHICS_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags freetype2 fontconfig)
+YSFX_GRAPHICS_LIBS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2 fontconfig)
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(STATIC_PLUGIN_TARGET),true)

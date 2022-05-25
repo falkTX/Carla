@@ -10,6 +10,7 @@ include ../Makefile.mk
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
+BUILD_CXX_FLAGS += $(YSFX_FLAGS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -61,6 +62,9 @@ LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
+
+LINK_FLAGS += $(MODULEDIR)/ysfx.a
+LINK_FLAGS += $(YSFX_GRAPHICS_LIBS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 

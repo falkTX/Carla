@@ -147,6 +147,9 @@ LIBS_win64   += $(MODULEDIR)/juce_gui_extra.win64.a
 LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
 endif
 
+LIBS_native += $(MODULEDIR)/ysfx.a
+LINK_FLAGS  += $(YSFX_GRAPHICS_LIBS)
+
 ifeq ($(JACKBRIDGE_DIRECT),true)
 LINK_FLAGS += $(JACK_LIBS)
 endif
@@ -205,6 +208,7 @@ OBJS_native = \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST3.cpp.o \
 	$(OBJDIR)/CarlaPluginAU.cpp.o \
+	$(OBJDIR)/CarlaPluginJSFX.cpp.o \
 	$(OBJDIR)/CarlaPluginJuce.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
 	$(OBJDIR)/CarlaPluginSFZero.cpp.o \
@@ -305,6 +309,11 @@ $(BINDIR)/$(MODULENAME)-win64.exe: $(OBJS_win64) $(LIBS_win64)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # native
+
+$(OBJDIR)/CarlaPluginJSFX.cpp.o: $(CWD)/backend/plugin/CarlaPluginJSFX.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJSFX.cpp (bridge)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) $(YSFX_FLAGS) -c -o $@
 
 ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginVST2.cpp.o: $(CWD)/backend/plugin/CarlaPluginVST2.cpp

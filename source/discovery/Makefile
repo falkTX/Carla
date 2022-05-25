@@ -69,6 +69,8 @@ NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
 endif
 
+NATIVE_BUILD_FLAGS += $(YSFX_FLAGS)
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 LIBS_native   = $(MODULEDIR)/lilv.a
@@ -151,6 +153,9 @@ LIBS_win32   += $(MODULEDIR)/juce_gui_extra.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_gui_extra.win64.a
 LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
 endif # USING_JUCE
+
+LIBS_native  += $(MODULEDIR)/ysfx.a
+LINK_FLAGS   += $(YSFX_GRAPHICS_LIBS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 

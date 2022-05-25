@@ -76,6 +76,8 @@ const char* carla_get_complete_license_text()
         "<li>AU plugin support (using JUCE)</li>"
 #endif
 
+        "<li>JSFX plugin support (using ysfx)</li>"
+
         // Sample kit libraries
 #if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
         "<li>FluidSynth library v" FLUIDSYNTH_VERSION " for SF2/3 support</li>"
@@ -184,6 +186,9 @@ const char* const* carla_get_supported_file_extensions()
 
         // SFZ
         "sfz",
+
+        // JSFX
+        "jsfx",
 
         // terminator
         nullptr
