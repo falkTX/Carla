@@ -36,27 +36,14 @@
 #include "CarlaNative.hpp"
 #include "CarlaNativePlugin.h"
 
-#if defined(USING_JUCE) && ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-# endif
-# include "AppConfig.h"
-# include "juce_events/juce_events.h"
-# define USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
-#endif
-
 #include "water/files/File.h"
 #include "water/streams/MemoryOutputStream.h"
 #include "water/xml/XmlDocument.h"
 #include "water/xml/XmlElement.h"
+
+#ifdef USING_JUCE
+# include "carla_juce/carla_juce.h"
+#endif
 
 using water::File;
 using water::MemoryOutputStream;
@@ -71,42 +58,6 @@ static const uint32_t kNumOutParams = 10;
 
 static const uint16_t kUiWidth = 1024;
 static const uint16_t kUiHeight = 712;
-
-// -----------------------------------------------------------------------
-
-#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-static int numScopedInitInstances = 0;
-
-struct ReferenceCountedJuceMessageMessager
-{
-    ReferenceCountedJuceMessageMessager()
-    {
-        CARLA_SAFE_ASSERT(numScopedInitInstances == 0);
-    }
-
-    ~ReferenceCountedJuceMessageMessager()
-    {
-        CARLA_SAFE_ASSERT(numScopedInitInstances == 0);
-    }
-
-    void incRef()
-    {
-        if (numScopedInitInstances++ == 0)
-        {
-            juce::initialiseJuce_GUI();
-            juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
-        }
-    }
-
-    void decRef()
-    {
-        if (--numScopedInitInstances == 0)
-        {
-            juce::shutdownJuce_GUI();
-        }
-    }
-};
-#endif
 
 // -----------------------------------------------------------------------
 
@@ -173,7 +124,7 @@ public:
 
 #ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
         if (kNeedsJuceEvents)
-            fJuceMsgMgr->incRef();
+            fJuceMsgMgr.incRef();
 #endif
 
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
@@ -246,7 +197,7 @@ public:
 
 #ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
         if (kNeedsJuceEvents)
-            fJuceMsgMgr->decRef();
+            fJuceMsgMgr.decRef();
 #endif
 
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
@@ -1735,45 +1686,28 @@ private:
 
 #ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
     const bool kNeedsJuceEvents;
-    const juce::SharedResourcePointer<ReferenceCountedJuceMessageMessager> fJuceMsgMgr;
+    const CarlaJUCE::ReferenceCountedJuceMessageMessager fJuceMsgMgr;
     CarlaMutex fJuceMsgMutex;
 
     struct ScopedJuceMessageThreadRunner {
         const CarlaMutexTryLocker cmtl;
         const bool wasLocked;
-        juce::MessageManager* msgMgr;
 
         ScopedJuceMessageThreadRunner(CarlaEngineNative& self, const bool forceLock) noexcept
             : cmtl(self.fJuceMsgMutex, forceLock),
-              wasLocked(cmtl.wasLocked()),
-              msgMgr(nullptr)
+              wasLocked(cmtl.wasLocked())
         {
             if (! self.kNeedsJuceEvents)
                 return;
             if (! wasLocked)
                 return;
 
-            juce::MessageManager* const msgMgr2 = juce::MessageManager::getInstanceWithoutCreating();
-            CARLA_SAFE_ASSERT_RETURN(msgMgr2 != nullptr,);
-
-            if (! msgMgr2->isThisTheMessageThread())
-            {
-                try {
-                    msgMgr2->setCurrentThreadAsMessageThread();
-                } CARLA_SAFE_EXCEPTION_RETURN("setCurrentThreadAsMessageThread",);
-            }
-
-            msgMgr = msgMgr2;
+            CarlaJUCE::setMessageManagerForThisThread();
         }
 
         ~ScopedJuceMessageThreadRunner()
         {
-            if (msgMgr == nullptr)
-                return;
-
-            const juce::MessageManagerLock mml;
-
-            for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
+            CarlaJUCE::dispatchMessageManagerMessages();
         }
 
         CARLA_DECLARE_NON_COPY_STRUCT(ScopedJuceMessageThreadRunner)

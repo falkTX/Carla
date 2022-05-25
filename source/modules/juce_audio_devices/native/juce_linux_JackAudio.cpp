@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -347,8 +347,7 @@ public:
         if (client != nullptr)
         {
             const auto result = juce::jack_deactivate (client);
-            jassert (result == 0);
-            ignoreUnused (result);
+            jassertquiet (result == 0);
 
             juce::jack_set_xrun_callback (client, xrunCallback, nullptr);
             juce::jack_set_process_callback (client, processCallback, nullptr);
@@ -463,8 +462,12 @@ private:
         if (callback != nullptr)
         {
             if ((numActiveInChans + numActiveOutChans) > 0)
-                callback->audioDeviceIOCallback (const_cast<const float**> (inChans.getData()), numActiveInChans,
-                                                 outChans, numActiveOutChans, numSamples);
+                callback->audioDeviceIOCallbackWithContext (const_cast<const float**> (inChans.getData()),
+                                                            numActiveInChans,
+                                                            outChans,
+                                                            numActiveOutChans,
+                                                            numSamples,
+                                                            {});
         }
         else
         {
@@ -543,8 +546,7 @@ private:
 
     static void infoShutdownCallback (jack_status_t code, const char* reason, void* arg)
     {
-        jassert (code == 0);
-        ignoreUnused (code);
+        jassertquiet (code == 0);
 
         JUCE_JACK_LOG ("Shutting down with message:");
         JUCE_JACK_LOG (reason);

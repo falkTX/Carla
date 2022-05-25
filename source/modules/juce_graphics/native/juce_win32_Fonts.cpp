@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -235,6 +235,7 @@ StringArray Font::findAllTypefaceStyles (const String& family)
         BOOL fontFound = false;
         uint32 fontIndex = 0;
         auto hr = factories->systemFonts->FindFamilyName (family.toWideCharPointer(), &fontIndex, &fontFound);
+        ignoreUnused (hr);
 
         if (! fontFound)
             fontIndex = 0;
@@ -300,7 +301,7 @@ Typeface::Ptr Font::getDefaultTypefaceForFont (const Font& font)
     static DefaultFontNames defaultNames;
 
     Font newFont (font);
-    auto& faceName = font.getTypefaceName();
+    auto faceName = font.getTypefaceName();
 
     if (faceName == getDefaultSansSerifFontName())       newFont.setTypefaceName (defaultNames.defaultSans);
     else if (faceName == getDefaultSerifFontName())      newFont.setTypefaceName (defaultNames.defaultSerif);
@@ -409,7 +410,7 @@ public:
 
             auto pheader = reinterpret_cast<const TTPOLYGONHEADER*> (data.getData());
 
-            auto scaleX = 1.0f / tm.tmHeight;
+            auto scaleX = 1.0f / (float) tm.tmHeight;
             auto scaleY = -scaleX;
 
             while ((char*) pheader < data + bufSize)
@@ -417,7 +418,7 @@ public:
                 glyphPath.startNewSubPath (scaleX * pheader->pfxStart.x.value,
                                            scaleY * pheader->pfxStart.y.value);
 
-                auto curve = (const TTPOLYCURVE*) ((const char*) pheader + sizeof (TTPOLYGONHEADER));
+                auto curve = unalignedPointerCast<const TTPOLYCURVE*> ((const char*) pheader + sizeof (TTPOLYGONHEADER));
                 auto curveEnd = ((const char*) pheader) + pheader->cb;
 
                 while ((const char*) curve < curveEnd)
@@ -450,7 +451,7 @@ public:
                     curve = (const TTPOLYCURVE*) &(curve->apfx [curve->cpfx]);
                 }
 
-                pheader = (const TTPOLYGONHEADER*) curve;
+                pheader = unalignedPointerCast<const TTPOLYGONHEADER*> (curve);
 
                 glyphPath.closeSubPath();
             }
@@ -514,9 +515,9 @@ private:
 
         if (GetTextMetrics (dc, &tm))
         {
-            auto dpi = (GetDeviceCaps (dc, LOGPIXELSX) + GetDeviceCaps (dc, LOGPIXELSY)) / 2.0f;
-            heightToPointsFactor = (dpi / GetDeviceCaps (dc, LOGPIXELSY)) * heightInPoints / (float) tm.tmHeight;
-            ascent = tm.tmAscent / (float) tm.tmHeight;
+            auto dpi = (float) (GetDeviceCaps (dc, LOGPIXELSX) + GetDeviceCaps (dc, LOGPIXELSY)) / 2.0f;
+            heightToPointsFactor = (dpi / (float) GetDeviceCaps (dc, LOGPIXELSY)) * (float) heightInPoints / (float) tm.tmHeight;
+            ascent = (float) tm.tmAscent / (float) tm.tmHeight;
             std::unordered_map<int, int> glyphsForChars;
             defaultGlyph = getGlyphForChar (dc, glyphsForChars, tm.tmDefaultChar);
             createKerningPairs (dc, glyphsForChars, (float) tm.tmHeight);
@@ -538,8 +539,8 @@ private:
             auto glyph2 = getGlyphForChar (hdc, glyphsForChars, rawKerning[i].wSecond);
             auto standardWidth = getGlyphWidth (hdc, widthsForGlyphs, glyph1);
 
-            kerningPairs[kerningPairIndex (glyph1, glyph2)] = (standardWidth + rawKerning[i].iKernAmount) / height;
-            kerningPairs[kerningPairIndex (glyph1, -1)]     = standardWidth / height;
+            kerningPairs[kerningPairIndex (glyph1, glyph2)] = (float) (standardWidth + rawKerning[i].iKernAmount) / height;
+            kerningPairs[kerningPairIndex (glyph1, -1)]     = (float) standardWidth / height;
         }
     }
 
@@ -593,7 +594,7 @@ private:
         if (single != kerningPairs.end())
             return single->second;
 
-        auto width = getGlyphWidth (hdc, glyph1) / (float) tm.tmHeight;
+        auto width = (float) getGlyphWidth (hdc, glyph1) / (float) tm.tmHeight;
         kerningPairs[kerningPairIndex (glyph1, -1)] = width;
         return width;
     }
@@ -612,7 +613,7 @@ Typeface::Ptr Typeface::createSystemTypefaceFor (const Font& font)
     {
         std::unique_ptr<WindowsDirectWriteTypeface> wtf (new WindowsDirectWriteTypeface (font, factories->systemFonts));
 
-        if (wtf->loadedOk())
+        if (wtf->loadedOk() && wtf->isFontFound())
             return wtf.release();
     }
    #endif

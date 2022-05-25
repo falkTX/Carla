@@ -45,6 +45,16 @@ ifeq ($(WIN32),true)
 LINK_FLAGS += -lole32 -lssp -mwindows
 endif
 
+ifeq ($(USING_JUCE),true)
+BUILD_CXX_FLAGS += -std=gnu++14
+endif
+
+ifeq ($(USING_JUCE),true)
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
+endif
+endif
+
 32BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 64BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 ARM32_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -58,6 +68,8 @@ ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
 endif
+
+NATIVE_BUILD_FLAGS += $(YSFX_FLAGS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -79,6 +91,12 @@ LINK_FLAGS   += $(WATER_LIBS)
 LINK_FLAGS   += $(LIBDL_LIBS)
 
 ifeq ($(USING_JUCE),true)
+LIBS_native  += $(MODULEDIR)/carla_juce.a
+LIBS_posix32 += $(MODULEDIR)/carla_juce.posix32.a
+LIBS_posix64 += $(MODULEDIR)/carla_juce.posix64.a
+LIBS_win32   += $(MODULEDIR)/carla_juce.win32.a
+LIBS_win64   += $(MODULEDIR)/carla_juce.win64.a
+
 LIBS_native  += $(MODULEDIR)/juce_audio_basics.a
 LIBS_posix32 += $(MODULEDIR)/juce_audio_basics.posix32.a
 LIBS_posix64 += $(MODULEDIR)/juce_audio_basics.posix64.a
@@ -128,15 +146,16 @@ LIBS_win32   += $(MODULEDIR)/juce_gui_basics.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_gui_basics.win64.a
 LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
 
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
 LIBS_posix32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 LIBS_posix64 += $(MODULEDIR)/juce_gui_extra.posix64.a
 LIBS_win32   += $(MODULEDIR)/juce_gui_extra.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_gui_extra.win64.a
 LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
-endif # USING_JUCE_GUI_EXTRA
 endif # USING_JUCE
+
+LIBS_native  += $(MODULEDIR)/ysfx.a
+LINK_FLAGS   += $(YSFX_GRAPHICS_LIBS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -173,37 +192,37 @@ win64:   $(BINDIR)/$(MODULENAME)-win64.exe
 $(BINDIR)/$(MODULENAME)-native: $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-native"
-	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_native) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-native.exe: $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-native.exe"
-	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_native) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-arm32: $(OBJS_arm32) $(LIBS_arm32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix32"
-	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_arm32) $(LIBS_START) $(LIBS_arm32) $(LIBS_END) $(LINK_FLAGS) $(ARM32_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix32: $(OBJS_posix32) $(LIBS_posix32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix32"
-	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_posix32) $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix64: $(OBJS_posix64) $(LIBS_posix64)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-posix64"
-	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_posix64) $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-win32.exe: $(OBJS_win32) $(LIBS_win32)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-win32.exe"
-	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_win32) $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(LINK_FLAGS) $(32BIT_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-win64.exe: $(OBJS_win64) $(LIBS_win64)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-win64.exe"
-	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_win64) $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

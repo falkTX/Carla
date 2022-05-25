@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -90,8 +90,9 @@ struct v3_process_setup {
  */
 
 struct v3_param_value_queue {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_param_id (V3_API* get_param_id)(void* self);
 	int32_t (V3_API* get_point_count)(void* self);
 	v3_result (V3_API* get_point)(void* self, int32_t idx, int32_t* sample_offset, double* value);
@@ -102,8 +103,9 @@ static constexpr const v3_tuid v3_param_value_queue_iid =
 	V3_ID(0x01263A18, 0xED074F6F, 0x98C9D356, 0x4686F9BA);
 
 struct v3_param_changes {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	int32_t (V3_API* get_param_count)(void* self);
 	struct v3_param_value_queue** (V3_API* get_param_data)(void* self, int32_t idx);
 	struct v3_param_value_queue** (V3_API* add_param_data)(void* self, v3_param_id* id, int32_t* index);
@@ -181,8 +183,9 @@ enum {
 };
 
 struct v3_process_context_requirements {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	uint32_t (V3_API* get_process_context_requirements)(void* self);
 };
 
@@ -222,8 +225,9 @@ struct v3_process_data {
  */
 
 struct v3_audio_processor {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* set_bus_arrangements)(void* self, v3_speaker_arrangement* inputs, int32_t num_inputs,
 	                                         v3_speaker_arrangement* outputs, int32_t num_outputs);
 	v3_result (V3_API* get_bus_arrangement)(void* self, int32_t bus_direction, int32_t idx, v3_speaker_arrangement*);

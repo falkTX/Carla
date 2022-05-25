@@ -73,25 +73,6 @@ public:
         deleteAllObjects();
     }
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    OwnedArray (OwnedArray&& other) noexcept
-        : data (static_cast<ArrayAllocationBase <ObjectClass*>&&> (other.data)),
-          numUsed (other.numUsed)
-    {
-        other.numUsed = 0;
-    }
-
-    OwnedArray& operator= (OwnedArray&& other) noexcept
-    {
-        deleteAllObjects();
-
-        data = static_cast<ArrayAllocationBase <ObjectClass*>&&> (other.data);
-        numUsed = other.numUsed;
-        other.numUsed = 0;
-        return *this;
-    }
-   #endif
-
     //==============================================================================
     /** Clears the array, optionally deleting the objects inside it first. */
     void clear (bool deleteObjects = true)

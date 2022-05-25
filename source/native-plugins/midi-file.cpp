@@ -384,12 +384,12 @@ private:
 
         for (size_t i=0; i<numTracks; ++i)
         {
-            const MidiMessageSequence* const track(midiFile.getTrack(i));
+            const MidiMessageSequence* const track = midiFile.getTrack(i);
             CARLA_SAFE_ASSERT_CONTINUE(track != nullptr);
 
             for (int j=0, numEvents = track->getNumEvents(); j<numEvents; ++j)
             {
-                const MidiMessageSequence::MidiEventHolder* const midiEventHolder(track->getEventPointer(j));
+                const MidiMessageSequence::MidiEventHolder* const midiEventHolder = track->getEventPointer(j);
                 CARLA_SAFE_ASSERT_CONTINUE(midiEventHolder != nullptr);
 
                 const MidiMessage& midiMessage(midiEventHolder->message);

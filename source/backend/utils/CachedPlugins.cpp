@@ -21,6 +21,7 @@
 #include "CarlaString.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLv2Utils.hpp"
+#include "CarlaJsfxUtils.hpp"
 
 #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
 # include "AppConfig.h"
@@ -72,11 +73,11 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static water::Array<water::File> gSFZs;
+static std::vector<water::File> gSFZs;
 
 static void findSFZs(const char* const sfzPaths)
 {
-    gSFZs.clearQuick();
+    gSFZs.clear();
 
     CARLA_SAFE_ASSERT_RETURN(sfzPaths != nullptr,);
 
@@ -87,10 +88,45 @@ static void findSFZs(const char* const sfzPaths)
 
     for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        water::Array<water::File> results;
+        std::vector<water::File> results;
 
         if (water::File(*it).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*.sfz") > 0)
-            gSFZs.addArray(results);
+        {
+            gSFZs.reserve(gSFZs.size() + results.size());
+            gSFZs.insert(gSFZs.end(), results.begin(), results.end());
+        }
+    }
+}
+// -------------------------------------------------------------------------------------------------------------------
+
+static water::Array<CB::CarlaJsfxUnit> gJSFXs;
+
+static void findJSFXs(const char* const jsfxPaths)
+{
+    gJSFXs.clearQuick();
+
+    CARLA_SAFE_ASSERT_RETURN(jsfxPaths != nullptr,);
+
+    if (jsfxPaths[0] == '\0')
+        return;
+
+    const water::StringArray splitPaths(water::StringArray::fromTokens(jsfxPaths, CARLA_OS_SPLIT_STR, ""));
+
+    for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
+    {
+        std::vector<water::File> results;
+        const water::File path(*it);
+
+        if (path.findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*") > 0)
+        {
+            for (std::vector<water::File>::iterator it=results.begin(), end=results.end(); it != end; ++it)
+            {
+                const water::File& file(*it);
+                const water::String fileExt = file.getFileExtension();
+                if (fileExt.isEmpty() || fileExt.equalsIgnoreCase(".jsfx"))
+                    gJSFXs.add(CB::CarlaJsfxUnit(path, file));
+            }
+        }
     }
 }
 
@@ -627,6 +663,81 @@ static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& fil
 
 // -------------------------------------------------------------------------------------------------------------------
 
+static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CB::CarlaJsfxUnit& unit)
+{
+    static CarlaCachedPluginInfo info;
+
+    ysfx_config_u config(ysfx_config_new());
+
+    const water::String rootPath = unit.getRootPath().getFullPathName();
+    const water::String filePath = unit.getFilePath().getFullPathName();
+
+    ysfx_register_builtin_audio_formats(config.get());
+    ysfx_set_import_root(config.get(), rootPath.toRawUTF8());
+    ysfx_guess_file_roots(config.get(), filePath.toRawUTF8());
+    ysfx_set_log_reporter(config.get(), &CB::CarlaJsfxLogging::logErrorsOnly);
+
+    ysfx_u effect(ysfx_new(config.get()));
+
+    if (! ysfx_load_file(effect.get(), filePath.toRawUTF8(), 0))
+    {
+        info.valid = false;
+        return &info;
+    }
+
+    // plugins with neither @block nor @sample are valid, but they are useless
+    // also use this as a sanity check against misdetected files
+    // since JSFX parsing is so permissive, it might accept lambda text files
+    if (! ysfx_has_section(effect.get(), ysfx_section_block) &&
+        ! ysfx_has_section(effect.get(), ysfx_section_sample))
+    {
+        info.valid = false;
+        return &info;
+    }
+
+    static CarlaString name, label, maker;
+    label = unit.getFileId().toRawUTF8();
+    name = ysfx_get_name(effect.get());
+    maker = ysfx_get_author(effect.get());
+
+    info.valid         = true;
+
+    info.category = CB::CarlaJsfxCategories::getFromEffect(effect.get());
+
+    info.audioIns = ysfx_get_num_inputs(effect.get());
+    info.audioOuts = ysfx_get_num_outputs(effect.get());
+
+    info.cvIns = 0;
+    info.cvOuts = 0;
+
+    info.midiIns = 1;
+    info.midiOuts = 1;
+
+    info.parameterIns = 0;
+    info.parameterOuts = 0;
+    for (uint32_t sliderIndex = 0; sliderIndex < ysfx_max_sliders; ++sliderIndex)
+    {
+        if (ysfx_slider_exists(effect.get(), sliderIndex))
+            ++info.parameterIns;
+    }
+
+    info.hints    = 0;
+
+#if 0 // TODO(jsfx) when supporting custom graphics
+    if (ysfx_has_section(effect.get(), ysfx_section_gfx))
+        info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+#endif
+
+    info.name      = name.buffer();
+    info.label     = label.buffer();
+    info.maker     = maker.buffer();
+    info.copyright = gCachedPluginsNullCharPtr;
+
+    return &info;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
 {
     CARLA_SAFE_ASSERT_RETURN(isCachedPluginType(ptype), 0);
@@ -656,6 +767,11 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
     case CB::PLUGIN_SFZ: {
         findSFZs(pluginPath);
         return static_cast<uint>(gSFZs.size());
+    }
+
+    case CB::PLUGIN_JSFX: {
+        findJSFXs(pluginPath);
+        return static_cast<uint>(gJSFXs.size());
     }
 
     default:
@@ -699,8 +815,13 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 #endif
 
     case CB::PLUGIN_SFZ: {
-        CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gSFZs.size()));
-        return get_cached_plugin_sfz(gSFZs.getUnchecked(static_cast<int>(index)));
+        CARLA_SAFE_ASSERT_BREAK(index < gSFZs.size());
+        return get_cached_plugin_sfz(gSFZs[index]);
+    }
+
+    case CB::PLUGIN_JSFX: {
+        CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gJSFXs.size()));
+        return get_cached_plugin_jsfx(gJSFXs.getUnchecked(static_cast<int>(index)));
     }
 
     default:

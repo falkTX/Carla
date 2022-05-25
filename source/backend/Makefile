@@ -45,6 +45,7 @@ STANDALONE_LIBS += $(MODULEDIR)/hylia.a
 endif
 
 ifeq ($(USING_JUCE),true)
+STANDALONE_LIBS += $(MODULEDIR)/carla_juce.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_devices.a
@@ -55,15 +56,15 @@ STANDALONE_LIBS += $(MODULEDIR)/juce_data_structures.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_events.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_graphics.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 STANDALONE_LIBS += $(MODULEDIR)/juce_gui_extra.a
-endif
 endif
 
 ifeq ($(USING_RTAUDIO),true)
 STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 endif
+
+STANDALONE_LIBS += $(MODULEDIR)/ysfx.a
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -90,15 +91,15 @@ STANDALONE_LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 STANDALONE_LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 STANDALONE_LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 STANDALONE_LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 STANDALONE_LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
-endif
 endif
 
 ifeq ($(USING_RTAUDIO),true)
 STANDALONE_LINK_FLAGS += $(RTAUDIO_LIBS)
 STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
 endif
+
+STANDALONE_LINK_FLAGS += $(YSFX_GRAPHICS_LIBS)
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
 STANDALONE_LINK_FLAGS += $(JACK_LIBS)

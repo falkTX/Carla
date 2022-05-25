@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -21,12 +21,13 @@
 #include "align_push.h"
 
 /**
- * connection point
+ * host application
  */
 
 struct v3_host_application {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* get_name)(void* self, v3_str_128 name); // wtf?
 	v3_result (V3_API* create_instance)(void* self, v3_tuid cid, v3_tuid iid, void** obj);
 };

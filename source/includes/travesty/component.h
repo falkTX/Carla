@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -89,8 +89,9 @@ struct v3_bus_info {
 struct v3_routing_info;
 
 struct v3_component {
+#ifndef __cplusplus
 	struct v3_plugin_base;
-
+#endif
 	v3_result (V3_API *get_controller_class_id)(void* self, v3_tuid class_id);
 	v3_result (V3_API *set_io_mode)(void* self, int32_t io_mode);
 	int32_t (V3_API *get_bus_count)(void* self, int32_t media_type, int32_t bus_direction);

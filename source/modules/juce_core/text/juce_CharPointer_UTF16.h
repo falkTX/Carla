@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -344,7 +344,7 @@ public:
         return CharacterFunctions::compareIgnoreCaseUpTo (*this, other, maxChars);
     }
 
-   #if JUCE_MSVC && ! DOXYGEN
+   #if JUCE_MSVC && ! defined (DOXYGEN)
     int compareIgnoreCase (CharPointer_UTF16 other) const noexcept
     {
         return _wcsicmp (data, other.data);
@@ -426,6 +426,9 @@ public:
     /** Returns the first non-whitespace character in the string. */
     CharPointer_UTF16 findEndOfWhitespace() const noexcept      { return CharacterFunctions::findEndOfWhitespace (*this); }
 
+    /** Move this pointer to the first non-whitespace character in the string. */
+    void incrementToEndOfWhitespace() noexcept                  { CharacterFunctions::incrementToEndOfWhitespace (*this); }
+
     /** Returns true if the given unicode character can be represented in this encoding. */
     static bool canRepresent (juce_wchar character) noexcept
     {
@@ -483,11 +486,13 @@ public:
     */
     static bool isByteOrderMarkBigEndian (const void* possibleByteOrder) noexcept
     {
+        JUCE_BEGIN_IGNORE_WARNINGS_MSVC (28182)
         jassert (possibleByteOrder != nullptr);
         auto c = static_cast<const uint8*> (possibleByteOrder);
 
         return c[0] == (uint8) byteOrderMarkBE1
             && c[1] == (uint8) byteOrderMarkBE2;
+        JUCE_END_IGNORE_WARNINGS_MSVC
     }
 
     /** Returns true if the first pair of bytes in this pointer are the UTF16 byte-order mark (little endian).
@@ -495,11 +500,13 @@ public:
     */
     static bool isByteOrderMarkLittleEndian (const void* possibleByteOrder) noexcept
     {
+        JUCE_BEGIN_IGNORE_WARNINGS_MSVC (28182)
         jassert (possibleByteOrder != nullptr);
         auto c = static_cast<const uint8*> (possibleByteOrder);
 
         return c[0] == (uint8) byteOrderMarkLE1
             && c[1] == (uint8) byteOrderMarkLE2;
+        JUCE_END_IGNORE_WARNINGS_MSVC
     }
 
 private:

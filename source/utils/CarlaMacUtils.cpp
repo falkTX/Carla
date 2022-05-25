@@ -1,6 +1,6 @@
 /*
  * Carla macOS utils
- * Copyright (C) 2018-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -88,6 +88,65 @@ AutoNSAutoreleasePool::~AutoNSAutoreleasePool()
 {
     NSAutoreleasePool* rpool = (NSAutoreleasePool*)pool;
     [rpool drain];
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct BundleLoader::PrivateData {
+    CFBundleRef ref;
+    CFBundleRefNum refNum;
+
+    PrivateData() noexcept
+      : ref(nullptr),
+        refNum(0) {}
+
+    ~PrivateData()
+    {
+        if (ref == nullptr)
+            return;
+
+        CFBundleCloseBundleResourceMap(ref, refNum);
+        CFBundleUnloadExecutable(ref);
+        CFRelease(ref);
+    }
+
+    bool load(const char* const filename)
+    {
+        const CFURLRef urlRef = CFURLCreateFromFileSystemRepresentation(0, (const UInt8*)filename, (CFIndex)std::strlen(filename), true);
+        CARLA_SAFE_ASSERT_RETURN(urlRef != nullptr, false);
+
+        ref = CFBundleCreate(kCFAllocatorDefault, urlRef);
+        CFRelease(urlRef);
+        CARLA_SAFE_ASSERT_RETURN(ref != nullptr, false);
+
+        if (! CFBundleLoadExecutable(ref))
+        {
+            CFRelease(ref);
+            ref = nullptr;
+            return false;
+        }
+
+        refNum = CFBundleOpenBundleResourceMap(ref);
+        return true;
+    }
+};
+
+BundleLoader::BundleLoader()
+    : pData(new PrivateData){}
+
+BundleLoader::~BundleLoader()
+{
+    delete pData;
+}
+
+bool BundleLoader::load(const char* const filename)
+{
+    return pData->load(filename);
+}
+
+CFBundleRef BundleLoader::getRef() const noexcept
+{
+    return pData->ref;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

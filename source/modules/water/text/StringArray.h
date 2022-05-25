@@ -47,10 +47,6 @@ public:
     /** Creates a copy of another string array */
     StringArray (const StringArray&);
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    StringArray (StringArray&&) noexcept;
-   #endif
-
     /** Creates an array containing a single string. */
     explicit StringArray (const String& firstValue);
 
@@ -79,10 +75,6 @@ public:
 
     /** Copies the contents of another string array into this one */
     StringArray& operator= (const StringArray&);
-
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    StringArray& operator= (StringArray&&) noexcept;
-   #endif
 
     /** Swaps the contents of this and another StringArray. */
     void swapWith (StringArray&) noexcept;
@@ -158,11 +150,6 @@ public:
     //==============================================================================
     /** Appends a string at the end of the array. */
     bool add (const String& stringToAdd);
-
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    /** Appends a string at the end of the array. */
-    bool add (String&& stringToAdd);
-   #endif
 
     /** Inserts a string into the array.
 

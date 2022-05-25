@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -26,7 +26,7 @@
 #ifndef WATER_VARIANT_H_INCLUDED
 #define WATER_VARIANT_H_INCLUDED
 
-#include "../water.h"
+#include "../text/String.h"
 
 namespace water {
 
@@ -68,13 +68,6 @@ public:
     var& operator= (double value);
     var& operator= (const char* value);
     var& operator= (const String& value);
-
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    var (var&&) noexcept;
-    var (String&&);
-    var& operator= (var&&) noexcept;
-    var& operator= (String&&);
-   #endif
 
     void swapWith (var& other) noexcept;
 

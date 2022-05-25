@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -62,8 +62,9 @@ bool File::isSymbolicLink() const
 
 String File::getNativeLinkedTarget() const
 {
-    HeapBlock<char> buffer (8194);
-    const int numBytes = (int) readlink (getFullPathName().toRawUTF8(), buffer, 8192);
+    constexpr int bufferSize = 8194;
+    HeapBlock<char> buffer (bufferSize);
+    auto numBytes = (int) readlink (getFullPathName().toRawUTF8(), buffer, bufferSize - 2);
     return String::fromUTF8 (buffer, jmax (0, numBytes));
 }
 

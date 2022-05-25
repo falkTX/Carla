@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -31,6 +31,8 @@
 
 #include "juce_audio_basics.h"
 
+#include <juce_core/containers/juce_Optional.h>
+
 #if JUCE_MINGW && ! defined (alloca)
  #define alloca __builtin_alloca
 #endif
@@ -53,36 +55,47 @@
  #include <arm_neon.h>
 #endif
 
-#include "buffers/juce_AudioDataConverters.cpp"
+// #include "buffers/juce_AudioDataConverters.cpp"
 #include "buffers/juce_FloatVectorOperations.cpp"
 #include "buffers/juce_AudioChannelSet.cpp"
 #include "buffers/juce_AudioProcessLoadMeasurer.cpp"
-#include "utilities/juce_IIRFilter.cpp"
-#include "utilities/juce_LagrangeInterpolator.cpp"
-#include "utilities/juce_WindowedSincInterpolator.cpp"
-#include "utilities/juce_Interpolators.cpp"
-#include "utilities/juce_SmoothedValue.cpp"
+// #include "utilities/juce_IIRFilter.cpp"
+// #include "utilities/juce_LagrangeInterpolator.cpp"
+// #include "utilities/juce_WindowedSincInterpolator.cpp"
+// #include "utilities/juce_Interpolators.cpp"
+// #include "utilities/juce_SmoothedValue.cpp"
 #include "midi/juce_MidiBuffer.cpp"
-#include "midi/juce_MidiFile.cpp"
-#include "midi/juce_MidiKeyboardState.cpp"
+// #include "midi/juce_MidiFile.cpp"
+// #include "midi/juce_MidiKeyboardState.cpp"
 #include "midi/juce_MidiMessage.cpp"
-#include "midi/juce_MidiMessageSequence.cpp"
-#include "midi/juce_MidiRPN.cpp"
-#include "mpe/juce_MPEValue.cpp"
-#include "mpe/juce_MPENote.cpp"
-#include "mpe/juce_MPEZoneLayout.cpp"
-#include "mpe/juce_MPEInstrument.cpp"
-#include "mpe/juce_MPEMessages.cpp"
-#include "mpe/juce_MPESynthesiserBase.cpp"
-#include "mpe/juce_MPESynthesiserVoice.cpp"
-#include "mpe/juce_MPESynthesiser.cpp"
-#include "mpe/juce_MPEUtils.cpp"
-#include "sources/juce_BufferingAudioSource.cpp"
-#include "sources/juce_ChannelRemappingAudioSource.cpp"
-#include "sources/juce_IIRFilterAudioSource.cpp"
-#include "sources/juce_MemoryAudioSource.cpp"
-#include "sources/juce_MixerAudioSource.cpp"
-#include "sources/juce_ResamplingAudioSource.cpp"
-#include "sources/juce_ReverbAudioSource.cpp"
-#include "sources/juce_ToneGeneratorAudioSource.cpp"
-#include "synthesisers/juce_Synthesiser.cpp"
+// #include "midi/juce_MidiMessageSequence.cpp"
+// #include "midi/juce_MidiRPN.cpp"
+// #include "mpe/juce_MPEValue.cpp"
+// #include "mpe/juce_MPENote.cpp"
+// #include "mpe/juce_MPEZoneLayout.cpp"
+// #include "mpe/juce_MPEInstrument.cpp"
+// #include "mpe/juce_MPEMessages.cpp"
+// #include "mpe/juce_MPESynthesiserBase.cpp"
+// #include "mpe/juce_MPESynthesiserVoice.cpp"
+// #include "mpe/juce_MPESynthesiser.cpp"
+// #include "mpe/juce_MPEUtils.cpp"
+// #include "sources/juce_BufferingAudioSource.cpp"
+// #include "sources/juce_ChannelRemappingAudioSource.cpp"
+// #include "sources/juce_IIRFilterAudioSource.cpp"
+// #include "sources/juce_MemoryAudioSource.cpp"
+// #include "sources/juce_MixerAudioSource.cpp"
+// #include "sources/juce_ResamplingAudioSource.cpp"
+// #include "sources/juce_ReverbAudioSource.cpp"
+// #include "sources/juce_ToneGeneratorAudioSource.cpp"
+// #include "synthesisers/juce_Synthesiser.cpp"
+ 
+#include "midi/ump/juce_UMP.h"
+#include "midi/ump/juce_UMPUtils.cpp"
+#include "midi/ump/juce_UMPView.cpp"
+#include "midi/ump/juce_UMPSysEx7.cpp"
+#include "midi/ump/juce_UMPMidi1ToMidi2DefaultTranslator.cpp"
+ 
+#if JUCE_UNIT_TESTS
+ #include "utilities/juce_ADSR_test.cpp"
+ #include "midi/ump/juce_UMP_test.cpp"
+#endif

@@ -21,6 +21,7 @@
 #include "ui_launcher_res.cpp"
 
 #include <cstring>
+#include <vector>
 
 #ifdef __WINE__
 __cdecl static intptr_t cvst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
@@ -130,9 +131,9 @@ intptr_t VSTAudioMaster(AEffect* effect, int32_t opcode, int32_t index, intptr_t
 
 bool isUsingUILauncher()
 {
-#ifdef CARLA_OS_LINUX
-    return false;
-#else
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     return true;
+#else
+    return false;
 #endif
 }

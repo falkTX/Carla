@@ -10,10 +10,14 @@ include ../Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_CORE_FLAGS) -I..
+BUILD_CXX_FLAGS += $(JUCE_CORE_FLAGS) -I.. -std=gnu++14
+
+# ifeq ($(WIN32),true)
+# BUILD_CXX_FLAGS += -w
+# endif
 
 ifeq ($(WIN32),true)
-BUILD_CXX_FLAGS += -w
+BUILD_CXX_FLAGS += -I../mingw-std-threads
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -326,6 +326,9 @@ public:
         JNIEnv* env = getEnv();
         jshortArray audioBuffer = env->NewShortArray (actualBufferSize * jmax (numDeviceOutputChannels, numDeviceInputChannels));
 
+        using NativeInt16   = AudioData::Format<AudioData::Int16,   AudioData::NativeEndian>;
+        using NativeFloat32 = AudioData::Format<AudioData::Float32, AudioData::NativeEndian>;
+
         while (! threadShouldExit())
         {
             if (inputDevice != nullptr)
@@ -339,20 +342,9 @@ public:
 
                 jshort* const src = env->GetShortArrayElements (audioBuffer, nullptr);
 
-                for (int chan = 0; chan < inputChannelBuffer.getNumChannels(); ++chan)
-                {
-                    AudioData::Pointer <AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::NonConst> d (inputChannelBuffer.getWritePointer (chan));
-
-                    if (chan < numDeviceInputChannels)
-                    {
-                        AudioData::Pointer <AudioData::Int16, AudioData::NativeEndian, AudioData::Interleaved, AudioData::Const> s (src + chan, numDeviceInputChannels);
-                        d.convertSamples (s, actualBufferSize);
-                    }
-                    else
-                    {
-                        d.clearSamples (actualBufferSize);
-                    }
-                }
+                AudioData::deinterleaveSamples (AudioData::InterleavedSource<NativeInt16>    { reinterpret_cast<const uint16*> (src),        numDeviceInputChannels },
+                                                AudioData::NonInterleavedDest<NativeFloat32> { inputChannelBuffer.getArrayOfWritePointers(), inputChannelBuffer.getNumChannels() },
+                                                actualBufferSize);
 
                 env->ReleaseShortArrayElements (audioBuffer, src, 0);
             }
@@ -365,9 +357,11 @@ public:
 
                 if (callback != nullptr)
                 {
-                    callback->audioDeviceIOCallback (inputChannelBuffer.getArrayOfReadPointers(), numClientInputChannels,
-                                                     outputChannelBuffer.getArrayOfWritePointers(), numClientOutputChannels,
-                                                     actualBufferSize);
+                    callback->audioDeviceIOCallbackWithContext (inputChannelBuffer.getArrayOfReadPointers(),
+                                                                numClientInputChannels,
+                                                                outputChannelBuffer.getArrayOfWritePointers(),
+                                                                numClientOutputChannels,
+                                                                actualBufferSize, {});
                 }
                 else
                 {
@@ -382,14 +376,9 @@ public:
 
                 jshort* const dest = env->GetShortArrayElements (audioBuffer, nullptr);
 
-                for (int chan = 0; chan < numDeviceOutputChannels; ++chan)
-                {
-                    AudioData::Pointer <AudioData::Int16, AudioData::NativeEndian, AudioData::Interleaved, AudioData::NonConst> d (dest + chan, numDeviceOutputChannels);
-
-                    const float* const sourceChanData = outputChannelBuffer.getReadPointer (jmin (chan, outputChannelBuffer.getNumChannels() - 1));
-                    AudioData::Pointer <AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::Const> s (sourceChanData);
-                    d.convertSamples (s, actualBufferSize);
-                }
+                AudioData::interleaveSamples (AudioData::NonInterleavedSource<NativeFloat32> { outputChannelBuffer.getArrayOfReadPointers(), outputChannelBuffer.getNumChannels() },
+                                              AudioData::InterleavedDest<NativeInt16>        { reinterpret_cast<uint16*> (dest),             numDeviceOutputChannels },
+                                              actualBufferSize);
 
                 env->ReleaseShortArrayElements (audioBuffer, dest, 0);
                 jint numWritten = env->CallIntMethod (outputDevice, AudioTrack.write, audioBuffer, 0, actualBufferSize * numDeviceOutputChannels);

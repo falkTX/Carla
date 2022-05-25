@@ -10,13 +10,17 @@ include ../Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_GRAPHICS_FLAGS) -I..
+BUILD_CXX_FLAGS += $(JUCE_GRAPHICS_FLAGS) -I.. -std=gnu++14
 
 ifeq ($(LINUX),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags freetype2)
 endif
+# ifeq ($(WIN32),true)
+# BUILD_CXX_FLAGS += -Wno-missing-field-initializers -Wno-strict-overflow
+# endif
+
 ifeq ($(WIN32),true)
-BUILD_CXX_FLAGS += -Wno-missing-field-initializers -Wno-strict-overflow
+BUILD_CXX_FLAGS += -I../mingw-std-threads
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

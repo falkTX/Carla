@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -20,12 +20,20 @@
   ==============================================================================
 */
 
+#include <juce_audio_basics/native/juce_mac_CoreAudioTimeConversions.h>
+
 namespace juce
 {
 
 class iOSAudioIODevice;
 
-static const char* const iOSAudioDeviceName = "iOS Audio";
+constexpr const char* const iOSAudioDeviceName = "iOS Audio";
+
+#ifndef JUCE_IOS_AUDIO_EXPLICIT_SAMPLERATES
+ #define JUCE_IOS_AUDIO_EXPLICIT_SAMPLERATES
+#endif
+
+constexpr std::initializer_list<double> iOSExplicitSampleRates { JUCE_IOS_AUDIO_EXPLICIT_SAMPLERATES };
 
 //==============================================================================
 struct AudioSessionHolder
@@ -58,6 +66,8 @@ static const char* getRoutingChangeReason (AVAudioSessionRouteChangeReason reaso
     }
 }
 
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wmissing-prototypes")
+
 bool getNotificationValueForKey (NSNotification* notification, NSString* key, NSUInteger& value) noexcept
 {
     if (notification != nil)
@@ -76,7 +86,9 @@ bool getNotificationValueForKey (NSNotification* notification, NSString* key, NS
     return false;
 }
 
-} // juce namespace
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+} // namespace juce
 
 //==============================================================================
 @interface iOSAudioSessionNative  : NSObject
@@ -278,9 +290,15 @@ struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
        #endif
 
         if (category == AVAudioSessionCategoryPlayAndRecord)
+        {
             options |= (AVAudioSessionCategoryOptionDefaultToSpeaker
-                      | AVAudioSessionCategoryOptionAllowBluetooth
-                      | AVAudioSessionCategoryOptionAllowBluetoothA2DP);
+                      | AVAudioSessionCategoryOptionAllowBluetooth);
+
+           #if defined (__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
+            if (@available (iOS 10.0, *))
+                options |= AVAudioSessionCategoryOptionAllowBluetoothA2DP;
+           #endif
+        }
 
         JUCE_NSERROR_CHECK ([[AVAudioSession sharedInstance] setCategory: category
                                                              withOptions: options
@@ -356,6 +374,12 @@ struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
     // depending on whether the headphones are plugged in or not!
     void updateAvailableSampleRates()
     {
+        if (iOSExplicitSampleRates.size() != 0)
+        {
+            availableSampleRates = Array<double> (iOSExplicitSampleRates);
+            return;
+        }
+
         availableSampleRates.clear();
 
         AudioUnitRemovePropertyListenerWithUserData (audioUnit,
@@ -700,11 +724,20 @@ struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
                                             &dataSize);
         if (err == noErr)
         {
-           #if (! defined __IPHONE_10_0) || (__IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_10_0)
-            [[UIApplication sharedApplication] openURL: (NSURL*)hostUrl];
-           #else
-            [[UIApplication sharedApplication] openURL: (NSURL*)hostUrl options: @{} completionHandler: nil];
+           #if defined (__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
+            if (@available (iOS 10.0, *))
+            {
+                [[UIApplication sharedApplication] openURL: (NSURL*) hostUrl
+                                                   options: @{}
+                                         completionHandler: nil];
+
+                return;
+            }
            #endif
+
+            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+            [[UIApplication sharedApplication] openURL: (NSURL*) hostUrl];
+            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
         }
     }
 
@@ -869,9 +902,14 @@ struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
                     zeromem (inputData[c], channelDataSize);
             }
 
-            callback->audioDeviceIOCallback ((const float**) inputData,  channelData.inputs ->numActiveChannels,
-                                                             outputData, channelData.outputs->numActiveChannels,
-                                             (int) numFrames);
+            const auto nanos = time != nullptr ? timeConversions.hostTimeToNanos (time->mHostTime) : 0;
+
+            callback->audioDeviceIOCallbackWithContext ((const float**) inputData,
+                                                        channelData.inputs ->numActiveChannels,
+                                                        outputData,
+                                                        channelData.outputs->numActiveChannels,
+                                                        (int) numFrames,
+                                                        { (time != nullptr && (time->mFlags & kAudioTimeStampHostTimeValid) != 0) ? &nanos : nullptr });
 
             for (int c = 0; c < channelData.outputs->numActiveChannels; ++c)
             {
@@ -1297,6 +1335,8 @@ struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
 
         AudioBuffer<float> audioData { 0, 0 };
     };
+
+    CoreAudioTimeConversions timeConversions;
 
     IOChannelData channelData;
 

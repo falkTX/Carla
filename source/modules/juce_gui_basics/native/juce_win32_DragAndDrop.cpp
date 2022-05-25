@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -113,7 +113,9 @@ namespace DragAndDropHelpers
             if (source.ptd != nullptr)
             {
                 dest.ptd = (DVTARGETDEVICE*) CoTaskMemAlloc (sizeof (DVTARGETDEVICE));
-                *(dest.ptd) = *(source.ptd);
+
+                if (dest.ptd != nullptr)
+                    *(dest.ptd) = *(source.ptd);
             }
         }
 
@@ -149,7 +151,8 @@ namespace DragAndDropHelpers
                     void* const src = GlobalLock (medium->hGlobal);
                     void* const dst = GlobalAlloc (GMEM_FIXED, len);
 
-                    memcpy (dst, src, len);
+                    if (src != nullptr && dst != nullptr)
+                        memcpy (dst, src, len);
 
                     GlobalUnlock (medium->hGlobal);
 
@@ -209,17 +212,26 @@ namespace DragAndDropHelpers
     };
 
     //==============================================================================
-    HDROP createHDrop (const StringArray& fileNames)
+    static HDROP createHDrop (const StringArray& fileNames)
     {
         size_t totalBytes = 0;
         for (int i = fileNames.size(); --i >= 0;)
             totalBytes += CharPointer_UTF16::getBytesRequiredFor (fileNames[i].getCharPointer()) + sizeof (WCHAR);
 
-        HDROP hDrop = (HDROP) GlobalAlloc (GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof (DROPFILES) + totalBytes + 4);
+        struct Deleter
+        {
+            void operator() (void* ptr) const noexcept { GlobalFree (ptr); }
+        };
+
+        auto hDrop = std::unique_ptr<void, Deleter> ((HDROP) GlobalAlloc (GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof (DROPFILES) + totalBytes + 4));
 
         if (hDrop != nullptr)
         {
-            auto pDropFiles = (LPDROPFILES) GlobalLock (hDrop);
+            auto pDropFiles = (LPDROPFILES) GlobalLock (hDrop.get());
+
+            if (pDropFiles == nullptr)
+                return nullptr;
+
             pDropFiles->pFiles = sizeof (DROPFILES);
             pDropFiles->fWide = true;
 
@@ -233,10 +245,10 @@ namespace DragAndDropHelpers
 
             *fname = 0;
 
-            GlobalUnlock (hDrop);
+            GlobalUnlock (hDrop.get());
         }
 
-        return hDrop;
+        return static_cast<HDROP> (hDrop.release());
     }
 
     struct DragAndDropJob   : public ThreadPoolJob
@@ -250,10 +262,10 @@ namespace DragAndDropHelpers
 
         JobStatus runJob() override
         {
-            OleInitialize (nullptr);
+            ignoreUnused (OleInitialize (nullptr));
 
-            auto source = new JuceDropSource();
-            auto data = new JuceDataObject (&format, &medium);
+            auto* source = new JuceDropSource();
+            auto* data = new JuceDataObject (&format, &medium);
 
             DWORD effect;
             DoDragDrop (data, source, whatToDo, &effect);
@@ -332,6 +344,10 @@ bool DragAndDropContainer::performExternalDragDropOfText (const String& text, Co
     auto numBytes = CharPointer_UTF16::getBytesRequiredFor (text.getCharPointer());
 
     medium.hGlobal = GlobalAlloc (GMEM_MOVEABLE | GMEM_ZEROINIT, numBytes + 2);
+
+    if (medium.hGlobal == nullptr)
+        return false;
+
     auto* data = static_cast<WCHAR*> (GlobalLock (medium.hGlobal));
 
     text.copyToUTF16 (data, numBytes + 2);

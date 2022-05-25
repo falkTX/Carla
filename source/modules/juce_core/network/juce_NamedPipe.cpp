@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -23,6 +23,8 @@
 namespace juce
 {
 
+#if ! JUCE_WASM
+
 NamedPipe::NamedPipe() {}
 
 NamedPipe::~NamedPipe()
@@ -41,6 +43,7 @@ bool NamedPipe::openExisting (const String& pipeName)
 
 bool NamedPipe::isOpen() const
 {
+    ScopedReadLock sl (lock);
     return pimpl != nullptr;
 }
 
@@ -55,6 +58,7 @@ bool NamedPipe::createNewPipe (const String& pipeName, bool mustNotExist)
 
 String NamedPipe::getName() const
 {
+    ScopedReadLock sl (lock);
     return currentPipeName;
 }
 
@@ -75,7 +79,7 @@ public:
 
     void runTest() override
     {
-        const String pipeName ("TestPipe");
+        const auto pipeName = "TestPipe" + String ((intptr_t) Thread::getCurrentThreadId());
 
         beginTest ("Pre test cleanup");
         {
@@ -208,11 +212,6 @@ private:
                 pipe.openExisting (pipeName);
         }
 
-        ~NamedPipeThread()
-        {
-            stopThread (100);
-        }
-
         NamedPipe pipe;
         const String& pipeName;
         WaitableEvent& workCompleted;
@@ -228,6 +227,11 @@ private:
             : NamedPipeThread ("NamePipeSender", pName, shouldCreatePipe, completed),
               sendData (sData)
         {}
+
+        ~SenderThread() override
+        {
+            stopThread (100);
+        }
 
         void run() override
         {
@@ -246,6 +250,11 @@ private:
             : NamedPipeThread ("NamePipeSender", pName, shouldCreatePipe, completed)
         {}
 
+        ~ReceiverThread() override
+        {
+            stopThread (100);
+        }
+
         void run() override
         {
             result = pipe.read (&recvData, sizeof (recvData), 2000);
@@ -258,6 +267,7 @@ private:
 
 static NamedPipeTests namedPipeTests;
 
+#endif
 #endif
 
 } // namespace juce

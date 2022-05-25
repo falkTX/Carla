@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -49,7 +49,8 @@ public:
 
     /** Creates an array containing a list of strings. */
     template <typename... OtherElements>
-    StringArray (StringRef firstValue, OtherElements... otherValues) : strings (firstValue, otherValues...) {}
+    StringArray (StringRef firstValue, OtherElements&&... otherValues)
+        : strings (firstValue, std::forward<OtherElements> (otherValues)...) {}
 
     /** Creates an array containing a list of strings. */
     StringArray (const std::initializer_list<const char*>& strings);
@@ -98,7 +99,7 @@ public:
     StringArray (const wchar_t* const* strings, int numberOfStrings);
 
     /** Destructor. */
-    ~StringArray();
+    ~StringArray() = default;
 
     /** Copies the contents of another string array into this one */
     StringArray& operator= (const StringArray&);
@@ -151,6 +152,12 @@ public:
         the index is in-range.
     */
     String& getReference (int index) noexcept;
+
+    /** Returns a reference to one of the strings in the array.
+        This lets you modify a string in-place in the array, but you must be sure that
+        the index is in-range.
+    */
+    const String& getReference (int index) const noexcept;
 
     /** Returns a pointer to the first String in the array.
         This method is provided for compatibility with standard C++ iteration mechanisms.

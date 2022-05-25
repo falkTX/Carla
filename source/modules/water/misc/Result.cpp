@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -29,7 +29,7 @@ namespace water {
 
 Result::Result() noexcept {}
 
-Result::Result (const String& message) noexcept
+Result::Result (const std::string& message) noexcept
     : errorMessage (message)
 {
 }
@@ -45,19 +45,6 @@ Result& Result::operator= (const Result& other)
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-Result::Result (Result&& other) noexcept
-    : errorMessage (static_cast<String&&> (other.errorMessage))
-{
-}
-
-Result& Result::operator= (Result&& other) noexcept
-{
-    errorMessage = static_cast<String&&> (other.errorMessage);
-    return *this;
-}
-#endif
-
 bool Result::operator== (const Result& other) const noexcept
 {
     return errorMessage == other.errorMessage;
@@ -68,19 +55,19 @@ bool Result::operator!= (const Result& other) const noexcept
     return errorMessage != other.errorMessage;
 }
 
-Result Result::fail (const String& errorMessage) noexcept
+Result Result::fail (const std::string& errorMessage) noexcept
 {
-    return Result (errorMessage.isEmpty() ? "Unknown Error" : errorMessage);
+    return Result (errorMessage.empty() ? "Unknown Error" : errorMessage);
 }
 
-const String& Result::getErrorMessage() const noexcept
+const std::string& Result::getErrorMessage() const noexcept
 {
     return errorMessage;
 }
 
-bool Result::wasOk() const noexcept         { return errorMessage.isEmpty(); }
-Result::operator bool() const noexcept      { return errorMessage.isEmpty(); }
-bool Result::failed() const noexcept        { return errorMessage.isNotEmpty(); }
-bool Result::operator!() const noexcept     { return errorMessage.isNotEmpty(); }
+bool Result::wasOk() const noexcept         { return errorMessage.empty(); }
+Result::operator bool() const noexcept      { return errorMessage.empty(); }
+bool Result::failed() const noexcept        { return !errorMessage.empty(); }
+bool Result::operator!() const noexcept     { return !errorMessage.empty(); }
 
 }

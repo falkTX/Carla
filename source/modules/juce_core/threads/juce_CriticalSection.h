@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -106,9 +106,9 @@ private:
     // a block of memory here that's big enough to be used internally as a windows
     // CRITICAL_SECTION structure.
     #if JUCE_64BIT
-     uint8 lock[44];
+     std::aligned_storage<44, 8>::type lock;
     #else
-     uint8 lock[24];
+     std::aligned_storage<24, 8>::type lock;
     #endif
    #else
     mutable pthread_mutex_t lock;

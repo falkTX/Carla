@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -26,7 +26,9 @@
 #ifndef WATER_RESULT_H_INCLUDED
 #define WATER_RESULT_H_INCLUDED
 
-#include "../text/String.h"
+#include "../water.h"
+
+#include <string>
 
 namespace water {
 
@@ -69,7 +71,7 @@ public:
         If you pass a blank error message in here, a default "Unknown Error" message
         will be used instead.
     */
-    static Result fail (const String& errorMessage) noexcept;
+    static Result fail (const std::string& errorMessage) noexcept;
 
     //==============================================================================
     /** Returns true if this result indicates a success. */
@@ -94,27 +96,22 @@ public:
     /** Returns the error message that was set when this result was created.
         For a successful result, this will be an empty string;
     */
-    const String& getErrorMessage() const noexcept;
+    const std::string& getErrorMessage() const noexcept;
 
     //==============================================================================
     Result (const Result&);
     Result& operator= (const Result&);
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    Result (Result&&) noexcept;
-    Result& operator= (Result&&) noexcept;
-   #endif
-
     bool operator== (const Result& other) const noexcept;
     bool operator!= (const Result& other) const noexcept;
 
 private:
-    String errorMessage;
+    std::string errorMessage;
 
     // The default constructor is not for public use!
     // Instead, use Result::ok() or Result::fail()
     Result() noexcept;
-    explicit Result (const String&) noexcept;
+    explicit Result (const std::string&) noexcept;
 
     // These casts are private to prevent people trying to use the Result object in numeric contexts
     operator int() const;

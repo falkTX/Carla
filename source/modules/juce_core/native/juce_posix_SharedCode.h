@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -59,7 +59,7 @@ void JUCE_CALLTYPE Process::terminate()
 }
 
 
-#if JUCE_MAC || JUCE_LINUX
+#if JUCE_MAC || JUCE_LINUX || JUCE_BSD
 bool Process::setMaxNumberOfFileHandles (int newMaxNumber) noexcept
 {
     rlimit lim;
@@ -99,8 +99,16 @@ static MaxNumFileHandlesInitialiser maxNumFileHandlesInitialiser;
 #endif
 
 //==============================================================================
-JUCE_DECLARE_DEPRECATED_STATIC (const juce_wchar File::separator = '/';)
-JUCE_DECLARE_DEPRECATED_STATIC (const StringRef File::separatorString ("/");)
+#if JUCE_ALLOW_STATIC_NULL_VARIABLES
+
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+
+const juce_wchar File::separator = '/';
+const StringRef File::separatorString ("/");
+
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+#endif
 
 juce_wchar File::getSeparatorChar()    { return '/'; }
 StringRef File::getSeparatorString()   { return "/"; }
@@ -130,16 +138,20 @@ bool File::setAsCurrentWorkingDirectory() const
     return chdir (getFullPathName().toUTF8()) == 0;
 }
 
-#if JUCE_ANDROID
- using juce_sigactionflags_type = unsigned long;
-#else
- using juce_sigactionflags_type = int;
-#endif
-
 //==============================================================================
 // The unix siginterrupt function is deprecated - this does the same job.
 int juce_siginterrupt (int sig, int flag)
 {
+   #if JUCE_WASM
+    ignoreUnused (sig, flag);
+    return 0;
+   #else
+    #if JUCE_ANDROID
+     using juce_sigactionflags_type = unsigned long;
+    #else
+     using juce_sigactionflags_type = int;
+    #endif
+
     struct ::sigaction act;
     (void) ::sigaction (sig, nullptr, &act);
 
@@ -149,6 +161,7 @@ int juce_siginterrupt (int sig, int flag)
         act.sa_flags |= static_cast<juce_sigactionflags_type> (SA_RESTART);
 
     return ::sigaction (sig, &act, nullptr);
+   #endif
 }
 
 //==============================================================================
@@ -168,6 +181,7 @@ namespace
                  && JUCE_STAT (fileName.toUTF8(), &info) == 0;
     }
 
+   #if ! JUCE_WASM
     // if this file doesn't exist, find a parent of it that does..
     bool juce_doStatFS (File f, struct statfs& result)
     {
@@ -205,6 +219,7 @@ namespace
         if (isReadOnly != nullptr)
             *isReadOnly = access (path.toUTF8(), W_OK) != 0;
     }
+   #endif
 
     Result getResultForErrno()
     {
@@ -253,7 +268,7 @@ uint64 File::getFileIdentifier() const
 
 static bool hasEffectiveRootFilePermissions()
 {
-   #if JUCE_LINUX
+   #if JUCE_LINUX || JUCE_BSD
     return geteuid() == 0;
    #else
     return false;
@@ -329,6 +344,7 @@ void File::getFileTimesInternal (int64& modificationTime, int64& accessTime, int
 
 bool File::setFileTimesInternal (int64 modificationTime, int64 accessTime, int64 /*creationTime*/) const
 {
+   #if ! JUCE_WASM
     juce_statStruct info;
 
     if ((modificationTime != 0 || accessTime != 0) && juce_stat (fullPath, info))
@@ -360,6 +376,7 @@ bool File::setFileTimesInternal (int64 modificationTime, int64 accessTime, int64
         return utime (fullPath.toUTF8(), &times) == 0;
        #endif
     }
+   #endif
 
     return false;
 }
@@ -533,6 +550,7 @@ String SystemStats::getEnvironmentVariable (const String& name, const String& de
 }
 
 //==============================================================================
+#if ! JUCE_WASM
 void MemoryMappedFile::openInternal (const File& file, AccessMode mode, bool exclusive)
 {
     jassert (mode == readOnly || mode == readWrite);
@@ -566,6 +584,9 @@ void MemoryMappedFile::openInternal (const File& file, AccessMode mode, bool exc
         {
             range = Range<int64>();
         }
+
+        close (fileHandle);
+        fileHandle = 0;
     }
 }
 
@@ -685,6 +706,8 @@ int File::getVolumeSerialNumber() const
 {
     return 0;
 }
+
+#endif
 
 //==============================================================================
 #if ! JUCE_IOS
@@ -850,8 +873,6 @@ void InterProcessLock::exit()
 }
 
 //==============================================================================
-void JUCE_API juce_threadEntryPoint (void*);
-
 #if JUCE_ANDROID
 extern JavaVM* androidJNIJavaVM;
 #endif
@@ -880,11 +901,8 @@ static void* threadEntryProc (void* userData)
     return nullptr;
 }
 
-#if JUCE_ANDROID && JUCE_MODULE_AVAILABLE_juce_audio_devices && \
-   ((JUCE_USE_ANDROID_OPENSLES || (! defined(JUCE_USE_ANDROID_OPENSLES) && JUCE_ANDROID_API_VERSION > 8)) \
- || (JUCE_USE_ANDROID_OBOE || (! defined(JUCE_USE_ANDROID_OBOE) && JUCE_ANDROID_API_VERSION > 15)))
-
-  #define JUCE_ANDROID_REALTIME_THREAD_AVAILABLE 1
+#if JUCE_ANDROID && JUCE_MODULE_AVAILABLE_juce_audio_devices && (JUCE_USE_ANDROID_OPENSLES || JUCE_USE_ANDROID_OBOE)
+ #define JUCE_ANDROID_REALTIME_THREAD_AVAILABLE 1
 #endif
 
 #if JUCE_ANDROID_REALTIME_THREAD_AVAILABLE
@@ -955,9 +973,10 @@ void JUCE_CALLTYPE Thread::setCurrentThreadName (const String& name)
     {
         [[NSThread currentThread] setName: juceStringToNS (name)];
     }
-   #elif JUCE_LINUX || JUCE_ANDROID
-    #if ((JUCE_LINUX && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012) \
-          || JUCE_ANDROID && __ANDROID_API__ >= 9)
+   #elif JUCE_LINUX || JUCE_BSD || JUCE_ANDROID
+    #if (JUCE_BSD \
+          || (JUCE_LINUX && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012) \
+          || (JUCE_ANDROID && __ANDROID_API__ >= 9))
      pthread_setname_np (pthread_self(), name.toRawUTF8());
     #else
      prctl (PR_SET_NAME, name.toRawUTF8(), 0, 0, 0);
@@ -967,9 +986,16 @@ void JUCE_CALLTYPE Thread::setCurrentThreadName (const String& name)
 
 bool Thread::setThreadPriority (void* handle, int priority)
 {
+    constexpr auto maxInputPriority = 10;
+
+   #if JUCE_LINUX || JUCE_BSD
+    constexpr auto lowestRrPriority = 8;
+   #else
+    constexpr auto lowestRrPriority = 0;
+   #endif
+
     struct sched_param param;
     int policy;
-    priority = jlimit (0, 10, priority);
 
     if (handle == nullptr)
         handle = (void*) pthread_self();
@@ -977,16 +1003,19 @@ bool Thread::setThreadPriority (void* handle, int priority)
     if (pthread_getschedparam ((pthread_t) handle, &policy, &param) != 0)
         return false;
 
-   #if JUCE_LINUX
-    policy = priority < 9 ? SCHED_OTHER : SCHED_RR;
-   #else
-    policy = priority == 0 ? SCHED_OTHER : SCHED_RR;
-   #endif
+    policy = priority < lowestRrPriority ? SCHED_OTHER : SCHED_RR;
 
-    const int minPriority = sched_get_priority_min (policy);
-    const int maxPriority = sched_get_priority_max (policy);
+    const auto minPriority = sched_get_priority_min (policy);
+    const auto maxPriority = sched_get_priority_max (policy);
 
-    param.sched_priority = ((maxPriority - minPriority) * priority) / 10 + minPriority;
+    param.sched_priority = [&]
+    {
+        if (policy == SCHED_OTHER)
+            return 0;
+
+        return jmap (priority, lowestRrPriority, maxInputPriority, minPriority, maxPriority);
+    }();
+
     return pthread_setschedparam ((pthread_t) handle, policy, &param) == 0;
 }
 
@@ -1019,7 +1048,7 @@ void JUCE_CALLTYPE Thread::setCurrentThreadAffinityMask (uint32 affinityMask)
         if ((affinityMask & (uint32) (1 << i)) != 0)
             CPU_SET ((size_t) i, &affinity);
 
-   #if (! JUCE_ANDROID) && ((! JUCE_LINUX) || ((__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2004))
+   #if (! JUCE_ANDROID) && ((! (JUCE_LINUX || JUCE_BSD)) || ((__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2004))
     pthread_setaffinity_np (pthread_self(), sizeof (cpu_set_t), &affinity);
    #elif JUCE_ANDROID
     sched_setaffinity (gettid(), sizeof (cpu_set_t), &affinity);
@@ -1041,6 +1070,7 @@ void JUCE_CALLTYPE Thread::setCurrentThreadAffinityMask (uint32 affinityMask)
 }
 
 //==============================================================================
+#if ! JUCE_WASM
 bool DynamicLibrary::open (const String& name)
 {
     close();
@@ -1061,7 +1091,6 @@ void* DynamicLibrary::getFunction (const String& functionName) noexcept
 {
     return handle != nullptr ? dlsym (handle, functionName.toUTF8()) : nullptr;
 }
-
 
 //==============================================================================
 #if JUCE_LINUX || JUCE_ANDROID
@@ -1160,7 +1189,7 @@ public:
         if (childPID == 0)
             return false;
 
-        int childState;
+        int childState = 0;
         auto pid = waitpid (childPID, &childState, WNOHANG);
 
         if (pid == 0)
@@ -1262,220 +1291,130 @@ bool ChildProcess::start (const StringArray& args, int streamFlags)
     return activeProcess != nullptr;
 }
 
+#endif
+
 //==============================================================================
 struct HighResolutionTimer::Pimpl
 {
-    Pimpl (HighResolutionTimer& t)  : owner (t)
-    {
-        pthread_condattr_t attr;
-        pthread_condattr_init (&attr);
-
-       #if JUCE_LINUX || (JUCE_ANDROID && defined(__ANDROID_API__) && __ANDROID_API__ >= 21)
-        pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
-       #endif
-
-        pthread_cond_init (&stopCond, &attr);
-        pthread_condattr_destroy (&attr);
-        pthread_mutex_init (&timerMutex, nullptr);
-    }
+    explicit Pimpl (HighResolutionTimer& t)
+        : owner (t)
+    {}
 
     ~Pimpl()
     {
-        jassert (! isRunning);
+        jassert (periodMs == 0);
         stop();
     }
 
     void start (int newPeriod)
     {
-        if (periodMs != newPeriod)
+        if (periodMs == newPeriod)
+            return;
+
+        if (thread.get_id() == std::this_thread::get_id())
         {
-            if (thread != pthread_self())
-            {
-                stop();
-
-                periodMs = newPeriod;
-                destroyThread = false;
-                isRunning = true;
-
-                if (pthread_create (&thread, nullptr, timerThread, this) == 0)
-                    setThreadToRealtime (thread, (uint64) newPeriod);
-                else
-                    jassertfalse;
-            }
-            else
-            {
-                periodMs = newPeriod;
-                isRunning = true;
-                destroyThread = false;
-            }
+            periodMs = newPeriod;
+            return;
         }
+
+        stop();
+
+        periodMs = newPeriod;
+
+        thread = std::thread ([this, newPeriod]
+        {
+            setThisThreadToRealtime ((uint64) newPeriod);
+
+            auto lastPeriod = periodMs.load();
+            Clock clock (lastPeriod);
+
+            std::unique_lock<std::mutex> unique_lock (timerMutex);
+
+            while (periodMs != 0)
+            {
+                clock.next();
+                while (periodMs != 0 && clock.wait (stopCond, unique_lock));
+
+                if (periodMs == 0)
+                    break;
+
+                owner.hiResTimerCallback();
+
+                auto nextPeriod = periodMs.load();
+
+                if (lastPeriod != nextPeriod)
+                {
+                    lastPeriod = nextPeriod;
+                    clock = Clock (lastPeriod);
+                }
+            }
+
+            periodMs = 0;
+        });
     }
 
     void stop()
     {
-        isRunning = false;
+        periodMs = 0;
 
-        if (thread == pthread_t())
+        const auto thread_id = thread.get_id();
+
+        if (thread_id == std::thread::id() || thread_id == std::this_thread::get_id())
             return;
 
-        if (thread == pthread_self())
         {
-            periodMs = 3600000;
-            return;
+            std::unique_lock<std::mutex> unique_lock (timerMutex);
+            stopCond.notify_one();
         }
 
-        isRunning = false;
-        destroyThread = true;
-
-        pthread_mutex_lock (&timerMutex);
-        pthread_cond_signal (&stopCond);
-        pthread_mutex_unlock (&timerMutex);
-
-        pthread_join (thread, nullptr);
-        thread = {};
+        thread.join();
     }
 
     HighResolutionTimer& owner;
     std::atomic<int> periodMs { 0 };
 
 private:
-    pthread_t thread = {};
-    pthread_cond_t stopCond;
-    pthread_mutex_t timerMutex;
-    std::atomic<bool> destroyThread { false }, isRunning { false };
+    std::thread thread;
+    std::condition_variable stopCond;
+    std::mutex timerMutex;
 
-    static void* timerThread (void* param)
+    class Clock
     {
-       #if ! JUCE_ANDROID
-        int dummy;
-        pthread_setcancelstate (PTHREAD_CANCEL_ENABLE, &dummy);
-       #endif
+    public:
+        explicit Clock (std::chrono::steady_clock::rep millis) noexcept
+            : time (std::chrono::steady_clock::now()),
+              delta (std::chrono::milliseconds (millis))
+        {}
 
-        reinterpret_cast<Pimpl*> (param)->timerThread();
-        return nullptr;
-    }
-
-    void timerThread()
-    {
-        auto lastPeriod = periodMs.load();
-        Clock clock (lastPeriod);
-
-        pthread_mutex_lock (&timerMutex);
-
-        while (! destroyThread)
+        bool wait (std::condition_variable& cond, std::unique_lock<std::mutex>& lock) noexcept
         {
-            clock.next();
-            while (! destroyThread && clock.wait (stopCond, timerMutex));
-
-            if (destroyThread)
-                break;
-
-            if (isRunning)
-                owner.hiResTimerCallback();
-
-            auto newPeriod = periodMs.load();
-
-            if (lastPeriod != newPeriod)
-            {
-                lastPeriod = newPeriod;
-                clock = Clock (lastPeriod);
-            }
+            return cond.wait_until (lock, time) != std::cv_status::timeout;
         }
-
-        periodMs = 0;
-        pthread_mutex_unlock (&timerMutex);
-        pthread_exit (nullptr);
-    }
-
-    struct Clock
-    {
-       #if JUCE_MAC || JUCE_IOS
-        Clock (double millis) noexcept
-        {
-            (void) mach_timebase_info (&timebase);
-            delta = (((uint64_t) (millis * 1000000.0)) * timebase.denom) / timebase.numer;
-            time = mach_absolute_time();
-        }
-
-        bool wait (pthread_cond_t& cond, pthread_mutex_t& mutex) noexcept
-        {
-            struct timespec left;
-
-            if (! hasExpired (left))
-                return (pthread_cond_timedwait_relative_np (&cond, &mutex, &left) != ETIMEDOUT);
-
-            return false;
-        }
-
-        uint64_t time, delta;
-        mach_timebase_info_data_t timebase;
-
-        bool hasExpired (struct timespec& time_left) noexcept
-        {
-            uint64_t now = mach_absolute_time();
-
-            if (now < time)
-            {
-                uint64_t left = time - now;
-                uint64_t nanos = (left * static_cast<uint64_t> (timebase.numer)) / static_cast<uint64_t> (timebase.denom);
-                time_left.tv_sec = static_cast<__darwin_time_t> (nanos / 1000000000ULL);
-                time_left.tv_nsec = static_cast<long> (nanos - (static_cast<uint64_t> (time_left.tv_sec) * 1000000000ULL));
-
-                return false;
-            }
-
-            return true;
-        }
-      #else
-        Clock (double millis) noexcept  : delta ((uint64) (millis * 1000000))
-        {
-            struct timespec t;
-            clock_gettime (CLOCK_MONOTONIC, &t);
-            time = (uint64) (1000000000 * (int64) t.tv_sec + (int64) t.tv_nsec);
-        }
-
-        bool wait (pthread_cond_t& cond, pthread_mutex_t& mutex) noexcept
-        {
-            struct timespec absExpire;
-
-            if (! hasExpired (absExpire))
-                return (pthread_cond_timedwait (&cond, &mutex, &absExpire) != ETIMEDOUT);
-
-            return false;
-        }
-
-        uint64 time, delta;
-
-        bool hasExpired (struct timespec& expiryTime) noexcept
-        {
-            struct timespec t;
-            clock_gettime (CLOCK_MONOTONIC, &t);
-            auto now = (uint64) (1000000000 * (int64) t.tv_sec + (int64) t.tv_nsec);
-
-            if (now < time)
-            {
-                expiryTime.tv_sec  = (time_t) (time / 1000000000);
-                expiryTime.tv_nsec = (long)   (time % 1000000000);
-
-                return false;
-            }
-
-            return true;
-        }
-       #endif
 
         void next() noexcept
         {
             time += delta;
         }
+
+    private:
+        std::chrono::time_point<std::chrono::steady_clock> time;
+        std::chrono::steady_clock::duration delta;
     };
 
-    static bool setThreadToRealtime (pthread_t thread, uint64 periodMs)
+    static bool setThisThreadToRealtime (uint64 periodMs)
     {
+        const auto thread = pthread_self();
+
        #if JUCE_MAC || JUCE_IOS
+        mach_timebase_info_data_t timebase;
+        mach_timebase_info (&timebase);
+
+        const auto ticksPerMs = ((double) timebase.denom * 1000000.0) / (double) timebase.numer;
+        const auto periodTicks = (uint32_t) jmin ((double) std::numeric_limits<uint32_t>::max(), periodMs * ticksPerMs);
+
         thread_time_constraint_policy_data_t policy;
-        policy.period      = (uint32_t) (periodMs * 1000000);
-        policy.computation = 50000;
+        policy.period      = periodTicks;
+        policy.computation = jmin ((uint32_t) 50000, policy.period);
         policy.constraint  = policy.period;
         policy.preemptible = true;
 
@@ -1489,7 +1428,6 @@ private:
         struct sched_param param;
         param.sched_priority = sched_get_priority_max (SCHED_RR);
         return pthread_setschedparam (thread, SCHED_RR, &param) == 0;
-
        #endif
     }
 

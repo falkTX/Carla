@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -285,24 +285,6 @@ MidiMessage& MidiMessage::operator= (const MidiMessage& other)
 
     return *this;
 }
-
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-MidiMessage::MidiMessage (MidiMessage&& other) noexcept
-   : timeStamp (other.timeStamp), size (other.size)
-{
-    packedData.allocatedData = other.packedData.allocatedData;
-    other.size = 0;
-}
-
-MidiMessage& MidiMessage::operator= (MidiMessage&& other) noexcept
-{
-    packedData.allocatedData = other.packedData.allocatedData;
-    timeStamp = other.timeStamp;
-    size = other.size;
-    other.size = 0;
-    return *this;
-}
-#endif
 
 MidiMessage::~MidiMessage() noexcept
 {
@@ -675,54 +657,6 @@ const uint8* MidiMessage::getMetaEventData() const noexcept
     return d + n;
 }
 
-bool MidiMessage::isTrackMetaEvent() const noexcept         { return getMetaEventType() == 0; }
-bool MidiMessage::isEndOfTrackMetaEvent() const noexcept    { return getMetaEventType() == 47; }
-
-bool MidiMessage::isTextMetaEvent() const noexcept
-{
-    const int t = getMetaEventType();
-    return t > 0 && t < 16;
-}
-
-String MidiMessage::getTextFromTextMetaEvent() const
-{
-    const char* const textData = reinterpret_cast<const char*> (getMetaEventData());
-    return String (CharPointer_UTF8 (textData),
-                   CharPointer_UTF8 (textData + getMetaEventLength()));
-}
-
-MidiMessage MidiMessage::textMetaEvent (int type, StringRef text)
-{
-    wassert (type > 0 && type < 16);
-
-    MidiMessage result;
-
-    const size_t textSize = text.text.sizeInBytes() - 1;
-
-    uint8 header[8];
-    size_t n = sizeof (header);
-
-    header[--n] = (uint8) (textSize & 0x7f);
-
-    for (size_t i = textSize; (i >>= 7) != 0;)
-        header[--n] = (uint8) ((i & 0x7f) | 0x80);
-
-    header[--n] = (uint8) type;
-    header[--n] = 0xff;
-
-    const size_t headerLen = sizeof (header) - n;
-    const int totalSize = (int) (headerLen + textSize);
-
-    uint8* const dest = result.allocateSpace (totalSize);
-    result.size = totalSize;
-
-    memcpy (dest, header + n, headerLen);
-    memcpy (dest + headerLen, text.text.getAddress(), textSize);
-
-    return result;
-}
-
-bool MidiMessage::isTrackNameEvent() const noexcept         { const uint8* data = getData(); return (data[1] == 3)    && (*data == 0xff); }
 bool MidiMessage::isTempoMetaEvent() const noexcept         { const uint8* data = getData(); return (data[1] == 81)   && (*data == 0xff); }
 bool MidiMessage::isMidiChannelMetaEvent() const noexcept   { const uint8* data = getData(); return (data[1] == 0x20) && (*data == 0xff) && (data[2] == 1); }
 
@@ -845,11 +779,6 @@ MidiMessage MidiMessage::keySignatureMetaEvent (int numberOfSharpsOrFlats, bool 
 
     const uint8 d[] = { 0xff, 0x59, 0x02, (uint8) numberOfSharpsOrFlats, isMinorKey ? (uint8) 1 : (uint8) 0 };
     return MidiMessage (d, 5, 0.0);
-}
-
-MidiMessage MidiMessage::endOfTrack() noexcept
-{
-    return MidiMessage (0xff, 0x2f, 0, 0.0);
 }
 
 //==============================================================================
@@ -981,25 +910,6 @@ MidiMessage MidiMessage::midiMachineControlGoto (int hours, int minutes, int sec
 }
 
 //==============================================================================
-String MidiMessage::getMidiNoteName (int note, bool useSharps, bool includeOctaveNumber, int octaveNumForMiddleC)
-{
-    static const char* const sharpNoteNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-    static const char* const flatNoteNames[]  = { "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B" };
-
-    if (isPositiveAndBelow (note, (int) 128))
-    {
-        String s (useSharps ? sharpNoteNames [note % 12]
-                            : flatNoteNames  [note % 12]);
-
-        if (includeOctaveNumber)
-            s << (note / 12 + (octaveNumForMiddleC - 5));
-
-        return s;
-    }
-
-    return String();
-}
-
 double MidiMessage::getMidiNoteInHertz (const int noteNumber, const double frequencyOfA) noexcept
 {
     return frequencyOfA * pow (2.0, (noteNumber - 69) / 12.0);

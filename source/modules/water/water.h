@@ -1,7 +1,7 @@
 /*
  * Cross-platform C++ library for Carla, based on Juce v4
  * Copyright (C) 2015-2016 ROLI Ltd.
- * Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,18 +32,12 @@
 // Compiler support
 
 #if (__cplusplus >= 201103L || defined (__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
- #define WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
-
  #if (__GNUC__ * 100 + __GNUC_MINOR__) >= 407 && ! defined (WATER_DELETED_FUNCTION)
   #define WATER_DELETED_FUNCTION = delete
  #endif
 #endif
 
 #ifdef __clang__
- #if __has_feature (cxx_implicit_moves) && __clang_major__ >= 9
-  #define WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
- #endif
-
  #if __has_feature (cxx_deleted_functions)
   #define WATER_DELETED_FUNCTION = delete
  #endif
@@ -59,24 +53,6 @@
      older ones it's just an empty definition.
  */
  #define WATER_DELETED_FUNCTION
-#endif
-
-//==============================================================================
-// FIXME
-
-/* WATER_PACKED needs to be a macro which
-    expands into a compiler directive. The directive must
-    tell the compiler to arrange the preceding structure
-    declaration so that it is packed on byte-boundaries rather
-    than use the natural alignment of the processor and/or
-    compiler.
-*/
-#if defined(__GNUC__)
- #define WATER_PACKED __attribute__((__packed__))
-#elif defined(_MSC_VER)
- #define WATER_PACKED ;__pragma(pack(pop))
-#else
- #define WATER_PACKED
 #endif
 
 //==============================================================================

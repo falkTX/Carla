@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -32,27 +32,17 @@ Identifier::~Identifier() noexcept {}
 
 Identifier::Identifier (const Identifier& other) noexcept  : name (other.name) {}
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-Identifier::Identifier (Identifier&& other) noexcept : name (static_cast<String&&> (other.name)) {}
-
-Identifier& Identifier::operator= (Identifier&& other) noexcept
-{
-    name = static_cast<String&&> (other.name);
-    return *this;
-}
-#endif
-
 Identifier& Identifier::operator= (const Identifier& other) noexcept
 {
     name = other.name;
     return *this;
 }
 
-Identifier::Identifier (const String& nm)
+Identifier::Identifier (const std::string& nm)
     : name (nm)
 {
     // An Identifier cannot be created from an empty string!
-    wassert (nm.isNotEmpty());
+    wassert (!nm.empty());
 }
 
 Identifier::Identifier (const char* nm)
@@ -62,17 +52,11 @@ Identifier::Identifier (const char* nm)
     wassert (nm != nullptr && nm[0] != 0);
 }
 
-Identifier::Identifier (String::CharPointerType start, String::CharPointerType end)
-    : name (StartEndString (start, end))
+Identifier::Identifier (const char* start, const char* end)
+    : name (start, end > start ? end - start : 0)
 {
     // An Identifier cannot be created from an empty string!
     wassert (start < end);
-}
-
-bool Identifier::isValidIdentifier (const String& possibleIdentifier) noexcept
-{
-    return possibleIdentifier.isNotEmpty()
-            && possibleIdentifier.containsOnly ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-:#@$%");
 }
 
 }

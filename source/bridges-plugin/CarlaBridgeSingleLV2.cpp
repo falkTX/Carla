@@ -27,25 +27,11 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaUtils.h"
 
-#ifdef USING_JUCE
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-# endif
-
-# include "AppConfig.h"
-# include "juce_events/juce_events.h"
-
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
-#endif
-
 #include "water/files/File.h"
+
+#ifdef USING_JUCE
+# include "carla_juce/carla_juce.h"
+#endif
 
 template<>
 void Lv2PluginBaseClass<CARLA_BACKEND_NAMESPACE::EngineTimeInfo>::clearTimeData() noexcept
@@ -500,7 +486,7 @@ private:
     CarlaPluginPtr fPlugin;
 
 #ifdef USING_JUCE
-    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
+    CarlaJUCE::ScopedJuceInitialiser_GUI fJuceInitialiser;
 #endif
 
     void updateParameterOutputs() noexcept

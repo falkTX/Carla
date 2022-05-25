@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -108,7 +108,7 @@ TimeSliceClient* TimeSliceThread::getNextClient (int index) const
     {
         auto* c = clients.getUnchecked ((i + index) % clients.size());
 
-        if (client == nullptr || c->nextCallTime < soonest)
+        if (c != nullptr && (client == nullptr || c->nextCallTime < soonest))
         {
             client = c;
             soonest = c->nextCallTime;

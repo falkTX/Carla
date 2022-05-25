@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -174,14 +174,17 @@ void MemoryBlock::append (const void* srcData, size_t numBytes)
     }
 }
 
-void MemoryBlock::replaceWith (const void* srcData, size_t numBytes)
+void MemoryBlock::replaceAll (const void* srcData, size_t numBytes)
 {
-    if (numBytes > 0)
+    if (numBytes <= 0)
     {
-        jassert (srcData != nullptr); // this must not be null!
-        setSize (numBytes);
-        memcpy (data, srcData, numBytes);
+        reset();
+        return;
     }
+
+    jassert (srcData != nullptr); // this must not be null!
+    setSize (numBytes);
+    memcpy (data, srcData, numBytes);
 }
 
 void MemoryBlock::insert (const void* srcData, size_t numBytes, size_t insertPosition)

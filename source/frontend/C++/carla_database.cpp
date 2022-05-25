@@ -209,6 +209,7 @@ PluginRefreshW::PluginRefreshW(QWidget* const parent, const CarlaHost& host)
     connect(self->ui.ch_au, SIGNAL(clicked()), SLOT(slot_checkTools()));
     connect(self->ui.ch_sf2, SIGNAL(clicked()), SLOT(slot_checkTools()));
     connect(self->ui.ch_sfz, SIGNAL(clicked()), SLOT(slot_checkTools()));
+    connect(self->ui.ch_jsfx, SIGNAL(clicked()), SLOT(slot_checkTools()));
     connect(&self->fThread, SIGNAL(pluginLook(float, QString)), SLOT(slot_handlePluginLook(float, QString)));
     connect(&self->fThread, SIGNAL(finished(int)), SLOT(slot_handlePluginThreadFinished()));
 

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -51,6 +51,7 @@ public:
         Linux           = 0x0400,
         Android         = 0x0800,
         iOS             = 0x1000,
+        WASM            = 0x2000,
 
         MacOSX_10_7     = MacOSX | 7,
         MacOSX_10_8     = MacOSX | 8,
@@ -61,7 +62,8 @@ public:
         MacOSX_10_13    = MacOSX | 13,
         MacOSX_10_14    = MacOSX | 14,
         MacOSX_10_15    = MacOSX | 15,
-        MacOSX_11_0     = MacOSX | 16,
+        MacOS_11        = MacOSX | 16,
+        MacOS_12        = MacOSX | 17,
 
         Win2000         = Windows | 1,
         WinXP           = Windows | 2,
@@ -232,8 +234,10 @@ public:
 
 
     //==============================================================================
-    // This method was spelt wrong! Please change your code to use getCpuSpeedInMegahertz() instead
-    JUCE_DEPRECATED_WITH_BODY (static int getCpuSpeedInMegaherz(), { return getCpuSpeedInMegahertz(); })
+   #ifndef DOXYGEN
+    [[deprecated ("This method was spelt wrong! Please change your code to use getCpuSpeedInMegahertz instead.")]]
+    static int getCpuSpeedInMegaherz() { return getCpuSpeedInMegahertz(); }
+   #endif
 
 private:
     SystemStats() = delete; // uses only static methods

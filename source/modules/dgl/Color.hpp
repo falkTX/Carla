@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -23,7 +23,7 @@ struct NVGcolor;
 
 START_NAMESPACE_DGL
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 /**
    A color made from red, green, blue and alpha floating-point values in [0..1] range.
@@ -44,13 +44,13 @@ struct Color {
 
    /**
       Create a color from red, green, blue and alpha numeric values.
-      Values must be in [0..255] range.
+      All values except alpha must be in [0..255] range, with alpha in [0..1] range.
     */
-    Color(int red, int green, int blue, int alpha = 255) noexcept;
+    Color(int red, int green, int blue, float alpha = 1.0f) noexcept;
 
    /**
       Create a color from red, green, blue and alpha floating-point values.
-      Values must in [0..1] range.
+      All values must in [0..1] range.
     */
     Color(float red, float green, float blue, float alpha = 1.0f) noexcept;
 
@@ -66,6 +66,11 @@ struct Color {
     Color(const Color& color1, const Color& color2, float u) noexcept;
 
    /**
+      Create a new color based on this one but with a different alpha value.
+    */
+    Color withAlpha(float alpha) noexcept;
+
+   /**
       Create a color specified by hue, saturation and lightness.
       Values must in [0..1] range.
     */
@@ -74,7 +79,7 @@ struct Color {
    /**
       Create a color from a HTML string like "#333" or "#112233".
     */
-    static Color fromHTML(const char* rgb, float alpha = 1.0f);
+    static Color fromHTML(const char* rgb, float alpha = 1.0f) noexcept;
 
    /**
       Linearly interpolate this color against another.
@@ -83,7 +88,7 @@ struct Color {
 
    /**
       Check if this color matches another.
-      @note Comparison is forced within 8-bit color values.
+      @note Comparison is done within 8-bit color space.
     */
     bool isEqual(const Color& color, bool withAlpha = true) noexcept;
     bool isNotEqual(const Color& color, bool withAlpha = true) noexcept;
@@ -96,6 +101,11 @@ struct Color {
     void fixBounds() noexcept;
 
    /**
+      Set this color for use in the next drawing operation for the provided context.
+    */
+    void setFor(const GraphicsContext& context, bool includeAlpha = false);
+
+   /**
       @internal
       Needed for NanoVG compatibility.
     */
@@ -103,7 +113,7 @@ struct Color {
     operator NVGcolor() const noexcept;
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 END_NAMESPACE_DGL
 

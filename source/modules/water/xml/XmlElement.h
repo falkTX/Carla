@@ -166,11 +166,6 @@ public:
     /** Creates a (deep) copy of another element. */
     XmlElement& operator= (const XmlElement&);
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    XmlElement (XmlElement&&) noexcept;
-    XmlElement& operator= (XmlElement&&) noexcept;
-   #endif
-
     /** Deleting an XmlElement will also delete all of its child elements. */
     ~XmlElement() noexcept;
 
@@ -301,7 +296,7 @@ public:
 
         @see getAttributeValue, getStringAttribute
     */
-    const String& getAttributeName (int attributeIndex) const noexcept;
+    const std::string& getAttributeName (int attributeIndex) const noexcept;
 
     /** Returns the value of one of the elements attributes.
 

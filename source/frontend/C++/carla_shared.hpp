@@ -172,6 +172,7 @@ static const char* const* const MIDI_CC_LIST = {
 #define CARLA_KEY_PATHS_VST3   "Paths/VST3"
 #define CARLA_KEY_PATHS_SF2    "Paths/SF2"
 #define CARLA_KEY_PATHS_SFZ    "Paths/SFZ"
+#define CARLA_KEY_PATHS_JSFX   "Paths/JSFX"
 
 #define CARLA_KEY_WINE_EXECUTABLE      "Wine/Executable"     /* str  */
 #define CARLA_KEY_WINE_AUTO_PREFIX     "Wine/AutoPrefix"     /* bool */
@@ -299,6 +300,7 @@ static const char* const* const MIDI_CC_LIST = {
 #define DEFAULT_VST3_PATH   ""
 #define DEFAULT_SF2_PATH    ""
 #define DEFAULT_SFZ_PATH    ""
+#define DEFAULT_JSFX_PATH    ""
 
 #ifdef CARLA_OS_WIN
 # define CARLA_PATH_SPLITTER ";"
@@ -338,6 +340,7 @@ if WINDOWS:
 # define CARLA_DEFAULT_VST3_PATH   = std::getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(CARLA_PATH_SPLITTER)
 # define CARLA_DEFAULT_SF2_PATH    = std::getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(CARLA_PATH_SPLITTER)
 # define CARLA_DEFAULT_SFZ_PATH    = std::getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_JSFX_PATH   = std::getenv("JSFX_PATH",    DEFAULT_JSFX_PATH).split(CARLA_PATH_SPLITTER)
 #else
 */
 # define CARLA_DEFAULT_LADSPA_PATH QString(DEFAULT_LADSPA_PATH).split(CARLA_PATH_SPLITTER)
@@ -347,6 +350,7 @@ if WINDOWS:
 # define CARLA_DEFAULT_VST3_PATH   QString(DEFAULT_VST3_PATH).split(CARLA_PATH_SPLITTER)
 # define CARLA_DEFAULT_SF2_PATH    QString(DEFAULT_SF2_PATH).split(CARLA_PATH_SPLITTER)
 # define CARLA_DEFAULT_SFZ_PATH    QString(DEFAULT_SFZ_PATH).split(CARLA_PATH_SPLITTER)
+# define CARLA_DEFAULT_JSFX_PATH   QString(DEFAULT_JSFX_PATH).split(CARLA_PATH_SPLITTER)
 /*
 #endif
 */

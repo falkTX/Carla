@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -16,11 +16,22 @@
 
 #include "../Color.hpp"
 
-#include "nanovg/nanovg.h"
-
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
+
+static float computeHue(float h, float m1, float m2)
+{
+    if (h < 0) h += 1;
+    if (h > 1) h -= 1;
+    if (h < 1.0f/6.0f)
+        return m1 + (m2 - m1) * h * 6.0f;
+    if (h < 3.0f/6.0f)
+        return m2;
+    if (h < 4.0f/6.0f)
+        return m1 + (m2 - m1) * (2.0f/3.0f - h) * 6.0f;
+    return m1;
+}
 
 static void fixRange(float& value)
 {
@@ -46,27 +57,27 @@ static uchar getFixedRange2(const float& value)
         return 0;
     if (value2 >= 255.0f)
         return 255;
-    return static_cast<uchar>(value2);
+    return static_cast<uchar>(value2 + 0.5f);
 }
 
 // -----------------------------------------------------------------------
 
 Color::Color() noexcept
-    : red(1.0f),
-      green(1.0f),
-      blue(1.0f),
+    : red(0.0f),
+      green(0.0f),
+      blue(0.0f),
       alpha(1.0f) {}
 
-Color::Color(int r, int g, int b, int a) noexcept
+Color::Color(const int r, const int g, const int b, const float a) noexcept
     : red(static_cast<float>(r)/255.0f),
       green(static_cast<float>(g)/255.0f),
       blue(static_cast<float>(b)/255.0f),
-      alpha(static_cast<float>(a)/255.0f)
+      alpha(a)
 {
     fixBounds();
 }
 
-Color::Color(float r, float g, float b, float a) noexcept
+Color::Color(const float r, const float g, const float b, const float a) noexcept
     : red(r),
       green(g),
       blue(b),
@@ -94,7 +105,7 @@ Color& Color::operator=(const Color& color) noexcept
     return *this;
 }
 
-Color::Color(const Color& color1, const Color& color2, float u) noexcept
+Color::Color(const Color& color1, const Color& color2, const float u) noexcept
     : red(color1.red),
       green(color1.green),
       blue(color1.blue),
@@ -103,70 +114,91 @@ Color::Color(const Color& color1, const Color& color2, float u) noexcept
     interpolate(color2, u);
 }
 
-Color Color::fromHSL(float hue, float saturation, float lightness, float alpha)
+Color Color::withAlpha(const float alpha2) noexcept
 {
-    return nvgHSLA(hue, saturation, lightness, static_cast<uchar>(getFixedRange(alpha)*255.0f));
+    Color color(*this);
+    color.alpha = alpha2;
+    return color;
 }
 
-Color Color::fromHTML(const char* rgb, float alpha)
+Color Color::fromHSL(float hue, float saturation, float lightness, float alpha)
+{
+    float m1, m2;
+    Color col;
+    hue = fmodf(hue, 1.0f);
+    if (hue < 0.0f) hue += 1.0f;
+    fixRange(saturation);
+    fixRange(lightness);
+    m2 = lightness <= 0.5f ? (lightness * (1 + saturation)) : (lightness + saturation - lightness * saturation);
+    m1 = 2 * lightness - m2;
+    col.red = computeHue(hue + 1.0f/3.0f, m1, m2);
+    col.green = computeHue(hue, m1, m2);
+    col.blue = computeHue(hue - 1.0f/3.0f, m1, m2);
+    col.alpha = alpha;
+    col.fixBounds();
+    return col;
+}
+
+Color Color::fromHTML(const char* rgb, const float alpha) noexcept
 {
     Color fallback;
     DISTRHO_SAFE_ASSERT_RETURN(rgb != nullptr && rgb[0] != '\0', fallback);
 
-    if (rgb[0] == '#') ++rgb;
+    if (rgb[0] == '#')
+        ++rgb;
     DISTRHO_SAFE_ASSERT_RETURN(rgb[0] != '\0', fallback);
 
-    std::size_t rgblen(std::strlen(rgb));
+    std::size_t rgblen = std::strlen(rgb);
     DISTRHO_SAFE_ASSERT_RETURN(rgblen == 3 || rgblen == 6, fallback);
 
-    char rgbtmp[3] = { '\0', '\0', '\0' };
+    char rgbtmp[5] = { '0', 'x', '\0', '\0', '\0' };
     int r, g, b;
 
     if (rgblen == 3)
     {
-        rgbtmp[0] = rgb[0];
-        r = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
+        rgbtmp[2] = rgb[0];
+        r = static_cast<int>(std::strtol(rgbtmp, nullptr, 16)) * 17;
 
-        rgbtmp[0] = rgb[1];
-        g = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
+        rgbtmp[2] = rgb[1];
+        g = static_cast<int>(std::strtol(rgbtmp, nullptr, 16)) * 17;
 
-        rgbtmp[0] = rgb[2];
-        b = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
+        rgbtmp[2] = rgb[2];
+        b = static_cast<int>(std::strtol(rgbtmp, nullptr, 16)) * 17;
     }
     else
     {
-        rgbtmp[0] = rgb[0];
-        rgbtmp[1] = rgb[1];
+        rgbtmp[2] = rgb[0];
+        rgbtmp[3] = rgb[1];
         r = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
 
-        rgbtmp[0] = rgb[2];
-        rgbtmp[1] = rgb[3];
+        rgbtmp[2] = rgb[2];
+        rgbtmp[3] = rgb[3];
         g = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
 
-        rgbtmp[0] = rgb[4];
-        rgbtmp[1] = rgb[5];
+        rgbtmp[2] = rgb[4];
+        rgbtmp[3] = rgb[5];
         b = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
     }
 
-    return Color(r, g, b, static_cast<int>(getFixedRange(alpha)*255.0f));
+    return Color(r, g, b, alpha);
 }
 
 void Color::interpolate(const Color& other, float u) noexcept
 {
     fixRange(u);
-    const float oneMinusU(1.0f - u);
+    const float oneMinusU = 1.0f - u;
 
-    red   = red   * oneMinusU + other.red   * u;
-    green = green * oneMinusU + other.green * u;
-    blue  = blue  * oneMinusU + other.blue  * u;
-    alpha = alpha * oneMinusU + other.alpha * u;
+    red   = (red   * oneMinusU) + (other.red   * u);
+    green = (green * oneMinusU) + (other.green * u);
+    blue  = (blue  * oneMinusU) + (other.blue  * u);
+    alpha = (alpha * oneMinusU) + (other.alpha * u);
 
     fixBounds();
 }
 
 // -----------------------------------------------------------------------
 
-bool Color::isEqual(const Color& color, bool withAlpha) noexcept
+bool Color::isEqual(const Color& color, const bool withAlpha) noexcept
 {
     const uchar r1 = getFixedRange2(rgba[0]);
     const uchar g1 = getFixedRange2(rgba[1]);
@@ -184,7 +216,7 @@ bool Color::isEqual(const Color& color, bool withAlpha) noexcept
         return (r1 == r2 && g1 == g2 && b1 == b2);
 }
 
-bool Color::isNotEqual(const Color& color, bool withAlpha) noexcept
+bool Color::isNotEqual(const Color& color, const bool withAlpha) noexcept
 {
     const uchar r1 = getFixedRange2(rgba[0]);
     const uchar g1 = getFixedRange2(rgba[1]);
@@ -220,24 +252,6 @@ void Color::fixBounds() noexcept
     fixRange(green);
     fixRange(blue);
     fixRange(alpha);
-}
-
-// -----------------------------------------------------------------------
-
-Color::Color(const NVGcolor& c) noexcept
-    : red(c.r), green(c.g), blue(c.b), alpha(c.a)
-{
-    fixBounds();
-}
-
-Color::operator NVGcolor() const noexcept
-{
-    NVGcolor nc;
-    nc.r = red;
-    nc.g = green;
-    nc.b = blue;
-    nc.a = alpha;
-    return nc;
 }
 
 // -----------------------------------------------------------------------

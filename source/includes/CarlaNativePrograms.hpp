@@ -63,12 +63,12 @@ struct NativePluginPresetManager {
 
         for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
         {
-            Array<File> results;
+            std::vector<File> results;
 
-            if (File(*it).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard) > 0)
+            if (const int count = File(*it).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard))
             {
-                for (File *it2 = results.begin(), *end2 = results.end(); it2 != end2; ++it2)
-                    filenames.add(it2->getFullPathName());
+                for (int i=0; i<count; ++i)
+                    filenames.add(results[i].getFullPathName());
             }
         }
 

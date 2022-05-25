@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -125,7 +125,7 @@ public:
     /** Sets a flag to change the treatment of empty text elements.
 
         If this is true (the default state), then any text elements that contain only
-        whitespace characters will be ingored during parsing. If you need to catch
+        whitespace characters will be ignored during parsing. If you need to catch
         whitespace-only text, then you should set this to false before calling the
         getDocumentElement() method.
     */
@@ -134,14 +134,12 @@ public:
     //==============================================================================
     /** A handy static method that parses a file.
         This is a shortcut for creating an XmlDocument object and calling getDocumentElement() on it.
-        An even better shortcut is the juce::parseXML() function, which returns a std::unique_ptr<XmlElement>!
         @returns    a new XmlElement, or nullptr if there was an error.
     */
     static std::unique_ptr<XmlElement> parse (const File& file);
 
     /** A handy static method that parses some XML data.
         This is a shortcut for creating an XmlDocument object and calling getDocumentElement() on it.
-        An even better shortcut is the juce::parseXML() function, which returns a std::unique_ptr<XmlElement>!
         @returns    a new XmlElement, or nullptr if there was an error.
     */
     static std::unique_ptr<XmlElement> parse (const String& xmlData);

@@ -14,6 +14,12 @@ BUILD_CXX_FLAGS += -Wno-undef
 endif
 endif
 
+ifeq ($(USING_JUCE),true)
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
+endif
+endif
+
 BUILD_CXX_FLAGS += $(MAGIC_FLAGS)
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -106,6 +112,13 @@ $(OBJDIR)/CarlaEngineJack.cpp.o: CarlaEngineJack.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEngineJack.cpp"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(JACK_FLAGS) -c -o $@
+endif
+
+ifeq ($(USING_JUCE),true)
+$(OBJDIR)/CarlaEngineJuce.cpp.o: CarlaEngineJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp

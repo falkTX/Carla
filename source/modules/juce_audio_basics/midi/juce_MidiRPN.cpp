@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -36,7 +36,7 @@ bool MidiRPNDetector::parseControllerMessage (int midiChannel,
                                               int controllerValue,
                                               MidiRPNMessage& result) noexcept
 {
-    jassert (midiChannel >= 1 && midiChannel <= 16);
+    jassert (midiChannel > 0 && midiChannel <= 16);
     jassert (controllerNumber >= 0 && controllerNumber < 128);
     jassert (controllerValue >= 0 && controllerValue < 128);
 
@@ -55,11 +55,6 @@ void MidiRPNDetector::reset() noexcept
 }
 
 //==============================================================================
-MidiRPNDetector::ChannelState::ChannelState() noexcept
-    : parameterMSB (0xff), parameterLSB (0xff), valueMSB (0xff), valueLSB (0xff), isNRPN (false)
-{
-}
-
 bool MidiRPNDetector::ChannelState::handleController (int channel,
                                                       int controllerNumber,
                                                       int value,

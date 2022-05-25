@@ -1,6 +1,6 @@
 /*
  * Carla macOS utils
- * Copyright (C) 2018-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,7 +23,10 @@
 #endif
 
 #include "CarlaBackend.h"
- 
+
+// don't include Foundation.h here
+typedef struct __CFBundle* CFBundleRef;
+
 CARLA_BACKEND_START_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -43,6 +46,8 @@ const char* findBinaryInBundle(const char* const bundleDir);
  */
 bool removeFileFromQuarantine(const char* const filename);
 
+// --------------------------------------------------------------------------------------------------------------------
+
 /*
  * ...
  */
@@ -53,6 +58,19 @@ public:
 
 private:
     void* const pool;
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct BundleLoader {
+    BundleLoader();
+    ~BundleLoader();
+    bool load(const char* const filename);
+    CFBundleRef getRef() const noexcept;
+
+private:
+    struct PrivateData;
+    PrivateData* const pData;
 };
 
 // --------------------------------------------------------------------------------------------------------------------

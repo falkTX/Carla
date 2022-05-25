@@ -84,8 +84,8 @@ BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden
 endif
 
-ifneq ($(MACOS),true)
-ifneq ($(WIN32),true)
+ifneq ($(MACOS_OR_WIN32),true)
+ifneq ($(BSD),true)
 BASE_FLAGS += -fno-gnu-unique
 endif
 endif
@@ -178,7 +178,11 @@ endif
 
 ifeq ($(HAVE_DGL),true)
 BASE_FLAGS += -DHAVE_DGL
-BASE_FLAGS += -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED -DDGL_NO_SHARED_RESOURCES
+BASE_FLAGS += -DDGL_NAMESPACE=CarlaDGL
+BASE_FLAGS += -DDGL_OPENGL
+BASE_FLAGS += -DDGL_FILE_BROWSER_DISABLED
+BASE_FLAGS += -DDGL_NO_SHARED_RESOURCES
+BASE_FLAGS += -DDONT_SET_USING_DGL_NAMESPACE
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -218,14 +222,14 @@ endif
 
 ifeq ($(USING_JUCE),true)
 BASE_FLAGS += -DUSING_JUCE
+BASE_FLAGS += -DJUCE_APP_CONFIG_HEADER='"AppConfig.h"'
+ifeq ($(WIN32),true)
+BASE_FLAGS += -D_WIN32_WINNT=0x0600
+endif
 endif
 
 ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 BASE_FLAGS += -DUSING_JUCE_AUDIO_DEVICES
-endif
-
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
-BASE_FLAGS += -DUSING_JUCE_GUI_EXTRA
 endif
 
 ifeq ($(USING_RTAUDIO),true)

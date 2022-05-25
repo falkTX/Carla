@@ -301,22 +301,6 @@ public:
         return *this;
     }
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    /** Takes-over the object from another pointer. */
-    ReferenceCountedObjectPtr (ReferenceCountedObjectPtr&& other) noexcept
-        : referencedObject (other.referencedObject)
-    {
-        other.referencedObject = nullptr;
-    }
-
-    /** Takes-over the object from another pointer. */
-    ReferenceCountedObjectPtr& operator= (ReferenceCountedObjectPtr&& other)
-    {
-        std::swap (referencedObject, other.referencedObject);
-        return *this;
-    }
-   #endif
-
     /** Destructor.
         This will decrement the object's reference-count, which will cause the
         object to be deleted when the ref-count hits zero.

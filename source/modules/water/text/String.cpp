@@ -247,19 +247,6 @@ String& String::operator= (const String& other) noexcept
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-String::String (String&& other) noexcept   : text (other.text)
-{
-    other.text = &(emptyString.text);
-}
-
-String& String::operator= (String&& other) noexcept
-{
-    std::swap (text, other.text);
-    return *this;
-}
-#endif
-
 inline String::PreallocationBytes::PreallocationBytes (const size_t num) noexcept : numBytes (num) {}
 
 String::String (const PreallocationBytes& preallocationSize)

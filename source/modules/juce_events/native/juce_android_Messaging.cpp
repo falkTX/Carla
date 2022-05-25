@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -117,15 +117,6 @@ JUCE_IMPLEMENT_SINGLETON (AndroidMessageQueue)
 //==============================================================================
 void MessageManager::doPlatformSpecificInitialisation() { AndroidMessageQueue::getInstance(); }
 void MessageManager::doPlatformSpecificShutdown()       { AndroidMessageQueue::deleteInstance(); }
-
-//==============================================================================
-bool MessageManager::dispatchNextMessageOnSystemQueue (const bool)
-{
-    Logger::outputDebugString ("*** Modal loops are not possible in Android!! Exiting...");
-    exit (1);
-
-    return true;
-}
 
 bool MessageManager::postMessageToSystemQueue (MessageManager::MessageBase* const message)
 {
@@ -297,6 +288,7 @@ private:
 //==============================================================================
 File juce_getExecutableFile();
 
+void juce_juceEventsAndroidStartApp();
 void juce_juceEventsAndroidStartApp()
 {
     auto dllPath = juce_getExecutableFile().getFullPathName();

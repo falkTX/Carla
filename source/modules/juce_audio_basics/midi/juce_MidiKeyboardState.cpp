@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -28,10 +28,6 @@ MidiKeyboardState::MidiKeyboardState()
     zerostruct (noteStates);
 }
 
-MidiKeyboardState::~MidiKeyboardState()
-{
-}
-
 //==============================================================================
 void MidiKeyboardState::reset()
 {
@@ -42,7 +38,7 @@ void MidiKeyboardState::reset()
 
 bool MidiKeyboardState::isNoteOn (const int midiChannel, const int n) const noexcept
 {
-    jassert (midiChannel >= 0 && midiChannel <= 16);
+    jassert (midiChannel > 0 && midiChannel <= 16);
 
     return isPositiveAndBelow (n, 128)
             && (noteStates[n] & (1 << (midiChannel - 1))) != 0;
@@ -56,7 +52,7 @@ bool MidiKeyboardState::isNoteOnForChannels (const int midiChannelMask, const in
 
 void MidiKeyboardState::noteOn (const int midiChannel, const int midiNoteNumber, const float velocity)
 {
-    jassert (midiChannel >= 0 && midiChannel <= 16);
+    jassert (midiChannel > 0 && midiChannel <= 16);
     jassert (isPositiveAndBelow (midiNoteNumber, 128));
 
     const ScopedLock sl (lock);

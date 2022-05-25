@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -68,40 +68,6 @@ MidiMessageSequence::MidiEventHolder* MidiMessageSequence::getEventPointer (cons
     return list [index];
 }
 
-double MidiMessageSequence::getTimeOfMatchingKeyUp (const int index) const noexcept
-{
-    if (const MidiEventHolder* const meh = list [index])
-        if (meh->noteOffObject != nullptr)
-            return meh->noteOffObject->message.getTimeStamp();
-
-    return 0.0;
-}
-
-int MidiMessageSequence::getIndexOfMatchingKeyUp (const int index) const noexcept
-{
-    if (const MidiEventHolder* const meh = list [index])
-        return list.indexOf (meh->noteOffObject);
-
-    return -1;
-}
-
-int MidiMessageSequence::getIndexOf (const MidiEventHolder* const event) const noexcept
-{
-    return list.indexOf (event);
-}
-
-int MidiMessageSequence::getNextIndexAtTime (const double timeStamp) const noexcept
-{
-    const int numEvents = list.size();
-
-    int i;
-    for (i = 0; i < numEvents; ++i)
-        if (list.getUnchecked(i)->message.getTimeStamp() >= timeStamp)
-            break;
-
-    return i;
-}
-
 //==============================================================================
 double MidiMessageSequence::getStartTime() const noexcept
 {
@@ -139,18 +105,6 @@ MidiMessageSequence::MidiEventHolder* MidiMessageSequence::addEvent (const MidiM
     return newOne;
 }
 
-void MidiMessageSequence::deleteEvent (const int index,
-                                       const bool deleteMatchingNoteUp)
-{
-    if (isPositiveAndBelow (index, static_cast<int>(list.size())))
-    {
-        if (deleteMatchingNoteUp)
-            deleteEvent (getIndexOfMatchingKeyUp (index), false);
-
-        list.remove (index);
-    }
-}
-
 struct MidiMessageSequenceSorter
 {
     static int compareElements (const MidiMessageSequence::MidiEventHolder* const first,
@@ -170,28 +124,6 @@ void MidiMessageSequence::addSequence (const MidiMessageSequence& other, double 
         MidiEventHolder* const newOne = new MidiEventHolder (m);
         newOne->message.addToTimeStamp (timeAdjustment);
         list.add (newOne);
-    }
-
-    sort();
-}
-
-void MidiMessageSequence::addSequence (const MidiMessageSequence& other,
-                                       double timeAdjustment,
-                                       double firstAllowableTime,
-                                       double endOfAllowableDestTimes)
-{
-    for (int i = 0; i < static_cast<int>(other.list.size()); ++i)
-    {
-        const MidiMessage& m = other.list.getUnchecked(i)->message;
-        const double t = m.getTimeStamp() + timeAdjustment;
-
-        if (t >= firstAllowableTime && t < endOfAllowableDestTimes)
-        {
-            MidiEventHolder* const newOne = new MidiEventHolder (m);
-            newOne->message.setTimeStamp (t);
-
-            list.add (newOne);
-        }
     }
 
     sort();
@@ -242,93 +174,6 @@ void MidiMessageSequence::updateMatchedPairs() noexcept
         }
     }
 }
-
-void MidiMessageSequence::addTimeToMessages (const double delta) noexcept
-{
-    for (int i = static_cast<int>(list.size()); --i >= 0;)
-    {
-        MidiMessage& mm = list.getUnchecked(i)->message;
-        mm.setTimeStamp (mm.getTimeStamp() + delta);
-    }
-}
-
-//==============================================================================
-void MidiMessageSequence::extractMidiChannelMessages (const int channelNumberToExtract,
-                                                      MidiMessageSequence& destSequence,
-                                                      const bool alsoIncludeMetaEvents) const
-{
-    for (int i = 0; i < static_cast<int>(list.size()); ++i)
-    {
-        const MidiMessage& mm = list.getUnchecked(i)->message;
-
-        if (mm.isForChannel (channelNumberToExtract) || (alsoIncludeMetaEvents && mm.isMetaEvent()))
-            destSequence.addEvent (mm);
-    }
-}
-
-void MidiMessageSequence::extractSysExMessages (MidiMessageSequence& destSequence) const
-{
-    for (int i = 0; i < static_cast<int>(list.size()); ++i)
-    {
-        const MidiMessage& mm = list.getUnchecked(i)->message;
-
-        if (mm.isSysEx())
-            destSequence.addEvent (mm);
-    }
-}
-
-void MidiMessageSequence::deleteMidiChannelMessages (const int channelNumberToRemove)
-{
-    for (int i = list.size(); --i >= 0;)
-        if (list.getUnchecked(i)->message.isForChannel (channelNumberToRemove))
-            list.remove(i);
-}
-
-void MidiMessageSequence::deleteSysExMessages()
-{
-    for (int i = list.size(); --i >= 0;)
-        if (list.getUnchecked(i)->message.isSysEx())
-            list.remove(i);
-}
-
-//==============================================================================
-void MidiMessageSequence::createControllerUpdatesForTime (const int channelNumber, const double time, Array<MidiMessage>& dest)
-{
-    bool doneProg = false;
-    bool donePitchWheel = false;
-    bool doneControllers[128] = { 0 };
-
-    for (int i = list.size(); --i >= 0;)
-    {
-        const MidiMessage& mm = list.getUnchecked(i)->message;
-
-        if (mm.isForChannel (channelNumber) && mm.getTimeStamp() <= time)
-        {
-            if (mm.isProgramChange() && ! doneProg)
-            {
-                doneProg = true;
-                dest.add (MidiMessage (mm, 0.0));
-            }
-            else if (mm.isPitchWheel() && ! donePitchWheel)
-            {
-                donePitchWheel = true;
-                dest.add (MidiMessage (mm, 0.0));
-            }
-            else if (mm.isController())
-            {
-                const int controllerNumber = mm.getControllerNumber();
-                wassert (isPositiveAndBelow (controllerNumber, 128));
-
-                if (! doneControllers[controllerNumber])
-                {
-                    doneControllers[controllerNumber] = true;
-                    dest.add (MidiMessage (mm, 0.0));
-                }
-            }
-        }
-    }
-}
-
 
 //==============================================================================
 MidiMessageSequence::MidiEventHolder::MidiEventHolder (const MidiMessage& mm)

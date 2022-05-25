@@ -1041,7 +1041,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         if (res.failed())
         {
-            pData->engine->setLastError(res.getErrorMessage().toRawUTF8());
+            pData->engine->setLastError(res.getErrorMessage().c_str());
             return false;
         }
     }

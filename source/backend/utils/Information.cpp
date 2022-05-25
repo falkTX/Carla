@@ -32,8 +32,7 @@
 #endif
 
 #ifdef USING_JUCE
-# include "AppConfig.h"
-# include "juce_core/juce_core.h"
+# include "carla_juce/carla_juce.h"
 #endif
 
 #ifdef USING_RTAUDIO
@@ -76,6 +75,8 @@ const char* carla_get_complete_license_text()
 #if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
         "<li>AU plugin support (using JUCE)</li>"
 #endif
+
+        "<li>JSFX plugin support (using ysfx)</li>"
 
         // Sample kit libraries
 #if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
@@ -127,7 +128,7 @@ const char* carla_get_juce_version()
 #ifdef USING_JUCE
     if (retVersion.isEmpty())
     {
-        if (const char* const version = juce::SystemStats::getJUCEVersion().toRawUTF8())
+        if (const char* const version = CarlaJUCE::getVersion())
             retVersion = version+6;
         else
             retVersion = "Unknown";
@@ -185,6 +186,9 @@ const char* const* carla_get_supported_file_extensions()
 
         // SFZ
         "sfz",
+
+        // JSFX
+        "jsfx",
 
         // terminator
         nullptr

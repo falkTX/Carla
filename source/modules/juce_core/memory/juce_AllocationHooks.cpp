@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -65,8 +65,6 @@ void operator delete[] (void* p) noexcept
     std::free (p);
 }
 
-#if JUCE_CXX14_IS_AVAILABLE
-
 void operator delete (void* p, size_t) noexcept
 {
     juce::notifyAllocationHooksForThread();
@@ -78,8 +76,6 @@ void operator delete[] (void* p, size_t) noexcept
     juce::notifyAllocationHooksForThread();
     std::free (p);
 }
-
-#endif
 
 namespace juce
 {
@@ -94,7 +90,7 @@ UnitTestAllocationChecker::UnitTestAllocationChecker (UnitTest& test)
 UnitTestAllocationChecker::~UnitTestAllocationChecker() noexcept
 {
     getAllocationHooksForThread().removeListener (this);
-    unitTest.expectEquals (calls, (size_t) 0, "new or delete was incorrectly called while allocation checker was active");
+    unitTest.expectEquals ((int) calls, 0, "new or delete was incorrectly called while allocation checker was active");
 }
 
 void UnitTestAllocationChecker::newOrDeleteCalled() noexcept { ++calls; }

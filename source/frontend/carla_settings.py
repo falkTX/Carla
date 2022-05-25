@@ -45,7 +45,8 @@ from carla_backend import (
     PLUGIN_VST2,
     PLUGIN_VST3,
     PLUGIN_SF2,
-    PLUGIN_SFZ
+    PLUGIN_SFZ,
+    PLUGIN_JSFX
 )
 
 from carla_shared import (
@@ -97,6 +98,7 @@ from carla_shared import (
     CARLA_KEY_PATHS_VST3,
     CARLA_KEY_PATHS_SF2,
     CARLA_KEY_PATHS_SFZ,
+    CARLA_KEY_PATHS_JSFX,
     CARLA_KEY_WINE_EXECUTABLE,
     CARLA_KEY_WINE_AUTO_PREFIX,
     CARLA_KEY_WINE_FALLBACK_PREFIX,
@@ -171,6 +173,7 @@ from carla_shared import (
     CARLA_DEFAULT_VST3_PATH,
     CARLA_DEFAULT_SF2_PATH,
     CARLA_DEFAULT_SFZ_PATH,
+    CARLA_DEFAULT_JSFX_PATH,
     getAndSetPath,
     getIcon,
     fontMetricsHorizontalAdvance,
@@ -476,6 +479,7 @@ class CarlaSettingsW(QDialog):
     PLUGINPATH_INDEX_VST3   = 4
     PLUGINPATH_INDEX_SF2    = 5
     PLUGINPATH_INDEX_SFZ    = 6
+    PLUGINPATH_INDEX_JSFX   = 7
 
     # Single and Multiple client mode is only for JACK,
     # but we still want to match QComboBox index to backend defines,
@@ -604,6 +608,7 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_vst3.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_jsfx.currentRowChanged.connect(self.slot_pluginPathRowChanged)
 
         self.ui.b_filepaths_add.clicked.connect(self.slot_addFilePath)
         self.ui.b_filepaths_remove.clicked.connect(self.slot_removeFilePath)
@@ -629,6 +634,7 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_vst3.setCurrentRow(0)
         self.ui.lw_sf2.setCurrentRow(0)
         self.ui.lw_sfz.setCurrentRow(0)
+        self.ui.lw_jsfx.setCurrentRow(0)
 
         self.ui.lw_files_audio.setCurrentRow(0)
         self.ui.lw_files_midi.setCurrentRow(0)
@@ -839,6 +845,7 @@ class CarlaSettingsW(QDialog):
         vst3s   = settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH, list)
         sf2s    = settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH, list)
         sfzs    = settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH, list)
+        jsfxs   = settings.value(CARLA_KEY_PATHS_JSFX,   CARLA_DEFAULT_JSFX_PATH, list)
 
         ladspas.sort()
         dssis.sort()
@@ -847,6 +854,7 @@ class CarlaSettingsW(QDialog):
         vst3s.sort()
         sf2s.sort()
         sfzs.sort()
+        jsfxs.sort()
 
         for ladspa in ladspas:
             if not ladspa:
@@ -882,6 +890,11 @@ class CarlaSettingsW(QDialog):
             if not sfz:
                 continue
             self.ui.lw_sfz.addItem(sfz)
+
+        for jsfx in jsfxs:
+            if not jsfx:
+                continue
+            self.ui.lw_jsfx.addItem(jsfx)
 
         # -------------------------------------------------------------------------------------------------------------
         # Wine
@@ -1053,6 +1066,7 @@ class CarlaSettingsW(QDialog):
         vst3s   = []
         sf2s    = []
         sfzs    = []
+        jsfxs   = []
 
         for i in range(self.ui.lw_ladspa.count()):
             ladspas.append(self.ui.lw_ladspa.item(i).text())
@@ -1075,6 +1089,9 @@ class CarlaSettingsW(QDialog):
         for i in range(self.ui.lw_sfz.count()):
             sfzs.append(self.ui.lw_sfz.item(i).text())
 
+        for i in range(self.ui.lw_jsfx.count()):
+            jsfxs.append(self.ui.lw_jsfx.item(i).text())
+
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(ladspas))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(dssis))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(lv2s))
@@ -1082,6 +1099,7 @@ class CarlaSettingsW(QDialog):
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(vst3s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(sf2s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(sfzs))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_JSFX,   splitter.join(jsfxs))
 
         settings.setValue(CARLA_KEY_PATHS_LADSPA, ladspas)
         settings.setValue(CARLA_KEY_PATHS_DSSI,   dssis)
@@ -1090,6 +1108,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_PATHS_VST3,   vst3s)
         settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
         settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
+        settings.setValue(CARLA_KEY_PATHS_JSFX,   jsfxs)
 
         # -------------------------------------------------------------------------------------------------------------
         # Wine
@@ -1277,6 +1296,16 @@ class CarlaSettingsW(QDialog):
                         continue
                     self.ui.lw_sfz.addItem(path)
 
+            elif curIndex == self.PLUGINPATH_INDEX_JSFX:
+                paths = CARLA_DEFAULT_JSFX_PATH
+                paths.sort()
+                self.ui.lw_jsfx.clear()
+
+                for path in paths:
+                    if not path:
+                        continue
+                    self.ui.lw_jsfx.addItem(path)
+
         # -------------------------------------------------------------------------------------------------------------
         # Wine
 
@@ -1405,6 +1434,8 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_sf2.addItem(newPath)
         elif curIndex == self.PLUGINPATH_INDEX_SFZ:
             self.ui.lw_sfz.addItem(newPath)
+        elif curIndex == self.PLUGINPATH_INDEX_JSFX:
+            self.ui.lw_jsfx.addItem(newPath)
 
     @pyqtSlot()
     def slot_removePluginPath(self):
@@ -1424,6 +1455,8 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_sf2.takeItem(self.ui.lw_sf2.currentRow())
         elif curIndex == self.PLUGINPATH_INDEX_SFZ:
             self.ui.lw_sfz.takeItem(self.ui.lw_sfz.currentRow())
+        elif curIndex == self.PLUGINPATH_INDEX_JSFX:
+            self.ui.lw_jsfx.takeItem(self.ui.lw_jsfx.currentRow())
 
     @pyqtSlot()
     def slot_changePluginPath(self):
@@ -1443,6 +1476,8 @@ class CarlaSettingsW(QDialog):
             currentPath = self.ui.lw_sf2.currentItem().text()
         elif curIndex == self.PLUGINPATH_INDEX_SFZ:
             currentPath = self.ui.lw_sfz.currentItem().text()
+        elif curIndex == self.PLUGINPATH_INDEX_JSFX:
+            currentPath = self.ui.lw_jsfx.currentItem().text()
         else:
             currentPath = ""
 
@@ -1465,6 +1500,8 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_sf2.currentItem().setText(newPath)
         elif curIndex == self.PLUGINPATH_INDEX_SFZ:
             self.ui.lw_sfz.currentItem().setText(newPath)
+        elif curIndex == self.PLUGINPATH_INDEX_JSFX:
+            self.ui.lw_jsfx.currentItem().setText(newPath)
 
     # -----------------------------------------------------------------------------------------------------------------
 
@@ -1484,6 +1521,8 @@ class CarlaSettingsW(QDialog):
             row = self.ui.lw_sf2.currentRow()
         elif index == self.PLUGINPATH_INDEX_SFZ:
             row = self.ui.lw_sfz.currentRow()
+        elif index == self.PLUGINPATH_INDEX_JSFX:
+            row = self.ui.lw_jsfx.currentRow()
         else:
             row = -1
 

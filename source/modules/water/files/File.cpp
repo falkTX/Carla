@@ -86,19 +86,6 @@ File& File::operator= (const File& other)
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-File::File (File&& other) noexcept
-    : fullPath (static_cast<String&&> (other.fullPath))
-{
-}
-
-File& File::operator= (File&& other) noexcept
-{
-    fullPath = static_cast<String&&> (other.fullPath);
-    return *this;
-}
-#endif
-
 bool File::isNull() const
 {
     return fullPath.isEmpty();
@@ -276,11 +263,11 @@ bool File::deleteRecursively() const
 
     if (isDirectory())
     {
-        Array<File> subFiles;
+        std::vector<File> subFiles;
         findChildFiles (subFiles, File::findFilesAndDirectories, false);
 
         for (int i = subFiles.size(); --i >= 0;)
-            worked = subFiles.getReference(i).deleteRecursively() && worked;
+            worked = subFiles[i].deleteRecursively() && worked;
     }
 
     return deleteFile() && worked;
@@ -328,12 +315,12 @@ bool File::copyDirectoryTo (const File& newDirectory) const
 {
     if (isDirectory() && newDirectory.createDirectory())
     {
-        Array<File> subFiles;
+        std::vector<File> subFiles;
         findChildFiles (subFiles, File::findFiles, false);
 
-        for (int i = 0; i < subFiles.size(); ++i)
+        for (size_t i = 0; i < subFiles.size(); ++i)
         {
-            const File& src (subFiles.getReference(i));
+            const File& src (subFiles[i]);
             const File& dst (newDirectory.getChildFile (src.getFileName()));
 
             if (src.isSymbolicLink())
@@ -351,8 +338,8 @@ bool File::copyDirectoryTo (const File& newDirectory) const
         subFiles.clear();
         findChildFiles (subFiles, File::findDirectories, false);
 
-        for (int i = 0; i < subFiles.size(); ++i)
-            if (! subFiles.getReference(i).copyDirectoryTo (newDirectory.getChildFile (subFiles.getReference(i).getFileName())))
+        for (size_t i = 0; i < subFiles.size(); ++i)
+            if (! subFiles[i].copyDirectoryTo (newDirectory.getChildFile (subFiles[i].getFileName())))
                 return false;
 
         return true;
@@ -569,7 +556,7 @@ void File::readLines (StringArray& destLines) const
 }
 
 //==============================================================================
-int File::findChildFiles (Array<File>& results,
+int File::findChildFiles (std::vector<File>& results,
                           const int whatToLookFor,
                           const bool searchRecursively,
                           const String& wildCardPattern) const
@@ -578,7 +565,7 @@ int File::findChildFiles (Array<File>& results,
 
     for (DirectoryIterator di (*this, searchRecursively, wildCardPattern, whatToLookFor); di.next();)
     {
-        results.add (di.getFile());
+        results.push_back (di.getFile());
         ++total;
     }
 

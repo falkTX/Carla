@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -25,8 +25,9 @@
  */
 
 struct v3_attribute_list {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* set_int)(void* self, const char* id, int64_t value);
 	v3_result (V3_API* get_int)(void* self, const char* id, int64_t* value);
 	v3_result (V3_API* set_float)(void* self, const char* id, double value);
@@ -45,8 +46,9 @@ static constexpr const v3_tuid v3_attribute_list_iid =
  */
 
 struct v3_message {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	const char* (V3_API* get_message_id)(void* self);
 	void (V3_API* set_message_id)(void* self, const char* id);
 	v3_attribute_list** (V3_API* get_attributes)(void* self);
@@ -60,8 +62,9 @@ static constexpr const v3_tuid v3_message_iid =
  */
 
 struct v3_connection_point {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* connect)(void* self, struct v3_connection_point** other);
 	v3_result (V3_API* disconnect)(void* self, struct v3_connection_point** other);
 	v3_result (V3_API* notify)(void* self, struct v3_message** message);

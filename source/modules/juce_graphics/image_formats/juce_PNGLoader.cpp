@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -26,7 +26,7 @@
 namespace juce
 {
 
-JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4390 4611 4365 4267 4616 2544 2545)
+JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4390 4611 4365 4267 4616 2544 2545 6297)
 
 namespace zlibNamespace
 {
@@ -62,7 +62,9 @@ namespace pnglibNamespace
                                         "-Wimplicit-fallthrough",
                                         "-Wtautological-constant-out-of-range-compare",
                                         "-Wzero-as-null-pointer-constant",
-                                        "-Wcomma")
+                                        "-Wcomma",
+                                        "-Wmaybe-uninitialized",
+                                        "-Wnull-pointer-subtraction")
 
   #undef check
   using std::abs;
@@ -71,6 +73,10 @@ namespace pnglibNamespace
 
  #if JUCE_ANDROID
   #define PNG_ARM_NEON_SUPPORTED
+ #endif
+
+ #ifndef Byte
+  using Byte = uint8_t;
  #endif
 
   #define PNG_16BIT_SUPPORTED

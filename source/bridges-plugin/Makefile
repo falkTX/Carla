@@ -34,6 +34,12 @@ endif
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
 
+ifeq ($(USING_JUCE),true)
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
+endif
+endif
+
 32BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 64BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 ARM32_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -78,6 +84,12 @@ LIBS_win64   += $(MODULEDIR)/water.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 
 ifeq ($(USING_JUCE),true)
+LIBS_native  += $(MODULEDIR)/carla_juce.a
+LIBS_posix32 += $(MODULEDIR)/carla_juce.posix32.a
+LIBS_posix64 += $(MODULEDIR)/carla_juce.posix64.a
+LIBS_win32   += $(MODULEDIR)/carla_juce.win32.a
+LIBS_win64   += $(MODULEDIR)/carla_juce.win64.a
+
 LIBS_native  += $(MODULEDIR)/juce_audio_basics.a
 LIBS_posix32 += $(MODULEDIR)/juce_audio_basics.posix32.a
 LIBS_posix64 += $(MODULEDIR)/juce_audio_basics.posix64.a
@@ -127,13 +139,16 @@ LIBS_win32   += $(MODULEDIR)/juce_gui_basics.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_gui_basics.win64.a
 LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
 
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
 LIBS_posix32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 LIBS_posix64 += $(MODULEDIR)/juce_gui_extra.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_gui_extra.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_gui_extra.win64.a
 LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
 endif
-endif
+
+LIBS_native += $(MODULEDIR)/ysfx.a
+LINK_FLAGS  += $(YSFX_GRAPHICS_LIBS)
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
 LINK_FLAGS += $(JACK_LIBS)
@@ -193,6 +208,7 @@ OBJS_native = \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST3.cpp.o \
 	$(OBJDIR)/CarlaPluginAU.cpp.o \
+	$(OBJDIR)/CarlaPluginJSFX.cpp.o \
 	$(OBJDIR)/CarlaPluginJuce.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
 	$(OBJDIR)/CarlaPluginSFZero.cpp.o \
@@ -294,15 +310,15 @@ $(BINDIR)/$(MODULENAME)-win64.exe: $(OBJS_win64) $(LIBS_win64)
 # ---------------------------------------------------------------------------------------------------------------------
 # native
 
+$(OBJDIR)/CarlaPluginJSFX.cpp.o: $(CWD)/backend/plugin/CarlaPluginJSFX.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJSFX.cpp (bridge)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) $(YSFX_FLAGS) -c -o $@
+
 ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginVST2.cpp.o: $(CWD)/backend/plugin/CarlaPluginVST2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginVST2.cpp (bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
-
-$(OBJDIR)/CarlaPluginJuce.cpp.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
@@ -326,6 +342,20 @@ $(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 endif
 
+ifeq ($(USING_JUCE),true)
+ifeq ($(MACOS),true)
+$(OBJDIR)/CarlaPluginJuce.cpp.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
+else
+$(OBJDIR)/CarlaPluginJuce.cpp.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -std=gnu++14 -c -o $@
+endif
+endif
+
 $(OBJDIR)/CarlaBridgeSingleLV2.cpp.o: CarlaBridgeSingleLV2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
@@ -343,6 +373,13 @@ $(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
 
 # ---------------------------------------------------------------------------------------------------------------------
 # arm32
+
+ifeq ($(USING_JUCE),true)
+$(OBJDIR)/CarlaPluginJuce.arm32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (arm32 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -std=gnu++14 -c -o $@
+endif
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.arm32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
@@ -373,11 +410,6 @@ $(OBJDIR)/CarlaPluginVST2.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginVST2.c
 	@echo "Compiling CarlaPluginVST2.cpp (posix32 bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
 
-$(OBJDIR)/CarlaPluginJuce.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (posix32 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
-
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix32 bridge)"
@@ -397,6 +429,20 @@ $(OBJDIR)/CarlaStandalone.cpp.posix32.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (posix32 bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+endif
+
+ifeq ($(USING_JUCE),true)
+ifeq ($(MACOS),true)
+$(OBJDIR)/CarlaPluginJuce.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (posix32 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
+else
+$(OBJDIR)/CarlaPluginJuce.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (posix32 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -std=gnu++14 -c -o $@
+endif
 endif
 
 $(OBJDIR)/CarlaEng%.cpp.posix32.o: $(CWD)/backend/engine/CarlaEng%.cpp
@@ -418,11 +464,6 @@ $(OBJDIR)/CarlaPluginVST2.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginVST2.c
 	@echo "Compiling CarlaPluginVST2.cpp (posix64 bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
 
-$(OBJDIR)/CarlaPluginJuce.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (posix64 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
-
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix64.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix64 bridge)"
@@ -444,6 +485,21 @@ $(OBJDIR)/CarlaStandalone.cpp.posix64.o: $(CWD)/backend/CarlaStandalone.cpp
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 endif
 
+ifeq ($(USING_JUCE),true)
+ifeq ($(MACOS),true)
+$(OBJDIR)/CarlaPluginJuce.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (posix64 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
+
+else
+$(OBJDIR)/CarlaPluginJuce.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (posix64 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -std=gnu++14 -c -o $@
+endif
+endif
+
 $(OBJDIR)/CarlaEng%.cpp.posix64.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (posix64 bridge)"
@@ -457,9 +513,21 @@ $(OBJDIR)/CarlaPlug%.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 # ---------------------------------------------------------------------------------------------------------------------
 # win32
 
+ifeq ($(USING_JUCE),true)
+$(OBJDIR)/CarlaPluginJuce.cpp.win32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (win32 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -std=gnu++14 -c -o $@
+endif
+
 $(OBJDIR)/CarlaBridgePlugin.cpp.win32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (win32 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaStandalone.cpp.win32.o: $(CWD)/backend/CarlaStandalone.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaStandalone.cpp (win32 bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaEng%.cpp.win32.o: $(CWD)/backend/engine/CarlaEng%.cpp
@@ -472,17 +540,24 @@ $(OBJDIR)/CarlaPlug%.cpp.win32.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 	@echo "Compiling CarlaPlug$*.cpp (win32 bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-$(OBJDIR)/CarlaStandalone.cpp.win32.o: $(CWD)/backend/CarlaStandalone.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaStandalone.cpp (win32 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
-
 # ---------------------------------------------------------------------------------------------------------------------
 # win64
+
+ifeq ($(USING_JUCE),true)
+$(OBJDIR)/CarlaPluginJuce.cpp.win64.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginJuce.cpp (win64 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -std=gnu++14 -c -o $@
+endif
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.win64.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (win64 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaStandalone.cpp.win64.o: $(CWD)/backend/CarlaStandalone.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaStandalone.cpp (win64 bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaEng%.cpp.win64.o: $(CWD)/backend/engine/CarlaEng%.cpp
@@ -493,11 +568,6 @@ $(OBJDIR)/CarlaEng%.cpp.win64.o: $(CWD)/backend/engine/CarlaEng%.cpp
 $(OBJDIR)/CarlaPlug%.cpp.win64.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPlug$*.cpp (win64 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
-
-$(OBJDIR)/CarlaStandalone.cpp.win64.o: $(CWD)/backend/CarlaStandalone.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaStandalone.cpp (win64 bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------

@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -67,7 +67,7 @@ public:
                                     const String& button1,
                                     const String& button2,
                                     const String& button3,
-                                    AlertWindow::AlertIconType iconType,
+                                    MessageBoxIconType iconType,
                                     int numButtons, Component* associatedComponent) override;
 
     void drawAlertBox (Graphics&, AlertWindow&, const Rectangle<int>& textArea, TextLayout&) override;
@@ -155,21 +155,47 @@ public:
 
     //==============================================================================
     void drawPopupMenuBackground (Graphics&, int width, int height) override;
+    void drawPopupMenuBackgroundWithOptions (Graphics&,
+                                             int width,
+                                             int height,
+                                             const PopupMenu::Options&) override;
 
     void drawPopupMenuItem (Graphics&, const Rectangle<int>& area,
                             bool isSeparator, bool isActive, bool isHighlighted, bool isTicked, bool hasSubMenu,
                             const String& text, const String& shortcutKeyText,
                             const Drawable* icon, const Colour* textColour) override;
 
+    void drawPopupMenuItemWithOptions (Graphics&, const Rectangle<int>& area,
+                                       bool isHighlighted,
+                                       const PopupMenu::Item& item,
+                                       const PopupMenu::Options&) override;
+
     void drawPopupMenuSectionHeader (Graphics&, const Rectangle<int>& area,
                                      const String& sectionName) override;
+
+    void drawPopupMenuSectionHeaderWithOptions (Graphics&, const Rectangle<int>& area,
+                                                const String& sectionName,
+                                                const PopupMenu::Options&) override;
 
     Font getPopupMenuFont() override;
 
     void drawPopupMenuUpDownArrow (Graphics&, int width, int height, bool isScrollUpArrow) override;
 
+    void drawPopupMenuUpDownArrowWithOptions (Graphics&,
+                                              int width, int height,
+                                              bool isScrollUpArrow,
+                                              const PopupMenu::Options&) override;
+
     void getIdealPopupMenuItemSize (const String& text, bool isSeparator, int standardMenuItemHeight,
                                     int& idealWidth, int& idealHeight) override;
+
+    void getIdealPopupMenuItemSizeWithOptions (const String& text,
+                                               bool isSeparator,
+                                               int standardMenuItemHeight,
+                                               int& idealWidth,
+                                               int& idealHeight,
+                                               const PopupMenu::Options&) override;
+
     int getMenuWindowFlags() override;
     void preparePopupMenuWindow (Component&) override;
 
@@ -188,6 +214,14 @@ public:
     bool shouldPopupMenuScaleWithTargetComponent (const PopupMenu::Options& options) override;
 
     int getPopupMenuBorderSize() override;
+
+    int getPopupMenuBorderSizeWithOptions (const PopupMenu::Options&) override;
+
+    void drawPopupMenuColumnSeparatorWithOptions (Graphics& g,
+                                                  const Rectangle<int>& bounds,
+                                                  const PopupMenu::Options&) override;
+
+    int getPopupMenuColumnSeparatorWidthWithOptions (const PopupMenu::Options&) override;
 
     //==============================================================================
     void drawComboBox (Graphics&, int width, int height, bool isMouseButtonDown,
@@ -265,7 +299,8 @@ public:
                                         bool positionTitleBarButtonsOnLeft) override;
 
     //==============================================================================
-    DropShadower* createDropShadowerForComponent (Component*) override;
+    std::unique_ptr<DropShadower> createDropShadowerForComponent (Component&) override;
+    std::unique_ptr<FocusOutline> createFocusOutlineForComponent (Component&) override;
 
     //==============================================================================
     void drawStretchableLayoutResizerBar (Graphics&, int w, int h, bool isVerticalBar,

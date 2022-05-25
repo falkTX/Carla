@@ -693,6 +693,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="ch_jsfx">
+         <property name="text">
+          <string>JSFX</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="ch_kits">
          <property name="text">
           <string>Sound Kits</string>

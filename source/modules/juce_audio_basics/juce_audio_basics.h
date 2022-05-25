@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -32,11 +32,12 @@
 
   ID:                 juce_audio_basics
   vendor:             juce
-  version:            6.0.4
+  version:            6.1.6
   name:               JUCE audio and MIDI data classes
   description:        Classes for audio buffer manipulation, midi message handling, synthesis, etc.
   website:            http://www.juce.com/juce
   license:            ISC
+  minimumCppStandard: 14
 
   dependencies:       juce_core
   OSXFrameworks:      Accelerate

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -28,7 +28,7 @@
 #if JUCE_MAC || JUCE_IOS
 
  #if JUCE_IOS
-  #if JUCE_MODULE_AVAILABLE_juce_opengl && defined (__IPHONE_12_0) && __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_12_0
+  #if JUCE_MODULE_AVAILABLE_juce_opengl && defined (__IPHONE_12_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_12_0
    #define GLES_SILENCE_DEPRECATION 1
   #endif
 
@@ -132,14 +132,16 @@
  #define STRICT 1
  #define WIN32_LEAN_AND_MEAN 1
  #if JUCE_MINGW
-  #define _WIN32_WINNT 0x0501
+  #if ! defined (_WIN32_WINNT)
+   #define _WIN32_WINNT 0x0600
+  #endif
  #else
   #define _WIN32_WINNT 0x0602
  #endif
  #define _UNICODE 1
  #define UNICODE 1
  #ifndef _WIN32_IE
-  #define _WIN32_IE 0x0500
+  #define _WIN32_IE 0x0501
  #endif
 
  #include <windows.h>
@@ -152,7 +154,18 @@
  #include <winsock2.h>
  #include <ws2tcpip.h>
  #include <iphlpapi.h>
+
+ #if ! JUCE_CXX17_IS_AVAILABLE
+  #pragma push_macro ("WIN_NOEXCEPT")
+  #define WIN_NOEXCEPT
+ #endif
+
  #include <mapi.h>
+
+ #if ! JUCE_CXX17_IS_AVAILABLE
+  #pragma pop_macro ("WIN_NOEXCEPT")
+ #endif
+
  #include <float.h>
  #include <process.h>
  #include <shlobj.h>
@@ -258,7 +271,10 @@
  #include <errno.h>
  #include <fcntl.h>
  #include <fnmatch.h>
+ #include <ifaddrs.h>
+ #include <langinfo.h>
  #include <net/if.h>
+ #include <net/if_dl.h>
  #include <netdb.h>
  #include <netinet/in.h>
  #include <pthread.h>
@@ -273,8 +289,10 @@
  #include <sys/ptrace.h>
  #include <sys/socket.h>
  #include <sys/stat.h>
+ #include <sys/sysctl.h>
  #include <sys/time.h>
  #include <sys/types.h>
+ #include <sys/user.h>
  #include <sys/wait.h>
  #include <utime.h>
  #include <poll.h>

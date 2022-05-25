@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -20,16 +20,12 @@
   ==============================================================================
 */
 
-#if ! DOXYGEN && (JUCE_MAC || JUCE_IOS)
- #if __LP64__
-  using OSType = unsigned int;
- #else
-  using OSType = unsigned long;
- #endif
-#endif
-
 namespace juce
 {
+
+#if ! DOXYGEN && (JUCE_MAC || JUCE_IOS)
+ using OSType = unsigned int;
+#endif
 
 //==============================================================================
 /**
@@ -381,21 +377,21 @@ public:
     //==============================================================================
     /** Returns the last modification time of this file.
 
-        @returns    the time, or an invalid time if the file doesn't exist.
+        @returns    the time, or the Unix Epoch if the file doesn't exist.
         @see setLastModificationTime, getLastAccessTime, getCreationTime
     */
     Time getLastModificationTime() const;
 
     /** Returns the last time this file was accessed.
 
-        @returns    the time, or an invalid time if the file doesn't exist.
+        @returns    the time, or the Unix Epoch if the file doesn't exist.
         @see setLastAccessTime, getLastModificationTime, getCreationTime
     */
     Time getLastAccessTime() const;
 
     /** Returns the time that this file was created.
 
-        @returns    the time, or an invalid time if the file doesn't exist.
+        @returns    the time, or the Unix Epoch if the file doesn't exist.
         @see getLastModificationTime, getLastAccessTime
     */
     Time getCreationTime() const;
@@ -560,6 +556,23 @@ public:
         ignoreHiddenFiles           = 4     /**< Add this flag to avoid returning any hidden files in the results. */
     };
 
+    enum class FollowSymlinks
+    {
+        /** Requests that a file system traversal should not follow any symbolic links. */
+        no,
+
+        /** Requests that a file system traversal may follow symbolic links, but should attempt to
+            skip any symbolic links to directories that may cause a cycle.
+        */
+        noCycles,
+
+        /** Requests that a file system traversal follow all symbolic links. Use with care, as this
+            may produce inconsistent results, or fail to terminate, if the filesystem contains cycles
+            due to symbolic links.
+        */
+        yes
+    };
+
     /** Searches this directory for files matching a wildcard pattern.
 
         Assuming that this file is a directory, this method will search it
@@ -572,13 +585,15 @@ public:
         @param searchRecursively        if true, all subdirectories will be recursed into to do
                                         an exhaustive search
         @param wildCardPattern          the filename pattern to search for, e.g. "*.txt"
+        @param followSymlinks           the method that should be used to handle symbolic links
         @returns                        the set of files that were found
 
         @see getNumberOfChildFiles, RangedDirectoryIterator
     */
     Array<File> findChildFiles (int whatToLookFor,
                                 bool searchRecursively,
-                                const String& wildCardPattern = "*") const;
+                                const String& wildCardPattern = "*",
+                                FollowSymlinks followSymlinks = FollowSymlinks::yes) const;
 
     /** Searches inside a directory for files matching a wildcard pattern.
         Note that there's a newer, better version of this method which returns the results
@@ -586,7 +601,8 @@ public:
         mainly for legacy code to use.
     */
     int findChildFiles (Array<File>& results, int whatToLookFor,
-                        bool searchRecursively, const String& wildCardPattern = "*") const;
+                        bool searchRecursively, const String& wildCardPattern = "*",
+                        FollowSymlinks followSymlinks = FollowSymlinks::yes) const;
 
     /** Searches inside a directory and counts how many files match a wildcard pattern.
 
@@ -942,7 +958,10 @@ public:
 
             @see globalApplicationsDirectory
         */
-        globalApplicationsDirectoryX86
+        globalApplicationsDirectoryX86,
+
+        /** On a Windows machine returns the %LOCALAPPDATA% folder. */
+        windowsLocalAppData
        #endif
     };
 
@@ -1074,6 +1093,17 @@ public:
     void addToDock() const;
    #endif
 
+   #if JUCE_MAC || JUCE_IOS
+    /** Returns the path to the container shared by all apps with the provided app group ID.
+
+        You *must* pass one of the app group IDs listed in your app's entitlements file.
+
+        On failure, this function may return a non-existent file, so you should check
+        that the path exists and is writable before trying to use it.
+    */
+    static File getContainerForSecurityApplicationGroupIdentifier (const String& appGroup);
+   #endif
+
     //==============================================================================
     /** Comparator for files */
     struct NaturalFileComparator
@@ -1095,14 +1125,16 @@ public:
         bool foldersFirst;
     };
 
+   #if JUCE_ALLOW_STATIC_NULL_VARIABLES && ! defined (DOXYGEN)
     /* These static objects are deprecated because it's too easy to accidentally use them indirectly
        during a static constructor, which leads to very obscure order-of-initialisation bugs.
        Use File::getSeparatorChar() and File::getSeparatorString(), and instead of File::nonexistent,
        just use File() or {}.
     */
-    JUCE_DEPRECATED_STATIC (static const juce_wchar separator;)
-    JUCE_DEPRECATED_STATIC (static const StringRef separatorString;)
-    JUCE_DEPRECATED_STATIC (static const File nonexistent;)
+    [[deprecated]] static const juce_wchar separator;
+    [[deprecated]] static const StringRef separatorString;
+    [[deprecated]] static const File nonexistent;
+   #endif
 
 private:
     //==============================================================================

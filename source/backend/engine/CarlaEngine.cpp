@@ -596,6 +596,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                            && ptype != PLUGIN_GIG
                            && ptype != PLUGIN_SF2
                            && ptype != PLUGIN_SFZ
+                           && ptype != PLUGIN_JSFX
                            && ptype != PLUGIN_JACK;
 
     // Prefer bridges for some specific plugins
@@ -705,10 +706,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             plugin = CarlaPlugin::newAU(initializer);
             break;
 
-        case PLUGIN_JSFX:
-            setLastError("Not implemented yet");
-            break;
-
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         case PLUGIN_INTERNAL:
             plugin = CarlaPlugin::newNative(initializer);
@@ -741,6 +738,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 # endif
             break;
 
+        case PLUGIN_JSFX:
+            plugin = CarlaPlugin::newJSFX(initializer);
+            break;
+
         case PLUGIN_JACK:
 # ifndef STATIC_PLUGIN_TARGET
             plugin = CarlaPlugin::newJackApp(initializer);
@@ -754,6 +755,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         case PLUGIN_GIG:
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
+        case PLUGIN_JSFX:
         case PLUGIN_JACK:
             setLastError("Plugin bridges cannot handle this binary");
             break;
@@ -2579,7 +2581,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
         searchFlags |= File::findDirectories;
 #endif
 
-    Array<File> results;
+    std::vector<File> results;
     for (const String *it=searchPaths.begin(), *end=searchPaths.end(); it != end; ++it)
     {
         const File path(*it);
@@ -2587,8 +2589,8 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
         results.clear();
         path.findChildFiles(results, searchFlags, true, filename);
 
-        if (results.size() > 0)
-            return results.getFirst().getFullPathName();
+        if (!results.empty())
+            return results.front().getFullPathName();
     }
 
     // try changing extension
@@ -2612,8 +2614,8 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
         results.clear();
         path.findChildFiles(results, searchFlags, true, filename);
 
-        if (results.size() > 0)
-            return results.getFirst().getFullPathName();
+        if (!results.empty())
+            return results.front().getFullPathName();
     }
 
     return String();
