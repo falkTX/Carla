@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -465,7 +465,7 @@ public:
             fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
             // kPluginBridgeNonRtServerParameter*
-            if (const uint32_t count = std::min(pData->options.maxParameters, plugin->getParameterCount()))
+            if (const uint32_t count = plugin->getParameterCount())
             {
                 // uint/count
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterCount);
@@ -711,10 +711,22 @@ public:
             }
             break;
 
+        case ENGINE_CALLBACK_EMBED_UI_RESIZED: {
+            CARLA_SAFE_ASSERT_BREAK(value1 > 1);
+            CARLA_SAFE_ASSERT_BREAK(value2 > 1);
+
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerResizeEmbedUI);
+            fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
+            fShmNonRtServerControl.writeUInt(static_cast<uint>(value2));
+            fShmNonRtServerControl.commitWrite();
+        }   break;
+
         case ENGINE_CALLBACK_RELOAD_PARAMETERS:
             if (const CarlaPluginPtr plugin = pData->plugins[0].plugin)
             {
-                if (const uint32_t count = std::min(pData->options.maxParameters, plugin->getParameterCount()))
+                if (const uint32_t count = plugin->getParameterCount())
                 {
                     const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
@@ -867,27 +879,63 @@ public:
 
             case kPluginBridgeNonRtClientSetCustomData: {
                 // type
-                const uint32_t typeSize(fShmNonRtClientControl.readUInt());
+                const uint32_t typeSize = fShmNonRtClientControl.readUInt();
                 char typeStr[typeSize+1];
                 carla_zeroChars(typeStr, typeSize+1);
                 fShmNonRtClientControl.readCustomData(typeStr, typeSize);
 
                 // key
-                const uint32_t keySize(fShmNonRtClientControl.readUInt());
+                const uint32_t keySize = fShmNonRtClientControl.readUInt();
                 char keyStr[keySize+1];
                 carla_zeroChars(keyStr, keySize+1);
                 fShmNonRtClientControl.readCustomData(keyStr, keySize);
 
                 // value
-                const uint32_t valueSize(fShmNonRtClientControl.readUInt());
-                char valueStr[valueSize+1];
-                carla_zeroChars(valueStr, valueSize+1);
+                const uint32_t valueSize = fShmNonRtClientControl.readUInt();
 
                 if (valueSize > 0)
-                    fShmNonRtClientControl.readCustomData(valueStr, valueSize);
+                {
+                    if (valueSize > 16384)
+                    {
+                        const uint32_t bigValueFilePathSize = fShmNonRtClientControl.readUInt();
+                        char bigValueFilePathTry[bigValueFilePathSize+1];
+                        carla_zeroChars(bigValueFilePathTry, bigValueFilePathSize+1);
+                        fShmNonRtClientControl.readCustomData(bigValueFilePathTry, bigValueFilePathSize);
 
-                if (plugin->isEnabled())
-                    plugin->setCustomData(typeStr, keyStr, valueStr, true);
+                        CARLA_SAFE_ASSERT_BREAK(bigValueFilePathTry[0] != '\0');
+                        if (! plugin->isEnabled()) break;
+
+                        String bigValueFilePath(bigValueFilePathTry);
+
+#ifdef CARLA_OS_WIN
+                        // check if running under Wine
+                        if (bigValueFilePath.startsWith("/"))
+                            bigValueFilePath = bigValueFilePath.replaceSection(0, 1, "Z:\\").replace("/", "\\");
+#endif
+
+                        File bigValueFile(bigValueFilePath);
+                        CARLA_SAFE_ASSERT_BREAK(bigValueFile.existsAsFile());
+
+                        plugin->setCustomData(typeStr, keyStr, bigValueFile.loadFileAsString().toRawUTF8(), true);
+
+                        bigValueFile.deleteFile();
+                    }
+                    else
+                    {
+                        char valueStr[valueSize+1];
+                        carla_zeroChars(valueStr, valueSize+1);
+                        fShmNonRtClientControl.readCustomData(valueStr, valueSize);
+
+                        if (plugin->isEnabled())
+                            plugin->setCustomData(typeStr, keyStr, valueStr, true);
+                    }
+                }
+                else
+                {
+                    if (plugin->isEnabled())
+                        plugin->setCustomData(typeStr, keyStr, "", true);
+                }
+
                 break;
             }
 
@@ -1018,9 +1066,12 @@ public:
                     if (std::strcmp(cdata.type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
                         continue;
 
-                    const uint32_t typeLen(static_cast<uint32_t>(std::strlen(cdata.type)));
-                    const uint32_t keyLen(static_cast<uint32_t>(std::strlen(cdata.key)));
-                    const uint32_t valueLen(static_cast<uint32_t>(std::strlen(cdata.value)));
+                    const uint32_t typeLen  = static_cast<uint32_t>(std::strlen(cdata.type));
+                    const uint32_t keyLen   = static_cast<uint32_t>(std::strlen(cdata.key));
+                    const uint32_t valueLen = static_cast<uint32_t>(std::strlen(cdata.value));
+
+                    if (valueLen > 16384)
+                        fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
                     {
                         const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
@@ -1036,11 +1087,36 @@ public:
                         fShmNonRtServerControl.writeUInt(valueLen);
 
                         if (valueLen > 0)
-                            fShmNonRtServerControl.writeCustomData(cdata.value, valueLen);
+                        {
+                            if (valueLen > 16384)
+                            {
+                                String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
+
+                                filePath += CARLA_OS_SEP_STR ".CarlaCustomData_";
+                                filePath += fShmAudioPool.getFilenameSuffix();
+
+                                if (File(filePath).replaceWithText(cdata.value))
+                                {
+                                    const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
+
+                                    fShmNonRtServerControl.writeUInt(ulength);
+                                    fShmNonRtServerControl.writeCustomData(filePath.toRawUTF8(), ulength);
+                                }
+                                else
+                                {
+                                    fShmNonRtServerControl.writeUInt(0);
+                                }
+                            }
+                            else
+                            {
+                                fShmNonRtServerControl.writeCustomData(cdata.value, valueLen);
+                            }
+                        }
 
                         fShmNonRtServerControl.commitWrite();
-                        fShmNonRtServerControl.waitIfDataIsReachingLimit();
                     }
+
+                    fShmNonRtServerControl.waitIfDataIsReachingLimit();
                 }
 
                 if (plugin->getOptionsEnabled() & PLUGIN_OPTION_USE_CHUNKS)
@@ -1096,9 +1172,27 @@ public:
                     plugin->showCustomUI(false);
                 break;
 
+            case kPluginBridgeNonRtClientEmbedUI: {
+                const uint64_t winId = fShmNonRtClientControl.readULong();
+                uint64_t resp = 0;
+
+                if (plugin->isEnabled())
+                    resp = reinterpret_cast<uint64_t>(plugin->embedCustomUI(reinterpret_cast<void*>(winId)));
+
+                if (resp == 0)
+                    resp = 1;
+
+                const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerRespEmbedUI);
+                fShmNonRtServerControl.writeULong(reinterpret_cast<uint64_t>(resp));
+                fShmNonRtServerControl.commitWrite();
+                break;
+            }
+
             case kPluginBridgeNonRtClientUiParameterChange: {
-                const uint32_t index(fShmNonRtClientControl.readUInt());
-                const float    value(fShmNonRtClientControl.readFloat());
+                const uint32_t index = fShmNonRtClientControl.readUInt();
+                const float    value = fShmNonRtClientControl.readFloat();
 
                 if (plugin->isEnabled())
                     plugin->uiParameterChange(index, value);

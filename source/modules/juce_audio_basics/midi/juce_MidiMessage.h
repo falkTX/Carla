@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -102,7 +102,8 @@ public:
                  double timeStamp = 0,
                  bool sysexHasEmbeddedLength = true);
 
-    /** Creates an active-sense message.
+    /** Creates an empty sysex message.
+
         Since the MidiMessage has to contain a valid message, this default constructor
         just initialises it with an empty sysex message.
     */
@@ -856,13 +857,46 @@ public:
 
 
     //==============================================================================
+   #ifndef DOXYGEN
     /** Reads a midi variable-length integer.
 
-        @param data             the data to read the number from
-        @param numBytesUsed     on return, this will be set to the number of bytes that were read
+        The `data` argument indicates the data to read the number from,
+        and `numBytesUsed` is used as an out-parameter to indicate the number
+        of bytes that were read.
     */
-    static int readVariableLengthVal (const uint8* data,
-                                      int& numBytesUsed) noexcept;
+    [[deprecated ("This signature has been deprecated in favour of the safer readVariableLengthValue.")]]
+    static int readVariableLengthVal (const uint8* data, int& numBytesUsed) noexcept;
+   #endif
+
+    /** Holds information about a variable-length value which was parsed
+        from a stream of bytes.
+
+        A valid value requires that `bytesUsed` is greater than 0.
+    */
+    struct VariableLengthValue
+    {
+        VariableLengthValue() = default;
+
+        VariableLengthValue (int valueIn, int bytesUsedIn)
+            : value (valueIn), bytesUsed (bytesUsedIn) {}
+
+        bool isValid() const noexcept  { return bytesUsed > 0; }
+
+        int value = 0;
+        int bytesUsed = 0;
+    };
+
+    /** Reads a midi variable-length integer, with protection against buffer overflow.
+
+        @param data             the data to read the number from
+        @param maxBytesToUse    the number of bytes in the region following `data`
+        @returns                a struct containing the parsed value, and the number
+                                of bytes that were read. If parsing fails, both the
+                                `value` and `bytesUsed` fields will be set to 0 and
+                                `isValid()` will return false
+    */
+    static VariableLengthValue readVariableLengthValue (const uint8* data,
+                                                        int maxBytesToUse) noexcept;
 
     /** Based on the first byte of a short midi message, this uses a lookup table
         to return the message length (either 1, 2, or 3 bytes).

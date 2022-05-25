@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -39,20 +39,22 @@ namespace juce
         m.addItem (1, "item 1");
         m.addItem (2, "item 2");
 
-        const int result = m.show();
-
-        if (result == 0)
-        {
-            // user dismissed the menu without picking anything
-        }
-        else if (result == 1)
-        {
-            // user picked item 1
-        }
-        else if (result == 2)
-        {
-            // user picked item 2
-        }
+        m.showMenuAsync (PopupMenu::Options(),
+                         [] (int result)
+                         {
+                             if (result == 0)
+                             {
+                                 // user dismissed the menu without picking anything
+                             }
+                             else if (result == 1)
+                             {
+                                 // user picked item 1
+                             }
+                             else if (result == 2)
+                             {
+                                 // user picked item 2
+                             }
+                         });
     }
     @endcode
 
@@ -68,9 +70,7 @@ namespace juce
         mainMenu.addItem (3, "item 3");
         mainMenu.addSubMenu ("other choices", subMenu);
 
-        const int result = m.show();
-
-        ...etc
+        m.showMenuAsync (...);
     }
     @endcode
 
@@ -178,6 +178,9 @@ public:
 
         /** True if this menu item is a section header. */
         bool isSectionHeader = false;
+
+        /** True if this is the final item in the current column. */
+        bool shouldBreakAfter = false;
 
         /** Sets the isTicked flag (and returns a reference to this item to allow chaining). */
         Item& setTicked (bool shouldBeTicked = true) & noexcept;
@@ -330,11 +333,15 @@ public:
 
         Note that native macOS menus do not support custom components.
 
+        itemTitle will be used as the fallback text for this item, and will
+        be exposed to screen reader clients.
+
         @see CustomComponent
     */
     void addCustomItem (int itemResultID,
                         std::unique_ptr<CustomComponent> customComponent,
-                        std::unique_ptr<const PopupMenu> optionalSubMenu = nullptr);
+                        std::unique_ptr<const PopupMenu> optionalSubMenu = nullptr,
+                        const String& itemTitle = {});
 
     /** Appends a custom menu item that can't be used to trigger a result.
 
@@ -347,14 +354,18 @@ public:
         menu ID specified in itemResultID. If this is false, the menu item can't
         be triggered, so itemResultID is not used.
 
-        Note that native macOS menus do support custom components.
+        itemTitle will be used as the fallback text for this item, and will
+        be exposed to screen reader clients.
+
+        Note that native macOS menus do not support custom components.
     */
     void addCustomItem (int itemResultID,
                         Component& customComponent,
                         int idealWidth,
                         int idealHeight,
                         bool triggerMenuItemAutomaticallyWhenClicked,
-                        std::unique_ptr<const PopupMenu> optionalSubMenu = nullptr);
+                        std::unique_ptr<const PopupMenu> optionalSubMenu = nullptr,
+                        const String& itemTitle = {});
 
     /** Appends a sub-menu.
 
@@ -410,6 +421,15 @@ public:
     */
     void addSectionHeader (String title);
 
+    /** Adds a column break to the menu, to help break it up into sections.
+        Subsequent items will be placed in a new column, rather than being appended
+        to the current column.
+
+        If a menu contains explicit column breaks, the menu will never add additional
+        breaks.
+    */
+    void addColumnBreak();
+
     /** Returns the number of items that the menu currently contains.
         (This doesn't count separators).
     */
@@ -436,7 +456,9 @@ public:
     class JUCE_API  Options
     {
     public:
+        /** By default, the target screen area will be the current mouse position. */
         Options();
+
         Options (const Options&) = default;
         Options& operator= (const Options&) = default;
 
@@ -447,37 +469,171 @@ public:
         };
 
         //==============================================================================
-        Options withTargetComponent (Component* targetComponent) const;
-        Options withTargetComponent (Component& targetComponent) const;
-        Options withTargetScreenArea (Rectangle<int> targetArea) const;
-        Options withDeletionCheck (Component& componentToWatchForDeletion) const;
-        Options withMinimumWidth (int minWidth) const;
-        Options withMinimumNumColumns (int minNumColumns) const;
-        Options withMaximumNumColumns (int maxNumColumns) const;
-        Options withStandardItemHeight (int standardHeight) const;
-        Options withItemThatMustBeVisible (int idOfItemToBeVisible) const;
-        Options withParentComponent (Component* parentComponent) const;
-        Options withPreferredPopupDirection (PopupDirection direction) const;
+        /** Sets the target component to use when displaying the menu.
+
+            This is normally the button or other control that triggered the menu.
+
+            The target component is primarily used to control the scale of the menu, so
+            it's important to supply a target component if you'll be using your program
+            on hi-DPI displays.
+
+            This function will also set the target screen area, so that the menu displays
+            next to the target component. If you need to display the menu at a specific
+            location, you should call withTargetScreenArea() after withTargetComponent.
+
+            @see withTargetComponent, withTargetScreenArea
+        */
+        JUCE_NODISCARD Options withTargetComponent (Component* targetComponent) const;
+        JUCE_NODISCARD Options withTargetComponent (Component& targetComponent) const;
+
+        /** Sets the region of the screen next to which the menu should be displayed.
+
+            To display the menu next to the mouse cursor use withMousePosition(),
+            which is equivalent to passing the following to this function:
+            @code
+            Rectangle<int>{}.withPosition (Desktop::getMousePosition())
+            @endcode
+
+            withTargetComponent() will also set the target screen area. If you need
+            a target component and a target screen area, make sure to call
+            withTargetScreenArea() after withTargetComponent().
+
+            @see withMousePosition
+        */
+        JUCE_NODISCARD Options withTargetScreenArea (Rectangle<int> targetArea) const;
+
+        /** Sets the target screen area to match the current mouse position.
+
+            Make sure to call this after withTargetComponent().
+
+            @see withTargetScreenArea
+        */
+        JUCE_NODISCARD Options withMousePosition() const;
+
+        /** If the passed component has been deleted when the popup menu exits,
+            the selected item's action will not be called.
+
+            This is useful for avoiding dangling references inside the action
+            callback, in the case that the callback needs to access a component that
+            may be deleted.
+        */
+        JUCE_NODISCARD Options withDeletionCheck (Component& componentToWatchForDeletion) const;
+
+        /** Sets the minimum width of the popup window. */
+        JUCE_NODISCARD Options withMinimumWidth (int minWidth) const;
+
+        /** Sets the minimum number of columns in the popup window. */
+        JUCE_NODISCARD Options withMinimumNumColumns (int minNumColumns) const;
+
+        /** Sets the maximum number of columns in the popup window. */
+        JUCE_NODISCARD Options withMaximumNumColumns (int maxNumColumns) const;
+
+        /** Sets the default height of each item in the popup menu. */
+        JUCE_NODISCARD Options withStandardItemHeight (int standardHeight) const;
+
+        /** Sets an item which must be visible when the menu is initially drawn.
+
+            This is useful to ensure that a particular item is shown when the menu
+            contains too many items to display on a single screen.
+        */
+        JUCE_NODISCARD Options withItemThatMustBeVisible (int idOfItemToBeVisible) const;
+
+        /** Sets a component that the popup menu will be drawn into.
+
+            Some plugin formats, such as AUv3, dislike it when the plugin editor
+            spawns additional windows. Some AUv3 hosts display pink backgrounds
+            underneath transparent popup windows, which is confusing and can appear
+            as though the plugin is malfunctioning. Setting a parent component will
+            avoid this unwanted behaviour, but with the downside that the menu size
+            will be constrained by the size of the parent component.
+        */
+        JUCE_NODISCARD Options withParentComponent (Component* parentComponent) const;
+
+        /** Sets the direction of the popup menu relative to the target screen area. */
+        JUCE_NODISCARD Options withPreferredPopupDirection (PopupDirection direction) const;
+
+        /** Sets an item to select in the menu.
+
+            This is useful for controls such as combo boxes, where opening the combo box
+            with the keyboard should ideally highlight the currently-selected item, allowing
+            the next/previous item to be selected by pressing up/down on the keyboard, rather
+            than needing to move the highlighted row down from the top of the menu each time
+            it is opened.
+        */
+        JUCE_NODISCARD Options withInitiallySelectedItem (int idOfItemToBeSelected) const;
 
         //==============================================================================
+        /** Gets the parent component. This may be nullptr if the Component has been deleted.
+
+            @see withParentComponent
+        */
         Component* getParentComponent() const noexcept               { return parentComponent; }
+
+        /** Gets the target component. This may be nullptr if the Component has been deleted.
+
+            @see withTargetComponent
+        */
         Component* getTargetComponent() const noexcept               { return targetComponent; }
+
+        /** Returns true if the menu was watching a component, and that component has been deleted, and false otherwise.
+
+            @see withDeletionCheck
+        */
         bool hasWatchedComponentBeenDeleted() const noexcept         { return isWatchingForDeletion && componentToWatchForDeletion == nullptr; }
+
+        /** Gets the target screen area.
+
+            @see withTargetScreenArea
+        */
         Rectangle<int> getTargetScreenArea() const noexcept          { return targetArea; }
+
+        /** Gets the minimum width.
+
+            @see withMinimumWidth
+        */
         int getMinimumWidth() const noexcept                         { return minWidth; }
+
+        /** Gets the maximum number of columns.
+
+            @see withMaximumNumColumns
+        */
         int getMaximumNumColumns() const noexcept                    { return maxColumns; }
+
+        /** Gets the minimum number of columns.
+
+            @see withMinimumNumColumns
+        */
         int getMinimumNumColumns() const noexcept                    { return minColumns; }
+
+        /** Gets the default height of items in the menu.
+
+            @see withStandardItemHeight
+        */
         int getStandardItemHeight() const noexcept                   { return standardHeight; }
+
+        /** Gets the ID of the item that must be visible when the menu is initially shown.
+
+            @see withItemThatMustBeVisible
+        */
         int getItemThatMustBeVisible() const noexcept                { return visibleItemID; }
+
+        /** Gets the preferred popup menu direction.
+
+            @see withPreferredPopupDirection
+        */
         PopupDirection getPreferredPopupDirection() const noexcept   { return preferredPopupDirection; }
+
+        /** Gets the ID of the item that must be selected when the menu is initially shown.
+
+            @see withItemThatMustBeVisible
+        */
+        int getInitiallySelectedItemId() const noexcept              { return initiallySelectedItemId; }
 
     private:
         //==============================================================================
         Rectangle<int> targetArea;
-        Component* targetComponent = nullptr;
-        Component* parentComponent = nullptr;
-        WeakReference<Component> componentToWatchForDeletion;
-        int visibleItemID = 0, minWidth = 0, minColumns = 1, maxColumns = 0, standardHeight = 0;
+        WeakReference<Component> targetComponent, parentComponent, componentToWatchForDeletion;
+        int visibleItemID = 0, minWidth = 0, minColumns = 1, maxColumns = 0, standardHeight = 0, initiallySelectedItemId = 0;
         bool isWatchingForDeletion = false;
         PopupDirection preferredPopupDirection = PopupDirection::downwards;
     };
@@ -672,15 +828,22 @@ public:
                                        public SingleThreadedReferenceCountedObject
     {
     public:
+        /** Creates a custom item that is triggered automatically. */
+        CustomComponent();
+
         /** Creates a custom item.
+
             If isTriggeredAutomatically is true, then the menu will automatically detect
             a mouse-click on this component and use that to invoke the menu item. If it's
             false, then it's up to your class to manually trigger the item when it wants to.
-        */
-        CustomComponent (bool isTriggeredAutomatically = true);
 
-        /** Destructor. */
-        ~CustomComponent() override;
+            If isTriggeredAutomatically is true, then an accessibility handler 'wrapper'
+            will be created for the item that allows pressing, focusing, and toggling.
+            If isTriggeredAutomatically is false, and the item has no submenu, then
+            no accessibility wrapper will be created and your component must be
+            independently accessible.
+        */
+        explicit CustomComponent (bool isTriggeredAutomatically);
 
         /** Returns a rectangle with the size that this component would like to have.
 
@@ -753,7 +916,13 @@ public:
         virtual ~LookAndFeelMethods() = default;
 
         /** Fills the background of a popup menu component. */
-        virtual void drawPopupMenuBackground (Graphics&, int width, int height) = 0;
+        virtual void drawPopupMenuBackground (Graphics&, int width, int height);
+
+        /** Fills the background of a popup menu component. */
+        virtual void drawPopupMenuBackgroundWithOptions (Graphics&,
+                                                         int width,
+                                                         int height,
+                                                         const Options&) = 0;
 
         /** Draws one of the items in a popup menu. */
         virtual void drawPopupMenuItem (Graphics&, const Rectangle<int>& area,
@@ -762,24 +931,47 @@ public:
                                         const String& text,
                                         const String& shortcutKeyText,
                                         const Drawable* icon,
-                                        const Colour* textColour) = 0;
+                                        const Colour* textColour);
 
-        virtual void drawPopupMenuSectionHeader (Graphics&, const Rectangle<int>& area,
-                                                 const String& sectionName) = 0;
+        /** Draws one of the items in a popup menu. */
+        virtual void drawPopupMenuItemWithOptions (Graphics&, const Rectangle<int>& area,
+                                                   bool isHighlighted,
+                                                   const Item& item,
+                                                   const Options&) = 0;
+
+        virtual void drawPopupMenuSectionHeader (Graphics&, const Rectangle<int>&,
+                                                 const String&);
+
+        virtual void drawPopupMenuSectionHeaderWithOptions (Graphics&, const Rectangle<int>& area,
+                                                            const String& sectionName,
+                                                            const Options&) = 0;
 
         /** Returns the size and style of font to use in popup menus. */
         virtual Font getPopupMenuFont() = 0;
 
         virtual void drawPopupMenuUpDownArrow (Graphics&,
                                                int width, int height,
-                                               bool isScrollUpArrow) = 0;
+                                               bool isScrollUpArrow);
+
+        virtual void drawPopupMenuUpDownArrowWithOptions (Graphics&,
+                                                          int width, int height,
+                                                          bool isScrollUpArrow,
+                                                          const Options&) = 0;
 
         /** Finds the best size for an item in a popup menu. */
         virtual void getIdealPopupMenuItemSize (const String& text,
                                                 bool isSeparator,
                                                 int standardMenuItemHeight,
                                                 int& idealWidth,
-                                                int& idealHeight) = 0;
+                                                int& idealHeight);
+
+        /** Finds the best size for an item in a popup menu. */
+        virtual void getIdealPopupMenuItemSizeWithOptions (const String& text,
+                                                           bool isSeparator,
+                                                           int standardMenuItemHeight,
+                                                           int& idealWidth,
+                                                           int& idealHeight,
+                                                           const Options&) = 0;
 
         virtual int getMenuWindowFlags() = 0;
 
@@ -801,16 +993,37 @@ public:
                                       bool isMouseOverBar,
                                       MenuBarComponent&) = 0;
 
-        virtual Component* getParentComponentForMenuOptions (const PopupMenu::Options& options) = 0;
+        virtual Component* getParentComponentForMenuOptions (const Options& options) = 0;
 
         virtual void preparePopupMenuWindow (Component& newWindow) = 0;
 
         /** Return true if you want your popup menus to scale with the target component's AffineTransform
-            or scale factor */
-        virtual bool shouldPopupMenuScaleWithTargetComponent (const PopupMenu::Options& options) = 0;
+            or scale factor
+        */
+        virtual bool shouldPopupMenuScaleWithTargetComponent (const Options& options) = 0;
 
-        virtual int getPopupMenuBorderSize() = 0;
+        virtual int getPopupMenuBorderSize();
+
+        virtual int getPopupMenuBorderSizeWithOptions (const Options&) = 0;
+
+        /** Implement this to draw some custom decoration between the columns of the popup menu.
+
+            `getPopupMenuColumnSeparatorWidthWithOptions` must return a positive value in order
+            to display the separator.
+        */
+        virtual void drawPopupMenuColumnSeparatorWithOptions (Graphics& g,
+                                                              const Rectangle<int>& bounds,
+                                                              const Options&) = 0;
+
+        /** Return the amount of space that should be left between popup menu columns. */
+        virtual int getPopupMenuColumnSeparatorWidthWithOptions (const Options&) = 0;
     };
+
+    //==============================================================================
+   #ifndef DOXYGEN
+    [[deprecated ("Use the new method.")]]
+    int drawPopupMenuItem (Graphics&, int, int, bool, bool, bool, bool, bool, const String&, const String&, Image*, const Colour*) { return 0; }
+   #endif
 
 private:
     //==============================================================================
@@ -826,11 +1039,6 @@ private:
     int showWithOptionalCallback (const Options&, ModalComponentManager::Callback*, bool);
 
     static void setItem (CustomComponent&, const Item*);
-
-   #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
-    // These methods have new implementations now - see its new definition
-    int drawPopupMenuItem (Graphics&, int, int, bool, bool, bool, bool, bool, const String&, const String&, Image*, const Colour*) { return 0; }
-   #endif
 
     JUCE_LEAK_DETECTOR (PopupMenu)
 };

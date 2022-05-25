@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -63,7 +63,7 @@ public:
         Note that like all other messages, this object will be deleted immediately
         after this method has been invoked.
     */
-    virtual void messageCallback() override = 0;
+    void messageCallback() override = 0;
 
 private:
     // Avoid the leak-detector because for plugins, the host can unload our DLL with undelivered

@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -26,10 +26,6 @@
 namespace juce
 {
 
-bool juce_handleXEmbedEvent (ComponentPeer*, void*);
-Window juce_getCurrentFocusWindow (ComponentPeer*);
-
-//==============================================================================
 ::Window juce_createKeyProxyWindow (ComponentPeer*);
 void juce_deleteKeyProxyWindow (::Window);
 
@@ -261,6 +257,11 @@ public:
         return host;
     }
 
+    void updateEmbeddedBounds()
+    {
+        componentMovedOrResized (owner, true, true);
+    }
+
 private:
     //==============================================================================
     XEmbedComponent& owner;
@@ -388,7 +389,7 @@ private:
     //==============================================================================
     bool getXEmbedMappedFlag()
     {
-        XWindowSystemUtilities::GetXProperty embedInfo (client, infoAtom, 0, 2, false, infoAtom);
+        XWindowSystemUtilities::GetXProperty embedInfo (getDisplay(), client, infoAtom, 0, 2, false, infoAtom);
 
         if (embedInfo.success && embedInfo.actualFormat == 32
              && embedInfo.numItems >= 2 && embedInfo.data != nullptr)
@@ -438,7 +439,7 @@ private:
             auto& displays = Desktop::getInstance().getDisplays();
             auto* peer = owner.getPeer();
             const double scale = (peer != nullptr ? peer->getPlatformScaleFactor()
-                                                  : displays.getMainDisplay().scale);
+                                                  : displays.getPrimaryDisplay()->scale);
 
             Point<int> topLeftInPeer
                 = (peer != nullptr ? peer->getComponent().getLocalPoint (&owner, Point<int> (0, 0))
@@ -616,7 +617,7 @@ private:
         if (auto* peer = owner.getPeer())
         {
             auto r = peer->getComponent().getLocalArea (&owner, owner.getLocalBounds());
-            return r * peer->getPlatformScaleFactor();
+            return r * peer->getPlatformScaleFactor() * peer->getComponent().getDesktopScaleFactor();
         }
 
         return owner.getLocalBounds();
@@ -691,6 +692,7 @@ void XEmbedComponent::focusLost   (FocusChangeType changeType)     { pimpl->focu
 void XEmbedComponent::broughtToFront()                             { pimpl->broughtToFront(); }
 unsigned long XEmbedComponent::getHostWindowID()                   { return pimpl->getHostWindowID(); }
 void XEmbedComponent::removeClient()                               { pimpl->setClient (0, true); }
+void XEmbedComponent::updateEmbeddedBounds()                       { pimpl->updateEmbeddedBounds(); }
 
 //==============================================================================
 bool juce_handleXEmbedEvent (ComponentPeer* p, void* e)

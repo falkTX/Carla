@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
 
 #include "CarlaPipeUtils.hpp"
 
-namespace CB = CarlaBackend;
+namespace CB = CARLA_BACKEND_NAMESPACE;
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -209,7 +209,7 @@ void carla_pipe_client_destroy(CarlaPipeClientHandle handle)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#ifndef CARLA_PLUGIN_EXPORT
+#ifndef CARLA_PLUGIN_BUILD
 # include "CarlaPipeUtils.cpp"
 #endif
 

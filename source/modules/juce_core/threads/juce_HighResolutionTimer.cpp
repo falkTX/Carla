@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -23,7 +23,7 @@
 namespace juce
 {
 
-HighResolutionTimer::HighResolutionTimer()                    { pimpl.reset (new Pimpl (*this)); }
+HighResolutionTimer::HighResolutionTimer() : pimpl (new Pimpl (*this)) {}
 HighResolutionTimer::~HighResolutionTimer()                   { stopTimer(); }
 
 void HighResolutionTimer::startTimer (int periodMs)           { pimpl->start (jmax (1, periodMs)); }

@@ -10,8 +10,7 @@ include ../Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I$(CWD)/includes/vst3sdk -I..
-
+BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I$(CWD)/includes/vst3sdk -I.. -std=gnu++14
 
 # needed by vst3
 ifeq ($(DEBUG),true)
@@ -21,12 +20,16 @@ BUILD_CXX_FLAGS += -DRELEASE
 endif
 
 # needed by vst3 on mingw
+# ifeq ($(WIN32),true)
+# BUILD_CXX_FLAGS += -D_NATIVE_WCHAR_T_DEFINED -D__wchar_t=wchar_t -fpermissive -Wno-unknown-pragmas
+# # needed for bloated juce
+# ifeq ($(DEBUG),true)
+# BUILD_CXX_FLAGS += -Wa,-mbig-obj
+# endif
+# endif
+
 ifeq ($(WIN32),true)
-BUILD_CXX_FLAGS += -D_NATIVE_WCHAR_T_DEFINED -D__wchar_t=wchar_t -fpermissive -Wno-unknown-pragmas
-# needed for bloated juce
-ifeq ($(DEBUG),true)
-BUILD_CXX_FLAGS += -Wa,-mbig-obj
-endif
+BUILD_CXX_FLAGS += -I../mingw-std-threads
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -64,66 +67,66 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).posix32.a: $(OBJS_posix32)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).posix32.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).posix64.a: $(OBJS_posix64)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).posix64.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).win32.a: $(OBJS_win32)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).win32.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).win64.a: $(OBJS_win64)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).win64.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/$(MODULENAME).cpp.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/$(MODULENAME).cpp.%32.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/$(MODULENAME).cpp.%64.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/$(MODULENAME).mm.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/$(MODULENAME).mm.%32.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/$(MODULENAME).mm.%64.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

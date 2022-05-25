@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -112,11 +112,6 @@ public:
 
     /** Copies this message from another one. */
     MidiMessage& operator= (const MidiMessage& other);
-
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    MidiMessage (MidiMessage&&) noexcept;
-    MidiMessage& operator= (MidiMessage&&) noexcept;
-   #endif
 
     //==============================================================================
     /** Returns a pointer to the raw midi data.
@@ -510,8 +505,7 @@ public:
 
         Meta-events are things like tempo changes, track names, etc.
 
-        @see getMetaEventType, isTrackMetaEvent, isEndOfTrackMetaEvent,
-             isTextMetaEvent, isTrackNameEvent, isTempoMetaEvent, isTimeSignatureMetaEvent,
+        @see getMetaEventType, isTempoMetaEvent, isTimeSignatureMetaEvent,
              isKeySignatureMetaEvent, isMidiChannelMetaEvent
     */
     bool isMetaEvent() const noexcept;
@@ -520,8 +514,7 @@ public:
 
         If the message isn't a meta-event, this will return -1.
 
-        @see isMetaEvent, isTrackMetaEvent, isEndOfTrackMetaEvent,
-             isTextMetaEvent, isTrackNameEvent, isTempoMetaEvent, isTimeSignatureMetaEvent,
+        @see isMetaEvent, isTempoMetaEvent, isTimeSignatureMetaEvent,
              isKeySignatureMetaEvent, isMidiChannelMetaEvent
     */
     int getMetaEventType() const noexcept;
@@ -535,36 +528,6 @@ public:
         @see isMetaEvent, getMetaEventData
     */
     int getMetaEventLength() const noexcept;
-
-    //==============================================================================
-    /** Returns true if this is a 'track' meta-event. */
-    bool isTrackMetaEvent() const noexcept;
-
-    /** Returns true if this is an 'end-of-track' meta-event. */
-    bool isEndOfTrackMetaEvent() const noexcept;
-
-    /** Creates an end-of-track meta-event.
-        @see isEndOfTrackMetaEvent
-    */
-    static MidiMessage endOfTrack() noexcept;
-
-    /** Returns true if this is an 'track name' meta-event.
-        You can use the getTextFromTextMetaEvent() method to get the track's name.
-    */
-    bool isTrackNameEvent() const noexcept;
-
-    /** Returns true if this is a 'text' meta-event.
-        @see getTextFromTextMetaEvent
-    */
-    bool isTextMetaEvent() const noexcept;
-
-    /** Returns the text from a text meta-event.
-        @see isTextMetaEvent
-    */
-    String getTextFromTextMetaEvent() const;
-
-    /** Creates a text meta-event. */
-    static MidiMessage textMetaEvent (int type, StringRef text);
 
     //==============================================================================
     /** Returns true if this is a 'tempo' meta-event.
@@ -852,25 +815,6 @@ public:
     static int getMessageLengthFromFirstByte (uint8 firstByte) noexcept;
 
     //==============================================================================
-    /** Returns the name of a midi note number.
-
-        E.g "C", "D#", etc.
-
-        @param noteNumber           the midi note number, 0 to 127
-        @param useSharps            if true, sharpened notes are used, e.g. "C#", otherwise
-                                    they'll be flattened, e.g. "Db"
-        @param includeOctaveNumber  if true, the octave number will be appended to the string,
-                                    e.g. "C#4"
-        @param octaveNumForMiddleC  if an octave number is being appended, this indicates the
-                                    number that will be used for middle C's octave
-
-        @see getMidiNoteInHertz
-    */
-    static String getMidiNoteName (int noteNumber,
-                                   bool useSharps,
-                                   bool includeOctaveNumber,
-                                   int octaveNumForMiddleC);
-
     /** Returns the frequency of a midi note number.
 
         The frequencyOfA parameter is an optional frequency for 'A', normally 440-444Hz for concert pitch.

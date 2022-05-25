@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -384,12 +384,12 @@ private:
 
         for (size_t i=0; i<numTracks; ++i)
         {
-            const MidiMessageSequence* const track(midiFile.getTrack(i));
+            const MidiMessageSequence* const track = midiFile.getTrack(i);
             CARLA_SAFE_ASSERT_CONTINUE(track != nullptr);
 
             for (int j=0, numEvents = track->getNumEvents(); j<numEvents; ++j)
             {
-                const MidiMessageSequence::MidiEventHolder* const midiEventHolder(track->getEventPointer(j));
+                const MidiMessageSequence::MidiEventHolder* const midiEventHolder = track->getEventPointer(j);
                 CARLA_SAFE_ASSERT_CONTINUE(midiEventHolder != nullptr);
 
                 const MidiMessage& midiMessage(midiEventHolder->message);
@@ -451,10 +451,10 @@ static const NativePluginDescriptor midifileDesc = {
 
 // -----------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_API_EXPORT
 void carla_register_native_plugin_midifile();
 
-CARLA_EXPORT
+CARLA_API_EXPORT
 void carla_register_native_plugin_midifile()
 {
     carla_register_native_plugin(&midifileDesc);

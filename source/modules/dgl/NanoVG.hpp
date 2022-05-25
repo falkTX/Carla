@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -18,7 +18,15 @@
 #define DGL_NANO_WIDGET_HPP_INCLUDED
 
 #include "Color.hpp"
-#include "Widget.hpp"
+#include "OpenGL.hpp"
+#include "SubWidget.hpp"
+#include "TopLevelWidget.hpp"
+#include "StandaloneWindow.hpp"
+
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4661) /* instantiated template classes whose methods are defined elsewhere */
+#endif
 
 #ifndef DGL_NO_SHARED_RESOURCES
 # define NANOVG_DEJAVU_SANS_TTF "__dpf_dejavusans_ttf__"
@@ -32,8 +40,16 @@ START_NAMESPACE_DGL
 // -----------------------------------------------------------------------
 // Forward class names
 
-class BlendishWidget;
 class NanoVG;
+
+// -----------------------------------------------------------------------
+// Helper methods
+
+/**
+   Create a NanoVG context using the DPF-provided NanoVG library.
+   On Windows this will load a few extra OpenGL functions required for NanoVG to work.
+ */
+NVGcontext* nvgCreateGL(int flags);
 
 // -----------------------------------------------------------------------
 // NanoImage
@@ -304,7 +320,9 @@ public:
    /**
       Constructor reusing a NanoVG context, used for subwidgets.
     */
+   /*
     NanoVG(NanoWidget* groupWidget);
+    */
 
    /**
       Destructor.
@@ -434,6 +452,11 @@ public:
       Already transparent paths will get proportionally more transparent as well.
     */
     void globalAlpha(float alpha);
+
+   /**
+      Sets the color tint applied to all rendered shapes.
+    */
+    void globalTint(Color tint);
 
    /* --------------------------------------------------------------------
     * Transforms */
@@ -578,12 +601,26 @@ public:
     NanoImage::Handle createImageFromMemory(uchar* data, uint dataSize, int imageFlags);
 
    /**
-      Creates image from specified image data.
+      Creates image from specified raw format image data.
+    */
+    NanoImage::Handle createImageFromRawMemory(uint w, uint h, const uchar* data,
+                                               ImageFlags imageFlags, ImageFormat format);
+
+   /**
+      Creates image from specified raw format image data.
+      Overloaded function for convenience.
+      @see ImageFlags
+    */
+    NanoImage::Handle createImageFromRawMemory(uint w, uint h, const uchar* data,
+                                               int imageFlags, ImageFormat format);
+
+   /**
+      Creates image from specified RGBA image data.
     */
     NanoImage::Handle createImageFromRGBA(uint w, uint h, const uchar* data, ImageFlags imageFlags);
 
    /**
-      Creates image from specified image data.
+      Creates image from specified RGBA image data.
       Overloaded function for convenience.
       @see ImageFlags
     */
@@ -850,14 +887,13 @@ public:
    /**
       Load DPF's internal shared resources for this NanoVG class.
     */
-    virtual void loadSharedResources();
+    virtual bool loadSharedResources();
 #endif
 
 private:
     NVGcontext* const fContext;
     bool fInFrame;
     bool fIsSubWidget;
-    friend class BlendishWidget;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NanoVG)
 };
@@ -872,30 +908,39 @@ private:
    The drawing function onDisplay() is implemented internally but a
    new onNanoDisplay() needs to be overridden instead.
  */
-class NanoWidget : public Widget,
-                   public NanoVG
+template <class BaseWidget>
+class NanoBaseWidget : public BaseWidget,
+                       public NanoVG
 {
 public:
    /**
-      Constructor.
+      Constructor for a NanoSubWidget.
       @see CreateFlags
     */
-    explicit NanoWidget(Window& parent, int flags = CREATE_ANTIALIAS);
+    explicit NanoBaseWidget(Widget* parentGroupWidget, int flags = CREATE_ANTIALIAS);
 
    /**
-      Constructor for a subwidget.
+      Constructor for a NanoTopLevelWidget.
+      @see CreateFlags
     */
-    explicit NanoWidget(Widget* groupWidget, int flags = CREATE_ANTIALIAS);
+    explicit NanoBaseWidget(Window& windowToMapTo, int flags = CREATE_ANTIALIAS);
 
    /**
-      Constructor for a subwidget, reusing a NanoVG context.
+      Constructor for a NanoStandaloneWindow without transient parent window.
+      @see CreateFlags
     */
-    explicit NanoWidget(NanoWidget* groupWidget);
+    explicit NanoBaseWidget(Application& app, int flags = CREATE_ANTIALIAS);
+
+   /**
+      Constructor for a NanoStandaloneWindow with transient parent window.
+      @see CreateFlags
+    */
+    explicit NanoBaseWidget(Application& app, Window& transientParentWindow, int flags = CREATE_ANTIALIAS);
 
    /**
       Destructor.
     */
-    virtual ~NanoWidget();
+    virtual ~NanoBaseWidget() {}
 
 protected:
    /**
@@ -905,14 +950,17 @@ protected:
     virtual void onNanoDisplay() = 0;
 
 private:
-    struct PrivateData;
-    PrivateData* const nData;
-
    /**
       Widget display function.
       Implemented internally to wrap begin/endFrame() automatically.
     */
-    void onDisplay() override;
+    inline void onDisplay() override
+    {
+        // NOTE maybe should use BaseWidget::getWindow().getScaleFactor() as 3rd arg ?
+        NanoVG::beginFrame(BaseWidget::getWidth(), BaseWidget::getHeight());
+        onNanoDisplay();
+        NanoVG::endFrame();
+    }
 
     // these should not be used
     void beginFrame(uint,uint) {}
@@ -921,11 +969,22 @@ private:
     void cancelFrame() {}
     void endFrame() {}
 
-    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NanoWidget)
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NanoBaseWidget)
 };
+
+typedef NanoBaseWidget<SubWidget> NanoSubWidget;
+typedef NanoBaseWidget<TopLevelWidget> NanoTopLevelWidget;
+typedef NanoBaseWidget<StandaloneWindow> NanoStandaloneWindow;
+
+DISTRHO_DEPRECATED_BY("NanoSubWidget")
+typedef NanoSubWidget NanoWidget;
 
 // -----------------------------------------------------------------------
 
 END_NAMESPACE_DGL
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #endif // DGL_NANO_WIDGET_HPP_INCLUDED

@@ -133,31 +133,6 @@ XmlElement& XmlElement::operator= (const XmlElement& other)
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-XmlElement::XmlElement (XmlElement&& other) noexcept
-    : nextListItem      (static_cast<LinkedListPointer<XmlElement>&&> (other.nextListItem)),
-      firstChildElement (static_cast<LinkedListPointer<XmlElement>&&> (other.firstChildElement)),
-      attributes        (static_cast<LinkedListPointer<XmlAttributeNode>&&> (other.attributes)),
-      tagName           (static_cast<String&&> (other.tagName))
-{
-}
-
-XmlElement& XmlElement::operator= (XmlElement&& other) noexcept
-{
-    wassert (this != &other); // hopefully the compiler should make this situation impossible!
-
-    removeAllAttributes();
-    deleteAllChildElements();
-
-    nextListItem      = static_cast<LinkedListPointer<XmlElement>&&> (other.nextListItem);
-    firstChildElement = static_cast<LinkedListPointer<XmlElement>&&> (other.firstChildElement);
-    attributes        = static_cast<LinkedListPointer<XmlAttributeNode>&&> (other.attributes);
-    tagName           = static_cast<String&&> (other.tagName);
-
-    return *this;
-}
-#endif
-
 void XmlElement::copyChildrenAndAttributesFrom (const XmlElement& other)
 {
     wassert (firstChildElement.get() == nullptr);
@@ -473,12 +448,18 @@ static const String& getEmptyStringRef() noexcept
     return empty;
 }
 
-const String& XmlElement::getAttributeName (const int index) const noexcept
+static const std::string& getEmptyStdStringRef() noexcept
+{
+    static std::string empty;
+    return empty;
+}
+
+const std::string& XmlElement::getAttributeName (const int index) const noexcept
 {
     if (const XmlAttributeNode* const att = attributes [index])
         return att->name.toString();
 
-    return getEmptyStringRef();
+    return getEmptyStdStringRef();
 }
 
 const String& XmlElement::getAttributeValue (const int index) const noexcept
@@ -857,10 +838,7 @@ bool XmlElement::isTextElement() const noexcept
     return tagName.isEmpty();
 }
 
-static const String water_xmltextContentAttributeName ()
-{
-    return String ("text");
-}
+static const char* const water_xmltextContentAttributeName = "text";
 
 const String& XmlElement::getText() const noexcept
 {
@@ -868,13 +846,13 @@ const String& XmlElement::getText() const noexcept
                                 // isn't actually a text element.. If this contains text sub-nodes, you
                                 // probably want to use getAllSubText instead.
 
-    return getStringAttribute (water_xmltextContentAttributeName());
+    return getStringAttribute (water_xmltextContentAttributeName);
 }
 
 void XmlElement::setText (const String& newText)
 {
     CARLA_SAFE_ASSERT_RETURN(isTextElement(),);
-    setAttribute (water_xmltextContentAttributeName(), newText);
+    setAttribute (water_xmltextContentAttributeName, newText);
 }
 
 String XmlElement::getAllSubText() const
@@ -904,7 +882,7 @@ String XmlElement::getChildElementAllSubText (StringRef childTagName, const Stri
 XmlElement* XmlElement::createTextElement (const String& text)
 {
     XmlElement* const e = new XmlElement ((int) 0);
-    e->setAttribute (water_xmltextContentAttributeName(), text);
+    e->setAttribute (water_xmltextContentAttributeName, text);
     return e;
 }
 

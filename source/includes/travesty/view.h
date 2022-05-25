@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -48,8 +48,9 @@ struct v3_view_rect {
 struct v3_plugin_frame;
 
 struct v3_plugin_view {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* is_platform_type_supported)(void* self, const char* platform_type);
 	v3_result (V3_API* attached)(void* self, void* parent, const char* platform_type);
 	v3_result (V3_API* removed)(void* self);
@@ -72,8 +73,9 @@ static constexpr const v3_tuid v3_plugin_view_iid =
  */
 
 struct v3_plugin_frame {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* resize_view)(void* self, struct v3_plugin_view**, struct v3_view_rect*);
 };
 
@@ -86,8 +88,9 @@ static constexpr const v3_tuid v3_plugin_frame_iid =
  */
 
 struct v3_plugin_view_content_scale {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* set_content_scale_factor)(void* self, float factor);
 };
 
@@ -99,8 +102,9 @@ static constexpr const v3_tuid v3_plugin_view_content_scale_iid =
  */
 
 struct v3_plugin_view_parameter_finder {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* find_parameter)(void* self, int32_t x, int32_t y, v3_param_id *);
 };
 
@@ -112,8 +116,9 @@ static constexpr const v3_tuid v3_plugin_view_parameter_finder_iid =
  */
 
 struct v3_event_handler {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	void (V3_API* on_fd_is_set)(void* self, int fd);
 };
 
@@ -125,8 +130,9 @@ static constexpr const v3_tuid v3_event_handler_iid =
  */
 
 struct v3_timer_handler {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	void (V3_API* on_timer)(void* self);
 };
 
@@ -138,8 +144,9 @@ static constexpr const v3_tuid v3_timer_handler_iid =
  */
 
 struct v3_run_loop {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* register_event_handler)(void* self, v3_event_handler** handler, int fd);
 	v3_result (V3_API* unregister_event_handler)(void* self, v3_event_handler** handler);
 	v3_result (V3_API* register_timer)(void* self, v3_timer_handler** handler, uint64_t ms);
@@ -176,7 +183,7 @@ struct v3_event_handler_cpp : v3_funknown {
 };
 
 struct v3_timer_handler_cpp : v3_funknown {
-	v3_timer_handler handler;
+	v3_timer_handler timer;
 };
 
 struct v3_run_loop_cpp : v3_funknown {

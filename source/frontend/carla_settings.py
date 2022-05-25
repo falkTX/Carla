@@ -258,14 +258,14 @@ class DriverSettingsW(QDialog):
         elif self.fBufferSizes == BUFFER_SIZE_LIST:
             self.ui.cb_buffersize.setCurrentIndex(BUFFER_SIZE_LIST.index(CARLA_DEFAULT_AUDIO_BUFFER_SIZE))
         else:
-            self.ui.cb_buffersize.setCurrentIndex(len(self.fBufferSizes)/2)
+            self.ui.cb_buffersize.setCurrentIndex(int(len(self.fBufferSizes)/2))
 
         if audioSampleRate and audioSampleRate in self.fSampleRates:
             self.ui.cb_samplerate.setCurrentIndex(self.fSampleRates.index(audioSampleRate))
         elif self.fSampleRates == SAMPLE_RATE_LIST:
             self.ui.cb_samplerate.setCurrentIndex(SAMPLE_RATE_LIST.index(CARLA_DEFAULT_AUDIO_SAMPLE_RATE))
         else:
-            self.ui.cb_samplerate.setCurrentIndex(len(self.fSampleRates)/2)
+            self.ui.cb_samplerate.setCurrentIndex(int(len(self.fSampleRates)/2))
 
         self.ui.cb_triple_buffer.setChecked(audioTripleBuffer and self.ui.cb_triple_buffer.isEnabled())
 

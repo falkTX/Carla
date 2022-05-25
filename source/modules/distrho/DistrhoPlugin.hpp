@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -35,14 +35,42 @@ START_NAMESPACE_DISTRHO
  */
 
 /**
-   Audio port can be used as control voltage (LV2 only).
+   Audio port can be used as control voltage (LV2 and JACK standalone only).
  */
 static const uint32_t kAudioPortIsCV = 0x1;
 
 /**
-   Audio port should be used as sidechan (LV2 only).
+   Audio port should be used as sidechan (LV2 and VST3 only).
+   This hint should not be used with CV style ports.
+   @note non-sidechain audio ports must exist in the plugin if this flag is set.
  */
 static const uint32_t kAudioPortIsSidechain = 0x2;
+
+/**
+   CV port has bipolar range (-1 to +1, or -5 to +5 if scaled).
+   This is merely a hint to tell the host what value range to expect.
+ */
+static const uint32_t kCVPortHasBipolarRange = 0x10;
+
+/**
+   CV port has negative unipolar range (-1 to 0, or -10 to 0 if scaled).
+   This is merely a hint to tell the host what value range to expect.
+ */
+static const uint32_t kCVPortHasNegativeUnipolarRange = 0x20;
+
+/**
+   CV port has positive unipolar range (0 to +1, or 0 to +10 if scaled).
+   This is merely a hint to tell the host what value range to expect.
+ */
+static const uint32_t kCVPortHasPositiveUnipolarRange = 0x40;
+
+/**
+   CV port has scaled range to match real values (-5 to +5v bipolar, +/-10 to 0v unipolar).
+   One other range flag is required if this flag is set.
+
+   When enabled, this makes the port a mod:CVPort, compatible with the MOD Devices platform.
+ */
+static const uint32_t kCVPortHasScaledRange = 0x80;
 
 /** @} */
 
@@ -58,10 +86,14 @@ static const uint32_t kAudioPortIsSidechain = 0x2;
  */
 
 /**
-   Parameter is automable (real-time safe).
+   Parameter is automatable (real-time safe).
    @see Plugin::setParameterValue(uint32_t, float)
  */
-static const uint32_t kParameterIsAutomable = 0x01;
+static const uint32_t kParameterIsAutomatable = 0x01;
+
+/** It was a typo, sorry.. */
+DISTRHO_DEPRECATED_BY("kParameterIsAutomatable")
+static const uint32_t kParameterIsAutomable = kParameterIsAutomatable;
 
 /**
    Parameter value is boolean.@n
@@ -83,9 +115,12 @@ static const uint32_t kParameterIsLogarithmic = 0x08;
    Parameter is of output type.@n
    When unset, parameter is assumed to be of input type.
 
-   Parameter inputs are changed by the host and must not be changed by the plugin.@n
-   The only exception being when changing programs, see Plugin::loadProgram().@n
+   Parameter inputs are changed by the host and typically should not be changed by the plugin.@n
+   One exception is when changing programs, see Plugin::loadProgram().@n
+   The other exception is with parameter change requests, see Plugin::requestParameterValueChange().@n
    Outputs are changed by the plugin and never modified by the host.
+
+   If you are targetting VST2, make sure to order your parameters so that all inputs are before any outputs.
  */
 static const uint32_t kParameterIsOutput = 0x10;
 
@@ -101,6 +136,52 @@ static const uint32_t kParameterIsTrigger = 0x20 | kParameterIsBoolean;
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------
+ * State Hints */
+
+/**
+   @defgroup StateHints State Hints
+
+   Various state hints.
+   @see State::hints
+   @{
+ */
+
+/**
+   State is visible and readable by hosts that support string-type plugin parameters.
+ */
+static const uint32_t kStateIsHostReadable = 0x01;
+
+/**
+   State is writable by the host, allowing users to arbitrarily change the state.@n
+   For obvious reasons a writable state is also readable by the host.
+ */
+static const uint32_t kStateIsHostWritable = 0x02 | kStateIsHostReadable;
+
+/**
+   State is a filename path instead of a regular string.@n
+   The readable and writable hints are required for filenames to work, and thus are automatically set.
+ */
+static const uint32_t kStateIsFilenamePath = 0x04 | kStateIsHostWritable;
+
+/**
+   State is a base64 encoded string.
+ */
+static const uint32_t kStateIsBase64Blob = 0x08;
+
+/**
+   State is for Plugin/DSP side only, meaning there is never a need to notify the UI when it changes.
+ */
+static const uint32_t kStateIsOnlyForDSP = 0x10;
+
+/**
+   State is for UI side only.@n
+   If the DSP and UI are separate and the UI is not available, this property won't be saved.
+ */
+static const uint32_t kStateIsOnlyForUI = 0x20;
+
+/** @} */
+
+/* ------------------------------------------------------------------------------------------------------------
  * Base Plugin structs */
 
 /**
@@ -109,7 +190,60 @@ static const uint32_t kParameterIsTrigger = 0x20 | kParameterIsBoolean;
  */
 
 /**
+   Parameter designation.@n
+   Allows a parameter to be specially designated for a task, like bypass.
+
+   Each designation is unique, there must be only one parameter that uses it.@n
+   The use of designated parameters is completely optional.
+
+   @note Designated parameters have strict ranges.
+   @see ParameterRanges::adjustForDesignation()
+ */
+enum ParameterDesignation {
+   /**
+     Null or unset designation.
+    */
+    kParameterDesignationNull = 0,
+
+   /**
+     Bypass designation.@n
+     When on (> 0.5f), it means the plugin must run in a bypassed state.
+    */
+    kParameterDesignationBypass = 1
+};
+
+/**
+   Predefined Port Groups Ids.
+
+   This enumeration provides a few commonly used groups for convenient use in plugins.
+   For preventing conflicts with user code, negative values are used here.
+   When rolling your own port groups, you MUST start their group ids from 0 and they MUST be sequential.
+
+   @see PortGroup
+ */
+enum PredefinedPortGroupsIds {
+   /**
+     Null or unset port group.
+    */
+    kPortGroupNone = (uint32_t)-1,
+
+   /**
+     A single channel audio group.
+    */
+    kPortGroupMono = (uint32_t)-2,
+
+   /**
+     A 2-channel discrete stereo audio group,
+     where the 1st audio port is the left channel and the 2nd port is the right channel.
+    */
+    kPortGroupStereo = (uint32_t)-3
+};
+
+/**
    Audio Port.
+
+   Can be used as CV port by specifying kAudioPortIsCV in hints,@n
+   but this is only supported in LV2 and JACK standalone formats.
  */
 struct AudioPort {
    /**
@@ -134,35 +268,23 @@ struct AudioPort {
     String symbol;
 
    /**
+      The group id that this audio/cv port belongs to.
+      No group is assigned by default.
+
+      You can use a group from PredefinedPortGroups or roll your own.@n
+      When rolling your own port groups, you MUST start their group ids from 0 and they MUST be sequential.
+      @see PortGroup, Plugin::initPortGroup
+    */
+    uint32_t groupId;
+
+   /**
       Default constructor for a regular audio port.
     */
     AudioPort() noexcept
         : hints(0x0),
           name(),
-          symbol() {}
-};
-
-/**
-   Parameter designation.@n
-   Allows a parameter to be specially designated for a task, like bypass.
-
-   Each designation is unique, there must be only one parameter that uses it.@n
-   The use of designated parameters is completely optional.
-
-   @note Designated parameters have strict ranges.
-   @see ParameterRanges::adjustForDesignation()
- */
-enum ParameterDesignation {
-   /**
-     Null or unset designation.
-    */
-    kParameterDesignationNull = 0,
-
-   /**
-     Bypass designation.@n
-     When on (> 0.5f), it means the plugin must run in a bypassed state.
-    */
-    kParameterDesignationBypass = 1
+          symbol(),
+          groupId(kPortGroupNone) {}
 };
 
 /**
@@ -189,7 +311,7 @@ struct ParameterRanges {
     float max;
 
    /**
-      Default constructor, using 0.0 as minimum, 1.0 as maximum and 0.0 as default.
+      Default constructor, using 0.0 as default, 0.0 as minimum, 1.0 as maximum.
     */
     ParameterRanges() noexcept
         : def(0.0f),
@@ -226,7 +348,7 @@ struct ParameterRanges {
    /**
       Get a fixed value within range.
     */
-    const float& getFixedValue(const float& value) const noexcept
+    float getFixedValue(const float& value) const noexcept
     {
         if (value <= min)
             return min;
@@ -333,9 +455,9 @@ struct ParameterEnumerationValues {
 
    /**
       Array of @ParameterEnumerationValue items.@n
-      This pointer must be null or have been allocated on the heap with `new`.
+      This pointer must be null or have been allocated on the heap with `new ParameterEnumerationValue[count]`.
     */
-    const ParameterEnumerationValue* values;
+    ParameterEnumerationValue* values;
 
    /**
       Default constructor, for zero enumeration values.
@@ -349,7 +471,7 @@ struct ParameterEnumerationValues {
       Constructor using custom values.@n
       The pointer to @values must have been allocated on the heap with `new`.
     */
-    ParameterEnumerationValues(uint32_t c, bool r, const ParameterEnumerationValue* v) noexcept
+    ParameterEnumerationValues(uint32_t c, bool r, ParameterEnumerationValue* v) noexcept
         : count(c),
           restrictedMode(r),
           values(v) {}
@@ -365,6 +487,8 @@ struct ParameterEnumerationValues {
             values = nullptr;
         }
     }
+
+    DISTRHO_DECLARE_NON_COPYABLE(ParameterEnumerationValues)
 };
 
 /**
@@ -385,6 +509,13 @@ struct Parameter {
     String name;
 
    /**
+      The short name of this parameter.@n
+      Used when displaying the parameter name in a very limited space.
+      @note This value is optional, the full name is used when the short one is missing.
+    */
+    String shortName;
+
+   /**
       The symbol of this parameter.@n
       A parameter symbol is a short restricted name used as a machine and human readable identifier.@n
       The first character must be one of _, a-z or A-Z and subsequent characters can be from _, a-z, A-Z and 0-9.
@@ -398,6 +529,12 @@ struct Parameter {
       Can be left blank if a unit does not apply to this parameter.
     */
     String unit;
+
+   /**
+      An extensive description/comment about the parameter.
+      @note This value is optional and only used for LV2.
+    */
+    String description;
 
    /**
       Ranges of this parameter.@n
@@ -425,17 +562,29 @@ struct Parameter {
     uint8_t midiCC;
 
    /**
+      The group id that this parameter belongs to.
+      No group is assigned by default.
+
+      You can use a group from PredefinedPortGroups or roll your own.@n
+      When rolling your own port groups, you MUST start their group ids from 0 and they MUST be sequential.
+      @see PortGroup, Plugin::initPortGroup
+    */
+    uint32_t groupId;
+
+   /**
       Default constructor for a null parameter.
     */
     Parameter() noexcept
         : hints(0x0),
           name(),
+          shortName(),
           symbol(),
           unit(),
           ranges(),
           enumValues(),
           designation(kParameterDesignationNull),
-          midiCC(0) {}
+          midiCC(0),
+          groupId(kPortGroupNone) {}
 
    /**
       Constructor using custom values.
@@ -443,12 +592,14 @@ struct Parameter {
     Parameter(uint32_t h, const char* n, const char* s, const char* u, float def, float min, float max) noexcept
         : hints(h),
           name(n),
+          shortName(),
           symbol(s),
           unit(u),
           ranges(def, min, max),
           enumValues(),
           designation(kParameterDesignationNull),
-          midiCC(0) {}
+          midiCC(0),
+          groupId(kPortGroupNone) {}
 
    /**
       Initialize a parameter for a specific designation.
@@ -462,17 +613,96 @@ struct Parameter {
         case kParameterDesignationNull:
             break;
         case kParameterDesignationBypass:
-            hints  = kParameterIsAutomable|kParameterIsBoolean|kParameterIsInteger;
-            name   = "Bypass";
-            symbol = "dpf_bypass";
-            unit   = "";
-            midiCC = 0;
+            hints      = kParameterIsAutomatable|kParameterIsBoolean|kParameterIsInteger;
+            name       = "Bypass";
+            shortName  = "Bypass";
+            symbol     = "dpf_bypass";
+            unit       = "";
+            midiCC     = 0;
+            groupId    = kPortGroupNone;
             ranges.def = 0.0f;
             ranges.min = 0.0f;
             ranges.max = 1.0f;
             break;
         }
     }
+};
+
+/**
+   Port Group.@n
+   Allows to group together audio/cv ports or parameters.
+
+   Each unique group MUST have an unique symbol and a name.
+   A group can be applied to both inputs and outputs (at the same time).
+   The same group cannot be used in audio ports and parameters.
+
+   An audio port group logically combines ports which should be considered part of the same stream.@n
+   For example, two audio ports in a group may form a stereo stream.
+
+   A parameter group provides meta-data to the host to indicate that some parameters belong together.
+
+   The use of port groups is completely optional.
+
+   @see Plugin::initPortGroup, AudioPort::group, Parameter::group
+ */
+struct PortGroup {
+   /**
+      The name of this port group.@n
+      A port group name can contain any character, but hosts might have a hard time with non-ascii ones.@n
+      The name doesn't have to be unique within a plugin instance, but it's recommended.
+    */
+    String name;
+
+   /**
+      The symbol of this port group.@n
+      A port group symbol is a short restricted name used as a machine and human readable identifier.@n
+      The first character must be one of _, a-z or A-Z and subsequent characters can be from _, a-z, A-Z and 0-9.
+      @note Port group symbols MUST be unique within a plugin instance.
+    */
+    String symbol;
+};
+
+/**
+   State.
+
+   In DPF states refer to key:value string pairs, used to store arbitrary non-parameter data.@n
+   By default states are completely internal to the plugin and not visible by the host.@n
+   Flags can be set to allow hosts to see and/or change them.
+
+   TODO API under construction
+ */
+struct State {
+   /**
+      Hints describing this state.
+      @note Changing these hints can break compatibility with previously saved data.
+      @see StateHints
+    */
+    uint32_t hints;
+
+   /**
+      The key or "symbol" of this state.@n
+      A state key is a short restricted name used as a machine and human readable identifier.
+      @note State keys MUST be unique within a plugin instance.
+      TODO define rules for allowed characters, must be usable as URI non-encoded parameters
+    */
+    String key;
+
+   /**
+      The default value of this state.@n
+      Can be left empty if considered a valid initial state.
+    */
+    String defaultValue;
+
+   /**
+      String representation of this state.
+    */
+    String label;
+
+   /**
+      An extensive description/comment about this state.
+      @note This value is optional and only used for LV2.
+    */
+    String description;
 };
 
 /**
@@ -497,6 +727,9 @@ struct MidiEvent {
    /**
       MIDI data.@n
       If size > kDataSize, dataExt is used (otherwise null).
+
+      When dataExt is used, the event holder is responsible for
+      keeping the pointer valid during the entirety of the run function.
     */
     uint8_t        data[kDataSize];
     const uint8_t* dataExt;
@@ -507,7 +740,7 @@ struct MidiEvent {
    The @a playing and @a frame values are always valid.@n
    BBT values are only valid when @a bbt.valid is true.
 
-   This struct is inspired by the JACK Transport API.
+   This struct is inspired by the [JACK Transport API](https://jackaudio.org/api/structjack__position__t.html).
  */
 struct TimePosition {
    /**
@@ -546,10 +779,11 @@ struct TimePosition {
 
        /**
           Current tick within beat.@n
-          Should always be > 0 and <= @a ticksPerBeat.@n
+          Should always be >= 0 and < @a ticksPerBeat.@n
           The first tick is tick '0'.
+          @note Fraction part of tick is only available on some plugin formats.
         */
-        int32_t tick;
+        double tick;
 
        /**
           Number of ticks that have elapsed between frame 0 and the first beat of the current measure.
@@ -567,7 +801,7 @@ struct TimePosition {
         float beatType;
 
        /**
-          Number of ticks within a bar.@n
+          Number of ticks within a beat.@n
           Usually a moderately large integer with many denominators, such as 1920.0.
         */
         double ticksPerBeat;
@@ -590,6 +824,22 @@ struct TimePosition {
               beatType(0.0f),
               ticksPerBeat(0.0),
               beatsPerMinute(0.0) {}
+
+       /**
+          Reinitialize this position using the default null initialization.
+        */
+        void clear() noexcept
+        {
+            valid = false;
+            bar = 0;
+            beat = 0;
+            tick = 0;
+            barStartTick = 0.0;
+            beatsPerBar = 0.0f;
+            beatType = 0.0f;
+            ticksPerBeat = 0.0;
+            beatsPerMinute = 0.0;
+        }
     } bbt;
 
    /**
@@ -599,6 +849,16 @@ struct TimePosition {
         : playing(false),
           frame(0),
           bbt() {}
+
+   /**
+      Reinitialize this position using the default null initialization.
+    */
+    void clear() noexcept
+    {
+        playing  = false;
+        frame = 0;
+        bbt.clear();
+    }
 };
 
 /** @} */
@@ -670,6 +930,22 @@ public:
     */
     double getSampleRate() const noexcept;
 
+   /**
+      Get the bundle path where the plugin resides.
+      Can return null if the plugin is not available in a bundle (if it is a single binary).
+      @see getBinaryFilename
+      @see getResourcePath
+    */
+    const char* getBundlePath() const noexcept;
+
+   /**
+      Check if this plugin instance is a "dummy" one used for plugin meta-data/information export.@n
+      When true no processing will be done, the plugin is created only to extract information.@n
+      In DPF, LADSPA/DSSI, VST2 and VST3 formats create one global instance per plugin binary
+      while LV2 creates one when generating turtle meta-data.
+    */
+    bool isDummyInstance() const noexcept;
+
 #if DISTRHO_PLUGIN_WANT_TIMEPOS
    /**
       Get the current host transport time position.@n
@@ -696,6 +972,37 @@ public:
       Returns false when the host buffer is full, in which case do not call this again until the next run().
     */
     bool writeMidiEvent(const MidiEvent& midiEvent) noexcept;
+#endif
+
+#if DISTRHO_PLUGIN_WANT_PARAMETER_VALUE_CHANGE_REQUEST
+   /**
+      Check if parameter value change requests will work with the current plugin host.
+      @note This function is only available if DISTRHO_PLUGIN_WANT_PARAMETER_VALUE_CHANGE_REQUEST is enabled.
+      @see requestParameterValueChange(uint32_t, float)
+    */
+    bool canRequestParameterValueChanges() const noexcept;
+
+   /**
+      Request a parameter value change from the host.
+      If successful, this function will automatically trigger a parameter update on the UI side as well.
+      This function can fail, for example if the host is busy with the parameter for read-only automation.
+      Some hosts simply do not have this functionality, which can be verified with canRequestParameterValueChanges().
+      @note This function is only available if DISTRHO_PLUGIN_WANT_PARAMETER_VALUE_CHANGE_REQUEST is enabled.
+    */
+    bool requestParameterValueChange(uint32_t index, float value) noexcept;
+#endif
+
+#if DISTRHO_PLUGIN_WANT_STATE
+   /**
+      Set state value and notify the host about the change.@n
+      This function will call `setState()` and also trigger an update on the UI side as necessary.@n
+      It must not be called during run.@n
+      The state must be host readable.
+      @note this function does nothing on DSSI plugin format, as DSSI only supports UI->DSP messages.
+
+      TODO API under construction
+    */
+    bool updateStateValue(const char* key, const char* value) noexcept;
 #endif
 
 protected:
@@ -763,7 +1070,14 @@ protected:
       Initialize the parameter @a index.@n
       This function will be called once, shortly after the plugin is created.
     */
-    virtual void initParameter(uint32_t index, Parameter& parameter) = 0;
+    virtual void initParameter(uint32_t index, Parameter& parameter);
+
+   /**
+      Initialize the port group @a groupId.@n
+      This function will be called once,
+      shortly after the plugin is created and all audio ports and parameters have been enumerated.
+    */
+    virtual void initPortGroup(uint32_t groupId, PortGroup& portGroup);
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
    /**
@@ -776,11 +1090,17 @@ protected:
 
 #if DISTRHO_PLUGIN_WANT_STATE
    /**
-      Set the state key and default value of @a index.@n
+      Initialize the state @a index.@n
       This function will be called once, shortly after the plugin is created.@n
       Must be implemented by your plugin class only if DISTRHO_PLUGIN_WANT_STATE is enabled.
     */
-    virtual void initState(uint32_t index, String& stateKey, String& defaultStateValue) = 0;
+    virtual void initState(uint32_t index, State& state);
+
+    DISTRHO_DEPRECATED_BY("initState(uint32_t,State&)")
+    virtual void initState(uint32_t, String&, String&) {}
+
+    DISTRHO_DEPRECATED_BY("initState(uint32_t,State&)")
+    virtual bool isStateFile(uint32_t) { return false; }
 #endif
 
    /* --------------------------------------------------------------------------------------------------------
@@ -790,15 +1110,15 @@ protected:
       Get the current value of a parameter.@n
       The host may call this function from any context, including realtime processing.
     */
-    virtual float getParameterValue(uint32_t index) const = 0;
+    virtual float getParameterValue(uint32_t index) const;
 
    /**
       Change a parameter value.@n
       The host may call this function from any context, including realtime processing.@n
-      When a parameter is marked as automable, you must ensure no non-realtime operations are performed.
+      When a parameter is marked as automatable, you must ensure no non-realtime operations are performed.
       @note This function will only be called for parameter inputs.
     */
-    virtual void setParameterValue(uint32_t index, float value) = 0;
+    virtual void setParameterValue(uint32_t index, float value);
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
    /**
@@ -806,7 +1126,7 @@ protected:
       The host may call this function from any context, including realtime processing.@n
       Must be implemented by your plugin class only if DISTRHO_PLUGIN_WANT_PROGRAMS is enabled.
     */
-    virtual void loadProgram(uint32_t index) = 0;
+    virtual void loadProgram(uint32_t index);
 #endif
 
 #if DISTRHO_PLUGIN_WANT_FULL_STATE
@@ -816,7 +1136,7 @@ protected:
       Must be implemented by your plugin class if DISTRHO_PLUGIN_WANT_FULL_STATE is enabled.
       @note The use of this function breaks compatibility with the DSSI format.
     */
-    virtual String getState(const char* key) const = 0;
+    virtual String getState(const char* key) const;
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
@@ -824,7 +1144,7 @@ protected:
       Change an internal state @a key to @a value.@n
       Must be implemented by your plugin class only if DISTRHO_PLUGIN_WANT_STATE is enabled.
     */
-    virtual void setState(const char* key, const char* value) = 0;
+    virtual void setState(const char* key, const char* value);
 #endif
 
    /* --------------------------------------------------------------------------------------------------------
@@ -845,14 +1165,14 @@ protected:
       Run/process function for plugins with MIDI input.
       @note Some parameters might be null if there are no audio inputs/outputs or MIDI events.
     */
-    virtual void run(const float* const* inputs, float** outputs, uint32_t frames,
+    virtual void run(const float** inputs, float** outputs, uint32_t frames,
                      const MidiEvent* midiEvents, uint32_t midiEventCount) = 0;
 #else
    /**
       Run/process function for plugins without MIDI input.
       @note Some parameters might be null if there are no audio inputs or outputs.
     */
-    virtual void run(const float* const* inputs, float** outputs, uint32_t frames) = 0;
+    virtual void run(const float** inputs, float** outputs, uint32_t frames) = 0;
 #endif
 
    /* --------------------------------------------------------------------------------------------------------
@@ -895,7 +1215,10 @@ private:
  */
 
 /**
-   TODO.
+   Create an instance of the Plugin class.@n
+   This is the entry point for DPF plugins.@n
+   DPF will call this to either create an instance of your plugin for the host
+   or to fetch some initial information for internal caching.
  */
 extern Plugin* createPlugin();
 

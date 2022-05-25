@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@
 #include "water/containers/Array.h"
 #include "water/files/File.h"
 
-namespace CB = CarlaBackend;
+namespace CB = CARLA_BACKEND_NAMESPACE;
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -73,11 +73,11 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static water::Array<water::File> gSFZs;
+static std::vector<water::File> gSFZs;
 
 static void findSFZs(const char* const sfzPaths)
 {
-    gSFZs.clearQuick();
+    gSFZs.clear();
 
     CARLA_SAFE_ASSERT_RETURN(sfzPaths != nullptr,);
 
@@ -88,10 +88,13 @@ static void findSFZs(const char* const sfzPaths)
 
     for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        water::Array<water::File> results;
+        std::vector<water::File> results;
 
         if (water::File(*it).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*.sfz") > 0)
-            gSFZs.addArray(results);
+        {
+            gSFZs.reserve(gSFZs.size() + results.size());
+            gSFZs.insert(gSFZs.end(), results.begin(), results.end());
+        }
     }
 }
 // -------------------------------------------------------------------------------------------------------------------
@@ -811,8 +814,8 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 #endif
 
     case CB::PLUGIN_SFZ: {
-        CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gSFZs.size()));
-        return get_cached_plugin_sfz(gSFZs.getUnchecked(static_cast<int>(index)));
+        CARLA_SAFE_ASSERT_BREAK(index < gSFZs.size());
+        return get_cached_plugin_sfz(gSFZs[index]);
     }
 
     case CB::PLUGIN_JSFX: {
@@ -830,7 +833,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#ifndef CARLA_PLUGIN_EXPORT
+#ifndef CARLA_PLUGIN_BUILD
 # include "../native-plugins/_data.cpp"
 #endif
 

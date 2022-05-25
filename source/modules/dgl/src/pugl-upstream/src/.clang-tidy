@@ -1,0 +1,16 @@
+Checks: >
+  *,
+  -*-uppercase-literal-suffix,
+  -*magic-numbers,
+  -altera-struct-pack-align,
+  -bugprone-reserved-identifier,
+  -cert-dcl37-c,
+  -cert-dcl51-cpp,
+  -cert-flp30-c,
+  -hicpp-multiway-paths-covered,
+  -hicpp-signed-bitwise,
+  -llvm-header-guard,
+  -llvmlibc-*,
+  -readability-function-cognitive-complexity,
+FormatStyle: file
+HeaderFilterRegex: 'pugl/.*'

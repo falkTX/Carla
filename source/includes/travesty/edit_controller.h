@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -40,8 +40,9 @@ enum {
 };
 
 struct v3_component_handler {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* begin_edit)(void* self, v3_param_id);
 	v3_result (V3_API* perform_edit)(void* self, v3_param_id, double value_normalised);
 	v3_result (V3_API* end_edit)(void* self, v3_param_id);
@@ -50,6 +51,19 @@ struct v3_component_handler {
 
 static constexpr const v3_tuid v3_component_handler_iid =
 	V3_ID(0x93A0BEA3, 0x0BD045DB, 0x8E890B0C, 0xC1E46AC6);
+
+struct v3_component_handler2 {
+#ifndef __cplusplus
+	struct v3_funknown;
+#endif
+	v3_result (V3_API* set_dirty)(void* self, v3_bool state);
+	v3_result (V3_API* request_open_editor)(void* self, const char* name);
+	v3_result (V3_API* start_group_edit)(void* self);
+	v3_result (V3_API* finish_group_edit)(void* self);
+};
+
+static constexpr const v3_tuid v3_component_handler2_iid =
+	V3_ID(0xF040B4B3, 0xA36045EC, 0xABCDC045, 0xB4D5A2CC);
 
 /**
  * edit controller
@@ -77,11 +91,12 @@ struct v3_param_info {
 };
 
 struct v3_edit_controller {
+#ifndef __cplusplus
 	struct v3_plugin_base;
-
-	v3_result (V3_API* set_component_state)(void* self, struct v3_bstream*);
-	v3_result (V3_API* set_state)(void* self, struct v3_bstream*);
-	v3_result (V3_API* get_state)(void* self, struct v3_bstream*);
+#endif
+	v3_result (V3_API* set_component_state)(void* self, struct v3_bstream**);
+	v3_result (V3_API* set_state)(void* self, struct v3_bstream**);
+	v3_result (V3_API* get_state)(void* self, struct v3_bstream**);
 	int32_t (V3_API* get_parameter_count)(void* self);
 	v3_result (V3_API* get_parameter_info)(void* self, int32_t param_idx, struct v3_param_info*);
 	v3_result (V3_API* get_parameter_string_for_value)(void* self, v3_param_id, double normalised, v3_str_128 output);
@@ -102,8 +117,9 @@ static constexpr const v3_tuid v3_edit_controller_iid =
  */
 
 struct v3_midi_mapping {
+#ifndef __cplusplus
 	struct v3_funknown;
-
+#endif
 	v3_result (V3_API* get_midi_controller_assignment)(void* self, int32_t bus, int16_t channel, int16_t cc, v3_param_id* id);
 };
 

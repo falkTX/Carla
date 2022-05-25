@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -98,19 +98,21 @@ public:
         return -1;
     }
 
-    static String getParamID (AudioProcessorParameter* param, bool forceLegacyParamIDs) noexcept
+    static String getParamID (const AudioProcessorParameter* param, bool forceLegacyParamIDs) noexcept
     {
-        if (auto* legacy = dynamic_cast<LegacyAudioParameter*> (param))
-        {
+        if (auto* legacy = dynamic_cast<const LegacyAudioParameter*> (param))
             return forceLegacyParamIDs ? String (legacy->parameterIndex) : legacy->getParamID();
-        }
-        else if (auto* paramWithID = dynamic_cast<AudioProcessorParameterWithID*> (param))
+
+        if (auto* paramWithID = dynamic_cast<const AudioProcessorParameterWithID*> (param))
         {
             if (! forceLegacyParamIDs)
                 return paramWithID->paramID;
         }
 
-        return String (param->getParameterIndex());
+        if (param != nullptr)
+            return String (param->getParameterIndex());
+
+        return {};
     }
 };
 
@@ -118,6 +120,13 @@ public:
 class LegacyAudioParametersWrapper
 {
 public:
+    LegacyAudioParametersWrapper() = default;
+
+    LegacyAudioParametersWrapper (AudioProcessor& audioProcessor, bool forceLegacyParamIDs)
+    {
+        update (audioProcessor, forceLegacyParamIDs);
+    }
+
     void update (AudioProcessor& audioProcessor, bool forceLegacyParamIDs)
     {
         clear();
@@ -129,15 +138,28 @@ public:
 
         for (int i = 0; i < numParameters; ++i)
         {
-            AudioProcessorParameter* param = usingManagedParameters ? audioProcessor.getParameters()[i]
-                                                                    : (legacy.add (new LegacyAudioParameter (audioProcessor, i)));
+            auto* param = [&]() -> AudioProcessorParameter*
+            {
+                if (usingManagedParameters)
+                    return audioProcessor.getParameters()[i];
+
+                auto newParam = std::make_unique<LegacyAudioParameter> (audioProcessor, i);
+                auto* result = newParam.get();
+                ownedGroup.addChild (std::move (newParam));
+
+                return result;
+            }();
+
             params.add (param);
         }
+
+        processorGroup = usingManagedParameters ? &audioProcessor.getParameterTree()
+                                                : nullptr;
     }
 
     void clear()
     {
-        legacy.clear();
+        ownedGroup = AudioProcessorParameterGroup();
         params.clear();
     }
 
@@ -157,13 +179,34 @@ public:
         return String (idx);
     }
 
+    const AudioProcessorParameterGroup& getGroup() const
+    {
+        return processorGroup != nullptr ? *processorGroup
+                                         : ownedGroup;
+    }
+
+    void addNonOwning (AudioProcessorParameter* param)
+    {
+        params.add (param);
+    }
+
+    size_t size() const noexcept { return (size_t) params.size(); }
+
     bool isUsingManagedParameters() const noexcept    { return usingManagedParameters; }
     int getNumParameters() const noexcept             { return params.size(); }
 
-    Array<AudioProcessorParameter*> params;
+    AudioProcessorParameter* const* begin() const { return params.begin(); }
+    AudioProcessorParameter* const* end()   const { return params.end(); }
+
+    bool contains (AudioProcessorParameter* param) const
+    {
+        return params.contains (param);
+    }
 
 private:
-    OwnedArray<LegacyAudioParameter> legacy;
+    const AudioProcessorParameterGroup* processorGroup = nullptr;
+    AudioProcessorParameterGroup ownedGroup;
+    Array<AudioProcessorParameter*> params;
     bool legacyParamIDs = false, usingManagedParameters = false;
 };
 

@@ -60,34 +60,34 @@ debug:
 $(BINDIR)/libcarla_interposer-safe.so: $(OBJDIR)/interposer-safe.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_interposer-safe.so"
-	@$(CXX) $< $(SHARED) $(LINK_FLAGS) $(INTERPOSER_SAFE_LIBS) -o $@
+	$(SILENT)$(CXX) $< $(SHARED) $(LINK_FLAGS) $(INTERPOSER_SAFE_LIBS) -o $@
 
 $(BINDIR)/libcarla_interposer-x11.so: $(OBJDIR)/interposer-x11.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_interposer-x11.so"
-	@$(CXX) $< $(SHARED) $(LINK_FLAGS) $(INTERPOSER_X11_LIBS) -o $@
+	$(SILENT)$(CXX) $< $(SHARED) $(LINK_FLAGS) $(INTERPOSER_X11_LIBS) -o $@
 
 $(BINDIR)/libcarla_interposer-jack-x11.so: $(OBJDIR)/interposer-jack-x11.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_interposer-jack-x11.so"
-	@$(CXX) $< $(SHARED) $(LINK_FLAGS) $(INTERPOSER_X11_LIBS) -o $@
+	$(SILENT)$(CXX) $< $(SHARED) $(LINK_FLAGS) $(INTERPOSER_X11_LIBS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/interposer-safe.cpp.o: interposer-safe.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/interposer-x11.cpp.o: interposer-x11.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(X11_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(X11_FLAGS) -c -o $@
 
 $(OBJDIR)/interposer-jack-x11.cpp.o: interposer-jack-x11.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(X11_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(X11_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,27 +21,27 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char* JACK_METADATA_PRETTY_NAME;
 const char* JACK_METADATA_PRETTY_NAME = "http://jackaudio.org/metadata/pretty-name";
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char* JACK_METADATA_HARDWARE;
 const char* JACK_METADATA_HARDWARE = "http://jackaudio.org/metadata/hardware";
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char* JACK_METADATA_CONNECTED;
 const char* JACK_METADATA_CONNECTED = "http://jackaudio.org/metadata/connected";
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char* JACK_METADATA_PORT_GROUP;
 const char* JACK_METADATA_PORT_GROUP = "http://jackaudio.org/metadata/port-group";
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char* JACK_METADATA_ICON_SMALL;
 const char* JACK_METADATA_ICON_SMALL = "http://jackaudio.org/metadata/icon-small";
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char* JACK_METADATA_ICON_LARGE;
 const char* JACK_METADATA_ICON_LARGE = "http://jackaudio.org/metadata/icon-large";
 
@@ -63,7 +63,7 @@ static Metadata sMetadata;
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_property(jack_client_t*, jack_uuid_t uuid, const char* key, const char* value, const char* type)
 {
     CARLA_SAFE_ASSERT_RETURN(uuid != JACK_UUID_EMPTY_INITIALIZER, -1);
@@ -77,7 +77,7 @@ int jack_set_property(jack_client_t*, jack_uuid_t uuid, const char* key, const c
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_get_property(jack_uuid_t uuid, const char* key, char** value, char** type)
 {
     CARLA_SAFE_ASSERT_RETURN(uuid != JACK_UUID_EMPTY_INITIALIZER, -1);
@@ -105,24 +105,24 @@ int jack_get_property(jack_uuid_t uuid, const char* key, char** value, char** ty
     (void)type;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_free_description(jack_description_t*, int)
 {
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_get_properties(jack_uuid_t, jack_description_t*)
 {
     return -1;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_get_all_properties(jack_description_t**)
 {
     return -1;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_remove_property(jack_client_t*, jack_uuid_t uuid, const char* key)
 {
 //     const MetadataKey mkey = { uuid, key };
@@ -134,7 +134,7 @@ int jack_remove_property(jack_client_t*, jack_uuid_t uuid, const char* key)
     (void)key;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_remove_properties(jack_client_t*, jack_uuid_t uuid)
 {
     int count = 0;
@@ -155,14 +155,14 @@ int jack_remove_properties(jack_client_t*, jack_uuid_t uuid)
     (void)uuid;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_remove_all_properties(jack_client_t*)
 {
 //     sMetadata = {};
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_property_change_callback(jack_client_t*, JackPropertyChangeCallback, void*)
 {
     return -1;
@@ -170,7 +170,7 @@ int jack_set_property_change_callback(jack_client_t*, JackPropertyChangeCallback
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_uuid_t jack_client_uuid_generate()
 {
     static uint32_t uuid_cnt = 0;
@@ -179,7 +179,7 @@ jack_uuid_t jack_client_uuid_generate()
     return uuid;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_uuid_t jack_port_uuid_generate(uint32_t port_id)
 {
     jack_uuid_t uuid = 0x1; /* JackUUIDPort */
@@ -187,13 +187,13 @@ jack_uuid_t jack_port_uuid_generate(uint32_t port_id)
     return uuid;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 uint32_t jack_uuid_to_index(jack_uuid_t u)
 {
     return static_cast<uint32_t>(u & 0xffff) - 1;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_uuid_compare(jack_uuid_t a, jack_uuid_t b)
 {
     if (a == b) {
@@ -207,19 +207,19 @@ int jack_uuid_compare(jack_uuid_t a, jack_uuid_t b)
     return 1;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_uuid_copy(jack_uuid_t* dst, jack_uuid_t src)
 {
     *dst = src;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_uuid_clear(jack_uuid_t* uuid)
 {
     *uuid = JACK_UUID_EMPTY_INITIALIZER;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_uuid_parse(const char* b, jack_uuid_t* u)
 {
     if (std::sscanf(b, P_UINT64, u) != 1)
@@ -233,13 +233,13 @@ int jack_uuid_parse(const char* b, jack_uuid_t* u)
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_uuid_unparse(jack_uuid_t u, char buf[JACK_UUID_STRING_SIZE])
 {
     std::snprintf(buf, JACK_UUID_STRING_SIZE, P_UINT64, u);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_uuid_empty(jack_uuid_t u)
 {
     return u == JACK_UUID_EMPTY_INITIALIZER;

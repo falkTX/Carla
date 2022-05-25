@@ -1,6 +1,6 @@
 /*
  * Carla Plugin UI
- * Copyright (C) 2014-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,6 +19,7 @@
 #include "CarlaPluginUI.hpp"
 
 #ifdef HAVE_X11
+# include <pthread.h>
 # include <sys/types.h>
 # include <X11/Xatom.h>
 # include <X11/Xlib.h>
@@ -341,7 +342,13 @@ public:
                 if (fChildWindow == 0)
                     fChildWindow = getChildWindow();
                 if (fChildWindow != 0)
-                    XSetInputFocus(fDisplay, fChildWindow, RevertToPointerRoot, CurrentTime);
+                {
+                    XWindowAttributes wa;
+                    carla_zeroStruct(wa);
+
+                    if (XGetWindowAttributes(fDisplay, fChildWindow, &wa) && wa.map_state == IsViewable)
+                        XSetInputFocus(fDisplay, fChildWindow, RevertToPointerRoot, CurrentTime);
+                }
                 break;
             }
 
@@ -351,7 +358,7 @@ public:
                 fEventProc(&event);
         }
 
-        if (nextWidth != 0 && nextHeight != 0)
+        if (nextWidth != 0 && nextHeight != 0 && fChildWindow != 0)
         {
             XSizeHints sizeHints;
             carla_zeroStruct(sizeHints);
@@ -490,11 +497,14 @@ private:
 #ifdef CARLA_OS_MAC
 
 #if defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
-# define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindowBridgedArch, CARLA_PLUGIN_UI_CLASS_PREFIX)
+# define CarlaPluginWindow CARLA_JOIN_MACRO3(CarlaPluginWindowBridgedArch, CARLA_BACKEND_NAMESPACE, CARLA_PLUGIN_UI_CLASS_PREFIX)
+# define CarlaPluginWindowDelegate CARLA_JOIN_MACRO3(CarlaPluginWindowDelegateBridgedArch, CARLA_BACKEND_NAMESPACE, CARLA_PLUGIN_UI_CLASS_PREFIX)
 #elif defined(BUILD_BRIDGE)
-# define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindowBridged, CARLA_PLUGIN_UI_CLASS_PREFIX)
+# define CarlaPluginWindow CARLA_JOIN_MACRO3(CarlaPluginWindowBridged, CARLA_BACKEND_NAMESPACE, CARLA_PLUGIN_UI_CLASS_PREFIX)
+# define CarlaPluginWindowDelegate CARLA_JOIN_MACRO3(CarlaPluginWindowDelegateBridged, CARLA_BACKEND_NAMESPACE, CARLA_PLUGIN_UI_CLASS_PREFIX)
 #else
-# define CarlaPluginWindow CARLA_JOIN_MACRO(CarlaPluginWindow, CARLA_PLUGIN_UI_CLASS_PREFIX)
+# define CarlaPluginWindow CARLA_JOIN_MACRO3(CarlaPluginWindow, CARLA_BACKEND_NAMESPACE, CARLA_PLUGIN_UI_CLASS_PREFIX)
+# define CarlaPluginWindowDelegate CARLA_JOIN_MACRO3(CarlaPluginWindowDelegate, CARLA_BACKEND_NAMESPACE, CARLA_PLUGIN_UI_CLASS_PREFIX)
 #endif
 
 @interface CarlaPluginWindow : NSWindow
@@ -546,6 +556,7 @@ private:
 - (instancetype)initWithWindowAndCallback:(CarlaPluginWindow*)window
                                  callback:(CarlaPluginUI::Callback*)callback2;
 - (BOOL)windowShouldClose:(id)sender;
+- (NSSize)windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize;
 @end
 
 @implementation CarlaPluginWindowDelegate
@@ -573,26 +584,36 @@ private:
     (void)sender;
 }
 
-@end
-
-@interface CarlaPluginView : NSView
-- (void)resizeWithOldSuperviewSize:(NSSize)oldSize;
-@end
-
-@implementation CarlaPluginView
-
-- (void)resizeWithOldSuperviewSize:(NSSize)oldSize
+- (NSSize)windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize
 {
-    [super resizeWithOldSuperviewSize:oldSize];
-
-    /*
-    for (NSView* subview in [self subviews])
+    for (NSView* subview in [[window contentView] subviews])
     {
-        [subview setFrame:NSMakeRect(0, 0, oldSize.width, oldSize.height)];
+        const NSSize minSize = [subview fittingSize];
+        if (frameSize.width < minSize.width)
+            frameSize.width = minSize.width;
+        if (frameSize.height < minSize.height)
+            frameSize.height = minSize.height;
         break;
     }
-    */
+
+    return frameSize;
 }
+
+/*
+- (void)windowDidResize:(NSWindow*)sender
+{
+    carla_stdout("window did resize %p %f %f", sender, [window frame].size.width, [window frame].size.height);
+
+    const NSSize size = [window frame].size;
+    NSView* const view = [window contentView];
+
+    for (NSView* subview in [view subviews])
+    {
+        [subview setFrameSize:size];
+        break;
+    }
+}
+*/
 
 @end
 
@@ -606,10 +627,10 @@ public:
           fWindow(nullptr)
     {
         carla_debug("CocoaPluginUI::CocoaPluginUI(%p, " P_UINTPTR, "%s)", callback, parentId, bool2str(isResizable));
-        const CarlaBackend::AutoNSAutoreleasePool arp;
+        const CARLA_BACKEND_NAMESPACE::AutoNSAutoreleasePool arp;
         [NSApplication sharedApplication];
 
-        fView = [[CarlaPluginView new]retain];
+        fView = [[NSView new]retain];
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,)
 
         uint style = NSClosableWindowMask | NSTitledWindowMask;
@@ -634,13 +655,26 @@ public:
             return;
         }
 
-        ((NSWindow*)fWindow).delegate = [[[CarlaPluginWindowDelegate alloc] 
+        ((NSWindow*)fWindow).delegate = [[[CarlaPluginWindowDelegate alloc]
             initWithWindowAndCallback:fWindow
                              callback:callback] retain];
 
-        // if (! isResizable)
+        /*
+        if (isResizable)
+        {
+            [fView setAutoresizingMask:(NSViewWidthSizable |
+                                        NSViewHeightSizable |
+                                        NSViewMinXMargin |
+                                        NSViewMaxXMargin |
+                                        NSViewMinYMargin |
+                                        NSViewMaxYMargin)];
+            [fView setAutoresizesSubviews:YES];
+        }
+        else
+        */
         {
             [fView setAutoresizingMask:NSViewNotSizable];
+            [fView setAutoresizesSubviews:NO];
             [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
         }
 
@@ -696,6 +730,19 @@ public:
     void idle() override
     {
         // carla_debug("CocoaPluginUI::idle()");
+
+        for (NSView* subview in [fView subviews])
+        {
+            const NSSize viewSize = [fView frame].size;
+            const NSSize subviewSize = [subview frame].size;
+
+            if (viewSize.width != subviewSize.width || viewSize.height != subviewSize.height)
+            {
+                [fView setFrameSize:subviewSize];
+                [fWindow setContentSize:subviewSize];
+            }
+            break;
+        }
     }
 
     void focus() override
@@ -714,16 +761,20 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
-        [fView setFrame:NSMakeRect(0, 0, width, height)];
-
-        for (NSView* subview in [fView subviews])
-        {
-            [subview setFrame:NSMakeRect(0, 0, width, height)];
-            break;
-        }
-
         const NSSize size = NSMakeSize(width, height);
+
+        [fView setFrameSize:size];
         [fWindow setContentSize:size];
+
+        // this is needed for a few plugins
+        if (forceUpdate)
+        {
+            for (NSView* subview in [fView subviews])
+            {
+                [subview setFrame:[fView frame]];
+                break;
+            }
+        }
 
         /*
         if (fIsResizable)

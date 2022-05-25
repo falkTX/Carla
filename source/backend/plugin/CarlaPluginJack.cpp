@@ -1134,7 +1134,7 @@ public:
                             fShmRtClientControl.writeByte(3); // size
                             fShmRtClientControl.writeByte(uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT)));
                             fShmRtClientControl.writeByte(uint8_t(ctrlEvent.param));
-                            fShmRtClientControl.writeByte(uint8_t(ctrlEvent.normalizedValue*127.0f));
+                            fShmRtClientControl.writeByte(uint8_t(ctrlEvent.normalizedValue*127.0f + 0.5f));
                         }
                         break;
 
@@ -1533,6 +1533,8 @@ public:
             case kPluginBridgeNonRtServerMidiProgramData:
             case kPluginBridgeNonRtServerSetCustomData:
             case kPluginBridgeNonRtServerVersion:
+            case kPluginBridgeNonRtServerRespEmbedUI:
+            case kPluginBridgeNonRtServerResizeEmbedUI:
                 break;
 
             case kPluginBridgeNonRtServerSetChunkDataFile:

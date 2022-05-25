@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -35,7 +35,7 @@ namespace juce
 
 template <typename OboeDataFormat>  struct OboeAudioIODeviceBufferHelpers {};
 
-template<>
+template <>
 struct OboeAudioIODeviceBufferHelpers<int16>
 {
     static oboe::AudioFormat oboeAudioFormat() { return oboe::AudioFormat::I16; }
@@ -44,34 +44,29 @@ struct OboeAudioIODeviceBufferHelpers<int16>
 
     static bool referAudioBufferDirectlyToOboeIfPossible (int16*, AudioBuffer<float>&, int)  { return false; }
 
+    using NativeInt16   = AudioData::Format<AudioData::Int16, AudioData::NativeEndian>;
+    using NativeFloat32 = AudioData::Format<AudioData::Float32, AudioData::NativeEndian>;
+
     static void convertFromOboe (const int16* srcInterleaved, AudioBuffer<float>& audioBuffer, int numSamples)
     {
-        for (int i = 0; i < audioBuffer.getNumChannels(); ++i)
-        {
-            using DstSampleType = AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::NonConst>;
-            using SrcSampleType = AudioData::Pointer<AudioData::Int16,   AudioData::NativeEndian, AudioData::Interleaved,    AudioData::Const>;
+        const auto numChannels = audioBuffer.getNumChannels();
 
-            DstSampleType dstData (audioBuffer.getWritePointer (i));
-            SrcSampleType srcData (srcInterleaved + i, audioBuffer.getNumChannels());
-            dstData.convertSamples (srcData, numSamples);
-        }
+        AudioData::deinterleaveSamples (AudioData::InterleavedSource<NativeInt16>    { reinterpret_cast<const uint16*> (srcInterleaved), numChannels },
+                                        AudioData::NonInterleavedDest<NativeFloat32> { audioBuffer.getArrayOfWritePointers(),            numChannels },
+                                        numSamples);
     }
 
     static void convertToOboe (const AudioBuffer<float>& audioBuffer, int16* dstInterleaved, int numSamples)
     {
-        for (int i = 0; i < audioBuffer.getNumChannels(); ++i)
-        {
-            using DstSampleType = AudioData::Pointer<AudioData::Int16,   AudioData::NativeEndian, AudioData::Interleaved,    AudioData::NonConst>;
-            using SrcSampleType = AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::Const>;
+        const auto numChannels = audioBuffer.getNumChannels();
 
-            DstSampleType dstData (dstInterleaved + i, audioBuffer.getNumChannels());
-            SrcSampleType srcData (audioBuffer.getReadPointer (i));
-            dstData.convertSamples (srcData, numSamples);
-        }
+        AudioData::interleaveSamples (AudioData::NonInterleavedSource<NativeFloat32> { audioBuffer.getArrayOfReadPointers(),       numChannels },
+                                      AudioData::InterleavedDest<NativeInt16>        { reinterpret_cast<uint16*> (dstInterleaved), numChannels },
+                                      numSamples);
     }
 };
 
-template<>
+template <>
 struct OboeAudioIODeviceBufferHelpers<float>
 {
     static oboe::AudioFormat oboeAudioFormat() { return oboe::AudioFormat::Float; }
@@ -89,6 +84,8 @@ struct OboeAudioIODeviceBufferHelpers<float>
         return false;
     }
 
+    using Format = AudioData::Format<AudioData::Float32, AudioData::NativeEndian>;
+
     static void convertFromOboe (const float* srcInterleaved, AudioBuffer<float>& audioBuffer, int numSamples)
     {
         auto numChannels = audioBuffer.getNumChannels();
@@ -98,15 +95,9 @@ struct OboeAudioIODeviceBufferHelpers<float>
             // No need to convert, we instructed the buffer to point to the src data directly already
             jassert (audioBuffer.getWritePointer (0) != srcInterleaved);
 
-            for (int i = 0; i < numChannels; ++i)
-            {
-                using DstSampleType = AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::NonConst>;
-                using SrcSampleType = AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::Interleaved,    AudioData::Const>;
-
-                DstSampleType dstData (audioBuffer.getWritePointer (i));
-                SrcSampleType srcData (srcInterleaved + i, audioBuffer.getNumChannels());
-                dstData.convertSamples (srcData, numSamples);
-            }
+            AudioData::deinterleaveSamples (AudioData::InterleavedSource<Format>  { srcInterleaved,                        numChannels },
+                                            AudioData::NonInterleavedDest<Format> { audioBuffer.getArrayOfWritePointers(), numChannels },
+                                            numSamples);
         }
     }
 
@@ -119,15 +110,9 @@ struct OboeAudioIODeviceBufferHelpers<float>
             // No need to convert, we instructed the buffer to point to the src data directly already
             jassert (audioBuffer.getReadPointer (0) != dstInterleaved);
 
-            for (int i = 0; i < numChannels; ++i)
-            {
-                using DstSampleType = AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::Interleaved,    AudioData::NonConst>;
-                using SrcSampleType = AudioData::Pointer<AudioData::Float32, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::Const>;
-
-                DstSampleType dstData (dstInterleaved + i, audioBuffer.getNumChannels());
-                SrcSampleType srcData (audioBuffer.getReadPointer (i));
-                dstData.convertSamples (srcData, numSamples);
-            }
+            AudioData::interleaveSamples (AudioData::NonInterleavedSource<Format> { audioBuffer.getArrayOfReadPointers(), numChannels },
+                                          AudioData::InterleavedDest<Format>      { dstInterleaved,                       numChannels },
+                                          numSamples);
         }
     }
 };
@@ -383,6 +368,15 @@ private:
     {
         auto bufferSizeHint = AndroidHighPerformanceAudioHelpers::getNativeBufferSizeHint();
 
+        // providing a callback is required on some devices to get a FAST track, so we pass an
+        // empty one to the temp stream to get the best available buffer size
+        struct DummyCallback  : public oboe::AudioStreamCallback
+        {
+            oboe::DataCallbackResult onAudioReady (oboe::AudioStream*, void*, int32_t) override  { return oboe::DataCallbackResult::Stop; }
+        };
+
+        DummyCallback callback;
+
         // NB: Exclusive mode could be rejected if a device is already opened in that mode, so to get
         //     reliable results, only use this function when a device is closed.
         //     We initially try to open a stream with a buffer size returned from
@@ -395,7 +389,7 @@ private:
                                                   getAndroidSDKVersion() >= 21 ? oboe::AudioFormat::Float : oboe::AudioFormat::I16,
                                                   (int) AndroidHighPerformanceAudioHelpers::getNativeSampleRate(),
                                                   bufferSizeHint,
-                                                  nullptr);
+                                                  &callback);
 
         if (auto* nativeStream = tempStream.getNativeStream())
             return nativeStream->getFramesPerBurst();
@@ -434,8 +428,12 @@ private:
     {
         if (auto* cb = callback.exchange (nullptr))
         {
-            cb->audioDeviceIOCallback (inputChannelData, numInputChannels,
-                                       outputChannelData, numOutputChannels, numFrames);
+            cb->audioDeviceIOCallbackWithContext (inputChannelData,
+                                                  numInputChannels,
+                                                  outputChannelData,
+                                                  numOutputChannels,
+                                                  numFrames,
+                                                  {});
             callback.set (cb);
         }
         else
@@ -498,7 +496,7 @@ private:
                                  + "\nFramesPerCallback = " + String (stream->getFramesPerCallback())
                                  + "\nBytesPerFrame = " + String (stream->getBytesPerFrame())
                                  + "\nBytesPerSample = " + String (stream->getBytesPerSample())
-                                 + "\nPerformanceMode = " + getOboeString (oboe::PerformanceMode::LowLatency)
+                                 + "\nPerformanceMode = " + getOboeString (stream->getPerformanceMode())
                                  + "\ngetDeviceId = " + String (stream->getDeviceId()));
             }
         }
@@ -591,7 +589,7 @@ private:
                  + "\nFramesPerCallback = " + (stream != nullptr ? String (stream->getFramesPerCallback()) : String ("?"))
                  + "\nBytesPerFrame = " + (stream != nullptr ? String (stream->getBytesPerFrame()) : String ("?"))
                  + "\nBytesPerSample = " + (stream != nullptr ? String (stream->getBytesPerSample()) : String ("?"))
-                 + "\nPerformanceMode = " + getOboeString (oboe::PerformanceMode::LowLatency));
+                 + "\nPerformanceMode = " + (stream != nullptr ? getOboeString (stream->getPerformanceMode()) : String ("?")));
         }
 
         void close()
@@ -878,7 +876,7 @@ private:
                  + "\nFramesPerCallback = " + (stream != nullptr ? String (stream->getFramesPerCallback()) : String ("?"))
                  + "\nBytesPerFrame = " + (stream != nullptr ? String (stream->getBytesPerFrame()) : String ("?"))
                  + "\nBytesPerSample = " + (stream != nullptr ? String (stream->getBytesPerSample()) : String ("?"))
-                 + "\nPerformanceMode = " + getOboeString (oboe::PerformanceMode::LowLatency)
+                 + "\nPerformanceMode = " + (stream != nullptr ? getOboeString (stream->getPerformanceMode()) : String ("?"))
                  + "\ngetDeviceId = " + (stream != nullptr ? String (stream->getDeviceId()) : String ("?")));
         }
 
@@ -1261,6 +1259,7 @@ public:
             case 22:  return "USB headset";
             case 23:  return "hearing aid";
             case 24:  return "built-in speaker safe";
+            case 25:  return {};
             default:  jassertfalse; return {}; // type not supported yet, needs to be added!
         }
     }
@@ -1421,6 +1420,7 @@ private:
 };
 
 //==============================================================================
+pthread_t juce_createRealtimeAudioThread (void* (*entry) (void*), void* userPtr);
 pthread_t juce_createRealtimeAudioThread (void* (*entry) (void*), void* userPtr)
 {
     auto thread = std::make_unique<OboeRealtimeThread>();

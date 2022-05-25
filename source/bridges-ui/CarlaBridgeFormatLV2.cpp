@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -521,7 +521,7 @@ public:
 
 #ifdef CARLA_OS_MAC
         // Binary might be in quarentine due to Apple stupid notarization rules, let's remove that if possible
-        CarlaBackend::removeFileFromQuarantine(fRdfUiDescriptor->Binary);
+        CARLA_BACKEND_NAMESPACE::removeFileFromQuarantine(fRdfUiDescriptor->Binary);
 #endif
 
         if (! libOpen(fRdfUiDescriptor->Binary))

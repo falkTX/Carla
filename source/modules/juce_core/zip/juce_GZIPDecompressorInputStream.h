@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -91,11 +91,6 @@ private:
 
     class GZIPDecompressHelper;
     std::unique_ptr<GZIPDecompressHelper> helper;
-
-   #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
-    // The arguments to this method have changed! Please pass a Format enum instead of the old dontWrap bool.
-    GZIPDecompressorInputStream (InputStream*, bool, bool, int64 x = -1);
-   #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GZIPDecompressorInputStream)
 };

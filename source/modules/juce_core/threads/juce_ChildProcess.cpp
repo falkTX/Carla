@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -101,7 +101,7 @@ public:
     {
         beginTest ("Child Processes");
 
-      #if JUCE_WINDOWS || JUCE_MAC || JUCE_LINUX
+      #if JUCE_WINDOWS || JUCE_MAC || JUCE_LINUX || JUCE_BSD
         ChildProcess p;
 
        #if JUCE_WINDOWS

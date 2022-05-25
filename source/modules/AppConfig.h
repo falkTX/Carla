@@ -29,13 +29,13 @@
 # define APPCONFIG_OS_MAC
 #elif defined(__linux__) || defined(__linux)
 # define APPCONFIG_OS_LINUX
-#else
-# error Unsupported platform!
+#elif defined(__FreeBSD__)
+# define APPCONFIG_OS_FREEBSD
 #endif
 
 #if defined(APPCONFIG_OS_WIN32) || defined(APPCONFIG_OS_WIN64)
 # define APPCONFIG_OS_WIN
-#elif defined(APPCONFIG_OS_LINUX) || defined(APPCONFIG_OS_MAC)
+#elif defined(APPCONFIG_OS_LINUX) || defined(APPCONFIG_OS_FREEBSD) || defined(APPCONFIG_OS_MAC)
 # define APPCONFIG_OS_UNIX
 #endif
 
@@ -49,6 +49,7 @@
 #define JUCE_MODULE_AVAILABLE_juce_events                1
 #define JUCE_MODULE_AVAILABLE_juce_graphics              1
 #define JUCE_MODULE_AVAILABLE_juce_gui_basics            1
+#define JUCE_MODULE_AVAILABLE_juce_gui_extra             1
 
 // always disabled
 #define JUCE_MODULE_AVAILABLE_juce_audio_formats         0
@@ -65,12 +66,6 @@
 # define JUCE_MODULE_AVAILABLE_juce_audio_devices        0
 #endif
 
-#ifdef USING_JUCE_GUI_EXTRA
-# define JUCE_MODULE_AVAILABLE_juce_gui_extra            1
-#else
-# define JUCE_MODULE_AVAILABLE_juce_gui_extra            0
-#endif
-
 // misc
 #define JUCE_DISABLE_JUCE_VERSION_PRINTING 1
 #define JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED 1
@@ -81,7 +76,7 @@
 #define JUCE_STRING_UTF_TYPE 8
 #define JUCE_USE_VFORK 1
 
-#ifdef APPCONFIG_OS_LINUX
+#if defined(APPCONFIG_OS_LINUX) || defined(APPCONFIG_OS_FREEBSD)
 # define JUCE_DISABLE_NATIVE_FILECHOOSERS 1
 # define JUCE_MODAL_LOOPS_PERMITTED 0
 // # define JUCE_AUDIOPROCESSOR_NO_GUI 1
@@ -145,7 +140,7 @@
 /** Config: JUCE_JACK
     Enables JACK audio devices (Linux only).
 */
-#ifdef APPCONFIG_OS_LINUX
+#if defined(APPCONFIG_OS_LINUX) || defined(APPCONFIG_OS_FREEBSD)
  #define JUCE_JACK 1
  #define JUCE_JACK_CLIENT_NAME "Carla"
 #else
@@ -227,7 +222,7 @@
 
     @see VSTPluginFormat, VST3PluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST, JUCE_PLUGINHOST_AU
 */
-#if defined(APPCONFIG_OS_LINUX) || defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
+#if defined(APPCONFIG_OS_LINUX) || defined(APPCONFIG_OS_FREEBSD) || defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
 # define JUCE_PLUGINHOST_VST3 1
 #else
 # define JUCE_PLUGINHOST_VST3 0
@@ -357,11 +352,7 @@
 
 #define JUCE_INCLUDE_JPEGLIB_CODE 1
 
-#ifdef APPCONFIG_OS_MAC
-# define USE_COREGRAPHICS_RENDERING 1
-#else
-# define USE_COREGRAPHICS_RENDERING 0
-#endif
+#define USE_COREGRAPHICS_RENDERING 0
 
 // --------------------------------------------------------------------------------------------------------------------
 // juce_gui_basics

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -79,7 +79,7 @@ public:
     */
     bool hasStopMessageBeenSent() const noexcept        { return quitMessagePosted.get() != 0; }
 
-   #if JUCE_MODAL_LOOPS_PERMITTED || DOXYGEN
+   #if JUCE_MODAL_LOOPS_PERMITTED
     /** Synchronously dispatches messages until a given time has elapsed.
 
         Returns false if a quit message has been posted by a call to stopDispatchLoop(),
@@ -203,7 +203,7 @@ public:
             Creates a new critical section to exclusively access methods which can
             only be called when the message manager is locked.
 
-            Unlike CrititcalSection, multiple instances of this lock class provide
+            Unlike CriticalSection, multiple instances of this lock class provide
             exclusive access to a single resource - the MessageManager.
         */
         Lock();
@@ -311,7 +311,6 @@ public:
     // Internal methods - do not use!
     void deliverBroadcastMessage (const String&);
     ~MessageManager() noexcept;
-    static bool dispatchNextMessageOnSystemQueue (bool returnIfNoPendingMessages);
    #endif
 
 private:

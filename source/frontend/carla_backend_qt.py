@@ -32,7 +32,7 @@ from carla_backend import CarlaHostNull, CarlaHostDLL, CarlaHostPlugin
 class CarlaHostSignals(QObject):
     # signals
     DebugCallback = pyqtSignal(int, int, int, int, float, str)
-    PluginAddedCallback = pyqtSignal(int, str)
+    PluginAddedCallback = pyqtSignal(int, int, str)
     PluginRemovedCallback = pyqtSignal(int)
     PluginRenamedCallback = pyqtSignal(int, str)
     PluginUnavailableCallback = pyqtSignal(int, str)

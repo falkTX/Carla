@@ -247,19 +247,6 @@ String& String::operator= (const String& other) noexcept
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-String::String (String&& other) noexcept   : text (other.text)
-{
-    other.text = &(emptyString.text);
-}
-
-String& String::operator= (String&& other) noexcept
-{
-    std::swap (text, other.text);
-    return *this;
-}
-#endif
-
 inline String::PreallocationBytes::PreallocationBytes (const size_t num) noexcept : numBytes (num) {}
 
 String::String (const PreallocationBytes& preallocationSize)
@@ -1920,6 +1907,23 @@ struct StringEncodingConverter<CharPointer_UTF8, CharPointer_UTF8>
 };
 
 CharPointer_UTF8  String::toUTF8()  const { return StringEncodingConverter<CharPointerType, CharPointer_UTF8 >::convert (*this); }
+
+#ifdef CARLA_OS_WIN
+std::wstring String::toUTF16() const
+{
+    if (isEmpty())
+        return L"";
+
+    const int len = MultiByteToWideChar (CP_UTF8, 0, toUTF8(), length() + 1, nullptr, 0);
+    CARLA_SAFE_ASSERT_RETURN(len > 0, L"");
+
+    std::wstring ret;
+    ret.resize(len);
+
+    MultiByteToWideChar (CP_UTF8, 0, toUTF8(), length(), &ret[0], len);
+    return ret;
+}
+#endif
 
 const char* String::toRawUTF8() const
 {

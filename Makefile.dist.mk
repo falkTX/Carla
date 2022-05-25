@@ -92,15 +92,18 @@ endif
 
 _CARLA_APP_FILES = \
 	Carla$(APP_EXT) \
-	libcarla_host-plugin$(LIB_EXT) \
-	libcarla_native-plugin$(LIB_EXT) \
-	libcarla_standalone2$(LIB_EXT) \
 	$(_CARLA_HOST_FILES) \
 	$(_PYTHON_FILES) \
 	$(_QT5_DLLS) \
 	$(_QT5_PLUGINS) \
 	$(_THEME_FILES) \
 	resources/lib
+
+ifneq ($(EMBED_TARGET),true)
+_CARLA_APP_FILES += \
+	libcarla_host-plugin$(LIB_EXT) \
+	libcarla_native-plugin$(LIB_EXT) \
+	libcarla_standalone2$(LIB_EXT)
 
 _CARLA_CONTROL_APP_FILES = \
 	Carla-Control$(APP_EXT) \
@@ -147,6 +150,7 @@ _CARLA_VST2_PLUGIN_FILES = \
 	$(_QT5_PLUGINS:%=carla.vst/resources/%) \
 	$(_THEME_FILES:%=carla.vst/resources/%)
 endif
+endif # EMBED_TARGET
 
 ifeq ($(MACOS),true)
 CARLA_APP_FILES = $(_CARLA_APP_FILES:%=build/Carla.app/Contents/MacOS/%)
@@ -218,6 +222,7 @@ endef
 define GENERATE_FINAL_ZIP
 endef
 endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # macOS plist files
 

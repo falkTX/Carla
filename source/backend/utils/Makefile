@@ -30,6 +30,7 @@ LIBS  = $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/water.files.a
 
 ifeq ($(USING_JUCE),true)
+LIBS += $(MODULEDIR)/carla_juce.a
 LIBS += $(MODULEDIR)/juce_audio_basics.a
 LIBS += $(MODULEDIR)/juce_audio_processors.a
 LIBS += $(MODULEDIR)/juce_core.a
@@ -37,9 +38,7 @@ LIBS += $(MODULEDIR)/juce_data_structures.a
 LIBS += $(MODULEDIR)/juce_events.a
 LIBS += $(MODULEDIR)/juce_graphics.a
 LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS += $(MODULEDIR)/juce_gui_extra.a
-endif
 endif
 
 LINK_FLAGS += $(LILV_LIBS)
@@ -61,9 +60,7 @@ LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
-endif
 endif
 
 LINK_FLAGS += $(MODULEDIR)/ysfx.a
@@ -86,21 +83,28 @@ debug:
 $(BINDIR)/libcarla_utils$(LIB_EXT): $(OBJS) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_utils$(LIB_EXT)"
-	@$(CXX) $(OBJS) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) $(LINK_FLAGS) $(SHARED) -o $@
+	$(SILENT)$(CXX) $(OBJS) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) $(LINK_FLAGS) $(SHARED) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)
+ifeq ($(USING_JUCE),true)
+$(OBJDIR)/CachedPlugins.cpp.o: CachedPlugins.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
+endif
+
 $(OBJDIR)/Windows.cpp.o: Windows.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 -include $(OBJS:%.o=%.d)
 

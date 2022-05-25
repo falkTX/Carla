@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,6 +21,7 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
+CARLA_PLUGIN_EXPORT
 int jack_set_latency_callback(jack_client_t* client, JackLatencyCallback callback, void* arg)
 {
     carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
@@ -29,7 +30,7 @@ int jack_set_latency_callback(jack_client_t* client, JackLatencyCallback callbac
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_port_get_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range)
 {
     carla_debug("%s(%p, %u, %p)", __FUNCTION__, port, mode, range);
@@ -42,7 +43,7 @@ void jack_port_get_latency_range(jack_port_t* port, jack_latency_callback_mode_t
     (void)mode;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_port_set_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range)
 {
     carla_stderr2("%s(%p, %u, %p)", __FUNCTION__, port, mode, range);
@@ -50,14 +51,14 @@ void jack_port_set_latency_range(jack_port_t* port, jack_latency_callback_mode_t
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_recompute_total_latencies(jack_client_t* client)
 {
     carla_stderr2("%s(%p)", __FUNCTION__, client);
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_nframes_t jack_port_get_latency(jack_port_t* port)
 {
     carla_debug("%s(%p)", __FUNCTION__, port);
@@ -80,7 +81,7 @@ jack_nframes_t jack_port_get_latency(jack_port_t* port)
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_nframes_t jack_port_get_total_latency(jack_client_t* client, jack_port_t* port)
 {
     carla_debug("%s(%p, %p)", __FUNCTION__, client, port);
@@ -119,13 +120,13 @@ jack_nframes_t jack_port_get_total_latency(jack_client_t* client, jack_port_t* p
 // --------------------------------------------------------------------------------------------------------------------
 // deprecated calls
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_port_set_latency(jack_port_t* port, jack_nframes_t nframes)
 {
     carla_stderr2("%s(%p, %u)", __FUNCTION__, port, nframes);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_recompute_total_latency(jack_client_t* client, jack_port_t* port)
 {
     carla_stderr2("%s(%p, %p)", __FUNCTION__, client, port);

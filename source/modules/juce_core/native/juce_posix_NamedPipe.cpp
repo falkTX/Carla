@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -23,6 +23,8 @@
 namespace juce
 {
 
+#if ! JUCE_WASM
+
 class NamedPipe::Pimpl
 {
 public:
@@ -37,8 +39,8 @@ public:
 
     ~Pimpl()
     {
-        if (pipeIn  != -1)  ::close (pipeIn);
-        if (pipeOut != -1)  ::close (pipeOut);
+        pipeIn .close();
+        pipeOut.close();
 
         if (createdPipe)
         {
@@ -49,7 +51,7 @@ public:
 
     bool connect (int timeOutMilliseconds)
     {
-        return openPipe (true, getTimeoutEnd (timeOutMilliseconds));
+        return openPipe (true, getTimeoutEnd (timeOutMilliseconds)) != invalidPipe;
     }
 
     int read (char* destBuffer, int maxBytesToRead, int timeOutMilliseconds)
@@ -59,18 +61,22 @@ public:
 
         while (bytesRead < maxBytesToRead)
         {
+            const auto pipe = pipeIn.get();
+
             auto bytesThisTime = maxBytesToRead - bytesRead;
-            auto numRead = (int) ::read (pipeIn, destBuffer, (size_t) bytesThisTime);
+            auto numRead = (int) ::read (pipe, destBuffer, (size_t) bytesThisTime);
 
             if (numRead <= 0)
             {
-                if (errno != EWOULDBLOCK || stopReadOperation.load() || hasExpired (timeoutEnd))
+                const auto error = errno;
+
+                if (! (error == EWOULDBLOCK || error == EAGAIN) || stopReadOperation.load() || hasExpired (timeoutEnd))
                     return -1;
 
                 const int maxWaitingTime = 30;
-                waitForInput (pipeIn, timeoutEnd == 0 ? maxWaitingTime
-                                                      : jmin (maxWaitingTime,
-                                                              (int) (timeoutEnd - Time::getMillisecondCounter())));
+                waitForInput (pipe, timeoutEnd == 0 ? maxWaitingTime
+                                                    : jmin (maxWaitingTime,
+                                                            (int) (timeoutEnd - Time::getMillisecondCounter())));
                 continue;
             }
 
@@ -85,7 +91,9 @@ public:
     {
         auto timeoutEnd = getTimeoutEnd (timeOutMilliseconds);
 
-        if (! openPipe (false, timeoutEnd))
+        const auto pipe = openPipe (false, timeoutEnd);
+
+        if (pipe == invalidPipe)
             return -1;
 
         int bytesWritten = 0;
@@ -93,10 +101,22 @@ public:
         while (bytesWritten < numBytesToWrite && ! hasExpired (timeoutEnd))
         {
             auto bytesThisTime = numBytesToWrite - bytesWritten;
-            auto numWritten = (int) ::write (pipeOut, sourceBuffer, (size_t) bytesThisTime);
+            auto numWritten = (int) ::write (pipe, sourceBuffer, (size_t) bytesThisTime);
 
-            if (numWritten <= 0)
-                return -1;
+            if (numWritten < 0)
+            {
+                const auto error = errno;
+                const int maxWaitingTime = 30;
+
+                if (error == EWOULDBLOCK || error == EAGAIN)
+                    waitToWrite (pipe, timeoutEnd == 0 ? maxWaitingTime
+                                                       : jmin (maxWaitingTime,
+                                                               (int) (timeoutEnd - Time::getMillisecondCounter())));
+                else
+                    return -1;
+
+                numWritten = 0;
+            }
 
             bytesWritten += numWritten;
             sourceBuffer += numWritten;
@@ -118,8 +138,52 @@ public:
         return createdFifoIn && createdFifoOut;
     }
 
+    static constexpr auto invalidPipe = -1;
+
+    class PipeDescriptor
+    {
+    public:
+        template <typename Fn>
+        int get (Fn&& fn)
+        {
+            {
+                const ScopedReadLock l (mutex);
+
+                if (descriptor != invalidPipe)
+                    return descriptor;
+            }
+
+            const ScopedWriteLock l (mutex);
+            return descriptor = fn();
+        }
+
+        void close()
+        {
+            {
+                const ScopedReadLock l (mutex);
+
+                if (descriptor == invalidPipe)
+                    return;
+            }
+
+            const ScopedWriteLock l (mutex);
+            ::close (descriptor);
+            descriptor = invalidPipe;
+        }
+
+        int get()
+        {
+            const ScopedReadLock l (mutex);
+            return descriptor;
+        }
+
+    private:
+        ReadWriteLock mutex;
+        int descriptor = invalidPipe;
+    };
+
     const String pipeInName, pipeOutName;
-    int pipeIn = -1, pipeOut = -1;
+    PipeDescriptor pipeIn, pipeOut;
     bool createdFifoIn = false, createdFifoOut = false;
 
     const bool createdPipe;
@@ -144,30 +208,25 @@ private:
         {
             auto p = ::open (name.toUTF8(), flags);
 
-            if (p != -1 || hasExpired (timeoutEnd) || stopReadOperation.load())
+            if (p != invalidPipe || hasExpired (timeoutEnd) || stopReadOperation.load())
                 return p;
 
             Thread::sleep (2);
         }
     }
 
-    bool openPipe (bool isInput, uint32 timeoutEnd)
+    int openPipe (bool isInput, uint32 timeoutEnd)
     {
         auto& pipe = isInput ? pipeIn : pipeOut;
-        int flags = isInput ? O_RDWR | O_NONBLOCK : O_WRONLY;
+        const auto flags = (isInput ? O_RDWR : O_WRONLY) | O_NONBLOCK;
 
         const String& pipeName = isInput ? (createdPipe ? pipeInName : pipeOutName)
                                          : (createdPipe ? pipeOutName : pipeInName);
 
-        if (pipe == -1)
+        return pipe.get ([this, &pipeName, &flags, &timeoutEnd]
         {
-            pipe = openPipe (pipeName, flags, timeoutEnd);
-
-            if (pipe == -1)
-                return false;
-        }
-
-        return true;
+            return openPipe (pipeName, flags, timeoutEnd);
+        });
     }
 
     static void waitForInput (int handle, int timeoutMsecs) noexcept
@@ -176,20 +235,32 @@ private:
         poll (&pfd, 1, timeoutMsecs);
     }
 
+    static void waitToWrite (int handle, int timeoutMsecs) noexcept
+    {
+        pollfd pfd { handle, POLLOUT, 0 };
+        poll (&pfd, 1, timeoutMsecs);
+    }
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl)
 };
 
 void NamedPipe::close()
 {
-    if (pimpl != nullptr)
     {
-        pimpl->stopReadOperation = true;
+        const ScopedReadLock sl (lock);
 
-        char buffer[1] = { 0 };
-        ssize_t done = ::write (pimpl->pipeIn, buffer, 1);
-        ignoreUnused (done);
+        if (pimpl != nullptr)
+        {
+            pimpl->stopReadOperation = true;
 
-        ScopedWriteLock sl (lock);
+            const char buffer[] { 0 };
+            const auto done = ::write (pimpl->pipeIn.get(), buffer, numElementsInArray (buffer));
+            ignoreUnused (done);
+        }
+    }
+
+    {
+        const ScopedWriteLock sl (lock);
         pimpl.reset();
     }
 }
@@ -234,5 +305,7 @@ int NamedPipe::write (const void* sourceBuffer, int numBytesToWrite, int timeOut
     ScopedReadLock sl (lock);
     return pimpl != nullptr ? pimpl->write (static_cast<const char*> (sourceBuffer), numBytesToWrite, timeOutMilliseconds) : -1;
 }
+
+#endif
 
 } // namespace juce

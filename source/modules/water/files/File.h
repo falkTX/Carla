@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -28,6 +28,9 @@
 
 #include "../containers/Array.h"
 #include "../misc/Result.h"
+#include "../text/String.h"
+
+#include <vector>
 
 namespace water {
 
@@ -88,11 +91,6 @@ public:
 
     /** Copies from another file object. */
     File& operator= (const File& otherFile);
-
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    File (File&&) noexcept;
-    File& operator= (File&&) noexcept;
-   #endif
 
     //==============================================================================
     /** Checks whether the file actually exists.
@@ -496,7 +494,7 @@ public:
 
         @see getNumberOfChildFiles, DirectoryIterator
     */
-    int findChildFiles (Array<File>& results,
+    int findChildFiles (std::vector<File>& results,
                         int whatToLookFor,
                         bool searchRecursively,
                         const String& wildCardPattern = "*") const;

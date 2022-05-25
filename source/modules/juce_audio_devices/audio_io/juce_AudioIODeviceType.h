@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -80,9 +80,8 @@ public:
 
         The scanForDevices() method must have been called to create this list.
 
-        @param wantInputNames     only really used by DirectSound where devices are split up
-                                  into inputs and outputs, this indicates whether to use
-                                  the input or output name to refer to a pair of devices.
+        @param wantInputNames    for devices which have separate inputs and outputs
+                                 this determines which list of names is returned
     */
     virtual StringArray getDeviceNames (bool wantInputNames = false) const = 0;
 
@@ -168,8 +167,10 @@ public:
     /** Creates a Bela device type if it's available on this platform, or returns null. */
     static AudioIODeviceType* createAudioIODeviceType_Bela();
 
-    /** This method has been deprecated. You should call the method which takes a WASAPIDeviceMode instead. */
-    JUCE_DEPRECATED (static AudioIODeviceType* createAudioIODeviceType_WASAPI (bool exclusiveMode));
+   #ifndef DOXYGEN
+    [[deprecated ("You should call the method which takes a WASAPIDeviceMode instead.")]]
+    static AudioIODeviceType* createAudioIODeviceType_WASAPI (bool exclusiveMode);
+   #endif
 
 protected:
     explicit AudioIODeviceType (const String& typeName);

@@ -86,19 +86,6 @@ File& File::operator= (const File& other)
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-File::File (File&& other) noexcept
-    : fullPath (static_cast<String&&> (other.fullPath))
-{
-}
-
-File& File::operator= (File&& other) noexcept
-{
-    fullPath = static_cast<String&&> (other.fullPath);
-    return *this;
-}
-#endif
-
 bool File::isNull() const
 {
     return fullPath.isEmpty();
@@ -276,11 +263,11 @@ bool File::deleteRecursively() const
 
     if (isDirectory())
     {
-        Array<File> subFiles;
+        std::vector<File> subFiles;
         findChildFiles (subFiles, File::findFilesAndDirectories, false);
 
         for (int i = subFiles.size(); --i >= 0;)
-            worked = subFiles.getReference(i).deleteRecursively() && worked;
+            worked = subFiles[i].deleteRecursively() && worked;
     }
 
     return deleteFile() && worked;
@@ -328,12 +315,12 @@ bool File::copyDirectoryTo (const File& newDirectory) const
 {
     if (isDirectory() && newDirectory.createDirectory())
     {
-        Array<File> subFiles;
+        std::vector<File> subFiles;
         findChildFiles (subFiles, File::findFiles, false);
 
-        for (int i = 0; i < subFiles.size(); ++i)
+        for (size_t i = 0; i < subFiles.size(); ++i)
         {
-            const File& src (subFiles.getReference(i));
+            const File& src (subFiles[i]);
             const File& dst (newDirectory.getChildFile (src.getFileName()));
 
             if (src.isSymbolicLink())
@@ -351,8 +338,8 @@ bool File::copyDirectoryTo (const File& newDirectory) const
         subFiles.clear();
         findChildFiles (subFiles, File::findDirectories, false);
 
-        for (int i = 0; i < subFiles.size(); ++i)
-            if (! subFiles.getReference(i).copyDirectoryTo (newDirectory.getChildFile (subFiles.getReference(i).getFileName())))
+        for (size_t i = 0; i < subFiles.size(); ++i)
+            if (! subFiles[i].copyDirectoryTo (newDirectory.getChildFile (subFiles[i].getFileName())))
                 return false;
 
         return true;
@@ -569,7 +556,7 @@ void File::readLines (StringArray& destLines) const
 }
 
 //==============================================================================
-int File::findChildFiles (Array<File>& results,
+int File::findChildFiles (std::vector<File>& results,
                           const int whatToLookFor,
                           const bool searchRecursively,
                           const String& wildCardPattern) const
@@ -578,7 +565,7 @@ int File::findChildFiles (Array<File>& results,
 
     for (DirectoryIterator di (*this, searchRecursively, wildCardPattern, whatToLookFor); di.next();)
     {
-        results.add (di.getFile());
+        results.push_back (di.getFile());
         ++total;
     }
 
@@ -966,20 +953,8 @@ bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExist
     }
 
    #ifdef CARLA_OS_WIN
-    typedef BOOLEAN (WINAPI* PFUNC)(LPCTSTR, LPCTSTR, DWORD);
-
-# if defined(__GNUC__) && (__GNUC__ >= 9)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wcast-function-type"
-# endif
-    const PFUNC pfn = (PFUNC)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateSymbolicLinkA");
-# if defined(__GNUC__) && (__GNUC__ >= 9)
-#  pragma GCC diagnostic pop
-# endif
-    CARLA_SAFE_ASSERT_RETURN(pfn != nullptr, false);
-
-    return pfn(linkFileToCreate.getFullPathName().toRawUTF8(), fullPath.toRawUTF8(),
-               isDirectory() ? 0x1 /*SYMBOLIC_LINK_FLAG_DIRECTORY*/ : 0x0) != FALSE;
+    carla_stderr("File::createSymbolicLink failed, unsupported");
+    return false;
    #else
     // one common reason for getting an error here is that the file already exists
     return symlink(fullPath.toRawUTF8(), linkFileToCreate.getFullPathName().toRawUTF8()) != -1;
@@ -992,7 +967,7 @@ namespace WindowsFileHelpers
 {
     DWORD getAtts (const String& path)
     {
-        return GetFileAttributes (path.toUTF8());
+        return GetFileAttributesW (path.toUTF16().c_str());
     }
 
     int64 fileTimeToTime (const FILETIME* const ft)
@@ -1006,20 +981,30 @@ namespace WindowsFileHelpers
 
     File getSpecialFolderPath (int type)
     {
-        CHAR path [MAX_PATH + 256];
+        WCHAR wpath [MAX_PATH + 256];
 
-        if (SHGetSpecialFolderPath (0, path, type, FALSE))
-            return File (String (path));
+        if (SHGetSpecialFolderPathW (nullptr, wpath, type, FALSE))
+        {
+            CHAR apath [MAX_PATH + 256];
+
+            if (WideCharToMultiByte (CP_UTF8, 0, wpath, -1, apath, numElementsInArray (apath), nullptr, nullptr))
+                return File (String (apath));
+        }
 
         return File();
     }
 
     File getModuleFileName (HINSTANCE moduleHandle)
     {
-        CHAR dest [MAX_PATH + 256];
-        dest[0] = 0;
-        GetModuleFileName (moduleHandle, dest, (DWORD) numElementsInArray (dest));
-        return File (String (dest));
+        WCHAR wdest [MAX_PATH + 256];
+        CHAR adest [MAX_PATH + 256];
+        wdest[0] = 0;
+        GetModuleFileNameW (moduleHandle, wdest, (DWORD) numElementsInArray (wdest));
+
+        if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
+            return File (String (adest));
+
+        return File();
     }
 }
 
@@ -1063,7 +1048,7 @@ int64 File::getSize() const
 {
     WIN32_FILE_ATTRIBUTE_DATA attributes;
 
-    if (GetFileAttributesEx (fullPath.toUTF8(), GetFileExInfoStandard, &attributes))
+    if (GetFileAttributesExW (fullPath.toUTF16().c_str(), GetFileExInfoStandard, &attributes))
         return (((int64) attributes.nFileSizeHigh) << 32) | attributes.nFileSizeLow;
 
     return 0;
@@ -1074,8 +1059,8 @@ bool File::deleteFile() const
     if (! exists())
         return true;
 
-    return isDirectory() ? RemoveDirectory (fullPath.toUTF8()) != 0
-                         : DeleteFile (fullPath.toUTF8()) != 0;
+    return isDirectory() ? RemoveDirectoryW (fullPath.toUTF16().c_str()) != 0
+                         : DeleteFileW (fullPath.toUTF16().c_str()) != 0;
 }
 
 File File::getLinkedTarget() const
@@ -1085,12 +1070,12 @@ File File::getLinkedTarget() const
 
 bool File::copyInternal (const File& dest) const
 {
-    return CopyFile (fullPath.toUTF8(), dest.getFullPathName().toUTF8(), false) != 0;
+    return CopyFileW (fullPath.toUTF16().c_str(), dest.getFullPathName().toUTF16().c_str(), false) != 0;
 }
 
 bool File::moveInternal (const File& dest) const
 {
-    return MoveFile (fullPath.toUTF8(), dest.getFullPathName().toUTF8()) != 0;
+    return MoveFileW (fullPath.toUTF16().c_str(), dest.getFullPathName().toUTF16().c_str()) != 0;
 }
 
 bool File::replaceInternal (const File& dest) const
@@ -1098,32 +1083,38 @@ bool File::replaceInternal (const File& dest) const
     void* lpExclude = 0;
     void* lpReserved = 0;
 
-    return ReplaceFile (dest.getFullPathName().toUTF8(), fullPath.toUTF8(),
-                        0, REPLACEFILE_IGNORE_MERGE_ERRORS, lpExclude, lpReserved) != 0;
+    return ReplaceFileW (dest.getFullPathName().toUTF16().c_str(),
+                         fullPath.toUTF16().c_str(),
+                         0, REPLACEFILE_IGNORE_MERGE_ERRORS, lpExclude, lpReserved) != 0;
 }
 
 Result File::createDirectoryInternal (const String& fileName) const
 {
-    return CreateDirectory (fileName.toUTF8(), 0) ? Result::ok()
-                                                  : getResultForLastError();
+    return CreateDirectoryW (fileName.toUTF16().c_str(), 0) ? Result::ok()
+                                                            : getResultForLastError();
 }
 
 File File::getCurrentWorkingDirectory()
 {
-    CHAR dest [MAX_PATH + 256];
-    dest[0] = 0;
-    GetCurrentDirectory ((DWORD) numElementsInArray (dest), dest);
-    return File (String (dest));
+    WCHAR wdest [MAX_PATH + 256];
+    CHAR adest [MAX_PATH + 256];
+    wdest[0] = 0;
+    GetCurrentDirectoryW ((DWORD) numElementsInArray (wdest), wdest);
+
+    if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
+        return File (String (adest));
+
+    return File();
 }
 
 bool File::setAsCurrentWorkingDirectory() const
 {
-    return SetCurrentDirectory (getFullPathName().toUTF8()) != FALSE;
+    return SetCurrentDirectoryW (getFullPathName().toUTF16().c_str()) != FALSE;
 }
 
 bool File::isSymbolicLink() const
 {
-    return (GetFileAttributes (fullPath.toUTF8()) & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+    return (GetFileAttributesW (fullPath.toUTF16().c_str()) & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
 }
 
 File File::getSpecialLocation (const SpecialLocationType type)
@@ -1138,10 +1129,15 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
         case tempDirectory:
         {
-            CHAR dest [2048];
-            dest[0] = 0;
-            GetTempPath ((DWORD) numElementsInArray (dest), dest);
-            return File (String (dest));
+            WCHAR wdest [2048];
+            CHAR adest [2048];
+            wdest[0] = 0;
+            GetTempPathW ((DWORD) numElementsInArray (wdest), wdest);
+
+            if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
+                return File (String (adest));
+
+            return File();
         }
 
         case currentExecutableFile:
@@ -1179,22 +1175,33 @@ public:
                Time* const modTime, Time* const creationTime, bool* const isReadOnly)
     {
         using namespace WindowsFileHelpers;
-        WIN32_FIND_DATA findData;
+        WIN32_FIND_DATAW findData;
 
         if (handle == INVALID_HANDLE_VALUE)
         {
-            handle = FindFirstFile (directoryWithWildCard.toUTF8(), &findData);
+            handle = FindFirstFileW (directoryWithWildCard.toUTF16().c_str(), &findData);
 
             if (handle == INVALID_HANDLE_VALUE)
                 return false;
         }
         else
         {
-            if (FindNextFile (handle, &findData) == 0)
+            if (FindNextFileW (handle, &findData) == 0)
                 return false;
         }
 
-        filenameFound = findData.cFileName;
+        const size_t wlen = wcslen(findData.cFileName);
+        CARLA_SAFE_ASSERT_RETURN (wlen > 0, false);
+
+        const int len = WideCharToMultiByte (CP_UTF8, 0, findData.cFileName, (int) wlen, nullptr, 0, nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN (len > 0, false);
+
+        if (CHAR* const path = new CHAR [len])
+        {
+            WideCharToMultiByte (CP_UTF8, 0, findData.cFileName, (int) wlen, path, len, nullptr, nullptr);
+            filenameFound = path;
+            delete[] path;
+        }
 
         if (isDir != nullptr)         *isDir        = ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
         if (isReadOnly != nullptr)    *isReadOnly   = ((findData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0);

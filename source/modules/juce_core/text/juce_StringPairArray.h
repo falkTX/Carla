@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -42,7 +42,7 @@ public:
     StringPairArray (const StringPairArray& other);
 
     /** Destructor. */
-    ~StringPairArray();
+    ~StringPairArray() = default;
 
     /** Copies the contents of another string array into this one */
     StringPairArray& operator= (const StringPairArray& other);
@@ -124,6 +124,10 @@ public:
     */
     void setIgnoresCase (bool shouldIgnoreCase);
 
+    /** Indicates whether a case-insensitive search is used when looking up a key string.
+    */
+    bool getIgnoresCase() const noexcept;
+
     //==============================================================================
     /** Returns a descriptive string containing the items.
         This is handy for dumping the contents of an array.
@@ -139,9 +143,18 @@ public:
     */
     void minimiseStorageOverheads();
 
+    //==============================================================================
+    /** Adds the contents of a map to this StringPairArray. */
+    void addMap (const std::map<String, String>& mapToAdd);
+
+    /** Adds the contents of an unordered map to this StringPairArray. */
+    void addUnorderedMap (const std::unordered_map<String, String>& mapToAdd);
 
 private:
     //==============================================================================
+    template <typename Map>
+    void addMapImpl (const Map& mapToAdd);
+
     StringArray keys, values;
     bool ignoreCase;
 

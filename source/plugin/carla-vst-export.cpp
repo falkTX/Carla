@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,6 +21,7 @@
 #include "ui_launcher_res.cpp"
 
 #include <cstring>
+#include <vector>
 
 #ifdef __WINE__
 __cdecl static intptr_t cvst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
@@ -67,10 +68,10 @@ static struct CarlaVSTCleanup {
     }
 } gCarlaVSTCleanup;
 
-CARLA_EXPORT __cdecl
+CARLA_PLUGIN_EXPORT __cdecl
 const AEffect* VSTPluginMain(audioMasterCallback audioMaster);
 
-CARLA_EXPORT __cdecl
+CARLA_PLUGIN_EXPORT __cdecl
 const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 {
     // old version
@@ -112,10 +113,10 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 }
 
 #if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-CARLA_EXPORT __cdecl
+CARLA_PLUGIN_EXPORT __cdecl
 const AEffect* VSTPluginMain_asm(audioMasterCallback audioMaster) asm ("main");
 
-CARLA_EXPORT __cdecl
+CARLA_PLUGIN_EXPORT __cdecl
 const AEffect* VSTPluginMain_asm(audioMasterCallback audioMaster)
 {
     return VSTPluginMain(audioMaster);
@@ -130,9 +131,9 @@ intptr_t VSTAudioMaster(AEffect* effect, int32_t opcode, int32_t index, intptr_t
 
 bool isUsingUILauncher()
 {
-#ifdef CARLA_OS_LINUX
-    return false;
-#else
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     return true;
+#else
+    return false;
 #endif
 }

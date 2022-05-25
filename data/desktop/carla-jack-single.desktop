@@ -8,4 +8,5 @@ Terminal=false
 Type=Application
 Version=1.0
 NoDisplay=true
-X-NSM-capable=true
+X-NSM-Capable=true
+X-NSM-Exec=carla-jack-single

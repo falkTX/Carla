@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2014-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@
 
 CARLA_BRIDGE_UI_START_NAMESPACE
 
-using CarlaBackend::runMainLoopOnce;
+using CARLA_BACKEND_NAMESPACE::runMainLoopOnce;
 
 // -------------------------------------------------------------------------
 
@@ -62,7 +62,7 @@ public:
         const CarlaBridgeFormat::Options& options(fPlugin->getOptions());
 
 #if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
-        CarlaBackend::initStandaloneApplication();
+        CARLA_BACKEND_NAMESPACE::initStandaloneApplication();
         fHostUI = CarlaPluginUI::newCocoa(this, 0, options.isStandalone, options.isResizable);
 #elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
         fHostUI = CarlaPluginUI::newWindows(this, 0, options.isStandalone, options.isResizable);

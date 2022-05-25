@@ -1304,7 +1304,7 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
                         {
-                            fluid_synth_cc(fSynth, event.channel, ctrlEvent.param, int(ctrlEvent.normalizedValue*127.0f));
+                            fluid_synth_cc(fSynth, event.channel, ctrlEvent.param, int(ctrlEvent.normalizedValue*127.0f + 0.5f));
                         }
                         break;
                     }

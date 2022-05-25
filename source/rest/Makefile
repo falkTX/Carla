@@ -50,14 +50,14 @@ debug:
 $(BINDIR)/carla-rest-server: $(OBJS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking carla-rest-server"
-	@$(CXX) $^ $(LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $^ $(LINK_FLAGS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------
 

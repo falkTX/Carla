@@ -68,11 +68,6 @@ public:
     */
     MemoryBlock& operator= (const MemoryBlock&);
 
-   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    MemoryBlock (MemoryBlock&&) noexcept;
-    MemoryBlock& operator= (MemoryBlock&&) noexcept;
-   #endif
-
     //==============================================================================
     /** Compares two memory blocks.
         @returns true only if the two blocks are the same size and have identical contents.

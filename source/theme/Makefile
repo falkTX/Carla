@@ -114,79 +114,79 @@ install: $(BINDIR)/styles/carlastyle$(LIB_EXT) $(BINDIR)/styles/carlastyle.json
 $(MODULEDIR)/$(MODULENAME).qt4.a: $(FILES_qt4) $(OBJS_qt4)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).qt4.a"
-	@rm -f $@
-	@$(AR) crs $@ $(OBJS_qt4)
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $(OBJS_qt4)
 
 $(MODULEDIR)/$(MODULENAME).qt5.a: $(FILES_qt5) $(OBJS_qt5)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).qt5.a"
-	@rm -f $@
-	@$(AR) crs $@ $(OBJS_qt5)
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $(OBJS_qt5)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(BINDIR)/styles/carlastyle.dll: $(FILES_qt5) $(OBJS_qt5_shared)
 	-@mkdir -p $(BINDIR)/styles
 	@echo "Linking carlastyle.dll"
-	@$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -shared -o $@
+	$(SILENT)$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -shared -o $@
 
 $(BINDIR)/styles/carlastyle.dylib: $(FILES_qt5) $(OBJS_qt5_shared)
 	-@mkdir -p $(BINDIR)/styles
 	@echo "Linking carlastyle.dylib"
-	@$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -dynamiclib -o $@
+	$(SILENT)$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -dynamiclib -o $@
 
 $(BINDIR)/styles/carlastyle.so: $(FILES_qt5) $(OBJS_qt5_shared)
 	-@mkdir -p $(BINDIR)/styles
 	@echo "Linking carlastyle.so"
-	@$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -shared -o $@
+	$(SILENT)$(CXX) $(OBJS_qt5_shared) $(QT5_LINK_FLAGS) -shared -o $@
 
 $(BINDIR)/styles/carlastyle.json: styles/carlastyle.json
 	-@mkdir -p $(BINDIR)/styles
-	@cp -f $< $@
+	$(SILENT)cp -f $< $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/moc_%.qt4.cpp: %.hpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating moc_$*.qt4.cpp"
-	@$(MOC_QT4) $< -o $@
+	$(SILENT)$(MOC_QT4) $< -o $@
 
 $(OBJDIR)/moc_%.qt5.cpp: %.hpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating moc_$*.qt5.cpp"
-	@$(MOC_QT5) -Istyles $< -o $@
+	$(SILENT)$(MOC_QT5) -Istyles $< -o $@
 
 $(OBJDIR)/resources.qt4.cpp: $(CWD)/../resources/resources-theme.qrc
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating resources.qt4.cpp"
-	@$(RCC_QT4) $< -o $@
+	$(SILENT)$(RCC_QT4) $< -o $@
 
 $(OBJDIR)/resources.qt5.cpp: $(CWD)/../resources/resources-theme.qrc
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating resources.qt5.cpp"
-	@$(RCC_QT5) $< -o $@
+	$(SILENT)$(RCC_QT5) $< -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/%.qt4.cpp.o: $(OBJDIR)/%.qt4.cpp $(OBJDIR)/moc_CarlaStyle.qt4.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $*.cpp (Qt4)"
-	@$(CXX) $< $(QT4_CXX_FLAGS) -Wno-unused-variable -c -o $@
+	$(SILENT)$(CXX) $< $(QT4_CXX_FLAGS) -Wno-unused-variable -c -o $@
 
 $(OBJDIR)/%.qt5.cpp.o: $(OBJDIR)/%.qt5.cpp $(OBJDIR)/moc_CarlaStyle.qt5.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $*.cpp (Qt5)"
-	@$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.qt4.o: %.cpp $(OBJDIR)/moc_CarlaStyle.qt4.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Qt4)"
-	@$(CXX) $< $(QT4_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(QT4_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.qt5.o: %.cpp $(OBJDIR)/moc_CarlaStyle.qt5.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Qt5)"
-	@$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

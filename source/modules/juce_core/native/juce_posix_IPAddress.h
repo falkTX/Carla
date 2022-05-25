@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -25,6 +25,18 @@ namespace juce
 
 namespace
 {
+    struct InterfaceInfo
+    {
+        IPAddress interfaceAddress, broadcastAddress;
+    };
+
+    inline bool operator== (const InterfaceInfo& lhs, const InterfaceInfo& rhs)
+    {
+        return lhs.interfaceAddress == rhs.interfaceAddress
+            && lhs.broadcastAddress == rhs.broadcastAddress;
+    }
+
+   #if ! JUCE_WASM
     static IPAddress makeAddress (const sockaddr_in6* addr_in)
     {
         if (addr_in == nullptr)
@@ -54,17 +66,6 @@ namespace
         return IPAddress (ntohl (addr_in->sin_addr.s_addr));
     }
 
-    struct InterfaceInfo
-    {
-        IPAddress interfaceAddress, broadcastAddress;
-    };
-
-    bool operator== (const InterfaceInfo& lhs, const InterfaceInfo& rhs)
-    {
-        return lhs.interfaceAddress == rhs.interfaceAddress
-            && lhs.broadcastAddress == rhs.broadcastAddress;
-    }
-
     bool populateInterfaceInfo (struct ifaddrs* ifa, InterfaceInfo& interfaceInfo)
     {
         if (ifa->ifa_addr != nullptr)
@@ -91,10 +92,15 @@ namespace
 
         return false;
     }
+   #endif
 
     Array<InterfaceInfo> getAllInterfaceInfo()
     {
         Array<InterfaceInfo> interfaces;
+
+       #if JUCE_WASM
+        // TODO
+       #else
         struct ifaddrs* ifaddr = nullptr;
 
         if (getifaddrs (&ifaddr) != -1)
@@ -109,6 +115,7 @@ namespace
 
             freeifaddrs (ifaddr);
         }
+       #endif
 
         return interfaces;
     }

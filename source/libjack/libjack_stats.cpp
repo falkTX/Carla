@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,21 +21,21 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 float jack_get_max_delayed_usecs(jack_client_t*)
 {
     // TODO
     return 0.0f;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 float jack_get_xrun_delayed_usecs(jack_client_t*)
 {
     // TODO
     return 0.0f;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_reset_max_delayed_usecs(jack_client_t*)
 {
     // TODO

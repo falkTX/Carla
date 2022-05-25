@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -24,6 +24,9 @@ namespace juce
 {
 
 //==============================================================================
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4996)
+
 /**
     Describes the attributes of a file or folder.
 
@@ -115,11 +118,13 @@ public:
                                 separated by a semi-colon or comma, e.g. "*.jpg;*.png"
         @param whatToLookFor    a value from the File::TypesOfFileToFind enum, specifying
                                 whether to look for files, directories, or both.
+        @param followSymlinks   the policy to use when symlinks are encountered
     */
     RangedDirectoryIterator (const File& directory,
                              bool isRecursive,
                              const String& wildCard = "*",
-                             int whatToLookFor = File::findFiles);
+                             int whatToLookFor = File::findFiles,
+                             File::FollowSymlinks followSymlinks = File::FollowSymlinks::yes);
 
     /** Returns true if both iterators are in their end/sentinel state,
         otherwise returns false.
@@ -177,5 +182,9 @@ inline RangedDirectoryIterator begin (const RangedDirectoryIterator& it) { retur
     Provided for range-for compatibility.
 */
 inline RangedDirectoryIterator end   (const RangedDirectoryIterator&)    { return {}; }
+
+
+JUCE_END_IGNORE_WARNINGS_MSVC
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 } // namespace juce

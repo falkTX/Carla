@@ -31,6 +31,10 @@
 #define CARLA_JOIN_MACRO_HELPER(a, b) a ## b
 #define CARLA_JOIN_MACRO(item1, item2) CARLA_JOIN_MACRO_HELPER(item1, item2)
 
+/** Same but for joining 3 items */
+#define CARLA_JOIN_MACRO_HELPER3(a, b, c) a ## b ## c
+#define CARLA_JOIN_MACRO3(item1, item2, item3) CARLA_JOIN_MACRO_HELPER3(item1, item2, item3)
+
 #ifdef DEBUG
 /** This macro lets you embed a leak-detecting object inside a class.
     To use it, simply declare a CARLA_LEAK_DETECTOR(YourClassName) inside a private section

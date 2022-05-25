@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -73,21 +73,21 @@ public:
     //==============================================================================
     /** Creates a FilenameComponent.
 
-        @param name             the name for this component.
-        @param currentFile      the file to initially show in the box
-        @param canEditFilename  if true, the user can manually edit the filename; if false,
-                                they can only change it by browsing for a new file
-        @param isDirectory      if true, the file will be treated as a directory, and
-                                an appropriate directory browser used
-        @param isForSaving      if true, the file browser will allow non-existent files to
-                                be picked, as the file is assumed to be used for saving rather
-                                than loading
-        @param fileBrowserWildcard  a wildcard pattern to use in the file browser - e.g. "*.txt;*.foo".
-                                If an empty string is passed in, then the pattern is assumed to be "*"
-        @param enforcedSuffix   if this is non-empty, it is treated as a suffix that will be added
-                                to any filenames that are entered or chosen
+        @param name                     the name for this component.
+        @param currentFile              the file to initially show in the box
+        @param canEditFilename          if true, the user can manually edit the filename; if false,
+                                        they can only change it by browsing for a new file
+        @param isDirectory              if true, the file will be treated as a directory, and
+                                        an appropriate directory browser used
+        @param isForSaving              if true, the file browser will allow non-existent files to
+                                        be picked, as the file is assumed to be used for saving rather
+                                        than loading
+        @param fileBrowserWildcard      a wildcard pattern to use in the file browser - e.g. "*.txt;*.foo".
+                                        If an empty string is passed in, then the pattern is assumed to be "*"
+        @param enforcedSuffix           if this is non-empty, it is treated as a suffix that will be added
+                                        to any filenames that are entered or chosen
         @param textWhenNothingSelected  the message to display in the box before any filename is entered. (This
-                                will only appear if the initial file isn't valid)
+                                        will only appear if the initial file isn't valid)
     */
     FilenameComponent (const String& name,
                        const File& currentFile,
@@ -212,10 +212,14 @@ public:
     /** @internal */
     void fileDragExit (const StringArray&) override;
     /** @internal */
-    KeyboardFocusTraverser* createFocusTraverser() override;
+    std::unique_ptr<ComponentTraverser> createKeyboardFocusTraverser() override;
 
 private:
     //==============================================================================
+    void handleAsyncUpdate() override;
+
+    void showChooser();
+
     ComboBox filenameBox;
     String lastFilename;
     std::unique_ptr<Button> browseButton;
@@ -224,9 +228,7 @@ private:
     String wildcard, enforcedSuffix, browseButtonText;
     ListenerList <FilenameComponentListener> listeners;
     File defaultBrowseFile;
-
-    void showChooser();
-    void handleAsyncUpdate() override;
+    std::unique_ptr<FileChooser> chooser;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FilenameComponent)
 };

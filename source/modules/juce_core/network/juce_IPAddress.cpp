@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -166,7 +166,7 @@ IPAddress::IPAddress (const String& adr)
             }
 
             IPAddressByteUnion temp;
-            temp.combined = (uint16) CharacterFunctions::HexParser<int>::parse (tokens[i].getCharPointer());
+            temp.combined = CharacterFunctions::HexParser<uint16>::parse (tokens[i].getCharPointer());
 
             address[i * 2]     = temp.split[0];
             address[i * 2 + 1] = temp.split[1];

@@ -1,6 +1,6 @@
 /*
  * Carla Bridge utils
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -127,6 +127,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientSetOptions";
     case kPluginBridgeNonRtClientSetWindowTitle:
         return "kPluginBridgeNonRtClientSetWindowTitle";
+    case kPluginBridgeNonRtClientEmbedUI:
+        return "kPluginBridgeNonRtClientEmbedUI";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtClientOpcode2str(%i) - invalid opcode", opcode);
@@ -200,6 +202,10 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerError";
     case kPluginBridgeNonRtServerVersion:
         return "kPluginBridgeNonRtServerVersion";
+    case kPluginBridgeNonRtServerRespEmbedUI:
+        return "kPluginBridgeNonRtServerRespEmbedUI";
+    case kPluginBridgeNonRtServerResizeEmbedUI:
+        return "kPluginBridgeNonRtServerResizeEmbedUI";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtServerOpcode2str%i) - invalid opcode", opcode);

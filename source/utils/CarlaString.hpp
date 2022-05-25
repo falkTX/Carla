@@ -819,12 +819,18 @@ public:
         std::memcpy(newBuf, fBuffer, fBufferLen);
         std::memcpy(newBuf + fBufferLen, strBuf, strBufLen + 1);
 
-        return CarlaString(newBuf);
+        return CarlaString(newBuf, false);
     }
 
     CarlaString operator+(const CarlaString& str) noexcept
     {
         return operator+(str.fBuffer);
+    }
+
+    // needed for std::map compatibility
+    bool operator<(const CarlaString& str) const noexcept
+    {
+        return std::strcmp(fBuffer, str.fBuffer) < 0;
     }
 
     // -------------------------------------------------------------------

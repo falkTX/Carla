@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Single Plugin
- * Copyright (C) 2017-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,28 +27,14 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaUtils.h"
 
-#ifdef USING_JUCE
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-# endif
-
-# include "AppConfig.h"
-# include "juce_events/juce_events.h"
-
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
-#endif
-
 #include "water/files/File.h"
 
+#ifdef USING_JUCE
+# include "carla_juce/carla_juce.h"
+#endif
+
 template<>
-void Lv2PluginBaseClass<CarlaBackend::EngineTimeInfo>::clearTimeData() noexcept
+void Lv2PluginBaseClass<CARLA_BACKEND_NAMESPACE::EngineTimeInfo>::clearTimeData() noexcept
 {
     fLastPositionData.clear();
     fTimeInfo.clear();
@@ -500,7 +486,7 @@ private:
     CarlaPluginPtr fPlugin;
 
 #ifdef USING_JUCE
-    juce::SharedResourcePointer<juce::ScopedJuceInitialiser_GUI> fJuceInitialiser;
+    CarlaJUCE::ScopedJuceInitialiser_GUI fJuceInitialiser;
 #endif
 
     void updateParameterOutputs() noexcept
@@ -566,7 +552,7 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-using CarlaBackend::CarlaEngineSingleLV2;
+using CARLA_BACKEND_NAMESPACE::CarlaEngineSingleLV2;
 
 // --------------------------------------------------------------------------------------------------------------------
 // LV2 DSP functions
@@ -707,7 +693,7 @@ static const void* lv2ui_extension_data(const char* uri)
 // --------------------------------------------------------------------------------------------------------------------
 // Startup code
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const LV2_Descriptor* lv2_descriptor(uint32_t index)
 {
     carla_debug("lv2_descriptor(%i)", index);
@@ -745,7 +731,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     return &desc;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);

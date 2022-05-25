@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -27,11 +27,11 @@ namespace juce
 {
 
 //==============================================================================
-class ChoicePropertyComponent::RemapperValueSource    : public Value::ValueSource,
-                                                        private Value::Listener
+class ChoiceRemapperValueSource  : public Value::ValueSource,
+                                   private Value::Listener
 {
 public:
-    RemapperValueSource (const Value& source, const Array<var>& map)
+    ChoiceRemapperValueSource (const Value& source, const Array<var>& map)
        : sourceValue (source),
          mappings (map)
     {
@@ -64,17 +64,17 @@ protected:
     void valueChanged (Value&) override    { sendChangeMessage (true); }
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RemapperValueSource)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChoiceRemapperValueSource)
 };
 
 //==============================================================================
-class ChoicePropertyComponent::RemapperValueSourceWithDefault    : public Value::ValueSource,
-                                                                   private Value::Listener
+class ChoiceRemapperValueSourceWithDefault  : public Value::ValueSource,
+                                              private Value::Listener
 {
 public:
-    RemapperValueSourceWithDefault (ValueWithDefault* vwd, const Array<var>& map)
-        : valueWithDefault (vwd),
-          sourceValue (valueWithDefault->getPropertyAsValue()),
+    ChoiceRemapperValueSourceWithDefault (const ValueTreePropertyWithDefault& v, const Array<var>& map)
+        : value (v),
+          sourceValue (value.getPropertyAsValue()),
           mappings (map)
     {
         sourceValue.addListener (this);
@@ -82,50 +82,49 @@ public:
 
     var getValue() const override
     {
-        if (valueWithDefault == nullptr)
-            return {};
+        if (! value.isUsingDefault())
+        {
+            const auto target = sourceValue.getValue();
+            const auto equalsWithSameType = [&target] (const var& map) { return map.equalsWithSameType (target); };
 
-        if (valueWithDefault->isUsingDefault())
-            return -1;
+            auto iter = std::find_if (mappings.begin(), mappings.end(), equalsWithSameType);
 
-        auto targetValue = sourceValue.getValue();
+            if (iter == mappings.end())
+                iter = std::find (mappings.begin(), mappings.end(), target);
 
-        for (auto map : mappings)
-            if (map.equalsWithSameType (targetValue))
-                return mappings.indexOf (map) + 1;
+            if (iter != mappings.end())
+                return 1 + (int) std::distance (mappings.begin(), iter);
+        }
 
-        return mappings.indexOf (targetValue) + 1;
+        return -1;
     }
 
     void setValue (const var& newValue) override
     {
-        if (valueWithDefault == nullptr)
-            return;
-
         auto newValueInt = static_cast<int> (newValue);
 
         if (newValueInt == -1)
         {
-            valueWithDefault->resetToDefault();
+            value.resetToDefault();
         }
         else
         {
             auto remappedVal = mappings [newValueInt - 1];
 
             if (! remappedVal.equalsWithSameType (sourceValue))
-                *valueWithDefault = remappedVal;
+                value = remappedVal;
         }
     }
 
 private:
     void valueChanged (Value&) override { sendChangeMessage (true); }
 
-    WeakReference<ValueWithDefault> valueWithDefault;
+    ValueTreePropertyWithDefault value;
     Value sourceValue;
     Array<var> mappings;
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RemapperValueSourceWithDefault)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChoiceRemapperValueSourceWithDefault)
 };
 
 //==============================================================================
@@ -143,9 +142,7 @@ ChoicePropertyComponent::ChoicePropertyComponent (const String& name,
 {
     // The array of corresponding values must contain one value for each of the items in
     // the choices array!
-    jassert (correspondingValues.size() == choices.size());
-
-    ignoreUnused (correspondingValues);
+    jassertquiet (correspondingValues.size() == choices.size());
 }
 
 ChoicePropertyComponent::ChoicePropertyComponent (const Value& valueToControl,
@@ -154,98 +151,84 @@ ChoicePropertyComponent::ChoicePropertyComponent (const Value& valueToControl,
                                                   const Array<var>& correspondingValues)
     : ChoicePropertyComponent (name, choiceList, correspondingValues)
 {
-    createComboBox();
-
-    comboBox.getSelectedIdAsValue().referTo (Value (new RemapperValueSource (valueToControl,
-                                                                             correspondingValues)));
+    refreshChoices();
+    initialiseComboBox (Value (new ChoiceRemapperValueSource (valueToControl, correspondingValues)));
 }
 
-ChoicePropertyComponent::ChoicePropertyComponent (ValueWithDefault& valueToControl,
+ChoicePropertyComponent::ChoicePropertyComponent (const ValueTreePropertyWithDefault& valueToControl,
                                                   const String& name,
                                                   const StringArray& choiceList,
                                                   const Array<var>& correspondingValues)
     : ChoicePropertyComponent (name, choiceList, correspondingValues)
 {
-    valueWithDefault = &valueToControl;
+    value = valueToControl;
 
-    createComboBoxWithDefault (choiceList [correspondingValues.indexOf (valueWithDefault->getDefault())]);
+    auto getDefaultString = [this, correspondingValues] { return choices [correspondingValues.indexOf (value.getDefault())]; };
 
-    comboBox.getSelectedIdAsValue().referTo (Value (new RemapperValueSourceWithDefault (valueWithDefault,
-                                                                                        correspondingValues)));
+    refreshChoices (getDefaultString());
+    initialiseComboBox (Value (new ChoiceRemapperValueSourceWithDefault (value, correspondingValues)));
 
-    valueWithDefault->onDefaultChange = [this, choiceList, correspondingValues]
+    value.onDefaultChange = [this, getDefaultString]
     {
         auto selectedId = comboBox.getSelectedId();
-
-        comboBox.clear();
-        createComboBoxWithDefault (choiceList [correspondingValues.indexOf (valueWithDefault->getDefault())]);
-
+        refreshChoices (getDefaultString());
         comboBox.setSelectedId (selectedId);
     };
 }
 
-ChoicePropertyComponent::ChoicePropertyComponent (ValueWithDefault& valueToControl,
+ChoicePropertyComponent::ChoicePropertyComponent (const ValueTreePropertyWithDefault& valueToControl,
                                                   const String& name)
     : PropertyComponent (name),
       choices ({ "Enabled", "Disabled" })
 {
-    valueWithDefault = &valueToControl;
+    value = valueToControl;
 
-    createComboBoxWithDefault (valueWithDefault->getDefault() ? "Enabled" : "Disabled");
+    auto getDefaultString = [this] { return value.getDefault() ? "Enabled" : "Disabled"; };
 
-    comboBox.getSelectedIdAsValue().referTo (Value (new RemapperValueSourceWithDefault (valueWithDefault,
-                                                                                       { true, false })));
+    refreshChoices (getDefaultString());
+    initialiseComboBox (Value (new ChoiceRemapperValueSourceWithDefault (value, { true, false })));
 
-    valueWithDefault->onDefaultChange = [this]
+    value.onDefaultChange = [this, getDefaultString]
     {
         auto selectedId = comboBox.getSelectedId();
-
-        comboBox.clear();
-        createComboBoxWithDefault (valueWithDefault->getDefault() ? "Enabled" : "Disabled");
-
+        refreshChoices (getDefaultString());
         comboBox.setSelectedId (selectedId);
     };
 }
 
-ChoicePropertyComponent::~ChoicePropertyComponent()
+//==============================================================================
+void ChoicePropertyComponent::initialiseComboBox (const Value& v)
 {
-    if (valueWithDefault != nullptr)
-        valueWithDefault->onDefaultChange = nullptr;
+    if (v != Value())
+        comboBox.setSelectedId (v.getValue(), dontSendNotification);
+
+    comboBox.getSelectedIdAsValue().referTo (v);
+    comboBox.setEditableText (false);
+    addAndMakeVisible (comboBox);
+}
+
+void ChoicePropertyComponent::refreshChoices()
+{
+    comboBox.clear();
+
+    for (int i = 0; i < choices.size(); ++i)
+    {
+        const auto& choice = choices[i];
+
+        if (choice.isNotEmpty())
+            comboBox.addItem (choice, i + 1);
+        else
+            comboBox.addSeparator();
+    }
+}
+
+void ChoicePropertyComponent::refreshChoices (const String& defaultString)
+{
+    refreshChoices();
+    comboBox.addItem ("Default" + (defaultString.isNotEmpty() ? " (" + defaultString + ")" : ""), -1);
 }
 
 //==============================================================================
-void ChoicePropertyComponent::createComboBox()
-{
-    addAndMakeVisible (comboBox);
-
-    for (auto choice : choices)
-    {
-        if (choice.isNotEmpty())
-            comboBox.addItem (choice, choices.indexOf (choice) + 1);
-        else
-            comboBox.addSeparator();
-    }
-
-    comboBox.setEditableText (false);
-}
-
-void ChoicePropertyComponent::createComboBoxWithDefault (const String& defaultString)
-{
-    addAndMakeVisible (comboBox);
-
-    comboBox.addItem ("Default" + (defaultString.isNotEmpty() ? " (" + defaultString + ")" : ""), -1);
-
-    for (auto choice : choices)
-    {
-        if (choice.isNotEmpty())
-            comboBox.addItem (choice, choices.indexOf (choice) + 1);
-        else
-            comboBox.addSeparator();
-    }
-
-    comboBox.setEditableText (false);
-}
-
 void ChoicePropertyComponent::setIndex (const int /*newIndex*/)
 {
     jassertfalse; // you need to override this method in your subclass!
@@ -269,7 +252,8 @@ void ChoicePropertyComponent::refresh()
     {
         if (! comboBox.isVisible())
         {
-            createComboBox();
+            refreshChoices();
+            initialiseComboBox ({});
             comboBox.onChange = [this] { changeIndex(); };
         }
 

@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -84,7 +84,13 @@ public:
     */
     void setMillisecondsBeforeTipAppears (int newTimeMs = 700) noexcept;
 
-    /** Can be called to manually force a tip to be shown at a particular location. */
+    /** Can be called to manually force a tip to be shown at a particular location.
+
+        The tip will be shown until hideTip() is called, or a dismissal mouse event
+        occurs.
+
+        @see hideTip
+    */
     void displayTip (Point<int> screenPosition, const String& text);
 
     /** Can be called to manually hide the tip if it's showing. */
@@ -121,25 +127,29 @@ public:
         /** returns the bounds for a tooltip at the given screen coordinate, constrained within the given desktop area. */
         virtual Rectangle<int> getTooltipBounds (const String& tipText, Point<int> screenPos, Rectangle<int> parentArea) = 0;
         virtual void drawTooltip (Graphics&, const String& text, int width, int height) = 0;
-
-       #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
-        // This method has been replaced by getTooltipBounds()
-        virtual int getTooltipSize (const String&, int&, int&) { return 0; }
-       #endif
     };
+
+    //==============================================================================
+    /** @internal */
+    float getDesktopScaleFactor() const override;
 
 private:
     //==============================================================================
     Point<float> lastMousePos;
-    Component* lastComponentUnderMouse = nullptr;
-    String tipShowing, lastTipUnderMouse;
+    SafePointer<Component> lastComponentUnderMouse;
+    String tipShowing, lastTipUnderMouse, manuallyShownTip;
     int millisecondsBeforeTipAppears;
-    int mouseClicks = 0, mouseWheelMoves = 0;
     unsigned int lastCompChangeTime = 0, lastHideTime = 0;
-    bool reentrant = false;
+    bool reentrant = false, dismissalMouseEventOccurred = false;
 
+    enum ShownManually { yes, no };
+    void displayTipInternal (Point<int>, const String&, ShownManually);
+
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
     void paint (Graphics&) override;
     void mouseEnter (const MouseEvent&) override;
+    void mouseDown (const MouseEvent&) override;
+    void mouseWheelMove (const MouseEvent&, const MouseWheelDetails&) override;
     void timerCallback() override;
     void updatePosition (const String&, Point<int>, Rectangle<int>);
 

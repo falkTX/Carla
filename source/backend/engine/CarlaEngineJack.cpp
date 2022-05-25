@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -30,20 +30,7 @@
 #include "jackey.h"
 
 #ifdef USING_JUCE
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-# endif
-
-# include "AppConfig.h"
-# include "juce_events/juce_events.h"
-
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
+# include "carla_juce/carla_juce.h"
 #endif
 
 #ifdef __SSE2_MATH__
@@ -4603,10 +4590,10 @@ CARLA_BACKEND_END_NAMESPACE
 // -----------------------------------------------------------------------
 // internal jack client
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_initialize(jack_client_t *client, const char *load_init);
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_finish(void *arg);
 
 #ifdef CARLA_OS_UNIX
@@ -4615,7 +4602,7 @@ void jack_finish(void *arg);
 
 // -----------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_initialize(jack_client_t* const client, const char* const load_init)
 {
     CARLA_BACKEND_USE_NAMESPACE
@@ -4631,7 +4618,7 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
         mode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
 
 #ifdef USING_JUCE
-    juce::initialiseJuce_GUI();
+    CarlaJUCE::initialiseJuce_GUI();
 #endif
 
     CarlaEngineJack* const engine = new CarlaEngineJack();
@@ -4660,12 +4647,12 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
 
     delete engine;
 #ifdef USING_JUCE
-    juce::shutdownJuce_GUI();
+    CarlaJUCE::shutdownJuce_GUI();
 #endif
     return 1;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_finish(void *arg)
 {
     CARLA_BACKEND_USE_NAMESPACE
@@ -4679,7 +4666,7 @@ void jack_finish(void *arg)
     delete engine;
 
 #ifdef USING_JUCE
-    juce::shutdownJuce_GUI();
+    CarlaJUCE::shutdownJuce_GUI();
 #endif
 }
 

@@ -14,6 +14,12 @@ BUILD_CXX_FLAGS += -Wno-undef
 endif
 endif
 
+ifeq ($(USING_JUCE),true)
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
+endif
+endif
+
 BUILD_CXX_FLAGS += $(MAGIC_FLAGS)
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -57,15 +63,15 @@ debug:
 $(MODULEDIR)/carla_plugin.a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating carla_plugin.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/CarlaPluginFluidSynth.cpp.o: CarlaPluginFluidSynth.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaPluginJSFX.cpp.o: CarlaPluginJSFX.cpp
 	-@mkdir -p $(OBJDIR)
@@ -76,18 +82,28 @@ ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginVST2.cpp.o: CarlaPluginVST2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 
+endif
+
+ifeq ($(USING_JUCE),true)
+ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginJuce.cpp.o: CarlaPluginJuce.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
+else
+$(OBJDIR)/CarlaPluginJuce.cpp.o: CarlaPluginJuce.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
+endif
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 -include $(OBJS:%.o=%.d)
 

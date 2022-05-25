@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -199,8 +199,6 @@ void LookAndFeel_V4::positionDocumentWindowButtons (DocumentWindow&,
                                                     Button* closeButton,
                                                     bool positionTitleBarButtonsOnLeft)
 {
-    titleBarH = jmin (titleBarH, titleBarH - titleBarY);
-
     auto buttonW = static_cast<int> (titleBarH * 1.2);
 
     auto x = positionTitleBarButtonsOnLeft ? titleBarX
@@ -387,7 +385,7 @@ void LookAndFeel_V4::changeToggleButtonWidthToFitText (ToggleButton& button)
 //==============================================================================
 AlertWindow* LookAndFeel_V4::createAlertWindow (const String& title, const String& message,
                                                 const String& button1, const String& button2, const String& button3,
-                                                AlertWindow::AlertIconType iconType,
+                                                MessageBoxIconType iconType,
                                                 int numButtons, Component* associatedComponent)
 {
     auto boundsOffset = 50;
@@ -431,13 +429,13 @@ void LookAndFeel_V4::drawAlertBox (Graphics& g, AlertWindow& alert,
     Rectangle<int> iconRect (iconSize / -10, iconSize / -10,
                              iconSize, iconSize);
 
-    if (alert.getAlertType() != AlertWindow::NoIcon)
+    if (alert.getAlertType() != MessageBoxIconType::NoIcon)
     {
         Path icon;
         char character;
         uint32 colour;
 
-        if (alert.getAlertType() == AlertWindow::WarningIcon)
+        if (alert.getAlertType() == MessageBoxIconType::WarningIcon)
         {
             character = '!';
 
@@ -451,7 +449,7 @@ void LookAndFeel_V4::drawAlertBox (Graphics& g, AlertWindow& alert,
         else
         {
             colour = Colour (0xff00b0b9).withAlpha (0.4f).getARGB();
-            character = alert.getAlertType() == AlertWindow::InfoIcon ? 'i' : '?';
+            character = alert.getAlertType() == MessageBoxIconType::InfoIcon ? 'i' : '?';
 
             icon.addEllipse (iconRect.toFloat());
         }
@@ -1440,15 +1438,22 @@ void LookAndFeel_V4::initialiseColours()
         0x1000440, /*LassoComponent::lassoFillColourId*/        currentColourScheme.getUIColour (ColourScheme::UIColour::defaultFill).getARGB(),
         0x1000441, /*LassoComponent::lassoOutlineColourId*/     currentColourScheme.getUIColour (ColourScheme::UIColour::outline).getARGB(),
 
+        0x1004000, /*KeyboardComponentBase::upDownButtonBackgroundColourId*/  0xffd3d3d3,
+        0x1004001, /*KeyboardComponentBase::upDownButtonArrowColourId*/       0xff000000,
+
         0x1005000, /*MidiKeyboardComponent::whiteNoteColourId*/               0xffffffff,
         0x1005001, /*MidiKeyboardComponent::blackNoteColourId*/               0xff000000,
         0x1005002, /*MidiKeyboardComponent::keySeparatorLineColourId*/        0x66000000,
         0x1005003, /*MidiKeyboardComponent::mouseOverKeyOverlayColourId*/     0x80ffff00,
         0x1005004, /*MidiKeyboardComponent::keyDownOverlayColourId*/          0xffb6b600,
         0x1005005, /*MidiKeyboardComponent::textLabelColourId*/               0xff000000,
-        0x1005006, /*MidiKeyboardComponent::upDownButtonBackgroundColourId*/  0xffd3d3d3,
-        0x1005007, /*MidiKeyboardComponent::upDownButtonArrowColourId*/       0xff000000,
-        0x1005008, /*MidiKeyboardComponent::shadowColourId*/                  0x4c000000,
+        0x1005006, /*MidiKeyboardComponent::shadowColourId*/                  0x4c000000,
+
+        0x1006000, /*MPEKeyboardComponent::whiteNoteColourId*/                0xff1a1c27,
+        0x1006001, /*MPEKeyboardComponent::blackNoteColourId*/                0x99f1f1f1,
+        0x1006002, /*MPEKeyboardComponent::textLabelColourId*/                0xfff1f1f1,
+        0x1006003, /*MPEKeyboardComponent::noteCircleFillColourId*/           0x99ba00ff,
+        0x1006004, /*MPEKeyboardComponent::noteCircleOutlineColourId*/        0xfff1f1f1,
 
         0x1004500, /*CodeEditorComponent::backgroundColourId*/                currentColourScheme.getUIColour (ColourScheme::UIColour::widgetBackground).getARGB(),
         0x1004502, /*CodeEditorComponent::highlightColourId*/                 currentColourScheme.getUIColour (ColourScheme::UIColour::defaultFill).withAlpha (0.4f).getARGB(),

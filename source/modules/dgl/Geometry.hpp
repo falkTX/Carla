@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -21,7 +21,7 @@
 
 START_NAMESPACE_DGL
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Forward class names
 
 template<typename> class Line;
@@ -29,7 +29,7 @@ template<typename> class Circle;
 template<typename> class Triangle;
 template<typename> class Rectangle;
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 /**
    DGL Point class.
@@ -114,14 +114,14 @@ public:
     bool operator!=(const Point<T>& pos) const noexcept;
 
 private:
-    T fX, fY;
+    T x, y;
     template<typename> friend class Line;
     template<typename> friend class Circle;
     template<typename> friend class Triangle;
     template<typename> friend class Rectangle;
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 /**
    DGL Size class.
@@ -195,7 +195,7 @@ public:
 
    /**
       Return true if size is not null (0x0).
-      A non-null size is still invalid if its width or height is negative.
+      A non-null size is still invalid if its width or height are negative.
     */
     bool isNotNull() const noexcept;
 
@@ -210,6 +210,8 @@ public:
     */
     bool isInvalid() const noexcept;
 
+    Size<int> toInt() const noexcept;
+
     Size<T> operator+(const Size<T>& size) noexcept;
     Size<T> operator-(const Size<T>& size) noexcept;
     Size<T>& operator=(const Size<T>& size) noexcept;
@@ -217,6 +219,8 @@ public:
     Size<T>& operator-=(const Size<T>& size) noexcept;
     Size<T>& operator*=(double m) noexcept;
     Size<T>& operator/=(double d) noexcept;
+    Size<T> operator*(double m) const noexcept;
+    Size<T> operator/(double m) const noexcept;
     bool operator==(const Size<T>& size) const noexcept;
     bool operator!=(const Size<T>& size) const noexcept;
 
@@ -347,11 +351,6 @@ public:
     void moveBy(const Point<T>& pos) noexcept;
 
    /**
-      Draw this line using the current OpenGL state.
-    */
-    void draw();
-
-   /**
       Return true if line is null (start and end pos are equal).
     */
     bool isNull() const noexcept;
@@ -361,12 +360,28 @@ public:
     */
     bool isNotNull() const noexcept;
 
+#ifndef DPF_TEST_POINT_CPP
+   /**
+      Draw this line using the provided graphics context, optionally specifying line width.
+    */
+    void draw(const GraphicsContext& context, T width = 1);
+#endif
+
     Line<T>& operator=(const Line<T>& line) noexcept;
     bool operator==(const Line<T>& line) const noexcept;
     bool operator!=(const Line<T>& line) const noexcept;
 
+#ifndef DPF_TEST_POINT_CPP
+   /**
+      Draw this line using the current OpenGL state.@n
+      DEPRECATED Please use draw(const GraphicsContext&) instead.
+    */
+    DISTRHO_DEPRECATED_BY("draw(const GraphicsContext&)")
+    void draw();
+#endif
+
 private:
-    Point<T> fPosStart, fPosEnd;
+    Point<T> posStart, posEnd;
 };
 
 // -----------------------------------------------------------------------
@@ -461,18 +476,34 @@ public:
     void setNumSegments(const uint num);
 
    /**
-      Draw this circle using the current OpenGL state.
+      Draw this circle using the provided graphics context.
     */
-    void draw();
+    void draw(const GraphicsContext& context);
 
    /**
-      Draw lines (outline of this circle) using the current OpenGL state.
+      Draw lines (outline of this circle) using the provided graphics context, optionally specifying line width.
     */
-    void drawOutline();
+    void drawOutline(const GraphicsContext& context, T lineWidth = 1);
 
     Circle<T>& operator=(const Circle<T>& cir) noexcept;
     bool operator==(const Circle<T>& cir) const noexcept;
     bool operator!=(const Circle<T>& cir) const noexcept;
+
+#ifndef DPF_TEST_POINT_CPP
+   /**
+      Draw this circle using the current OpenGL state.@n
+      DEPRECATED Please use draw(const GraphicsContext&) instead.
+    */
+    DISTRHO_DEPRECATED_BY("draw(const GraphicsContext&)")
+    void draw();
+
+   /**
+      Draw lines (outline of this circle) using the current OpenGL state.@n
+      DEPRECATED Please use drawOutline(const GraphicsContext&,T) instead.
+    */
+    DISTRHO_DEPRECATED_BY("drawOutline(const GraphicsContext&)")
+    void drawOutline();
+#endif
 
 private:
     Point<T> fPos;
@@ -481,8 +512,6 @@ private:
 
     // cached values
     float fTheta, fCos, fSin;
-
-    void _draw(const bool outline);
 };
 
 // -----------------------------------------------------------------------
@@ -517,16 +546,6 @@ public:
     Triangle(const Triangle<T>& tri) noexcept;
 
    /**
-      Draw this triangle using the current OpenGL state.
-    */
-    void draw();
-
-   /**
-      Draw lines (outline of this triangle) using the current OpenGL state.
-    */
-    void drawOutline();
-
-   /**
       Return true if triangle is null (all its points are equal).
       An null triangle is also invalid.
     */
@@ -549,14 +568,38 @@ public:
     */
     bool isInvalid() const noexcept;
 
+   /**
+      Draw this triangle using the provided graphics context.
+    */
+    void draw(const GraphicsContext& context);
+
+   /**
+      Draw lines (outline of this triangle) using the provided graphics context, optionally specifying line width.
+    */
+    void drawOutline(const GraphicsContext& context, T lineWidth = 1);
+
     Triangle<T>& operator=(const Triangle<T>& tri) noexcept;
     bool operator==(const Triangle<T>& tri) const noexcept;
     bool operator!=(const Triangle<T>& tri) const noexcept;
 
-private:
-    Point<T> fPos1, fPos2, fPos3;
+#ifndef DPF_TEST_POINT_CPP
+   /**
+      Draw this triangle using the current OpenGL state.@n
+      DEPRECATED Please use draw(const GraphicsContext&) instead.
+    */
+    DISTRHO_DEPRECATED_BY("draw(const GraphicsContext&)")
+    void draw();
 
-    void _draw(const bool outline);
+   /**
+      Draw lines (outline of this triangle) using the current OpenGL state.@n
+      DEPRECATED Please use drawOutline(const GraphicsContext&,T) instead.
+    */
+    DISTRHO_DEPRECATED_BY("drawOutline(const GraphicsContext&)")
+    void drawOutline();
+#endif
+
+private:
+    Point<T> pos1, pos2, pos3;
 };
 
 // -----------------------------------------------------------------------
@@ -711,6 +754,17 @@ public:
     bool contains(const Point<T>& pos) const noexcept;
 
    /**
+      Check if this rectangle contains the point @a pos affected by a custom scale.
+    */
+    bool containsAfterScaling(const Point<T>& pos, double scaling) const noexcept;
+
+   /**
+      Check if this rectangle contains the point @a pos of another type.
+    */
+    template<typename T2>
+    bool contains(const Point<T2>& pos) const noexcept;
+
+   /**
       Check if this rectangle contains X.
     */
     bool containsX(const T& x) const noexcept;
@@ -721,14 +775,37 @@ public:
     bool containsY(const T& y) const noexcept;
 
    /**
-      Draw this rectangle using the current OpenGL state.
+      Return true if size is null (0x0).
+      An null size is also invalid.
     */
-    void draw();
+    bool isNull() const noexcept;
 
    /**
-      Draw lines (outline of this rectangle) using the current OpenGL state.
+      Return true if size is not null (0x0).
+      A non-null size is still invalid if its width or height are negative.
     */
-    void drawOutline();
+    bool isNotNull() const noexcept;
+
+   /**
+      Return true if size is valid (width and height are higher than zero).
+    */
+    bool isValid() const noexcept;
+
+   /**
+      Return true if size is invalid (width or height are lower or equal to zero).
+      An invalid size might not be null under some circumstances.
+    */
+    bool isInvalid() const noexcept;
+
+   /**
+      Draw this rectangle using the provided graphics context.
+    */
+    void draw(const GraphicsContext& context);
+
+   /**
+      Draw lines (outline of this rectangle) using the provided graphics context, optionally specifying line width.
+    */
+    void drawOutline(const GraphicsContext& context, T lineWidth = 1);
 
     Rectangle<T>& operator=(const Rectangle<T>& rect) noexcept;
     Rectangle<T>& operator*=(double m) noexcept;
@@ -736,11 +813,23 @@ public:
     bool operator==(const Rectangle<T>& size) const noexcept;
     bool operator!=(const Rectangle<T>& size) const noexcept;
 
-private:
-    Point<T> fPos;
-    Size<T>  fSize;
+   /**
+      Draw this rectangle using the current OpenGL state.@n
+      DEPRECATED Please use draw(const GraphicsContext&) instead.
+    */
+    DISTRHO_DEPRECATED_BY("draw(const GraphicsContext&)")
+    void draw();
 
-    void _draw(const bool outline);
+   /**
+      Draw lines (outline of this rectangle) using the current OpenGL state.@n
+      DEPRECATED Please use drawOutline(const GraphicsContext&,T) instead.
+    */
+    DISTRHO_DEPRECATED_BY("drawOutline(const GraphicsContext&)")
+    void drawOutline();
+
+private:
+    Point<T> pos;
+    Size<T> size;
 };
 
 // -----------------------------------------------------------------------

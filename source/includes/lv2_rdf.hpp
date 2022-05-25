@@ -169,6 +169,7 @@ typedef uint32_t LV2_Property;
 #define LV2_PORT_NOT_ON_GUI              0x1000
 #define LV2_PORT_TRIGGER                 0x2000
 #define LV2_PORT_NON_AUTOMATABLE         0x4000
+#define LV2_PORT_SIDECHAIN               0x8000
 
 #define LV2_IS_PORT_OPTIONAL(x)          ((x) & LV2_PORT_OPTIONAL)
 #define LV2_IS_PORT_ENUMERATION(x)       ((x) & LV2_PORT_ENUMERATION)
@@ -185,6 +186,7 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_PORT_NOT_ON_GUI(x)        ((x) & LV2_PORT_NOT_ON_GUI)
 #define LV2_IS_PORT_TRIGGER(x)           ((x) & LV2_PORT_TRIGGER)
 #define LV2_IS_PORT_NON_AUTOMATABLE(x)   ((x) & LV2_PORT_NON_AUTOMATABLE)
+#define LV2_IS_PORT_SIDECHAIN(x)         ((x) & LV2_PORT_SIDECHAIN)
 
 // Port Designation
 #define LV2_PORT_DESIGNATION_CONTROL                 1

@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,24 +23,24 @@ typedef void *(*JackThreadCallback)(void* arg);
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_nframes_t jack_thread_wait(jack_client_t*, int)
 {
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 jack_nframes_t jack_cycle_wait(jack_client_t*)
 {
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_cycle_signal(jack_client_t*, int)
 {
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_process_thread(jack_client_t*, JackThreadCallback, void*)
 {
     return ENOSYS;

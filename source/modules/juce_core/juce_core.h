@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -32,14 +32,15 @@
 
   ID:                 juce_core
   vendor:             juce
-  version:            6.0.4
+  version:            6.1.6
   name:               JUCE core classes
   description:        The essential set of basic JUCE classes, as required by all the other JUCE modules. Includes text, container, memory, threading and i/o functionality.
   website:            http://www.juce.com/juce
   license:            ISC
+  minimumCppStandard: 14
 
   dependencies:
-  OSXFrameworks:      Cocoa IOKit
+  OSXFrameworks:      Cocoa Foundation IOKit
   iOSFrameworks:      Foundation
   linuxLibs:          rt dl pthread
   mingwLibs:          uuid wsock32 wininet version ole32 ws2_32 oleaut32 imm32 comdlg32 shlwapi rpcrt4 winmm
@@ -243,6 +244,7 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "memory/juce_ReferenceCountedObject.h"
 #include "memory/juce_ScopedPointer.h"
 #include "memory/juce_OptionalScopedPointer.h"
+#include "containers/juce_ScopedValueSetter.h"
 #include "memory/juce_Singleton.h"
 #include "memory/juce_WeakReference.h"
 #include "threads/juce_ScopedLock.h"
@@ -258,10 +260,10 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "containers/juce_ListenerList.h"
 #include "containers/juce_OwnedArray.h"
 #include "containers/juce_ReferenceCountedArray.h"
-#include "containers/juce_ScopedValueSetter.h"
 #include "containers/juce_SortedSet.h"
 #include "containers/juce_SparseSet.h"
 #include "containers/juce_AbstractFifo.h"
+#include "containers/juce_SingleThreadedAbstractFifo.h"
 #include "text/juce_NewLine.h"
 #include "text/juce_StringPool.h"
 #include "text/juce_Identifier.h"
@@ -272,6 +274,7 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "text/juce_TextDiff.h"
 #include "text/juce_LocalisedStrings.h"
 #include "text/juce_Base64.h"
+#include "misc/juce_Functional.h"
 #include "misc/juce_Result.h"
 #include "misc/juce_Uuid.h"
 #include "misc/juce_ConsoleApplication.h"
@@ -338,9 +341,10 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "containers/juce_PropertySet.h"
 #include "memory/juce_SharedResourcePointer.h"
 #include "memory/juce_AllocationHooks.h"
+#include "memory/juce_Reservoir.h"
 
 #if JUCE_CORE_INCLUDE_OBJC_HELPERS && (JUCE_MAC || JUCE_IOS)
- #include "native/juce_osx_ObjCHelpers.h"
+ #include "native/juce_mac_ObjCHelpers.h"
 #endif
 
 #if JUCE_CORE_INCLUDE_COM_SMART_PTR && JUCE_WINDOWS

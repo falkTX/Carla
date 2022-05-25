@@ -388,7 +388,7 @@ def checkAllPluginsAU(tool):
 # Separate Thread for Plugin Search
 
 class SearchPluginsThread(QThread):
-    pluginLook = pyqtSignal(int, str)
+    pluginLook = pyqtSignal(float, str)
 
     def __init__(self, parent, pathBinaries):
         QThread.__init__(self, parent)
@@ -1044,7 +1044,7 @@ class SearchPluginsThread(QThread):
 # Plugin Refresh Dialog
 
 class PluginRefreshW(QDialog):
-    def __init__(self, parent, host, useSystemIcons):
+    def __init__(self, parent, host, useSystemIcons, hasLoadedLv2Plugins):
         QDialog.__init__(self, parent)
         self.host = host
         self.ui = ui_carla_refresh.Ui_PluginRefreshW()
@@ -1060,7 +1060,7 @@ class PluginRefreshW(QDialog):
         hasWin32   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win32.exe"))
         hasWin64   = os.path.exists(os.path.join(self.host.pathBinaries, "carla-discovery-win64.exe"))
 
-        self.fThread  = SearchPluginsThread(self, host.pathBinaries)
+        self.fThread = SearchPluginsThread(self, host.pathBinaries)
 
         # -------------------------------------------------------------------------------------------------------------
         # Set-up Icons
@@ -1182,6 +1182,9 @@ class PluginRefreshW(QDialog):
                 self.ui.ch_dssi.setEnabled(False)
                 self.ui.ch_vst.setEnabled(False)
                 self.ui.ch_vst3.setEnabled(False)
+
+        if not hasLoadedLv2Plugins:
+            self.ui.lv2_restart_notice.hide()
 
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
@@ -1405,7 +1408,7 @@ class PluginRefreshW(QDialog):
 
     # -----------------------------------------------------------------------------------------------------------------
 
-    @pyqtSlot(int, str)
+    @pyqtSlot(float, str)
     def slot_handlePluginLook(self, percent, plugin):
         self.ui.progressBar.setFormat("%s" % plugin)
         self.ui.progressBar.setValue(percent)
@@ -1455,6 +1458,9 @@ class PluginDatabaseW(QDialog):
         self.host = host
         self.ui = ui_carla_database.Ui_PluginDatabaseW()
         self.ui.setupUi(self)
+
+        # To be changed by parent
+        self.hasLoadedLv2Plugins = False
 
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
@@ -1734,7 +1740,7 @@ class PluginDatabaseW(QDialog):
 
     @pyqtSlot()
     def slot_refreshPlugins(self):
-        if PluginRefreshW(self, self.host, self.fUseSystemIcons).exec_():
+        if PluginRefreshW(self, self.host, self.fUseSystemIcons, self.hasLoadedLv2Plugins).exec_():
             self._reAddPlugins()
 
             if self.fRealParent:
@@ -2478,7 +2484,7 @@ if __name__ == '__main__':
     _loadHostSettings(host)
 
     gui = PluginDatabaseW(None, host, True)
-    #gui = PluginRefreshW(None, host, True)
+    #gui = PluginRefreshW(None, host, True, False)
     gui.show()
 
     app.exit_exec()

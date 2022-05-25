@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -108,44 +108,34 @@ static Image getIconFromIcnsFile (const File& icnsFile, const int size)
 
 Image JUCE_API getIconFromApplication (const String& applicationPath, const int size)
 {
-    Image hostIcon;
-
-    if (CFStringRef pathCFString = CFStringCreateWithCString (kCFAllocatorDefault, applicationPath.toRawUTF8(), kCFStringEncodingUTF8))
+    if (auto pathCFString = CFUniquePtr<CFStringRef> (CFStringCreateWithCString (kCFAllocatorDefault, applicationPath.toRawUTF8(), kCFStringEncodingUTF8)))
     {
-        if (CFURLRef url = CFURLCreateWithFileSystemPath (kCFAllocatorDefault, pathCFString, kCFURLPOSIXPathStyle, 1))
+        if (auto url = CFUniquePtr<CFURLRef> (CFURLCreateWithFileSystemPath (kCFAllocatorDefault, pathCFString.get(), kCFURLPOSIXPathStyle, 1)))
         {
-            if (CFBundleRef appBundle = CFBundleCreate (kCFAllocatorDefault, url))
+            if (auto appBundle = CFUniquePtr<CFBundleRef> (CFBundleCreate (kCFAllocatorDefault, url.get())))
             {
-                if (CFTypeRef infoValue = CFBundleGetValueForInfoDictionaryKey (appBundle, CFSTR("CFBundleIconFile")))
+                if (CFTypeRef infoValue = CFBundleGetValueForInfoDictionaryKey (appBundle.get(), CFSTR("CFBundleIconFile")))
                 {
                     if (CFGetTypeID (infoValue) == CFStringGetTypeID())
                     {
                         CFStringRef iconFilename = reinterpret_cast<CFStringRef> (infoValue);
                         CFStringRef resourceURLSuffix = CFStringHasSuffix (iconFilename, CFSTR(".icns")) ? nullptr : CFSTR("icns");
-                        if (CFURLRef iconURL = CFBundleCopyResourceURL (appBundle, iconFilename, resourceURLSuffix, nullptr))
-                        {
-                            if (CFStringRef iconPath = CFURLCopyFileSystemPath (iconURL, kCFURLPOSIXPathStyle))
-                            {
-                                File icnsFile (CFStringGetCStringPtr (iconPath, CFStringGetSystemEncoding()));
-                                hostIcon = getIconFromIcnsFile (icnsFile, size);
-                                CFRelease (iconPath);
-                            }
 
-                            CFRelease (iconURL);
+                        if (auto iconURL = CFUniquePtr<CFURLRef> (CFBundleCopyResourceURL (appBundle.get(), iconFilename, resourceURLSuffix, nullptr)))
+                        {
+                            if (auto iconPath = CFUniquePtr<CFStringRef> (CFURLCopyFileSystemPath (iconURL.get(), kCFURLPOSIXPathStyle)))
+                            {
+                                File icnsFile (CFStringGetCStringPtr (iconPath.get(), CFStringGetSystemEncoding()));
+                                return getIconFromIcnsFile (icnsFile, size);
+                            }
                         }
                     }
                 }
-
-                CFRelease (appBundle);
             }
-
-            CFRelease (url);
         }
-
-        CFRelease (pathCFString);
     }
 
-    return hostIcon;
+    return {};
 }
 
 } // namespace juce

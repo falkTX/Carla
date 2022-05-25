@@ -1,6 +1,6 @@
 /*
  * Carla Interposer for unsafe backend functions
- * Copyright (C) 2014-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,14 +27,14 @@
 // -----------------------------------------------------------------------
 // Gtk stuff
 
-CARLA_EXPORT void gtk_init(int*, char***);
-CARLA_EXPORT int gtk_init_check(int*, char***);
-CARLA_EXPORT int gtk_init_with_args(int*, char***, const char*, void*, const char*, void**);
+CARLA_PLUGIN_EXPORT void gtk_init(int*, char***);
+CARLA_PLUGIN_EXPORT int gtk_init_check(int*, char***);
+CARLA_PLUGIN_EXPORT int gtk_init_with_args(int*, char***, const char*, void*, const char*, void**);
 
 // -----------------------------------------------------------------------
 // Our custom functions
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 pid_t fork()
 {
     PREVENTED_FUNC_MSG;
@@ -42,7 +42,7 @@ pid_t fork()
     return -1;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int clone(int (*)(void*), void*, int, void*, ...)
 {
     PREVENTED_FUNC_MSG;
@@ -50,14 +50,14 @@ int clone(int (*)(void*), void*, int, void*, ...)
     return -1;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int posix_spawn(pid_t*, const char*, const posix_spawn_file_actions_t*, const posix_spawnattr_t*, char* const[], char* const[])
 {
     PREVENTED_FUNC_MSG;
     return ENOSYS;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int posix_spawnp(pid_t*, const char*, const posix_spawn_file_actions_t*, const posix_spawnattr_t*, char* const[], char* const[])
 {
     PREVENTED_FUNC_MSG;
@@ -66,7 +66,7 @@ int posix_spawnp(pid_t*, const char*, const posix_spawn_file_actions_t*, const p
 
 // -----------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void exit(int status)
 {
     carla_stderr2("Carla prevented a plugin from calling 'exit', redirecting to '_exit' instead, bad plugin!");
@@ -75,20 +75,20 @@ void exit(int status)
 
 // -----------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void gtk_init(int*, char***)
 {
     PREVENTED_FUNC_MSG;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int gtk_init_check(int*, char***)
 {
     PREVENTED_FUNC_MSG;
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int gtk_init_with_args(int*, char***, const char*, void*, const char*, void**)
 {
     PREVENTED_FUNC_MSG;

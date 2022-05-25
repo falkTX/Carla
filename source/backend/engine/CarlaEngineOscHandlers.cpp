@@ -271,7 +271,9 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
                 const CarlaPluginPtr plugin = fEngine->getPluginUnchecked(i);
                 CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
 
-                fEngine->callback(false, true, ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0, 0.0f, plugin->getName());
+                fEngine->callback(false, true, ENGINE_CALLBACK_PLUGIN_ADDED, i, plugin->getType(),
+                                  0, 0, 0.0f,
+                                  plugin->getName());
             }
 
             fEngine->patchbayRefresh(false, true, fEngine->pData->graph.isUsingExternalOSC());

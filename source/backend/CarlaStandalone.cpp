@@ -33,6 +33,10 @@
 
 #include "water/files/File.h"
 
+#ifdef USING_JUCE
+# include "carla_juce/carla_juce.h"
+#endif
+
 #define CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(cond, msg, ret) \
     if (! (cond)) {                                              \
         carla_stderr2("%s: " msg, __FUNCTION__);                 \
@@ -40,21 +44,6 @@
             ((CarlaHostStandalone*)handle)->lastError = msg;     \
         return ret;                                              \
     }
-
-// --------------------------------------------------------------------------------------------------------------------
-
-#ifdef USING_JUCE
-static void carla_standalone_juce_init(void);
-static void carla_standalone_juce_idle(void);
-static void carla_standalone_juce_cleanup(void);
-# define carla_juce_init carla_standalone_juce_init
-# define carla_juce_idle carla_standalone_juce_idle
-# define carla_juce_cleanup carla_standalone_juce_cleanup
-# include "utils/JUCE.cpp"
-# undef carla_juce_init
-# undef carla_juce_idle
-# undef carla_juce_cleanup
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 // Always return a valid string ptr for standalone functions
@@ -146,7 +135,7 @@ void _CarlaTransportInfo::clear() noexcept
 
 // --------------------------------------------------------------------------------------------------------------------
 
-using CarlaBackend::CarlaPluginPtr;
+using CARLA_BACKEND_NAMESPACE::CarlaPluginPtr;
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -413,7 +402,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
 #endif
 
 #ifdef USING_JUCE
-    carla_standalone_juce_init();
+    CarlaJUCE::initialiseJuce_GUI();
 #endif
 
     CarlaHostStandalone& shandle((CarlaHostStandalone&)*handle);
@@ -463,7 +452,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
         shandle.engine = nullptr;
         delete engine;
 #ifdef USING_JUCE
-        carla_standalone_juce_cleanup();
+        CarlaJUCE::shutdownJuce_GUI();
 #endif
         return false;
     }
@@ -543,7 +532,7 @@ bool carla_engine_close(CarlaHostHandle handle)
     delete engine;
 
 #ifdef USING_JUCE
-    carla_standalone_juce_cleanup();
+    CarlaJUCE::shutdownJuce_GUI();
 #endif
     return closed;
 }
@@ -556,7 +545,7 @@ void carla_engine_idle(CarlaHostHandle handle)
 
 #ifdef USING_JUCE
     if (handle->isStandalone)
-        carla_standalone_juce_idle();
+        CarlaJUCE::idleJuce_GUI();
 #endif
 }
 
@@ -1584,6 +1573,22 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(CarlaHostHandle h
 
 // --------------------------------------------------------------------------------------------------------------------
 
+uint carla_get_audio_port_hints(CarlaHostHandle handle, uint pluginId, bool isOutput, uint32_t portIndex)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0x0);
+
+    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(portIndex < (isOutput ? plugin->getAudioOutCount() : plugin->getAudioInCount()), 0x0);
+
+        return plugin->getAudioPortHints(isOutput, portIndex);
+    }
+
+    return 0x0;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
 const ParameterData* carla_get_parameter_data(CarlaHostHandle handle, uint pluginId, uint32_t parameterId)
 {
     static ParameterData retParamData;
@@ -2387,7 +2392,7 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-#ifndef CARLA_PLUGIN_EXPORT
+#ifndef CARLA_PLUGIN_BUILD
 # define CARLA_PLUGIN_UI_CLASS_PREFIX Standalone
 # include "CarlaPluginUI.cpp"
 # undef CARLA_PLUGIN_UI_CLASS_PREFIX
@@ -2399,6 +2404,6 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
 # include "CarlaStateUtils.cpp"
 # include "utils/Information.cpp"
 # include "utils/Windows.cpp"
-#endif /* CARLA_PLUGIN_EXPORT */
+#endif /* CARLA_PLUGIN_BUILD */
 
 // --------------------------------------------------------------------------------------------------------------------

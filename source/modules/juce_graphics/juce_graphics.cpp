@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -54,6 +54,14 @@
  #endif
 
  #if JUCE_USE_DIRECTWRITE || JUCE_DIRECT2D
+  /*  This is a workaround for broken-by-default function definitions
+      in the MinGW headers. If you're using a newer distribution of MinGW,
+      then your headers may substitute the broken definitions with working definitions
+      when this flag is enabled. Unfortunately, not all MinGW headers contain this
+      workaround, so Direct2D remains disabled by default when building with MinGW.
+  */
+  #define WIDL_EXPLICIT_AGGREGATE_RETURNS 1
+
   /* If you hit a compile error trying to include these files, you may need to update
      your version of the Windows SDK to the latest one. The DirectWrite and Direct2D
      headers are in the version 7 SDKs.
@@ -67,15 +75,13 @@
   #include <cstdio>
  #endif
 
- #include <unordered_map>
-
  JUCE_END_IGNORE_WARNINGS_MSVC
 
 #elif JUCE_IOS
  #import <QuartzCore/QuartzCore.h>
  #import <CoreText/CoreText.h>
 
-#elif JUCE_LINUX
+#elif JUCE_LINUX || JUCE_BSD
  #ifndef JUCE_USE_FREETYPE
   #define JUCE_USE_FREETYPE 1
  #endif
@@ -110,11 +116,11 @@
 #include "geometry/juce_PathStrokeType.cpp"
 #include "placement/juce_RectanglePlacement.cpp"
 #include "contexts/juce_GraphicsContext.cpp"
-#include "contexts/juce_LowLevelGraphicsPostScriptRenderer.cpp"
+// #include "contexts/juce_LowLevelGraphicsPostScriptRenderer.cpp"
 #include "contexts/juce_LowLevelGraphicsSoftwareRenderer.cpp"
 #include "images/juce_Image.cpp"
-#include "images/juce_ImageCache.cpp"
-#include "images/juce_ImageConvolutionKernel.cpp"
+// #include "images/juce_ImageCache.cpp"
+// #include "images/juce_ImageConvolutionKernel.cpp"
 #include "images/juce_ImageFileFormat.cpp"
 #include "image_formats/juce_GIFLoader.cpp"
 #include "image_formats/juce_JPEGLoader.cpp"
@@ -126,7 +132,11 @@
 #include "fonts/juce_GlyphArrangement.cpp"
 #include "fonts/juce_TextLayout.cpp"
 #include "effects/juce_DropShadowEffect.cpp"
-#include "effects/juce_GlowEffect.cpp"
+// #include "effects/juce_GlowEffect.cpp"
+
+#if JUCE_UNIT_TESTS
+ #include "geometry/juce_Rectangle_test.cpp"
+#endif
 
 #if JUCE_USE_FREETYPE
  #include "native/juce_freetype_Fonts.cpp"
@@ -147,7 +157,7 @@
   #include "native/juce_win32_Direct2DGraphicsContext.cpp"
  #endif
 
-#elif JUCE_LINUX
+#elif JUCE_LINUX || JUCE_BSD
  #include "native/juce_linux_Fonts.cpp"
  #include "native/juce_linux_IconHelpers.cpp"
 

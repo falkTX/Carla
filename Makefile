@@ -22,7 +22,8 @@ else
 MODULEDIR := $(CURDIR)/build/modules/Release
 endif
 
-VERSION   := 2.4.2
+# see also source/frontend/carla_shared.py and source/includes/CarlaDefines.h
+VERSION   := 2.4.3
 
 -include Makefile.user.mk
 
@@ -68,6 +69,7 @@ ifeq ($(HAVE_QT5),true)
 endif
 
 ifeq ($(USING_JUCE),true)
+3RD_LIBS += $(MODULEDIR)/carla_juce.a
 3RD_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 3RD_LIBS += $(MODULEDIR)/juce_audio_devices.a
@@ -78,9 +80,7 @@ endif
 3RD_LIBS += $(MODULEDIR)/juce_events.a
 3RD_LIBS += $(MODULEDIR)/juce_graphics.a
 3RD_LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 3RD_LIBS += $(MODULEDIR)/juce_gui_extra.a
-endif
 endif
 
 ifeq ($(USING_RTAUDIO),true)
@@ -261,6 +261,7 @@ LIBS_POSIX32 += $(MODULEDIR)/rtmempool.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/water.posix32.a
 
 ifeq ($(USING_JUCE),true)
+LIBS_POSIX32 += $(MODULEDIR)/carla_juce.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_audio_basics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_audio_processors.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_data_structures.posix32.a
@@ -268,9 +269,7 @@ LIBS_POSIX32 += $(MODULEDIR)/juce_core.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_events.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_graphics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_basics.posix32.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_extra.posix32.a
-endif
 endif
 
 posix32: $(LIBS_POSIX32)
@@ -286,6 +285,7 @@ LIBS_POSIX64 += $(MODULEDIR)/rtmempool.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/water.posix64.a
 
 ifeq ($(USING_JUCE),true)
+LIBS_POSIX64 += $(MODULEDIR)/carla_juce.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_audio_basics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_audio_processors.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_data_structures.posix64.a
@@ -293,9 +293,7 @@ LIBS_POSIX64 += $(MODULEDIR)/juce_core.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_events.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_graphics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_basics.posix64.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
-endif
 endif
 
 posix64: $(LIBS_POSIX64)
@@ -310,6 +308,7 @@ LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
 LIBS_WIN32 += $(MODULEDIR)/water.win32.a
 
 ifeq ($(USING_JUCE),true)
+LIBS_WIN32 += $(MODULEDIR)/carla_juce.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_audio_basics.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_audio_processors.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_data_structures.win32.a
@@ -317,9 +316,7 @@ LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_events.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_graphics.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_gui_basics.win32.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_WIN32 += $(MODULEDIR)/juce_gui_extra.win32.a
-endif
 endif
 
 LIBS_WINE32 = $(LIBS_WIN32) $(MODULEDIR)/jackbridge.win32e.a
@@ -346,6 +343,7 @@ LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
 LIBS_WIN64 += $(MODULEDIR)/water.win64.a
 
 ifeq ($(USING_JUCE),true)
+LIBS_WIN64 += $(MODULEDIR)/carla_juce.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_audio_basics.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_audio_processors.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_data_structures.win64.a
@@ -353,9 +351,7 @@ LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_events.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_graphics.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_gui_basics.win64.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 LIBS_WIN64 += $(MODULEDIR)/juce_gui_extra.win64.a
-endif
 endif
 
 LIBS_WINE64 = $(LIBS_WIN64) $(MODULEDIR)/jackbridge.win64e.a
@@ -391,15 +387,17 @@ clean:
 	$(MAKE) clean -C source/backend
 	$(MAKE) clean -C source/bridges-plugin
 	$(MAKE) clean -C source/bridges-ui
+	$(MAKE) clean -C source/modules
+	$(MAKE) clean -C source/native-plugins
+	$(MAKE) clean -C source/plugin
+ifneq ($(STATIC_PLUGIN_TARGET),true)
 	$(MAKE) clean -C source/discovery
 	$(MAKE) clean -C source/frontend
 	$(MAKE) clean -C source/interposer
 	$(MAKE) clean -C source/libjack
-	$(MAKE) clean -C source/modules
-	$(MAKE) clean -C source/native-plugins
-	$(MAKE) clean -C source/plugin
 	$(MAKE) clean -C source/tests
 	$(MAKE) clean -C source/theme
+endif
 	rm -f *~ source/*~
 
 distclean: clean
@@ -657,7 +655,7 @@ endif
 
 	# Install app data
 	sed -e 's?X-VERSION-X?$(VERSION)?' \
-		data/appdata.xml > $(DESTDIR)$(PREFIX)/share/appdata/studio.kx.carla.appdata.xml
+		data/appdata.xml.in > $(DESTDIR)$(PREFIX)/share/appdata/studio.kx.carla.appdata.xml
 
 	# Install mime package
 	install -m 644 data/carla.xml $(DESTDIR)$(DATADIR)/mime/packages

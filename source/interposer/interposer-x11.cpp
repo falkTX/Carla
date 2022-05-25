@@ -1,6 +1,6 @@
 /*
  * Carla Interposer for X11 Window Mapping
- * Copyright (C) 2014-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -99,28 +99,28 @@ static int carlaWindowMap(Display* const display, const Window window, const int
 // --------------------------------------------------------------------------------------------------------------------
 // Our custom X11 functions
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XMapWindow(Display* display, Window window)
 {
     carla_debug("XMapWindow(%p, %lu)", display, window);
     return carlaWindowMap(display, window, 1);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XMapRaised(Display* display, Window window)
 {
     carla_debug("XMapRaised(%p, %lu)", display, window);
     return carlaWindowMap(display, window, 2);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XMapSubwindows(Display* display, Window window)
 {
     carla_debug("XMapSubwindows(%p, %lu)", display, window);
     return carlaWindowMap(display, window, 3);
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int XUnmapWindow(Display* display, Window window)
 {
     carla_debug("XUnmapWindow(%p, %lu)", display, window);

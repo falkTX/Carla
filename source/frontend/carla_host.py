@@ -165,6 +165,7 @@ class HostWindow(QMainWindow):
         self.fProjectFilename  = ""
         self.fIsProjectLoading = False
         self.fCurrentlyRemovingAllPlugins = False
+        self.fHasLoadedLv2Plugins = False
 
         self.fLastTransportBPM   = 0.0
         self.fLastTransportFrame = 0
@@ -541,6 +542,7 @@ class HostWindow(QMainWindow):
         self.ui.keyboard.noteOff.connect(self.slot_noteOff)
 
         self.ui.tabWidget.currentChanged.connect(self.slot_tabChanged)
+        self.ui.toolBar.visibilityChanged.connect(self.slot_toolbarVisibilityChanged)
 
         if withCanvas:
             self.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
@@ -1182,6 +1184,7 @@ class HostWindow(QMainWindow):
             self.fPluginDatabaseDialog = PluginDatabaseW(self.fParentOrSelf, self.host,
                                                          self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
         dialog = self.fPluginDatabaseDialog
+        dialog.hasLoadedLv2Plugins = self.fHasLoadedLv2Plugins
 
         ret = dialog.exec_()
 
@@ -1431,8 +1434,8 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Plugins (host callbacks)
 
-    @pyqtSlot(int, str)
-    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
+    @pyqtSlot(int, int, str)
+    def slot_handlePluginAddedCallback(self, pluginId, pluginType, pluginName):
         if pluginId != self.fPluginCount:
             print("ERROR: pluginAdded mismatch Id:", pluginId, self.fPluginCount)
             pitem = self.getPluginItem(pluginId)
@@ -1444,6 +1447,9 @@ class HostWindow(QMainWindow):
         self.fPluginCount += 1
 
         self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
+
+        if pluginType == PLUGIN_LV2:
+            self.fHasLoadedLv2Plugins = True
 
     @pyqtSlot(int)
     def slot_handlePluginRemovedCallback(self, pluginId):
@@ -1914,8 +1920,10 @@ class HostWindow(QMainWindow):
 
             showToolbar = settings.value("ShowToolbar", True, bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+            self.ui.toolBar.blockSignals(True)
             self.ui.toolBar.setEnabled(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
+            self.ui.toolBar.blockSignals(False)
 
             #if settings.contains("SplitterState"):
                 #self.ui.splitter.restoreState(settings.value("SplitterState", b""))
@@ -2030,8 +2038,10 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(bool)
     def slot_showToolbar(self, yesNo):
+        self.ui.toolBar.blockSignals(True)
         self.ui.toolBar.setEnabled(yesNo)
         self.ui.toolBar.setVisible(yesNo)
+        self.ui.toolBar.blockSignals(False)
 
     @pyqtSlot(bool)
     def slot_showCanvasMeters(self, yesNo):
@@ -2466,6 +2476,13 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Misc
+
+    @pyqtSlot(bool)
+    def slot_toolbarVisibilityChanged(self, visible):
+        self.ui.toolBar.blockSignals(True)
+        self.ui.toolBar.setEnabled(visible)
+        self.ui.toolBar.blockSignals(False)
+        self.ui.act_settings_show_toolbar.setChecked(visible)
 
     @pyqtSlot(int)
     def slot_tabChanged(self, index):
@@ -3041,7 +3058,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valuef, value
     if action == ENGINE_CALLBACK_DEBUG:
         host.DebugCallback.emit(pluginId, value1, value2, value3, valuef, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_ADDED:
-        host.PluginAddedCallback.emit(pluginId, valueStr)
+        host.PluginAddedCallback.emit(pluginId, value1, valueStr)
     elif action == ENGINE_CALLBACK_PLUGIN_REMOVED:
         host.PluginRemovedCallback.emit(pluginId)
     elif action == ENGINE_CALLBACK_PLUGIN_RENAMED:

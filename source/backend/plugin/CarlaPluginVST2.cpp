@@ -1009,6 +1009,7 @@ public:
 #endif
             {
                 pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+                pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
             }
 
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
@@ -1501,7 +1502,7 @@ public:
                             vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : eventTime);
                             vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             vstMidiEvent.midiData[1] = char(ctrlEvent.param);
-                            vstMidiEvent.midiData[2] = char(ctrlEvent.normalizedValue*127.0f);
+                            vstMidiEvent.midiData[2] = char(ctrlEvent.normalizedValue*127.0f + 0.5f);
                         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH

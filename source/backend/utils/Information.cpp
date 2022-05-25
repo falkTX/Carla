@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,9 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaHost.h"
 #include "CarlaUtils.h"
-
 #include "CarlaString.hpp"
 
 #if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
@@ -34,8 +32,7 @@
 #endif
 
 #ifdef USING_JUCE
-# include "AppConfig.h"
-# include "juce_core/juce_core.h"
+# include "carla_juce/carla_juce.h"
 #endif
 
 #ifdef USING_RTAUDIO
@@ -131,7 +128,7 @@ const char* carla_get_juce_version()
 #ifdef USING_JUCE
     if (retVersion.isEmpty())
     {
-        if (const char* const version = juce::SystemStats::getJUCEVersion().toRawUTF8())
+        if (const char* const version = CarlaJUCE::getVersion())
             retVersion = version+6;
         else
             retVersion = "Unknown";

@@ -1,6 +1,6 @@
 /*
  * Carla State utils
- * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -486,23 +486,58 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 {
                     CustomData* const stateCustomData(new CustomData());
 
+                    // find type first
                     for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
                     {
                         const String& cTag(xmlSubData->getTagName());
-                        const String  cText(xmlSubData->getAllSubText().trim());
 
-                        /**/ if (cTag == "Type")
-                            stateCustomData->type = xmlSafeStringCharDup(cText, false);
-                        else if (cTag == "Key")
-                            stateCustomData->key = xmlSafeStringCharDup(cText, false);
+                        if (cTag != "Type")
+                            continue;
+
+                        stateCustomData->type = xmlSafeStringCharDup(xmlSubData->getAllSubText().trim(), false);
+                        break;
+                    }
+
+                    if (stateCustomData->type == nullptr || stateCustomData->type[0] == '\0')
+                    {
+                        carla_stderr("Reading CustomData type failed");
+                        delete stateCustomData;
+                        continue;
+                    }
+
+                    // now fill in key and value, knowing what the type is
+                    for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
+                    {
+                        const String& cTag(xmlSubData->getTagName());
+                        String cText(xmlSubData->getAllSubText());
+
+                        /**/ if (cTag == "Key")
+                        {
+                            stateCustomData->key = xmlSafeStringCharDup(cText.trim(), false);
+                        }
                         else if (cTag == "Value")
-                            stateCustomData->value = carla_strdup(cText.toRawUTF8()); //xmlSafeStringCharDup(cText, false);
+                        {
+                            // save operation adds a newline and newline+space around the string in some cases
+                            const int len = cText.length();
+                            if (std::strcmp(stateCustomData->type, CUSTOM_DATA_TYPE_CHUNK) == 0 || len >= 128+6)
+                            {
+                                CARLA_SAFE_ASSERT_CONTINUE(len >= 6);
+                                cText = cText.substring(1, len - 5);
+                            }
+
+                            stateCustomData->value = xmlSafeStringCharDup(cText, false);
+                        }
                     }
 
                     if (stateCustomData->isValid())
+                    {
                         customData.append(stateCustomData);
+                    }
                     else
+                    {
                         carla_stderr("Reading CustomData property failed, missing data");
+                        delete stateCustomData;
+                    }
                 }
 
                 // -------------------------------------------------------

@@ -50,126 +50,126 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).arm32.a: $(OBJS_arm32)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).arm32.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).posix32.a: $(OBJS_posix32)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).posix32.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).posix64.a: $(OBJS_posix64)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).posix64.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).win32.a: $(OBJS_win32)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).win32.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).win64.a: $(OBJS_win64)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).win64.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/serd.c.o: serd.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) -c -o $@
 
 $(OBJDIR)/serd.c.%32.o: serd.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/serd.c.%64.o: serd.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/serd.c.arm32.o: serd.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (ARM32)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(ARM32_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/sord.c.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -c -o $@
 
 $(OBJDIR)/sord.c.%32.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/sord.c.%64.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/sord.c.arm32.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (ARM32)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(ARM32_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/sratom.c.o: sratom.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) -c -o $@
 
 $(OBJDIR)/sratom.c.%32.o: sratom.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/sratom.c.%64.o: sratom.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/sratom.c.arm32.o: sratom.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (ARM32)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(ARM32_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/lilv.c.o: lilv.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src -c -o $@
 
 $(OBJDIR)/lilv.c.%32.o: lilv.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/lilv.c.%64.o: lilv.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/lilv.c.arm32.o: lilv.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (ARM32)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(ARM32_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

@@ -28,10 +28,14 @@
 
 #define STR_MAX 0xFF
 
+#ifndef CARLA_BACKEND_NAMESPACE
+# define CARLA_BACKEND_NAMESPACE CarlaBackend
+#endif
+
 #ifdef __cplusplus
-# define CARLA_BACKEND_START_NAMESPACE namespace CarlaBackend {
+# define CARLA_BACKEND_START_NAMESPACE namespace CARLA_BACKEND_NAMESPACE {
 # define CARLA_BACKEND_END_NAMESPACE }
-# define CARLA_BACKEND_USE_NAMESPACE using namespace CarlaBackend;
+# define CARLA_BACKEND_USE_NAMESPACE using namespace CARLA_BACKEND_NAMESPACE;
 # include <algorithm>
 # include <cmath>
 # include <limits>
@@ -272,6 +276,24 @@ static const uint PLUGIN_OPTION_SKIP_SENDING_NOTES = 0x400;
  * This flag exists because 0x0 as an option value is a valid one, so we need something else to indicate "null-ness".
  */
 static const uint PLUGIN_OPTIONS_NULL = 0x10000;
+
+/** @} */
+
+/* ------------------------------------------------------------------------------------------------------------
+ * Audio Port Hints */
+
+/*!
+ * @defgroup AudioPortHints Audio Port Hints
+ *
+ * Various audio port hints.
+ * @see CarlaPlugin::getAudioPortHints() and carla_get_audio_port_hints()
+ * @{
+ */
+
+/*!
+ * Audio port should be used as sidechan.
+ */
+static const uint AUDIO_PORT_IS_SIDECHAIN = 0x1;
 
 /** @} */
 
@@ -854,6 +876,7 @@ typedef enum {
     /*!
      * A plugin has been added.
      * @a pluginId Plugin Id
+     * @a value1   Plugin type
      * @a valueStr Plugin name
      */
     ENGINE_CALLBACK_PLUGIN_ADDED = 1,

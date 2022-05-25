@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Bridge Plugin
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -51,34 +51,19 @@
 #endif
 
 #ifdef USING_JUCE
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-# endif
-# include "AppConfig.h"
-# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-#  include "juce_gui_basics/juce_gui_basics.h"
-# else
-#  include "juce_events/juce_events.h"
-# endif
-# if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
+# include "carla_juce/carla_juce.h"
 #endif
-
-#include "jackbridge/JackBridge.hpp"
 
 #include "water/files/File.h"
 #include "water/misc/Time.h"
 
-using CarlaBackend::CarlaEngine;
-using CarlaBackend::EngineCallbackOpcode;
-using CarlaBackend::EngineCallbackOpcode2Str;
-using CarlaBackend::runMainLoopOnce;
+// must be last
+#include "jackbridge/JackBridge.hpp"
+
+using CARLA_BACKEND_NAMESPACE::CarlaEngine;
+using CARLA_BACKEND_NAMESPACE::EngineCallbackOpcode;
+using CARLA_BACKEND_NAMESPACE::EngineCallbackOpcode2Str;
+using CARLA_BACKEND_NAMESPACE::runMainLoopOnce;
 
 using water::CharPointer_UTF8;
 using water::File;
@@ -152,52 +137,6 @@ static void gIdle()
         }
     }
 }
-
- // -------------------------------------------------------------------------
-
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-class CarlaJuceApp : public juce::JUCEApplication,
-                     private juce::Timer
-{
-public:
-    CarlaJuceApp()  {}
-    ~CarlaJuceApp() {}
-
-    void initialise(const juce::String&) override
-    {
-        startTimer(8);
-    }
-
-    void shutdown() override
-    {
-        gCloseNow = true;
-        stopTimer();
-    }
-
-    const juce::String getApplicationName() override
-    {
-        return "CarlaPlugin";
-    }
-
-    const juce::String getApplicationVersion() override
-    {
-        return CARLA_VERSION_STRING;
-    }
-
-    void timerCallback() override
-    {
-        gIdle();
-
-        if (gCloseNow)
-        {
-            quit();
-            gCloseNow = false;
-        }
-    }
-};
-
-static juce::JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp(); }
-#endif
 
 // -------------------------------------------------------------------------
 
@@ -290,12 +229,7 @@ public:
         gIsInitiated = true;
 
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-# ifndef CARLA_OS_WIN
-        static const int argc = 0;
-        static const char* argv[] = {};
-# endif
-        juce::JUCEApplicationBase::createInstance = &juce_CreateApplication;
-        juce::JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
+        CarlaJUCE::setupAndUseMainApplication(gIdle, &gCloseNow);
 #else
         int64_t timeToEnd = 0;
 
@@ -353,7 +287,7 @@ private:
     CarlaEngine* fEngine;
 
 #ifdef USING_JUCE
-    const juce::ScopedJuceInitialiser_GUI fJuceInitialiser;
+    const CarlaJUCE::ScopedJuceInitialiser_GUI fJuceInitialiser;
 #endif
 
     bool fUsingBridge;
@@ -372,8 +306,8 @@ private:
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // pluginId must be 0 (first), except for patchbay things
-        if (action < CarlaBackend::ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED ||
-            action > CarlaBackend::ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED)
+        if (action < CARLA_BACKEND_NAMESPACE::ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED ||
+            action > CARLA_BACKEND_NAMESPACE::ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED)
 #endif
         {
             CARLA_SAFE_ASSERT_UINT_RETURN(pluginId == 0, pluginId,);
@@ -426,12 +360,12 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Check binary type
 
-    CarlaBackend::BinaryType btype = CarlaBackend::BINARY_NATIVE;
+    CARLA_BACKEND_NAMESPACE::BinaryType btype = CARLA_BACKEND_NAMESPACE::BINARY_NATIVE;
 
     if (const char* const binaryTypeStr = std::getenv("CARLA_BRIDGE_PLUGIN_BINARY_TYPE"))
-        btype = CarlaBackend::getBinaryTypeFromString(binaryTypeStr);
+        btype = CARLA_BACKEND_NAMESPACE::getBinaryTypeFromString(binaryTypeStr);
 
-    if (btype == CarlaBackend::BINARY_NONE)
+    if (btype == CARLA_BACKEND_NAMESPACE::BINARY_NONE)
     {
         carla_stderr("Invalid binary type '%i'", btype);
         return 1;
@@ -440,9 +374,9 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Check plugin type
 
-    CarlaBackend::PluginType itype(CarlaBackend::getPluginTypeFromString(stype));
+    CARLA_BACKEND_NAMESPACE::PluginType itype = CARLA_BACKEND_NAMESPACE::getPluginTypeFromString(stype);
 
-    if (itype == CarlaBackend::PLUGIN_NONE)
+    if (itype == CARLA_BACKEND_NAMESPACE::PLUGIN_NONE)
     {
         carla_stderr("Invalid plugin type '%s'", stype);
         return 1;
@@ -507,7 +441,7 @@ int main(int argc, char* argv[])
     {
         clientName = name;
     }
-    else if (itype == CarlaBackend::PLUGIN_LV2)
+    else if (itype == CARLA_BACKEND_NAMESPACE::PLUGIN_LV2)
     {
         // LV2 requires URI
         CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0', 1);
@@ -573,7 +507,7 @@ int main(int argc, char* argv[])
 
     const void* extraStuff = nullptr;
 
-    if (itype == CarlaBackend::PLUGIN_SF2)
+    if (itype == CARLA_BACKEND_NAMESPACE::PLUGIN_SF2)
     {
         if (label == nullptr)
             label = clientName;
@@ -585,10 +519,11 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Initialize OS features
 
+    const bool dummy = std::getenv("CARLA_BRIDGE_DUMMY") != nullptr;
     const bool testing = std::getenv("CARLA_BRIDGE_TESTING") != nullptr;
 
 #ifdef CARLA_OS_MAC
-    CarlaBackend::initStandaloneApplication();
+    CARLA_BACKEND_NAMESPACE::initStandaloneApplication();
 #endif
 
 #ifdef CARLA_OS_WIN
@@ -609,32 +544,35 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Set ourselves with high priority
 
-#ifdef CARLA_OS_LINUX
-    // reset scheduler to normal mode
-    struct sched_param sparam;
-    carla_zeroStruct(sparam);
-    sched_setscheduler(0, SCHED_OTHER|SCHED_RESET_ON_FORK, &sparam);
-
-    // try niceness first, if it fails, try SCHED_RR
-    if (nice(-5) < 0)
+    if (!dummy && !testing)
     {
-        sparam.sched_priority = (sched_get_priority_max(SCHED_RR) + sched_get_priority_min(SCHED_RR*7)) / 8;
+#ifdef CARLA_OS_LINUX
+        // reset scheduler to normal mode
+        struct sched_param sparam;
+        carla_zeroStruct(sparam);
+        sched_setscheduler(0, SCHED_OTHER|SCHED_RESET_ON_FORK, &sparam);
 
-        if (sparam.sched_priority > 0)
+        // try niceness first, if it fails, try SCHED_RR
+        if (nice(-5) < 0)
         {
-            if (sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &sparam) < 0 && ! testing)
+            sparam.sched_priority = (sched_get_priority_max(SCHED_RR) + sched_get_priority_min(SCHED_RR*7)) / 8;
+
+            if (sparam.sched_priority > 0)
             {
-                CarlaString error(std::strerror(errno));
-                carla_stderr("Failed to set high priority, error %i: %s", errno, error.buffer());
+                if (sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &sparam) < 0)
+                {
+                    CarlaString error(std::strerror(errno));
+                    carla_stderr("Failed to set high priority, error %i: %s", errno, error.buffer());
+                }
             }
         }
-    }
 #endif
 
 #ifdef CARLA_OS_WIN
-    if (! SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS) && ! testing)
-        carla_stderr("Failed to set high priority.");
+        if (! SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS))
+            carla_stderr("Failed to set high priority.");
 #endif
+    }
 
     // ---------------------------------------------------------------------
     // Listen for ctrl+c or sigint/sigterm events
@@ -664,7 +602,7 @@ int main(int argc, char* argv[])
             if (std::getenv("DISPLAY") != nullptr)
 #endif
                 carla_set_engine_option(gHostHandle,
-                                        CarlaBackend::ENGINE_OPTION_FRONTEND_UI_SCALE,
+                                        CARLA_BACKEND_NAMESPACE::ENGINE_OPTION_FRONTEND_UI_SCALE,
                                         static_cast<int>(carla_get_desktop_scale_factor()*1000+0.5),
                                         nullptr);
         }
@@ -674,25 +612,26 @@ int main(int argc, char* argv[])
 
         if (carla_add_plugin(gHostHandle,
                              btype, itype,
-                             file.getFullPathName().toRawUTF8(), name, label, uniqueId, extraStuff, CarlaBackend::PLUGIN_OPTIONS_NULL))
+                             file.getFullPathName().toRawUTF8(), name, label, uniqueId, extraStuff,
+                             CARLA_BACKEND_NAMESPACE::PLUGIN_OPTIONS_NULL))
         {
             ret = 0;
 
             if (! useBridge)
             {
                 carla_set_active(gHostHandle, 0, true);
-                carla_set_engine_option(gHostHandle, CarlaBackend::ENGINE_OPTION_PLUGINS_ARE_STANDALONE, 1, nullptr);
+                carla_set_engine_option(gHostHandle, CARLA_BACKEND_NAMESPACE::ENGINE_OPTION_PLUGINS_ARE_STANDALONE, 1, nullptr);
 
                 if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(gHostHandle, 0))
                 {
-                    if (itype == CarlaBackend::PLUGIN_INTERNAL && (std::strcmp(label, "audiofile") == 0 || std::strcmp(label, "midifile") == 0))
+                    if (itype == CARLA_BACKEND_NAMESPACE::PLUGIN_INTERNAL && (std::strcmp(label, "audiofile") == 0 || std::strcmp(label, "midifile") == 0))
                     {
                         if (file.exists())
                             carla_set_custom_data(gHostHandle, 0,
-                                                  CarlaBackend::CUSTOM_DATA_TYPE_STRING,
+                                                  CARLA_BACKEND_NAMESPACE::CUSTOM_DATA_TYPE_STRING,
                                                   "file", file.getFullPathName().toRawUTF8());
                     }
-                    else if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
+                    else if (pluginInfo->hints & CARLA_BACKEND_NAMESPACE::PLUGIN_HAS_CUSTOM_UI)
                     {
 #ifdef HAVE_X11
                         if (std::getenv("DISPLAY") != nullptr)
@@ -703,8 +642,8 @@ int main(int argc, char* argv[])
 
                     // on standalone usage, enable everything that makes sense
                     const uint optsAvailable = pluginInfo->optionsAvailable;
-                    if (optsAvailable & CarlaBackend::PLUGIN_OPTION_FIXED_BUFFERS)
-                        carla_set_option(gHostHandle, 0, CarlaBackend::PLUGIN_OPTION_FIXED_BUFFERS, true);
+                    if (optsAvailable & CARLA_BACKEND_NAMESPACE::PLUGIN_OPTION_FIXED_BUFFERS)
+                        carla_set_option(gHostHandle, 0, CARLA_BACKEND_NAMESPACE::PLUGIN_OPTION_FIXED_BUFFERS, true);
                 }
             }
 

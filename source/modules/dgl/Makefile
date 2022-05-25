@@ -11,6 +11,7 @@ include ../Makefile.mk
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(DGL_FLAGS) -Isrc
+BUILD_CXX_FLAGS += -Isrc/pugl-upstream/include
 
 ifneq ($(MACOS),true)
 WINE_FLAGS  = -I/usr/include/wine/wine/windows
@@ -21,28 +22,43 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 OBJS = \
+	$(OBJDIR)/pugl.cpp.o \
 	$(OBJDIR)/Application.cpp.o \
+	$(OBJDIR)/ApplicationPrivateData.cpp.o \
 	$(OBJDIR)/Color.cpp.o \
+	$(OBJDIR)/EventHandlers.cpp.o \
 	$(OBJDIR)/Geometry.cpp.o \
-	$(OBJDIR)/Image.cpp.o \
-	$(OBJDIR)/ImageWidgets.cpp.o \
+	$(OBJDIR)/ImageBase.cpp.o \
+	$(OBJDIR)/ImageBaseWidgets.cpp.o \
 	$(OBJDIR)/NanoVG.cpp.o \
-	$(OBJDIR)/Widget.cpp.o
-
-ifeq ($(MACOS),true)
-OBJS += $(OBJDIR)/Window.mm.o
-else
-OBJS += $(OBJDIR)/Window.cpp.o
-endif
+	$(OBJDIR)/OpenGL.cpp.o \
+	$(OBJDIR)/SubWidget.cpp.o \
+	$(OBJDIR)/SubWidgetPrivateData.cpp.o \
+	$(OBJDIR)/TopLevelWidget.cpp.o \
+	$(OBJDIR)/TopLevelWidgetPrivateData.cpp.o \
+	$(OBJDIR)/Widget.cpp.o \
+	$(OBJDIR)/WidgetPrivateData.cpp.o \
+	$(OBJDIR)/Window.cpp.o \
+	$(OBJDIR)/WindowPrivateData.cpp.o
 
 OBJS_wine = \
+	$(OBJDIR)/pugl.cpp-wine.o \
 	$(OBJDIR)/Application.cpp-wine.o \
+	$(OBJDIR)/ApplicationPrivateData.cpp-wine.o \
 	$(OBJDIR)/Color.cpp-wine.o \
+	$(OBJDIR)/EventHandlers.cpp-wine.o \
 	$(OBJDIR)/Geometry.cpp-wine.o \
-	$(OBJDIR)/Image.cpp-wine.o \
-	$(OBJDIR)/ImageWidgets.cpp-wine.o \
+	$(OBJDIR)/ImageBase.cpp-wine.o \
+	$(OBJDIR)/ImageBaseWidgets.cpp-wine.o \
+	$(OBJDIR)/OpenGL.cpp-wine.o \
+	$(OBJDIR)/SubWidget.cpp-wine.o \
+	$(OBJDIR)/SubWidgetPrivateData.cpp-wine.o \
+	$(OBJDIR)/TopLevelWidget.cpp-wine.o \
+	$(OBJDIR)/TopLevelWidgetPrivateData.cpp-wine.o \
 	$(OBJDIR)/Widget.cpp-wine.o \
-	$(OBJDIR)/Window.cpp-wine.o
+	$(OBJDIR)/WidgetPrivateData.cpp-wine.o \
+	$(OBJDIR)/Window.cpp-wine.o \
+	$(OBJDIR)/WindowPrivateData.cpp-wine.o
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -62,31 +78,33 @@ debug:
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 $(MODULEDIR)/$(MODULENAME).wine.a: $(OBJS_wine)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).wine.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $^
 
 # ---------------------------------------------------------------------------------------------------------------------
+
+ifeq ($(MACOS),true)
+$(OBJDIR)/pugl.cpp.o: src/pugl.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+endif
 
 $(OBJDIR)/%.cpp.o: src/%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp-wine.o: src/%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Wine)"
-	@$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_FLAGS) -c -o $@
-
-$(OBJDIR)/Window.mm.o: src/Window.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(WINECC) $< $(BUILD_CXX_FLAGS) $(WINE_FLAGS) -c -o $@
 
 -include $(OBJS:%.o=%.d)
 -include $(OBJS_wine:%.o=%.d)

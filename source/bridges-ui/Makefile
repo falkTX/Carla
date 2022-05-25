@@ -23,7 +23,13 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -I$(CWD)/modules
-LINK_FLAGS       += $(WATER_LIBS) -pthread
+LINK_FLAGS       += $(WATER_LIBS)
+
+ifeq ($(HAIKU),true)
+LINK_FLAGS       += -lpthread
+else
+LINK_FLAGS       += -pthread
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -129,7 +135,7 @@ LIBS = \
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 # ui_lv2-gtk2
@@ -142,12 +148,12 @@ OBJS_GTK2 = \
 $(BINDIR)/$(MODULENAME)-lv2-gtk2: $(OBJS_GTK2) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-gtk2"
-	@$(CXX) $(OBJS_GTK2) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK2_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_GTK2) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK2_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-gtk2.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (GTK2)"
-	@$(CXX) $< $(BUILD_GTK2_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_GTK2_FLAGS) -c -o $@
 
 -include $(OBJS_GTK2:%.o=%.d)
 
@@ -162,12 +168,12 @@ OBJS_GTK3 = \
 $(BINDIR)/$(MODULENAME)-lv2-gtk3: $(OBJS_GTK3) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-gtk3"
-	@$(CXX) $(OBJS_GTK3) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK3_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_GTK3) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK3_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-gtk3.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (GTK3)"
-	@$(CXX) $< $(BUILD_GTK3_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_GTK3_FLAGS) -c -o $@
 
 -include $(OBJS_GTK3:%.o=%.d)
 
@@ -182,22 +188,22 @@ OBJS_QT4 = \
 $(BINDIR)/$(MODULENAME)-lv2-qt4: $(OBJS_QT4) $(LIBS) $(MODULEDIR)/theme.qt4.a
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-qt4"
-	@$(CXX) $(OBJS_QT4) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt4.a $(LINK_QT4_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_QT4) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt4.a $(LINK_QT4_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-qt4.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt4.moc $(OBJDIR)/resources.qt4.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (QT4)"
-	@$(CXX) $< $(BUILD_QT4_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_QT4_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaBridgeToolkitQt4.moc: CarlaBridgeToolkitQt.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating CarlaBridgeToolkitQt4.moc"
-	@$(MOC_QT4) $< -DMOC_PARSING -o $@
+	$(SILENT)$(MOC_QT4) $< -DMOC_PARSING -o $@
 
 $(OBJDIR)/resources.qt4.cpp: ../../resources/resources-theme.qrc
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating resources.qt4.cpp"
-	@$(RCC_QT4) $< -o $@
+	$(SILENT)$(RCC_QT4) $< -o $@
 
 -include $(OBJS_QT4:%.o=%.d)
 
@@ -212,22 +218,22 @@ OBJS_QT5 = \
 $(BINDIR)/$(MODULENAME)-lv2-qt5: $(OBJS_QT5) $(LIBS) $(MODULEDIR)/theme.qt5.a
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-qt5"
-	@$(CXX) $(OBJS_QT5) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt5.a $(LINK_QT5_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_QT5) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt5.a $(LINK_QT5_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-qt5.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt5.moc $(OBJDIR)/resources.qt5.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (QT5)"
-	@$(CXX) $< $(BUILD_QT5_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_QT5_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaBridgeToolkitQt5.moc: CarlaBridgeToolkitQt.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating CarlaBridgeToolkitQt5.moc"
-	@$(MOC_QT5) $< -DMOC_PARSING -o $@
+	$(SILENT)$(MOC_QT5) $< -DMOC_PARSING -o $@
 
 $(OBJDIR)/resources.qt5.cpp: ../../resources/resources-theme.qrc
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating resources.qt5.cpp"
-	@$(RCC_QT5) $< -o $@
+	$(SILENT)$(RCC_QT5) $< -o $@
 
 -include $(OBJS_QT5:%.o=%.d)
 
@@ -242,12 +248,12 @@ OBJS_X11 = \
 $(BINDIR)/$(MODULENAME)-lv2-x11: $(OBJS_X11) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-x11"
-	@$(CXX) $(OBJS_X11) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_X11_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_X11) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_X11_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-x11.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (X11)"
-	@$(CXX) $< $(BUILD_X11_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_X11_FLAGS) -c -o $@
 
 -include $(OBJS_X11:%.o=%.d)
 
@@ -262,12 +268,12 @@ OBJS_COCOA = \
 $(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_COCOA) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-cocoa"
-	@$(CXX) $(OBJS_COCOA) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_COCOA_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_COCOA) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_COCOA_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-cocoa.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Cocoa)"
-	@$(CXX) $< $(BUILD_COCOA_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_COCOA_FLAGS) -c -o $@
 
 -include $(OBJS_COCOA:%.o=%.d)
 
@@ -282,12 +288,12 @@ OBJS_WINDOWS = \
 $(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_WINDOWS) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-windows.exe"
-	@$(CXX) $(OBJS_WINDOWS) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_WINDOWS_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS_WINDOWS) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_WINDOWS_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-windows.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Windows)"
-	@$(CXX) $< $(BUILD_WINDOWS_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_WINDOWS_FLAGS) -c -o $@
 
 -include $(OBJS_WINDOWS:%.o=%.d)
 

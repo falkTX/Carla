@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -166,7 +166,11 @@ bool PathFlatteningIterator::next()
             auto errorX = m3x - x2;
             auto errorY = m3y - y2;
 
-            if (errorX * errorX + errorY * errorY > toleranceSquared)
+            auto outsideTolerance = errorX * errorX + errorY * errorY > toleranceSquared;
+            auto canBeSubdivided = (m3x != m1x && m3x != m2x)
+                                || (m3y != m1y && m3y != m2y);
+
+            if (outsideTolerance && canBeSubdivided)
             {
                 *stackPos++ = y3;
                 *stackPos++ = x3;
@@ -220,8 +224,14 @@ bool PathFlatteningIterator::next()
             auto error2X = m5x - x3;
             auto error2Y = m5y - y3;
 
-            if (error1X * error1X + error1Y * error1Y > toleranceSquared
-                 || error2X * error2X + error2Y * error2Y > toleranceSquared)
+            auto outsideTolerance = error1X * error1X + error1Y * error1Y > toleranceSquared
+                                 || error2X * error2X + error2Y * error2Y > toleranceSquared;
+            auto canBeSubdivided = (m4x != m1x && m4x != m2x)
+                                || (m4y != m1y && m4y != m2y)
+                                || (m5x != m3x && m5x != m2x)
+                                || (m5y != m3y && m5y != m2y);
+
+            if (outsideTolerance && canBeSubdivided)
             {
                 *stackPos++ = y4;
                 *stackPos++ = x4;

@@ -44,19 +44,6 @@ NamedValueSet& NamedValueSet::operator= (const NamedValueSet& other)
     return *this;
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-NamedValueSet::NamedValueSet (NamedValueSet&& other) noexcept
-    : values (static_cast<Array<NamedValue>&&> (other.values))
-{
-}
-
-NamedValueSet& NamedValueSet::operator= (NamedValueSet&& other) noexcept
-{
-    other.values.swapWith (values);
-    return *this;
-}
-#endif
-
 NamedValueSet::~NamedValueSet() noexcept
 {
 }
@@ -116,23 +103,6 @@ var* NamedValueSet::getVarPointer (const Identifier& name) const noexcept
 
     return nullptr;
 }
-
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-bool NamedValueSet::set (const Identifier& name, var&& newValue)
-{
-    if (var* const v = getVarPointer (name))
-    {
-        if (v->equalsWithSameType (newValue))
-            return false;
-
-        *v = static_cast<var&&> (newValue);
-        return true;
-    }
-
-    values.add (NamedValue (name, static_cast<var&&> (newValue)));
-    return true;
-}
-#endif
 
 bool NamedValueSet::set (const Identifier& name, const var& newValue)
 {

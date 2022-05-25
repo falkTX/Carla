@@ -25,7 +25,6 @@
 #include "water/misc/Time.h"
 #include "water/text/StringArray.h"
 
-using water::jmax;
 using water::String;
 using water::StringArray;
 
@@ -2065,7 +2064,7 @@ public:
                             nativeEvent.time    = isSampleAccurate ? startTime : eventTime;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = uint8_t(ctrlEvent.param);
-                            nativeEvent.data[2] = uint8_t(ctrlEvent.normalizedValue*127.0f);
+                            nativeEvent.data[2] = uint8_t(ctrlEvent.normalizedValue*127.0f + 0.5f);
                             nativeEvent.size    = 3;
                         }
 

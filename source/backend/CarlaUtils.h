@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,8 +21,8 @@
 #include "CarlaBackend.h"
 
 #ifdef __cplusplus
-using CarlaBackend::PluginCategory;
-using CarlaBackend::PluginType;
+using CARLA_BACKEND_NAMESPACE::PluginCategory;
+using CARLA_BACKEND_NAMESPACE::PluginType;
 #endif
 
 /*!
@@ -147,15 +147,17 @@ typedef struct _CarlaCachedPluginInfo {
  * Do not call this for any other plugin formats.
  *
  * @note if this carla build uses JUCE, then you must call carla_juce_init beforehand
+ * @note for AU plugins, you cannot call this outside the main thread
  */
-CARLA_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath);
+CARLA_PLUGIN_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath);
 
 /*!
  * Get information about a cached plugin.
  *
  * @note if this carla build uses JUCE, then you must call carla_juce_init beforehand
+ * @note for AU plugins, you cannot call this outside the main thread
  */
-CARLA_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint index);
+CARLA_PLUGIN_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint index);
 
 #ifndef CARLA_HOST_H_INCLUDED
 /* --------------------------------------------------------------------------------------------------------------------
@@ -165,32 +167,32 @@ CARLA_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginTyp
  * Get the complete license text of used third-party code and features.
  * Returned string is in basic html format.
  */
-CARLA_EXPORT const char* carla_get_complete_license_text(void);
+CARLA_PLUGIN_EXPORT const char* carla_get_complete_license_text(void);
 
 /*!
  * Get the juce version used in the current Carla build.
  */
-CARLA_EXPORT const char* carla_get_juce_version(void);
+CARLA_PLUGIN_EXPORT const char* carla_get_juce_version(void);
 
 /*!
  * Get the list of supported file extensions in carla_load_file().
  */
-CARLA_EXPORT const char* const* carla_get_supported_file_extensions(void);
+CARLA_PLUGIN_EXPORT const char* const* carla_get_supported_file_extensions(void);
 
 /*!
  * Get the list of supported features in the current Carla build.
  */
-CARLA_EXPORT const char* const* carla_get_supported_features(void);
+CARLA_PLUGIN_EXPORT const char* const* carla_get_supported_features(void);
 
 /*!
  * Get the absolute filename of this carla library.
  */
-CARLA_EXPORT const char* carla_get_library_filename(void);
+CARLA_PLUGIN_EXPORT const char* carla_get_library_filename(void);
 
 /*!
  * Get the folder where this carla library resides.
  */
-CARLA_EXPORT const char* carla_get_library_folder(void);
+CARLA_PLUGIN_EXPORT const char* carla_get_library_folder(void);
 #endif
 
 /* --------------------------------------------------------------------------------------------------------------------
@@ -204,18 +206,18 @@ CARLA_EXPORT const char* carla_get_library_folder(void);
  *
  * Make sure to call carla_juce_cleanup after you are done with APIs that need JUCE.
  */
-CARLA_EXPORT void carla_juce_init(void);
+CARLA_PLUGIN_EXPORT void carla_juce_init(void);
 
 /*!
  * Give idle time to JUCE stuff.
  * Currently only used for Linux.
  */
-CARLA_EXPORT void carla_juce_idle(void);
+CARLA_PLUGIN_EXPORT void carla_juce_idle(void);
 
 /*!
  * Cleanup the JUCE stuff that was initialized by carla_juce_init.
  */
-CARLA_EXPORT void carla_juce_cleanup(void);
+CARLA_PLUGIN_EXPORT void carla_juce_cleanup(void);
 
 /* --------------------------------------------------------------------------------------------------------------------
  * pipes */
@@ -223,65 +225,65 @@ CARLA_EXPORT void carla_juce_cleanup(void);
 /*!
  * TODO.
  */
-CARLA_EXPORT CarlaPipeClientHandle carla_pipe_client_new(const char* argv[], CarlaPipeCallbackFunc callbackFunc, void* callbackPtr);
+CARLA_PLUGIN_EXPORT CarlaPipeClientHandle carla_pipe_client_new(const char* argv[], CarlaPipeCallbackFunc callbackFunc, void* callbackPtr);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT void carla_pipe_client_idle(CarlaPipeClientHandle handle);
+CARLA_PLUGIN_EXPORT void carla_pipe_client_idle(CarlaPipeClientHandle handle);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT bool carla_pipe_client_is_running(CarlaPipeClientHandle handle);
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_is_running(CarlaPipeClientHandle handle);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT void carla_pipe_client_lock(CarlaPipeClientHandle handle);
+CARLA_PLUGIN_EXPORT void carla_pipe_client_lock(CarlaPipeClientHandle handle);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT void carla_pipe_client_unlock(CarlaPipeClientHandle handle);
+CARLA_PLUGIN_EXPORT void carla_pipe_client_unlock(CarlaPipeClientHandle handle);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT const char* carla_pipe_client_readlineblock(CarlaPipeClientHandle handle, uint timeout);
+CARLA_PLUGIN_EXPORT const char* carla_pipe_client_readlineblock(CarlaPipeClientHandle handle, uint timeout);
 
 /*!
  * Extras.
  * TODO.
  */
-CARLA_EXPORT bool carla_pipe_client_readlineblock_bool(CarlaPipeClientHandle handle, uint timeout);
-CARLA_EXPORT int carla_pipe_client_readlineblock_int(CarlaPipeClientHandle handle, uint timeout);
-CARLA_EXPORT double carla_pipe_client_readlineblock_float(CarlaPipeClientHandle handle, uint timeout);
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_readlineblock_bool(CarlaPipeClientHandle handle, uint timeout);
+CARLA_PLUGIN_EXPORT int carla_pipe_client_readlineblock_int(CarlaPipeClientHandle handle, uint timeout);
+CARLA_PLUGIN_EXPORT double carla_pipe_client_readlineblock_float(CarlaPipeClientHandle handle, uint timeout);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT bool carla_pipe_client_write_msg(CarlaPipeClientHandle handle, const char* msg);
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_write_msg(CarlaPipeClientHandle handle, const char* msg);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT bool carla_pipe_client_write_and_fix_msg(CarlaPipeClientHandle handle, const char* msg);
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_write_and_fix_msg(CarlaPipeClientHandle handle, const char* msg);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT bool carla_pipe_client_flush(CarlaPipeClientHandle handle);
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_flush(CarlaPipeClientHandle handle);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handle);
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handle);
 
 /*!
  * TODO.
  */
-CARLA_EXPORT void carla_pipe_client_destroy(CarlaPipeClientHandle handle);
+CARLA_PLUGIN_EXPORT void carla_pipe_client_destroy(CarlaPipeClientHandle handle);
 
 /* --------------------------------------------------------------------------------------------------------------------
  * system stuff */
@@ -289,17 +291,17 @@ CARLA_EXPORT void carla_pipe_client_destroy(CarlaPipeClientHandle handle);
 /*!
  * Flush stdout or stderr.
  */
-CARLA_EXPORT void carla_fflush(bool err);
+CARLA_PLUGIN_EXPORT void carla_fflush(bool err);
 
 /*!
  * Print the string @a string to stdout or stderr.
  */
-CARLA_EXPORT void carla_fputs(bool err, const char* string);
+CARLA_PLUGIN_EXPORT void carla_fputs(bool err, const char* string);
 
 /*!
  * Set the current process name to @a name.
  */
-CARLA_EXPORT void carla_set_process_name(const char* name);
+CARLA_PLUGIN_EXPORT void carla_set_process_name(const char* name);
 
 /* --------------------------------------------------------------------------------------------------------------------
  * window control */
@@ -307,16 +309,16 @@ CARLA_EXPORT void carla_set_process_name(const char* name);
 /*!
  * Get the global/desktop scale factor.
  */
-CARLA_EXPORT double carla_get_desktop_scale_factor(void);
+CARLA_PLUGIN_EXPORT double carla_get_desktop_scale_factor(void);
 
-CARLA_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
-CARLA_EXPORT void carla_cocoa_set_transient_window_for(void* nsViewChild, void* nsViewParent);
+CARLA_PLUGIN_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
+CARLA_PLUGIN_EXPORT void carla_cocoa_set_transient_window_for(void* nsViewChild, void* nsViewParent);
 
-CARLA_EXPORT void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2);
+CARLA_PLUGIN_EXPORT void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2);
 
-CARLA_EXPORT void carla_x11_move_window(uintptr_t winId, int x, int y);
+CARLA_PLUGIN_EXPORT void carla_x11_move_window(uintptr_t winId, int x, int y);
 
-CARLA_EXPORT int* carla_x11_get_window_pos(uintptr_t winId);
+CARLA_PLUGIN_EXPORT int* carla_x11_get_window_pos(uintptr_t winId);
 
 /* ----------------------------------------------------------------------------------------------------------------- */
 

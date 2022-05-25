@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_carla_interposed_action(uint, uint, void*)
 {
     static bool printWarning = true;
@@ -40,7 +40,7 @@ int jack_carla_interposed_action(uint, uint, void*)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr)
 {
     carla_debug("%s(%p, %p, %p, %p)", __FUNCTION__, major_ptr, minor_ptr, micro_ptr, proto_ptr);
@@ -51,7 +51,7 @@ void jack_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto
     *proto_ptr = 9; // FIXME
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 const char* jack_get_version_string(void)
 {
     carla_debug("%s()", __FUNCTION__);
@@ -62,7 +62,7 @@ const char* jack_get_version_string(void)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_is_realtime(jack_client_t* client)
 {
     carla_debug("%s(%p)", __FUNCTION__, client);
@@ -74,7 +74,7 @@ int jack_is_realtime(jack_client_t* client)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_free(void* ptr)
 {
     carla_debug("%s(%p)", __FUNCTION__, ptr);

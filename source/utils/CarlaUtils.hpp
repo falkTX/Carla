@@ -117,15 +117,16 @@ void carla_debug(const char* const fmt, ...) noexcept
         if (output == stdout)
         {
 #ifdef CARLA_OS_MAC
-            std::fprintf(output, "\x1b[37;1m");
+            std::fprintf(output, "\x1b[37;1m[carla] ");
 #else
-            std::fprintf(output, "\x1b[30;1m");
+            std::fprintf(output, "\x1b[30;1m[carla] ");
 #endif
             std::vfprintf(output, fmt, args);
             std::fprintf(output, "\x1b[0m\n");
         }
         else
         {
+            std::fprintf(output, "[carla] ");
             std::vfprintf(output, fmt, args);
             std::fprintf(output, "\n");
         }
@@ -147,6 +148,7 @@ void carla_stdout(const char* const fmt, ...) noexcept
     try {
         ::va_list args;
         ::va_start(args, fmt);
+        std::fprintf(output, "[carla] ");
         std::vfprintf(output, fmt, args);
         std::fprintf(output, "\n");
 #ifndef DEBUG
@@ -168,6 +170,7 @@ void carla_stderr(const char* const fmt, ...) noexcept
     try {
         ::va_list args;
         ::va_start(args, fmt);
+        std::fprintf(output, "[carla] ");
         std::vfprintf(output, fmt, args);
         std::fprintf(output, "\n");
 #ifndef DEBUG
@@ -192,12 +195,13 @@ void carla_stderr2(const char* const fmt, ...) noexcept
 
         if (output == stderr)
         {
-            std::fprintf(output, "\x1b[31m");
+            std::fprintf(output, "\x1b[31m[carla] ");
             std::vfprintf(output, fmt, args);
             std::fprintf(output, "\x1b[0m\n");
         }
         else
         {
+            std::fprintf(output, "[carla] ");
             std::vfprintf(output, fmt, args);
             std::fprintf(output, "\n");
         }

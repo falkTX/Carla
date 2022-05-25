@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -32,14 +32,10 @@ namespace water {
 
 //==============================================================================
 /**
-    Reads/writes standard midi format files.
+    Reads standard midi format files.
 
     To read a midi file, create a MidiFile object and call its readFrom() method. You
     can then get the individual midi tracks from it using the getTrack() method.
-
-    To write a file, create a MidiFile object, add some MidiMessageSequence objects
-    to it using the addTrack() method, and then call its writeTo() method to stream
-    it out.
 
     @see MidiMessageSequence
 */
@@ -160,13 +156,6 @@ public:
     */
     bool readFrom (InputStream& sourceStream);
 
-    /** Writes the midi tracks as a standard midi file.
-        The midiFileType value is written as the file's format type, which can be 0, 1
-        or 2 - see the midi file spec for more info about that.
-        @returns true if the operation succeeded.
-    */
-    bool writeTo (OutputStream& destStream, int midiFileType = 1);
-
     /** Converts the timestamp of all the midi events from midi ticks to seconds.
 
         This will use the midi time format and tempo/time signature info in the
@@ -181,7 +170,6 @@ private:
     short timeFormat;
 
     void readNextTrack (const uint8*, int size);
-    bool writeTrack (OutputStream&, int trackNum);
 };
 
 }

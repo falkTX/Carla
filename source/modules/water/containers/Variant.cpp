@@ -265,34 +265,6 @@ var& var::operator= (const double v)             { type->cleanUp (value); type =
 var& var::operator= (const char* const v)        { type->cleanUp (value); type = &VariantType_String::instance; new (value.stringValue) String (v); return *this; }
 var& var::operator= (const String& v)            { type->cleanUp (value); type = &VariantType_String::instance; new (value.stringValue) String (v); return *this; }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-var::var (var&& other) noexcept
-    : type (other.type),
-      value (other.value)
-{
-    other.type = &VariantType_Void::instance;
-}
-
-var& var::operator= (var&& other) noexcept
-{
-    swapWith (other);
-    return *this;
-}
-
-var::var (String&& v)  : type (&VariantType_String::instance)
-{
-    new (value.stringValue) String (static_cast<String&&> (v));
-}
-
-var& var::operator= (String&& v)
-{
-    type->cleanUp (value);
-    type = &VariantType_String::instance;
-    new (value.stringValue) String (static_cast<String&&> (v));
-    return *this;
-}
-#endif
-
 //==============================================================================
 bool var::equals (const var& other) const noexcept
 {

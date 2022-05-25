@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -182,5 +182,19 @@ inline const Type* addBytesToPointer (const Type* basePointer, IntegerType bytes
 #ifndef juce_UseDebuggingNewOperator
  #define juce_UseDebuggingNewOperator
 #endif
+
+/** Converts an owning raw pointer into a unique_ptr, deriving the
+    type of the unique_ptr automatically.
+
+    This should only be used with pointers to single objects.
+    Do NOT pass a pointer to an array to this function, as the
+    destructor of the unique_ptr will incorrectly call `delete`
+    instead of `delete[]` on the pointer.
+*/
+template <typename T>
+std::unique_ptr<T> rawToUniquePtr (T* ptr)
+{
+    return std::unique_ptr<T> (ptr);
+}
 
 } // namespace juce

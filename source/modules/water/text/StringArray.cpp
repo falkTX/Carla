@@ -36,13 +36,6 @@ StringArray::StringArray (const StringArray& other)
 {
 }
 
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-StringArray::StringArray (StringArray&& other) noexcept
-    : strings (static_cast<Array <String>&&> (other.strings))
-{
-}
-#endif
-
 StringArray::StringArray (const String& firstValue)
 {
     strings.add (firstValue);
@@ -68,14 +61,6 @@ StringArray& StringArray::operator= (const StringArray& other)
     strings = other.strings;
     return *this;
 }
-
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-StringArray& StringArray::operator= (StringArray&& other) noexcept
-{
-    strings = static_cast<Array<String>&&> (other.strings);
-    return *this;
-}
-#endif
 
 StringArray::~StringArray()
 {
@@ -124,13 +109,6 @@ bool StringArray::add (const String& newString)
 {
     return strings.add (newString);
 }
-
-#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-bool StringArray::add (String&& stringToAdd)
-{
-    return strings.add (static_cast<String&&> (stringToAdd));
-}
-#endif
 
 bool StringArray::insert (const int index, const String& newString)
 {

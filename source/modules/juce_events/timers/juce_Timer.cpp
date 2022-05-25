@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -38,6 +38,7 @@ public:
 
     ~TimerThread() override
     {
+        cancelPendingUpdate();
         signalThreadShouldExit();
         callbackArrived.signal();
         stopThread (4000);
@@ -186,8 +187,8 @@ private:
     {
         // Trying to add a timer that's already here - shouldn't get to this point,
         // so if you get this assertion, let me know!
-        jassert (std::find_if (timers.begin(), timers.end(),
-                               [t] (TimerCountdown i) { return i.timer == t; }) == timers.end());
+        jassert (std::none_of (timers.begin(), timers.end(),
+                               [t] (TimerCountdown i) { return i.timer == t; }));
 
         auto pos = timers.size();
 
@@ -317,6 +318,14 @@ Timer::Timer (const Timer&) noexcept {}
 
 Timer::~Timer()
 {
+    // If you're destroying a timer on a background thread, make sure the timer has
+    // been stopped before execution reaches this point. A simple way to achieve this
+    // is to add a call to `stopTimer()` to the destructor of your class which inherits
+    // from Timer.
+    jassert (! isTimerRunning()
+             || MessageManager::getInstanceWithoutCreating() == nullptr
+             || MessageManager::getInstanceWithoutCreating()->currentThreadHasLockedMessageManager());
+
     stopTimer();
 }
 

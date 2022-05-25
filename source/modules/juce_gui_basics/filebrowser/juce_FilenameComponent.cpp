@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -70,11 +70,11 @@ void FilenameComponent::resized()
     getLookAndFeel().layoutFilenameComponent (*this, &filenameBox, browseButton.get());
 }
 
-KeyboardFocusTraverser* FilenameComponent::createFocusTraverser()
+std::unique_ptr<ComponentTraverser> FilenameComponent::createKeyboardFocusTraverser()
 {
     // This prevents the sub-components from grabbing focus if the
     // FilenameComponent has been set to refuse focus.
-    return getWantsKeyboardFocus() ? Component::createFocusTraverser() : nullptr;
+    return getWantsKeyboardFocus() ? Component::createKeyboardFocusTraverser() : nullptr;
 }
 
 void FilenameComponent::setBrowseButtonText (const String& newBrowseButtonText)
@@ -114,22 +114,22 @@ File FilenameComponent::getLocationToBrowse()
 
 void FilenameComponent::showChooser()
 {
-   #if JUCE_MODAL_LOOPS_PERMITTED
-    FileChooser fc (isDir ? TRANS ("Choose a new directory")
-                          : TRANS ("Choose a new file"),
-                    getLocationToBrowse(),
-                    wildcard);
+    chooser = std::make_unique<FileChooser> (isDir ? TRANS ("Choose a new directory")
+                                                   : TRANS ("Choose a new file"),
+                                             getLocationToBrowse(),
+                                             wildcard);
 
-    if (isDir ? fc.browseForDirectory()
-              : (isSaving ? fc.browseForFileToSave (false)
-                          : fc.browseForFileToOpen()))
+    auto chooserFlags = isDir ? FileBrowserComponent::openMode | FileBrowserComponent::canSelectDirectories
+                              : FileBrowserComponent::canSelectFiles | (isSaving ? FileBrowserComponent::saveMode
+                                                                                 : FileBrowserComponent::openMode);
+
+    chooser->launchAsync (chooserFlags, [this] (const FileChooser&)
     {
-        setCurrentFile (fc.getResult(), true);
-    }
-   #else
-    ignoreUnused (isSaving);
-    jassertfalse; // needs rewriting to deal with non-modal environments
-   #endif
+        if (chooser->getResult() == File{})
+            return;
+
+        setCurrentFile (chooser->getResult(), true);
+    });
 }
 
 bool FilenameComponent::isInterestedInFileDrag (const StringArray&)

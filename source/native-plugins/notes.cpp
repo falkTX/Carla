@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -116,10 +116,10 @@ static const NativePluginDescriptor notesDesc = {
 
 // -----------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_API_EXPORT
 void carla_register_native_plugin_notes();
 
-CARLA_EXPORT
+CARLA_API_EXPORT
 void carla_register_native_plugin_notes()
 {
     carla_register_native_plugin(&notesDesc);

@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -240,6 +240,11 @@ int32_t CarlaPlugin::getCurrentProgram() const noexcept
 int32_t CarlaPlugin::getCurrentMidiProgram() const noexcept
 {
     return pData->midiprog.current;
+}
+
+uint CarlaPlugin::getAudioPortHints(bool, uint32_t) const noexcept
+{
+    return 0x0;
 }
 
 const ParameterData& CarlaPlugin::getParameterData(const uint32_t parameterId) const noexcept
@@ -1036,7 +1041,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         if (res.failed())
         {
-            pData->engine->setLastError(res.getErrorMessage().toRawUTF8());
+            pData->engine->setLastError(res.getErrorMessage().c_str());
             return false;
         }
     }

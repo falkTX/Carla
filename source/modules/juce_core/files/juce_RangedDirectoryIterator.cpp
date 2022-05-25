@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -23,6 +23,9 @@
 namespace juce
 {
 
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4996)
+
 float DirectoryEntry::getEstimatedProgress() const
 {
     if (auto it = iterator.lock())
@@ -31,26 +34,22 @@ float DirectoryEntry::getEstimatedProgress() const
     return 0.0f;
 }
 
-JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
-JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4996)
-
 // We implement this in terms of the deprecated DirectoryIterator,
 // but the old DirectoryIterator might go away in the future!
 RangedDirectoryIterator::RangedDirectoryIterator (const File& directory,
                                                   bool isRecursive,
                                                   const String& wildCard,
-                                                  int whatToLookFor)
+                                                  int whatToLookFor,
+                                                  File::FollowSymlinks followSymlinks)
     : iterator (new DirectoryIterator (directory,
                                        isRecursive,
                                        wildCard,
-                                       whatToLookFor))
+                                       whatToLookFor,
+                                       followSymlinks))
 {
     entry.iterator = iterator;
     increment();
 }
-
-JUCE_END_IGNORE_WARNINGS_GCC_LIKE
-JUCE_END_IGNORE_WARNINGS_MSVC
 
 bool RangedDirectoryIterator::next()
 {
@@ -73,5 +72,8 @@ void RangedDirectoryIterator::increment()
     if (iterator != nullptr && ! next())
         iterator = nullptr;
 }
+
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+JUCE_END_IGNORE_WARNINGS_MSVC
 
 } // namespace juce

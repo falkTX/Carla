@@ -84,8 +84,15 @@ BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden
 endif
 
+ifneq ($(MACOS),true)
+ifneq ($(WIN32),true)
+BASE_FLAGS += -fno-gnu-unique
+endif
+endif
+
 ifeq ($(WITH_LTO),true)
 BASE_FLAGS += -fno-strict-aliasing -flto
+LINK_OPTS  += -fno-strict-aliasing -flto -Werror=odr -Werror=lto-type-mismatch
 endif
 
 32BIT_FLAGS = -m32
@@ -171,7 +178,11 @@ endif
 
 ifeq ($(HAVE_DGL),true)
 BASE_FLAGS += -DHAVE_DGL
-BASE_FLAGS += -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED -DDGL_NO_SHARED_RESOURCES
+BASE_FLAGS += -DDGL_NAMESPACE=CarlaDGL
+BASE_FLAGS += -DDGL_OPENGL
+BASE_FLAGS += -DDGL_FILE_BROWSER_DISABLED
+BASE_FLAGS += -DDGL_NO_SHARED_RESOURCES
+BASE_FLAGS += -DDONT_SET_USING_DGL_NAMESPACE
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -211,14 +222,14 @@ endif
 
 ifeq ($(USING_JUCE),true)
 BASE_FLAGS += -DUSING_JUCE
+BASE_FLAGS += -DJUCE_APP_CONFIG_HEADER='"AppConfig.h"'
+ifeq ($(WIN32),true)
+BASE_FLAGS += -D_WIN32_WINNT=0x0600
+endif
 endif
 
 ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 BASE_FLAGS += -DUSING_JUCE_AUDIO_DEVICES
-endif
-
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
-BASE_FLAGS += -DUSING_JUCE_GUI_EXTRA
 endif
 
 ifeq ($(USING_RTAUDIO),true)
@@ -227,6 +238,13 @@ endif
 
 ifeq ($(STATIC_PLUGIN_TARGET),true)
 BASE_FLAGS += -DSTATIC_PLUGIN_TARGET
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Allow custom namespace
+
+ifneq ($(CARLA_BACKEND_NAMESPACE),)
+BASE_FLAGS += -DCARLA_BACKEND_NAMESPACE=$(CARLA_BACKEND_NAMESPACE)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -257,6 +275,19 @@ BASE_FLAGS += -DCARLA_LIB_EXT=\"$(LIB_EXT)\"
 ifneq ($(MACOS),true)
 LIBS_START = -Wl,--start-group -Wl,--whole-archive
 LIBS_END   = -Wl,--no-whole-archive -Wl,--end-group
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Handle the verbosity switch
+
+SILENT =
+
+ifeq ($(VERBOSE),1)
+else ifeq ($(VERBOSE),y)
+else ifeq ($(VERBOSE),yes)
+else ifeq ($(VERBOSE),true)
+else
+SILENT = @
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

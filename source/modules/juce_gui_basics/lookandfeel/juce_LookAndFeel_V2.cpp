@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -188,15 +188,22 @@ LookAndFeel_V2::LookAndFeel_V2()
         0x1000440, /*LassoComponent::lassoFillColourId*/        0x66dddddd,
         0x1000441, /*LassoComponent::lassoOutlineColourId*/     0x99111111,
 
+        0x1004000, /*KeyboardComponentBase::upDownButtonBackgroundColourId*/  0xffd3d3d3,
+        0x1004001, /*KeyboardComponentBase::upDownButtonArrowColourId*/       0xff000000,
+
         0x1005000, /*MidiKeyboardComponent::whiteNoteColourId*/               0xffffffff,
         0x1005001, /*MidiKeyboardComponent::blackNoteColourId*/               0xff000000,
         0x1005002, /*MidiKeyboardComponent::keySeparatorLineColourId*/        0x66000000,
         0x1005003, /*MidiKeyboardComponent::mouseOverKeyOverlayColourId*/     0x80ffff00,
         0x1005004, /*MidiKeyboardComponent::keyDownOverlayColourId*/          0xffb6b600,
         0x1005005, /*MidiKeyboardComponent::textLabelColourId*/               0xff000000,
-        0x1005006, /*MidiKeyboardComponent::upDownButtonBackgroundColourId*/  0xffd3d3d3,
-        0x1005007, /*MidiKeyboardComponent::upDownButtonArrowColourId*/       0xff000000,
-        0x1005008, /*MidiKeyboardComponent::shadowColourId*/                  0x4c000000,
+        0x1005006, /*MidiKeyboardComponent::shadowColourId*/                  0x4c000000,
+
+        0x1006000, /*MPEKeyboardComponent::whiteNoteColourId*/                0xff1a1c27,
+        0x1006001, /*MPEKeyboardComponent::blackNoteColourId*/                0x99f1f1f1,
+        0x1006002, /*MPEKeyboardComponent::textLabelColourId*/                0xfff1f1f1,
+        0x1006003, /*MPEKeyboardComponent::noteCircleFillColourId*/           0x99ba00ff,
+        0x1006004, /*MPEKeyboardComponent::noteCircleOutlineColourId*/        0xfff1f1f1,
 
         0x1004500, /*CodeEditorComponent::backgroundColourId*/                0xffffffff,
         0x1004502, /*CodeEditorComponent::highlightColourId*/                 textHighlightColour,
@@ -407,7 +414,7 @@ void LookAndFeel_V2::drawDrawableButton (Graphics& g, DrawableButton& button,
 //==============================================================================
 AlertWindow* LookAndFeel_V2::createAlertWindow (const String& title, const String& message,
                                                 const String& button1, const String& button2, const String& button3,
-                                                AlertWindow::AlertIconType iconType,
+                                                MessageBoxIconType iconType,
                                                 int numButtons, Component* associatedComponent)
 {
     AlertWindow* aw = new AlertWindow (title, message, iconType, associatedComponent);
@@ -457,13 +464,13 @@ void LookAndFeel_V2::drawAlertBox (Graphics& g, AlertWindow& alert,
     const Rectangle<int> iconRect (iconSize / -10, iconSize / -10,
                                    iconSize, iconSize);
 
-    if (alert.getAlertType() != AlertWindow::NoIcon)
+    if (alert.getAlertType() != MessageBoxIconType::NoIcon)
     {
         Path icon;
         uint32 colour;
         char character;
 
-        if (alert.getAlertType() == AlertWindow::WarningIcon)
+        if (alert.getAlertType() == MessageBoxIconType::WarningIcon)
         {
             colour = 0x55ff5555;
             character = '!';
@@ -476,8 +483,8 @@ void LookAndFeel_V2::drawAlertBox (Graphics& g, AlertWindow& alert,
         }
         else
         {
-            colour    = alert.getAlertType() == AlertWindow::InfoIcon ? (uint32) 0x605555ff : (uint32) 0x40b69900;
-            character = alert.getAlertType() == AlertWindow::InfoIcon ? 'i' : '?';
+            colour    = alert.getAlertType() == MessageBoxIconType::InfoIcon ? (uint32) 0x605555ff : (uint32) 0x40b69900;
+            character = alert.getAlertType() == MessageBoxIconType::InfoIcon ? 'i' : '?';
 
             icon.addEllipse (iconRect.toFloat());
         }
@@ -890,6 +897,20 @@ void LookAndFeel_V2::getIdealPopupMenuItemSize (const String& text, const bool i
     }
 }
 
+void LookAndFeel_V2::getIdealPopupMenuItemSizeWithOptions (const String& text,
+                                                           bool isSeparator,
+                                                           int standardMenuItemHeight,
+                                                           int& idealWidth,
+                                                           int& idealHeight,
+                                                           const PopupMenu::Options&)
+{
+    getIdealPopupMenuItemSize (text,
+                               isSeparator,
+                               standardMenuItemHeight,
+                               idealWidth,
+                               idealHeight);
+}
+
 void LookAndFeel_V2::drawPopupMenuBackground (Graphics& g, int width, int height)
 {
     auto background = findColour (PopupMenu::backgroundColourId);
@@ -904,6 +925,14 @@ void LookAndFeel_V2::drawPopupMenuBackground (Graphics& g, int width, int height
     g.setColour (findColour (PopupMenu::textColourId).withAlpha (0.6f));
     g.drawRect (0, 0, width, height);
    #endif
+}
+
+void LookAndFeel_V2::drawPopupMenuBackgroundWithOptions (Graphics& g,
+                                                         int width,
+                                                         int height,
+                                                         const PopupMenu::Options&)
+{
+    drawPopupMenuBackground (g, width, height);
 }
 
 void LookAndFeel_V2::drawPopupMenuUpDownArrow (Graphics& g, int width, int height, bool isScrollUpArrow)
@@ -929,6 +958,14 @@ void LookAndFeel_V2::drawPopupMenuUpDownArrow (Graphics& g, int width, int heigh
 
     g.setColour (findColour (PopupMenu::textColourId).withAlpha (0.5f));
     g.fillPath (p);
+}
+
+void LookAndFeel_V2::drawPopupMenuUpDownArrowWithOptions (Graphics& g,
+                                                          int width, int height,
+                                                          bool isScrollUpArrow,
+                                                          const PopupMenu::Options&)
+{
+    drawPopupMenuUpDownArrow (g, width, height, isScrollUpArrow);
 }
 
 void LookAndFeel_V2::drawPopupMenuItem (Graphics& g, const Rectangle<int>& area,
@@ -1024,7 +1061,31 @@ void LookAndFeel_V2::drawPopupMenuItem (Graphics& g, const Rectangle<int>& area,
     }
 }
 
-void LookAndFeel_V2::drawPopupMenuSectionHeader (Graphics& g, const Rectangle<int>& area, const String& sectionName)
+void LookAndFeel_V2::drawPopupMenuItemWithOptions (Graphics& g, const Rectangle<int>& area,
+                                                   bool isHighlighted,
+                                                   const PopupMenu::Item& item,
+                                                   const PopupMenu::Options&)
+{
+    const auto colour = item.colour != Colour() ? &item.colour : nullptr;
+    const auto hasSubMenu = item.subMenu != nullptr
+                            && (item.itemID == 0 || item.subMenu->getNumItems() > 0);
+
+    drawPopupMenuItem (g,
+                       area,
+                       item.isSeparator,
+                       item.isEnabled,
+                       isHighlighted,
+                       item.isTicked,
+                       hasSubMenu,
+                       item.text,
+                       item.shortcutKeyDescription,
+                       item.image.get(),
+                       colour);
+}
+
+void LookAndFeel_V2::drawPopupMenuSectionHeader (Graphics& g,
+                                                 const Rectangle<int>& area,
+                                                 const String& sectionName)
 {
     g.setFont (getPopupMenuFont().boldened());
     g.setColour (findColour (PopupMenu::headerTextColourId));
@@ -1032,6 +1093,13 @@ void LookAndFeel_V2::drawPopupMenuSectionHeader (Graphics& g, const Rectangle<in
     g.drawFittedText (sectionName,
                       area.getX() + 12, area.getY(), area.getWidth() - 16, (int) ((float) area.getHeight() * 0.8f),
                       Justification::bottomLeft, 1);
+}
+
+void LookAndFeel_V2::drawPopupMenuSectionHeaderWithOptions (Graphics& g, const Rectangle<int>& area,
+                                                            const String& sectionName,
+                                                            const PopupMenu::Options&)
+{
+    drawPopupMenuSectionHeader (g, area, sectionName);
 }
 
 //==============================================================================
@@ -1097,6 +1165,20 @@ void LookAndFeel_V2::preparePopupMenuWindow (Component&) {}
 bool LookAndFeel_V2::shouldPopupMenuScaleWithTargetComponent (const PopupMenu::Options&)    { return true; }
 
 int LookAndFeel_V2::getPopupMenuBorderSize()    { return 2; }
+
+int LookAndFeel_V2::getPopupMenuBorderSizeWithOptions (const PopupMenu::Options&)
+{
+    return getPopupMenuBorderSize();
+}
+
+void LookAndFeel_V2::drawPopupMenuColumnSeparatorWithOptions (Graphics&,
+                                                              const Rectangle<int>&,
+                                                              const PopupMenu::Options&) {}
+
+int LookAndFeel_V2::getPopupMenuColumnSeparatorWidthWithOptions (const PopupMenu::Options&)
+{
+    return 0;
+}
 
 //==============================================================================
 void LookAndFeel_V2::fillTextEditorBackground (Graphics& g, int /*width*/, int /*height*/, TextEditor& textEditor)
@@ -1213,6 +1295,7 @@ PopupMenu::Options LookAndFeel_V2::getOptionsForComboBoxPopupMenu (ComboBox& box
 {
     return PopupMenu::Options().withTargetComponent (&box)
                                .withItemThatMustBeVisible (box.getSelectedId())
+                               .withInitiallySelectedItem (box.getSelectedId())
                                .withMinimumWidth (box.getWidth())
                                .withMaximumNumColumns (1)
                                .withStandardItemHeight (label.getHeight());
@@ -1522,6 +1605,11 @@ public:
     SliderLabelComp() : Label ({}, {}) {}
 
     void mouseWheelMove (const MouseEvent&, const MouseWheelDetails&) override {}
+
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override
+    {
+        return createIgnoredAccessibilityHandler (*this);
+    }
 };
 
 Label* LookAndFeel_V2::createSliderTextBox (Slider& slider)
@@ -1671,6 +1759,9 @@ Button* LookAndFeel_V2::createFilenameComponentBrowseButton (const String& text)
 void LookAndFeel_V2::layoutFilenameComponent (FilenameComponent& filenameComp,
                                               ComboBox* filenameBox, Button* browseButton)
 {
+    if (browseButton == nullptr || filenameBox == nullptr)
+        return;
+
     browseButton->setSize (80, filenameComp.getHeight());
 
     if (auto* tb = dynamic_cast<TextButton*> (browseButton))
@@ -1972,9 +2063,28 @@ int LookAndFeel_V2::getDefaultMenuBarHeight()
 }
 
 //==============================================================================
-DropShadower* LookAndFeel_V2::createDropShadowerForComponent (Component*)
+std::unique_ptr<DropShadower> LookAndFeel_V2::createDropShadowerForComponent (Component&)
 {
-    return new DropShadower (DropShadow (Colours::black.withAlpha (0.4f), 10, Point<int> (0, 2)));
+    return std::make_unique<DropShadower> (DropShadow (Colours::black.withAlpha (0.4f), 10, Point<int> (0, 2)));
+}
+
+std::unique_ptr<FocusOutline> LookAndFeel_V2::createFocusOutlineForComponent (Component&)
+{
+    struct WindowProperties  : public FocusOutline::OutlineWindowProperties
+    {
+        Rectangle<int> getOutlineBounds (Component& c) override
+        {
+            return c.getScreenBounds();
+        }
+
+        void drawOutline (Graphics& g, int width, int height) override
+        {
+            g.setColour (Colours::yellow.withAlpha (0.6f));
+            g.drawRoundedRectangle ({ (float) width, (float) height }, 3.0f, 3.0f);
+        }
+    };
+
+    return std::make_unique<FocusOutline> (std::make_unique<WindowProperties>());
 }
 
 //==============================================================================
@@ -2346,7 +2456,7 @@ Button* LookAndFeel_V2::createTabBarExtrasButton()
     overImage.addAndMakeVisible (ellipse.createCopy().release());
     overImage.addAndMakeVisible (dp.createCopy().release());
 
-    auto db = new DrawableButton ("tabs", DrawableButton::ImageFitted);
+    auto db = new DrawableButton (TRANS ("Additional Items"), DrawableButton::ImageFitted);
     db->setImages (&normalImage, &overImage, nullptr);
     return db;
 }

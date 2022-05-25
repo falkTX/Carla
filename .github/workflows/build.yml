@@ -22,39 +22,39 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(sysctl -n hw.logicalcpu)
+        run: make WITH_LTO=true -j $(sysctl -n hw.logicalcpu)
 
-  msys2-i686:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: msys2/setup-msys2@v2
-        with:
-          msystem: mingw32
-          install: base-devel make mingw-w64-i686-toolchain mingw-w64-i686-fluidsynth mingw-w64-i686-liblo mingw-w64-i686-libsndfile mingw-w64-i686-pkg-config mingw-w64-i686-python-pyqt5
-      - name: make features
-        run: make features
-      - name: make
-        run: make -j $(nproc)
+  #msys2-i686:
+    #runs-on: windows-latest
+    #defaults:
+      #run:
+        #shell: msys2 {0}
+    #steps:
+      #- uses: actions/checkout@v2
+      #- uses: msys2/setup-msys2@v2
+        #with:
+          #msystem: mingw32
+          #install: base-devel make mingw-w64-i686-toolchain mingw-w64-i686-fluidsynth mingw-w64-i686-liblo mingw-w64-i686-libsndfile mingw-w64-i686-pkg-config mingw-w64-i686-python-pyqt5
+      #- name: make features
+        #run: make features
+      #- name: make
+        #run: make WITH_LTO=true -j $(nproc)
 
-  msys2-x86_64:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: msys2/setup-msys2@v2
-        with:
-          msystem: mingw64
-          install: base-devel make mingw-w64-x86_64-toolchain mingw-w64-x86_64-fluidsynth mingw-w64-x86_64-liblo mingw-w64-x86_64-libsndfile mingw-w64-x86_64-pkg-config mingw-w64-x86_64-python-pyqt5
-      - name: make features
-        run: make features
-      - name: make
-        run: make -j $(nproc)
+  #msys2-x86_64:
+    #runs-on: windows-latest
+    #defaults:
+      #run:
+        #shell: msys2 {0}
+    #steps:
+      #- uses: actions/checkout@v2
+      #- uses: msys2/setup-msys2@v2
+        #with:
+          #msystem: mingw64
+          #install: base-devel make mingw-w64-x86_64-toolchain mingw-w64-x86_64-fluidsynth mingw-w64-x86_64-liblo mingw-w64-x86_64-libsndfile mingw-w64-x86_64-pkg-config mingw-w64-x86_64-python-pyqt5
+      #- name: make features
+        #run: make features
+      #- name: make
+        #run: make WITH_LTO=true -j $(nproc)
 
   ubuntu-18_04:
     runs-on: ubuntu-18.04
@@ -74,14 +74,19 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)
       - name: make posix32
-        run: make posix32 -j $(nproc)
+        run: make WITH_LTO=true posix32 -j $(nproc)
 
   ubuntu-20_04:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
       - name: Set up dependencies
         run: |
           sudo dpkg --add-architecture i386
@@ -96,12 +101,12 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)
       - name: make posix32
-        run: make posix32 -j $(nproc)
+        run: make WITH_LTO=true posix32 -j $(nproc)
 
   ubuntu-mingw-win32:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       CC: i686-w64-mingw32-gcc
       CXX: i686-w64-mingw32-g++
@@ -110,6 +115,11 @@ jobs:
       WINEDEBUG: "-all"
     steps:
       - uses: actions/checkout@v2
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
       - name: Set up dependencies
         run: |
           sudo dpkg --add-architecture i386
@@ -118,7 +128,7 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)
 
   ubuntu-mingw-win64:
     runs-on: ubuntu-20.04
@@ -130,6 +140,11 @@ jobs:
       WINEDEBUG: "-all"
     steps:
       - uses: actions/checkout@v2
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
       - name: Set up dependencies
         run: |
           sudo apt-get update -qq
@@ -137,4 +152,4 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
+        run: make WITH_LTO=true -j $(nproc)

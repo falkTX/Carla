@@ -45,6 +45,7 @@ STANDALONE_LIBS += $(MODULEDIR)/hylia.a
 endif
 
 ifeq ($(USING_JUCE),true)
+STANDALONE_LIBS += $(MODULEDIR)/carla_juce.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_devices.a
@@ -55,9 +56,7 @@ STANDALONE_LIBS += $(MODULEDIR)/juce_data_structures.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_events.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_graphics.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 STANDALONE_LIBS += $(MODULEDIR)/juce_gui_extra.a
-endif
 endif
 
 ifeq ($(USING_RTAUDIO),true)
@@ -92,9 +91,7 @@ STANDALONE_LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 STANDALONE_LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 STANDALONE_LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 STANDALONE_LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 STANDALONE_LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
-endif
 endif
 
 ifeq ($(USING_RTAUDIO),true)
@@ -134,7 +131,7 @@ doxygen: CarlaBackend.doxygen
 $(BINDIR)/libcarla_standalone2$(LIB_EXT): $(OBJS_standalone) $(STANDALONE_LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_standalone2$(LIB_EXT)"
-	@$(CXX) $(OBJS_standalone) $(BUILD_CXX_FLAGS) $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_LINK_FLAGS) $(SHARED) -o $@
+	$(SILENT)$(CXX) $(OBJS_standalone) $(BUILD_CXX_FLAGS) $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_LINK_FLAGS) $(SHARED) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -142,13 +139,13 @@ ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaStandalone.cpp.o: CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 -include $(OBJS_standalone:%.o=%.d)
 

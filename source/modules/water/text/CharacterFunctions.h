@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <sys/types.h>
 
 namespace water {
 

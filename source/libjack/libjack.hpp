@@ -69,7 +69,7 @@ struct JackMidiPortBufferBase {
     static const size_t  kBufferPoolSize = kMaxEventCount*8;
 
     bool isInput;
-    bool isValid;
+    bool isDummy;
 };
 
 struct JackMidiPortBufferOnStack : JackMidiPortBufferBase {
@@ -86,7 +86,7 @@ struct JackMidiPortBufferOnStack : JackMidiPortBufferBase {
           bufferPool()
     {
         isInput = true;
-        isValid = true;
+        isDummy = false;
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(JackMidiPortBufferOnStack)
@@ -96,7 +96,7 @@ struct JackMidiPortBufferDummy : JackMidiPortBufferBase {
     JackMidiPortBufferDummy(const bool input)
     {
         isInput = input;
-        isValid = false;
+        isDummy = true;
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(JackMidiPortBufferDummy)

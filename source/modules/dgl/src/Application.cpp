@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -14,19 +14,14 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef __WINE__
-# include "winsock2.h"
-#endif
-
 #include "ApplicationPrivateData.hpp"
-#include "../Window.hpp"
 
 START_NAMESPACE_DGL
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
-Application::Application()
-    : pData(new PrivateData()) {}
+Application::Application(const bool isStandalone)
+    : pData(new PrivateData(isStandalone)) {}
 
 Application::~Application()
 {
@@ -35,44 +30,56 @@ Application::~Application()
 
 void Application::idle()
 {
-    for (std::list<Window*>::iterator it = pData->windows.begin(), ite = pData->windows.end(); it != ite; ++it)
-    {
-        Window* const window(*it);
-        window->_idle();
-    }
-
-    for (std::list<IdleCallback*>::iterator it = pData->idleCallbacks.begin(), ite = pData->idleCallbacks.end(); it != ite; ++it)
-    {
-        IdleCallback* const idleCallback(*it);
-        idleCallback->idleCallback();
-    }
+    pData->idle(0);
 }
 
-void Application::exec(unsigned int idleTime)
+void Application::exec(const uint idleTimeInMs)
 {
-    for (; pData->doLoop;)
-    {
-        idle();
-        d_msleep(idleTime);
-    }
+    DISTRHO_SAFE_ASSERT_RETURN(pData->isStandalone,);
+
+    while (! pData->isQuitting)
+        pData->idle(idleTimeInMs);
 }
 
 void Application::quit()
 {
-    pData->doLoop = false;
-
-    for (std::list<Window*>::reverse_iterator rit = pData->windows.rbegin(), rite = pData->windows.rend(); rit != rite; ++rit)
-    {
-        Window* const window(*rit);
-        window->close();
-    }
+    pData->quit();
 }
 
-bool Application::isQuiting() const noexcept
+bool Application::isQuitting() const noexcept
 {
-    return !pData->doLoop;
+    return pData->isQuitting || pData->isQuittingInNextCycle;
 }
 
-// -----------------------------------------------------------------------
+bool Application::isStandalone() const noexcept
+{
+    return pData->isStandalone;
+}
+
+double Application::getTime() const
+{
+    return pData->getTime();
+}
+
+void Application::addIdleCallback(IdleCallback* const callback)
+{
+    DISTRHO_SAFE_ASSERT_RETURN(callback != nullptr,)
+
+    pData->idleCallbacks.push_back(callback);
+}
+
+void Application::removeIdleCallback(IdleCallback* const callback)
+{
+    DISTRHO_SAFE_ASSERT_RETURN(callback != nullptr,)
+
+    pData->idleCallbacks.remove(callback);
+}
+
+void Application::setClassName(const char* const name)
+{
+    pData->setClassName(name);
+}
+
+// --------------------------------------------------------------------------------------------------------------------
 
 END_NAMESPACE_DGL

@@ -316,12 +316,6 @@ ifeq ($(HAVE_JUCE_LINUX_DEPS),true)
 USING_JUCE = true
 endif
 
-ifeq ($(USING_JUCE),true)
-ifeq ($(LINUX_OR_MACOS),true)
-USING_JUCE_GUI_EXTRA = true
-endif
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Set USING_RTAUDIO
 
@@ -452,10 +446,10 @@ WATER_LIBS       = -pthread -lrt
 endif
 
 ifeq ($(HAIKU),true)
-JACKBRIDGE_LIBS  = -pthread
+JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
-RTMEMPOOL_LIBS   = -pthread
-WATER_LIBS       = -pthread
+RTMEMPOOL_LIBS   = -lpthread
+WATER_LIBS       = -lpthread
 endif
 
 ifeq ($(HURD),true)
@@ -474,9 +468,9 @@ WATER_LIBS       = -ldl -pthread -lrt
 ifeq ($(USING_JUCE),true)
 JUCE_AUDIO_DEVICES_LIBS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
 JUCE_CORE_LIBS          = -ldl -pthread -lrt
-JUCE_EVENTS_LIBS        = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11)
+JUCE_EVENTS_LIBS        =
 JUCE_GRAPHICS_LIBS      = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2)
-JUCE_GUI_BASICS_LIBS    = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11 xext)
+JUCE_GUI_BASICS_LIBS    =
 endif # USING_JUCE
 endif # LINUX
 
@@ -567,9 +561,7 @@ STATIC_CARLA_PLUGIN_LIBS += $(JUCE_CORE_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(JUCE_EVENTS_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(JUCE_GRAPHICS_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(JUCE_GUI_BASICS_LIBS)
-ifeq ($(USING_JUCE_GUI_EXTRA),true)
 STATIC_CARLA_PLUGIN_LIBS += $(JUCE_GUI_EXTRA_LIBS)
-endif
 endif
 
 ifeq ($(EXTERNAL_PLUGINS),true)

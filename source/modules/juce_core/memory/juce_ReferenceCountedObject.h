@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -428,9 +428,10 @@ public:
     operator ReferencedType*() const noexcept               { return referencedObject; }
    #endif
 
-
-    // This old method is deprecated in favour of the shorter and more standard get() method.
-    JUCE_DEPRECATED_WITH_BODY (ReferencedType* getObject() const, { return get(); })
+   #ifndef DOXYGEN
+    [[deprecated ("Use the get method instead.")]]
+    ReferencedType* getObject() const { return get(); }
+   #endif
 
 private:
     //==============================================================================

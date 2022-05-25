@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -15,33 +15,22 @@
  */
 
 #include "WidgetPrivateData.hpp"
+#include "../TopLevelWidget.hpp"
+#include "../Window.hpp"
 
 START_NAMESPACE_DGL
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Widget
 
-Widget::Widget(Window& parent)
-    : pData(new PrivateData(this, parent, nullptr, false))
-{
-    parent._addWidget(this);
-}
+Widget::Widget(TopLevelWidget* const topLevelWidget)
+    : pData(new PrivateData(this, topLevelWidget)) {}
 
-Widget::Widget(Widget* groupWidget)
-    : pData(new PrivateData(this, groupWidget->getParentWindow(), groupWidget, true))
-{
-    pData->parent._addWidget(this);
-}
-
-Widget::Widget(Widget* groupWidget, bool addToSubWidgets)
-    : pData(new PrivateData(this, groupWidget->getParentWindow(), groupWidget, addToSubWidgets))
-{
-    pData->parent._addWidget(this);
-}
+Widget::Widget(Widget* const parentWidget)
+    : pData(new PrivateData(this, parentWidget)) {}
 
 Widget::~Widget()
 {
-    pData->parent._removeWidget(this);
     delete pData;
 }
 
@@ -50,13 +39,15 @@ bool Widget::isVisible() const noexcept
     return pData->visible;
 }
 
-void Widget::setVisible(bool yesNo)
+void Widget::setVisible(bool visible)
 {
-    if (pData->visible == yesNo)
+    if (pData->visible == visible)
         return;
 
-    pData->visible = yesNo;
-    pData->parent.repaint();
+    pData->visible = visible;
+    repaint();
+
+    // FIXME check case of hiding a previously visible widget, does it trigger a repaint?
 }
 
 void Widget::show()
@@ -79,7 +70,7 @@ uint Widget::getHeight() const noexcept
     return pData->size.getHeight();
 }
 
-const Size<uint>& Widget::getSize() const noexcept
+const Size<uint> Widget::getSize() const noexcept
 {
     return pData->size;
 }
@@ -96,7 +87,7 @@ void Widget::setWidth(uint width) noexcept
     pData->size.setWidth(width);
     onResize(ev);
 
-    pData->parent.repaint();
+    repaint();
 }
 
 void Widget::setHeight(uint height) noexcept
@@ -111,7 +102,7 @@ void Widget::setHeight(uint height) noexcept
     pData->size.setHeight(height);
     onResize(ev);
 
-    pData->parent.repaint();
+    repaint();
 }
 
 void Widget::setSize(uint width, uint height) noexcept
@@ -131,79 +122,34 @@ void Widget::setSize(const Size<uint>& size) noexcept
     pData->size = size;
     onResize(ev);
 
-    pData->parent.repaint();
+    repaint();
 }
 
-int Widget::getAbsoluteX() const noexcept
+Application& Widget::getApp() const noexcept
 {
-    return pData->absolutePos.getX();
+    DISTRHO_SAFE_ASSERT(pData->topLevelWidget != nullptr);
+    return pData->topLevelWidget->getApp();
 }
 
-int Widget::getAbsoluteY() const noexcept
+Window& Widget::getWindow() const noexcept
 {
-    return pData->absolutePos.getY();
+    DISTRHO_SAFE_ASSERT(pData->topLevelWidget != nullptr);
+    return pData->topLevelWidget->getWindow();
 }
 
-const Point<int>& Widget::getAbsolutePos() const noexcept
+const GraphicsContext& Widget::getGraphicsContext() const noexcept
 {
-    return pData->absolutePos;
+    DISTRHO_SAFE_ASSERT(pData->topLevelWidget != nullptr);
+    return pData->topLevelWidget->getWindow().getGraphicsContext();
 }
 
-void Widget::setAbsoluteX(int x) noexcept
+TopLevelWidget* Widget::getTopLevelWidget() const noexcept
 {
-    if (pData->absolutePos.getX() == x)
-        return;
-
-    pData->absolutePos.setX(x);
-    pData->parent.repaint();
-}
-
-void Widget::setAbsoluteY(int y) noexcept
-{
-    if (pData->absolutePos.getY() == y)
-        return;
-
-    pData->absolutePos.setY(y);
-    pData->parent.repaint();
-}
-
-void Widget::setAbsolutePos(int x, int y) noexcept
-{
-    setAbsolutePos(Point<int>(x, y));
-}
-
-void Widget::setAbsolutePos(const Point<int>& pos) noexcept
-{
-    if (pData->absolutePos == pos)
-        return;
-
-    pData->absolutePos = pos;
-    pData->parent.repaint();
-}
-
-Application& Widget::getParentApp() const noexcept
-{
-    return pData->parent.getApp();
-}
-
-Window& Widget::getParentWindow() const noexcept
-{
-    return pData->parent;
-}
-
-bool Widget::contains(int x, int y) const noexcept
-{
-    return (x >= 0 && y >= 0 && static_cast<uint>(x) < pData->size.getWidth() && static_cast<uint>(y) < pData->size.getHeight());
-}
-
-bool Widget::contains(const Point<int>& pos) const noexcept
-{
-    return contains(pos.getX(), pos.getY());
+    return pData->topLevelWidget;
 }
 
 void Widget::repaint() noexcept
 {
-    pData->parent.repaint();
 }
 
 uint Widget::getId() const noexcept
@@ -216,35 +162,38 @@ void Widget::setId(uint id) noexcept
     pData->id = id;
 }
 
-bool Widget::onKeyboard(const KeyboardEvent&)
+bool Widget::onKeyboard(const KeyboardEvent& ev)
 {
-    return false;
+    return pData->giveKeyboardEventForSubWidgets(ev);
 }
 
-bool Widget::onSpecial(const SpecialEvent&)
+bool Widget::onCharacterInput(const CharacterInputEvent& ev)
 {
-    return false;
+    return pData->giveCharacterInputEventForSubWidgets(ev);
 }
 
-bool Widget::onMouse(const MouseEvent&)
+bool Widget::onMouse(const MouseEvent& ev)
 {
-    return false;
+    MouseEvent rev = ev;
+    return pData->giveMouseEventForSubWidgets(rev);
 }
 
-bool Widget::onMotion(const MotionEvent&)
+bool Widget::onMotion(const MotionEvent& ev)
 {
-    return false;
+    MotionEvent rev = ev;
+    return pData->giveMotionEventForSubWidgets(rev);
 }
 
-bool Widget::onScroll(const ScrollEvent&)
+bool Widget::onScroll(const ScrollEvent& ev)
 {
-    return false;
+    ScrollEvent rev = ev;
+    return pData->giveScrollEventForSubWidgets(rev);
 }
 
 void Widget::onResize(const ResizeEvent&)
 {
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 END_NAMESPACE_DGL

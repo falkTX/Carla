@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_thread_init_callback(jack_client_t* client, JackThreadInitCallback callback, void* arg)
 {
     carla_debug("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
@@ -36,7 +36,7 @@ int jack_set_thread_init_callback(jack_client_t* client, JackThreadInitCallback 
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_on_shutdown(jack_client_t* client, JackShutdownCallback callback, void* arg)
 {
     carla_debug("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
@@ -50,7 +50,7 @@ void jack_on_shutdown(jack_client_t* client, JackShutdownCallback callback, void
     jclient->shutdownCbPtr = arg;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 void jack_on_info_shutdown(jack_client_t* client, JackInfoShutdownCallback callback, void* arg)
 {
     carla_debug("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
@@ -64,7 +64,7 @@ void jack_on_info_shutdown(jack_client_t* client, JackInfoShutdownCallback callb
     jclient->infoShutdownCbPtr = arg;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_process_callback(jack_client_t* client, JackProcessCallback callback, void* arg)
 {
     carla_debug("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
@@ -79,7 +79,7 @@ int jack_set_process_callback(jack_client_t* client, JackProcessCallback callbac
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_freewheel_callback(jack_client_t* client, JackFreewheelCallback callback, void* arg)
 {
     carla_debug("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
@@ -94,7 +94,7 @@ int jack_set_freewheel_callback(jack_client_t* client, JackFreewheelCallback cal
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback callback, void* arg)
 {
     carla_debug("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
@@ -109,7 +109,7 @@ int jack_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback 
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback callback, void* arg)
 {
     carla_debug("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
@@ -124,42 +124,42 @@ int jack_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback 
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback callback, void* arg)
 {
     carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback callback, void* arg)
 {
     carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback callback, void* arg)
 {
     carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_port_rename_callback(jack_client_t* client, JackPortRenameCallback callback, void* arg)
 {
     carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_graph_order_callback(jack_client_t* client, JackGraphOrderCallback callback, void* arg)
 {
     carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
     return 0;
 }
 
-CARLA_EXPORT
+CARLA_PLUGIN_EXPORT
 int jack_set_xrun_callback(jack_client_t* client, JackXRunCallback callback, void* arg)
 {
     carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -60,9 +60,8 @@ namespace MidiBufferHelpers
             if (maxBytes == 1)
                 return 1;
 
-            int n;
-            auto bytesLeft = MidiMessage::readVariableLengthVal (data + 1, n);
-            return jmin (maxBytes, n + 2 + bytesLeft);
+            const auto var = MidiMessage::readVariableLengthValue (data + 1, maxBytes - 1);
+            return jmin (maxBytes, var.value + 2 + var.bytesUsed);
         }
 
         if (byte >= 0x80)
@@ -117,32 +116,40 @@ void MidiBuffer::clear (int startSample, int numSamples)
     auto start = MidiBufferHelpers::findEventAfter (data.begin(), data.end(), startSample - 1);
     auto end   = MidiBufferHelpers::findEventAfter (start,        data.end(), startSample + numSamples - 1);
 
-    data.removeRange ((int) (start - data.begin()), (int) (end - data.begin()));
+    data.removeRange ((int) (start - data.begin()), (int) (end - start));
 }
 
-void MidiBuffer::addEvent (const MidiMessage& m, int sampleNumber)
+bool MidiBuffer::addEvent (const MidiMessage& m, int sampleNumber)
 {
-    addEvent (m.getRawData(), m.getRawDataSize(), sampleNumber);
+    return addEvent (m.getRawData(), m.getRawDataSize(), sampleNumber);
 }
 
-void MidiBuffer::addEvent (const void* newData, int maxBytes, int sampleNumber)
+bool MidiBuffer::addEvent (const void* newData, int maxBytes, int sampleNumber)
 {
     auto numBytes = MidiBufferHelpers::findActualEventLength (static_cast<const uint8*> (newData), maxBytes);
 
-    if (numBytes > 0)
+    if (numBytes <= 0)
+        return true;
+
+    if (std::numeric_limits<uint16>::max() < numBytes)
     {
-        auto newItemSize = (size_t) numBytes + sizeof (int32) + sizeof (uint16);
-        auto offset = (int) (MidiBufferHelpers::findEventAfter (data.begin(), data.end(), sampleNumber) - data.begin());
-
-        data.insertMultiple (offset, 0, (int) newItemSize);
-
-        auto* d = data.begin() + offset;
-        writeUnaligned<int32>  (d, sampleNumber);
-        d += sizeof (int32);
-        writeUnaligned<uint16> (d, static_cast<uint16> (numBytes));
-        d += sizeof (uint16);
-        memcpy (d, newData, (size_t) numBytes);
+        // This method only supports messages smaller than (1 << 16) bytes
+        return false;
     }
+
+    auto newItemSize = (size_t) numBytes + sizeof (int32) + sizeof (uint16);
+    auto offset = (int) (MidiBufferHelpers::findEventAfter (data.begin(), data.end(), sampleNumber) - data.begin());
+
+    data.insertMultiple (offset, 0, (int) newItemSize);
+
+    auto* d = data.begin() + offset;
+    writeUnaligned<int32>  (d, sampleNumber);
+    d += sizeof (int32);
+    writeUnaligned<uint16> (d, static_cast<uint16> (numBytes));
+    d += sizeof (uint16);
+    memcpy (d, newData, (size_t) numBytes);
+
+    return true;
 }
 
 void MidiBuffer::addEvents (const MidiBuffer& otherBuffer,
@@ -202,12 +209,13 @@ MidiBufferIterator MidiBuffer::findNextSamplePosition (int samplePosition) const
 }
 
 //==============================================================================
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4996)
+
 MidiBuffer::Iterator::Iterator (const MidiBuffer& b) noexcept
     : buffer (b), iterator (b.data.begin())
 {
 }
-
-MidiBuffer::Iterator::~Iterator() noexcept {}
 
 void MidiBuffer::Iterator::setNextSamplePosition (int samplePosition) noexcept
 {
@@ -236,5 +244,77 @@ bool MidiBuffer::Iterator::getNextEvent (MidiMessage& result, int& samplePositio
     samplePosition = metadata.samplePosition;
     return true;
 }
+
+JUCE_END_IGNORE_WARNINGS_MSVC
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+//==============================================================================
+//==============================================================================
+#if JUCE_UNIT_TESTS
+
+struct MidiBufferTest  : public UnitTest
+{
+    MidiBufferTest()
+        : UnitTest ("MidiBuffer", UnitTestCategories::midi)
+    {}
+
+    void runTest() override
+    {
+        beginTest ("Clear messages");
+        {
+            const auto message = MidiMessage::noteOn (1, 64, 0.5f);
+
+            const auto testBuffer = [&]
+            {
+                MidiBuffer buffer;
+                buffer.addEvent (message, 0);
+                buffer.addEvent (message, 10);
+                buffer.addEvent (message, 20);
+                buffer.addEvent (message, 30);
+                return buffer;
+            }();
+
+            {
+                auto buffer = testBuffer;
+                buffer.clear (10, 0);
+                expectEquals (buffer.getNumEvents(), 4);
+            }
+
+            {
+                auto buffer = testBuffer;
+                buffer.clear (10, 1);
+                expectEquals (buffer.getNumEvents(), 3);
+            }
+
+            {
+                auto buffer = testBuffer;
+                buffer.clear (10, 10);
+                expectEquals (buffer.getNumEvents(), 3);
+            }
+
+            {
+                auto buffer = testBuffer;
+                buffer.clear (10, 20);
+                expectEquals (buffer.getNumEvents(), 2);
+            }
+
+            {
+                auto buffer = testBuffer;
+                buffer.clear (10, 30);
+                expectEquals (buffer.getNumEvents(), 1);
+            }
+
+            {
+                auto buffer = testBuffer;
+                buffer.clear (10, 300);
+                expectEquals (buffer.getNumEvents(), 1);
+            }
+        }
+    }
+};
+
+static MidiBufferTest midiBufferTest;
+
+#endif
 
 } // namespace juce
