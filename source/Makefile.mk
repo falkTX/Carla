@@ -84,8 +84,8 @@ BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden
 endif
 
-ifneq ($(MACOS),true)
-ifneq ($(WIN32),true)
+ifneq ($(MACOS_OR_WIN32),true)
+ifneq ($(BSD),true)
 BASE_FLAGS += -fno-gnu-unique
 endif
 endif
