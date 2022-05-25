@@ -353,7 +353,7 @@ DEFAULT_VST2_PATH   = ""
 DEFAULT_VST3_PATH   = ""
 DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
-DEFAULT_JSFX_PATH    = ""
+DEFAULT_JSFX_PATH   = ""
 
 if WINDOWS:
     splitter = ";"
@@ -390,7 +390,7 @@ if WINDOWS:
     DEFAULT_VST2_PATH    = PROGRAMFILES + "\\VstPlugins"
     DEFAULT_VST2_PATH   += ";" + PROGRAMFILES + "\\Steinberg\\VstPlugins"
 
-    DEFAULT_JSFX_PATH    = APPDATA + "\\REAPER\Effects"
+    DEFAULT_JSFX_PATH    = APPDATA + "\\REAPER\\Effects"
     #DEFAULT_JSFX_PATH   += ";" + PROGRAMFILES + "\\REAPER\\InstallData\\Effects"
 
     if kIs64bit:
