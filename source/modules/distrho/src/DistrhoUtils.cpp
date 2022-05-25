@@ -30,7 +30,7 @@
 # include <stdlib.h>
 #endif
 
-#if defined(DISTRHO_OS_WINDOWS) && !DISTRHO_IS_STANDALONE
+#if defined(DISTRHO_OS_WINDOWS) && !defined(STATIC_BUILD) && !DISTRHO_IS_STANDALONE
 static HINSTANCE hInstance = nullptr;
 
 DISTRHO_PLUGIN_EXPORT
@@ -50,22 +50,24 @@ const char* getBinaryFilename()
 {
     static String filename;
 
+#ifndef STATIC_BUILD
     if (filename.isNotEmpty())
         return filename;
 
-#ifdef DISTRHO_OS_WINDOWS
-# if DISTRHO_IS_STANDALONE
+# ifdef DISTRHO_OS_WINDOWS
+#  if DISTRHO_IS_STANDALONE
     constexpr const HINSTANCE hInstance = nullptr;
-# endif
+#  endif
     CHAR filenameBuf[MAX_PATH];
     filenameBuf[0] = '\0';
     GetModuleFileNameA(hInstance, filenameBuf, sizeof(filenameBuf));
     filename = filenameBuf;
-#elif !defined(STATIC_BUILD)
+# else
     Dl_info info;
     dladdr((void*)getBinaryFilename, &info);
     char filenameBuf[PATH_MAX];
     filename = realpath(info.dli_fname, filenameBuf);
+# endif
 #endif
 
     return filename;
