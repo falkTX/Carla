@@ -99,7 +99,7 @@ static void findSFZs(const char* const sfzPaths)
 }
 // -------------------------------------------------------------------------------------------------------------------
 
-static water::Array<CarlaJsfxUnit> gJSFXs;
+static water::Array<CB::CarlaJsfxUnit> gJSFXs;
 
 static void findJSFXs(const char* const jsfxPaths)
 {
@@ -124,7 +124,7 @@ static void findJSFXs(const char* const jsfxPaths)
                 const water::File& file(*it);
                 const water::String fileExt = file.getFileExtension();
                 if (fileExt.isEmpty() || fileExt.equalsIgnoreCase(".jsfx"))
-                    gJSFXs.add(CarlaJsfxUnit(path, file));
+                    gJSFXs.add(CB::CarlaJsfxUnit(path, file));
             }
         }
     }
@@ -663,7 +663,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& fil
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& unit)
+static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CB::CarlaJsfxUnit& unit)
 {
     static CarlaCachedPluginInfo info;
 
@@ -675,7 +675,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& 
     ysfx_register_builtin_audio_formats(config.get());
     ysfx_set_import_root(config.get(), rootPath.toRawUTF8());
     ysfx_guess_file_roots(config.get(), filePath.toRawUTF8());
-    ysfx_set_log_reporter(config.get(), &CarlaJsfxLogging::logErrorsOnly);
+    ysfx_set_log_reporter(config.get(), &CB::CarlaJsfxLogging::logErrorsOnly);
 
     ysfx_u effect(ysfx_new(config.get()));
 
@@ -702,7 +702,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CarlaJsfxUnit& 
 
     info.valid         = true;
 
-    info.category = CarlaJsfxCategories::getFromEffect(effect.get());
+    info.category = CB::CarlaJsfxCategories::getFromEffect(effect.get());
 
     info.audioIns = ysfx_get_num_inputs(effect.get());
     info.audioOuts = ysfx_get_num_outputs(effect.get());

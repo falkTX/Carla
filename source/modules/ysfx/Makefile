@@ -11,8 +11,7 @@ include ../Makefile.mk
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_C_FLAGS += $(YSFX_FLAGS)
-BUILD_C_FLAGS += $(YSFX_GRAPHICS_FLAGS)
-BUILD_C_FLAGS += -Isources
+BUILD_C_FLAGS += -Iinclude -Isources
 BUILD_C_FLAGS += -Ithirdparty/WDL/source -Ithirdparty/dr_libs -Ithirdparty/stb
 BUILD_C_FLAGS += -DYSFX_NO_STANDARD_MUTEX
 BUILD_C_FLAGS += -DEELSCRIPT_NO_NET
@@ -22,8 +21,7 @@ BUILD_C_FLAGS += -DWDL_LINEPARSE_ATOF=ysfx_wdl_atof
 BUILD_C_FLAGS += -DNSEEL_ATOF=ysfx_wdl_atof
 
 BUILD_CXX_FLAGS += $(YSFX_FLAGS)
-BUILD_CXX_FLAGS += $(YSFX_GRAPHICS_FLAGS)
-BUILD_CXX_FLAGS += -Isources
+BUILD_CXX_FLAGS += -Iinclude -Isources
 BUILD_CXX_FLAGS += -Ithirdparty/WDL/source -Ithirdparty/dr_libs -Ithirdparty/stb
 BUILD_CXX_FLAGS += -DYSFX_NO_STANDARD_MUTEX
 BUILD_CXX_FLAGS += -DEELSCRIPT_NO_NET
@@ -43,11 +41,13 @@ BUILD_C_FLAGS += -DNOMINMAX
 BUILD_CXX_FLAGS += -DNOMINMAX
 endif
 
-ifneq ($(WIN32),true)
-ifneq ($(MACOS),true)
+ifeq ($(HAVE_YSFXGUI),true)
+ifneq ($(MACOS_OR_WIN32),true)
 BUILD_C_FLAGS += -DSWELL_LICE_GDI -DSWELL_FONTCONFIG -DSWELL_FREETYPE
 BUILD_CXX_FLAGS += -DSWELL_LICE_GDI -DSWELL_FONTCONFIG -DSWELL_FREETYPE
 endif
+else
+BUILD_CXX_FLAGS += -DYSFX_NO_GFX
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -93,6 +93,8 @@ OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_gif.cpp.o
 OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_jpg.cpp.o
 OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_png.cpp.o
 OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_write.cpp.o
+
+ifeq ($(HAVE_YSFXGUI),true)
 ifneq ($(WIN32),true)
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-ini.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell.cpp.o
@@ -106,7 +108,7 @@ OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-misc.mm.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-miscdlg.mm.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-modstub.mm.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-wnd.mm.o
-else
+else # MACOS
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-appstub-generic.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-dlg-generic.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-gdi-generic.cpp.o
@@ -119,8 +121,9 @@ OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-misc-generic.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-miscdlg-generic.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-modstub-generic.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-wnd-generic.cpp.o
+endif # !WIN32
 endif
-endif
+endif # HAVE_YSFXGUI
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -157,7 +160,7 @@ $(OBJDIR)/%.cpp.o: %.cpp
 $(OBJDIR)/%.mm.o: %.mm
 	-@mkdir -p $(dir $@)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/%.S.o: %.S
 	-@mkdir -p $(dir $@)

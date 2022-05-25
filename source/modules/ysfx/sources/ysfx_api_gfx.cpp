@@ -58,6 +58,8 @@ struct ysfx_gfx_state_t {
     const char *(*get_drop_file)(void *user_data, int32_t index) = nullptr;
 };
 
+#endif
+
 //------------------------------------------------------------------------------
 #if !defined(YSFX_NO_GFX)
 static bool eel_lice_get_filename_for_string(void *opaque, EEL_F idx, WDL_FastString *fs, int iswrite)
@@ -209,8 +211,6 @@ static EEL_F NSEEL_CGEN_CALL ysfx_api_gfx_getdropfile(void *opaque, INT_PTR np, 
 
     return 1;
 }
-
-#endif
 
 //------------------------------------------------------------------------------
 #if !defined(YSFX_NO_GFX)

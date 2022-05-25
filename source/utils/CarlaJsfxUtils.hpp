@@ -1,6 +1,7 @@
 /*
  * Carla JSFX utils
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021 Jean Pierre Cimalando
+ * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,9 +33,16 @@
 #include "water/streams/MemoryInputStream.h"
 #include "water/streams/MemoryOutputStream.h"
 
-#include "ysfx.h"
+#ifdef YSFX_API
+# error YSFX_API is not private
+#endif
+#include "ysfx/include/ysfx.h"
 
 #include <memory>
+
+CARLA_BACKEND_START_NAMESPACE
+
+// --------------------------------------------------------------------------------------------------------------------
 
 class CarlaJsfxLogging
 {
@@ -67,58 +75,58 @@ public:
     };
 };
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 class CarlaJsfxCategories
 {
 public:
-    static CarlaBackend::PluginCategory getFromEffect(ysfx_t* effect)
+    static PluginCategory getFromEffect(ysfx_t* effect)
     {
-        CarlaBackend::PluginCategory category = CarlaBackend::PLUGIN_CATEGORY_OTHER;
+        PluginCategory category = PLUGIN_CATEGORY_OTHER;
 
         water::Array<const char*> tags;
         int tagCount = (int)ysfx_get_tags(effect, nullptr, 0);
         tags.resize(tagCount);
         ysfx_get_tags(effect, tags.getRawDataPointer(), (uint32_t)tagCount);
 
-        for (int i = 0; i < tagCount && category == CarlaBackend::PLUGIN_CATEGORY_OTHER; ++i)
+        for (int i = 0; i < tagCount && category == PLUGIN_CATEGORY_OTHER; ++i)
         {
             water::CharPointer_UTF8 tag(tags[i]);
-            CarlaBackend::PluginCategory current = getFromTag(tag);
-            if (current != CarlaBackend::PLUGIN_CATEGORY_NONE)
+            PluginCategory current = getFromTag(tag);
+            if (current != PLUGIN_CATEGORY_NONE)
                 category = current;
         }
 
         return category;
     }
 
-    static CarlaBackend::PluginCategory getFromTag(const water::CharPointer_UTF8 tag)
+    static PluginCategory getFromTag(const water::CharPointer_UTF8 tag)
     {
         if (tag.compareIgnoreCase(water::CharPointer_UTF8("synthesis")) == 0)
-            return CarlaBackend::PLUGIN_CATEGORY_SYNTH;
+            return PLUGIN_CATEGORY_SYNTH;
 
         if (tag.compareIgnoreCase(water::CharPointer_UTF8("delay")) == 0)
-            return CarlaBackend::PLUGIN_CATEGORY_DELAY;
+            return PLUGIN_CATEGORY_DELAY;
 
         if (tag.compareIgnoreCase(water::CharPointer_UTF8("equalizer")) == 0)
-            return CarlaBackend::PLUGIN_CATEGORY_EQ;
+            return PLUGIN_CATEGORY_EQ;
 
         if (tag.compareIgnoreCase(water::CharPointer_UTF8("filter")) == 0)
-            return CarlaBackend::PLUGIN_CATEGORY_FILTER;
+            return PLUGIN_CATEGORY_FILTER;
 
         if (tag.compareIgnoreCase(water::CharPointer_UTF8("distortion")) == 0)
-            return CarlaBackend::PLUGIN_CATEGORY_DISTORTION;
+            return PLUGIN_CATEGORY_DISTORTION;
 
         if (tag.compareIgnoreCase(water::CharPointer_UTF8("dynamics")) == 0)
-            return CarlaBackend::PLUGIN_CATEGORY_DYNAMICS;
+            return PLUGIN_CATEGORY_DYNAMICS;
 
         if (tag.compareIgnoreCase(water::CharPointer_UTF8("modulation")) == 0)
-            return CarlaBackend::PLUGIN_CATEGORY_MODULATOR;
+            return PLUGIN_CATEGORY_MODULATOR;
 
         if (tag.compareIgnoreCase(water::CharPointer_UTF8("utility")) == 0)
-            return CarlaBackend::PLUGIN_CATEGORY_UTILITY;
+            return PLUGIN_CATEGORY_UTILITY;
 
-        return CarlaBackend::PLUGIN_CATEGORY_NONE;
+        return PLUGIN_CATEGORY_NONE;
     }
 };
 
@@ -202,7 +210,7 @@ public:
     }
 };
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 class CarlaJsfxUnit
 {
@@ -242,6 +250,8 @@ private:
     water::String fFileId;
 };
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
+
+CARLA_BACKEND_END_NAMESPACE
 
 #endif // CARLA_JSFX_UTILS_HPP_INCLUDED

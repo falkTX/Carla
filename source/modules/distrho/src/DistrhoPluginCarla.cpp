@@ -31,11 +31,13 @@
 START_NAMESPACE_DISTRHO
 
 #if ! DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
-static const writeMidiFunc writeMidiCallback = nullptr;
+static constexpr const writeMidiFunc writeMidiCallback = nullptr;
 #endif
 #if ! DISTRHO_PLUGIN_WANT_PARAMETER_VALUE_CHANGE_REQUEST
-static const requestParameterValueChangeFunc requestParameterValueChangeCallback = nullptr;
+static constexpr const requestParameterValueChangeFunc requestParameterValueChangeCallback = nullptr;
 #endif
+// TODO
+static constexpr const updateStateValueFunc updateStateValueCallback = nullptr;
 
 #if DISTRHO_PLUGIN_HAS_UI
 // -----------------------------------------------------------------------
@@ -191,7 +193,7 @@ class PluginCarla : public NativePluginClass
 public:
     PluginCarla(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
-          fPlugin(this, writeMidiCallback, requestParameterValueChangeCallback),
+          fPlugin(this, writeMidiCallback, requestParameterValueChangeCallback, updateStateValueCallback),
           fScalePointsCache(nullptr)
     {
 #if DISTRHO_PLUGIN_HAS_UI
@@ -367,7 +369,8 @@ protected:
     }
 
 #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames,
+                 const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         MidiEvent realMidiEvents[midiEventCount];
 
@@ -391,7 +394,8 @@ protected:
         fPlugin.run(const_cast<const float**>(inBuffer), outBuffer, frames, realMidiEvents, midiEventCount);
     }
 #else
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
+    void process(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames,
+                 const NativeMidiEvent* const, const uint32_t) override
     {
         fPlugin.run(const_cast<const float**>(inBuffer), outBuffer, frames);
     }
@@ -539,8 +543,8 @@ private:
 public:
     static NativePluginHandle _instantiate(const NativeHostDescriptor* host)
     {
-        d_lastBufferSize = host->get_buffer_size(host->handle);
-        d_lastSampleRate = host->get_sample_rate(host->handle);
+        d_nextBufferSize = host->get_buffer_size(host->handle);
+        d_nextSampleRate = host->get_sample_rate(host->handle);
         return new PluginCarla(host);
     }
 

@@ -160,11 +160,16 @@ HAVE_HYLIA = true
 endif
 
 ifeq ($(MACOS_OR_WIN32),true)
-HAVE_DGL = true
+HAVE_DGL     = true
+HAVE_YSFXGUI = true
 else
-HAVE_DGL = $(shell $(PKG_CONFIG) --exists gl x11 && echo true)
-HAVE_X11 = $(shell $(PKG_CONFIG) --exists x11 && echo true)
+HAVE_DGL     = $(shell $(PKG_CONFIG) --exists gl x11 && echo true)
+HAVE_YSFXGUI = $(shell $(PKG_CONFIG) --exists freetype2 fontconfig gl x11 && echo true)
+HAVE_X11     = $(shell $(PKG_CONFIG) --exists x11 && echo true)
 endif
+
+# NOTE not yet implemented, disabled for now
+HAVE_YSFXGUI = false
 
 ifeq ($(UNIX),true)
 ifneq ($(MACOS),true)
@@ -388,13 +393,68 @@ SNDFILE_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags sndfile)
 SNDFILE_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs sndfile)
 endif
 
+ifeq ($(HAVE_YSFXGUI),true)
+ifeq ($(MACOS),true)
+YSFX_LIBS  = -framework Cocoa -framework Carbon -framework Metal -framework Foundation
+else ifeq ($(WIN32),true)
+# TODO
+YSFX_LIBS  =
+else
+YSFX_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags freetype2 fontconfig)
+YSFX_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2 fontconfig gl x11)
+endif
+endif
+
 ifeq ($(HAVE_X11),true)
 X11_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags x11)
 X11_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs x11)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Set libs stuff (part 2)
+# Set libs stuff (juce)
+
+ifeq ($(USING_JUCE),true)
+
+ifeq ($(LINUX),true)
+JUCE_AUDIO_BASICS_LIBS     =
+JUCE_AUDIO_DEVICES_LIBS    = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
+JUCE_AUDIO_FORMATS_LIBS    =
+JUCE_AUDIO_PROCESSORS_LIBS =
+JUCE_CORE_LIBS             = -ldl -pthread -lrt
+JUCE_EVENTS_LIBS           =
+JUCE_GRAPHICS_LIBS         = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2)
+JUCE_GUI_BASICS_LIBS       =
+JUCE_GUI_EXTRA_LIBS        =
+endif
+
+ifeq ($(MACOS),true)
+JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
+JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
+JUCE_AUDIO_FORMATS_LIBS    = -framework AudioToolbox -framework CoreFoundation
+JUCE_AUDIO_PROCESSORS_LIBS = -framework AudioToolbox -framework AudioUnit -framework CoreAudio -framework CoreAudioKit -framework Cocoa
+JUCE_CORE_LIBS             = -framework AppKit
+JUCE_EVENTS_LIBS           = -framework AppKit
+JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
+JUCE_GUI_BASICS_LIBS       = -framework Cocoa
+JUCE_GUI_EXTRA_LIBS        = -framework IOKit
+endif
+
+ifeq ($(WIN32),true)
+JUCE_AUDIO_BASICS_LIBS     =
+JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
+JUCE_AUDIO_FORMATS_LIBS    =
+JUCE_AUDIO_PROCESSORS_LIBS =
+JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+JUCE_EVENTS_LIBS           = -lole32
+JUCE_GRAPHICS_LIBS         = -lgdi32
+JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
+JUCE_GUI_EXTRA_LIBS        =
+endif
+
+endif # USING_JUCE
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Set libs stuff (rtaudio)
 
 ifeq ($(USING_RTAUDIO),true)
 
@@ -438,83 +498,58 @@ endif
 
 endif # USING_RTAUDIO
 
+# ---------------------------------------------------------------------------------------------------------------------
+# Set libs stuff (extra)
+
 ifeq ($(BSD),true)
+
+HYLIA_FLAGS      =
 JACKBRIDGE_LIBS  = -pthread -lrt
 LILV_LIBS        = -lm -lrt
 RTMEMPOOL_LIBS   = -pthread
 WATER_LIBS       = -pthread -lrt
-endif
 
-ifeq ($(HAIKU),true)
+else ifeq ($(HAIKU),true)
+
+HYLIA_FLAGS      =
 JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -lpthread
-endif
 
-ifeq ($(HURD),true)
+else ifeq ($(HURD),true)
+
+HYLIA_FLAGS      =
 JACKBRIDGE_LIBS  = -ldl -pthread -lrt
 LILV_LIBS        = -ldl -lm -lrt
 RTMEMPOOL_LIBS   = -pthread -lrt
 WATER_LIBS       = -ldl -pthread -lrt
-endif
 
-ifeq ($(LINUX),true)
+else ifeq ($(LINUX),true)
+
 HYLIA_FLAGS      = -DLINK_PLATFORM_LINUX=1
 JACKBRIDGE_LIBS  = -ldl -pthread -lrt
 LILV_LIBS        = -ldl -lm -lrt
 RTMEMPOOL_LIBS   = -pthread -lrt
 WATER_LIBS       = -ldl -pthread -lrt
-ifeq ($(USING_JUCE),true)
-JUCE_AUDIO_DEVICES_LIBS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs alsa)
-JUCE_CORE_LIBS          = -ldl -pthread -lrt
-JUCE_EVENTS_LIBS        =
-JUCE_GRAPHICS_LIBS      = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2)
-JUCE_GUI_BASICS_LIBS    =
-endif # USING_JUCE
-endif # LINUX
 
-ifeq ($(MACOS),true)
+else ifeq ($(MACOS),true)
+
 HYLIA_FLAGS      = -DLINK_PLATFORM_MACOSX=1
 JACKBRIDGE_LIBS  = -ldl -pthread
 LILV_LIBS        = -ldl -lm
 RTMEMPOOL_LIBS   = -pthread
 WATER_LIBS       = -framework AppKit
-ifeq ($(USING_JUCE),true)
-JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
-JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
-JUCE_AUDIO_FORMATS_LIBS    = -framework AudioToolbox -framework CoreFoundation
-JUCE_AUDIO_PROCESSORS_LIBS = -framework AudioToolbox -framework AudioUnit -framework CoreAudio -framework CoreAudioKit -framework Cocoa -framework Carbon
-JUCE_CORE_LIBS             = -framework AppKit
-JUCE_EVENTS_LIBS           = -framework AppKit
-JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
-JUCE_GUI_BASICS_LIBS       = -framework Cocoa
-JUCE_GUI_EXTRA_LIBS        = -framework IOKit
-endif # USING_JUCE
-endif # MACOS
 
-ifeq ($(WIN32),true)
+else ifeq ($(WIN32),true)
+
 HYLIA_FLAGS      = -DLINK_PLATFORM_WINDOWS=1
 HYLIA_LIBS       = -liphlpapi
 JACKBRIDGE_LIBS  = -pthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -pthread
 WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
-ifeq ($(USING_JUCE),true)
-JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
-JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
-JUCE_EVENTS_LIBS           = -lole32
-JUCE_GRAPHICS_LIBS         = -lgdi32
-JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
-endif # USING_JUCE
-endif # WIN32
 
-YSFX_FLAGS = -I$(CWD)/modules/ysfx/include
-ifeq ($(MACOS),true)
-YSFX_GRAPHICS_LIBS = -framework Cocoa -framework Carbon -framework Metal -framework Foundation
-else ifneq ($(WIN32),true)
-YSFX_GRAPHICS_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags freetype2 fontconfig)
-YSFX_GRAPHICS_LIBS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs freetype2 fontconfig)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -552,6 +587,7 @@ STATIC_CARLA_PLUGIN_LIBS += $(LILV_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(MAGIC_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(RTMEMPOOL_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(WATER_LIBS)
+STATIC_CARLA_PLUGIN_LIBS += $(YSFX_LIBS)
 
 ifeq ($(USING_JUCE),true)
 STATIC_CARLA_PLUGIN_LIBS += $(JUCE_AUDIO_BASICS_LIBS)
