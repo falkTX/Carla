@@ -114,14 +114,15 @@ static void findJSFXs(const char* const jsfxPaths)
 
     for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        water::Array<water::File> results;
-        water::File path(*it);
+        std::vector<water::File> results;
+        const water::File path(*it);
 
         if (path.findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*") > 0)
         {
-            for (const water::File& file : results)
+            for (std::vector<water::File>::iterator it=results.begin(), end=results.end(); it != end; ++it)
             {
-                water::String fileExt = file.getFileExtension();
+                const water::File& file(*it);
+                const water::String fileExt = file.getFileExtension();
                 if (fileExt.isEmpty() || fileExt.equalsIgnoreCase(".jsfx"))
                     gJSFXs.add(CarlaJsfxUnit(path, file));
             }

@@ -2119,7 +2119,7 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
 #ifndef BUILD_BRIDGE
 static void do_jsfx_check(const char* const filename, bool doInit)
 {
-    const water::File file = File(CharPointer_UTF8(filename));
+    const water::File file(filename);
 
     ysfx_config_u config(ysfx_config_new());
 
