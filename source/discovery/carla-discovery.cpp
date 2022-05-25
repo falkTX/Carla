@@ -1477,14 +1477,14 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             binaryfilename += CARLA_OS_SEP_STR;
 
         binaryfilename += "Contents" CARLA_OS_SEP_STR V3_CONTENT_DIR CARLA_OS_SEP_STR;
-        binaryfilename += File(filename).getFileNameWithoutExtension();
+        binaryfilename += water::File(filename).getFileNameWithoutExtension();
 # ifdef CARLA_OS_WIN
         binaryfilename += ".vst3";
 # else
         binaryfilename += ".so";
 # endif
 
-        if (! File(binaryfilename).existsAsFile())
+        if (! water::File(binaryfilename).existsAsFile())
         {
             DISCOVERY_OUT("error", "Failed to find a suitable VST3 bundle binary");
             return;
@@ -1501,12 +1501,12 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
     }
 
 #ifndef CARLA_OS_MAC
-    // ensure entry and exist points are available
     v3_entry = lib_symbol<V3_ENTRYFN>(libHandle, V3_ENTRYFNNAME);
     v3_exit = lib_symbol<V3_EXITFN>(libHandle, V3_EXITFNNAME);
     v3_get = lib_symbol<V3_GETFN>(libHandle, V3_GETFNNAME);
 #endif
 
+    // ensure entry and exit points are available
     if (v3_entry == nullptr || v3_exit == nullptr || v3_get == nullptr)
     {
         DISCOVERY_OUT("error", "Not a VST3 plugin");

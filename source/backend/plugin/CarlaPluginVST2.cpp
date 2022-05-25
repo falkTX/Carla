@@ -1,6 +1,6 @@
 /*
  * Carla VST Plugin
- * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -158,18 +158,18 @@ public:
         clearBuffers();
 
 #ifdef CARLA_OS_MAC
-    if (fMacBundleRef != nullptr)
-    {
-        CFBundleCloseBundleResourceMap(fMacBundleRef, fMacBundleRefNum);
+        if (fMacBundleRef != nullptr)
+        {
+            CFBundleCloseBundleResourceMap(fMacBundleRef, fMacBundleRefNum);
 
-        if (CFGetRetainCount(fMacBundleRef) == 1)
-            CFBundleUnloadExecutable(fMacBundleRef);
+            if (CFGetRetainCount(fMacBundleRef) == 1)
+                CFBundleUnloadExecutable(fMacBundleRef);
 
-        if (CFGetRetainCount(fMacBundleRef) > 0)
-            CFRelease(fMacBundleRef);
+            if (CFGetRetainCount(fMacBundleRef) > 0)
+                CFRelease(fMacBundleRef);
 
-        fMacBundleRef = nullptr;
-    }
+            fMacBundleRef = nullptr;
+        }
 #endif
     }
 
@@ -1172,11 +1172,11 @@ public:
 
         try {
             dispatcher(effMainsChanged, 0, 1);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION("effMainsChanged on");
 
         try {
             dispatcher(effStartProcess, 0, 0);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION("effStartProcess on");
 
         fFirstActive = true;
     }
@@ -1187,11 +1187,11 @@ public:
 
         try {
             dispatcher(effStopProcess);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION("effStartProcess off");
 
         try {
             dispatcher(effMainsChanged);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION("effMainsChanged off");
     }
 
     void process(const float* const* const audioIn,
@@ -1261,7 +1261,7 @@ public:
 
         fTimeInfo.flags = 0;
 
-        if (fFirstActive || ! fLastTimeInfo.compareIgnoringRollingFrames(timeInfo, fBufferSize))
+        if (fFirstActive || ! fLastTimeInfo.compareIgnoringRollingFrames(timeInfo, frames))
         {
             fTimeInfo.flags |= kVstTransportChanged;
             fLastTimeInfo = timeInfo;
@@ -1289,7 +1289,7 @@ public:
             // const double ppqTick = timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat;
 
             // PPQ Pos
-            fTimeInfo.ppqPos = fTimeInfo.samplePos / (fTimeInfo.sampleRate * 60 / fTimeInfo.tempo);
+            fTimeInfo.ppqPos = fTimeInfo.samplePos / (fTimeInfo.sampleRate * 60 / timeInfo.bbt.beatsPerMinute);
             // fTimeInfo.ppqPos = ppqBar + ppqBeat + ppqTick;
             fTimeInfo.flags |= kVstPpqPosValid;
 
@@ -1302,8 +1302,8 @@ public:
             fTimeInfo.flags |= kVstBarsValid;
 
             // Time Signature
-            fTimeInfo.timeSigNumerator   = static_cast<int32_t>(timeInfo.bbt.beatsPerBar);
-            fTimeInfo.timeSigDenominator = static_cast<int32_t>(timeInfo.bbt.beatType);
+            fTimeInfo.timeSigNumerator = static_cast<int32_t>(timeInfo.bbt.beatsPerBar + 0.5f);
+            fTimeInfo.timeSigDenominator = static_cast<int32_t>(timeInfo.bbt.beatType + 0.5f);
             fTimeInfo.flags |= kVstTimeSigValid;
         }
         else
@@ -1313,7 +1313,7 @@ public:
             fTimeInfo.flags |= kVstTempoValid;
 
             // Time Signature
-            fTimeInfo.timeSigNumerator   = 4;
+            fTimeInfo.timeSigNumerator = 4;
             fTimeInfo.timeSigDenominator = 4;
             fTimeInfo.flags |= kVstTimeSigValid;
 
@@ -2500,7 +2500,7 @@ public:
             {
                 CFRelease(fMacBundleRef);
                 fMacBundleRef = nullptr;
-                pData->engine->setLastError("Failed to load VST bundle executable");
+                pData->engine->setLastError("Failed to load VST2 bundle executable");
                 return false;
             }
 
@@ -2514,7 +2514,7 @@ public:
                 CFBundleUnloadExecutable(fMacBundleRef);
                 CFRelease(fMacBundleRef);
                 fMacBundleRef = nullptr;
-                pData->engine->setLastError("Not a VST plugin");
+                pData->engine->setLastError("Not a VST2 plugin");
                 return false;
             }
 
@@ -2543,7 +2543,7 @@ public:
 
                 if (vstFn == nullptr)
                 {
-                    pData->engine->setLastError("Could not find the VST main entry in the plugin library");
+                    pData->engine->setLastError("Could not find the VST2 main entry in the plugin library");
                     return false;
                 }
             }
@@ -2695,7 +2695,7 @@ public:
 
         pData->options = 0x0;
 
-        if (pData->latency.frames != 0 || hasMidiOutput() || isPluginOptionEnabled(options, PLUGIN_OPTION_FIXED_BUFFERS))
+        if (fEffect->initialDelay > 0 || hasMidiOutput() || isPluginOptionEnabled(options, PLUGIN_OPTION_FIXED_BUFFERS))
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (fEffect->flags & effFlagsProgramChunks)
