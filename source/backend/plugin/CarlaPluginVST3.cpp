@@ -28,6 +28,10 @@
 
 #include "CarlaPluginUI.hpp"
 
+#ifdef CARLA_OS_MAC
+# import <Foundation/Foundation.h>
+#endif
+
 #include "water/files/File.h"
 
 CARLA_BACKEND_START_NAMESPACE

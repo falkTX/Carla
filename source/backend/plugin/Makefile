@@ -84,6 +84,10 @@ $(OBJDIR)/CarlaPluginVST2.cpp.o: CarlaPluginVST2.cpp
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 
+$(OBJDIR)/CarlaPluginVST3.cpp.o: CarlaPluginVST3.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 endif
 
 ifeq ($(USING_JUCE),true)
