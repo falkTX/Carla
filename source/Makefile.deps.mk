@@ -18,26 +18,20 @@ ifneq ($(WIN32),true)
 
 ifneq (,$(findstring bsd,$(TARGET_MACHINE)))
 BSD=true
-endif
-ifneq (,$(findstring haiku,$(TARGET_MACHINE)))
+else ifneq (,$(findstring haiku,$(TARGET_MACHINE)))
 HAIKU=true
-endif
-ifneq (,$(findstring gnu,$(TARGET_MACHINE)))
-HURD=true
-endif
-ifneq (,$(findstring linux,$(TARGET_MACHINE)))
+else ifneq (,$(findstring linux,$(TARGET_MACHINE)))
 LINUX=true
-endif
-ifneq (,$(findstring apple,$(TARGET_MACHINE)))
+else ifneq (,$(findstring gnu,$(TARGET_MACHINE)))
+HURD=true
+else ifneq (,$(findstring apple,$(TARGET_MACHINE)))
 MACOS=true
-endif
-ifneq (,$(findstring mingw,$(TARGET_MACHINE)))
+else ifneq (,$(findstring mingw,$(TARGET_MACHINE)))
 WIN32=true
 ifneq (,$(findstring x86_64,$(TARGET_MACHINE)))
 WIN64=true
 endif
-endif
-ifneq (,$(findstring msys,$(TARGET_MACHINE)))
+else ifneq (,$(findstring msys,$(TARGET_MACHINE)))
 WIN32=true
 endif
 
