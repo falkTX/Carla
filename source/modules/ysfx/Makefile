@@ -78,6 +78,14 @@ OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/fft.c.o
 ifeq ($(WIN32),true)
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/win32_utf8.c.o
 endif
+
+ifeq ($(HAVE_YSFXGUI),true)
+OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_loaders.cpp.o
+OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_bmp.cpp.o
+OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_gif.cpp.o
+OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_jpg.cpp.o
+OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_png.cpp.o
+OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_write.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_arc.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_colorspace.cpp.o
@@ -87,14 +95,6 @@ OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_palette.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_texgen.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_text.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_textnew.cpp.o
-OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_loaders.cpp.o
-OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_bmp.cpp.o
-OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_gif.cpp.o
-OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_jpg.cpp.o
-OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_png.cpp.o
-OBJS += $(OBJDIR)/sources/lice_stb/lice_stb_write.cpp.o
-
-ifeq ($(HAVE_YSFXGUI),true)
 ifneq ($(WIN32),true)
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-ini.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell.cpp.o
