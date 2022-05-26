@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -55,7 +55,12 @@ class UICarla
 public:
     UICarla(const NativeHostDescriptor* const host, PluginExporter* const plugin)
         : fHost(host),
-          fUI(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback, plugin->getInstancePointer())
+          fUI(this, 0, plugin->getSampleRate(),
+              editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback,
+              nullptr, // window size
+              nullptr, // TODO file request
+              nullptr, // bundle path
+              plugin->getInstancePointer())
     {
         fUI.setWindowTitle(host->uiName);
 
@@ -77,7 +82,7 @@ public:
 
     bool carla_idle()
     {
-        return fUI.idle();
+        return fUI.plugin_idle();
     }
 
     void carla_setParameterValue(const uint32_t index, const float value)
@@ -131,11 +136,6 @@ protected:
     }
 #endif
 
-    void handleSetSize(const uint width, const uint height)
-    {
-        fUI.setWindowSize(width, height);
-    }
-
     // ---------------------------------------------
 
 private:
@@ -173,11 +173,6 @@ private:
         handlePtr->handleSendNote(channel, note, velocity);
     }
 #endif
-
-    static void setSizeCallback(void* ptr, uint width, uint height)
-    {
-        handlePtr->handleSetSize(width, height);
-    }
 
     #undef handlePtr
 
@@ -502,10 +497,7 @@ private:
     void createUiIfNeeded()
     {
         if (fUiPtr == nullptr)
-        {
-            d_lastUiSampleRate = getSampleRate();
             fUiPtr = new UICarla(getHostHandle(), &fPlugin);
-        }
     }
 #endif
 
