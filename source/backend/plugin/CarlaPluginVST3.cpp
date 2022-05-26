@@ -1713,7 +1713,7 @@ public:
         // call entry point
 
        #if defined(CARLA_OS_MAC)
-        v3_entry(pData->lib != nullptr ? pData->lib : fMacBundleLoader.ref);
+        v3_entry(pData->lib == nullptr ? fMacBundleLoader.getRef() : nullptr);
        #elif defined(CARLA_OS_WIN)
         v3_entry();
        #else
