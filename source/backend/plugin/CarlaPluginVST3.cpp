@@ -29,6 +29,7 @@
 #include "CarlaPluginUI.hpp"
 
 #ifdef CARLA_OS_MAC
+# include "CarlaMacUtils.hpp"
 # import <Foundation/Foundation.h>
 #endif
 
