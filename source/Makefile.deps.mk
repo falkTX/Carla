@@ -550,7 +550,6 @@ endif
 
 ifeq ($(STATIC_PLUGIN_TARGET),true)
 HAVE_ALSA = false
-HAVE_DGL = false
 HAVE_HYLIA = false
 HAVE_JACK = false
 HAVE_LIBLO = false
@@ -559,6 +558,7 @@ HAVE_QT4 = false
 HAVE_QT5 = false
 HAVE_QT5PKG = false
 HAVE_PULSEAUDIO = false
+USING_JUCE = false
 USING_JUCE_AUDIO_DEVICES = false
 USING_RTAUDIO = false
 endif
