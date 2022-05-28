@@ -53,7 +53,9 @@ ALL_LIBS += $(MODULEDIR)/rtmempool.a
 3RD_LIBS += $(MODULEDIR)/zita-resampler.a
 
 ifeq ($(HAVE_DGL),true)
+ifneq ($(USING_CUSTOM_DPF),true)
 3RD_LIBS += $(MODULEDIR)/dgl.a
+endif
 endif
 
 ifeq ($(HAVE_HYLIA),true)
