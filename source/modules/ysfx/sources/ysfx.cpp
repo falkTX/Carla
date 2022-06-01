@@ -1514,7 +1514,7 @@ void ysfx_gfx_update_mouse(ysfx_t *fx, uint32_t mods, int32_t xpos, int32_t ypos
     (void)xpos;
     (void)ypos;
     (void)buttons;
-    (void)vwheel;
+    (void)wheel;
     (void)hwheel;
 #endif
 }
