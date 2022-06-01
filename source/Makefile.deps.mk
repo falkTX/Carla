@@ -311,10 +311,6 @@ USING_JUCE_AUDIO_DEVICES = true
 endif
 endif
 
-ifeq ($(HAVE_JUCE_LINUX_DEPS),true)
-USING_JUCE = true
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Set USING_RTAUDIO
 
