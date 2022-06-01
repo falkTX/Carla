@@ -107,6 +107,7 @@ float unpack_f32le(const uint8_t data[4]);
 //------------------------------------------------------------------------------
 
 std::vector<uint8_t> decode_base64(const char *text, size_t len = ~(size_t)0);
+std::string encode_base64(const uint8_t *data, size_t len);
 
 //------------------------------------------------------------------------------
 

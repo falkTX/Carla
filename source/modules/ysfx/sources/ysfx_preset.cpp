@@ -30,7 +30,13 @@ static void ysfx_parse_preset_from_rpl_blob(ysfx_preset_t *preset, const char *n
 
 ysfx_bank_t *ysfx_load_bank(const char *path)
 {
+#if defined(_WIN32)
+    std::wstring wpath = ysfx::widen(path);
+    ysfx::FILE_u stream{_wfopen(wpath.c_str(), L"rb")};
+#else
     ysfx::FILE_u stream{fopen(path, "rb")};
+#endif
+
     if (!stream)
         return nullptr;
 
@@ -100,24 +106,24 @@ static ysfx_bank_t *ysfx_load_bank_from_rpl_text(const std::string &text)
 
     const char *bank_name = parser.gettoken_str(itok++);
 
-    std::string base64;
-    base64.reserve(1024);
-
     while (itok < ntok) {
         if (strcmp("<PRESET", parser.gettoken_str(itok++)) == 0) {
             const char *preset_name = parser.gettoken_str(itok++);
 
-            base64.clear();
+            std::vector<uint8_t> blob;
+            blob.reserve(64 * 1024);
+
             for (const char *part; itok < ntok &&
                      strcmp(">", (part = parser.gettoken_str(itok++))) != 0; )
-                base64.append(part);
+            {
+                std::vector<uint8_t> blobChunk = ysfx::decode_base64(part);
+                blob.insert(blob.end(), blobChunk.begin(), blobChunk.end());
+            }
 
             preset_list.emplace_back();
             ysfx_preset_t &preset = preset_list.back();
 
-            ysfx_parse_preset_from_rpl_blob(
-                &preset, preset_name,
-                ysfx::decode_base64(base64.data(), base64.size()));
+            ysfx_parse_preset_from_rpl_blob(&preset, preset_name, blob);
         }
     }
 
@@ -140,30 +146,46 @@ static void ysfx_parse_preset_from_rpl_blob(ysfx_preset_t *preset, const char *n
     ysfx_state_t state{};
     std::vector<ysfx_state_slider_t> sliders;
 
+    const char *text = (const char *)data.data();
     size_t len = data.size();
+
+    // find the null terminator
     size_t pos = 0;
-    while (pos < len && data[pos] != 0) ++pos;
+    while (pos < len && data[pos] != 0)
+        ++pos;
 
-    if (pos++ < len) {
-        state.data = const_cast<uint8_t *>(&data[pos]);
-        state.data_size = len - pos;
+    // skip null terminator if there was one
+    // otherwise null-terminate the text
+    std::string textbuf;
+    if (pos < len)
+        ++pos;
+    else {
+        textbuf.assign(text, len);
+        text = textbuf.c_str();
+    }
 
-        LineParser parser;
-        if (parser.parse((const char *)data.data()) >= 0) {
-            sliders.reserve(ysfx_max_sliders);
+    // whatever follows null is the raw serialization
+    state.data = const_cast<uint8_t *>(&data[pos]);
+    state.data_size = len - pos;
 
-            for (uint32_t i = 0; i < 64; ++i) {
-                int success = false;
+    // parse a line of 64 slider floats (or '-' if missing)
+    LineParser parser;
+    if (parser.parse(text) >= 0) {
+        sliders.reserve(ysfx_max_sliders);
+
+        for (uint32_t i = 0; i < 64; ++i) {
+            const char *str = parser.gettoken_str(i);
+            bool skip = str[0] == '-' && str[1] == '\0';
+            if (!skip) {
                 ysfx_state_slider_t slider{};
                 slider.index = i;
-                slider.value = (ysfx_real)parser.gettoken_float(i, &success);
-                if (success)
-                    sliders.push_back(slider);
+                slider.value = (ysfx_real)ysfx::dot_atof(str);
+                sliders.push_back(slider);
             }
-
-            state.sliders = sliders.data();
-            state.slider_count = (uint32_t)sliders.size();
         }
+
+        state.sliders = sliders.data();
+        state.slider_count = (uint32_t)sliders.size();
     }
 
     preset->name = ysfx::strdup_using_new(name);

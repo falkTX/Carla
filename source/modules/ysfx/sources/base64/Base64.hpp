@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
  * Copyright (C) 2022 Jean Pierre Cimalando <jp-dev@inbox.ru>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
@@ -21,6 +21,7 @@
 #include <cassert>
 #include <array>
 #include <vector>
+#include <string>
 
 // -----------------------------------------------------------------------
 // base64 stuff, based on http://www.adp-gmbh.ch/cpp/common/base64.html
@@ -133,6 +134,60 @@ std::vector<uint8_t> d_getChunkFromBase64String(const char* const base64string, 
 
         for (j=0; i>0 && j<i-1; j++)
             ret.push_back(static_cast<uint8_t>(charArray3[j]));
+    }
+
+    return ret;
+}
+
+static inline
+std::string d_getBase64StringFromChunk(const void* const data, std::size_t dataSize)
+{
+    static const char* const kBase64Chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "0123456789+/";
+
+    const uint8_t* bytesToEncode((const uint8_t*)data);
+
+    uint32_t i=0, j=0;
+    uint32_t charArray3[3], charArray4[4];
+
+    std::string ret;
+    ret.reserve(((dataSize + 2) / 3) * 4);
+
+    for (std::size_t s=0; s<dataSize; ++s)
+    {
+        charArray3[i++] = *(bytesToEncode++);
+
+        if (i == 3)
+        {
+            charArray4[0] =  (charArray3[0] & 0xfc) >> 2;
+            charArray4[1] = ((charArray3[0] & 0x03) << 4) + ((charArray3[1] & 0xf0) >> 4);
+            charArray4[2] = ((charArray3[1] & 0x0f) << 2) + ((charArray3[2] & 0xc0) >> 6);
+            charArray4[3] =   charArray3[2] & 0x3f;
+
+            for (i=0; i<4; ++i)
+                ret.push_back(kBase64Chars[charArray4[i]]);
+
+            i = 0;
+        }
+    }
+
+    if (i != 0)
+    {
+        for (j=i; j<3; ++j)
+          charArray3[j] = '\0';
+
+        charArray4[0] =  (charArray3[0] & 0xfc) >> 2;
+        charArray4[1] = ((charArray3[0] & 0x03) << 4) + ((charArray3[1] & 0xf0) >> 4);
+        charArray4[2] = ((charArray3[1] & 0x0f) << 2) + ((charArray3[2] & 0xc0) >> 6);
+        charArray4[3] =   charArray3[2] & 0x3f;
+
+        for (j=0; j<4 && i<3 && j<i+1; ++j)
+            ret.push_back(kBase64Chars[charArray4[j]]);
+
+        for (; i++ < 3;)
+            ret.push_back('=');
     }
 
     return ret;

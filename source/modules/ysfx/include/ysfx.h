@@ -429,6 +429,52 @@ enum {
 };
 
 //------------------------------------------------------------------------------
+// YSFX menu
+
+typedef struct ysfx_menu_insn_s ysfx_menu_insn_t;
+
+typedef struct ysfx_menu_s {
+    // list of instructions to build a menu
+    ysfx_menu_insn_t *insns;
+    // number of menu instructions
+    uint32_t insn_count;
+} ysfx_menu_t;
+
+typedef enum ysfx_menu_opcode_e {
+    // appends an item
+    ysfx_menu_item,
+    // appends a separator
+    ysfx_menu_separator,
+    // appends a submenu and enters
+    ysfx_menu_sub,
+    // terminates a submenu and leaves
+    ysfx_menu_endsub,
+} ysfx_menu_opcode_t;
+
+typedef enum ysfx_menu_item_flag_e {
+    // whether the item is disabled (grayed out)
+    ysfx_menu_item_disabled = 1 << 0,
+    // whether the item is checked
+    ysfx_menu_item_checked = 1 << 1,
+} ysfx_menu_item_flag_t;
+
+typedef struct ysfx_menu_insn_s {
+    // operation code of this instruction
+    ysfx_menu_opcode_t opcode;
+    // unique identifier, greater than 0 (opcodes: item)
+    uint32_t id;
+    // name (opcodes: item, sub/endsub)
+    const char *name;
+    // combination of item flags (opcodes: item, sub/endsub)
+    uint32_t item_flags;
+} ysfx_menu_insn_t;
+
+// parse a string which describes a popup menu (cf. `gfx_showmenu`)
+YSFX_API ysfx_menu_t *ysfx_parse_menu(const char *text);
+// free a menu
+YSFX_API void ysfx_menu_free(ysfx_menu_t *menu);
+
+//------------------------------------------------------------------------------
 // YSFX audio formats
 
 typedef struct ysfx_audio_reader_s ysfx_audio_reader_t;
@@ -477,6 +523,7 @@ YSFX_DEFINE_AUTO_PTR(ysfx_config_u, ysfx_config_t, ysfx_config_free);
 YSFX_DEFINE_AUTO_PTR(ysfx_u, ysfx_t, ysfx_free);
 YSFX_DEFINE_AUTO_PTR(ysfx_state_u, ysfx_state_t, ysfx_state_free);
 YSFX_DEFINE_AUTO_PTR(ysfx_bank_u, ysfx_bank_t, ysfx_bank_free);
+YSFX_DEFINE_AUTO_PTR(ysfx_menu_u, ysfx_menu_t, ysfx_menu_free);
 #endif // defined(__cplusplus) && (__cplusplus >= 201103L || (defined(_MSC_VER) && _MSVC_LANG >= 201103L))
 
 //------------------------------------------------------------------------------

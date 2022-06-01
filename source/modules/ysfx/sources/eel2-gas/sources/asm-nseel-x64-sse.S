@@ -1397,3 +1397,9 @@ MANGLE(eel_leavefp):
                 ret##
 
 #endif // defined(__x86_64__)
+
+
+//NOTE(jpc) mark the stack as non-executable
+#if defined(__ELF__)
+.section .note.GNU-stack,"",@progbits
+#endif

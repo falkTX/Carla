@@ -183,7 +183,6 @@ public:
   void gfx_getimgdim(EEL_F img, EEL_F *w, EEL_F *h);
   EEL_F gfx_setimgdim(int img, EEL_F *w, EEL_F *h);
   void gfx_blurto(EEL_F x, EEL_F y);
-  void gfx_blit(EEL_F img, EEL_F scale, EEL_F rotate);
   void gfx_blitext(EEL_F img, EEL_F *coords, EEL_F angle);
   void gfx_blitext2(int np, EEL_F **parms, int mode); // 0=blit, 1=deltablit
   void gfx_transformblit(EEL_F **parms, int div_w, int div_h, EEL_F *tab); // parms[0]=src, 1-4=x,y,w,h
@@ -490,13 +489,6 @@ static EEL_F * NSEEL_CGEN_CALL ysfx_api_gfx_getpixel(void *opaque, EEL_F *r, EEL
   eel_lice_state *ctx=EEL_LICE_GET_CONTEXT(opaque);
   if (ctx) ctx->gfx_getpixel(r, g, b);
   return r;
-}
-
-static EEL_F * NSEEL_CGEN_CALL ysfx_api_gfx_blit(void *opaque, EEL_F *img, EEL_F *scale, EEL_F *rotate)
-{
-  eel_lice_state *ctx=EEL_LICE_GET_CONTEXT(opaque);
-  if (ctx) ctx->gfx_blit(*img,*scale,*rotate);
-  return img;
 }
 
 static EEL_F NSEEL_CGEN_CALL ysfx_api_gfx_setfont(void *opaque, INT_PTR np, EEL_F **parms)
@@ -1097,8 +1089,8 @@ void eel_lice_state::gfx_blitext2(int np, EEL_F **parms, int blitmode)
   
   // 0=img, 1=scale, 2=rotate
   double coords[8];
-  const double sc = blitmode==0 ? parms[1][0] : 1.0,
-            angle = blitmode==0 ? parms[2][0] : 0.0;
+  const double sc = blitmode==0 && np > 1 ? parms[1][0] : 1.0,
+            angle = blitmode==0 && np > 2 ? parms[2][0] : 0.0;
   if (blitmode==0)
   {
     parms+=2;
@@ -1117,7 +1109,9 @@ void eel_lice_state::gfx_blitext2(int np, EEL_F **parms, int blitmode)
   const bool isFromFB = bm == m_framebuffer;
   SetImageDirty(dest);
  
-  if (bm == dest && CoordsSrcDestOverlap(coords))
+  if (bm == dest &&
+      (blitmode != 0 || np > 1) && // legacy behavior to matech previous gfx_blit(3parm), do not use temp buffer
+      CoordsSrcDestOverlap(coords))
   {
     if (!m_framebuffer_extra && LICE_FUNCTION_VALID(__LICE_CreateBitmap)) m_framebuffer_extra=__LICE_CreateBitmap(0,bmw,bmh);
     if (m_framebuffer_extra)
@@ -1203,35 +1197,6 @@ void eel_lice_state::gfx_blitext(EEL_F img, EEL_F *coords, EEL_F angle)
   {
     LICE_ScaledBlit(dest,bm,(int)coords[4],(int)coords[5],(int)coords[6],(int)coords[7],
       (float)coords[0],(float)coords[1],(float)coords[2],(float)coords[3], (float)*m_gfx_a,getCurModeForBlit(isFromFB));
-  }
-}
-
-void eel_lice_state::gfx_blit(EEL_F img, EEL_F scale, EEL_F rotate)
-{
-  LICE_IBitmap *dest = GetImageForIndex(*m_gfx_dest,"gfx_blit");
-  if (!dest
-#ifdef DYNAMIC_LICE
-    ||!LICE_ScaledBlit || !LICE_RotatedBlit||!LICE__GetWidth||!LICE__GetHeight
-#endif
-    ) return;
-
-  LICE_IBitmap *bm=GetImageForIndex(img,"gfx_blit:src");
-  
-  if (!bm) return;
-  
-  SetImageDirty(dest);
-  const bool isFromFB = bm == m_framebuffer;
-  
-  int bmw=LICE__GetWidth(bm);
-  int bmh=LICE__GetHeight(bm);
-  if (fabs(rotate)>0.000000001)
-  {
-    LICE_RotatedBlit(dest,bm,(int)*m_gfx_x,(int)*m_gfx_y,(int) (bmw*scale),(int) (bmh*scale),0.0f,0.0f,(float)bmw,(float)bmh,(float)rotate,true, (float)*m_gfx_a,getCurModeForBlit(isFromFB),
-        0.0f,0.0f);
-  }
-  else
-  {
-    LICE_ScaledBlit(dest,bm,(int)*m_gfx_x,(int)*m_gfx_y,(int) (bmw*scale),(int) (bmh*scale),0.0f,0.0f,(float)bmw,(float)bmh, (float)*m_gfx_a,getCurModeForBlit(isFromFB));
   }
 }
 

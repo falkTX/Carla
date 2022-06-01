@@ -335,6 +335,11 @@ std::vector<uint8_t> decode_base64(const char *text, size_t len)
     return d_getChunkFromBase64String(text, len);
 }
 
+std::string encode_base64(const uint8_t *data, size_t len)
+{
+    return d_getBase64StringFromChunk(data, len);
+}
+
 //------------------------------------------------------------------------------
 
 bool get_file_uid(const char *path, file_uid &uid)

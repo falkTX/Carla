@@ -1517,7 +1517,8 @@ LONG_PTR GetWindowLong(HWND hwnd, int idx)
     if ([pid isKindOfClass:[NSButton class]]) 
     {
       int tmp;
-      if ([pid allowsMixedState]) ret |= BS_AUTO3STATE;
+      if ([pid isKindOfClass:[NSPopUpButton class]]) ret |= CBS_DROPDOWNLIST;
+      else if ([pid allowsMixedState]) ret |= BS_AUTO3STATE;
       else if ([pid isKindOfClass:[SWELL_Button class]] && (tmp = (int)[pid swellGetRadioFlags]))
       {
         ret |= BS_AUTORADIOBUTTON;
@@ -1904,6 +1905,15 @@ void EnableWindow(HWND hwnd, int enable)
     
   if (bla && [bla respondsToSelector:@selector(setEnabled:)])
   {
+    if (!enable)
+    {
+      HWND foc = GetFocus();
+      if (foc && (foc==hwnd || IsChild(hwnd,foc)))
+      {
+        HWND par = GetParent(hwnd);
+        if (par) SetFocus(par);
+      }
+    }
     if (enable == -1000 && [bla respondsToSelector:@selector(setEnabledSwellNoFocus)])
       [(SWELL_hwndChild *)bla setEnabledSwellNoFocus];
     else
@@ -3522,7 +3532,6 @@ HWND SWELL_MakeEditField(int idx, int x, int y, int w, int h, int flags)
       
       [obj setVerticallyResizable:YES];
       NSScrollView *obj2=[[NSScrollView alloc] init];
-      [obj2 setFrame:fr];
       if (flags&WS_VSCROLL) [obj2 setHasVerticalScroller:YES];
       if (flags&WS_HSCROLL) 
       {
@@ -3535,6 +3544,7 @@ HWND SWELL_MakeEditField(int idx, int x, int y, int w, int h, int flags)
       [obj2 setAutohidesScrollers:YES];
       [obj2 setDrawsBackground:NO];
       [obj2 setDocumentView:obj];
+      [obj2 setFrame:fr];
       [m_make_owner addSubview:obj2];
       if (m_doautoright) UpdateAutoCoords([obj2 frame]);
       if (flags&SWELL_NOT_WS_VISIBLE) [obj2 setHidden:YES];
@@ -5514,7 +5524,27 @@ LRESULT DefWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     SWELL_END_TRY(;)
     return rv;
   }
-  else if (msg==WM_KEYDOWN || msg==WM_KEYUP) return 69;
+  else if (msg==WM_KEYDOWN || msg==WM_KEYUP)
+  {
+    // if not ctrl/cmd/opt modified, and not tab, and listview/treeview, do not bubble it up
+    // (fixes triggering of menu items when searching for text etc)
+    if (!(lParam & (FCONTROL|FALT|FLWIN)) && !(wParam == VK_TAB && (lParam&FVIRTKEY)))
+    {
+      id fr = [[(NSView *)hwnd window] firstResponder];
+      if ([fr isKindOfClass:[NSTableView class]] ||
+          [fr isKindOfClass:[NSOutlineView class]]) return 1;
+
+      if (wParam >= VK_LEFT && wParam <= VK_DOWN && [fr isKindOfClass:[NSButton class]])
+      {
+        // do not bubble up left/right for any
+        if (wParam == VK_LEFT || wParam == VK_RIGHT) return 1;
+
+        // do not bubble up left/down for non-NSPopUpButton
+        if (![fr isKindOfClass:[NSPopUpButton class]]) return 1;
+      }
+    }
+    return 69;
+  }
   else if (msg == WM_DISPLAYCHANGE)
   {
     if ([(id)hwnd isKindOfClass:[NSView class]])
@@ -5535,8 +5565,7 @@ LRESULT DefWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
           if (d) SWELL_DoDialogColorUpdates(hwnd,d,true);
         }
       }
-      if ([(id)hwnd respondsToSelector:@selector(swellWantsMetal)] && [(SWELL_hwndChild *)hwnd swellWantsMetal])
-        InvalidateRect((HWND)hwnd,NULL,FALSE);
+      InvalidateRect((HWND)hwnd,NULL,FALSE);
     }
   }
   else if (msg == WM_CTLCOLORSTATIC && wParam)
@@ -5567,9 +5596,6 @@ void SWELL_BroadcastMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     if (v && [v respondsToSelector:@selector(onSwellMessage:p1:p2:)])
     {
       [(SWELL_hwndChild *)v onSwellMessage:uMsg p1:wParam p2:lParam];
-      
-      if (uMsg == WM_DISPLAYCHANGE)
-        InvalidateRect((HWND)v,NULL,FALSE);
     }
   }  
 }
@@ -7141,6 +7167,41 @@ void SWELL_DisableContextMenu(HWND hwnd, bool dis)
 {
   if (WDL_NORMALLY(hwnd && [(id)hwnd respondsToSelector:@selector(swellDisableContextMenu:)]))
     [(SWELL_TextField*)hwnd swellDisableContextMenu:dis];
+}
+
+extern char g_swell_disable_retina;
+int SWELL_IsRetinaHWND(HWND hwnd)
+{
+  if (!hwnd || SWELL_GetOSXVersion() < 0x1070) return 0;
+
+  int retina_disabled = g_swell_disable_retina;
+  NSWindow *w=NULL;
+  if ([(id)hwnd isKindOfClass:[NSView class]])
+  {
+    if (retina_disabled &&
+        [(id)hwnd isKindOfClass:[SWELL_hwndChild class]] &&
+        ((SWELL_hwndChild*)hwnd)->m_glctx != NULL)
+      retina_disabled = 0;
+
+    w = [(NSView *)hwnd window];
+  }
+  else if ([(id)hwnd isKindOfClass:[NSWindow class]]) w = (NSWindow *)hwnd;
+
+  if (retina_disabled) return 0;
+
+  if (w)
+  {
+    NSRect r=NSMakeRect(0,0,1,1);
+#if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_6
+    NSRect str = [w convertRectToBacking:r];
+#else
+    NSRect (*tmp)(id receiver, SEL operation, NSRect) = (NSRect (*)(id, SEL, NSRect))objc_msgSend_stret;
+    NSRect str = tmp(w,sel_getUid("convertRectToBacking:"),r);
+#endif
+
+    if (str.size.width > 1.9) return 1;
+  }
+  return 0;
 }
 
 #endif

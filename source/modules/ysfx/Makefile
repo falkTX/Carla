@@ -10,45 +10,39 @@ include ../Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_C_FLAGS += $(YSFX_FLAGS)
-BUILD_C_FLAGS += -Iinclude -Isources
-BUILD_C_FLAGS += -Ithirdparty/WDL/source -Ithirdparty/dr_libs -Ithirdparty/stb
-BUILD_C_FLAGS += -DYSFX_NO_STANDARD_MUTEX
-BUILD_C_FLAGS += -DEELSCRIPT_NO_NET
-BUILD_C_FLAGS += -DEELSCRIPT_NO_LICE
-BUILD_C_FLAGS += -DWDL_FFT_REALSIZE=8
-BUILD_C_FLAGS += -DWDL_LINEPARSE_ATOF=ysfx_wdl_atof
-BUILD_C_FLAGS += -DNSEEL_ATOF=ysfx_wdl_atof
+YSFX_FLAGS += -Iinclude -Isources
+YSFX_FLAGS += -Ithirdparty/WDL/source -Ithirdparty/dr_libs -Ithirdparty/stb
+YSFX_FLAGS += -DEELSCRIPT_NO_NET
+YSFX_FLAGS += -DEELSCRIPT_NO_LICE
+YSFX_FLAGS += -DNSEEL_ATOF=ysfx_wdl_atof
+YSFX_FLAGS += -DWDL_FFT_REALSIZE=8
+YSFX_FLAGS += -DWDL_LINEPARSE_ATOF=ysfx_wdl_atof
+YSFX_FLAGS += -DYSFX_NO_STANDARD_MUTEX
 
-BUILD_CXX_FLAGS += $(YSFX_FLAGS)
-BUILD_CXX_FLAGS += -Iinclude -Isources
-BUILD_CXX_FLAGS += -Ithirdparty/WDL/source -Ithirdparty/dr_libs -Ithirdparty/stb
-BUILD_CXX_FLAGS += -DYSFX_NO_STANDARD_MUTEX
-BUILD_CXX_FLAGS += -DEELSCRIPT_NO_NET
-BUILD_CXX_FLAGS += -DEELSCRIPT_NO_LICE
-BUILD_CXX_FLAGS += -DWDL_FFT_REALSIZE=8
-BUILD_CXX_FLAGS += -DWDL_LINEPARSE_ATOF=ysfx_wdl_atof
-BUILD_CXX_FLAGS += -DNSEEL_ATOF=ysfx_wdl_atof
+# FIXME so many warnings..
+YSFX_FLAGS += -Wno-missing-field-initializers
+YSFX_FLAGS += -Wno-sign-compare
+YSFX_FLAGS += -Wno-unused-parameter
 
 ifneq ($(WIN32),true)
 # NOTE: not compatible with MingGW, breaks win32_utf8
-BUILD_C_FLAGS += -D_FILE_OFFSET_BITS=64
-BUILD_CXX_FLAGS += -D_FILE_OFFSET_BITS=64
+YSFX_FLAGS += -D_FILE_OFFSET_BITS=64
 endif
 
 ifeq ($(WIN32),true)
-BUILD_C_FLAGS += -DNOMINMAX
-BUILD_CXX_FLAGS += -DNOMINMAX
+YSFX_FLAGS += -DNOMINMAX
 endif
 
 ifeq ($(HAVE_YSFXGUI),true)
 ifneq ($(MACOS_OR_WIN32),true)
-BUILD_C_FLAGS += -DSWELL_LICE_GDI -DSWELL_FONTCONFIG -DSWELL_FREETYPE
-BUILD_CXX_FLAGS += -DSWELL_LICE_GDI -DSWELL_FONTCONFIG -DSWELL_FREETYPE
+YSFX_FLAGS += -DSWELL_LICE_GDI -DSWELL_FONTCONFIG -DSWELL_FREETYPE
 endif
 else
-BUILD_CXX_FLAGS += -DYSFX_NO_GFX
+YSFX_FLAGS += -DYSFX_NO_GFX
 endif
+
+BUILD_C_FLAGS += $(YSFX_FLAGS)
+BUILD_CXX_FLAGS += $(YSFX_FLAGS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 

@@ -146,40 +146,6 @@ static CGColorRef CreateColor(int col, float alpha=1.0f)
 
 char g_swell_disable_retina;
 
-int SWELL_IsRetinaHWND(HWND hwnd)
-{
-  if (!hwnd || SWELL_GDI_GetOSXVersion() < 0x1070) return 0;
-
-  int retina_disabled = g_swell_disable_retina;
-  NSWindow *w=NULL;
-  if ([(id)hwnd isKindOfClass:[NSView class]])
-  {
-    if (retina_disabled &&
-        [(id)hwnd isKindOfClass:[SWELL_hwndChild class]] &&
-        ((SWELL_hwndChild*)hwnd)->m_glctx != NULL)
-      retina_disabled = 0;
-
-    w = [(NSView *)hwnd window];
-  }
-  else if ([(id)hwnd isKindOfClass:[NSWindow class]]) w = (NSWindow *)hwnd;
-
-  if (retina_disabled) return 0;
-
-  if (w)
-  {
-    NSRect r=NSMakeRect(0,0,1,1);
-#if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_6
-    NSRect str = [w convertRectToBacking:r];
-#else
-    NSRect (*tmp)(id receiver, SEL operation, NSRect) = (NSRect (*)(id, SEL, NSRect))objc_msgSend_stret;
-    NSRect str = tmp(w,sel_getUid("convertRectToBacking:"),r);
-#endif
-
-    if (str.size.width > 1.9) return 1;
-  }
-  return 0;
-}
-
 int SWELL_IsRetinaDC(HDC hdc)
 {
   if (g_swell_disable_retina) return 0;
@@ -237,7 +203,10 @@ static void *ALIGN_FBUF(void *inbuf)
 
 HDC SWELL_CreateMemContext(HDC hdc, int w, int h)
 {
-  void *buf=calloc(w*4*h+ALIGN_EXTRA,1);
+  // we always allocate an extra row, because StretchBlt() will sometimes pass
+  // rowspan*h to CGDataProviderCreateWithData() with an X offset (and smaller width),
+  // which confuses guard malloc (and is generally possibly unsafe)
+  void *buf=calloc(w*4*(h+1)+ALIGN_EXTRA,1); 
   if (WDL_NOT_NORMALLY(!buf)) return 0;
   CGContextRef c=CGBitmapContextCreate(ALIGN_FBUF(buf),w,h,8,w*4, __GetBitmapColorSpace(), kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host);
   if (WDL_NOT_NORMALLY(!c))
@@ -1817,7 +1786,17 @@ void SWELL_FillDialogBackground(HDC hdc, const RECT *r, int level)
   if (WDL_NORMALLY(ctx))
   {
     bool ok = false;
-    if (SWELL_GDI_GetOSXVersion()>=0x10d0)
+    if (SWELL_osx_is_dark_mode(1))
+    {
+      CGColorRef col = CreateColor(GetSysColor(COLOR_3DFACE));
+      if (col)
+      {
+        CGContextSetFillColorWithColor(ctx, col);
+        CGColorRelease(col);
+        ok = true;
+      }
+    }
+    else if (SWELL_GDI_GetOSXVersion()>=0x10d0)
     {
       NSColor *c = [NSColor windowBackgroundColor];
       if ([c respondsToSelector:@selector(CGColor)])
@@ -2020,16 +1999,23 @@ int AddFontResourceEx(LPCTSTR str, DWORD fl, void *pdv)
 
 bool SWELL_osx_is_dark_mode(int mode) // mode=0 for enabled, 1=allowed
 {
-  static char c;
+  static DWORD lastchk;
+  static char last_res,c;
   if (!c)
   {
-    NSUserDefaults *def = SWELL_GetOSXVersion() >= 0x10d0 ? [NSUserDefaults standardUserDefaults] : NULL;
+    NSUserDefaults *def = SWELL_GDI_GetOSXVersion() >= 0x10d0 ? [NSUserDefaults standardUserDefaults] : NULL;
     c = (def && [def objectForKey:@"NSRequiresAquaSystemAppearance"] && [def boolForKey:@"NSRequiresAquaSystemAppearance"] == NO) ? 1 : -1;
   }
   if (c<0) return false;
   if (mode == 1) return true;
 
-  return [[[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"] isEqualToString:@"Dark"];
+  const DWORD now = GetTickCount();
+  if (!last_res || (now-lastchk) > 1000)
+  {
+    lastchk = now;
+    last_res = [[[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"] isEqualToString:@"Dark"] ? 1 : -1;
+  }
+  return last_res>0;
 }
 
 

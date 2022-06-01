@@ -908,6 +908,14 @@ void ysfx_init(ysfx_t *fx)
     if (!fx->code.compiled)
         return;
 
+    *fx->var.samplesblock = (EEL_F)fx->block_size;
+    *fx->var.srate = fx->sample_rate;
+
+    *fx->var.pdc_delay = 0;
+    *fx->var.pdc_bot_ch = 0;
+    *fx->var.pdc_top_ch = 0;
+    *fx->var.pdc_midi = 0;
+
     if (fx->is_freshly_compiled) {
         ysfx_first_init(fx);
         fx->is_freshly_compiled = false;
@@ -934,19 +942,9 @@ void ysfx_first_init(ysfx_t *fx)
     assert(fx->code.compiled);
     assert(fx->is_freshly_compiled);
 
-    *fx->var.samplesblock = (EEL_F)fx->block_size;
-    *fx->var.srate = fx->sample_rate;
-
-    ysfx_clear_files(fx);
-
     fx->slider.automate_mask.store(0);
     fx->slider.change_mask.store(0);
     ysfx_update_slider_visibility_mask(fx);
-
-    *fx->var.pdc_delay = 0;
-    *fx->var.pdc_bot_ch = 0;
-    *fx->var.pdc_top_ch = 0;
-    *fx->var.pdc_midi = 0;
 }
 
 ysfx_real ysfx_get_pdc_delay(ysfx_t *fx)
@@ -1516,7 +1514,7 @@ void ysfx_gfx_update_mouse(ysfx_t *fx, uint32_t mods, int32_t xpos, int32_t ypos
     (void)xpos;
     (void)ypos;
     (void)buttons;
-    (void)wheel;
+    (void)vwheel;
     (void)hwheel;
 #endif
 }

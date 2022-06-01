@@ -80,7 +80,6 @@ static EEL_F NSEEL_CGEN_CALL ysfx_api_gfx_stub_retval3(void *, EEL_F *, EEL_F *,
 #define ysfx_api_gfx_getimgdim ysfx_api_gfx_stub_retptr3
 #define ysfx_api_gfx_setimgdim ysfx_api_gfx_stub_retval3
 #define ysfx_api_gfx_loadimg ysfx_api_gfx_stub_retval2
-#define ysfx_api_gfx_blit ysfx_api_gfx_stub_retptr3
 #define ysfx_api_gfx_blitext ysfx_api_gfx_stub_retptr3
 #define ysfx_api_gfx_blit2 ysfx_api_gfx_stub_varparm
 #define ysfx_api_gfx_setfont ysfx_api_gfx_stub_varparm
