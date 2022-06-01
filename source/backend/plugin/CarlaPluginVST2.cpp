@@ -413,7 +413,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -421,7 +421,7 @@ public:
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fEffect->setParameter(fEffect, static_cast<int32_t>(parameterId), fixedValue);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
     void setChunkData(const void* const data, const std::size_t dataSize) override
@@ -1425,7 +1425,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                             continue;
                         }
 
@@ -1486,7 +1486,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
@@ -2768,7 +2768,7 @@ private:
             carla_zeroPointers(data, kPluginMaxMidiEvents*2);
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(FixedVstEvents);
+        CARLA_DECLARE_NON_COPYABLE(FixedVstEvents);
     } fEvents;
 
     struct UI {
@@ -2794,7 +2794,7 @@ private:
             }
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(UI);
+        CARLA_DECLARE_NON_COPYABLE(UI);
     } fUI;
 
     int fUnique2;

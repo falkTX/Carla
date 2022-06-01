@@ -371,7 +371,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
@@ -385,7 +385,7 @@ public:
             parameter->setValue(value);
         } CARLA_SAFE_EXCEPTION("setValue(RT)");
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
     void setChunkData(const void* const data, const std::size_t dataSize) override
@@ -1083,7 +1083,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                             continue;
                         }
 
@@ -1144,7 +1144,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
@@ -1189,7 +1189,7 @@ public:
                         }
                         else if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
                         {
-                            uint8_t midiData[3];
+                            uint8_t midiData[2];
                             midiData[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = uint8_t(ctrlEvent.normalizedValue*127.0f + 0.5f);
                             fMidiBuffer.addEvent(midiData, 2, static_cast<int>(event.time));

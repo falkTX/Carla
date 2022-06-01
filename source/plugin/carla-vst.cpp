@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -408,7 +408,7 @@ public:
                 if (kIsUsingUILauncher)
                 {
                     destoryUILauncher(fUiLauncher);
-                    fUiLauncher = createUILauncher((intptr_t)ptr, fDescriptor, fHandle);
+                    fUiLauncher = createUILauncher((uintptr_t)ptr, fDescriptor, fHandle);
                 }
                 else
                 {
@@ -871,7 +871,7 @@ private:
             carla_zeroStructs(mdata, kMaxMidiEvents);
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(FixedVstEvents);
+        CARLA_DECLARE_NON_COPYABLE(FixedVstEvents);
     } fMidiOutEvents;
 
     char* fStateChunk;

@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -81,7 +81,7 @@ struct ExternalGraphPorts {
     uint getPortId(bool isInput, const char portName[], bool* ok = nullptr) const noexcept;
     ExternalGraphPorts() noexcept;
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(ExternalGraphPorts)
+    CARLA_DECLARE_NON_COPYABLE(ExternalGraphPorts)
 };
 
 struct ExternalGraph {
@@ -108,7 +108,7 @@ struct ExternalGraph {
 
     CarlaEngine* const kEngine;
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(ExternalGraph)
+    CARLA_DECLARE_NON_COPYABLE(ExternalGraph)
 };
 
 // -----------------------------------------------------------------------
@@ -134,7 +134,7 @@ struct RackGraph {
         ~Buffers() noexcept;
         void setBufferSize(uint32_t bufferSize, bool createBuffers) noexcept;
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(Buffers)
+        CARLA_DECLARE_NON_COPYABLE(Buffers)
     } audioBuffers;
 
     RackGraph(CarlaEngine* engine, uint32_t inputs, uint32_t outputs) noexcept;
@@ -157,7 +157,7 @@ struct RackGraph {
     void processHelper(CarlaEngine::ProtectedData* data, const float* const* inBuf, float* const* outBuf, uint32_t frames);
 
     CarlaEngine* const kEngine;
-    CARLA_DECLARE_NON_COPY_CLASS(RackGraph)
+    CARLA_DECLARE_NON_COPYABLE(RackGraph)
 };
 
 // -----------------------------------------------------------------------
@@ -219,7 +219,7 @@ private:
     void run() override;
 
     CarlaEngine* const kEngine;
-    CARLA_DECLARE_NON_COPY_CLASS(PatchbayGraph)
+    CARLA_DECLARE_NON_COPYABLE(PatchbayGraph)
 };
 
 // -----------------------------------------------------------------------

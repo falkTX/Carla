@@ -87,7 +87,7 @@ struct CarlaHostStandalone : CarlaHostHandleImpl {
     }
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_STRUCT(CarlaHostStandalone)
+    CARLA_DECLARE_NON_COPYABLE(CarlaHostStandalone)
 };
 
 // --------------------------------------------------------------------------------------------------------------------

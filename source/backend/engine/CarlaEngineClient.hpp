@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -63,7 +63,7 @@ struct CarlaEngineClient::ProtectedData {
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     ProtectedData() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
+    CARLA_DECLARE_NON_COPYABLE(ProtectedData)
 #endif
 };
 
@@ -96,7 +96,7 @@ protected:
         return pData->plugin;
     }
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClientForStandalone)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngineClientForStandalone)
 };
 typedef CarlaEngineClientForStandalone CarlaEngineClientForSubclassing;
 #else
@@ -112,7 +112,7 @@ public:
         delete pData;
     }
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClientForBridge)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngineClientForBridge)
 };
 typedef CarlaEngineClientForBridge CarlaEngineClientForSubclassing;
 #endif

@@ -47,16 +47,20 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
 
         std::vector<water::File> results;
 
-        for (int i=water::File(pluginDir).findChildFiles(results,
-                                                         water::File::findFiles|water::File::ignoreHiddenFiles, false); --i >= 0;)
+        if (const uint count = water::File(pluginDir).findChildFiles(results,
+                                                                     water::File::findFiles|water::File::ignoreHiddenFiles,
+                                                                     false))
         {
-            const water::File& gui(results[i]);
-            const water::String& guiShortName(gui.getFileName());
-
-            if (guiShortName.startsWith(checkLabel) || guiShortName.startsWith(checkSName))
+            for (uint i=0; i<count; ++i)
             {
-                guiFilename = gui.getFullPathName();
-                break;
+                const water::File& gui(results[i]);
+                const water::String& guiShortName(gui.getFileName());
+
+                if (guiShortName.startsWith(checkLabel) || guiShortName.startsWith(checkSName))
+                {
+                    guiFilename = gui.getFullPathName();
+                    break;
+                }
             }
         }
 

@@ -89,7 +89,7 @@ private:
     const char* key;
     const char* origValue;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopedEnvVar)
+    CARLA_DECLARE_NON_COPYABLE(CarlaScopedEnvVar)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
 
@@ -149,7 +149,7 @@ private:
     const char* const oldloc;
 #endif
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopedLocale)
+    CARLA_DECLARE_NON_COPYABLE(CarlaScopedLocale)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
 
@@ -391,7 +391,7 @@ private:
     ValueType& value;
     const ValueType originalValue;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopedValueSetter)
+    CARLA_DECLARE_NON_COPYABLE(CarlaScopedValueSetter)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
 

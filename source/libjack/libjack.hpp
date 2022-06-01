@@ -1,6 +1,6 @@
 /*
  * Carla JACK API for external applications
- * Copyright (C) 2016-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -89,7 +89,7 @@ struct JackMidiPortBufferOnStack : JackMidiPortBufferBase {
         isDummy = false;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(JackMidiPortBufferOnStack)
+    CARLA_DECLARE_NON_COPYABLE(JackMidiPortBufferOnStack)
 };
 
 struct JackMidiPortBufferDummy : JackMidiPortBufferBase {
@@ -99,7 +99,7 @@ struct JackMidiPortBufferDummy : JackMidiPortBufferBase {
         isDummy = true;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(JackMidiPortBufferDummy)
+    CARLA_DECLARE_NON_COPYABLE(JackMidiPortBufferDummy)
 };
 
 struct JackPortState {
@@ -174,7 +174,7 @@ struct JackPortState {
         fullname = nullptr;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(JackPortState)
+    CARLA_DECLARE_NON_COPYABLE(JackPortState)
 };
 
 struct JackClientState {
@@ -289,7 +289,7 @@ struct JackClientState {
         portNameMapping.clear();
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(JackClientState)
+    CARLA_DECLARE_NON_COPYABLE(JackClientState)
 };
 
 struct JackServerState {
@@ -325,7 +325,7 @@ struct JackServerState {
         carla_zeroStruct(position);
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(JackServerState)
+    CARLA_DECLARE_NON_COPYABLE(JackServerState)
 };
 
 CARLA_BACKEND_END_NAMESPACE

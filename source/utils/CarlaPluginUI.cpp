@@ -1165,7 +1165,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         ~ScopedDisplay() { if (display!=nullptr) XCloseDisplay(display); }
         // c++ compat stuff
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(ScopedDisplay)
+        CARLA_DECLARE_NON_COPYABLE(ScopedDisplay)
     };
     struct ScopedFreeData {
         union {
@@ -1177,7 +1177,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         ~ScopedFreeData() { XFree(data); }
         // c++ compat stuff
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(ScopedFreeData)
+        CARLA_DECLARE_NON_COPYABLE(ScopedFreeData)
     };
 
     const ScopedDisplay sd;

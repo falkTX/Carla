@@ -319,12 +319,12 @@ private:
             }
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(InlineDisplay)
+        CARLA_DECLARE_NON_COPYABLE(InlineDisplay)
         CARLA_PREVENT_HEAP_ALLOCATION
     } fInlineDisplay;
 
     PluginClassEND(BigMeterPlugin)
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BigMeterPlugin)
+    CARLA_DECLARE_NON_COPYABLE(BigMeterPlugin)
 };
 
 // -----------------------------------------------------------------------

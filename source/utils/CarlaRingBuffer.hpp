@@ -1,6 +1,6 @@
 /*
  * Carla Ring Buffer
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -443,7 +443,7 @@ private:
     bool fErrorWriting;
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaRingBufferControl)
+    CARLA_DECLARE_NON_COPYABLE(CarlaRingBufferControl)
 };
 
 template <class BufferStruct>
@@ -509,7 +509,7 @@ private:
     HeapBuffer fHeapBuffer;
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaHeapRingBuffer)
+    CARLA_DECLARE_NON_COPYABLE(CarlaHeapRingBuffer)
 };
 
 // -----------------------------------------------------------------------
@@ -528,7 +528,7 @@ private:
     SmallStackBuffer fStackBuffer;
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaSmallStackRingBuffer)
+    CARLA_DECLARE_NON_COPYABLE(CarlaSmallStackRingBuffer)
 };
 
 // -----------------------------------------------------------------------

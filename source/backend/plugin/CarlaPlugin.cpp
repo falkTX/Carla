@@ -75,7 +75,7 @@ struct ParamSymbol {
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     ParamSymbol() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(ParamSymbol)
+    CARLA_DECLARE_NON_COPYABLE(ParamSymbol)
 #endif
 };
 
@@ -573,7 +573,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         {
             pData->stateSave.chunk = CarlaString::asBase64(data, dataSize).dup();
 
-            if (pluginType != PLUGIN_INTERNAL)
+            if (pluginType != PLUGIN_INTERNAL && pluginType != PLUGIN_JSFX)
                 usingChunk = true;
         }
     }
@@ -1672,7 +1672,7 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
                             nullptr);
 }
 
-void CarlaPlugin::setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept
+void CarlaPlugin::setParameterValueRT(const uint32_t parameterId, const float value, uint32_t, const bool sendCallbackLater) noexcept
 {
     pData->postponeParameterChangeRtEvent(sendCallbackLater, static_cast<int32_t>(parameterId), value);
 }

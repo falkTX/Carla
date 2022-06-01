@@ -63,7 +63,7 @@ protected:
 private:
     Callback* const fCallback;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaJackRealtimeThread)
+    CARLA_DECLARE_NON_COPYABLE(CarlaJackRealtimeThread)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ protected:
 private:
     Callback* const fCallback;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaJackNonRealtimeThread)
+    CARLA_DECLARE_NON_COPYABLE(CarlaJackNonRealtimeThread)
 };
 
 // ---------------------------------------------------------------------------------------------------------------------

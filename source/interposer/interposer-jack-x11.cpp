@@ -59,7 +59,7 @@ struct ScopedLibOpen {
         return slo;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(ScopedLibOpen);
+    CARLA_DECLARE_NON_COPYABLE(ScopedLibOpen);
 };
 
 // --------------------------------------------------------------------------------------------------------------------

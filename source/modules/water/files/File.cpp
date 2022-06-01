@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -556,12 +556,12 @@ void File::readLines (StringArray& destLines) const
 }
 
 //==============================================================================
-int File::findChildFiles (std::vector<File>& results,
-                          const int whatToLookFor,
-                          const bool searchRecursively,
-                          const String& wildCardPattern) const
+uint File::findChildFiles (std::vector<File>& results,
+                           const int whatToLookFor,
+                           const bool searchRecursively,
+                           const String& wildCardPattern) const
 {
-    int total = 0;
+    uint total = 0;
 
     for (DirectoryIterator di (*this, searchRecursively, wildCardPattern, whatToLookFor); di.next();)
     {
@@ -572,9 +572,9 @@ int File::findChildFiles (std::vector<File>& results,
     return total;
 }
 
-int File::getNumberOfChildFiles (const int whatToLookFor, const String& wildCardPattern) const
+uint File::getNumberOfChildFiles (const int whatToLookFor, const String& wildCardPattern) const
 {
-    int total = 0;
+    uint total = 0;
 
     for (DirectoryIterator di (*this, false, wildCardPattern, whatToLookFor); di.next();)
         ++total;
@@ -1216,7 +1216,7 @@ private:
     const String directoryWithWildCard;
     HANDLE handle;
 
-    CARLA_DECLARE_NON_COPY_CLASS (Pimpl)
+    CARLA_DECLARE_NON_COPYABLE (Pimpl)
 };
 #else
 //=====================================================================================================================
@@ -1542,7 +1542,7 @@ private:
     String parentDir, wildCard;
     NSDirectoryEnumerator* enumerator;
 
-    CARLA_DECLARE_NON_COPY_CLASS (Pimpl)
+    CARLA_DECLARE_NON_COPYABLE (Pimpl)
 };
 #else
 static String getLinkedFile (const String& file)
@@ -1689,7 +1689,7 @@ private:
     String parentDir, wildCard;
     DIR* dir;
 
-    CARLA_DECLARE_NON_COPY_CLASS (Pimpl)
+    CARLA_DECLARE_NON_COPYABLE (Pimpl)
 };
 #endif
 #endif

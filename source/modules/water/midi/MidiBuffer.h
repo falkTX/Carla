@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -222,7 +222,7 @@ public:
         const MidiBuffer& buffer;
         const uint8* data;
 
-        CARLA_DECLARE_NON_COPY_CLASS (Iterator)
+        CARLA_DECLARE_NON_COPYABLE (Iterator)
     };
 
     /** The raw data holding this buffer.

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin
- * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -171,7 +171,7 @@ struct NativePluginMidiOutData {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(NativePluginMidiOutData)
+    CARLA_DECLARE_NON_COPYABLE(NativePluginMidiOutData)
 };
 
 struct NativePluginMidiInData : NativePluginMidiOutData {
@@ -236,7 +236,7 @@ struct NativePluginMidiInData : NativePluginMidiOutData {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(NativePluginMidiInData)
+    CARLA_DECLARE_NON_COPYABLE(NativePluginMidiInData)
 };
 
 // -----------------------------------------------------
@@ -764,7 +764,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->set_parameter_value != nullptr,);
@@ -779,7 +779,7 @@ public:
         if (fHandle2 != nullptr)
             fDescriptor->set_parameter_value(fHandle2, parameterId, fixedValue);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
@@ -1990,7 +1990,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                             continue;
                         }
 
@@ -2050,7 +2050,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)

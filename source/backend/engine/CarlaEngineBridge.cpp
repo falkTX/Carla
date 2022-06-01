@@ -88,7 +88,7 @@ protected:
 private:
     LatencyChangedCallback* const fLatencyCallback;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineBridgeClient)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngineBridgeClient)
 };
 
 // -------------------------------------------------------------------

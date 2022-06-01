@@ -22,16 +22,10 @@
 #include "CarlaDefines.h"
 #include "CarlaBackend.h"
 #include "CarlaUtils.hpp"
-#include "CarlaString.hpp"
-#include "CarlaBase64Utils.hpp"
 #include "CarlaJuceUtils.hpp"
 
 #include "water/files/File.h"
-#include "water/files/FileInputStream.h"
-#include "water/xml/XmlElement.h"
-#include "water/xml/XmlDocument.h"
-#include "water/streams/MemoryInputStream.h"
-#include "water/streams/MemoryOutputStream.h"
+#include "water/text/String.h"
 
 #ifdef YSFX_API
 # error YSFX_API is not private
@@ -44,10 +38,9 @@ CARLA_BACKEND_START_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-class CarlaJsfxLogging
+struct CarlaJsfxLogging
 {
-public:
-    static void logAll(intptr_t, ysfx_log_level level, const char *message)
+    static void logAll(intptr_t, const ysfx_log_level level, const char* const message)
     {
         switch (level)
         {
@@ -55,21 +48,25 @@ public:
             carla_stdout("%s: %s", ysfx_log_level_string(level), message);
             break;
         case ysfx_log_warning:
-        case ysfx_log_error:
             carla_stderr("%s: %s", ysfx_log_level_string(level), message);
+            break;
+        case ysfx_log_error:
+            carla_stderr2("%s: %s", ysfx_log_level_string(level), message);
             break;
         }
     };
 
-    static void logErrorsOnly(intptr_t, ysfx_log_level level, const char *message)
+    static void logErrorsOnly(intptr_t, const ysfx_log_level level, const char* const message)
     {
         switch (level)
         {
         case ysfx_log_info:
             break;
         case ysfx_log_warning:
-        case ysfx_log_error:
             carla_stderr("%s: %s", ysfx_log_level_string(level), message);
+            break;
+        case ysfx_log_error:
+            carla_stderr2("%s: %s", ysfx_log_level_string(level), message);
             break;
         }
     };
@@ -77,24 +74,25 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------
 
-class CarlaJsfxCategories
+struct CarlaJsfxCategories
 {
-public:
     static PluginCategory getFromEffect(ysfx_t* effect)
     {
         PluginCategory category = PLUGIN_CATEGORY_OTHER;
 
-        water::Array<const char*> tags;
-        int tagCount = (int)ysfx_get_tags(effect, nullptr, 0);
-        tags.resize(tagCount);
-        ysfx_get_tags(effect, tags.getRawDataPointer(), (uint32_t)tagCount);
-
-        for (int i = 0; i < tagCount && category == PLUGIN_CATEGORY_OTHER; ++i)
+        if (const uint32_t tagCount = ysfx_get_tags(effect, nullptr, 0))
         {
-            water::CharPointer_UTF8 tag(tags[i]);
-            PluginCategory current = getFromTag(tag);
-            if (current != PLUGIN_CATEGORY_NONE)
-                category = current;
+            std::vector<const char*> tags;
+            tags.resize(tagCount);
+            ysfx_get_tags(effect, tags.data(), tagCount);
+
+            for (uint32_t i=0; i<tagCount && category == PLUGIN_CATEGORY_OTHER; ++i)
+            {
+                water::CharPointer_UTF8 tag(tags[i]);
+                PluginCategory current = getFromTag(tag);
+                if (current != PLUGIN_CATEGORY_NONE)
+                    category = current;
+            }
         }
 
         return category;
@@ -130,124 +128,54 @@ public:
     }
 };
 
-// -------------------------------------------------------------------------------------------------------------------
-
-class CarlaJsfxState
-{
-public:
-    static water::String convertToString(ysfx_state_t &state)
-    {
-        water::XmlElement root("JSFXState");
-
-        for (uint32_t i = 0; i < state.slider_count; ++i)
-        {
-            water::XmlElement *slider = new water::XmlElement("Slider");
-            slider->setAttribute("index", (int32_t)state.sliders[i].index);
-            slider->setAttribute("value", state.sliders[i].value);
-            root.addChildElement(slider);
-        }
-
-        {
-            const CarlaString base64 = CarlaString::asBase64(state.data, state.data_size);
-            water::XmlElement *var = new water::XmlElement("Serialization");
-            var->addTextElement(base64.buffer());
-            root.addChildElement(var);
-        }
-
-        water::MemoryOutputStream stream;
-        root.writeToStream(stream, water::StringRef(), true);
-        return stream.toUTF8();
-    }
-
-    static ysfx_state_u convertFromString(const water::String& string)
-    {
-        std::unique_ptr<water::XmlElement> root(water::XmlDocument::parse(string));
-
-        CARLA_SAFE_ASSERT_RETURN(root != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(root->getTagName() == "JSFXState", nullptr);
-
-        std::vector<ysfx_state_slider_t> sliders;
-        std::vector<uint8_t> serialization;
-
-        sliders.reserve(ysfx_max_sliders);
-
-        int numChildren = root->getNumChildElements();
-        for (int i = 0; i < numChildren; ++i)
-        {
-            water::XmlElement* child = root->getChildElement(i);
-            CARLA_SAFE_ASSERT_CONTINUE(child != nullptr);
-
-            if (child->getTagName() == "Slider")
-            {
-                CARLA_SAFE_ASSERT_CONTINUE(child->hasAttribute("index"));
-                CARLA_SAFE_ASSERT_CONTINUE(child->hasAttribute("value"));
-
-                ysfx_state_slider_t item;
-                int32_t index = child->getIntAttribute("index");
-                CARLA_SAFE_ASSERT_CONTINUE(index >= 0 && index < ysfx_max_sliders);
-
-                item.index = (uint32_t)index;
-                item.value = child->getDoubleAttribute("value");
-                sliders.push_back(item);
-            }
-            else if (child->getTagName() == "Serialization")
-            {
-                serialization = carla_getChunkFromBase64String(child->getAllSubText().toRawUTF8());
-            }
-            else
-            {
-                CARLA_SAFE_ASSERT_CONTINUE(false);
-            }
-        }
-
-        ysfx_state_t state;
-        state.sliders = sliders.data();
-        state.slider_count = (uint32_t)sliders.size();
-        state.data = serialization.data();
-        state.data_size = (uint32_t)serialization.size();
-
-        return ysfx_state_u(ysfx_state_dup(&state));
-    }
-};
-
 // --------------------------------------------------------------------------------------------------------------------
 
 class CarlaJsfxUnit
 {
-public:
-    CarlaJsfxUnit() = default;
-
-    CarlaJsfxUnit(const water::File& rootPath, const water::File& filePath)
-        : fRootPath(rootPath), fFileId(filePath.getRelativePathFrom(rootPath))
+    static water::String createFileId(const water::File& rootPath, const water::File& filePath)
     {
+        water::String fileId(filePath.getRelativePathFrom(rootPath));
 #ifdef CARLA_OS_WIN
-        fFileId.replaceCharacter('\\', '/');
+        fileId.replaceCharacter('\\', '/');
 #endif
+        return fileId;
     }
 
-    explicit operator bool() const
+public:
+    CarlaJsfxUnit() noexcept
+        : fFileId(),
+          fFilePath(),
+          fRootPath() {}
+
+    CarlaJsfxUnit(const water::File& rootPath, const water::File& filePath)
+        : fFileId(createFileId(rootPath, filePath)),
+          fFilePath(rootPath.getChildFile(fFileId).getFullPathName()),
+          fRootPath(rootPath.getFullPathName()) {}
+
+    explicit operator bool() const noexcept
     {
         return fFileId.isNotEmpty();
     }
 
-    const water::File& getRootPath() const
-    {
-        return fRootPath;
-    }
-
-    const water::String& getFileId() const
+    const water::String& getFileId() const noexcept
     {
         return fFileId;
     }
 
-    water::File getFilePath() const
+    const water::String& getFilePath() const noexcept
     {
-        return fRootPath.getChildFile(fFileId);
+        return fFilePath;
+    }
+
+    const water::String& getRootPath() const noexcept
+    {
+        return fRootPath;
     }
 
 private:
-    water::File fRootPath;
     water::String fFileId;
+    water::String fFilePath;
+    water::String fRootPath;
 };
 
 // --------------------------------------------------------------------------------------------------------------------

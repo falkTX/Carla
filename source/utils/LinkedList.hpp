@@ -1,6 +1,6 @@
 /*
  * High-level, templated, C++ doubly-linked list
- * Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -508,7 +508,7 @@ private:
     template<typename> friend class RtLinkedList;
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(AbstractLinkedList)
+    CARLA_DECLARE_NON_COPYABLE(AbstractLinkedList)
 };
 
 // -----------------------------------------------------------------------
@@ -532,7 +532,7 @@ protected:
     }
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(LinkedList)
+    CARLA_DECLARE_NON_COPYABLE(LinkedList)
 };
 
 // -----------------------------------------------------------------------

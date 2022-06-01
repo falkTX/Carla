@@ -1,6 +1,6 @@
 /*
  * Carla binary utils
- * Copyright (C) 2014-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -66,7 +66,7 @@ private:
     bool fLoadedOk;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaMagic)
+    CARLA_DECLARE_NON_COPYABLE(CarlaMagic)
 };
 #endif
 

@@ -74,7 +74,7 @@ private:
     jackbridge_exported_function_type func;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(JackBridgeExported);
+    CARLA_DECLARE_NON_COPYABLE(JackBridgeExported);
 };
 
 // -----------------------------------------------------------------------------

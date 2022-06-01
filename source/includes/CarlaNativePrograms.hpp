@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API (C++)
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -65,9 +65,9 @@ struct NativePluginPresetManager {
         {
             std::vector<File> results;
 
-            if (const int count = File(*it).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard))
+            if (const uint count = File(*it).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard))
             {
-                for (int i=0; i<count; ++i)
+                for (uint i=0; i<count; ++i)
                     filenames.add(results[i].getFullPathName());
             }
         }

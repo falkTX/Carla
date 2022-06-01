@@ -41,7 +41,7 @@ public:
     QStringList keys() const override;
 #endif
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaStylePlugin);
+    CARLA_DECLARE_NON_COPYABLE(CarlaStylePlugin);
 };
 
 #endif // CARLA_STYLE_PLUGIN_HPP_INCLUDED

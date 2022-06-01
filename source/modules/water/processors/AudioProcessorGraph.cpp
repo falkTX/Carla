@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2015 ROLI Ltd.
-   Copyright (C) 2017-2020 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the GNU
    General Public License as published by the Free Software Foundation;
@@ -74,7 +74,7 @@ struct ClearChannelOp  : public AudioGraphRenderingOp<ClearChannelOp>
     const int channelNum;
     const bool isCV;
 
-    CARLA_DECLARE_NON_COPY_CLASS (ClearChannelOp)
+    CARLA_DECLARE_NON_COPYABLE (ClearChannelOp)
 };
 
 //==============================================================================
@@ -97,7 +97,7 @@ struct CopyChannelOp  : public AudioGraphRenderingOp<CopyChannelOp>
     const int srcChannelNum, dstChannelNum;
     const bool isCV;
 
-    CARLA_DECLARE_NON_COPY_CLASS (CopyChannelOp)
+    CARLA_DECLARE_NON_COPYABLE (CopyChannelOp)
 };
 
 //==============================================================================
@@ -120,7 +120,7 @@ struct AddChannelOp  : public AudioGraphRenderingOp<AddChannelOp>
     const int srcChannelNum, dstChannelNum;
     const bool isCV;
 
-    CARLA_DECLARE_NON_COPY_CLASS (AddChannelOp)
+    CARLA_DECLARE_NON_COPYABLE (AddChannelOp)
 };
 
 //==============================================================================
@@ -137,7 +137,7 @@ struct ClearMidiBufferOp  : public AudioGraphRenderingOp<ClearMidiBufferOp>
 
     const int bufferNum;
 
-    CARLA_DECLARE_NON_COPY_CLASS (ClearMidiBufferOp)
+    CARLA_DECLARE_NON_COPYABLE (ClearMidiBufferOp)
 };
 
 //==============================================================================
@@ -156,7 +156,7 @@ struct CopyMidiBufferOp  : public AudioGraphRenderingOp<CopyMidiBufferOp>
 
     const int srcBufferNum, dstBufferNum;
 
-    CARLA_DECLARE_NON_COPY_CLASS (CopyMidiBufferOp)
+    CARLA_DECLARE_NON_COPYABLE (CopyMidiBufferOp)
 };
 
 //==============================================================================
@@ -176,7 +176,7 @@ struct AddMidiBufferOp  : public AudioGraphRenderingOp<AddMidiBufferOp>
 
     const int srcBufferNum, dstBufferNum;
 
-    CARLA_DECLARE_NON_COPY_CLASS (AddMidiBufferOp)
+    CARLA_DECLARE_NON_COPYABLE (AddMidiBufferOp)
 };
 
 //==============================================================================
@@ -217,7 +217,7 @@ private:
     int readIndex, writeIndex;
     const bool isCV;
 
-    CARLA_DECLARE_NON_COPY_CLASS (DelayChannelOp)
+    CARLA_DECLARE_NON_COPYABLE (DelayChannelOp)
 };
 
 //==============================================================================
@@ -306,7 +306,7 @@ private:
     const uint totalCVOuts;
     const int midiBufferToUse;
 
-    CARLA_DECLARE_NON_COPY_CLASS (ProcessBufferOp)
+    CARLA_DECLARE_NON_COPYABLE (ProcessBufferOp)
 };
 
 //==============================================================================
@@ -956,7 +956,7 @@ private:
         }
     }
 
-    CARLA_DECLARE_NON_COPY_CLASS (RenderingOpSequenceCalculator)
+    CARLA_DECLARE_NON_COPYABLE (RenderingOpSequenceCalculator)
 };
 
 //==============================================================================
@@ -998,7 +998,7 @@ private:
         const uint32 destNodeId;
         SortedSet<uint32> srcNodes;
 
-        CARLA_DECLARE_NON_COPY_CLASS (Entry)
+        CARLA_DECLARE_NON_COPYABLE (Entry)
     };
 
     OwnedArray<Entry> entries;
@@ -1067,7 +1067,7 @@ private:
         return result;
     }
 
-    CARLA_DECLARE_NON_COPY_CLASS (ConnectionLookupTable)
+    CARLA_DECLARE_NON_COPYABLE (ConnectionLookupTable)
 };
 
 //==============================================================================

@@ -1,6 +1,6 @@
 /*
  * JackBridge (Part 1, JACK functions)
- * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -554,7 +554,7 @@ struct JackBridge {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(JackBridge);
+    CARLA_DECLARE_NON_COPYABLE(JackBridge);
 };
 
 // -----------------------------------------------------------------------------
@@ -773,7 +773,7 @@ struct WineBridge {
         return getInstance().prop_change_cb(subject, key, change, arg);
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(WineBridge);
+    CARLA_DECLARE_NON_COPYABLE(WineBridge);
 };
 
 #endif // __WINE__ && ! JACKBRIDGE_DIRECT

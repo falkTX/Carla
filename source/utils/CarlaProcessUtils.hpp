@@ -1,6 +1,6 @@
 /*
  * Carla process utils
- * Copyright (C) 2019-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2019-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -116,7 +116,7 @@ private:
     static void sig_handler(const int signum);
 #endif
 
-    CARLA_DECLARE_NON_COPY_CLASS(ScopedAbortCatcher)
+    CARLA_DECLARE_NON_COPYABLE(ScopedAbortCatcher)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
 
@@ -133,7 +133,7 @@ private:
     struct ::sigaction sigs[16];
 #endif
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaSignalRestorer)
+    CARLA_DECLARE_NON_COPYABLE(CarlaSignalRestorer)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
 

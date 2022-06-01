@@ -771,7 +771,7 @@ private:
     EngineEvent* fBuffer;
     EngineEvent* fBufferToDeleteLater;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineJackCVSourcePorts)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngineJackCVSourcePorts)
 };
 #endif
 

@@ -57,13 +57,13 @@
     ::LeakedObjectDetector<ClassName> CARLA_JOIN_MACRO(leakDetector_, ClassName);
 
 # define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ClassName) \
-    CARLA_DECLARE_NON_COPY_CLASS(ClassName)                       \
+    CARLA_DECLARE_NON_COPYABLE(ClassName)                       \
     CARLA_LEAK_DETECTOR(ClassName)
 #else
 /** Don't use leak detection on release builds. */
 # define CARLA_LEAK_DETECTOR(ClassName)
 # define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ClassName) \
-    CARLA_DECLARE_NON_COPY_CLASS(ClassName)
+    CARLA_DECLARE_NON_COPYABLE(ClassName)
 #endif
 
 //=====================================================================================================================

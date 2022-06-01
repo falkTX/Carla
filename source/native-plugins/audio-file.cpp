@@ -751,7 +751,7 @@ private:
             }
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(InlineDisplay)
+        CARLA_DECLARE_NON_COPYABLE(InlineDisplay)
         CARLA_PREVENT_HEAP_ALLOCATION
     } fInlineDisplay;
 #endif

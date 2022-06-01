@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2015 ROLI Ltd.
-   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the GNU
    General Public License as published by the Free Software Foundation;
@@ -323,7 +323,7 @@ private:
     uint numCVIns, numCVOuts;
     uint numMIDIIns, numMIDIOuts;
 
-    CARLA_DECLARE_NON_COPY_CLASS (AudioProcessor)
+    CARLA_DECLARE_NON_COPYABLE (AudioProcessor)
 };
 
 }

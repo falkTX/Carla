@@ -99,11 +99,11 @@ static void findSFZs(const char* const sfzPaths)
 }
 // -------------------------------------------------------------------------------------------------------------------
 
-static water::Array<CB::CarlaJsfxUnit> gJSFXs;
+static std::vector<CB::CarlaJsfxUnit> gJSFXs;
 
 static void findJSFXs(const char* const jsfxPaths)
 {
-    gJSFXs.clearQuick();
+    gJSFXs.clear();
 
     CARLA_SAFE_ASSERT_RETURN(jsfxPaths != nullptr,);
 
@@ -119,12 +119,14 @@ static void findJSFXs(const char* const jsfxPaths)
 
         if (path.findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*") > 0)
         {
-            for (std::vector<water::File>::iterator it=results.begin(), end=results.end(); it != end; ++it)
+            gJSFXs.reserve(gJSFXs.size() + results.size());
+
+            for (std::vector<water::File>::iterator it2=results.begin(), end2=results.end(); it2 != end2; ++it2)
             {
-                const water::File& file(*it);
+                const water::File& file(*it2);
                 const water::String fileExt = file.getFileExtension();
                 if (fileExt.isEmpty() || fileExt.equalsIgnoreCase(".jsfx"))
-                    gJSFXs.add(CB::CarlaJsfxUnit(path, file));
+                    gJSFXs.push_back(CB::CarlaJsfxUnit(path, file));
             }
         }
     }
@@ -669,8 +671,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CB::CarlaJsfxUn
 
     ysfx_config_u config(ysfx_config_new());
 
-    const water::String rootPath = unit.getRootPath().getFullPathName();
-    const water::String filePath = unit.getFilePath().getFullPathName();
+    const water::String rootPath = unit.getRootPath();
+    const water::String filePath = unit.getFilePath();
 
     ysfx_register_builtin_audio_formats(config.get());
     ysfx_set_import_root(config.get(), rootPath.toRawUTF8());
@@ -821,7 +823,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
     case CB::PLUGIN_JSFX: {
         CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gJSFXs.size()));
-        return get_cached_plugin_jsfx(gJSFXs.getUnchecked(static_cast<int>(index)));
+        return get_cached_plugin_jsfx(gJSFXs[index]);
     }
 
     default:

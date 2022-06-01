@@ -115,7 +115,7 @@ private:
     const NativePluginHandle handle;
     PluginWindow& pluginWindow;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaButtonWidget);
+    CARLA_DECLARE_NON_COPYABLE(CarlaButtonWidget);
 };
 
 END_NAMESPACE_DGL

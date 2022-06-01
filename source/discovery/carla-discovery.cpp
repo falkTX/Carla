@@ -1523,7 +1523,7 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
 #endif
 
     carla_v3_host_application hostApplication;
-    carla_v3_host_application* const hostApplicationPtr = &hostApplication;
+    carla_v3_host_application* hostApplicationPtr = &hostApplication;
     v3_funknown** const hostContext = (v3_funknown**)&hostApplicationPtr;
 
     // fetch initial factory
@@ -1737,8 +1737,8 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, true) == V3_OK);
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->set_processing(processor, true) == V3_OK);
 
-            float* bufferAudioIn[std::max(1, audioIns + cvIns)];
-            float* bufferAudioOut[std::max(1, audioOuts + cvOuts)];
+            float* bufferAudioIn[(uint)std::max(1, audioIns + cvIns)];
+            float* bufferAudioOut[(uint)std::max(1, audioOuts + cvOuts)];
 
             if (audioIns + cvIns == 0)
             {

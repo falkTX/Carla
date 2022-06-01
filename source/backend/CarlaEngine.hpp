@@ -293,14 +293,14 @@ struct CARLA_API EngineOptions {
 
         Wine() noexcept;
         ~Wine() noexcept;
-        CARLA_DECLARE_NON_COPY_STRUCT(Wine)
+        CARLA_DECLARE_NON_COPYABLE(Wine)
     } wine;
 #endif
 
 #ifndef DOXYGEN
     EngineOptions() noexcept;
     ~EngineOptions() noexcept;
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineOptions)
+    CARLA_DECLARE_NON_COPYABLE(EngineOptions)
 #endif
 };
 
@@ -426,7 +426,7 @@ protected:
     const bool     kIsInput;
     const uint32_t kIndexOffset;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEnginePort)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEnginePort)
 #endif
 };
 
@@ -473,7 +473,7 @@ public:
 protected:
     float* fBuffer;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineAudioPort)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngineAudioPort)
 #endif
 };
 
@@ -535,7 +535,7 @@ protected:
     float* fBuffer;
     float fMinimum, fMaximum;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineCVPort)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngineCVPort)
 #endif
 };
 
@@ -626,7 +626,7 @@ protected:
     friend class CarlaPluginInstance;
     friend class CarlaEngineCVSourcePorts;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineEventPort)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngineEventPort)
 #endif
 };
 
@@ -682,7 +682,7 @@ protected:
      */
     CarlaEngineCVSourcePorts();
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineCVSourcePorts)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngineCVSourcePorts)
 #endif
 };
 
@@ -795,7 +795,7 @@ protected:
      */
     CarlaEngineClient(ProtectedData* pData);
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClient)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngineClient)
 #endif
 };
 
@@ -1387,7 +1387,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngine)
+    CARLA_DECLARE_NON_COPYABLE(CarlaEngine)
 };
 
 /**@}*/

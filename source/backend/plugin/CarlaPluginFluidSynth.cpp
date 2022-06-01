@@ -424,11 +424,11 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
     {
         const float fixedValue = setParameterValueInFluidSynth(parameterId, value);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
     float setParameterValueInFluidSynth(const uint32_t parameterId, const float value) noexcept
@@ -1299,7 +1299,7 @@ public:
                                 continue;
 
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)

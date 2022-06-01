@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -136,7 +136,7 @@ private:
         friend class DirectoryIterator;
         CarlaScopedPointer<Pimpl> pimpl;
 
-        CARLA_DECLARE_NON_COPY_CLASS (NativeIterator)
+        CARLA_DECLARE_NON_COPYABLE (NativeIterator)
     };
 
     StringArray wildCards;
@@ -153,7 +153,7 @@ private:
     static StringArray parseWildcards (const String& pattern);
     static bool fileMatches (const StringArray& wildCards, const String& filename);
 
-    CARLA_DECLARE_NON_COPY_CLASS (DirectoryIterator)
+    CARLA_DECLARE_NON_COPYABLE (DirectoryIterator)
 };
 
 }

@@ -586,7 +586,7 @@ public:
     /*!
      * Overloaded function, to be called from within RT context only.
      */
-    virtual void setParameterValueRT(uint32_t parameterId, float value, bool sendCallbackLater) noexcept;
+    virtual void setParameterValueRT(uint32_t parameterId, float value, uint32_t frameOffset, bool sendCallbackLater) noexcept;
 
     /*!
      * Set a plugin's parameter value, including internal parameters.
@@ -1040,7 +1040,7 @@ protected:
         bool fWasEnabled;
 
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(ScopedDisabler)
+        CARLA_DECLARE_NON_COPYABLE(ScopedDisabler)
     };
 
     /*!
@@ -1059,12 +1059,12 @@ protected:
         const bool fBlock;
 
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(ScopedSingleProcessLocker)
+        CARLA_DECLARE_NON_COPYABLE(ScopedSingleProcessLocker)
     };
 
     friend class CarlaEngine;
     friend class CarlaEngineBridge;
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaPlugin)
+    CARLA_DECLARE_NON_COPYABLE(CarlaPlugin)
 };
 
 /**@}*/

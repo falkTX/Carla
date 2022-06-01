@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 - ROLI Ltd.
-   Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -93,7 +93,7 @@ private:
 
     void createInternalCopy();
 
-    CARLA_DECLARE_NON_COPY_CLASS (MemoryInputStream)
+    CARLA_DECLARE_NON_COPYABLE (MemoryInputStream)
 };
 
 }

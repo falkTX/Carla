@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -126,7 +126,7 @@ private:
     //==============================================================================
     Atomic<int> refCount;
 
-    CARLA_DECLARE_NON_COPY_CLASS (ReferenceCountedObject)
+    CARLA_DECLARE_NON_COPYABLE (ReferenceCountedObject)
 };
 
 
@@ -196,7 +196,7 @@ private:
     //==============================================================================
     int refCount;
 
-    CARLA_DECLARE_NON_COPY_CLASS (SingleThreadedReferenceCountedObject)
+    CARLA_DECLARE_NON_COPYABLE (SingleThreadedReferenceCountedObject)
 };
 
 

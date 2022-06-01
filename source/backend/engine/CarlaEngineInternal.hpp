@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -64,7 +64,7 @@ struct EngineInternalEvents {
     ~EngineInternalEvents() noexcept;
     void clear() noexcept;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalEvents)
+    CARLA_DECLARE_NON_COPYABLE(EngineInternalEvents)
 };
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -137,7 +137,7 @@ private:
     CarlaEngine* const kEngine;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalGraph)
+    CARLA_DECLARE_NON_COPYABLE(EngineInternalGraph)
 };
 #endif // BUILD_BRIDGE_ALTERNATIVE_ARCH
 
@@ -174,7 +174,7 @@ private:
 
         Hylia();
         ~Hylia();
-        CARLA_DECLARE_NON_COPY_STRUCT(Hylia)
+        CARLA_DECLARE_NON_COPYABLE(Hylia)
     } hylia;
 #endif
 
@@ -188,7 +188,7 @@ private:
     friend class CarlaEngineJack;
     void fillJackTimeInfo(jack_position_t* pos, uint32_t newFrames) noexcept;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalTime)
+    CARLA_DECLARE_NON_COPYABLE(EngineInternalTime)
 };
 
 // -----------------------------------------------------------------------
@@ -218,7 +218,7 @@ struct EngineNextAction {
     ~EngineNextAction() noexcept;
     void clearAndReset() noexcept;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineNextAction)
+    CARLA_DECLARE_NON_COPYABLE(EngineNextAction)
 };
 
 // -----------------------------------------------------------------------
@@ -323,7 +323,7 @@ struct CarlaEngine::ProtectedData {
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     ProtectedData() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
+    CARLA_DECLARE_NON_COPYABLE(ProtectedData)
 #endif
 };
 
@@ -342,7 +342,7 @@ private:
     int64_t prevTime;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(PendingRtEventsRunner)
+    CARLA_DECLARE_NON_COPYABLE(PendingRtEventsRunner)
 };
 
 // -----------------------------------------------------------------------
@@ -357,7 +357,7 @@ private:
     CarlaEngine::ProtectedData* const pData;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(ScopedActionLock)
+    CARLA_DECLARE_NON_COPYABLE(ScopedActionLock)
 };
 
 // -----------------------------------------------------------------------
@@ -373,7 +373,7 @@ private:
     CarlaEngine::ProtectedData* const pData;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(ScopedThreadStopper)
+    CARLA_DECLARE_NON_COPYABLE(ScopedThreadStopper)
 };
 
 // -----------------------------------------------------------------------

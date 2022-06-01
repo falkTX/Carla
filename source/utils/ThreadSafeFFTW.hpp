@@ -1,6 +1,6 @@
 /*
  * Thread-safe fftw
- * Copyright (C) 2018-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -87,7 +87,7 @@ private:
     lib_t libfftw3l;
     lib_t libfftw3q;
 
-    CARLA_DECLARE_NON_COPY_CLASS(ThreadSafeFFTW)
+    CARLA_DECLARE_NON_COPYABLE(ThreadSafeFFTW)
 };
 #endif
 

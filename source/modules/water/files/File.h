@@ -494,10 +494,10 @@ public:
 
         @see getNumberOfChildFiles, DirectoryIterator
     */
-    int findChildFiles (std::vector<File>& results,
-                        int whatToLookFor,
-                        bool searchRecursively,
-                        const String& wildCardPattern = "*") const;
+    uint findChildFiles (std::vector<File>& results,
+                         int whatToLookFor,
+                         bool searchRecursively,
+                         const String& wildCardPattern = "*") const;
 
     /** Searches inside a directory and counts how many files match a wildcard pattern.
 
@@ -515,8 +515,8 @@ public:
         @returns                the number of matches found
         @see findChildFiles, DirectoryIterator
     */
-    int getNumberOfChildFiles (int whatToLookFor,
-                               const String& wildCardPattern = "*") const;
+    uint getNumberOfChildFiles (int whatToLookFor,
+                                const String& wildCardPattern = "*") const;
 
     /** Returns true if this file is a directory that contains one or more subdirectories.
         @see isDirectory, findChildFiles

@@ -1,6 +1,6 @@
 /*
  * Custom types to store LV2 information
- * Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -378,7 +378,7 @@ struct LV2_RDF_PortUnit {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_PortUnit)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_PortUnit)
 };
 
 // Port Scale Point
@@ -399,7 +399,7 @@ struct LV2_RDF_PortScalePoint {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_PortScalePoint)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_PortScalePoint)
 };
 
 // Port
@@ -465,7 +465,7 @@ struct LV2_RDF_Port {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Port)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_Port)
 };
 
 // Port
@@ -493,7 +493,7 @@ struct LV2_RDF_PortGroup {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_PortGroup)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_PortGroup)
 };
 
 // Parameter
@@ -568,7 +568,7 @@ struct LV2_RDF_Parameter {
         other.Unit.Symbol = nullptr;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Parameter)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_Parameter)
 };
 
 // Preset
@@ -594,7 +594,7 @@ struct LV2_RDF_Preset {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Preset)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_Preset)
 };
 
 // Feature
@@ -615,7 +615,7 @@ struct LV2_RDF_Feature {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Feature)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_Feature)
 };
 
 // Port Notification
@@ -638,7 +638,7 @@ struct LV2_RDF_UI_PortNotification {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_UI_PortNotification)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_UI_PortNotification)
 };
 
 // UI
@@ -711,7 +711,7 @@ struct LV2_RDF_UI {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_UI)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_UI)
 };
 
 // Plugin Descriptor
@@ -849,7 +849,7 @@ struct LV2_RDF_Descriptor {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Descriptor)
+    CARLA_DECLARE_NON_COPYABLE(LV2_RDF_Descriptor)
 };
 
 #endif // LV2_RDF_HPP_INCLUDED

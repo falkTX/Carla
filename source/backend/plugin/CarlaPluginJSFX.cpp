@@ -49,12 +49,19 @@ class CarlaPluginJSFX : public CarlaPlugin
 public:
     CarlaPluginJSFX(CarlaEngine* const engine, const uint id) noexcept
         : CarlaPlugin(engine, id),
+          fEffect(nullptr),
+          fEffectState(nullptr),
+          fUnit(),
+          fChunkText(),
+          fTransportValues(),
           fMapOfSliderToParameter(ysfx_max_sliders, -1)
     {
         carla_debug("CarlaPluginJSFX::CarlaPluginJSFX(%p, %i)", engine, id);
+
+        carla_zeroStruct(fTransportValues);
     }
 
-    ~CarlaPluginJSFX()
+    ~CarlaPluginJSFX() noexcept override
     {
         carla_debug("CarlaPluginJSFX::~CarlaPluginJSFX()");
 
@@ -71,6 +78,9 @@ public:
         }
 
         clearBuffers();
+
+        ysfx_state_free(fEffectState);
+        ysfx_free(fEffect);
     }
 
     // -------------------------------------------------------------------
@@ -85,15 +95,15 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, CarlaPlugin::getCategory());
 
-        return CarlaJsfxCategories::getFromEffect(fEffect.get());
+        return CarlaJsfxCategories::getFromEffect(fEffect);
     }
 
     uint32_t getLatencyInFrames() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 
-        ysfx_real sampleRate = ysfx_get_sample_rate(fEffect.get());
-        ysfx_real latencyInSeconds = ysfx_get_pdc_delay(fEffect.get());
+        ysfx_real sampleRate = ysfx_get_sample_rate(fEffect);
+        ysfx_real latencyInSeconds = ysfx_get_pdc_delay(fEffect);
 
         //NOTE: `pdc_bot_ch` and `pdc_top_ch` channel range ignored
 
@@ -120,25 +130,24 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
 
-        int32_t rindex = pData->param.data[parameterId].rindex;
-        return ysfx_slider_get_enum_names(fEffect.get(), (uint32_t)rindex, nullptr, 0);;
+        const uint32_t rindex = static_cast<uint32_t>(pData->param.data[parameterId].rindex);
+        return ysfx_slider_get_enum_names(fEffect, rindex, nullptr, 0);;
     }
 
     // -------------------------------------------------------------------
     // Information (current data)
 
-    std::size_t getChunkData(void** dataPtr) noexcept override
+    std::size_t getChunkData(void** const dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
 
-        ysfx_state_u state(ysfx_save_state(fEffect.get()));
-        CARLA_SAFE_ASSERT_RETURN(state, 0);
+        ysfx_state_free(fEffectState);
+        fEffectState = ysfx_save_state(fEffect);
+        CARLA_SAFE_ASSERT_RETURN(fEffectState != nullptr, 0);
 
-        fChunkText = CarlaJsfxState::convertToString(*state);
-
-        *dataPtr = (void*)fChunkText.toRawUTF8();
-        return (std::size_t)fChunkText.getNumBytesAsUTF8();
+        *dataPtr = fEffectState->data;
+        return fEffectState->data_size;
     }
 
     // -------------------------------------------------------------------
@@ -165,8 +174,8 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
-        int32_t rindex = pData->param.data[parameterId].rindex;
-        return ysfx_slider_get_value(fEffect.get(), (uint32_t)rindex);
+        const uint32_t rindex = static_cast<uint32_t>(pData->param.data[parameterId].rindex);
+        return static_cast<float>(ysfx_slider_get_value(fEffect, rindex));
     }
 
     bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -174,35 +183,15 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
-        int32_t rindex = pData->param.data[parameterId].rindex;
-        const char *name = ysfx_slider_get_name(fEffect.get(), (uint32_t)rindex);
-        std::snprintf(strBuf, STR_MAX, "%s", name);
-        return true;
-    }
+        const uint32_t rindex = static_cast<uint32_t>(pData->param.data[parameterId].rindex);
 
-
-    bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
-    {
-        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
-
-        int32_t rindex = pData->param.data[parameterId].rindex;
-        float value = ysfx_slider_get_value(fEffect.get(), (uint32_t)rindex);
-
-        int32_t enumIndex = -1;
-        if (ysfx_slider_is_enum(fEffect.get(), (uint32_t)rindex))
+        if (const char* const name = ysfx_slider_get_name(fEffect, rindex))
         {
-            uint32_t enumCount = ysfx_slider_get_enum_names(fEffect.get(), (uint32_t)rindex, nullptr, 0);
-            if ((int32_t)value >= 0 && (uint32_t)value < enumCount)
-                enumIndex = (int32_t)value;
+            std::snprintf(strBuf, STR_MAX, "%s", name);
+            return true;
         }
 
-        if (enumIndex != -1)
-            std::snprintf(strBuf, STR_MAX, "%s", ysfx_slider_get_name(fEffect.get(), (uint32_t)enumIndex));
-        else
-            std::snprintf(strBuf, STR_MAX, "%.12g", value);
-
-        return true;
+        return false;
     }
 
     float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const noexcept override
@@ -216,13 +205,18 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), false);
 
-        int32_t rindex = pData->param.data[parameterId].rindex;
+        const uint32_t rindex = static_cast<uint32_t>(pData->param.data[parameterId].rindex);
 
-        uint32_t enumCount = ysfx_slider_get_enum_names(fEffect.get(), (uint32_t)rindex, nullptr, 0);
+        const uint32_t enumCount = ysfx_slider_get_enum_names(fEffect, rindex, nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(scalePointId < enumCount, false);
 
-        std::snprintf(strBuf, STR_MAX, "%s", ysfx_slider_get_enum_name(fEffect.get(), (uint32_t)rindex, scalePointId));
-        return true;
+        if (const char* const name = ysfx_slider_get_enum_name(fEffect, rindex, scalePointId))
+        {
+            std::snprintf(strBuf, STR_MAX, "%s", name);
+            return true;
+        }
+
+        return false;
     }
 
     bool getLabel(char* const strBuf) const noexcept override
@@ -239,32 +233,34 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        int32_t rindex = pData->param.data[parameterId].rindex;
-        ysfx_slider_set_value(fEffect.get(), rindex, value);
+        const uint32_t rindex = static_cast<uint32_t>(pData->param.data[parameterId].rindex);
+        ysfx_slider_set_value(fEffect, rindex, value);
 
         CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        int32_t rindex = pData->param.data[parameterId].rindex;
-        ysfx_slider_set_value(fEffect.get(), rindex, value);
+        const uint32_t rindex = static_cast<uint32_t>(pData->param.data[parameterId].rindex);
+        ysfx_slider_set_value(fEffect, rindex, value);
 
-        CarlaPlugin::setParameterValueRT(parameterId, value, sendCallbackLater);
+        CarlaPlugin::setParameterValueRT(parameterId, value, frameOffset, sendCallbackLater);
     }
 
     void setChunkData(const void* data, std::size_t dataSize) override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
 
-        water::String dataText(water::CharPointer_UTF8((const char*)data), dataSize);
+        ysfx_state_t state;
+        state.sliders = nullptr;
+        state.slider_count = 0;
+        state.data = static_cast<uint8_t*>(const_cast<void*>(data));
+        state.data_size = dataSize;
 
-        ysfx_state_u state(CarlaJsfxState::convertFromString(dataText));
-        CARLA_SAFE_ASSERT_RETURN(state,);
-        CARLA_SAFE_ASSERT_RETURN(ysfx_load_state(fEffect.get(), state.get()),);
+        CARLA_SAFE_ASSERT(ysfx_load_state(fEffect, &state));
     }
 
     // -------------------------------------------------------------------
@@ -290,12 +286,12 @@ public:
 
         // initialize the block size and sample rate
         // loading the chunk can invoke @slider which makes computations based on these
-        ysfx_set_sample_rate(fEffect.get(), pData->engine->getSampleRate());
-        ysfx_set_block_size(fEffect.get(), (uint32_t)pData->engine->getBufferSize());
-        ysfx_init(fEffect.get());
+        ysfx_set_sample_rate(fEffect, pData->engine->getSampleRate());
+        ysfx_set_block_size(fEffect, (uint32_t)pData->engine->getBufferSize());
+        ysfx_init(fEffect);
 
-        const uint32_t aIns = ysfx_get_num_inputs(fEffect.get());
-        const uint32_t aOuts = ysfx_get_num_outputs(fEffect.get());
+        const uint32_t aIns = ysfx_get_num_inputs(fEffect);
+        const uint32_t aOuts = ysfx_get_num_outputs(fEffect);
 
         // perhaps we obtained a latency value from @init
         pData->client->setLatency(getLatencyInFrames());
@@ -315,7 +311,7 @@ public:
         uint32_t mapOfParameterToSlider[ysfx_max_sliders];
         for (uint32_t rindex = 0; rindex < ysfx_max_sliders; ++rindex)
         {
-            if (ysfx_slider_exists(fEffect.get(), rindex))
+            if (ysfx_slider_exists(fEffect, rindex))
             {
                 mapOfParameterToSlider[params] = rindex;
                 fMapOfSliderToParameter[rindex] = (int32_t)params;
@@ -332,7 +328,7 @@ public:
             pData->param.createNew(params, false);
         }
 
-        const uint portNameSize(pData->engine->getMaxPortNameSize());
+        const uint portNameSize = pData->engine->getMaxPortNameSize();
         CarlaString portName;
 
         // Audio Ins
@@ -346,7 +342,7 @@ public:
                 portName += ":";
             }
 
-            const char* const inputName = ysfx_get_input_name(fEffect.get(), j);
+            const char* const inputName = ysfx_get_input_name(fEffect, j);
             if (inputName && inputName[0])
             {
                 portName += inputName;
@@ -376,7 +372,7 @@ public:
                 portName += ":";
             }
 
-            const char* const outputName = ysfx_get_input_name(fEffect.get(), j);
+            const char* const outputName = ysfx_get_input_name(fEffect, j);
             if (outputName && outputName[0])
             {
                 portName += outputName;
@@ -404,21 +400,24 @@ public:
             pData->param.data[j].rindex = (int32_t)rindex;
 
             ysfx_slider_range_t range = {};
-            ysfx_slider_get_range(fEffect.get(), rindex, &range);
+            ysfx_slider_get_range(fEffect, rindex, &range);
 
             float min = (float)range.min;
             float max = (float)range.max;
             float def = (float)range.def;
             float step = (float)range.inc;
+            float stepSmall;
+            float stepLarge;
 
             // only use values as integer if we have a proper range
-            bool isEnum = ysfx_slider_is_enum(fEffect.get(), rindex) &&
-                min == 0.0f && max >= 0.0f &&
-                max + 1.0f == (float)ysfx_slider_get_enum_names(fEffect.get(), rindex, nullptr, 0);
+            const bool isEnum = ysfx_slider_is_enum(fEffect, rindex) &&
+                                carla_isZero(min) &&
+                                max >= 0.0f &&
+                                carla_isEqual(max + 1.0f, static_cast<float>(ysfx_slider_get_enum_names(fEffect, rindex, nullptr, 0)));
 
             // NOTE: in case of incomplete slider specification without <min,max,step>;
             //  these are usually output-only sliders.
-            if (min == max)
+            if (carla_isEqual(min, max))
             {
                 // replace with a dummy range
                 min = 0.0f;
@@ -433,30 +432,20 @@ public:
             else if (def > max)
                 def = max;
 
-            float stepSmall;
-            float stepLarge;
+            pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
+
             if (isEnum)
             {
                 step = 1.0f;
                 stepSmall = 1.0f;
                 stepLarge = 10.0f;
+                pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
+                pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
             }
             else
             {
                 stepSmall = step/10.0f;
                 stepLarge = step*10.0f;
-            }
-
-            pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-
-            if (isEnum)
-            {
-                pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
-                pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
-                pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
-            }
-            else
-            {
                 pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
             }
 
@@ -508,9 +497,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect,);
 
-        ysfx_set_sample_rate(fEffect.get(), pData->engine->getSampleRate());
-        ysfx_set_block_size(fEffect.get(), (uint32_t)pData->engine->getBufferSize());
-        ysfx_init(fEffect.get());
+        ysfx_set_sample_rate(fEffect, pData->engine->getSampleRate());
+        ysfx_set_block_size(fEffect, (uint32_t)pData->engine->getBufferSize());
+        ysfx_init(fEffect);
 
         fTransportValues.tempo = 120;
         fTransportValues.playback_state = ysfx_playback_paused;
@@ -546,7 +535,7 @@ public:
             fTransportValues.time_signature[1] = (uint32_t)bbt.beatType;
         }
 
-        ysfx_set_time_info(fEffect.get(), &fTransportValues);
+        ysfx_set_time_info(fEffect, &fTransportValues);
 
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
@@ -573,7 +562,7 @@ public:
                     event.offset = 0;
                     event.size = 3;
                     event.data = midiData;
-                    ysfx_send_midi(fEffect.get(), &event);
+                    ysfx_send_midi(fEffect, &event);
                 }
 
                 pData->extNotes.data.clear();
@@ -594,17 +583,6 @@ public:
 
                 if (event.time >= frames)
                     continue;
-
-                auto addInputEvent = [this]
-                    (uint32_t offset, const uint8_t *data, uint32_t size)
-                {
-                    ysfx_midi_event_t event;
-                    event.bus = 0;
-                    event.offset = offset;
-                    event.size = size;
-                    event.data = data;
-                    ysfx_send_midi(fEffect.get(), &event);
-                };
 
                 switch (event.type)
                 {
@@ -631,7 +609,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                             continue;
                         }
 
@@ -692,7 +670,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
@@ -702,7 +680,12 @@ public:
                             midiData[1] = uint8_t(ctrlEvent.param);
                             midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f);
 
-                            addInputEvent(event.time, midiData, 3);
+                            ysfx_midi_event_t yevent;
+                            yevent.bus = 0;
+                            yevent.offset = event.time;
+                            yevent.size = 3;
+                            yevent.data = midiData;
+                            ysfx_send_midi(fEffect, &yevent);
                         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -719,11 +702,21 @@ public:
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = MIDI_CONTROL_BANK_SELECT;
                             midiData[2] = 0;
-                            addInputEvent(event.time, midiData, 3);
+
+                            ysfx_midi_event_t yevent;
+                            yevent.bus = 0;
+                            yevent.offset = event.time;
+                            yevent.size = 3;
+                            yevent.data = midiData;
+                            ysfx_send_midi(fEffect, &yevent);
 
                             midiData[1] = MIDI_CONTROL_BANK_SELECT__LSB;
                             midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f);
-                            addInputEvent(event.time, midiData, 3);
+                            yevent.bus = 0;
+                            yevent.offset = event.time;
+                            yevent.size = 3;
+                            yevent.data = midiData;
+                            ysfx_send_midi(fEffect, &yevent);
                         }
                         break;
 
@@ -737,10 +730,15 @@ public:
                         }
                         else if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
                         {
-                            uint8_t midiData[3];
+                            uint8_t midiData[2];
                             midiData[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = uint8_t(ctrlEvent.normalizedValue*127.0f);
-                            addInputEvent(event.time, midiData, 2);
+                            ysfx_midi_event_t yevent;
+                            yevent.bus = 0;
+                            yevent.offset = event.time;
+                            yevent.size = 2;
+                            yevent.data = midiData;
+                            ysfx_send_midi(fEffect, &yevent);
                         }
                         break;
 
@@ -751,8 +749,12 @@ public:
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                             midiData[2] = 0;
-
-                            addInputEvent(event.time, midiData, 3);
+                            ysfx_midi_event_t yevent;
+                            yevent.bus = 0;
+                            yevent.offset = event.time;
+                            yevent.size = 3;
+                            yevent.data = midiData;
+                            ysfx_send_midi(fEffect, &yevent);
                         }
                         break;
 
@@ -772,7 +774,12 @@ public:
                             midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                             midiData[2] = 0;
 
-                            addInputEvent(event.time, midiData, 3);
+                            ysfx_midi_event_t yevent;
+                            yevent.bus = 0;
+                            yevent.offset = event.time;
+                            yevent.size = 3;
+                            yevent.data = midiData;
+                            ysfx_send_midi(fEffect, &yevent);
                         }
                         break;
                     } // switch (ctrlEvent.type)
@@ -806,7 +813,12 @@ public:
                     midiData2[0] = uint8_t(status | (event.channel & MIDI_CHANNEL_BIT));
                     std::memcpy(midiData2+1, midiData+1, static_cast<std::size_t>(midiEvent.size-1));
 
-                    addInputEvent(event.time, midiData2, midiEvent.size);
+                    ysfx_midi_event_t yevent;
+                    yevent.bus = midiEvent.port;
+                    yevent.offset = event.time;
+                    yevent.size = midiEvent.size;
+                    yevent.data = midiData;
+                    ysfx_send_midi(fEffect, &yevent);
 
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
@@ -827,9 +839,9 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Plugin processing
 
-        const uint32_t numInputs = ysfx_get_num_inputs(fEffect.get());
-        const uint32_t numOutputs = ysfx_get_num_outputs(fEffect.get());
-        ysfx_process_float(fEffect.get(), audioIn, audioOut, numInputs, numOutputs, frames);
+        const uint32_t numInputs = ysfx_get_num_inputs(fEffect);
+        const uint32_t numOutputs = ysfx_get_num_outputs(fEffect);
+        ysfx_process_float(fEffect, audioIn, audioOut, numInputs, numOutputs, frames);
 
         // End of Plugin processing (no events)
 
@@ -840,7 +852,7 @@ public:
         {
             ysfx_midi_event_t event;
 
-            while (ysfx_receive_midi(fEffect.get(), &event))
+            while (ysfx_receive_midi(fEffect, &event))
             {
                 CARLA_SAFE_ASSERT_BREAK(event.offset < frames);
                 CARLA_SAFE_ASSERT_BREAK(event.size > 0);
@@ -858,8 +870,8 @@ public:
         // Control Output
 
         {
-            uint64_t changes = ysfx_fetch_slider_changes(fEffect.get());
-            uint64_t automations = ysfx_fetch_slider_automations(fEffect.get());
+            uint64_t changes = ysfx_fetch_slider_changes(fEffect);
+            uint64_t automations = ysfx_fetch_slider_automations(fEffect);
 
             if ((changes|automations) != 0)
             {
@@ -875,8 +887,8 @@ public:
                         int32_t parameterIndex = fMapOfSliderToParameter[rindex];
                         CARLA_SAFE_ASSERT_CONTINUE(parameterIndex != -1);
 
-                        float newValue = ysfx_slider_get_value(fEffect.get(), (uint32_t)parameterIndex);
-                        setParameterValueRT(parameterIndex, newValue, true);
+                        const float newValue = static_cast<float>(ysfx_slider_get_value(fEffect, (uint32_t)parameterIndex));
+                        setParameterValueRT((uint32_t)parameterIndex, newValue, 0, true);
                     }
                 }
             }
@@ -944,7 +956,7 @@ public:
                     const File currentPath(splitPaths[i]);
                     const File currentFile = currentPath.getChildFile(CharPointer_UTF8(label));
                     const CarlaJsfxUnit currentUnit(currentPath, currentFile);
-                    if (currentUnit.getFilePath().existsAsFile())
+                    if (File(currentUnit.getFilePath()).existsAsFile())
                         fUnit = currentUnit;
                 }
             }
@@ -961,8 +973,8 @@ public:
         ysfx_config_u config(ysfx_config_new());
         CARLA_SAFE_ASSERT_RETURN(config != nullptr, false);
 
-        const water::String rootPath = fUnit.getRootPath().getFullPathName();
-        const water::String filePath = fUnit.getFilePath().getFullPathName();
+        const water::String rootPath = fUnit.getRootPath();
+        const water::String filePath = fUnit.getFilePath();
 
         ysfx_register_builtin_audio_formats(config.get());
         ysfx_set_import_root(config.get(), rootPath.toRawUTF8());
@@ -970,14 +982,14 @@ public:
         ysfx_set_log_reporter(config.get(), &CarlaJsfxLogging::logAll);
         ysfx_set_user_data(config.get(), (intptr_t)this);
 
-        fEffect.reset(ysfx_new(config.get()));
+        fEffect = ysfx_new(config.get());
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, false);
 
         // ---------------------------------------------------------------
         // get info
 
         {
-            if (! ysfx_load_file(fEffect.get(), filePath.toRawUTF8(), 0))
+            if (! ysfx_load_file(fEffect, filePath.toRawUTF8(), 0))
             {
                 pData->engine->setLastError("Failed to load JSFX");
                 return false;
@@ -989,7 +1001,7 @@ public:
                 | ysfx_compile_no_gfx
                 ;
 
-            if (! ysfx_compile(fEffect.get(), compileFlags))
+            if (! ysfx_compile(fEffect, compileFlags))
             {
                 pData->engine->setLastError("Failed to compile JSFX");
                 return false;
@@ -1002,7 +1014,7 @@ public:
         }
         else
         {
-            pData->name = carla_strdup(ysfx_get_name(fEffect.get()));
+            pData->name = carla_strdup(ysfx_get_name(fEffect));
         }
 
         pData->filename = carla_strdup(filePath.toRawUTF8());
@@ -1045,11 +1057,14 @@ public:
     }
 
 private:
-    ysfx_u fEffect = nullptr;
+    ysfx_t* fEffect;
+    ysfx_state_t* fEffectState;
     CarlaJsfxUnit fUnit;
     water::String fChunkText;
-    ysfx_time_info_t fTransportValues = {};
+    ysfx_time_info_t fTransportValues;
     std::vector<int32_t> fMapOfSliderToParameter;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJSFX)
 };
 
 // -------------------------------------------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*
  * Custom types to store LADSPA-RDF information
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -129,7 +129,7 @@ struct LADSPA_RDF_ScalePoint {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LADSPA_RDF_ScalePoint)
+    CARLA_DECLARE_NON_COPYABLE(LADSPA_RDF_ScalePoint)
 };
 
 // Port
@@ -166,7 +166,7 @@ struct LADSPA_RDF_Port {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LADSPA_RDF_Port)
+    CARLA_DECLARE_NON_COPYABLE(LADSPA_RDF_Port)
 };
 
 // Plugin Descriptor
@@ -206,7 +206,7 @@ struct LADSPA_RDF_Descriptor {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(LADSPA_RDF_Descriptor)
+    CARLA_DECLARE_NON_COPYABLE(LADSPA_RDF_Descriptor)
 };
 
 #endif // LADSPA_RDF_HPP_INCLUDED

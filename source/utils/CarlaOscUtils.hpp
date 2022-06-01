@@ -1,6 +1,6 @@
 /*
  * Carla OSC utils
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -105,7 +105,7 @@ struct CarlaOscData {
 #endif
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_STRUCT(CarlaOscData)
+    CARLA_DECLARE_NON_COPYABLE(CarlaOscData)
 };
 
 // -----------------------------------------------------------------------

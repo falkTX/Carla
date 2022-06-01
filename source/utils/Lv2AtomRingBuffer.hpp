@@ -1,6 +1,6 @@
 /*
  * LV2 Atom Ring Buffer
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -213,7 +213,7 @@ private:
     friend class Lv2AtomQueue;
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(Lv2AtomRingBuffer)
+    CARLA_DECLARE_NON_COPYABLE(Lv2AtomRingBuffer)
 };
 
 // -----------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*
  * High-level, real-time safe, templated, C++ doubly-linked list
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -92,7 +92,7 @@ public:
         mutable RtMemPool_Handle fHandle;
 
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(Pool)
+        CARLA_DECLARE_NON_COPYABLE(Pool)
     };
 
     // -------------------------------------------------------------------
@@ -208,7 +208,7 @@ private:
     }
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(RtLinkedList)
+    CARLA_DECLARE_NON_COPYABLE(RtLinkedList)
 };
 
 // -----------------------------------------------------------------------

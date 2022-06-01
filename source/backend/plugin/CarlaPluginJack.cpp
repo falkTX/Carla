@@ -1,6 +1,6 @@
 /*
  * Carla Plugin JACK
- * Copyright (C) 2016-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -497,7 +497,7 @@ private:
             return true;
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(ProjectData)
+        CARLA_DECLARE_NON_COPYABLE(ProjectData)
     } fProject;
 #endif
 
@@ -1818,7 +1818,7 @@ private:
               setupLabel(),
               chunk() {}
 
-        CARLA_DECLARE_NON_COPY_STRUCT(Info)
+        CARLA_DECLARE_NON_COPYABLE(Info)
     } fInfo;
 
     void handleProcessStopped() noexcept

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -220,7 +220,7 @@ struct AudioFilePool {
         return true;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(AudioFilePool)
+    CARLA_DECLARE_NON_COPYABLE(AudioFilePool)
 };
 
 class AudioFileReader
@@ -862,7 +862,7 @@ private:
 #endif
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(AudioFileReader)
+    CARLA_DECLARE_NON_COPYABLE(AudioFileReader)
 };
 
 #endif // AUDIO_BASE_HPP_INCLUDED

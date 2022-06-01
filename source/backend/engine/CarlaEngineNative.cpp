@@ -1019,7 +1019,7 @@ protected:
     {
         uint32_t rindex = index;
         if (const CarlaPluginPtr plugin = _getPluginForParameterIndex(rindex))
-            plugin->setParameterValueRT(rindex, value, false);
+            plugin->setParameterValueRT(rindex, value, 0, false);
 
         fParameters[index] = value;
     }
@@ -1710,7 +1710,7 @@ private:
             CarlaJUCE::dispatchMessageManagerMessages();
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(ScopedJuceMessageThreadRunner)
+        CARLA_DECLARE_NON_COPYABLE(ScopedJuceMessageThreadRunner)
     };
 #endif
 

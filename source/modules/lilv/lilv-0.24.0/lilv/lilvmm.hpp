@@ -356,7 +356,7 @@ struct World {
 
 	LilvWorld* me;
 
-	CARLA_DECLARE_NON_COPY_STRUCT(World)
+	CARLA_DECLARE_NON_COPYABLE(World)
 };
 
 } /* namespace Lilv */

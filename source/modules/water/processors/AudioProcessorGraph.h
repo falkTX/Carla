@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2015 ROLI Ltd.
-   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the GNU
    General Public License as published by the Free Software Foundation;
@@ -97,7 +97,7 @@ public:
         void prepare (double newSampleRate, int newBlockSize, AudioProcessorGraph*);
         void unprepare();
 
-        CARLA_DECLARE_NON_COPY_CLASS (Node)
+        CARLA_DECLARE_NON_COPYABLE (Node)
     };
 
     //==============================================================================
@@ -342,7 +342,7 @@ public:
                                 AudioSampleBuffer& cvOutBuffer,
                                 MidiBuffer& midiMessages);
 
-        CARLA_DECLARE_NON_COPY_CLASS (AudioGraphIOProcessor)
+        CARLA_DECLARE_NON_COPYABLE (AudioGraphIOProcessor)
     };
 
     //==============================================================================
@@ -394,7 +394,7 @@ public:
     void buildRenderingSequence();
     bool isAnInputTo (uint32 possibleInputId, uint32 possibleDestinationId, int recursionCheck) const;
 
-    CARLA_DECLARE_NON_COPY_CLASS (AudioProcessorGraph)
+    CARLA_DECLARE_NON_COPYABLE (AudioProcessorGraph)
 };
 
 }

@@ -256,7 +256,7 @@ struct BridgeAudioPool {
 
     const char* getFilenameSuffix() const noexcept;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
+    CARLA_DECLARE_NON_COPYABLE(BridgeAudioPool)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -293,10 +293,10 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         WaitHelper(BridgeRtClientControl& c) noexcept;
         ~WaitHelper() noexcept;
 
-        CARLA_DECLARE_NON_COPY_STRUCT(WaitHelper)
+        CARLA_DECLARE_NON_COPYABLE(WaitHelper)
     };
 
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeRtClientControl)
+    CARLA_DECLARE_NON_COPYABLE(BridgeRtClientControl)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -325,7 +325,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
     // bridge, client
     PluginBridgeNonRtClientOpcode readOpcode() noexcept;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtClientControl)
+    CARLA_DECLARE_NON_COPYABLE(BridgeNonRtClientControl)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -354,7 +354,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
     void waitIfDataIsReachingLimit() noexcept;
     bool writeOpcode(const PluginBridgeNonRtServerOpcode opcode) noexcept;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtServerControl)
+    CARLA_DECLARE_NON_COPYABLE(BridgeNonRtServerControl)
 };
 
 // -------------------------------------------------------------------------------------------------------------------

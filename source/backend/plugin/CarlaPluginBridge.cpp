@@ -79,7 +79,7 @@ struct BridgeParamInfo {
           symbol(),
           unit() {}
 
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeParamInfo)
+    CARLA_DECLARE_NON_COPYABLE(BridgeParamInfo)
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -771,7 +771,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
@@ -788,7 +788,7 @@ public:
             fShmNonRtClientControl.waitIfDataIsReachingLimit();
         }
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
     void setParameterMidiChannel(const uint32_t parameterId, const uint8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
@@ -1503,7 +1503,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                             continue;
                         }
 
@@ -1564,7 +1564,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -2989,7 +2989,7 @@ private:
         char* strBuf;
         CarlaMutex mutex;
 
-        CARLA_DECLARE_NON_COPY_CLASS(ReceivingParamText)
+        CARLA_DECLARE_NON_COPYABLE(ReceivingParamText)
     } fReceivingParamText;
 
     struct Info {
@@ -3081,7 +3081,7 @@ private:
             aIns = aOuts = cvIns = cvOuts = 0;
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(Info)
+        CARLA_DECLARE_NON_COPYABLE(Info)
     } fInfo;
 
     int64_t  fUniqueId;

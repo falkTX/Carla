@@ -215,7 +215,7 @@ private:
 #endif
 
     //CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaLogThread)
+    CARLA_DECLARE_NON_COPYABLE(CarlaLogThread)
 };
 
 #ifdef CARLA_OS_WIN

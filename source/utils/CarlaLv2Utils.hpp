@@ -1,6 +1,6 @@
 /*
  * Carla LV2 utils
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -550,7 +550,7 @@ public:
     }
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_STRUCT(Lv2WorldClass)
+    CARLA_DECLARE_NON_COPYABLE(Lv2WorldClass)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1512,7 +1512,7 @@ protected:
             }
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(Ports);
+        CARLA_DECLARE_NON_COPYABLE(Ports);
     } fPorts;
 
     // Rest of host<->plugin support
@@ -1669,7 +1669,7 @@ private:
 
     // ----------------------------------------------------------------------------------------------------------------
 
-    CARLA_DECLARE_NON_COPY_STRUCT(Lv2PluginBaseClass)
+    CARLA_DECLARE_NON_COPYABLE(Lv2PluginBaseClass)
 };
 
 // --------------------------------------------------------------------------------------------------------------------

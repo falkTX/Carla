@@ -263,7 +263,7 @@ struct Lv2EventData {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(Lv2EventData)
+    CARLA_DECLARE_NON_COPYABLE(Lv2EventData)
 };
 
 struct CarlaPluginLV2EventData {
@@ -334,7 +334,7 @@ struct CarlaPluginLV2EventData {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginLV2EventData)
+    CARLA_DECLARE_NON_COPYABLE(CarlaPluginLV2EventData)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -482,7 +482,7 @@ struct CarlaPluginLV2Options {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginLV2Options);
+    CARLA_DECLARE_NON_COPYABLE(CarlaPluginLV2Options);
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1549,14 +1549,14 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value, const bool sendCallbackLater) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const float fixedValue = setParamterValueCommon(parameterId, value);
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, sendCallbackLater);
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
@@ -4018,7 +4018,7 @@ public:
 
                             ctrlEvent.handled = true;
                             value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                             continue;
                         }
 
@@ -4084,7 +4084,7 @@ public:
                             else
                                 value = pData->param.getFinalUnnormalizedValue(k, ctrlEvent.normalizedValue);
 
-                            setParameterValueRT(k, value, true);
+                            setParameterValueRT(k, value, event.time, true);
                         }
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
@@ -6332,7 +6332,7 @@ public:
         {
             if (pData->param.data[i].rindex == rindex)
             {
-                setParameterValueRT(i, paramValue, true);
+                setParameterValueRT(i, paramValue, 0, true);
                 break;
             }
         }
@@ -7467,7 +7467,7 @@ private:
               uiresize(nullptr),
               uiprograms(nullptr) {}
 
-        CARLA_DECLARE_NON_COPY_STRUCT(Extensions);
+        CARLA_DECLARE_NON_COPYABLE(Extensions);
     } fExt;
 
     struct UI {
@@ -7511,7 +7511,7 @@ private:
             CARLA_SAFE_ASSERT(window == nullptr);
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT(UI);
+        CARLA_DECLARE_NON_COPYABLE(UI);
     } fUI;
 
     // -------------------------------------------------------------------

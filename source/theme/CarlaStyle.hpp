@@ -88,7 +88,7 @@ private:
     CarlaStylePrivate* const d;
     friend class CarlaStylePrivate;
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaStyle);
+    CARLA_DECLARE_NON_COPYABLE(CarlaStyle);
 };
 
 #endif // CARLA_STYLE_HPP_INCLUDED

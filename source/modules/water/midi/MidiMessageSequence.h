@@ -90,7 +90,7 @@ public:
         friend class MidiMessageSequence;
         MidiEventHolder (const MidiMessage&);
 
-        CARLA_DECLARE_NON_COPY_CLASS(MidiEventHolder);
+        CARLA_DECLARE_NON_COPYABLE(MidiEventHolder);
     };
 
     //==============================================================================

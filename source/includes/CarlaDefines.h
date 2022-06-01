@@ -217,32 +217,21 @@
 #define CARLA_SAFE_EXCEPTION_CONTINUE(msg)    CARLA_CATCH_UNWIND catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); continue; }
 #define CARLA_SAFE_EXCEPTION_RETURN(msg, ret) CARLA_CATCH_UNWIND catch(...) { carla_safe_exception(msg, __FILE__, __LINE__); return ret; }
 
-/* Define CARLA_DECLARE_NON_COPY_CLASS */
+/* Define CARLA_DECLARE_NON_COPYABLE */
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-# define CARLA_DECLARE_NON_COPY_CLASS(ClassName) \
+# define CARLA_DECLARE_NON_COPYABLE(ClassName) \
 private:                                         \
     ClassName(ClassName&) = delete;              \
     ClassName(const ClassName&) = delete;        \
     ClassName& operator=(ClassName&) = delete;   \
     ClassName& operator=(const ClassName&) = delete;
 #else
-# define CARLA_DECLARE_NON_COPY_CLASS(ClassName) \
+# define CARLA_DECLARE_NON_COPYABLE(ClassName) \
 private:                                         \
     ClassName(ClassName&);                       \
     ClassName(const ClassName&);                 \
     ClassName& operator=(ClassName&);            \
     ClassName& operator=(const ClassName&);
-#endif
-
-/* Define CARLA_DECLARE_NON_COPY_STRUCT */
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-# define CARLA_DECLARE_NON_COPY_STRUCT(StructName) \
-    StructName(StructName&) = delete;              \
-    StructName(const StructName&) = delete;        \
-    StructName& operator=(StructName&) = delete;   \
-    StructName& operator=(const StructName&) = delete;
-#else
-# define CARLA_DECLARE_NON_COPY_STRUCT(StructName)
 #endif
 
 /* Define CARLA_PREVENT_HEAP_ALLOCATION */

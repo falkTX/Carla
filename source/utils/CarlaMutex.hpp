@@ -1,6 +1,6 @@
 /*
  * Carla Mutex
- * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -97,7 +97,7 @@ private:
     mutable pthread_mutex_t fMutex;
     mutable volatile bool fTryLockWasCalled; // true if "tryLock()" was called at least once
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaMutex)
+    CARLA_DECLARE_NON_COPYABLE(CarlaMutex)
 };
 
 // -----------------------------------------------------------------------
@@ -185,7 +185,7 @@ private:
     mutable pthread_mutex_t fMutex;
 #endif
 
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaRecursiveMutex)
+    CARLA_DECLARE_NON_COPYABLE(CarlaRecursiveMutex)
 };
 
 // -----------------------------------------------------------------------
@@ -266,7 +266,7 @@ private:
     volatile bool   fTriggered;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaSignal)
+    CARLA_DECLARE_NON_COPYABLE(CarlaSignal)
 };
 
 // -----------------------------------------------------------------------
@@ -291,7 +291,7 @@ private:
     const Mutex& fMutex;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopeLocker)
+    CARLA_DECLARE_NON_COPYABLE(CarlaScopeLocker)
 };
 
 // -----------------------------------------------------------------------
@@ -335,7 +335,7 @@ private:
     const bool   fLocked;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopeTryLocker)
+    CARLA_DECLARE_NON_COPYABLE(CarlaScopeTryLocker)
 };
 
 // -----------------------------------------------------------------------
@@ -360,7 +360,7 @@ private:
     const Mutex& fMutex;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(CarlaScopeUnlocker)
+    CARLA_DECLARE_NON_COPYABLE(CarlaScopeUnlocker)
 };
 
 // -----------------------------------------------------------------------

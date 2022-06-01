@@ -1,6 +1,6 @@
 /*
  * Carla State utils
- * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@ struct CarlaStateSave {
         Parameter() noexcept;
         ~Parameter() noexcept;
 
-        CARLA_DECLARE_NON_COPY_STRUCT(Parameter)
+        CARLA_DECLARE_NON_COPYABLE(Parameter)
     };
 
     typedef LinkedList<Parameter*> ParameterList;
@@ -60,7 +60,7 @@ struct CarlaStateSave {
         ~CustomData() noexcept;
         bool isValid() const noexcept;
 
-        CARLA_DECLARE_NON_COPY_STRUCT(CustomData)
+        CARLA_DECLARE_NON_COPYABLE(CustomData)
     };
 
     typedef LinkedList<CustomData*> CustomDataList;
@@ -102,7 +102,7 @@ struct CarlaStateSave {
     bool fillFromXmlElement(const water::XmlElement* const xmlElement);
     void dumpToMemoryStream(water::MemoryOutputStream& stream) const;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(CarlaStateSave)
+    CARLA_DECLARE_NON_COPYABLE(CarlaStateSave)
 };
 
 static inline

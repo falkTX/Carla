@@ -133,7 +133,7 @@ typedef struct _CarlaCachedPluginInfo {
      * C++ constructor.
      */
     CARLA_API _CarlaCachedPluginInfo() noexcept;
-    CARLA_DECLARE_NON_COPY_STRUCT(_CarlaCachedPluginInfo)
+    CARLA_DECLARE_NON_COPYABLE(_CarlaCachedPluginInfo)
 #endif
 
 } CarlaCachedPluginInfo;
