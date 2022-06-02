@@ -67,7 +67,11 @@ LIBS += $(MODULEDIR)/sfzero.a
 LIBS += $(MODULEDIR)/zita-resampler.a
 
 ifeq ($(HAVE_DGL),true)
+ifneq ($(USING_CUSTOM_DPF),true)
 LIBS += $(MODULEDIR)/dgl.a
+else
+LIBS += $(CUSTOM_DPF_PATH)/build/libdgl-opengl.a
+endif
 endif
 
 ifeq ($(HAVE_HYLIA),true)
@@ -176,6 +180,10 @@ TARGETS = \
 # sometimes needed for testing:
 #	$(BINDIR)/carla-native-plugin$(APP_EXT)
 
+# ---------------------------------------------------------------------------------------------------------------------
+
+ifneq ($(STATIC_PLUGIN_TARGET),true)
+
 TARGETS += \
 	$(BINDIR)/carla.lv2/carla$(LIB_EXT)
 
@@ -205,6 +213,8 @@ TARGETS += \
 endif
 endif
 endif
+
+endif # !STATIC_PLUGIN_TARGET
 
 # ---------------------------------------------------------------------------------------------------------------------
 

@@ -175,7 +175,11 @@ LIBS_native        += $(MODULEDIR)/sfzero.a
 LIBS_native        += $(MODULEDIR)/zita-resampler.a
 
 ifeq ($(HAVE_DGL),true)
+ifneq ($(USING_CUSTOM_DPF),true)
 LIBS_native        += $(MODULEDIR)/dgl.a
+else
+LIBS_native        += $(CUSTOM_DPF_PATH)/build/libdgl-opengl.a
+endif
 endif
 
 ifeq ($(WIN32),true)
