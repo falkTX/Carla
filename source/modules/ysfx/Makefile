@@ -10,6 +10,7 @@ include ../Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+YSFX_FLAGS += -fsigned-char
 YSFX_FLAGS += -Iinclude -Isources
 YSFX_FLAGS += -Ithirdparty/WDL/source -Ithirdparty/dr_libs -Ithirdparty/stb
 YSFX_FLAGS += -DEELSCRIPT_NO_NET
