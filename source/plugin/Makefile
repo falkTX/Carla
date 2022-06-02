@@ -466,22 +466,22 @@ $(OBJDIR)/carla-vst.cpp.shellfx.o: carla-vst.cpp
 	@echo "Compiling $< (VstShell)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_VST_SHELL -DCARLA_PLUGIN_SYNTH=0 -c -o $@
 
-$(OBJDIR)/carla-vst-export-bridged.cpp.fx.o: carla-vst-export-bridged.cpp $(LIBS)
+$(OBJDIR)/carla-vst-export-bridged.cpp.fx.o: carla-vst-export-bridged.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_SYNTH=0 -c -o $@
 
-$(OBJDIR)/carla-vst-export-bridged.cpp.synth.o: carla-vst-export-bridged.cpp $(LIBS)
+$(OBJDIR)/carla-vst-export-bridged.cpp.synth.o: carla-vst-export-bridged.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_SYNTH=1 -c -o $@
 
-$(OBJDIR)/carla-vst-export.cpp.o: carla-vst-export.cpp $(LIBS)
+$(OBJDIR)/carla-vst-export.cpp.o: carla-vst-export.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(OBJDIR)/carla-vst-export.cpp.dll.o: carla-vst-export.cpp $(LIBS)
+$(OBJDIR)/carla-vst-export.cpp.dll.o: carla-vst-export.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Wine)"
 	$(SILENT)$(WINECC) $< $(BUILD_CXX_FLAGS) -c -o $@
@@ -491,7 +491,7 @@ $(OBJDIR)/carla-vst-export.cpp.dll.o: carla-vst-export.cpp $(LIBS)
 $(BINDIR)/carla.lv2/manifest.ttl: $(OBJDIR)/carla-lv2-export.cpp.o $(BINDIR)/carla.lv2/carla$(LIB_EXT)
 	-@mkdir -p $(BINDIR)/carla.lv2
 	@echo "Linking carla-lv2-export$(APP_EXT)"
-	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(NATIVE_LINK_FLAGS) -o $(BINDIR)/carla-lv2-export$(APP_EXT)
+	$(SILENT)$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_juce) $(LIBS_END) $(NATIVE_LINK_FLAGS) -o $(BINDIR)/carla-lv2-export$(APP_EXT)
 
 	@echo "Generating LV2 ttl data"
 	$(SILENT)cd $(BINDIR) && $(EXE_WRAPPER) ./carla-lv2-export$(APP_EXT)
@@ -500,7 +500,7 @@ $(BINDIR)/carla.lv2/manifest.ttl: $(OBJDIR)/carla-lv2-export.cpp.o $(BINDIR)/car
 $(BINDIR)/carla-lv2-export$(APP_EXT): $(OBJDIR)/carla-lv2-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking carla-lv2-export$(APP_EXT)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(NATIVE_LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_juce) $(LIBS_END) $(NATIVE_LINK_FLAGS) -o $@
 
 $(OBJDIR)/carla-lv2-export.cpp.o: carla-lv2-export.cpp
 	-@mkdir -p $(OBJDIR)
