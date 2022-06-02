@@ -18,11 +18,13 @@ YSFX_FLAGS += -DEELSCRIPT_NO_LICE
 YSFX_FLAGS += -DNSEEL_ATOF=ysfx_wdl_atof
 YSFX_FLAGS += -DWDL_FFT_REALSIZE=8
 YSFX_FLAGS += -DWDL_LINEPARSE_ATOF=ysfx_wdl_atof
+YSFX_FLAGS += -DYSFX_API=
 YSFX_FLAGS += -DYSFX_NO_STANDARD_MUTEX
 
 # FIXME so many warnings..
 YSFX_FLAGS += -Wno-missing-field-initializers
 YSFX_FLAGS += -Wno-sign-compare
+YSFX_FLAGS += -Wno-unused-function
 YSFX_FLAGS += -Wno-unused-parameter
 
 ifneq ($(WIN32),true)
