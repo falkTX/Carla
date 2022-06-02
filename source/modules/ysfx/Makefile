@@ -159,7 +159,7 @@ $(OBJDIR)/%.mm.o: %.mm
 $(OBJDIR)/%.S.o: %.S
 	-@mkdir -p $(dir $@)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_ASM_FLAGS) -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
 -include $(OBJS:%.o=%.d)
 

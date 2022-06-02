@@ -1533,6 +1533,7 @@ bool ysfx_gfx_run(ysfx_t *fx)
 
     return ysfx_gfx_state_is_dirty(fx->gfx.state.get());
 #else
+    return false;
     (void)fx;
 #endif
 }

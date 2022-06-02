@@ -2156,8 +2156,10 @@ yyexhaustedlab:
 
 yyreturn:
   if (yychar != YYEOF && yychar != YYEMPTY)
+  {
      yydestruct ("Cleanup: discarding lookahead",
 		 yytoken, &yylval, &yylloc, context);
+  }
   /* Do not reclaim the symbols of the rule which action triggered
      this YYABORT or YYACCEPT.  */
   YYPOPSTACK (yylen);
