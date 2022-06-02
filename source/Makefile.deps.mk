@@ -321,6 +321,24 @@ endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Disable features for static plugin target
+
+ifeq ($(STATIC_PLUGIN_TARGET),true)
+HAVE_ALSA = false
+HAVE_JACK = false
+HAVE_HYLIA = false
+HAVE_LIBLO = false
+HAVE_PULSEAUDIO = false
+HAVE_PYQT = false
+HAVE_QT4 = false
+HAVE_QT5 = false
+HAVE_QT5PKG = false
+USING_JUCE = false
+USING_JUCE_AUDIO_DEVICES = false
+USING_RTAUDIO = false
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 1)
 
 ifneq ($(HAIKU_OR_MACOS_OR_WIN32),true)
@@ -540,23 +558,6 @@ LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -pthread
 WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-
-ifeq ($(STATIC_PLUGIN_TARGET),true)
-HAVE_ALSA = false
-HAVE_HYLIA = false
-HAVE_JACK = false
-HAVE_LIBLO = false
-HAVE_PYQT = false
-HAVE_QT4 = false
-HAVE_QT5 = false
-HAVE_QT5PKG = false
-HAVE_PULSEAUDIO = false
-USING_JUCE = false
-USING_JUCE_AUDIO_DEVICES = false
-USING_RTAUDIO = false
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
