@@ -27,11 +27,6 @@ YSFX_FLAGS += -Wno-sign-compare
 YSFX_FLAGS += -Wno-unused-function
 YSFX_FLAGS += -Wno-unused-parameter
 
-ifeq ($(CPU_ARM),true)
-# In case -mthumb is enabled by default, we need -marm mode
-YSFX_FLAGS += -marm
-endif
-
 ifneq ($(WIN32),true)
 # NOTE: not compatible with MingGW, breaks win32_utf8
 YSFX_FLAGS += -D_FILE_OFFSET_BITS=64
