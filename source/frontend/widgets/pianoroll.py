@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # A piano roll viewer/editor
-# Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
 # Copyright (C) 2014-2015 Perry Nguyen
 #
 # This program is free software; you can redistribute it and/or
@@ -21,15 +21,15 @@
 # Imports (Global)
 
 from PyQt5.QtCore import Qt, QRectF, QPointF, pyqtSignal
-from PyQt5.QtGui import QColor, QCursor, QFont, QPen, QPainter, QTransform
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsOpacityEffect, QGraphicsRectItem, QGraphicsSimpleTextItem
+from PyQt5.QtGui import QColor, QCursor, QFont, QPen, QPainter
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsRectItem, QGraphicsSimpleTextItem
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView
-from PyQt5.QtWidgets import QApplication, QComboBox, QHBoxLayout, QLabel, QStyle, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QStyle, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from carla_shared import *
+#from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
 # MIDI definitions, copied from CarlaMIDI.h
@@ -57,17 +57,26 @@ def MIDI_IS_SYSTEM_MESSAGE(status):  return status >= MIDI_STATUS_BIT      and s
 def MIDI_IS_OSC_MESSAGE(status):     return status == '/'                   or status == '#'
 
 # MIDI Channel message type
-def MIDI_IS_STATUS_NOTE_OFF(status):              return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_OFF
-def MIDI_IS_STATUS_NOTE_ON(status):               return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_ON
-def MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status): return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_POLYPHONIC_AFTERTOUCH
-def MIDI_IS_STATUS_CONTROL_CHANGE(status):        return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_CONTROL_CHANGE
-def MIDI_IS_STATUS_PROGRAM_CHANGE(status):        return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_PROGRAM_CHANGE
-def MIDI_IS_STATUS_CHANNEL_PRESSURE(status):      return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_CHANNEL_PRESSURE
-def MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status):   return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_PITCH_WHEEL_CONTROL
+def MIDI_IS_STATUS_NOTE_OFF(status):
+    return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_OFF
+def MIDI_IS_STATUS_NOTE_ON(status):
+    return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_ON
+def MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status):
+    return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_POLYPHONIC_AFTERTOUCH
+def MIDI_IS_STATUS_CONTROL_CHANGE(status):
+    return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_CONTROL_CHANGE
+def MIDI_IS_STATUS_PROGRAM_CHANGE(status):
+    return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_PROGRAM_CHANGE
+def MIDI_IS_STATUS_CHANNEL_PRESSURE(status):
+    return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_CHANNEL_PRESSURE
+def MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status):
+    return MIDI_IS_CHANNEL_MESSAGE(status) and (status & MIDI_STATUS_BIT) == MIDI_STATUS_PITCH_WHEEL_CONTROL
 
 # MIDI Utils
-def MIDI_GET_STATUS_FROM_DATA(data):  return data[0] & MIDI_STATUS_BIT  if MIDI_IS_CHANNEL_MESSAGE(data[0]) else data[0]
-def MIDI_GET_CHANNEL_FROM_DATA(data): return data[0] & MIDI_CHANNEL_BIT if MIDI_IS_CHANNEL_MESSAGE(data[0]) else 0
+def MIDI_GET_STATUS_FROM_DATA(data):
+    return data[0] & MIDI_STATUS_BIT  if MIDI_IS_CHANNEL_MESSAGE(data[0]) else data[0]
+def MIDI_GET_CHANNEL_FROM_DATA(data):
+    return data[0] & MIDI_CHANNEL_BIT if MIDI_IS_CHANNEL_MESSAGE(data[0]) else 0
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Graphics Items

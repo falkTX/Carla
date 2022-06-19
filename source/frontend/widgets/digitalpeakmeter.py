@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Digital Peak Meter, a custom Qt widget
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -16,16 +16,16 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from math import sqrt
 
-from PyQt5.QtCore import qCritical, Qt, QTimer, QSize, QLineF, QRectF
+from PyQt5.QtCore import qCritical, Qt, QSize, QLineF, QRectF
 from PyQt5.QtGui import QColor, QLinearGradient, QPainter, QPen, QPixmap
 from PyQt5.QtWidgets import QWidget
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Widget Class
 
 class DigitalPeakMeter(QWidget):
@@ -43,7 +43,7 @@ class DigitalPeakMeter(QWidget):
     STYLE_RNCBC   = 3
     STYLE_CALF    = 4
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def __init__(self, parent):
         QWidget.__init__(self, parent)
@@ -71,7 +71,7 @@ class DigitalPeakMeter(QWidget):
 
         self.updateGrandient()
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def channelCount(self):
         return self.fChannelCount
@@ -81,13 +81,14 @@ class DigitalPeakMeter(QWidget):
             return
 
         if count < 0:
-            return qCritical("DigitalPeakMeter::setChannelCount(%i) - channel count must be a positive integer or zero" % count)
+            qCritical(f"DigitalPeakMeter::setChannelCount({count}) - channel count must be a positive integer or zero")
+            return
 
         self.fChannelCount    = count
         self.fChannelData     = []
         self.fLastChannelData = []
 
-        for x in range(count):
+        for _ in range(count):
             self.fChannelData.append(0.0)
             self.fLastChannelData.append(0.0)
 
@@ -98,7 +99,7 @@ class DigitalPeakMeter(QWidget):
                 self.setMinimumSize(0, 0)
                 self.setMaximumSize(9999, 9999)
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def meterColor(self):
         return self.fMeterColor
@@ -108,7 +109,8 @@ class DigitalPeakMeter(QWidget):
             return
 
         if color not in (self.COLOR_GREEN, self.COLOR_BLUE):
-            return qCritical("DigitalPeakMeter::setMeterColor(%i) - invalid color" % color)
+            qCritical(f"DigitalPeakMeter::setMeterColor({color}) - invalid color")
+            return
 
         if color == self.COLOR_GREEN:
             self.fMeterColorBase    = QColor(93, 231, 61)
@@ -121,7 +123,7 @@ class DigitalPeakMeter(QWidget):
 
         self.updateGrandient()
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def meterLinesEnabled(self):
         return self.fMeterLinesEnabled
@@ -132,7 +134,7 @@ class DigitalPeakMeter(QWidget):
 
         self.fMeterLinesEnabled = yesNo
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def meterOrientation(self):
         return self.fMeterOrientation
@@ -142,13 +144,14 @@ class DigitalPeakMeter(QWidget):
             return
 
         if orientation not in (self.HORIZONTAL, self.VERTICAL):
-            return qCritical("DigitalPeakMeter::setMeterOrientation(%i) - invalid orientation" % orientation)
+            qCritical(f"DigitalPeakMeter::setMeterOrientation({orientation}) - invalid orientation")
+            return
 
         self.fMeterOrientation = orientation
 
         self.updateGrandient()
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def meterStyle(self):
         return self.fMeterStyle
@@ -158,7 +161,8 @@ class DigitalPeakMeter(QWidget):
             return
 
         if style not in (self.STYLE_DEFAULT, self.STYLE_OPENAV, self.STYLE_RNCBC, self.STYLE_CALF):
-            return qCritical("DigitalPeakMeter::setMeterStyle(%i) - invalid style" % style)
+            qCritical(f"DigitalPeakMeter::setMeterStyle({style}) - invalid style")
+            return
 
         if style == self.STYLE_DEFAULT:
             self.fMeterBackground = QColor("#070707")
@@ -182,7 +186,7 @@ class DigitalPeakMeter(QWidget):
 
         self.updateGrandient()
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def smoothMultiplier(self):
         return self.fSmoothMultiplier
@@ -192,28 +196,37 @@ class DigitalPeakMeter(QWidget):
             return
 
         if not isinstance(value, int):
-            return qCritical("DigitalPeakMeter::setSmoothMultiplier() - value must be an integer")
+            qCritical("DigitalPeakMeter::setSmoothMultiplier() - value must be an integer")
+            return
         if value < 0:
-            return qCritical("DigitalPeakMeter::setSmoothMultiplier(%i) - value must be >= 0" % value)
+            qCritical(f"DigitalPeakMeter::setSmoothMultiplier({value}) - value must be >= 0")
+            return
         if value > 5:
-            return qCritical("DigitalPeakMeter::setSmoothMultiplier(%i) - value must be < 5" % value)
+            qCritical(f"DigitalPeakMeter::setSmoothMultiplier({value}) - value must be < 5")
+            return
 
         self.fSmoothMultiplier = value
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def displayMeter(self, meter, level, forced = False):
         if not isinstance(meter, int):
-            return qCritical("DigitalPeakMeter::displayMeter(,) - meter value must be an integer")
+            qCritical("DigitalPeakMeter::displayMeter(,) - meter value must be an integer")
+            return
         if not isinstance(level, float):
-            return qCritical("DigitalPeakMeter::displayMeter(%i,) - level value must be a float" % (meter,))
+            qCritical(f"DigitalPeakMeter::displayMeter({meter},) - level value must be a float")
+            return
         if meter <= 0 or meter > self.fChannelCount:
-            return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - invalid meter number" % (meter, level))
+            qCritical(f"DigitalPeakMeter::displayMeter({meter}, {level}) - invalid meter number")
+            return
 
         i = meter - 1
 
         if self.fSmoothMultiplier > 0 and not forced:
-            level = (self.fLastChannelData[i] * float(self.fSmoothMultiplier) + level) / float(self.fSmoothMultiplier + 1)
+            level = (
+                (self.fLastChannelData[i] * float(self.fSmoothMultiplier) + level)
+                / float(self.fSmoothMultiplier + 1)
+            )
 
         if level < 0.001:
             level = 0.0
@@ -226,7 +239,7 @@ class DigitalPeakMeter(QWidget):
 
         self.fLastChannelData[i] = level
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def updateGrandient(self):
         self.fMeterGradient = QLinearGradient(0, 0, 1, 1)
@@ -287,15 +300,15 @@ class DigitalPeakMeter(QWidget):
         elif self.fMeterOrientation == self.VERTICAL:
             self.fMeterGradient.setFinalStop(0, self.height())
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def minimumSizeHint(self):
-        return QSize(10, 10)
+        return QSize(20, 10) if self.fMeterOrientation == self.HORIZONTAL else QSize(10, 20)
 
     def sizeHint(self):
         return QSize(self.width(), self.height())
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def drawCalf(self, event):
         painter = QPainter(self)
@@ -323,7 +336,8 @@ class DigitalPeakMeter(QWidget):
 
     def paintEvent(self, event):
         if self.fMeterStyle == self.STYLE_CALF:
-            return self.drawCalf(event)
+            self.drawCalf(event)
+            return
 
         painter = QPainter(self)
         event.accept()
@@ -440,30 +454,10 @@ class DigitalPeakMeter(QWidget):
                 painter.setPen(QColor(110, 15, 15, 100))
                 painter.drawLine(QLineF(2, lsmall - (lsmall * 0.96), lfull-2.0, lsmall - (lsmall * 0.96)))
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def resizeEvent(self, event):
         QWidget.resizeEvent(self, event)
         self.updateGrandientFinalStop()
 
-# ------------------------------------------------------------------------------------------------------------
-# Main Testing
-
-if __name__ == '__main__':
-    import sys
-    import resources_rc
-    from PyQt5.QtWidgets import QApplication
-
-    app = QApplication(sys.argv)
-
-    gui = DigitalPeakMeter(None)
-    gui.setChannelCount(2)
-    #gui.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
-    gui.setMeterStyle(DigitalPeakMeter.STYLE_RNCBC)
-    gui.displayMeter(1, 0.5)
-    gui.displayMeter(2, 0.8)
-    gui.show()
-
-    sys.exit(app.exec_())
-
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------

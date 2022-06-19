@@ -76,7 +76,9 @@ class CustomInputDialog(QDialog):
             text = "<table>"
             for scalePoint in scalePoints:
                 valuestr = ("%i" if decimals == 0 else "%f") % scalePoint['value']
-                text += "<tr><td align='right'>%s</td><td align='left'> - %s</td></tr>" % (valuestr, scalePoint['label'])
+                text += "<tr>"
+                text += f"<td align='right'>{valuestr}</td><td align='left'> - {scalePoint['label']}</td>"
+                text += "</tr>"
             text += "</table>"
             self.ui.textBrowser.setText(text)
             self.resize(200, 300)
@@ -341,10 +343,8 @@ class ParamSpinBox(QAbstractSpinBox):
         else:
             self.fStep = value
 
-        if self.fStepSmall > value:
-            self.fStepSmall = value
-        if self.fStepLarge < value:
-            self.fStepLarge = value
+        self.fStepSmall = min(self.fStepSmall, value)
+        self.fStepLarge = max(self.fStepLarge, value)
 
         self.fBar.fIsInteger = bool(self.fStepSmall == 1.0)
 

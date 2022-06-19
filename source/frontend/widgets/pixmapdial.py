@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Dial, a custom Qt widget
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -16,64 +16,24 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from math import cos, floor, pi, sin, isnan
+from math import cos, floor, pi, sin
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
-from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
-from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+from PyQt5.QtCore import pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
+from PyQt5.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QPen, QPixmap
 from PyQt5.QtWidgets import QDial
 
-# ------------------------------------------------------------------------------------------------------------
+from .commondial import CommonDial
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Widget Class
 
-class PixmapDial(QDial):
-    # enum CustomPaintMode
-    CUSTOM_PAINT_MODE_NULL        = 0 # default (NOTE: only this mode has label gradient)
-    CUSTOM_PAINT_MODE_CARLA_WET   = 1 # color blue-green gradient (reserved #3)
-    CUSTOM_PAINT_MODE_CARLA_VOL   = 2 # color blue (reserved #3)
-    CUSTOM_PAINT_MODE_CARLA_L     = 3 # color yellow (reserved #4)
-    CUSTOM_PAINT_MODE_CARLA_R     = 4 # color yellow (reserved #4)
-    CUSTOM_PAINT_MODE_CARLA_PAN   = 5 # color yellow (reserved #3)
-    CUSTOM_PAINT_MODE_COLOR       = 6 # color, selectable (reserved #3)
-    CUSTOM_PAINT_MODE_ZITA        = 7 # custom zita knob (reserved #6)
-    CUSTOM_PAINT_MODE_NO_GRADIENT = 8 # skip label gradient
-
-    # enum Orientation
-    HORIZONTAL = 0
-    VERTICAL   = 1
-
-    HOVER_MIN = 0
-    HOVER_MAX = 9
-
-    MODE_DEFAULT = 0
-    MODE_LINEAR = 1
-
-    # signals
-    dragStateChanged = pyqtSignal(bool)
-    realValueChanged = pyqtSignal(float)
-
+class PixmapDial(CommonDial):
     def __init__(self, parent, index=0):
-        QDial.__init__(self, parent)
+        CommonDial.__init__(self, parent, index)
 
-        self.fDialMode = self.MODE_LINEAR
-
-        self.fMinimum   = 0.0
-        self.fMaximum   = 1.0
-        self.fRealValue = 0.0
-        self.fPrecision = 10000
-        self.fIsInteger = False
-
-        self.fIsHovered = False
-        self.fIsPressed = False
-        self.fHoverStep = self.HOVER_MIN
-
-        self.fLastDragPos = None
-        self.fLastDragValue = 0.0
-
-        self.fIndex     = index
         self.fPixmap    = QPixmap(":/bitmaps/dial_01d.png")
         self.fPixmapNum = "01"
 
@@ -82,59 +42,10 @@ class PixmapDial(QDial):
         else:
             self.fPixmapOrientation = self.VERTICAL
 
-        self.fLabel     = ""
-        self.fLabelPos  = QPointF(0.0, 0.0)
-        self.fLabelFont = QFont(self.font())
-        self.fLabelFont.setPixelSize(8)
-        self.fLabelWidth  = 0
-        self.fLabelHeight = 0
-
-        if self.palette().window().color().lightness() > 100:
-            # Light background
-            c = self.palette().dark().color()
-            self.fLabelGradientColor1 = c
-            self.fLabelGradientColor2 = QColor(c.red(), c.green(), c.blue(), 0)
-            self.fLabelGradientColorT = [self.palette().buttonText().color(), self.palette().mid().color()]
-        else:
-            # Dark background
-            self.fLabelGradientColor1 = QColor(0, 0, 0, 255)
-            self.fLabelGradientColor2 = QColor(0, 0, 0, 0)
-            self.fLabelGradientColorT = [Qt.white, Qt.darkGray]
-
-        self.fLabelGradient = QLinearGradient(0, 0, 0, 1)
-        self.fLabelGradient.setColorAt(0.0, self.fLabelGradientColor1)
-        self.fLabelGradient.setColorAt(0.6, self.fLabelGradientColor1)
-        self.fLabelGradient.setColorAt(1.0, self.fLabelGradientColor2)
-
-        self.fLabelGradientRect = QRectF(0.0, 0.0, 0.0, 0.0)
-
-        self.fCustomPaintMode  = self.CUSTOM_PAINT_MODE_NULL
-        self.fCustomPaintColor = QColor(0xff, 0xff, 0xff)
-
         self.updateSizes()
-
-        # Fake internal value, custom precision
-        QDial.setMinimum(self, 0)
-        QDial.setMaximum(self, self.fPrecision)
-        QDial.setValue(self, 0)
-
-        self.valueChanged.connect(self.slot_valueChanged)
-
-    def getIndex(self):
-        return self.fIndex
 
     def getBaseSize(self):
         return self.fPixmapBaseSize
-
-    def forceWhiteLabelGradientText(self):
-        self.fLabelGradientColor1 = QColor(0, 0, 0, 255)
-        self.fLabelGradientColor2 = QColor(0, 0, 0, 0)
-        self.fLabelGradientColorT = [Qt.white, Qt.darkGray]
-
-    def setLabelColor(self, enabled, disabled):
-        self.fLabelGradientColor1 = QColor(0, 0, 0, 255)
-        self.fLabelGradientColor2 = QColor(0, 0, 0, 0)
-        self.fLabelGradientColorT = [enabled, disabled]
 
     def updateSizes(self):
         self.fPixmapWidth  = self.fPixmap.width()
@@ -178,31 +89,6 @@ class PixmapDial(QDial):
 
         self.fLabelGradientRect = QRectF(float(self.fPixmapBaseSize)/8.0, float(self.fPixmapBaseSize)/2.0, float(self.fPixmapBaseSize*3)/4.0, self.fPixmapBaseSize+self.fLabelHeight+5)
 
-    def setCustomPaintMode(self, paintMode):
-        if self.fCustomPaintMode == paintMode:
-            return
-
-        self.fCustomPaintMode = paintMode
-        self.update()
-
-    def setCustomPaintColor(self, color):
-        if self.fCustomPaintColor == color:
-            return
-
-        self.fCustomPaintColor = color
-        self.update()
-
-    def setLabel(self, label):
-        if self.fLabel == label:
-            return
-
-        self.fLabel = label
-        self.updateSizes()
-        self.update()
-
-    def setIndex(self, index):
-        self.fIndex = index
-
     def setPixmap(self, pixmapId):
         self.fPixmapNum = "%02i" % pixmapId
         self.fPixmap.load(":/bitmaps/dial_%s%s.png" % (self.fPixmapNum, "" if self.isEnabled() else "d"))
@@ -229,46 +115,6 @@ class PixmapDial(QDial):
         self.updateSizes()
         self.update()
 
-    def setPrecision(self, value, isInteger):
-        self.fPrecision = value
-        self.fIsInteger = isInteger
-        QDial.setMaximum(self, value)
-
-    def setMinimum(self, value):
-        self.fMinimum = value
-
-    def setMaximum(self, value):
-        self.fMaximum = value
-
-    def setValue(self, value, emitSignal=False):
-        if self.fRealValue == value or isnan(value):
-            return
-
-        if value <= self.fMinimum:
-            qtValue = 0
-            self.fRealValue = self.fMinimum
-
-        elif value >= self.fMaximum:
-            qtValue = self.fPrecision
-            self.fRealValue = self.fMaximum
-
-        else:
-            qtValue = round(float(value - self.fMinimum) / float(self.fMaximum - self.fMinimum) * self.fPrecision)
-            self.fRealValue = value
-
-        # Block change signal, we'll handle it ourselves
-        self.blockSignals(True)
-        QDial.setValue(self, qtValue)
-        self.blockSignals(False)
-
-        if emitSignal:
-            self.realValueChanged.emit(self.fRealValue)
-
-    @pyqtSlot(int)
-    def slot_valueChanged(self, value):
-        self.fRealValue = float(value)/self.fPrecision * (self.fMaximum - self.fMinimum) + self.fMinimum
-        self.realValueChanged.emit(self.fRealValue)
-
     @pyqtSlot()
     def slot_updatePixmap(self):
         self.setPixmap(int(self.fPixmapNum))
@@ -280,81 +126,13 @@ class PixmapDial(QDial):
         return QSize(self.fPixmapBaseSize, self.fPixmapBaseSize)
 
     def changeEvent(self, event):
-        QDial.changeEvent(self, event)
+        CommonDial.changeEvent(self, event)
 
         # Force pixmap update if enabled state changes
         if event.type() == QEvent.EnabledChange:
             self.setPixmap(int(self.fPixmapNum))
 
-    def enterEvent(self, event):
-        self.fIsHovered = True
-        if self.fHoverStep == self.HOVER_MIN:
-            self.fHoverStep = self.HOVER_MIN + 1
-        QDial.enterEvent(self, event)
-
-    def leaveEvent(self, event):
-        self.fIsHovered = False
-        if self.fHoverStep == self.HOVER_MAX:
-            self.fHoverStep = self.HOVER_MAX - 1
-        QDial.leaveEvent(self, event)
-
-    def mousePressEvent(self, event):
-        if self.fDialMode == self.MODE_DEFAULT:
-            return QDial.mousePressEvent(self, event)
-
-        if event.button() == Qt.LeftButton:
-            self.fIsPressed = True
-            self.fLastDragPos = event.pos()
-            self.fLastDragValue = self.fRealValue
-            self.dragStateChanged.emit(True)
-
-    def mouseMoveEvent(self, event):
-        if self.fDialMode == self.MODE_DEFAULT:
-            return QDial.mouseMoveEvent(self, event)
-
-        if not self.fIsPressed:
-            return
-
-        range = (self.fMaximum - self.fMinimum) / 4.0
-        pos   = event.pos()
-        dx    = range * float(pos.x() - self.fLastDragPos.x()) / self.width()
-        dy    = range * float(pos.y() - self.fLastDragPos.y()) / self.height()
-        value = self.fLastDragValue + dx - dy
-
-        if value < self.fMinimum:
-            value = self.fMinimum
-        elif value > self.fMaximum:
-            value = self.fMaximum
-        elif self.fIsInteger:
-            value = float(round(value))
-
-        self.setValue(value, True)
-
-    def mouseReleaseEvent(self, event):
-        if self.fDialMode == self.MODE_DEFAULT:
-            return QDial.mouseReleaseEvent(self, event)
-
-        if self.fIsPressed:
-            self.fIsPressed = False
-            self.dragStateChanged.emit(False)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        event.accept()
-
-        painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, True)
-
-        if self.fLabel:
-            if self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_NULL:
-                painter.setPen(self.fLabelGradientColor2)
-                painter.setBrush(self.fLabelGradient)
-                painter.drawRect(self.fLabelGradientRect)
-
-            painter.setFont(self.fLabelFont)
-            painter.setPen(self.fLabelGradientColorT[0 if self.isEnabled() else 1])
-            painter.drawText(self.fLabelPos, self.fLabel)
-
+    def paintDial(self, painter):
         if self.isEnabled():
             normValue = float(self.fRealValue - self.fMinimum) / float(self.fMaximum - self.fMinimum)
             target    = QRectF(0.0, 0.0, self.fPixmapBaseSize, self.fPixmapBaseSize)
@@ -494,26 +272,4 @@ class PixmapDial(QDial):
             target = QRectF(0.0, 0.0, self.fPixmapBaseSize, self.fPixmapBaseSize)
             painter.drawPixmap(target, self.fPixmap, target)
 
-        painter.restore()
-
-    def resizeEvent(self, event):
-        QDial.resizeEvent(self, event)
-        self.updateSizes()
-
-# ------------------------------------------------------------------------------------------------------------
-# Main Testing
-
-if __name__ == '__main__':
-    import sys
-    from PyQt5.QtWidgets import QApplication
-    import resources_rc
-
-    app = QApplication(sys.argv)
-    gui = PixmapDial(None)
-    #gui.setEnabled(True)
-    #gui.setEnabled(False)
-    gui.setPixmap(3)
-    gui.setLabel("hahaha")
-    gui.show()
-
-    sys.exit(app.exec_())
+# ---------------------------------------------------------------------------------------------------------------------

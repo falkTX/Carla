@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Keyboard, a custom Qt widget
-# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -16,19 +16,19 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, QSize
-from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QPointF, QRectF, QTimer, QSize
+from PyQt5.QtGui import QColor, QPainter, QPixmap
 from PyQt5.QtWidgets import QActionGroup, QMenu, QScrollArea, QWidget
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 from carla_shared import QSafeSettings
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 kMidiKey2RectMapHorizontal = [
     QRectF(0,   0, 24, 57), # C
@@ -174,6 +174,12 @@ kPcKeysLayouts = {
 kValidColors = ("Blue", "Green", "Orange", "Red")
 
 kBlackNotes = (1, 3, 6, 8, 10)
+
+# ------------------------------------------------------------------------------------------------------------
+
+def _isNoteBlack(note):
+    baseNote = note % 12
+    return bool(baseNote in kBlackNotes)
 
 # ------------------------------------------------------------------------------------------------------------
 # MIDI Keyboard, using a pixmap for painting
@@ -502,7 +508,7 @@ class PixmapKeyboard(QWidget):
         for note in self.fEnabledKeys:
             pos = self._getRectFromMidiNote(note)
 
-            if self._isNoteBlack(note):
+            if _isNoteBlack(note):
                 continue
 
             if note < 12:
@@ -558,7 +564,7 @@ class PixmapKeyboard(QWidget):
         for note in self.fEnabledKeys:
             pos = self._getRectFromMidiNote(note)
 
-            if not self._isNoteBlack(note):
+            if not _isNoteBlack(note):
                 continue
 
             if note < 12:
@@ -605,15 +611,11 @@ class PixmapKeyboard(QWidget):
                              Qt.AlignCenter,
                              "C{}".format(octave))
 
-    def _isNoteBlack(self, note):
-        baseNote = note % 12
-        return bool(baseNote in kBlackNotes)
-
     def _getRectFromMidiNote(self, note):
         baseNote = note % 12
         return self.fKey2RectMap[baseNote]
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Horizontal scroll area for keyboard
 
 class PixmapKeyboardHArea(QScrollArea):
@@ -641,18 +643,4 @@ class PixmapKeyboardHArea(QScrollArea):
     def slot_initScrollbarValue(self):
         self.horizontalScrollBar().setValue(int(self.horizontalScrollBar().maximum()/2))
 
-# ------------------------------------------------------------------------------------------------------------
-# Main Testing
-
-if __name__ == '__main__':
-    import sys
-    from PyQt5.QtWidgets import QApplication
-    import resources_rc
-
-    app = QApplication(sys.argv)
-
-    gui = PixmapKeyboard(None)
-    gui.setEnabled(True)
-    gui.show()
-
-    sys.exit(app.exec_())
+# ---------------------------------------------------------------------------------------------------------------------

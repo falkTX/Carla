@@ -162,9 +162,9 @@ class CanvasPreviewFrame(QFrame):
         if self.fZoomCursors[self._kCursorName] != cursorName:
             prefix = ":/cursors/zoom"
             self.fZoomCursors[self._kCursorName] = cursorName
-            self.fZoomCursors[self._kCursorZoom] = QCursor(QPixmap("{}_{}.png".format(prefix, cursorName)), 8, 7)
-            self.fZoomCursors[self._kCursorZoomIn] = QCursor(QPixmap("{}-in_{}.png".format(prefix, cursorName)), 8, 7)
-            self.fZoomCursors[self._kCursorZoomOut] = QCursor(QPixmap("{}-out_{}.png".format(prefix, cursorName)), 8, 7)
+            self.fZoomCursors[self._kCursorZoom] = QCursor(QPixmap(f"{prefix}_{cursorName}.png"), 8, 7)
+            self.fZoomCursors[self._kCursorZoomIn] = QCursor(QPixmap(f"{prefix}-in_{cursorName}.png"), 8, 7)
+            self.fZoomCursors[self._kCursorZoomOut] = QCursor(QPixmap(f"{prefix}-out_{cursorName}.png"), 8, 7)
 
     # -----------------------------------------------------------------------------------------------------------------
 
@@ -406,19 +406,3 @@ class CanvasPreviewFrame(QFrame):
         self.fFrameWidth = 1 if self.fUseCustomPaint else self.frameWidth()
 
 # ---------------------------------------------------------------------------------------------------------------------
-
-if __name__ == '__main__':
-    # pylint: disable=unused-import
-    # pylint: disable=ungrouped-imports
-    import sys
-    import resources_rc
-    from PyQt5.QtWidgets import QApplication
-    # pylint: enable=unused-import
-    # pylint: enable=ungrouped-imports
-
-    app = QApplication(sys.argv)
-
-    gui = CanvasPreviewFrame(None)
-    gui.show()
-
-    sys.exit(app.exec_())

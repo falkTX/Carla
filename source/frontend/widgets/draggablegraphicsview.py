@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Middle-click draggable QGraphicsView
-# Copyright (C) 2016-2020 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -16,19 +16,20 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import Qt, QEvent, QTimer
+import os
+from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QCursor, QMouseEvent
-from PyQt5.QtWidgets import QGraphicsView
+from PyQt5.QtWidgets import QGraphicsView, QMessageBox
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
-from carla_shared import *
+from carla_shared import MACOS, CustomMessageBox, gCarla
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Widget Class
 
 class DraggableGraphicsView(QGraphicsView):
@@ -49,7 +50,7 @@ class DraggableGraphicsView(QGraphicsView):
 
         self.setAcceptDrops(True)
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def isDragUrlValid(self, filename):
         lfilename = filename.lower()
@@ -59,7 +60,7 @@ class DraggableGraphicsView(QGraphicsView):
                 #return True
             if MACOS and lfilename.endswith(".vst"):
                 return True
-            elif lfilename.endswith(".vst3") and ".vst3" in self.fSupportedExtensions:
+            if lfilename.endswith(".vst3") and ".vst3" in self.fSupportedExtensions:
                 return True
 
         elif os.path.isfile(filename):
@@ -68,7 +69,7 @@ class DraggableGraphicsView(QGraphicsView):
 
         return False
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def dragEnterEvent(self, event):
         urls = event.mimeData().urls()
@@ -93,7 +94,7 @@ class DraggableGraphicsView(QGraphicsView):
         self.fWasLastDragValid = False
         QGraphicsView.dragLeaveEvent(self, event)
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def dropEvent(self, event):
         event.acceptProposedAction()
@@ -111,7 +112,7 @@ class DraggableGraphicsView(QGraphicsView):
                                  self.tr("Failed to load file"),
                                  gCarla.gui.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
-    # --------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
 
     def mousePressEvent(self, event):
         if event.button() == self.fMiddleButton and not (event.modifiers() & Qt.ControlModifier):
@@ -151,4 +152,4 @@ class DraggableGraphicsView(QGraphicsView):
             return
         QGraphicsView.wheelEvent(self, event)
 
-    # --------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------

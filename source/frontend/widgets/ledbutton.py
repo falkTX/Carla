@@ -16,7 +16,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from PyQt5.QtCore import QRectF
@@ -24,7 +24,7 @@ from PyQt5.QtGui import QPainter, QPixmap
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import QPushButton
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Widget Class
 
 class LEDButton(QPushButton):
@@ -61,10 +61,10 @@ class LEDButton(QPushButton):
             self.fLastColor = self.UNSET
 
         if self._loadImageNowIfNeeded():
-            if isinstance(self.fImage, QPixmap):
-                size = self.fImage.width()
-            else:
-                size = self.fImage.sizeHint().width()
+            #if isinstance(self.fImage, QPixmap):
+                #size = self.fImage.width()
+            #else:
+                #size = self.fImage.sizeHint().width()
 
             self.fRect = QRectF(self.fImage.rect())
             self.setFixedSize(self.fImage.size())
@@ -87,7 +87,7 @@ class LEDButton(QPushButton):
     def _loadImageNowIfNeeded(self):
         if self.isChecked():
             if self.fLastColor == self.fColor:
-                return
+                return False
             if self.fColor == self.OFF:
                 img = ":/scalable/led_off.svg"
             elif self.fColor == self.BLUE:
@@ -122,3 +122,5 @@ class LEDButton(QPushButton):
         self.update()
 
         return True
+
+# ---------------------------------------------------------------------------------------------------------------------

@@ -132,6 +132,17 @@ debug:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+lint:
+	pylint \
+	--extension-pkg-whitelist=PyQt5 \
+	--max-line-length=120 \
+	--max-locals=25 \
+	--max-statements=100 \
+	--disable=bare-except,duplicate-code,invalid-name,missing-docstring,too-many-branches,too-many-instance-attributes,too-many-statements \
+	$(wildcard widgets/*.py)
+
+# ---------------------------------------------------------------------------------------------------------------------
+
 i18n_update: $(TSs)
 i18n_release: $(QMs)
 

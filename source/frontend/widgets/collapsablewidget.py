@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Collapsible Box, a custom Qt widget
-# Copyright (C) 2019 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2019-2022 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -20,7 +20,6 @@
 # Imports (Global)
 
 from PyQt5.QtCore import pyqtSlot, Qt
-from PyQt5.QtGui import QCursor, QFont
 from PyQt5.QtWidgets import QFrame, QSizePolicy, QToolButton, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
@@ -75,3 +74,5 @@ class CollapsibleBox(QFrame):
 
     def getContentLayout(self):
         return self.content_layout
+
+# ------------------------------------------------------------------------------------------------------------

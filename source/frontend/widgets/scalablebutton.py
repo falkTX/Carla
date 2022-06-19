@@ -16,7 +16,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from PyQt5.QtCore import QPointF, QRectF
@@ -24,7 +24,7 @@ from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import QPushButton
 
-# ------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Widget Class
 
 class ScalableButton(QPushButton):
@@ -136,3 +136,5 @@ class ScalableButton(QPushButton):
 
         else:
             self.fImageNormal.renderer().render(painter, self.fImageRect)
+
+# ---------------------------------------------------------------------------------------------------------------------
