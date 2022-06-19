@@ -2,7 +2,7 @@
 <installer-gui-script minSpecVersion="1">
     <title>Carla Plugin</title>
     <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true" />
-    <options customize="always" hostArchitectures="x86_64" require-scripts="false" rootVolumeOnly="true" />
+    <options customize="always" hostArchitectures="arm64,x86_64" require-scripts="false" rootVolumeOnly="true" />
     <pkg-ref id="studio.kx.carla" />
     <choice id="studio.kx.carla.lv2" title="LV2 plugin" description='Carla as LV2 plugin' visible="true">
         <pkg-ref id="studio.kx.carla.lv2" version="0">carla-lv2.pkg</pkg-ref>
