@@ -217,7 +217,7 @@ static const double __consttab[] = {
     1.5,
   };
 
-__attribute__((naked, target("arm")))
+__attribute__((target("arm")))
 static void eel_callcode32(INT_PTR bp, INT_PTR cp, INT_PTR rt) 
 {
   __asm__ volatile(
