@@ -126,8 +126,179 @@ struct carla_v3_plugin_frame : v3_plugin_frame_cpp {
 
 // --------------------------------------------------------------------------------------------------------------------
 
-struct carla_v3_param_changes : v3_param_changes_cpp {
-    carla_v3_param_changes()
+struct carla_v3_input_param_value_queue : v3_param_value_queue_cpp {
+    const v3_param_id paramId;
+    int8_t numUsed;
+
+    struct Point {
+        int32_t offset;
+        float value;
+    } points[32];
+
+    carla_v3_input_param_value_queue(const v3_param_id pId)
+        : paramId(pId),
+          numUsed(0)
+    {
+        query_interface = carla_query_interface;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        queue.get_param_id = carla_get_param_id;
+        queue.get_point_count = carla_get_point_count;
+        queue.get_point = carla_get_point;
+        queue.add_point = carla_add_point;
+    }
+
+private:
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_param_value_queue_iid))
+        {
+            *iface = self;
+            return V3_OK;
+        }
+
+        *iface = nullptr;
+        return V3_NO_INTERFACE;
+    }
+
+    static v3_param_id V3_API carla_get_param_id(void* self)
+    {
+        carla_v3_input_param_value_queue* const me = *static_cast<carla_v3_input_param_value_queue**>(self);
+        return me->paramId;
+    }
+
+    static int32_t V3_API carla_get_point_count(void* self)
+    {
+        carla_v3_input_param_value_queue* const me = *static_cast<carla_v3_input_param_value_queue**>(self);
+        return me->numUsed;
+    }
+
+    static v3_result V3_API carla_get_point(void* const self, const int32_t idx, int32_t* const sample_offset, double* const value)
+    {
+        carla_v3_input_param_value_queue* const me = *static_cast<carla_v3_input_param_value_queue**>(self);
+        CARLA_SAFE_ASSERT_INT2_RETURN(idx < me->numUsed, idx, me->numUsed, V3_INVALID_ARG);
+
+        *sample_offset = me->points[idx].offset;
+        *value = me->points[idx].value;
+        return V3_OK;
+    }
+
+    static v3_result V3_API carla_add_point(void*, int32_t, double, int32_t*)
+    {
+        // there is nothing here for input parameters, plugins are not meant to call this!
+        return V3_NOT_IMPLEMENTED;
+    }
+};
+
+struct carla_v3_input_param_changes : v3_param_changes_cpp {
+    const uint32_t paramCount;
+
+    struct UpdatedParam {
+        bool updated;
+        float value;
+    }* const updatedParams;
+
+    carla_v3_input_param_value_queue** const queue;
+
+    // data given to plugins
+    v3_param_value_queue*** pluginExposedQueue;
+    int32_t pluginExposedCount;
+
+    carla_v3_input_param_changes(const PluginParameterData& paramData)
+        : paramCount(paramData.count),
+          updatedParams(new UpdatedParam[paramData.count]),
+          queue(new carla_v3_input_param_value_queue*[paramData.count]),
+          pluginExposedQueue(new v3_param_value_queue**[paramData.count]),
+          pluginExposedCount(0)
+    {
+        for (uint32_t i=0; i<paramData.count; ++i)
+            queue[i] = new carla_v3_input_param_value_queue(paramData.data[i].rindex);
+
+        query_interface = carla_query_interface;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        changes.get_param_count = carla_get_param_count;
+        changes.get_param_data = carla_get_param_data;
+        changes.add_param_data = carla_add_param_data;
+    }
+
+    // called during start of process, gathering all parameter update requests so far
+    void init()
+    {
+        for (uint32_t i=0; i<paramCount; ++i)
+        {
+            if (updatedParams[i].updated)
+            {
+                queue[i]->numUsed = 1;
+                queue[i]->points[0].offset = 0;
+                queue[i]->points[0].value = updatedParams[i].value;
+            }
+            else
+            {
+                queue[i]->numUsed = 0;
+            }
+        }
+    }
+
+    // called just before plugin processing, creating local queue
+    void prepare()
+    {
+        uint32_t count = 0;
+
+        for (uint32_t i=0; i<paramCount; ++i)
+        {
+            if (queue[i]->numUsed)
+                pluginExposedQueue[count++] = (v3_param_value_queue**)&queue[i];
+        }
+
+        pluginExposedCount = count;
+    }
+
+    // called when a parameter is set from non-rt thread
+    void setParamValue(const uint32_t index, const float value) noexcept
+    {
+        updatedParams[index].value = value;
+        updatedParams[index].updated = true;
+    }
+
+private:
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_param_changes_iid))
+        {
+            *iface = self;
+            return V3_OK;
+        }
+
+        *iface = nullptr;
+        return V3_NO_INTERFACE;
+    }
+
+    static int32_t V3_API carla_get_param_count(void* const self)
+    {
+        carla_v3_input_param_changes* const me = *static_cast<carla_v3_input_param_changes**>(self);
+        return me->pluginExposedCount;
+    }
+
+    static v3_param_value_queue** V3_API carla_get_param_data(void* const self, const int32_t index)
+    {
+        carla_v3_input_param_changes* const me = *static_cast<carla_v3_input_param_changes**>(self);
+        return me->pluginExposedQueue[index];
+    }
+
+    static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*)
+    {
+        // there is nothing here for input parameters, plugins are not meant to call this!
+        return nullptr;
+    }
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct carla_v3_output_param_changes : v3_param_changes_cpp {
+    carla_v3_output_param_changes()
     {
         query_interface = carla_query_interface;
         ref = v3_ref_static;
@@ -155,8 +326,13 @@ struct carla_v3_param_changes : v3_param_changes_cpp {
     static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*) { return nullptr; }
 };
 
-struct carla_v3_event_list : v3_event_list_cpp {
-    carla_v3_event_list()
+// --------------------------------------------------------------------------------------------------------------------
+
+struct carla_v3_input_event_list : v3_event_list_cpp {
+    v3_event events[kPluginMaxMidiEvents];
+    uint16_t numEvents;
+
+    carla_v3_input_event_list()
     {
         query_interface = carla_query_interface;
         ref = v3_ref_static;
@@ -166,6 +342,55 @@ struct carla_v3_event_list : v3_event_list_cpp {
         list.add_event = carla_add_event;
     }
 
+private:
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_event_list_iid))
+        {
+            *iface = self;
+            return V3_OK;
+        }
+
+        *iface = nullptr;
+        return V3_NO_INTERFACE;
+    }
+
+    static uint32_t V3_API carla_get_event_count(void* const self)
+    {
+        const carla_v3_input_event_list* const me = *static_cast<const carla_v3_input_event_list**>(self);
+        return me->numEvents;
+    }
+
+    static v3_result V3_API carla_get_event(void* const self, const int32_t index, v3_event* const event)
+    {
+        const carla_v3_input_event_list* const me = *static_cast<const carla_v3_input_event_list**>(self);
+        CARLA_SAFE_ASSERT_RETURN(index < static_cast<int32_t>(me->numEvents), V3_INVALID_ARG);
+        std::memcpy(event, &me->events[index], sizeof(v3_event));
+        return V3_OK;
+    }
+
+    static v3_result V3_API carla_add_event(void*, v3_event*)
+    {
+        // there is nothing here for input events, plugins are not meant to call this!
+        return V3_NOT_IMPLEMENTED;
+    }
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct carla_v3_output_event_list : v3_event_list_cpp {
+    carla_v3_output_event_list()
+    {
+        query_interface = carla_query_interface;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        list.get_event_count = carla_get_event_count;
+        list.get_event = carla_get_event;
+        list.add_event = carla_add_event;
+    }
+
+private:
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
     {
         if (v3_tuid_match(iid, v3_funknown_iid) ||
@@ -457,6 +682,10 @@ public:
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
         const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller, parameterId, fixedValue);
 
+        // report value to component (next process call)
+        fEvents.paramInputs->setParamValue(parameterId, normalized);
+
+        // report value to edit controller
         v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, parameterId, normalized);
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
@@ -874,6 +1103,12 @@ public:
             pData->param.ranges[j].stepLarge = stepLarge;
         }
 
+        if (params > 0)
+        {
+            fEvents.paramInputs = new carla_v3_input_param_changes(pData->param);
+            fEvents.paramOutputs = new carla_v3_output_param_changes;
+        }
+
         if (needsCtrlIn)
         {
             portName.clear();
@@ -891,6 +1126,7 @@ public:
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
 #endif
+            fEvents.eventInputs = new carla_v3_input_event_list;
         }
 
         if (needsCtrlOut)
@@ -907,6 +1143,7 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
+            fEvents.eventOutputs = new carla_v3_output_event_list;
         }
 
         // plugin hints
@@ -1039,11 +1276,32 @@ public:
             return;
         }
 
+        fEvents.init();
+
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
 
         if (pData->needsReset)
         {
+            /*
+            if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+            {
+            }
+            else
+            */
+            if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS && fEvents.eventInputs != nullptr)
+            {
+                fEvents.eventInputs->numEvents = MAX_MIDI_NOTE;
+
+                for (uint8_t i=0; i < MAX_MIDI_NOTE; ++i)
+                {
+                    v3_event& event(fEvents.eventInputs->events[i]);
+                    carla_zeroStruct(event);
+                    event.type = V3_EVENT_NOTE_OFF;
+                    event.note_off.channel = (pData->ctrlChannel & MIDI_CHANNEL_BIT);
+                    event.note_off.pitch = i;
+                }
+            }
 
             pData->needsReset = false;
         }
@@ -1066,7 +1324,7 @@ public:
 
         if (timeInfo.usecs != 0)
         {
-            fV3TimeContext.system_time_ns = static_cast<int64_t>(timeInfo.usecs);
+            fV3TimeContext.system_time_ns = static_cast<int64_t>(timeInfo.usecs / 1000);
             fV3TimeContext.state |= V3_PROCESS_CTX_SYSTEM_TIME_VALID;
         }
 
@@ -1118,14 +1376,42 @@ public:
 
         if (pData->event.portIn != nullptr)
         {
+            uint16_t numEvents = fEvents.eventInputs->numEvents;
+
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
-            if (pData->extNotes.mutex.tryLock())
+            if (fEvents.eventInputs != nullptr && pData->extNotes.mutex.tryLock())
             {
-                // TODO
+                ExternalMidiNote note = { 0, 0, 0 };
+
+                for (; numEvents < kPluginMaxMidiEvents && ! pData->extNotes.data.isEmpty();)
+                {
+                    note = pData->extNotes.data.getFirst(note, true);
+
+                    CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+
+                    v3_event& event(fEvents.eventInputs->events[numEvents++]);
+                    carla_zeroStruct(event);
+
+                    if (note.velo > 0)
+                    {
+                        event.type = V3_EVENT_NOTE_ON;
+                        event.note_on.channel = (note.channel & MIDI_CHANNEL_BIT);
+                        event.note_on.pitch = note.note;
+                        event.note_on.velocity = static_cast<float>(note.velo) / 127.f;
+                    }
+                    else
+                    {
+                        event.type = V3_EVENT_NOTE_OFF;
+                        event.note_off.channel = (note.channel & MIDI_CHANNEL_BIT);
+                        event.note_off.pitch = note.note;
+                    }
+                }
 
                 pData->extNotes.mutex.unlock();
+
+                fEvents.eventInputs->numEvents = numEvents;
 
             } // End of MIDI Input (External)
 
@@ -1459,11 +1745,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
 
-        carla_v3_event_list eventList;
-        carla_v3_event_list* eventListPtr = &eventList;
-
-        carla_v3_param_changes paramChanges;
-        carla_v3_param_changes* paramChangesPtr = &paramChanges;
+        fEvents.prepare();
 
         v3_audio_bus_buffers processInputs = {
             static_cast<int32_t>(pData->audioIn.count + pData->cvIn.count),
@@ -1482,16 +1764,18 @@ public:
             static_cast<int32_t>(pData->audioOut.count + pData->cvOut.count),
             &processInputs,
             &processOutputs,
-            (v3_param_changes**)&paramChangesPtr,
-            (v3_param_changes**)&paramChangesPtr,
-            (v3_event_list**)&eventListPtr,
-            (v3_event_list**)&eventListPtr,
+            fEvents.paramInputs != nullptr ? (v3_param_changes**)&fEvents.paramInputs : nullptr,
+            fEvents.paramOutputs != nullptr ? (v3_param_changes**)&fEvents.paramOutputs : nullptr,
+            fEvents.eventInputs != nullptr ? (v3_event_list**)&fEvents.eventInputs : nullptr,
+            fEvents.eventOutputs != nullptr ? (v3_event_list**)&fEvents.eventOutputs : nullptr,
             &fV3TimeContext
         };
 
         try {
             v3_cpp_obj(fV3.processor)->process(fV3.processor, &processData);
         } CARLA_SAFE_EXCEPTION("process");
+
+        fEvents.init();
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
@@ -2167,6 +2451,42 @@ private:
 
         CARLA_DECLARE_NON_COPYABLE(Pointers)
     } fV3;
+
+    struct Events {
+        carla_v3_input_param_changes* paramInputs;
+        carla_v3_output_param_changes* paramOutputs;
+        carla_v3_input_event_list* eventInputs;
+        carla_v3_output_event_list* eventOutputs;
+
+        Events() noexcept
+          : paramInputs(nullptr),
+            paramOutputs(nullptr),
+            eventInputs(nullptr),
+            eventOutputs(nullptr) {}
+
+        ~Events()
+        {
+            delete paramInputs;
+            delete paramOutputs;
+            delete eventInputs;
+            delete eventOutputs;
+        }
+
+        void init()
+        {
+            if (paramInputs != nullptr)
+                paramInputs->init();
+
+            if (eventInputs != nullptr)
+                eventInputs->numEvents = 0;
+        }
+
+        void prepare()
+        {
+            if (paramInputs != nullptr)
+                paramInputs->prepare();
+        }
+    } fEvents;
 
     struct UI {
         bool isAttached;

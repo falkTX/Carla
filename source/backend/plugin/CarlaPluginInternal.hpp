@@ -43,7 +43,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Maximum pre-allocated events for some plugin types
 
-const ushort kPluginMaxMidiEvents = 512;
+const uint16_t kPluginMaxMidiEvents = 512;
 
 // -----------------------------------------------------------------------
 // Extra parameter hints, hidden from backend
