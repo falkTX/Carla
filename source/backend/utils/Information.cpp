@@ -71,6 +71,8 @@ const char* carla_get_complete_license_text()
 #endif
 #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST3
         "<li>VST3 plugin support (using JUCE)</li>"
+#else
+        "<li>VST3 plugin support (using Travesty header files)</li>"
 #endif
 #if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
         "<li>AU plugin support (using JUCE)</li>"
@@ -222,7 +224,6 @@ const char* const* carla_get_supported_features()
 #endif
 #ifdef USING_JUCE
         "juce",
-        "vst3",
 # if defined(CARLA_OS_MAC)
         "au",
 # endif

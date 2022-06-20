@@ -212,10 +212,6 @@ class CarlaAboutW(QDialog):
 
         if usingJuce:
             self.ui.l_vst3.setText(self.tr("Using JUCE host"))
-        else:
-            self.ui.line_vst2.hide()
-            self.ui.l_vst3.hide()
-            self.ui.lid_vst3.hide()
 
         if MACOS:
             self.ui.l_au.setText(self.tr("Using JUCE host"))
