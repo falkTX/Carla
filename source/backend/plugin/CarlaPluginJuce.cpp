@@ -503,9 +503,9 @@ public:
                                               ? (AEffect*)fInstance->getPlatformSpecificData()
                                               : nullptr;
 
-                    v3_plugin_view** const vst3view = /*fDesc.pluginFormatName == "VST3"
+                    v3_plugin_view** const vst3view = fDesc.pluginFormatName == "VST3"
                                                     ? (v3_plugin_view**)editor->getPlatformSpecificData()
-                                                    :*/ nullptr;
+                                                    : nullptr;
 
                     fWindow = new JucePluginWindow(opts.frontendWinId, opts.pluginsAreStandalone,
                                                    vst2effect, vst3view);
