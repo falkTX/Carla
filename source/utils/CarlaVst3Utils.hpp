@@ -123,7 +123,7 @@ typedef v3_plugin_factory** (*V3_GETFN)(void);
 CARLA_BACKEND_START_NAMESPACE
 
 static inline
-PluginCategory getPluginCategoryFromV3SubCategories(const char* const subcategories)
+PluginCategory getPluginCategoryFromV3SubCategories(const char* const subcategories) noexcept
 {
     if (std::strstr(subcategories, "Instrument") != nullptr)
         return PLUGIN_CATEGORY_SYNTH;
@@ -138,7 +138,7 @@ uint32_t v3_cconst(const uint8_t a, const uint8_t b, const uint8_t c, const uint
 }
 
 static inline
-const char* tuid2str(const v3_tuid iid)
+const char* tuid2str(const v3_tuid iid) noexcept
 {
     static char buf[44];
     std::snprintf(buf, sizeof(buf), "0x%08X,0x%08X,0x%08X,0x%08X",

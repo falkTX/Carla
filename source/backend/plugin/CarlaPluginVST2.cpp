@@ -216,6 +216,16 @@ public:
         return static_cast<int64_t>(fEffect->uniqueID);
     }
 
+    uint32_t getLatencyInFrames() const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
+
+        const int latency = fEffect->initialDelay;
+        CARLA_SAFE_ASSERT_RETURN(latency >= 0, 0);
+
+        return static_cast<uint32_t>(latency);
+    }
+
     // -------------------------------------------------------------------
     // Information (count)
 

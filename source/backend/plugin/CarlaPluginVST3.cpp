@@ -15,6 +15,10 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+/* TODO list
+ * noexcept safe calls
+ * paramId vs index
+ */
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 #include "AppConfig.h"
@@ -255,10 +259,40 @@ public:
         return getPluginCategoryFromV3SubCategories(fV3ClassInfo.v2.sub_categories);
     }
 
+    uint32_t getLatencyInFrames() const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fV3.processor != nullptr, 0);
+
+        try {
+            return v3_cpp_obj(fV3.processor)->get_latency_samples(fV3.processor);
+        } CARLA_SAFE_EXCEPTION_RETURN("get_latency_samples", 0);
+    }
+
     // -------------------------------------------------------------------
     // Information (count)
 
-    // nothing
+    /* TODO
+    uint32_t getMidiInCount() const noexcept override
+    {
+    }
+
+    uint32_t getMidiOutCount() const noexcept override
+    {
+    }
+
+    uint32_t getParameterScalePointCount(uint32_t parameterId) const noexcept override
+    {
+    }
+    */
+
+    // -------------------------------------------------------------------
+    // Information (current data)
+
+    /* TODO
+    std::size_t getChunkData(void** dataPtr) noexcept override
+    {
+    }
+    */
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
@@ -271,14 +305,14 @@ public:
         if (pData->latency.frames == 0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        /*
+        /* TODO
         if (numPrograms > 1)
             options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         */
 
         options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        /*
+        /* TODO
         if (hasMidiInput())
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
@@ -303,6 +337,12 @@ public:
         return static_cast<float>(
             v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, parameterId, normalized));
     }
+
+    /* TODO
+    float getParameterScalePointValue(uint32_t parameterId, uint32_t scalePointId) const noexcept override
+    {
+    }
+    */
 
     bool getLabel(char* const strBuf) const noexcept override
     {
@@ -341,6 +381,12 @@ public:
         return true;
     }
 
+    /* TODO
+    bool getParameterSymbol(uint32_t parameterId, char* strBuf) const noexcept override
+    {
+    }
+    */
+
     bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr, false);
@@ -374,13 +420,34 @@ public:
         return true;
     }
 
+    /* TODO
+    bool getParameterGroupName(uint32_t parameterId, char* strBuf) const noexcept override
+    {
+    }
+
+    bool getParameterScalePointLabel(uint32_t parameterId, uint32_t scalePointId, char* strBuf) const noexcept override
+    {
+    }
+    */
+
     // -------------------------------------------------------------------
     // Set data (state)
 
-    // nothing
+    /* TODO
+    void prepareForSave(const bool temporary) override
+    {
+        // component to edit controller state or vice-versa here
+    }
+    */
 
     // -------------------------------------------------------------------
     // Set data (internal stuff)
+
+    /* TODO
+    void setName(const char* newName) override
+    {
+    }
+    */
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -409,6 +476,12 @@ public:
 
         CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
+
+    /*
+    void setChunkData(const void* data, std::size_t dataSize) override
+    {
+    }
+    */
 
     // -------------------------------------------------------------------
     // Set ui stuff
@@ -517,6 +590,7 @@ public:
             fUI.window->hide();
         }
     }
+
     // -------------------------------------------------------------------
     // Plugin state
 
