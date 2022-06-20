@@ -194,6 +194,7 @@ public:
         : CarlaPlugin(engine, id),
           fFirstActive(true),
           fAudioOutBuffers(nullptr),
+          fLastKnownLatency(0),
           fLastTimeInfo(),
           fV3TimeContext(),
           fV3Application(new carla_v3_host_application),
@@ -261,11 +262,7 @@ public:
 
     uint32_t getLatencyInFrames() const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fV3.processor != nullptr, 0);
-
-        try {
-            return v3_cpp_obj(fV3.processor)->get_latency_samples(fV3.processor);
-        } CARLA_SAFE_EXCEPTION_RETURN("get_latency_samples", 0);
+        return fLastKnownLatency;
     }
 
     // -------------------------------------------------------------------
@@ -302,7 +299,7 @@ public:
         uint options = 0x0;
 
         // can't disable fixed buffers if using latency
-        if (pData->latency.frames == 0)
+        if (fLastKnownLatency == 0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         /* TODO
@@ -640,7 +637,7 @@ public:
                 aIns += static_cast<uint32_t>(busInfo.channel_count);
         }
 
-        for (int32_t j=0; j<numAudioInputBuses; ++j)
+        for (int32_t j=0; j<numAudioOutputBuses; ++j)
         {
             v3_bus_info busInfo = {};
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component, V3_AUDIO, V3_OUTPUT, j, &busInfo) == V3_OK);
@@ -946,11 +943,11 @@ public:
             pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
 
         // check initial latency
-        if (const uint32_t latency = v3_cpp_obj(fV3.processor)->get_latency_samples(fV3.processor))
+        if ((fLastKnownLatency = v3_cpp_obj(fV3.processor)->get_latency_samples(fV3.processor)) != 0)
         {
-            pData->client->setLatency(latency);
+            pData->client->setLatency(fLastKnownLatency);
 #ifndef BUILD_BRIDGE
-            pData->latency.recreateBuffers(std::max(aIns+cvIns, aOuts+cvOuts), latency);
+            pData->latency.recreateBuffers(std::max(aIns+cvIns, aOuts+cvOuts), fLastKnownLatency);
 #endif
         }
 
@@ -1880,8 +1877,7 @@ public:
 
         pData->options = 0x0;
 
-        if (v3_cpp_obj(fV3.processor)->get_latency_samples(fV3.processor) != 0 /*|| hasMidiOutput()*/ ||
-            isPluginOptionEnabled(options, PLUGIN_OPTION_FIXED_BUFFERS))
+        if (fLastKnownLatency != 0 /*|| hasMidiOutput()*/ || isPluginOptionEnabled(options, PLUGIN_OPTION_FIXED_BUFFERS))
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (isPluginOptionEnabled(options, PLUGIN_OPTION_USE_CHUNKS))
@@ -1948,11 +1944,12 @@ private:
 
     bool fFirstActive; // first process() call after activate()
     float** fAudioOutBuffers;
+    uint32_t fLastKnownLatency;
     EngineTimeInfo fLastTimeInfo;
     v3_process_context fV3TimeContext;
 
     CarlaScopedPointer<carla_v3_host_application> fV3Application;
-    inline v3_funknown** getHostContext() const noexcept { return (v3_funknown**)fV3Application.get(); }
+    inline v3_funknown** getHostContext() const noexcept { return (v3_funknown**)&fV3Application; }
 
     // v3_class_info_2 is ABI compatible with v3_class_info
     union ClassInfo {
