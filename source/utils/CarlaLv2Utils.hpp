@@ -2291,6 +2291,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                                 rdfPort->Unit.Unit = LV2_PORT_UNIT_S;
                             else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
                                 rdfPort->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
+                            else if (std::strcmp(unitUnit, "http://moddevices.com/ns/mod#volts") == 0)
+                                rdfPort->Unit.Unit = LV2_PORT_UNIT_VOLTS;
                             else
                                 carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit '%s'", uri, unitUnit);
                         }
@@ -2603,6 +2605,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                                 rdfParam.Unit.Unit = LV2_PORT_UNIT_S;
                             else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
                                 rdfParam.Unit.Unit = LV2_PORT_UNIT_SEMITONE;
+                            else if (std::strcmp(unitUnit, "http://moddevices.com/ns/mod#volts") == 0)
+                                rdfParam.Unit.Unit = LV2_PORT_UNIT_VOLTS;
                             else
                                 carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit '%s'", uri, unitUnit);
                         }

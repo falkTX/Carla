@@ -96,6 +96,7 @@ typedef uint32_t LV2_Property;
 #define LV2_PORT_UNIT_PC                 22
 #define LV2_PORT_UNIT_S                  23
 #define LV2_PORT_UNIT_SEMITONE           24
+#define LV2_PORT_UNIT_VOLTS              25
 
 #define LV2_IS_PORT_UNIT_BAR(x)          ((x) == LV2_PORT_UNIT_BAR)
 #define LV2_IS_PORT_UNIT_BEAT(x)         ((x) == LV2_PORT_UNIT_BEAT)
@@ -121,6 +122,7 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_PORT_UNIT_PC(x)           ((x) == LV2_PORT_UNIT_PC)
 #define LV2_IS_PORT_UNIT_S(x)            ((x) == LV2_PORT_UNIT_S)
 #define LV2_IS_PORT_UNIT_SEMITONE(x)     ((x) == LV2_PORT_UNIT_SEMITONE)
+#define LV2_IS_PORT_UNIT_VOLTS(x)        ((x) == LV2_PORT_UNIT_VOLTS)
 
 // Port Types
 #define LV2_PORT_INPUT                   0x001

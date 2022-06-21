@@ -1271,6 +1271,9 @@ public:
                 case LV2_PORT_UNIT_SEMITONE:
                     std::strncpy(strBuf, "semi", STR_MAX);
                     return true;
+                case LV2_PORT_UNIT_VOLTS:
+                    std::strncpy(strBuf, "v", STR_MAX);
+                    return true;
                 }
             }
         }
