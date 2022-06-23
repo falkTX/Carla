@@ -5183,6 +5183,9 @@ had_error:
 }
 
 //------------------------------------------------------------------------------
+#ifdef _NSEEL_GLUE_ARM_H_
+__attribute__((target("arm")))
+#endif
 void NSEEL_code_execute(NSEEL_CODEHANDLE code)
 {
 #ifndef GLUE_TABPTR_IGNORED
