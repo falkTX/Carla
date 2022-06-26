@@ -1664,7 +1664,7 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
                 audioIns += busInfo.channel_count;
         }
 
-        for (int32_t j=0; j<numAudioInputBuses; ++j)
+        for (int32_t j=0; j<numAudioOutputBuses; ++j)
         {
             v3_bus_info busInfo = {};
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_OUTPUT, j, &busInfo) == V3_OK);
@@ -1724,7 +1724,7 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
                 }
             }
 
-            for (int32_t j=0; j<numAudioInputBuses; ++j)
+            for (int32_t j=0; j<numAudioOutputBuses; ++j)
             {
                 v3_bus_info busInfo = {};
                 CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_OUTPUT, j, &busInfo) == V3_OK);
