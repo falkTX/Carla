@@ -1142,8 +1142,8 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
         case tempDirectory:
         {
-            WCHAR wdest [2048];
-            CHAR adest [2048];
+            WCHAR wdest [MAX_PATH + 256];
+            CHAR adest [MAX_PATH + 256];
             wdest[0] = 0;
             GetTempPathW ((DWORD) numElementsInArray (wdest), wdest);
 
@@ -1203,18 +1203,10 @@ public:
                 return false;
         }
 
-        const size_t wlen = wcslen(findData.cFileName);
-        CARLA_SAFE_ASSERT_RETURN (wlen > 0, false);
+        CHAR apath [MAX_PATH + 256];
 
-        const int len = WideCharToMultiByte (CP_UTF8, 0, findData.cFileName, (int) wlen, nullptr, 0, nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN (len > 0, false);
-
-        if (CHAR* const path = new CHAR [len])
-        {
-            WideCharToMultiByte (CP_UTF8, 0, findData.cFileName, (int) wlen, path, len, nullptr, nullptr);
-            filenameFound = path;
-            delete[] path;
-        }
+        if (WideCharToMultiByte (CP_UTF8, 0, findData.cFileName, -1, apath, numElementsInArray (apath), nullptr, nullptr))
+            filenameFound = apath;
 
         if (isDir != nullptr)         *isDir        = ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
         if (isReadOnly != nullptr)    *isReadOnly   = ((findData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0);
