@@ -27,6 +27,17 @@ YSFX_FLAGS += -Wno-sign-compare
 YSFX_FLAGS += -Wno-unused-function
 YSFX_FLAGS += -Wno-unused-parameter
 
+ifeq ($(CPU_ARM),true)
+ifneq ($(CPU_ARM64),true)
+# optimized assembly code for armhf does not run properly yet
+YSFX_FLAGS += -DEEL_TARGET_PORTABLE
+endif
+endif
+
+ifeq ($(YSFX_FTS_LACKS_LFS_SUPPORT),true)
+YSFX_FLAGS += -DYSFX_FTS_LACKS_LFS_SUPPORT
+endif
+
 ifneq ($(WIN32),true)
 # NOTE: not compatible with MingGW, breaks win32_utf8
 YSFX_FLAGS += -D_FILE_OFFSET_BITS=64
