@@ -51,6 +51,8 @@
 # define CARLA_OS_BSD
 #elif defined(__GNU__)
 # define CARLA_OS_GNU_HURD
+#elif defined(__EMSCRIPTEN__)
+# define CARLA_OS_WASM
 #else
 # warning Unsupported platform!
 #endif
@@ -110,6 +112,13 @@
 # define P_UINTPTR "%x"
 # define P_SIZE    "%u"
 # define P_SSIZE   "%i"
+#elif defined(CARLA_OS_WASM)
+# define P_INT64   "%lli"
+# define P_UINT64  "%llu"
+# define P_INTPTR  "%li"
+# define P_UINTPTR "%lx"
+# define P_SIZE    "%lu"
+# define P_SSIZE   "%li"
 #elif defined(CARLA_OS_MAC)
 # define P_INT64   "%lli"
 # define P_UINT64  "%llu"

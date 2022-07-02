@@ -23,10 +23,13 @@
 *.dmg
 *.dylib
 *.exe
+*.html
+*.js
 *.msi
 *.so
 *.vst
 *.vst3
+*.wasm
 
 # Binary dir
 /bin/ansi-pedantic-test_*

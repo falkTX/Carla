@@ -23,7 +23,9 @@
 #endif
 
 #include "ysfx_utils.hpp"
+#ifndef __EMSCRIPTEN__
 #include <fts.h>
+#endif
 #include <string>
 #include <cstring>
 
@@ -31,6 +33,7 @@ namespace ysfx {
 
 void visit_directories(const char *rootpath, bool (*visit)(const std::string &, void *), void *data)
 {
+#ifndef __EMSCRIPTEN__
     char *argv[] = {(char *)rootpath, nullptr};
 
     auto compar = [](const FTSENT **a, const FTSENT **b) -> int {
@@ -53,6 +56,7 @@ void visit_directories(const char *rootpath, bool (*visit)(const std::string &, 
                 return;
         }
     }
+#endif
 }
 
 } // namespace ysfx
