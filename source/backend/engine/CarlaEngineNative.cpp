@@ -2953,6 +2953,11 @@ const char* const* getRtAudioApiDeviceNames(const uint) { return nullptr; }
 const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint, const char* const) { return nullptr; }
 #endif
 
+#ifdef HAVE_SDL
+CarlaEngine*       newSDL() { return nullptr; }
+const char* const* getSDLDeviceNames() { return nullptr; }
+#endif
+
 }
 
 CARLA_BACKEND_END_NAMESPACE

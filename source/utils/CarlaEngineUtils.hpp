@@ -46,6 +46,8 @@ const char* EngineType2Str(const EngineType type) noexcept
         return "kEngineTypeJuce";
     case kEngineTypeRtAudio:
         return "kEngineTypeRtAudio";
+    case kEngineTypeSDL:
+        return "kEngineTypeSDL";
     case kEngineTypePlugin:
         return "kEngineTypePlugin";
     case kEngineTypeBridge:

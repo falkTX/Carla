@@ -217,6 +217,12 @@ ifeq ($(HAVE_PYQT),true)
 BASE_FLAGS += -DHAVE_PYQT
 endif
 
+ifeq ($(HAVE_SDL2),true)
+BASE_FLAGS += -DHAVE_SDL -DHAVE_SDL2
+else ifeq ($(HAVE_SDL1),true)
+BASE_FLAGS += -DHAVE_SDL -DHAVE_SDL1
+endif
+
 ifeq ($(HAVE_SNDFILE),true)
 BASE_FLAGS += -DHAVE_SNDFILE
 endif

@@ -63,19 +63,24 @@ enum EngineType {
     kEngineTypeRtAudio = 3,
 
     /*!
+     * SDL engine type, used to provide Native Audio support.
+     */
+    kEngineTypeSDL = 4,
+
+    /*!
      * Plugin engine type, used to export the engine as a plugin.
      */
-    kEngineTypePlugin = 4,
+    kEngineTypePlugin = 5,
 
     /*!
      * Bridge engine type, used in BridgePlugin class.
      */
-    kEngineTypeBridge = 5,
+    kEngineTypeBridge = 6,
 
     /*!
      * Dummy engine type, does not send audio or MIDI anywhere.
      */
-    kEngineTypeDummy = 6
+    kEngineTypeDummy = 7
 };
 
 /*!

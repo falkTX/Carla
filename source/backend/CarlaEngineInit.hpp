@@ -75,6 +75,10 @@ const char*        getRtAudioApiName(uint index);
 const char* const* getRtAudioApiDeviceNames(uint index);
 const EngineDriverDeviceInfo* getRtAudioDeviceInfo(uint index, const char* deviceName);
 
+// SDL
+CarlaEngine*       newSDL();
+const char* const* getSDLDeviceNames();
+
 }
 
 // -----------------------------------------------------------------------

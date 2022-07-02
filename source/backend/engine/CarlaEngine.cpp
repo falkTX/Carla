@@ -107,6 +107,9 @@ uint CarlaEngine::getDriverCount()
 # ifdef USING_RTAUDIO
     count += getRtAudioApiCount();
 # endif
+# ifdef HAVE_SDL
+    ++count;
+# endif
 #endif
 
     return count;
@@ -138,7 +141,13 @@ const char* CarlaEngine::getDriverName(const uint index2)
     {
         if (index < count)
             return getRtAudioApiName(index);
+        index -= count;
     }
+# endif
+# ifdef HAVE_SDL
+    if (index == 0)
+        return "SDL";
+    --index;
 # endif
 #endif
 
@@ -175,7 +184,13 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
     {
         if (index < count)
             return getRtAudioApiDeviceNames(index);
+        index -= count;
     }
+# endif
+# ifdef HAVE_SDL
+    if (index == 0)
+        return getSDLDeviceNames();
+    --index;
 # endif
 #endif
 
@@ -215,11 +230,25 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
     {
         if (index < count)
             return getRtAudioDeviceInfo(index, deviceName);
+        index -= count;
     }
+# endif
+# ifdef HAVE_SDL
+    if (index == 0)
+    {
+        static uint32_t sdlBufferSizes[] = { 512, 1024, 2048, 4096, 8192, 0 };
+        static double   sdlSampleRates[] = { 44100.0, 48000.0, 88200.0, 96000.0, 0.0 };
+        static EngineDriverDeviceInfo devInfo;
+        devInfo.hints       = 0x0;
+        devInfo.bufferSizes = sdlBufferSizes;
+        devInfo.sampleRates = sdlSampleRates;
+        return &devInfo;
+    }
+    --index;
 # endif
 #endif
 
-    carla_stderr("CarlaEngine::getDriverDeviceNames(%i, \"%s\") - invalid index", index2, deviceName);
+    carla_stderr("CarlaEngine::getDriverDeviceInfo(%i, \"%s\") - invalid index", index2, deviceName);
     return nullptr;
 }
 
@@ -251,7 +280,13 @@ bool CarlaEngine::showDriverDeviceControlPanel(const uint index2, const char* co
     {
         if (index < count)
             return false;
+        index -= count;
     }
+# endif
+# ifdef HAVE_SDL
+    if (index == 0)
+        return false;
+    --index;
 # endif
 #endif
 
@@ -297,6 +332,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     if (std::strcmp(driverName, "WASAPI") == 0 || std::strcmp(driverName, "Windows Audio") == 0)
         return newJuce(AUDIO_API_WASAPI);
 # endif
+
 # ifdef USING_RTAUDIO
     // -------------------------------------------------------------------
     // common
@@ -329,6 +365,11 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newRtAudio(AUDIO_API_DIRECTSOUND);
     if (std::strcmp(driverName, "WASAPI") == 0)
         return newRtAudio(AUDIO_API_WASAPI);
+# endif
+
+# ifdef HAVE_SDL
+    if (std::strcmp(driverName, "SDL") == 0)
+        return newSDL();
 # endif
 #endif
 

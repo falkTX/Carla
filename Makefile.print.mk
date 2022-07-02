@@ -102,6 +102,11 @@ else
 	@printf -- "DirectSound: $(ANS_NO)  $(mZ)Windows only$(mE)\n"
 	@printf -- "WASAPI:      $(ANS_NO)  $(mZ)Windows only$(mE)\n"
 endif
+ifeq ($(HAVE_SDL),true)
+	@printf -- "SDL:         $(ANS_YES)\n"
+else
+	@printf -- "SDL:         $(ANS_NO)  $(mS)Missing SDL$(mE)\n"
+endif
 	@printf -- "\n"
 
 	@printf -- "$(tS)---> Plugin formats: $(tE)\n"

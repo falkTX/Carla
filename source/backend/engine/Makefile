@@ -59,6 +59,11 @@ OBJSa += \
 	$(OBJDIR)/CarlaEngineRtAudio.cpp.o
 endif
 
+ifeq ($(HAVE_SDL),true)
+OBJSa += \
+	$(OBJDIR)/CarlaEngineSDL.cpp.o
+endif
+
 OBJSp = $(OBJS) \
 	$(OBJDIR)/CarlaEngineNative.cpp.exp.o
 
@@ -98,6 +103,11 @@ $(OBJDIR)/CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEngineRtAudio.cpp"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaEngineSDL.cpp.o: CarlaEngineSDL.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaEngineSDL.cpp"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(SDL_FLAGS) -c -o $@
 
 ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp
