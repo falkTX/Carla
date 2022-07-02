@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -222,7 +222,7 @@
 
     @see VSTPluginFormat, VST3PluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST, JUCE_PLUGINHOST_AU
 */
-#if defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
+#if defined(APPCONFIG_OS_LINUX) || defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
 # define JUCE_PLUGINHOST_VST3 1
 #else
 # define JUCE_PLUGINHOST_VST3 0
