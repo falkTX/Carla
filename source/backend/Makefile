@@ -22,6 +22,10 @@ endif
 
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 
+ifneq ($(HAIKU),true)
+BUILD_CXX_FLAGS += -pthread
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 STANDALONE_LIBS  = $(MODULEDIR)/carla_engine.a

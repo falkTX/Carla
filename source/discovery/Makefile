@@ -8,12 +8,6 @@ CWD=..
 MODULENAME=carla-discovery
 include $(CWD)/Makefile.mk
 
-ifeq ($(WIN64),true)
-winv=64
-else
-winv=32
-endif
-
 # Workaround GCC bug
 ifeq ($(TESTBUILD),true)
 ifeq ($(USING_JUCE),true)
@@ -41,7 +35,7 @@ ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
 endif
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 LINK_FLAGS += -lole32 -lssp -mwindows
 endif
 
@@ -50,7 +44,7 @@ BUILD_CXX_FLAGS += -std=gnu++14
 endif
 
 ifeq ($(USING_JUCE),true)
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
 endif
 endif

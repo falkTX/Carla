@@ -12,13 +12,13 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(JUCE_AUDIO_DEVICES_FLAGS) -I.. -std=gnu++14
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 # BUILD_CXX_FLAGS += -Wno-missing-field-initializers
 # BUILD_CXX_FLAGS += -I$(CWD)/includes/asio
 BUILD_CXX_FLAGS += -I$(CWD)/modules/rtaudio/include
 endif
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I../mingw-std-threads
 endif
 

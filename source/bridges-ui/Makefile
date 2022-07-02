@@ -70,7 +70,7 @@ endif
 TARGETS += ui_lv2-gtk2
 TARGETS += ui_lv2-gtk3
 
-ifneq ($(MACOS_OR_WIN32),true)
+ifneq ($(MACOS_OR_WINDOWS),true)
 ifeq ($(HAVE_QT4),true)
 TARGETS += ui_lv2-qt4
 endif
@@ -88,7 +88,7 @@ ifeq ($(MACOS),true)
 TARGETS += ui_lv2-cocoa
 endif
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 TARGETS += ui_lv2-windows
 endif
 

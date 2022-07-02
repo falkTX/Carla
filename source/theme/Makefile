@@ -10,7 +10,7 @@ include ../modules/Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 NON_STATIC_LINK_FLAGS = $(shell echo $(LINK_FLAGS) | awk 'sub(" -static","")') -static-libgcc
 else
 NON_STATIC_LINK_FLAGS = $(LINK_FLAGS)

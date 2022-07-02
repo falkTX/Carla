@@ -15,12 +15,16 @@ endif
 endif
 
 ifeq ($(USING_JUCE),true)
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
 endif
 endif
 
 BUILD_CXX_FLAGS += $(MAGIC_FLAGS)
+
+ifneq ($(HAIKU),true)
+BUILD_CXX_FLAGS += -pthread
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 

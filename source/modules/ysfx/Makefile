@@ -38,17 +38,26 @@ ifeq ($(YSFX_FTS_LACKS_LFS_SUPPORT),true)
 YSFX_FLAGS += -DYSFX_FTS_LACKS_LFS_SUPPORT
 endif
 
-ifneq ($(WIN32),true)
-# NOTE: not compatible with MingGW, breaks win32_utf8
-YSFX_FLAGS += -D_FILE_OFFSET_BITS=64
+ifneq ($(HAIKU),true)
+YSFX_FLAGS += -pthread
 endif
 
-ifeq ($(WIN32),true)
+ifeq ($(WASM),true)
+# FIXME
+YSFX_FLAGS += -DEEL_TARGET_PORTABLE
+endif
+
+ifeq ($(WINDOWS),true)
 YSFX_FLAGS += -DNOMINMAX
 endif
 
+# ifneq ($(CPU_I386),true)
+# # NOTE: not compatible with MingGW, breaks win32_utf8
+# YSFX_FLAGS += -D_FILE_OFFSET_BITS=64
+# endif
+
 ifeq ($(HAVE_YSFXGUI),true)
-ifneq ($(MACOS_OR_WIN32),true)
+ifneq ($(MACOS_OR_WINDOWS),true)
 YSFX_FLAGS += -DSWELL_LICE_GDI -DSWELL_FONTCONFIG -DSWELL_FREETYPE
 endif
 else
@@ -83,7 +92,7 @@ OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/eel2/nseel-lextab.c.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/eel2/nseel-ram.c.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/eel2/nseel-yylex.c.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/fft.c.o
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/win32_utf8.c.o
 endif
 
@@ -103,7 +112,7 @@ OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_palette.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_texgen.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_text.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/lice/lice_textnew.cpp.o
-ifneq ($(WIN32),true)
+ifneq ($(WINDOWS),true)
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-ini.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell.cpp.o
 ifeq ($(MACOS),true)
@@ -129,7 +138,7 @@ OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-misc-generic.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-miscdlg-generic.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-modstub-generic.cpp.o
 OBJS += $(OBJDIR)/thirdparty/WDL/source/WDL/swell/swell-wnd-generic.cpp.o
-endif # !WIN32
+endif # !WINDOWS
 endif
 endif # HAVE_YSFXGUI
 

@@ -15,11 +15,11 @@ BUILD_CXX_FLAGS += $(JUCE_GRAPHICS_FLAGS) -I.. -std=gnu++14
 ifeq ($(LINUX),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags freetype2)
 endif
-# ifeq ($(WIN32),true)
+# ifeq ($(WINDOWS),true)
 # BUILD_CXX_FLAGS += -Wno-missing-field-initializers -Wno-strict-overflow
 # endif
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I../mingw-std-threads
 endif
 

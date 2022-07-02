@@ -14,6 +14,10 @@ BUILD_CXX_FLAGS += -Wno-undef
 endif
 endif
 
+ifneq ($(HAIKU),true)
+BUILD_CXX_FLAGS += -pthread
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin
@@ -137,7 +141,7 @@ SYMBOLS_LV2    += -Wl,-exported_symbol,_lv2ui_descriptor
 SYMBOLS_LV2_UI  = -Wl,-exported_symbol,_lv2ui_descriptor
 endif
 SYMBOLS_VST     = -Wl,-exported_symbol,_VSTPluginMain
-else ifeq ($(WIN32),true)
+else ifeq ($(WINDOWS),true)
 SYMBOLS_NATIVE  = symbols/carla-native-plugin.def
 SYMBOLS_VST     = symbols/carla-vst.def
 ifeq ($(HAVE_PYQT),true)
@@ -220,7 +224,7 @@ endif # !STATIC_PLUGIN_TARGET
 
 all: $(TARGETS)
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 wine: $(BINDIR)/CarlaVstShellBridged.dll $(BINDIR)/CarlaVstFxShellBridged.dll
 else
 wine: $(BINDIR)/CarlaVstShellBridged.dll.so $(BINDIR)/CarlaVstFxShellBridged.dll.so
@@ -332,7 +336,7 @@ $(BINDIR)/CarlaPatchbay$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-syn.o $(OBJD
 $(BINDIR)/CarlaPatchbay16$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-syn16.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaPatchbay16$(LIB_EXT)"
-	$(SILENT)$(CXX) $^ $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_juce) $(LIBS_juce) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $^ $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_juce) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/CarlaPatchbay32$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-syn32.o $(OBJDIR)/carla-vst-export.cpp.o
 	-@mkdir -p $(BINDIR)
@@ -361,7 +365,7 @@ $(BINDIR)/CarlaVstFxShell$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.shellfx.o $(OBJDIR)
 	@echo "Linking CarlaVstFxShell$(LIB_EXT)"
 	$(SILENT)$(CXX) $^ $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_juce) $(LIBS_END) $(SHARED) $(SYMBOLS_VST) $(NATIVE_LINK_FLAGS) -o $@
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 $(BINDIR)/CarlaVstShellBridged.dll: $(OBJDIR)/carla-vst-export-bridged.cpp.synth.o
 	-@mkdir -p $(BINDIR)
 	@echo "Linking CarlaVstShellBridged.dll"

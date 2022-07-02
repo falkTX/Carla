@@ -12,7 +12,7 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(JUCE_DATA_STRUCTURES_FLAGS) -I.. -std=gnu++14
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I../mingw-std-threads
 endif
 

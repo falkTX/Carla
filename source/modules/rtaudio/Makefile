@@ -12,7 +12,7 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(RTAUDIO_FLAGS) -I$(CWD) -Iinclude
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -Wno-unused-function -Wno-unused-but-set-variable
 endif
 

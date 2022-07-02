@@ -17,6 +17,10 @@ BUILD_CXX_FLAGS += -Wno-deprecated-declarations
 endif
 endif
 
+ifneq ($(HAIKU),true)
+BUILD_CXX_FLAGS += -pthread
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin
@@ -35,7 +39,7 @@ BUILD_CXX_FLAGS += -DBUILD_BRIDGE -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/include
 BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
 
 ifeq ($(USING_JUCE),true)
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
 endif
 endif
@@ -182,7 +186,7 @@ LIBS_native        += $(CUSTOM_DPF_PATH)/build/libdgl-opengl.a
 endif
 endif
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 EXTRA_LINK_FLAGS   += -lole32 -lssp -mwindows
 endif
 

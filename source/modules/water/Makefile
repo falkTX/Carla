@@ -12,6 +12,10 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I..
 
+ifneq ($(HAIKU),true)
+BUILD_CXX_FLAGS += -pthread
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)

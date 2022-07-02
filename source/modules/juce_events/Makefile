@@ -12,11 +12,11 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(JUCE_EVENTS_FLAGS) -I.. -std=gnu++14
 
-# ifeq ($(WIN32),true)
+# ifeq ($(WINDOWS),true)
 # BUILD_CXX_FLAGS += -Wno-missing-field-initializers
 # endif
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I../mingw-std-threads
 endif
 

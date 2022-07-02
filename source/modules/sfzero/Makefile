@@ -12,6 +12,10 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I$(CWD)/modules
 
+ifneq ($(HAIKU),true)
+BUILD_CXX_FLAGS += -pthread
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 OBJS = $(OBJDIR)/SFZero.cpp.o

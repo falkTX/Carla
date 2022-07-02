@@ -20,7 +20,7 @@ BUILD_CXX_FLAGS += -DRELEASE
 endif
 
 # needed by vst3 on mingw
-# ifeq ($(WIN32),true)
+# ifeq ($(WINDOWS),true)
 # BUILD_CXX_FLAGS += -D_NATIVE_WCHAR_T_DEFINED -D__wchar_t=wchar_t -fpermissive -Wno-unknown-pragmas
 # # needed for bloated juce
 # ifeq ($(DEBUG),true)
@@ -28,7 +28,7 @@ endif
 # endif
 # endif
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I../mingw-std-threads
 endif
 

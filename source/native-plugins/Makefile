@@ -14,6 +14,10 @@ include ../modules/Makefile.mk
 BUILD_C_FLAGS   += -I..
 BUILD_CXX_FLAGS += -I.. -I$(CWD)/modules
 
+ifneq ($(HAIKU),true)
+BUILD_CXX_FLAGS += -pthread
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Set targets
 

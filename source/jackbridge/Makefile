@@ -73,7 +73,7 @@ OBJS_win32e   = $(OBJDIR)/JackBridgeExport.cpp.win32e.o
 all: $(MODULEDIR)/$(MODULENAME).a
 min: $(MODULEDIR)/$(MODULENAME).min.a
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 posix32:
 posix64:
 posix32e:

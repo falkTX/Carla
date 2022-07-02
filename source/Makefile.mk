@@ -7,10 +7,6 @@
 # ---------------------------------------------------------------------------------------------------------------------
 # Base environment vars
 
-AR  ?= ar
-CC  ?= gcc
-CXX ?= g++
-
 WINECC ?= winegcc
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -30,7 +26,12 @@ BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP -fno-comm
 BASE_OPTS  = -O3 -ffast-math -fdata-sections -ffunction-sections
 
 ifeq ($(CPU_I386_OR_X86_64),true)
-BASE_OPTS += -mtune=generic -msse -msse2 -mfpmath=sse
+BASE_OPTS += -mtune=generic -msse -msse2
+ifeq ($(WASM),true)
+BASE_OPTS += -msse3 -msimd128
+else
+BASE_OPTS += -mfpmath=sse
+endif
 endif
 
 ifeq ($(CPU_ARM),true)
@@ -42,15 +43,18 @@ endif
 ifeq ($(MACOS),true)
 # MacOS linker flags
 BASE_FLAGS += -Wno-deprecated-declarations
-LINK_OPTS   = -fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs
+LINK_OPTS   = -fdata-sections -ffunction-sections -Wl,-dead_strip,-dead_strip_dylibs
 ifneq ($(SKIP_STRIPPING),true)
 LINK_OPTS += -Wl,-x
 endif
 else
 # Common linker flags
-LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed
+LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-O1,--gc-sections
 ifneq ($(SKIP_STRIPPING),true)
 LINK_OPTS += -Wl,--strip-all
+endif
+ifneq ($(WASM),true)
+LINK_OPTS += -Wl,--as-needed
 endif
 endif
 
@@ -59,7 +63,7 @@ ifeq ($(NOOPT),true)
 BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections -DBUILDING_CARLA_NOOPT
 endif
 
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 # Assume we want posix
 BASE_FLAGS += -posix
 # Needed for windows, see https://github.com/falkTX/Carla/issues/855
@@ -84,7 +88,7 @@ BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden
 endif
 
-ifneq ($(MACOS_OR_WIN32),true)
+ifneq ($(MACOS_OR_WASM_OR_WINDOWS),true)
 ifneq ($(BSD),true)
 BASE_FLAGS += -fno-gnu-unique
 endif
@@ -103,13 +107,12 @@ BUILD_C_FLAGS   = $(BASE_FLAGS) -std=gnu99 $(CFLAGS)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=gnu++11 $(CXXFLAGS)
 LINK_FLAGS      = $(LINK_OPTS) $(LDFLAGS)
 
-ifneq ($(MACOS),true)
+ifeq ($(WASM),true)
+# Special flag for emscripten
+LINK_FLAGS += -sLLD_REPORT_UNDEFINED
+else ifneq ($(MACOS),true)
 # Not available on MacOS
-LINK_FLAGS     += -Wl,--no-undefined
-endif
-
-ifeq ($(MACOS_OLD),true)
-BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS) -DHAVE_CPP11_SUPPORT=0
+LINK_FLAGS += -Wl,--no-undefined
 endif
 
 ifeq ($(STATIC_BINARIES),true)
@@ -150,12 +153,6 @@ BASE_FLAGS += -isystem /opt/kxstudio/include
 endif
 ifeq ($(MACOS),true)
 CXXFLAGS   += -isystem /System/Library/Frameworks
-endif
-ifeq ($(WIN32),true)
-BASE_FLAGS += -isystem /opt/mingw32/include
-endif
-ifeq ($(WIN64),true)
-BASE_FLAGS += -isystem /opt/mingw64/include
 endif
 # TODO
 ifeq ($(CLANG),true)
@@ -231,7 +228,7 @@ endif
 ifeq ($(USING_JUCE),true)
 BASE_FLAGS += -DUSING_JUCE
 BASE_FLAGS += -DJUCE_APP_CONFIG_HEADER='"AppConfig.h"'
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 BASE_FLAGS += -D_WIN32_WINNT=0x0600
 endif
 endif
@@ -258,21 +255,23 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set app extension
 
-ifeq ($(WIN32),true)
+ifeq ($(WASM),true)
+APP_EXT = .html
+else ifeq ($(WINDOWS),true)
 APP_EXT = .exe
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Set shared lib extension
 
-LIB_EXT = .so
-
 ifeq ($(MACOS),true)
 LIB_EXT = .dylib
-endif
-
-ifeq ($(WIN32),true)
+else ifeq ($(WASM),true)
+LIB_EXT = .wasm
+else ifeq ($(WINDOWS),true)
 LIB_EXT = .dll
+else
+LIB_EXT = .so
 endif
 
 BASE_FLAGS += -DCARLA_LIB_EXT=\"$(LIB_EXT)\"
@@ -303,6 +302,8 @@ endif
 
 ifeq ($(MACOS),true)
 SHARED = -dynamiclib
+else ifeq ($(WASM),true)
+SHARED = -sSIDE_MODULE=1
 else
 SHARED = -shared
 endif
@@ -326,7 +327,7 @@ LINK := ln -sf
 
 ifneq ($(BUILDING_FOR_WINE),true)
 ifeq ($(CROSS_COMPILING),true)
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 NEEDS_WINE = true
 endif
 endif
