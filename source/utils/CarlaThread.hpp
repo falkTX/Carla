@@ -37,13 +37,15 @@ protected:
      */
     CarlaThread(const char* const threadName) noexcept
         : fLock(),
+         #ifndef CARLA_OS_WASM
           fSignal(),
+         #endif
           fName(threadName),
-#ifdef PTW32_DLLPORT
+         #ifdef PTW32_DLLPORT
           fHandle({nullptr, 0}),
-#else
+         #else
           fHandle(0),
-#endif
+         #endif
           fShouldExit(false) {}
 
     /*
@@ -107,7 +109,7 @@ public:
         {
             sched_param.sched_priority = 80;
 
-#ifndef CARLA_OS_HAIKU
+#if !defined(CARLA_OS_HAIKU) && !defined(CARLA_OS_WASM)
             if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)          == 0  &&
                 pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0  &&
 # ifndef CARLA_OS_WIN
@@ -145,16 +147,20 @@ public:
             pthread_attr_destroy(&attr);
        }
 
+#ifndef CARLA_OS_WASM
         CARLA_SAFE_ASSERT_RETURN(ok, false);
-#ifdef PTW32_DLLPORT
+# ifdef PTW32_DLLPORT
         CARLA_SAFE_ASSERT_RETURN(handle.p != nullptr, false);
-#else
+# else
         CARLA_SAFE_ASSERT_RETURN(handle != 0, false);
+# endif
 #endif
         _copyFrom(handle);
 
+       #ifndef CARLA_OS_WASM
         // wait for thread to start
         fSignal.wait();
+       #endif
         return true;
     }
 
@@ -254,7 +260,9 @@ public:
 
 private:
     CarlaMutex         fLock;       // Thread lock
+   #ifndef CARLA_OS_WASM
     CarlaSignal        fSignal;     // Thread start wait signal
+   #endif
     const CarlaString  fName;       // Thread name
     volatile pthread_t fHandle;     // Handle for this thread
     volatile bool      fShouldExit; // true if thread should exit
@@ -306,8 +314,10 @@ private:
         if (fName.isNotEmpty())
             setCurrentThreadName(fName);
 
+       #ifndef CARLA_OS_WASM
         // report ready
         fSignal.signal();
+       #endif
 
         try {
             run();
