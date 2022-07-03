@@ -21,14 +21,14 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_C_FLAGS   += -I..
-BUILD_CXX_FLAGS += -I.. -I$(CWD)/modules
+BASE_FLAGS      += -DBUILDING_CARLA -DREAL_BUILD
+BASE_FLAGS      += -I. -I.. -I../backend -I../includes -I../modules -I../utils
+BUILD_CXX_FLAGS += -I$(CWD)/modules
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 PEDANTIC_FLAGS  = -pedantic -pedantic-errors
-PEDANTIC_FLAGS += -Wall -Wextra -Werror -pipe -DBUILDING_CARLA -DREAL_BUILD
-PEDANTIC_FLAGS += -I. -I../backend -I../includes -I../modules -I../utils
+PEDANTIC_FLAGS += -Wall -Wextra -Werror -pipe
 
 PEDANTIC_FLAGS += -Wabi=98 -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization
 PEDANTIC_FLAGS += -Wcast-align -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization
@@ -75,7 +75,12 @@ TARGETS = \
 	ansi-pedantic-test_cxx98_run \
 	ansi-pedantic-test_cxx03_run \
 	ansi-pedantic-test_cxx11_run \
-	carla-host-plugin_run
+	carla-host-plugin_run \
+	carla-engine-sdl
+
+ifeq ($(WASM),true)
+TARGETS = carla-engine-sdl$(APP_EXT)
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -122,6 +127,27 @@ $(BINDIR)/ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h .
 
 $(BINDIR)/carla-host-plugin: carla-host-plugin.c
 	$(CC) $< $(PEDANTIC_CFLAGS) $(PEDANTIC_LDFLAGS) -g -O0 -Wno-declaration-after-statement -Wno-pedantic -lcarla_host-plugin -std=c99 -o $@
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+# 		$(CWD)/../build/plugin/Release/carla-host-plugin.cpp.o \
+
+.PHONY: carla-engine-sdl$(APP_EXT)
+carla-engine-sdl$(APP_EXT): $(OBJDIR)/carla-engine-sdl.c.o
+	$(CC) $< \
+		$(CWD)/../build/backend/Release/CarlaStandalone.cpp.o \
+		$(MODULEDIR)/carla_engine.a \
+		$(MODULEDIR)/carla_plugin.a \
+		$(MODULEDIR)/lilv.a \
+		$(MODULEDIR)/native-plugins.a \
+		$(MODULEDIR)/sfzero.a \
+		$(MODULEDIR)/audio_decoder.a \
+		$(MODULEDIR)/rtmempool.a \
+		$(MODULEDIR)/water.a \
+		$(MODULEDIR)/ysfx.a \
+		$(MODULEDIR)/zita-resampler.a \
+		-lSDL --preload-file foolme.mp3 -sALLOW_MEMORY_GROWTH \
+		-o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
