@@ -17,6 +17,7 @@ clean:
 	$(MAKE) clean -C rtmidi
 	$(MAKE) clean -C sfzero
 	$(MAKE) clean -C water
+	$(MAKE) clean -C ysfx
 	$(MAKE) clean -C zita-resampler
 
 ifneq ($(STATIC_PLUGIN_TARGET),true)
