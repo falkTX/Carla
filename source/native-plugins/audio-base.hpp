@@ -39,15 +39,19 @@ extern "C" {
 # pragma GCC diagnostic pop
 #endif
 
-#ifdef CARLA_OS_WIN
+#if defined(CARLA_OS_WIN)
 # include <windows.h>
 # define CARLA_MLOCK(ptr, size) VirtualLock((ptr), (size))
-#else
+#elif !defined(CARLA_OS_WASM)
 # include <sys/mman.h>
 # define CARLA_MLOCK(ptr, size) mlock((ptr), (size))
+#else
+# define CARLA_MLOCK(ptr, size)
 #endif
 
-// #define DEBUG_FILE_OPS
+#ifdef CARLA_OS_WASM
+# define DEBUG_FILE_OPS
+#endif
 
 typedef struct adinfo ADInfo;
 
@@ -340,6 +344,11 @@ public:
             return false;
 
         ad_dump_nfo(99, &fFileNfo);
+
+       #ifdef CARLA_OS_WASM
+        // FIXME pool handling with seeking and partial reads is failing
+        fFileNfo.can_seek = 0;
+       #endif
 
         // Fix for misinformation using libsndfile
         if (fFileNfo.frames % fFileNfo.channels)
