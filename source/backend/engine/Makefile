@@ -46,7 +46,6 @@ OBJS += \
 endif
 
 OBJSa = $(OBJS) \
-	$(OBJDIR)/CarlaEngineJack.cpp.o \
 	$(OBJDIR)/CarlaEngineNative.cpp.o
 
 ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
@@ -57,6 +56,11 @@ endif
 ifeq ($(USING_RTAUDIO),true)
 OBJSa += \
 	$(OBJDIR)/CarlaEngineRtAudio.cpp.o
+endif
+
+ifeq ($(HAVE_JACK),true)
+OBJSa += \
+	$(OBJDIR)/CarlaEngineJack.cpp.o
 endif
 
 ifeq ($(HAVE_SDL),true)

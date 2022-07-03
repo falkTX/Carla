@@ -8267,6 +8267,7 @@ CarlaPluginPtr CarlaPlugin::newLV2(const Initializer& init)
     if (plugin->init(plugin, init.name, init.label, init.options, needsArchBridge))
         return plugin;
 
+   #ifndef CARLA_OS_WASM
     if (needsArchBridge != nullptr)
     {
         CarlaString bridgeBinary(init.engine->getOptions().binaryDir);
@@ -8274,6 +8275,7 @@ CarlaPluginPtr CarlaPlugin::newLV2(const Initializer& init)
 
         return CarlaPlugin::newBridge(init, BINARY_NATIVE, PLUGIN_LV2, needsArchBridge, bridgeBinary);
     }
+   #endif
 
     return nullptr;
 }

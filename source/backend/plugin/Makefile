@@ -32,7 +32,6 @@ OBJS = \
 	$(OBJDIR)/CarlaPlugin.cpp.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.o \
 	$(OBJDIR)/CarlaPluginNative.cpp.o \
-	$(OBJDIR)/CarlaPluginBridge.cpp.o \
 	$(OBJDIR)/CarlaPluginLADSPADSSI.cpp.o \
 	$(OBJDIR)/CarlaPluginLV2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
@@ -43,8 +42,12 @@ OBJS = \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
 	$(OBJDIR)/CarlaPluginSFZero.cpp.o
 
-ifneq ($(STATIC_PLUGIN_TARGET),true)
+ifeq ($(HAVE_JACK),true)
 OBJS += $(OBJDIR)/CarlaPluginJack.cpp.o
+endif
+
+ifneq ($(WASM),true)
+OBJS += $(OBJDIR)/CarlaPluginBridge.cpp.o
 endif
 
 TARGETS = \

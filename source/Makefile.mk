@@ -166,7 +166,7 @@ endif
 # Set base defines
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
-ifeq ($(HAVE_JACK),true)
+ifeq ($(HAVE_JACKLIB),true)
 BASE_FLAGS += -DJACKBRIDGE_DIRECT
 else
 $(error jackbridge direct mode requested, but jack not available)
@@ -203,6 +203,10 @@ endif
 
 ifeq ($(HAVE_HYLIA),true)
 BASE_FLAGS += -DHAVE_HYLIA
+endif
+
+ifeq ($(HAVE_JACK),true)
+BASE_FLAGS += -DHAVE_JACK
 endif
 
 ifeq ($(HAVE_LIBLO),true)

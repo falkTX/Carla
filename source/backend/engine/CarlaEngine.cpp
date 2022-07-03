@@ -96,8 +96,10 @@ uint CarlaEngine::getDriverCount()
     uint count = 0;
 
 #ifndef STATIC_PLUGIN_TARGET
+# ifdef HAVE_JACK
     if (jackbridge_is_ok())
         count += 1;
+# endif
 #endif
 
 #ifndef BUILD_BRIDGE
@@ -123,8 +125,10 @@ const char* CarlaEngine::getDriverName(const uint index2)
 #ifndef STATIC_PLUGIN_TARGET
     uint index = index2;
 
+# ifdef HAVE_JACK
     if (jackbridge_is_ok() && index-- == 0)
         return "JACK";
+# endif
 #endif
 
 #ifndef BUILD_BRIDGE
@@ -163,11 +167,13 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
 #ifndef STATIC_PLUGIN_TARGET
     uint index = index2;
 
+# ifdef HAVE_JACK
     if (jackbridge_is_ok() && index-- == 0)
     {
         static const char* ret[3] = { "Auto-Connect ON", "Auto-Connect OFF", nullptr };
         return ret;
     }
+# endif
 #endif
 
 #ifndef BUILD_BRIDGE
@@ -206,6 +212,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
 #ifndef STATIC_PLUGIN_TARGET
     uint index = index2;
 
+# ifdef HAVE_JACK
     if (jackbridge_is_ok() && index-- == 0)
     {
         static EngineDriverDeviceInfo devInfo;
@@ -214,6 +221,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
         devInfo.sampleRates = nullptr;
         return &devInfo;
     }
+# endif
 #endif
 
 #ifndef BUILD_BRIDGE
@@ -260,10 +268,12 @@ bool CarlaEngine::showDriverDeviceControlPanel(const uint index2, const char* co
 #ifndef STATIC_PLUGIN_TARGET
     uint index = index2;
 
+# ifdef HAVE_JACK
     if (jackbridge_is_ok() && index-- == 0)
     {
         return false;
     }
+# endif
 #endif
 
 #ifndef BUILD_BRIDGE
@@ -300,8 +310,10 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     carla_debug("CarlaEngine::newDriverByName(\"%s\")", driverName);
     using namespace EngineInit;
 
+#ifdef HAVE_JACK
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
+#endif
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (std::strcmp(driverName, "Dummy") == 0)
@@ -696,6 +708,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
     }
 #endif // ! BUILD_BRIDGE
 
+#ifndef CARLA_OS_WASM
     if (canBeBridged && (needsArchBridge || btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
     {
         if (bridgeBinary.isNotEmpty())
@@ -709,6 +722,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         }
     }
     else
+#endif
     {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         bool use16Outs;
@@ -784,10 +798,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             break;
 
         case PLUGIN_JACK:
-# ifndef STATIC_PLUGIN_TARGET
+# ifdef HAVE_JACK
             plugin = CarlaPlugin::newJackApp(initializer);
 # else
-            setLastError("Static plugin target does not support JACK applications");
+            setLastError("JACK plugin target is not available");
 # endif
             break;
 #else
