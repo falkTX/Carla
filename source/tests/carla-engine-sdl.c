@@ -26,10 +26,12 @@
 static void engine_idle_loop(void* const arg)
 {
     const CarlaHostHandle handle = arg;
+    carla_engine_idle(handle);
+
+    /*
     static int counter = 0;
     if (++counter == 100)
     {
-    carla_engine_idle(handle);
         counter = 0;
         const uint64_t frame = carla_get_current_transport_frame(handle);
         printf("engine_idle_loop | play frame %llu | audio peaks %f %f\n",
@@ -37,6 +39,7 @@ static void engine_idle_loop(void* const arg)
                carla_get_output_peak_value(handle, 0, true),
                carla_get_output_peak_value(handle, 0, false));
     }
+    */
 }
 
 int main(void)
@@ -70,17 +73,25 @@ int main(void)
     if (!engine_init)
         return 1;
 
-    const bool plugin_added = carla_add_plugin(handle, BINARY_NATIVE, PLUGIN_INTERNAL, NULL, "Music", "audiofile", 0, NULL, PLUGIN_OPTIONS_NULL);
+    const bool plugin_added = carla_add_plugin(handle, BINARY_NATIVE, PLUGIN_INTERNAL, NULL, "Music", "audiofile", 0, NULL, 0x0);
     printf("carla_add_plugin: %d\n", plugin_added);
 
     if (!plugin_added)
         goto close;
 
+    const bool plugin_added2 = carla_add_plugin(handle, BINARY_NATIVE, PLUGIN_INTERNAL, NULL, "Gain", "audiogain_s", 0, NULL, 0x0);
+    printf("carla_add_plugin2: %d\n", plugin_added2);
+
+    if (!plugin_added2)
+        goto close;
+
     const uint32_t current_plugins_count = carla_get_current_plugin_count(handle);
     printf("carla_get_current_plugin_count: %u\n", current_plugins_count);
 
-    if (current_plugins_count != 1)
+    if (current_plugins_count != 2)
         goto close;
+
+    carla_set_parameter_value(handle, 1, 0, 1.0f); // gain
 
     carla_patchbay_connect(handle, false, 1, 3, 3, 1);
     carla_patchbay_connect(handle, false, 1, 4, 3, 2);

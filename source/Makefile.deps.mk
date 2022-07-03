@@ -394,7 +394,11 @@ QT5_FLAGS = $(shell $(PKG_CONFIG) --cflags Qt5Core Qt5Gui Qt5Widgets)
 QT5_LIBS  = $(shell $(PKG_CONFIG) --libs Qt5Core Qt5Gui Qt5Widgets)
 endif
 
-ifeq ($(HAVE_SDL2),true)
+ifeq ($(WASM),true)
+HAVE_SDL  = true
+SDL_FLAGS = -sUSE_SDL=2
+SDL_LIBS  = -sUSE_SDL=2
+else ifeq ($(HAVE_SDL2),true)
 HAVE_SDL  = true
 SDL_FLAGS = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags sdl2)
 SDL_LIBS  = $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs sdl2)

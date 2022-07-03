@@ -146,7 +146,7 @@ carla-engine-sdl$(APP_EXT): $(OBJDIR)/carla-engine-sdl.c.o
 		$(MODULEDIR)/water.a \
 		$(MODULEDIR)/ysfx.a \
 		$(MODULEDIR)/zita-resampler.a \
-		-lSDL --preload-file foolme.mp3 -sALLOW_MEMORY_GROWTH \
+		$(SDL_LIBS) --preload-file foolme.mp3 -sALLOW_MEMORY_GROWTH \
 		-o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
