@@ -19,11 +19,16 @@
 #include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaStringList.hpp"
+#include "CarlaBackendUtils.hpp"
 
 #include "SDL.h"
 
 #ifndef HAVE_SDL2
-typedef int SDL_AudioDeviceID;
+typedef Uint32 SDL_AudioDeviceID;
+#endif
+
+#if defined(HAVE_SDL2) && !defined(CARLA_OS_WASM)
+# define HAVE_SDL2_CALLS
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
@@ -47,10 +52,12 @@ static void initAudioDevicesIfNeeded()
 #ifdef HAVE_SDL2
     SDL_InitSubSystem(SDL_INIT_AUDIO);
 
+# ifdef HAVE_SDL2_CALLS
     const int numDevices = SDL_GetNumAudioDevices(0);
 
     for (int i=0; i<numDevices; ++i)
         gDeviceNames.append(SDL_GetAudioDeviceName(i, 0));
+# endif
 #endif
 }
 
@@ -107,7 +114,7 @@ public:
         requested.callback = carla_sdl_process_callback;
         requested.userdata = this;
 
-#ifdef HAVE_SDL2
+#ifdef HAVE_SDL2_CALLS
         const char* const deviceName = pData->options.audioDevice != nullptr && pData->options.audioDevice[0] != '\0'
                                      ? pData->options.audioDevice
                                      : nullptr;
@@ -129,7 +136,7 @@ public:
 
         if (received.channels == 0)
         {
-#ifdef HAVE_SDL2
+#ifdef HAVE_SDL2_CALLS
             SDL_CloseAudioDevice(fDeviceId);
 #else
             SDL_CloseAudio();
@@ -157,11 +164,12 @@ public:
 
         pData->graph.create(0, fAudioOutCount, 0, 0);
 
-#ifdef HAVE_SDL2
+#ifdef HAVE_SDL2_CALLS
         SDL_PauseAudioDevice(fDeviceId, 0);
 #else
         SDL_PauseAudio(0);
 #endif
+        carla_stdout("open fAudioOutCount %d %d %d", fAudioOutCount, received.samples, received.freq);
 
         patchbayRefresh(true, false, false);
 
@@ -187,7 +195,7 @@ public:
         if (fDeviceId != 0)
         {
             // SDL_PauseAudioDevice(fDeviceId, 1);
-#ifdef HAVE_SDL2
+#ifdef HAVE_SDL2_CALLS
             SDL_CloseAudioDevice(fDeviceId);
 #else
             SDL_CloseAudio();
@@ -306,12 +314,12 @@ protected:
 #ifdef HAVE_SDL2
         // direct float type
         float* const fstream = (float*)stream;
+        const uint ulen = static_cast<uint>(static_cast<uint>(len) / sizeof(float) / fAudioOutCount);
 #else
         // signed 16bit int
         int16_t* const istream = (int16_t*)stream;
+        const uint ulen = static_cast<uint>(static_cast<uint>(len) / sizeof(int16_t) / fAudioOutCount);
 #endif
-
-        const uint ulen = static_cast<uint>(static_cast<uint>(len) / sizeof(float) / fAudioOutCount);
 
         const PendingRtEventsRunner prt(this, ulen, true);
 
