@@ -130,12 +130,10 @@ $(BINDIR)/carla-host-plugin: carla-host-plugin.c
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-# 		$(CWD)/../build/plugin/Release/carla-host-plugin.cpp.o \
-
 .PHONY: carla-engine-sdl$(APP_EXT)
-carla-engine-sdl$(APP_EXT): $(OBJDIR)/carla-engine-sdl.c.o
-	$(CC) $< \
-		$(CWD)/../build/backend/Release/CarlaStandalone.cpp.o \
+carla-engine-sdl$(APP_EXT): $(OBJDIR)/carla-engine-sdl.c.o $(OBJDIR)/carla-engine-sdl-extra.cpp.o
+	$(CC) $^ \
+		$(CWD)/../build/plugin/Release/carla-host-plugin.cpp.o \
 		$(MODULEDIR)/carla_engine.a \
 		$(MODULEDIR)/carla_plugin.a \
 		$(MODULEDIR)/lilv.a \

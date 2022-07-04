@@ -95,6 +95,7 @@ void carla_terminateProcessOnParentExit(const bool kill) noexcept
 // --------------------------------------------------------------------------------------------------------------------
 // process utility classes
 
+#if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
 /*
  * Catches SIGABRT for a function scope.
  */
@@ -110,15 +111,14 @@ public:
 
 private:
     static bool s_triggered;
-#ifndef CARLA_OS_WIN
     static jmp_buf s_env;
     static sig_t s_oldsig;
     static void sig_handler(const int signum);
-#endif
 
     CARLA_DECLARE_NON_COPYABLE(ScopedAbortCatcher)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
+#endif
 
 /*
  * Store and restore all signal handlers for a function scope.
@@ -129,7 +129,7 @@ public:
   ~CarlaSignalRestorer();
 
 private:
-#ifndef CARLA_OS_WIN
+#if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
     struct ::sigaction sigs[16];
 #endif
 

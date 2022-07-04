@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API (C++)
- * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -30,13 +30,17 @@
 // -----------------------------------------------------------------------
 // Native Plugin and External UI class
 
-class NativePluginAndUiClass : public NativePluginClass,
-                               public CarlaExternalUI
+class NativePluginAndUiClass : public NativePluginClass
+#ifndef CARLA_OS_WASM
+                             , public CarlaExternalUI
+#endif
 {
 public:
     NativePluginAndUiClass(const NativeHostDescriptor* const host, const char* const pathToExternalUI)
         : NativePluginClass(host),
+#ifndef CARLA_OS_WASM
           CarlaExternalUI(),
+#endif
           fExtUiPath(getResourceDir())
     {
         fExtUiPath += CARLA_OS_SEP_STR;
@@ -51,6 +55,7 @@ public:
         return fExtUiPath;
     }
 
+#ifndef CARLA_OS_WASM
 protected:
     // -------------------------------------------------------------------
     // Plugin UI calls
@@ -212,6 +217,7 @@ protected:
 
         return false;
     }
+#endif
 
 private:
     CarlaString fExtUiPath;

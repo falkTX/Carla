@@ -112,7 +112,7 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     return VSTPluginMainInit(effect);
 }
 
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
 CARLA_PLUGIN_EXPORT __cdecl
 const AEffect* VSTPluginMain_asm(audioMasterCallback audioMaster) asm ("main");
 

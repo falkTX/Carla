@@ -21,6 +21,10 @@
 # error This file should not be compiled if building alternative-arch bridges
 #endif
 
+#ifdef CARLA_OS_WASM
+# define CARLA_ENGINE_WITHOUT_UI
+#endif
+
 #include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
@@ -61,6 +65,7 @@ static const uint16_t kUiHeight = 712;
 
 // -----------------------------------------------------------------------
 
+#ifndef CARLA_ENGINE_WITHOUT_UI
 class CarlaEngineNative;
 
 class CarlaEngineNativeUI : public CarlaExternalUI
@@ -89,6 +94,7 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeUI)
 };
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -112,8 +118,10 @@ public:
           fIsActive(false),
           fIsRunning(false),
           fUsesEmbed(false),
+#ifndef CARLA_ENGINE_WITHOUT_UI
           fUiServer(this),
           fLastScaleFactor(1.0f),
+#endif
           fLastProjectFolder(),
           fPluginDeleterMutex(),
           fOptionsForced(false)
@@ -280,8 +288,10 @@ public:
     {
         CarlaEngine::callback(sendHost, sendOsc, action, pluginId, value1, value2, value3, valuef, valueStr);
 
+#ifndef CARLA_ENGINE_WITHOUT_UI
         if (sendHost)
             uiServerCallback(action, pluginId, value1, value2, value3, valuef, valueStr);
+#endif
 
         switch (action)
         {
@@ -298,11 +308,13 @@ public:
                 {
                     fParameters[rindex] = valuef;
 
+#ifndef CARLA_ENGINE_WITHOUT_UI
                     if (fUsesEmbed || fUiServer.isPipeRunning())
                     {
                         pHost->ui_parameter_changed(pHost->handle, rindex, valuef);
                     }
                     else
+#endif
                     {
                         static uint last_pluginId = pluginId;
                         static int last_value1 = value1;
@@ -390,6 +402,7 @@ protected:
         if (pData->bufferSize == newBufferSize)
             return;
 
+#ifndef CARLA_ENGINE_WITHOUT_UI
         {
             const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
@@ -404,6 +417,7 @@ protected:
                     fUiServer.flushMessages();
             }
         }
+#endif
 
         pData->bufferSize = newBufferSize;
         CarlaEngine::bufferSizeChanged(newBufferSize);
@@ -414,6 +428,7 @@ protected:
         if (carla_isEqual(pData->sampleRate, newSampleRate))
             return;
 
+#ifndef CARLA_ENGINE_WITHOUT_UI
         {
             const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
@@ -431,11 +446,13 @@ protected:
                     fUiServer.flushMessages();
             }
         }
+#endif
 
         pData->sampleRate = newSampleRate;
         CarlaEngine::sampleRateChanged(newSampleRate);
     }
 
+#ifndef CARLA_ENGINE_WITHOUT_UI
     // -------------------------------------------------------------------
 
     void uiServerSendPluginInfo(const CarlaPluginPtr& plugin)
@@ -911,6 +928,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         fUiServer.flushMessages();
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin parameter calls
@@ -1217,6 +1235,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin UI calls
 
+#ifndef CARLA_ENGINE_WITHOUT_UI
     void uiShow(const bool show)
     {
         if (show)
@@ -1468,6 +1487,7 @@ protected:
             }
         }
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin state calls
@@ -1591,6 +1611,7 @@ public:
         handlePtr->setParameterValue(index, value);
     }
 
+#ifndef CARLA_ENGINE_WITHOUT_UI
     static void _ui_show(NativePluginHandle handle, bool show)
     {
         handlePtr->uiShow(show);
@@ -1605,6 +1626,7 @@ public:
     {
         handlePtr->uiSetParameterValue(index, value);
     }
+#endif
 
     static void _activate(NativePluginHandle handle)
     {
@@ -1717,10 +1739,12 @@ private:
     const bool kIsPatchbay; // rack if false
     const bool kHasMidiOut;
     bool fIsActive, fIsRunning, fUsesEmbed;
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNativeUI fUiServer;
+    float fLastScaleFactor;
+#endif
 
     float fParameters[kNumInParams+kNumOutParams];
-    float fLastScaleFactor;
     CarlaString fLastProjectFolder;
     CarlaMutex fPluginDeleterMutex;
 
@@ -1779,6 +1803,7 @@ private:
 
 // -----------------------------------------------------------------------
 
+#ifndef CARLA_ENGINE_WITHOUT_UI
 bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
 {
     if (CarlaExternalUI::msgReceived(msg))
@@ -2359,6 +2384,7 @@ void CarlaEngineNativeUI::_updateParamValues(const CarlaPluginPtr& plugin,
         }
     }
 }
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -2391,9 +2417,13 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2440,9 +2470,13 @@ static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2489,9 +2523,13 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2538,9 +2576,13 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2587,9 +2629,13 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2636,9 +2682,13 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2685,9 +2735,13 @@ static const NativePluginDescriptor carlaPatchbay64Desc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2735,9 +2789,13 @@ static const NativePluginDescriptor carlaPatchbayCVDesc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2785,9 +2843,13 @@ static const NativePluginDescriptor carlaPatchbayCV8Desc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,
@@ -2835,9 +2897,13 @@ static const NativePluginDescriptor carlaPatchbayCV32Desc = {
     CarlaEngineNative::_set_parameter_value,
     /* _set_midi_program       */ nullptr,
     /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
     CarlaEngineNative::_ui_show,
     CarlaEngineNative::_ui_idle,
     CarlaEngineNative::_ui_set_parameter_value,
+#else
+    nullptr, nullptr, nullptr,
+#endif
     /* _ui_set_midi_program    */ nullptr,
     /* _ui_set_custom_data     */ nullptr,
     CarlaEngineNative::_activate,

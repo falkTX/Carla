@@ -1,6 +1,6 @@
 /*
  * Carla process utils
- * Copyright (C) 2019-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2019-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,27 +20,23 @@
 // --------------------------------------------------------------------------------------------------------------------
 // process utility classes
 
+#if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
 ScopedAbortCatcher::ScopedAbortCatcher()
 {
     s_triggered = false;
-#ifndef CARLA_OS_WIN
     s_oldsig = ::setjmp(s_env) == 0
              ? std::signal(SIGABRT, sig_handler)
              : nullptr;
-#endif
 }
 
 ScopedAbortCatcher::~ScopedAbortCatcher()
 {
-#ifndef CARLA_OS_WIN
     if (s_oldsig != nullptr && ! s_triggered)
         std::signal(SIGABRT, s_oldsig);
-#endif
 }
 
 bool ScopedAbortCatcher::s_triggered = false;
 
-#ifndef CARLA_OS_WIN
 jmp_buf ScopedAbortCatcher::s_env;
 sig_t ScopedAbortCatcher::s_oldsig;
 
@@ -58,7 +54,7 @@ void ScopedAbortCatcher::sig_handler(const int signum)
 
 CarlaSignalRestorer::CarlaSignalRestorer()
 {
-#ifndef CARLA_OS_WIN
+#if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
     carla_zeroStructs(sigs, 16);
 
     for (int i=0; i < 16; ++i)
@@ -68,7 +64,7 @@ CarlaSignalRestorer::CarlaSignalRestorer()
 
 CarlaSignalRestorer::~CarlaSignalRestorer()
 {
-#ifndef CARLA_OS_WIN
+#if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
     for (int i=0; i < 16; ++i)
         ::sigaction(i+1, &sigs[i], nullptr);
 #endif

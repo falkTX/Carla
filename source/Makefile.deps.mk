@@ -85,11 +85,21 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PKG_CONFIG (can be overridden by environment variable)
 
-ifeq ($(WINDOWS),true)
+ifeq ($(WASM),true)
+# Skip on wasm by default
+PKG_CONFIG ?= false
+else ifeq ($(WINDOWS),true)
 # Build statically on Windows by default
 PKG_CONFIG ?= pkg-config --static
 else
 PKG_CONFIG ?= pkg-config
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Set cross compiling flag
+
+ifeq ($(WASM),true)
+CROSS_COMPILING = true
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

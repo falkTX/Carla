@@ -306,6 +306,7 @@ protected:
         fLastFrame = fTimeInfo.frame;
     }
 
+#ifndef CARLA_OS_WASM
     // -------------------------------------------------------------------
     // Plugin UI calls
 
@@ -355,6 +356,7 @@ protected:
             flushMessages();
         }
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin state calls
@@ -368,8 +370,10 @@ protected:
     {
         fMidiOut.setState(data);
 
+#ifndef CARLA_OS_WASM
         if (isPipeRunning())
             _sendEventsToUI();
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -397,6 +401,7 @@ protected:
         NativePluginAndUiClass::writeMidiEvent(&midiEvent);
     }
 
+#ifndef CARLA_OS_WASM
     // -------------------------------------------------------------------
     // Pipe Server calls
 
@@ -481,6 +486,7 @@ protected:
 
         return false;
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -502,6 +508,7 @@ private:
 
     float fParameters[kParameterCount];
 
+#ifndef CARLA_OS_WASM
     void _sendEventsToUI() const noexcept
     {
         char strBuf[0xff+1];
@@ -540,6 +547,7 @@ private:
             }
         }
     }
+#endif
 
     PluginClassEND(MidiPatternPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiPatternPlugin)

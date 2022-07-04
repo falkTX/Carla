@@ -143,6 +143,25 @@ SYMBOLS_LV2    += -Wl,-exported_symbol,_lv2ui_descriptor
 SYMBOLS_LV2_UI  = -Wl,-exported_symbol,_lv2ui_descriptor
 endif
 SYMBOLS_VST     = -Wl,-exported_symbol,_VSTPluginMain
+else ifeq ($(WASM),true)
+SYMBOLS_NATIVE  = -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS="[
+SYMBOLS_NATIVE += 'carla_get_native_rack_plugin',
+SYMBOLS_NATIVE += 'carla_get_native_patchbay_plugin',
+SYMBOLS_NATIVE += 'carla_get_native_patchbay16_plugin',
+SYMBOLS_NATIVE += 'carla_get_native_patchbay32_plugin',
+SYMBOLS_NATIVE += 'carla_get_native_patchbay64_plugin',
+SYMBOLS_NATIVE += 'carla_get_native_patchbay_cv_plugin',
+SYMBOLS_NATIVE += 'carla_create_native_plugin_host_handle',
+SYMBOLS_NATIVE += 'carla_host_handle_free',
+SYMBOLS_NATIVE += 'carla_get_native_plugin_engine'
+SYMBOLS_NATIVE += ]"
+ifeq ($(HAVE_PYQT),true)
+SYMBOLS_LV2     = -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS="['lv2_descriptor','lv2ui_descriptor']"
+SYMBOLS_LV2_UI  = -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS="['lv2ui_descriptor']"
+else
+SYMBOLS_LV2     = -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS="['lv2_descriptor']"
+endif
+SYMBOLS_VST     = -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS="['VSTPluginMain']"
 else ifeq ($(WINDOWS),true)
 SYMBOLS_NATIVE  = symbols/carla-native-plugin.def
 SYMBOLS_VST     = symbols/carla-vst.def

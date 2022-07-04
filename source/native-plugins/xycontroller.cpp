@@ -168,6 +168,7 @@ protected:
             writeMidiEvent(&midiEvents[i]);
     }
 
+#ifndef CARLA_OS_WASM
     // -------------------------------------------------------------------
     // Pipe Server calls
 
@@ -242,6 +243,7 @@ protected:
 
         return false;
     }
+#endif
 
 private:
     float params[kParamCount];

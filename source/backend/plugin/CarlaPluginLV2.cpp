@@ -49,6 +49,10 @@ extern "C" {
 # endif
 #endif
 
+#ifdef CARLA_OS_WASM
+# define LV2_UIS_ONLY_INPROCESS
+#endif
+
 #include <string>
 #include <vector>
 
@@ -485,6 +489,7 @@ struct CarlaPluginLV2Options {
     CARLA_DECLARE_NON_COPYABLE(CarlaPluginLV2Options);
 };
 
+#ifndef LV2_UIS_ONLY_INPROCESS
 // -------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginLV2;
@@ -576,6 +581,7 @@ private:
 };
 
 // -------------------------------------------------------------------------------------------------------------------
+#endif
 
 static void initAtomForge(LV2_Atom_Forge& atomForge) noexcept
 {
@@ -648,7 +654,9 @@ public:
           fEventsIn(),
           fEventsOut(),
           fLv2Options(),
+#ifndef LV2_UIS_ONLY_INPROCESS
           fPipeServer(engine, this),
+#endif
           fCustomURIDs(kUridCount, std::string("urn:null")),
           fFirstActive(true),
           fLastStateChunk(nullptr),
@@ -675,11 +683,13 @@ public:
         {
             showCustomUI(false);
 
+#ifndef LV2_UIS_ONLY_INPROCESS
             if (fUI.type == UI::TYPE_BRIDGE)
             {
                 fPipeServer.stopPipeServer(pData->engine->getOptions().uiBridgesTimeout);
             }
             else
+#endif
             {
                 if (fFeatures[kFeatureIdUiDataAccess] != nullptr && fFeatures[kFeatureIdUiDataAccess]->data != nullptr)
                     delete (LV2_Extension_Data_Feature*)fFeatures[kFeatureIdUiDataAccess]->data;
@@ -1466,8 +1476,10 @@ public:
         if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
             ((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data)->plugin_human_id = fLv2Options.windowTitle;
 
+#ifndef LV2_UIS_ONLY_INPROCESS
         if (fPipeServer.isPipeRunning())
             fPipeServer.writeUiTitleMessage(fLv2Options.windowTitle);
+#endif
 
 #ifndef LV2_UIS_ONLY_BRIDGES
         if (fUI.window != nullptr)
@@ -1786,6 +1798,7 @@ public:
             pData->transientTryCounter = 0;
 #endif
 
+#ifndef LV2_UIS_ONLY_INPROCESS
         if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (yesNo)
@@ -1916,6 +1929,7 @@ public:
             }
             return;
         }
+#endif
 
         // take some precautions
         CARLA_SAFE_ASSERT_RETURN(fUI.descriptor != nullptr,);
@@ -2188,12 +2202,14 @@ public:
 
             for (; tmpRingBuffer.get(atom, portIndex);)
             {
+#ifndef LV2_UIS_ONLY_INPROCESS
                 if (fUI.type == UI::TYPE_BRIDGE)
                 {
                     if (fPipeServer.isPipeRunning())
                         fPipeServer.writeLv2AtomMessage(portIndex, atom);
                 }
                 else
+#endif
                 {
                     if (hasPortEvent && ! fNeedsUiClose)
                         fUI.descriptor->port_event(fUI.handle, portIndex, lv2_atom_total_size(atom), kUridAtomTransferEvent, atom);
@@ -2203,6 +2219,7 @@ public:
             }
         }
 
+#ifndef LV2_UIS_ONLY_INPROCESS
         if (fPipeServer.isPipeRunning())
         {
             fPipeServer.idlePipe();
@@ -2231,6 +2248,7 @@ public:
         {
             // TODO - detect if ui-bridge crashed
         }
+#endif
 
         if (fNeedsUiClose)
         {
@@ -4943,12 +4961,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(pData->param.data[index].rindex >= 0,);
 
+#ifndef LV2_UIS_ONLY_INPROCESS
         if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (! fPipeServer.isPipeRunning())
                 return;
         }
         else
+#endif
         {
             if (fUI.handle == nullptr)
                 return;
@@ -4970,11 +4990,14 @@ public:
 
             const char* const uri = fRdfDescriptor->Parameters[rindex].URI;
 
+#ifndef LV2_UIS_ONLY_INPROCESS
             if (fUI.type == UI::TYPE_BRIDGE)
             {
                 fPipeServer.writeLv2ParameterMessage(uri, value);
             }
-            else if (fEventsIn.ctrl != nullptr)
+            else
+#endif
+            if (fEventsIn.ctrl != nullptr)
             {
                 uint8_t atomBuf[256];
                 LV2_Atom_Forge atomForge;
@@ -5028,11 +5051,13 @@ public:
         }
         else
         {
+#ifndef LV2_UIS_ONLY_INPROCESS
             if (fUI.type == UI::TYPE_BRIDGE)
             {
                 fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[index].rindex), value);
             }
             else
+#endif
             {
                 fUI.descriptor->port_event(fUI.handle,
                                            static_cast<uint32_t>(pData->param.data[index].rindex),
@@ -5046,12 +5071,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL || fFilePathURI.isNotEmpty(),);
         CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
+#ifndef LV2_UIS_ONLY_INPROCESS
         if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (fPipeServer.isPipeRunning())
                 fPipeServer.writeMidiProgramMessage(pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
         }
         else
+#endif
         {
             if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program != nullptr && ! fNeedsUiClose)
                 fExt.uiprograms->select_program(fUI.handle, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
@@ -5666,8 +5693,10 @@ public:
 
         fCustomURIDs.push_back(uri);
 
+#ifndef LV2_UIS_ONLY_INPROCESS
         if (fUI.type == UI::TYPE_BRIDGE && fPipeServer.isPipeRunning())
             fPipeServer.writeLv2UridMessage(urid, uri);
+#endif
 
         return urid;
     }
@@ -6353,10 +6382,12 @@ public:
         return fDescriptor;
     }
 
+#ifndef LV2_UIS_ONLY_INPROCESS
     uintptr_t getUiBridgeProcessId() const noexcept override
     {
         return fPipeServer.isPipeRunning() ? fPipeServer.getPID() : 0;
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -7044,8 +7075,9 @@ public:
         // ---------------------------------------------------------------
         // initialize ui according to type
 
-        const LV2_Property uiType(fUI.rdfDescriptor->Type);
+        const LV2_Property uiType = fUI.rdfDescriptor->Type;
 
+#ifndef LV2_UIS_ONLY_INPROCESS
         if (
             (iFinal == eQt4     ||
              iFinal == eQt5     ||
@@ -7095,6 +7127,7 @@ public:
                 return;
             }
         }
+#endif
 
 #ifdef LV2_UIS_ONLY_BRIDGES
         carla_stderr2("Failed to get an UI working, canBridge:%s", bool2str(isUiBridgeable(static_cast<uint32_t>(iFinal))));
@@ -7435,7 +7468,9 @@ private:
     CarlaPluginLV2EventData fEventsIn;
     CarlaPluginLV2EventData fEventsOut;
     CarlaPluginLV2Options   fLv2Options;
+#ifndef LV2_UIS_ONLY_INPROCESS
     CarlaPipeServerLV2      fPipeServer;
+#endif
 
     std::vector<std::string> fCustomURIDs;
 
@@ -7476,7 +7511,9 @@ private:
     struct UI {
         enum Type {
             TYPE_NULL = 0,
+#ifndef LV2_UIS_ONLY_INPROCESS
             TYPE_BRIDGE,
+#endif
             TYPE_EMBED,
             TYPE_EXTERNAL
         };
@@ -8124,6 +8161,7 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#ifndef LV2_UIS_ONLY_INPROCESS
 bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
 {
     if (std::strcmp(msg, "exiting") == 0)
@@ -8254,6 +8292,7 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
 
     return false;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
