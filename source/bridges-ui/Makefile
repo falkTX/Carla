@@ -114,13 +114,13 @@ doxygen: carla_bridge.doxygen
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-ui_lv2-gtk2:    $(BINDIR)/$(MODULENAME)-lv2-gtk2
-ui_lv2-gtk3:    $(BINDIR)/$(MODULENAME)-lv2-gtk3
-ui_lv2-qt4:     $(BINDIR)/$(MODULENAME)-lv2-qt4
-ui_lv2-qt5:     $(BINDIR)/$(MODULENAME)-lv2-qt5
-ui_lv2-x11:     $(BINDIR)/$(MODULENAME)-lv2-x11
-ui_lv2-cocoa:   $(BINDIR)/$(MODULENAME)-lv2-cocoa
-ui_lv2-windows: $(BINDIR)/$(MODULENAME)-lv2-windows.exe
+ui_lv2-gtk2:    $(BINDIR)/$(MODULENAME)-lv2-gtk2$(APP_EXT)
+ui_lv2-gtk3:    $(BINDIR)/$(MODULENAME)-lv2-gtk3$(APP_EXT)
+ui_lv2-qt4:     $(BINDIR)/$(MODULENAME)-lv2-qt4$(APP_EXT)
+ui_lv2-qt5:     $(BINDIR)/$(MODULENAME)-lv2-qt5$(APP_EXT)
+ui_lv2-x11:     $(BINDIR)/$(MODULENAME)-lv2-x11$(APP_EXT)
+ui_lv2-cocoa:   $(BINDIR)/$(MODULENAME)-lv2-cocoa$(APP_EXT)
+ui_lv2-windows: $(BINDIR)/$(MODULENAME)-lv2-windows$(APP_EXT)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Common libs
@@ -145,9 +145,9 @@ OBJS_GTK2 = \
 	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-gtk2.o \
 	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp-gtk2.o
 
-$(BINDIR)/$(MODULENAME)-lv2-gtk2: $(OBJS_GTK2) $(LIBS)
+$(BINDIR)/$(MODULENAME)-lv2-gtk2$(APP_EXT): $(OBJS_GTK2) $(LIBS)
 	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-lv2-gtk2"
+	@echo "Linking $(MODULENAME)-lv2-gtk2$(APP_EXT)"
 	$(SILENT)$(CXX) $(OBJS_GTK2) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK2_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-gtk2.o: %.cpp
@@ -165,9 +165,9 @@ OBJS_GTK3 = \
 	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-gtk3.o \
 	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp-gtk3.o
 
-$(BINDIR)/$(MODULENAME)-lv2-gtk3: $(OBJS_GTK3) $(LIBS)
+$(BINDIR)/$(MODULENAME)-lv2-gtk3$(APP_EXT): $(OBJS_GTK3) $(LIBS)
 	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-lv2-gtk3"
+	@echo "Linking $(MODULENAME)-lv2-gtk3$(APP_EXT)"
 	$(SILENT)$(CXX) $(OBJS_GTK3) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK3_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-gtk3.o: %.cpp
@@ -185,9 +185,9 @@ OBJS_QT4 = \
 	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-qt4.o \
 	$(OBJDIR)/CarlaBridgeToolkitQt.cpp-qt4.o
 
-$(BINDIR)/$(MODULENAME)-lv2-qt4: $(OBJS_QT4) $(LIBS) $(MODULEDIR)/theme.qt4.a
+$(BINDIR)/$(MODULENAME)-lv2-qt4$(APP_EXT): $(OBJS_QT4) $(LIBS) $(MODULEDIR)/theme.qt4.a
 	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-lv2-qt4"
+	@echo "Linking $(MODULENAME)-lv2-qt4$(APP_EXT)"
 	$(SILENT)$(CXX) $(OBJS_QT4) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt4.a $(LINK_QT4_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-qt4.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt4.moc $(OBJDIR)/resources.qt4.cpp
@@ -215,9 +215,9 @@ OBJS_QT5 = \
 	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-qt5.o \
 	$(OBJDIR)/CarlaBridgeToolkitQt.cpp-qt5.o
 
-$(BINDIR)/$(MODULENAME)-lv2-qt5: $(OBJS_QT5) $(LIBS) $(MODULEDIR)/theme.qt5.a
+$(BINDIR)/$(MODULENAME)-lv2-qt5$(APP_EXT): $(OBJS_QT5) $(LIBS) $(MODULEDIR)/theme.qt5.a
 	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-lv2-qt5"
+	@echo "Linking $(MODULENAME)-lv2-qt5$(APP_EXT)"
 	$(SILENT)$(CXX) $(OBJS_QT5) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(MODULEDIR)/theme.qt5.a $(LINK_QT5_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-qt5.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt5.moc $(OBJDIR)/resources.qt5.cpp
@@ -245,9 +245,9 @@ OBJS_X11 = \
 	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-x11.o \
 	$(OBJDIR)/CarlaBridgeToolkitNative.cpp-x11.o
 
-$(BINDIR)/$(MODULENAME)-lv2-x11: $(OBJS_X11) $(LIBS)
+$(BINDIR)/$(MODULENAME)-lv2-x11$(APP_EXT): $(OBJS_X11) $(LIBS)
 	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-lv2-x11"
+	@echo "Linking $(MODULENAME)-lv2-x11$(APP_EXT)"
 	$(SILENT)$(CXX) $(OBJS_X11) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_X11_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-x11.o: %.cpp
@@ -265,9 +265,9 @@ OBJS_COCOA = \
 	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-cocoa.o \
 	$(OBJDIR)/CarlaBridgeToolkitNative.cpp-cocoa.o
 
-$(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_COCOA) $(LIBS)
+$(BINDIR)/$(MODULENAME)-lv2-cocoa$(APP_EXT): $(OBJS_COCOA) $(LIBS)
 	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-lv2-cocoa"
+	@echo "Linking $(MODULENAME)-lv2-cocoa$(APP_EXT)"
 	$(SILENT)$(CXX) $(OBJS_COCOA) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_COCOA_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-cocoa.o: %.cpp
@@ -285,9 +285,9 @@ OBJS_WINDOWS = \
 	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-windows.o \
 	$(OBJDIR)/CarlaBridgeToolkitNative.cpp-windows.o
 
-$(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_WINDOWS) $(LIBS)
+$(BINDIR)/$(MODULENAME)-lv2-windows$(APP_EXT): $(OBJS_WINDOWS) $(LIBS)
 	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-lv2-windows.exe"
+	@echo "Linking $(MODULENAME)-lv2-windows$(APP_EXT)"
 	$(SILENT)$(CXX) $(OBJS_WINDOWS) $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_WINDOWS_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-windows.o: %.cpp

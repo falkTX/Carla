@@ -27,7 +27,9 @@
 
 // disable SIMD for macos-old builds
 #include "CarlaDefines.h"
-#if defined(CARLA_OS_MAC) && !defined(CARLA_PROPER_CPP11_SUPPORT)
+#if defined(CARLA_OS_WASM)
+# define MINIMP3_NO_SIMD
+#elif defined(CARLA_OS_MAC) && !defined(CARLA_PROPER_CPP11_SUPPORT)
 # define MINIMP3_NO_SIMD
 #endif
 
