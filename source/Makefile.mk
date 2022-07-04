@@ -50,11 +50,11 @@ endif
 else
 # Common linker flags
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-O1,--gc-sections
+ifneq ($(WASM),true)
+LINK_OPTS += -Wl,--as-needed
 ifneq ($(SKIP_STRIPPING),true)
 LINK_OPTS += -Wl,--strip-all
 endif
-ifneq ($(WASM),true)
-LINK_OPTS += -Wl,--as-needed
 endif
 endif
 

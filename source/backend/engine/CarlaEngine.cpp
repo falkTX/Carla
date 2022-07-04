@@ -122,37 +122,36 @@ const char* CarlaEngine::getDriverName(const uint index2)
     carla_debug("CarlaEngine::getDriverName(%i)", index2);
     using namespace EngineInit;
 
-#ifndef STATIC_PLUGIN_TARGET
     uint index = index2;
 
-# ifdef HAVE_JACK
-    if (jackbridge_is_ok() && index-- == 0)
+#ifdef HAVE_JACK
+    if (jackbridge_is_ok() && index == 0)
         return "JACK";
-# endif
+    --index;
 #endif
 
-#ifndef BUILD_BRIDGE
-# ifdef USING_JUCE_AUDIO_DEVICES
+#ifdef USING_JUCE_AUDIO_DEVICES
     if (const uint count = getJuceApiCount())
     {
         if (index < count)
             return getJuceApiName(index);
         index -= count;
     }
-# endif
-# ifdef USING_RTAUDIO
+#endif
+
+#ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getRtAudioApiName(index);
         index -= count;
     }
-# endif
-# ifdef HAVE_SDL
+#endif
+
+#ifdef HAVE_SDL
     if (index == 0)
         return "SDL";
     --index;
-# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index2);
@@ -164,40 +163,39 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index2)
     carla_debug("CarlaEngine::getDriverDeviceNames(%i)", index2);
     using namespace EngineInit;
 
-#ifndef STATIC_PLUGIN_TARGET
     uint index = index2;
 
-# ifdef HAVE_JACK
-    if (jackbridge_is_ok() && index-- == 0)
+#ifdef HAVE_JACK
+    if (jackbridge_is_ok() && index == 0)
     {
         static const char* ret[3] = { "Auto-Connect ON", "Auto-Connect OFF", nullptr };
         return ret;
     }
-# endif
+    --index;
 #endif
 
-#ifndef BUILD_BRIDGE
-# ifdef USING_JUCE_AUDIO_DEVICES
+#ifdef USING_JUCE_AUDIO_DEVICES
     if (const uint count = getJuceApiCount())
     {
         if (index < count)
             return getJuceApiDeviceNames(index);
         index -= count;
     }
-# endif
-# ifdef USING_RTAUDIO
+#endif
+
+#ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getRtAudioApiDeviceNames(index);
         index -= count;
     }
-# endif
-# ifdef HAVE_SDL
+#endif
+
+#ifdef HAVE_SDL
     if (index == 0)
         return getSDLDeviceNames();
     --index;
-# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index2);
@@ -209,11 +207,10 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
     carla_debug("CarlaEngine::getDriverDeviceInfo(%i, \"%s\")", index2, deviceName);
     using namespace EngineInit;
 
-#ifndef STATIC_PLUGIN_TARGET
     uint index = index2;
 
-# ifdef HAVE_JACK
-    if (jackbridge_is_ok() && index-- == 0)
+#ifdef HAVE_JACK
+    if (jackbridge_is_ok() && index == 0)
     {
         static EngineDriverDeviceInfo devInfo;
         devInfo.hints       = ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE;
@@ -221,27 +218,28 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
         devInfo.sampleRates = nullptr;
         return &devInfo;
     }
-# endif
+    --index;
 #endif
 
-#ifndef BUILD_BRIDGE
-# ifdef USING_JUCE_AUDIO_DEVICES
+#ifdef USING_JUCE_AUDIO_DEVICES
     if (const uint count = getJuceApiCount())
     {
         if (index < count)
             return getJuceDeviceInfo(index, deviceName);
         index -= count;
     }
-# endif
-# ifdef USING_RTAUDIO
+#endif
+
+#ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return getRtAudioDeviceInfo(index, deviceName);
         index -= count;
     }
-# endif
-# ifdef HAVE_SDL
+#endif
+
+#ifdef HAVE_SDL
     if (index == 0)
     {
         static uint32_t sdlBufferSizes[] = { 512, 1024, 2048, 4096, 8192, 0 };
@@ -253,7 +251,6 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index2
         return &devInfo;
     }
     --index;
-# endif
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceInfo(%i, \"%s\") - invalid index", index2, deviceName);
@@ -265,39 +262,36 @@ bool CarlaEngine::showDriverDeviceControlPanel(const uint index2, const char* co
     carla_debug("CarlaEngine::showDriverDeviceControlPanel(%i, \"%s\")", index2, deviceName);
     using namespace EngineInit;
 
-#ifndef STATIC_PLUGIN_TARGET
     uint index = index2;
 
-# ifdef HAVE_JACK
-    if (jackbridge_is_ok() && index-- == 0)
-    {
+#ifdef HAVE_JACK
+    if (jackbridge_is_ok() && index == 0)
         return false;
-    }
-# endif
+    --index;
 #endif
 
-#ifndef BUILD_BRIDGE
-# ifdef USING_JUCE_AUDIO_DEVICES
+#ifdef USING_JUCE_AUDIO_DEVICES
     if (const uint count = getJuceApiCount())
     {
         if (index < count)
             return showJuceDeviceControlPanel(index, deviceName);
         index -= count;
     }
-# endif
-# ifdef USING_RTAUDIO
+#endif
+
+#ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
         if (index < count)
             return false;
         index -= count;
     }
-# endif
-# ifdef HAVE_SDL
+#endif
+
+#ifdef HAVE_SDL
     if (index == 0)
         return false;
     --index;
-# endif
 #endif
 
     carla_stderr("CarlaEngine::showDriverDeviceControlPanel(%i, \"%s\") - invalid index", index2, deviceName);
