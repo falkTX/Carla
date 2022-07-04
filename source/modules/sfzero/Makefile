@@ -13,7 +13,9 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += -I$(CWD)/modules
 
 ifneq ($(HAIKU),true)
+ifneq ($(WASM),true)
 BUILD_CXX_FLAGS += -pthread
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

@@ -18,7 +18,9 @@ endif
 endif
 
 ifneq ($(HAIKU),true)
+ifneq ($(WASM),true)
 BUILD_CXX_FLAGS += -pthread
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

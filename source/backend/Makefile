@@ -23,7 +23,9 @@ endif
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 
 ifneq ($(HAIKU),true)
+ifneq ($(WASM),true)
 BUILD_CXX_FLAGS += -pthread
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

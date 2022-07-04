@@ -39,7 +39,9 @@ YSFX_FLAGS += -DYSFX_FTS_LACKS_LFS_SUPPORT
 endif
 
 ifneq ($(HAIKU),true)
+ifneq ($(WASM),true)
 YSFX_FLAGS += -pthread
+endif
 endif
 
 ifeq ($(WASM),true)

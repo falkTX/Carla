@@ -613,8 +613,8 @@ HYLIA_FLAGS      =
 HYLIA_LIBS       =
 JACKBRIDGE_LIBS  =
 LILV_LIBS        =
-RTMEMPOOL_LIBS   = -pthread -sUSE_PTHREADS=1
-WATER_LIBS       = -pthread -sUSE_PTHREADS=1
+RTMEMPOOL_LIBS   =
+WATER_LIBS       =
 
 else ifeq ($(WINDOWS),true)
 

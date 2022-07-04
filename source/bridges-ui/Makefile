@@ -25,10 +25,12 @@ endif
 BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -I$(CWD)/modules
 LINK_FLAGS       += $(WATER_LIBS)
 
+ifneq ($(WASM),true)
 ifeq ($(HAIKU),true)
 LINK_FLAGS       += -lpthread
 else
 LINK_FLAGS       += -pthread
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
