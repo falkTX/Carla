@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -16,9 +16,20 @@
 
 #include "ApplicationPrivateData.hpp"
 
+#ifdef __EMSCRIPTEN__
+# include <emscripten/emscripten.h>
+#endif
+
 START_NAMESPACE_DGL
 
 // --------------------------------------------------------------------------------------------------------------------
+
+#ifdef __EMSCRIPTEN__
+static void app_idle(void* const app)
+{
+    static_cast<Application*>(app)->idle();
+}
+#endif
 
 Application::Application(const bool isStandalone)
     : pData(new PrivateData(isStandalone)) {}
@@ -37,8 +48,12 @@ void Application::exec(const uint idleTimeInMs)
 {
     DISTRHO_SAFE_ASSERT_RETURN(pData->isStandalone,);
 
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop_arg(app_idle, this, 0, true);
+#else
     while (! pData->isQuitting)
         pData->idle(idleTimeInMs);
+#endif
 }
 
 void Application::quit()

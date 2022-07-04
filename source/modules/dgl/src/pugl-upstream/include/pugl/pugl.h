@@ -1,25 +1,15 @@
-/*
-  Copyright 2012-2020 David Robillard <d@drobilla.net>
-
-  Permission to use, copy, modify, and/or distribute this software for any
-  purpose with or without fee is hereby granted, provided that the above
-  copyright notice and this permission notice appear in all copies.
-
-  THIS SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-*/
+// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// SPDX-License-Identifier: ISC
 
 #ifndef PUGL_PUGL_H
 #define PUGL_PUGL_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#ifndef __cplusplus
+#  include <stdbool.h>
+#endif
 
 #ifndef PUGL_API
 #  if defined(_WIN32) && !defined(PUGL_STATIC) && defined(PUGL_INTERNAL)
@@ -53,13 +43,8 @@
   PUGL_API             \
   PUGL_CONST_FUNC
 
-#ifdef __cplusplus
-#  define PUGL_BEGIN_DECLS extern "C" {
-#  define PUGL_END_DECLS }
-#else
-#  define PUGL_BEGIN_DECLS
-#  define PUGL_END_DECLS
-#endif
+#define PUGL_BEGIN_DECLS
+#define PUGL_END_DECLS
 
 PUGL_BEGIN_DECLS
 
@@ -70,16 +55,40 @@ PUGL_BEGIN_DECLS
 */
 
 /**
-   A rectangle.
+   A pixel coordinate within/of a view.
 
-   This is used to describe things like view position and size.  Pugl generally
-   uses coordinates where the top left corner is 0,0.
+   This is relative to the top left corner of the view's parent, or to the top
+   left corner of the view itself, depending on the context.
+
+   There are platform-imposed limits on window positions.  For portability,
+   applications should keep coordinates between -16000 and 16000.  Note that
+   negative frame coordinates are possible, for example with multiple screens.
+*/
+typedef int16_t PuglCoord;
+
+/**
+   A pixel span (width or height) within/of a view.
+
+   Due to platform limits, the span of a view in either dimension should be
+   between 1 and 10000.
+*/
+typedef uint16_t PuglSpan;
+
+/**
+   A rectangle in a view or on the screen.
+
+   This type is used to describe two things: the position and size of a view
+   (for configuring), or a rectangle within a view (for exposing).
+
+   The coordinate (0, 0) represents the top-left pixel of the parent window (or
+   display if there isn't one), or the top-left pixel of the view,
+   respectively.
 */
 typedef struct {
-  double x;
-  double y;
-  double width;
-  double height;
+  PuglCoord x;
+  PuglCoord y;
+  PuglSpan  width;
+  PuglSpan  height;
 } PuglRect;
 
 /**
@@ -192,6 +201,8 @@ typedef enum {
   PUGL_TIMER,          ///< Timer triggered, a #PuglTimerEvent
   PUGL_LOOP_ENTER,     ///< Recursive loop entered, a #PuglLoopEnterEvent
   PUGL_LOOP_LEAVE,     ///< Recursive loop left, a #PuglLoopLeaveEvent
+  PUGL_DATA_OFFER,     ///< Data offered from clipboard, a #PuglDataOfferEvent
+  PUGL_DATA,           ///< Data available from clipboard, a #PuglDataEvent
 } PuglEventType;
 
 /// Common flags for all event types
@@ -269,10 +280,10 @@ typedef PuglAnyEvent PuglDestroyEvent;
 typedef struct {
   PuglEventType  type;   ///< #PUGL_CONFIGURE
   PuglEventFlags flags;  ///< Bitwise OR of #PuglEventFlag values
-  double         x;      ///< New parent-relative X coordinate
-  double         y;      ///< New parent-relative Y coordinate
-  double         width;  ///< New width
-  double         height; ///< New height
+  PuglCoord      x;      ///< Parent-relative X coordinate of view
+  PuglCoord      y;      ///< Parent-relative Y coordinate of view
+  PuglSpan       width;  ///< Width of view
+  PuglSpan       height; ///< Height of view
 } PuglConfigureEvent;
 
 /**
@@ -315,10 +326,10 @@ typedef PuglAnyEvent PuglUpdateEvent;
 typedef struct {
   PuglEventType  type;   ///< #PUGL_EXPOSE
   PuglEventFlags flags;  ///< Bitwise OR of #PuglEventFlag values
-  double         x;      ///< View-relative X coordinate
-  double         y;      ///< View-relative Y coordinate
-  double         width;  ///< Width of exposed region
-  double         height; ///< Height of exposed region
+  PuglCoord      x;      ///< View-relative top-left X coordinate of region
+  PuglCoord      y;      ///< View-relative top-left Y coordinate of region
+  PuglSpan       width;  ///< Width of exposed region
+  PuglSpan       height; ///< Height of exposed region
 } PuglExposeEvent;
 
 /**
@@ -419,6 +430,21 @@ typedef struct {
 
 /**
    Button press or release event.
+
+   Button numbers start from 0, and are ordered: primary, secondary, middle.
+   So, on a typical right-handed mouse, the button numbers are:
+
+   Left: 0
+   Right: 1
+   Middle (often a wheel): 2
+
+   Higher button numbers are reported in the same order they are represented on
+   the system.  There is no universal standard here, but buttons 3 and 4 are
+   typically a pair of buttons or a rocker, which are usually bound to "back"
+   and "forward" operations.
+
+   Note that these numbers may differ from those used on the underlying
+   platform, since they are manipulated to provide a consistent portable API.
 */
 typedef struct {
   PuglEventType  type;   ///< #PUGL_BUTTON_PRESS or #PUGL_BUTTON_RELEASE
@@ -429,7 +455,7 @@ typedef struct {
   double         xRoot;  ///< Root-relative X coordinate
   double         yRoot;  ///< Root-relative Y coordinate
   PuglMods       state;  ///< Bitwise OR of #PuglMod flags
-  uint32_t       button; ///< Button number starting from 1
+  uint32_t       button; ///< Button number starting from 0
 } PuglButtonEvent;
 
 /**
@@ -500,6 +526,34 @@ typedef struct {
 } PuglTimerEvent;
 
 /**
+   Clipboard data offer event.
+
+   This event is sent when a clipboard has data present, possibly with several
+   datatypes.  While handling this event, the types can be investigated with
+   puglGetClipboardType() to decide whether to accept the offer with
+   puglAcceptOffer().
+*/
+typedef struct {
+  PuglEventType  type;  ///< #PUGL_DATA_OFFER
+  PuglEventFlags flags; ///< Bitwise OR of #PuglEventFlag values
+  double         time;  ///< Time in seconds
+} PuglDataOfferEvent;
+
+/**
+   Clipboard data event.
+
+   This event is sent after accepting a data offer when the data has been
+   retrieved and converted.  While handling this event, the data can be
+   accessed with puglGetClipboard().
+*/
+typedef struct {
+  PuglEventType  type;      ///< #PUGL_DATA
+  PuglEventFlags flags;     ///< Bitwise OR of #PuglEventFlag values
+  double         time;      ///< Time in seconds
+  uint32_t       typeIndex; ///< Index of datatype
+} PuglDataEvent;
+
+/**
    Recursive loop enter event.
 
    This event is sent when the window system enters a recursive loop.  The main
@@ -556,6 +610,8 @@ typedef union {
   PuglFocusEvent     focus;     ///< #PUGL_FOCUS_IN, #PUGL_FOCUS_OUT
   PuglClientEvent    client;    ///< #PUGL_CLIENT
   PuglTimerEvent     timer;     ///< #PUGL_TIMER
+  PuglDataOfferEvent offer;     ///< #PUGL_DATA_OFFER
+  PuglDataEvent      data;      ///< #PUGL_DATA
 } PuglEvent;
 
 /**
@@ -580,7 +636,8 @@ typedef enum {
   PUGL_REALIZE_FAILED,        ///< System view realization failed
   PUGL_SET_FORMAT_FAILED,     ///< Failed to set pixel format
   PUGL_CREATE_CONTEXT_FAILED, ///< Failed to create drawing context
-  PUGL_UNSUPPORTED_TYPE,      ///< Unsupported data type
+  PUGL_UNSUPPORTED,           ///< Unsupported operation
+  PUGL_NO_MEMORY,             ///< Failed to allocate memory
 } PuglStatus;
 
 /// Return a string describing a status code
@@ -626,7 +683,7 @@ typedef enum {
   /**
      Set up support for threads if necessary.
 
-     - X11: Calls XInitThreads() which is required for some drivers.
+     X11: Calls XInitThreads() which is required for some drivers.
   */
   PUGL_WORLD_THREADS = 1u << 0u
 } PuglWorldFlag;
@@ -692,6 +749,11 @@ puglGetNativeWorld(PuglWorld* world);
 PUGL_API
 PuglStatus
 puglSetClassName(PuglWorld* world, const char* name);
+
+/// Get the class name of the application, or null
+PUGL_API
+const char*
+puglGetClassName(const PuglWorld* world);
 
 /**
    Return the time in seconds.
@@ -792,9 +854,10 @@ typedef enum {
   PUGL_RESIZABLE,             ///< True if view should be resizable
   PUGL_IGNORE_KEY_REPEAT,     ///< True if key repeat events are ignored
   PUGL_REFRESH_RATE,          ///< Refresh rate in Hz
-
-  PUGL_NUM_VIEW_HINTS
 } PuglViewHint;
+
+/// The number of #PuglViewHint values
+#define PUGL_NUM_VIEW_HINTS ((unsigned)PUGL_REFRESH_RATE + 1u)
 
 /// A special view hint value
 typedef enum {
@@ -802,6 +865,46 @@ typedef enum {
   PUGL_FALSE     = 0,  ///< Explicitly false
   PUGL_TRUE      = 1   ///< Explicitly true
 } PuglViewHintValue;
+
+/**
+   A hint for configuring/constraining the size of a view.
+
+   The system will attempt to make the view's window adhere to these, but they
+   are suggestions, not hard constraints.  Applications should handle any view
+   size gracefully.
+*/
+typedef enum {
+  PUGL_DEFAULT_SIZE, ///< Default size
+  PUGL_MIN_SIZE,     ///< Minimum size
+  PUGL_MAX_SIZE,     ///< Maximum size
+
+  /**
+     Fixed aspect ratio.
+
+     If set, the view's size should be constrained to this aspect ratio.
+     Mutually exclusive with #PUGL_MIN_ASPECT and #PUGL_MAX_ASPECT.
+  */
+  PUGL_FIXED_ASPECT,
+
+  /**
+     Minimum aspect ratio.
+
+     If set, the view's size should be constrained to an aspect ratio no lower
+     than this.  Mutually exclusive with #PUGL_FIXED_ASPECT.
+  */
+  PUGL_MIN_ASPECT,
+
+  /**
+     Maximum aspect ratio.
+
+     If set, the view's size should be constrained to an aspect ratio no higher
+     than this.  Mutually exclusive with #PUGL_FIXED_ASPECT.
+  */
+  PUGL_MAX_ASPECT
+} PuglSizeHint;
+
+/// The number of #PuglSizeHint values
+#define PUGL_NUM_SIZE_HINTS ((unsigned)PUGL_MAX_ASPECT + 1u)
 
 /// A function called when an event occurs
 typedef PuglStatus (*PuglEventFunc)(PuglView* view, const PuglEvent* event);
@@ -872,6 +975,10 @@ PUGL_API
 PuglStatus
 puglSetBackend(PuglView* view, const PuglBackend* backend);
 
+/// Return the graphics backend used by a view
+const PuglBackend*
+puglGetBackend(const PuglView* view);
+
 /// Set the function to call when an event occurs
 PUGL_API
 PuglStatus
@@ -896,6 +1003,22 @@ puglSetViewHint(PuglView* view, PuglViewHint hint, int value);
 PUGL_API
 int
 puglGetViewHint(const PuglView* view, PuglViewHint hint);
+
+/**
+   Return the scale factor of the view.
+
+   This factor describe how large UI elements (especially text) should be
+   compared to "normal".  For example, 2.0 means the UI should be drawn twice
+   as large.
+
+   "Normal" is loosely defined, but means a good size on a "standard DPI"
+   display (around 96 DPI).  In other words, the scale 1.0 should have text
+   that is reasonably sized on a 96 DPI display, and the scale 2.0 should have
+   text twice that large.
+*/
+PUGL_API
+double
+puglGetScaleFactor(const PuglView* view);
 
 /**
    @}
@@ -926,64 +1049,43 @@ PuglStatus
 puglSetFrame(PuglView* view, PuglRect frame);
 
 /**
-   Set the default size of the view.
+   Set the current position of the view.
 
-   This should be called before puglResize() to set the default size of the
-   view, which will be the initial size of the window if this is a top level
-   view.
-
-   @return #PUGL_UNKNOWN_ERROR on failure, but always succeeds if the view is
-   not yet realized.
+   @return #PUGL_UNKNOWN_ERROR on failure, in which case the view frame is
+   unchanged.
 */
 PUGL_API
 PuglStatus
-puglSetDefaultSize(PuglView* view, int width, int height);
+puglSetPosition(PuglView* view, int x, int y);
 
 /**
-   Set the minimum size of the view.
+   Set the current size of the view.
 
-   If an initial minimum size is known, this should be called before
-   puglRealize() to avoid stutter, though it can be called afterwards as well.
-
-   @return #PUGL_UNKNOWN_ERROR on failure, but always succeeds if the view is
-   not yet realized.
+   @return #PUGL_UNKNOWN_ERROR on failure, in which case the view frame is
+   unchanged.
 */
 PUGL_API
 PuglStatus
-puglSetMinSize(PuglView* view, int width, int height);
+puglSetSize(PuglView* view, unsigned width, unsigned height);
 
 /**
-   Set the maximum size of the view.
+   Set a size hint for the view.
 
-   If an initial maximum size is known, this should be called before
-   puglRealize() to avoid stutter, though it can be called afterwards as well.
+   This can be used to set the default, minimum, and maximum size of a view,
+   as well as the supported range of aspect ratios.
 
-   @return #PUGL_UNKNOWN_ERROR on failure, but always succeeds if the view is
-   not yet realized.
-*/
-PUGL_API
-PuglStatus
-puglSetMaxSize(PuglView* view, int width, int height);
-
-/**
-   Set the view aspect ratio range.
-
-   The x and y values here represent a ratio of width to height.  To set a
-   fixed aspect ratio, set the minimum and maximum values to the same ratio.
-
-   Note that setting different minimum and maximum constraints does not
-   currenty work on MacOS (the minimum is used), so only setting a fixed aspect
-   ratio works properly across all platforms.
-
-   If an initial aspect ratio is known, this should be called before
-   puglRealize() to avoid stutter, though it can be called afterwards as well.
+   This should be called before puglRealize() so the initial window for the
+   view can be configured correctly.
 
    @return #PUGL_UNKNOWN_ERROR on failure, but always succeeds if the view is
    not yet realized.
 */
 PUGL_API
 PuglStatus
-puglSetAspectRatio(PuglView* view, int minX, int minY, int maxX, int maxY);
+puglSetSizeHint(PuglView*    view,
+                PuglSizeHint hint,
+                PuglSpan     width,
+                PuglSpan     height);
 
 /**
    @}
@@ -1003,6 +1105,11 @@ PUGL_API
 PuglStatus
 puglSetWindowTitle(PuglView* view, const char* title);
 
+/// Return the title of the window, or null
+PUGL_API
+const char*
+puglGetWindowTitle(const PuglView* view);
+
 /**
    Set the parent window for embedding a view in an existing window.
 
@@ -1011,6 +1118,11 @@ puglSetWindowTitle(PuglView* view, const char* title);
 PUGL_API
 PuglStatus
 puglSetParentWindow(PuglView* view, PuglNativeView parent);
+
+/// Return the parent window this view is embedded in, or null
+PUGL_API
+PuglNativeView
+puglGetParentWindow(const PuglView* view);
 
 /**
    Set the transient parent of the window.
@@ -1024,13 +1136,23 @@ puglSetParentWindow(PuglView* view, PuglNativeView parent);
 */
 PUGL_API
 PuglStatus
-puglSetTransientFor(PuglView* view, PuglNativeView parent);
+puglSetTransientParent(PuglView* view, PuglNativeView parent);
+
+/**
+   Return the transient parent of the window.
+
+   @return The native handle to the window this view is a transient child of,
+   or null.
+*/
+PUGL_API
+PuglNativeView
+puglGetTransientParent(const PuglView* view);
 
 /**
    Realize a view by creating a corresponding system view or window.
 
    After this call, the (initially invisible) underlying system view exists and
-   can be accessed with puglGetNativeWindow().  There is currently no
+   can be accessed with puglGetNativeView().  There is currently no
    corresponding unrealize function, the system view will be destroyed along
    with the view when puglFreeView() is called.
 
@@ -1067,7 +1189,7 @@ puglGetVisible(const PuglView* view);
 /// Return the native window handle
 PUGL_API
 PuglNativeView
-puglGetNativeWindow(PuglView* view);
+puglGetNativeView(PuglView* view);
 
 /**
    @}
@@ -1139,7 +1261,17 @@ typedef enum {
   PUGL_CURSOR_ANTI_DIAGONAL, ///< Bottom-left to top-right arrow for diagonal resize
 } PuglCursor;
 
-/// Grab the keyboard input focus
+/// The number of #PuglCursor values
+#define PUGL_NUM_CURSORS ((unsigned)PUGL_CURSOR_ANTI_DIAGONAL + 1u)
+
+/**
+   Grab the keyboard input focus.
+
+   Note that this will fail if the view is not mapped and so should not, for
+   example, be called immediately after puglShow().
+
+   @return #PUGL_SUCCESS if the focus was successfully grabbed, or an error.
+*/
 PUGL_API
 PuglStatus
 puglGrabFocus(PuglView* view);
@@ -1148,6 +1280,59 @@ puglGrabFocus(PuglView* view);
 PUGL_API
 bool
 puglHasFocus(const PuglView* view);
+
+/**
+   Request data from the general copy/paste clipboard.
+
+   A #PUGL_DATA_OFFER event will be sent if data is available.
+*/
+PUGL_API
+PuglStatus
+puglPaste(PuglView* view);
+
+/**
+   Return the number of types available for the data in a clipboard.
+
+   Returns zero if the clipboard is empty.
+*/
+PUGL_API
+uint32_t
+puglGetNumClipboardTypes(const PuglView* view);
+
+/**
+   Return the identifier of a type available in a clipboard.
+
+   This is usually a MIME type, but may also be another platform-specific type
+   identifier.  Applications must ignore any type they do not recognize.
+
+   Returns null if `typeIndex` is out of bounds according to
+   puglGetNumClipboardTypes().
+*/
+PUGL_API
+const char*
+puglGetClipboardType(const PuglView* view, uint32_t typeIndex);
+
+/**
+   Accept data offered from a clipboard.
+
+   To accept data, this must be called while handling a #PUGL_DATA_OFFER event.
+   Doing so will request the data from the source as the specified type.  When
+   the data is available, a #PUGL_DATA event will be sent to the view which can
+   then retrieve the data with puglGetClipboard().
+
+   @param view The view.
+
+   @param offer The data offer event.
+
+   @param typeIndex The index of the type that the view will accept.  This is
+   the `typeIndex` argument to the call of puglGetClipboardType() that returned
+   the accepted type.
+*/
+PUGL_API
+PuglStatus
+puglAcceptOffer(PuglView*                 view,
+                const PuglDataOfferEvent* offer,
+                uint32_t                  typeIndex);
 
 /**
    Set the clipboard contents.
@@ -1174,13 +1359,13 @@ puglSetClipboard(PuglView*   view,
    puglSetClipboard() or copied from another application.
 
    @param view The view.
-   @param[out] type Set to the MIME type of the data.
+   @param typeIndex Index of the data type to get the item as.
    @param[out] len Set to the length of the data in bytes.
    @return The clipboard contents, or null.
 */
 PUGL_API
 const void*
-puglGetClipboard(PuglView* view, const char** type, size_t* len);
+puglGetClipboard(PuglView* view, uint32_t typeIndex, size_t* len);
 
 /**
    Set the mouse cursor.
@@ -1263,8 +1448,8 @@ puglStopTimer(PuglView* view, uintptr_t id);
    puglPostRedisplayRect(), but will always send a message to the X server,
    even when called in an event handler.
 
-   @return #PUGL_UNSUPPORTED_TYPE if sending events of this type is not
-   supported, #PUGL_UNKNOWN_ERROR if sending the event failed.
+   @return #PUGL_UNSUPPORTED if sending events of this type is not supported,
+   #PUGL_UNKNOWN_ERROR if sending the event failed.
 */
 PUGL_API
 PuglStatus
@@ -1348,6 +1533,7 @@ typedef PuglLoopLeaveEvent PuglEventLoopLeave;
 
    Windows: This is a `HWND`.
 */
+PUGL_DEPRECATED_BY("PuglNativeView")
 typedef uintptr_t PuglNativeWindow;
 
 /**
@@ -1408,8 +1594,8 @@ puglInitWindowSize(PuglView* view, int width, int height)
 {
   PuglRect frame = puglGetFrame(view);
 
-  frame.width  = width;
-  frame.height = height;
+  frame.width  = (PuglSpan)width;
+  frame.height = (PuglSpan)height;
 
   puglSetFrame(view, frame);
 }
@@ -1421,7 +1607,7 @@ static inline PUGL_DEPRECATED_BY("puglSetMinSize")
 void
 puglInitWindowMinSize(PuglView* view, int width, int height)
 {
-  puglSetMinSize(view, width, height);
+  puglSetSizeHint(view, PUGL_MIN_SIZE, (PuglSpan)width, (PuglSpan)height);
 }
 
 /**
@@ -1431,8 +1617,8 @@ puglInitWindowMinSize(PuglView* view, int width, int height)
    fixed aspect ratio, set the minimum and maximum values to the same ratio.
 
    Note that setting different minimum and maximum constraints does not
-   currenty work on MacOS (the minimum is used), so only setting a fixed aspect
-   ratio works properly across all platforms.
+   currently work on MacOS (the minimum is used), so only setting a fixed
+   aspect ratio works properly across all platforms.
 */
 static inline PUGL_DEPRECATED_BY("puglSetAspectRatio")
 void
@@ -1442,7 +1628,8 @@ puglInitWindowAspectRatio(PuglView* view,
                           int       maxX,
                           int       maxY)
 {
-  puglSetAspectRatio(view, minX, minY, maxX, maxY);
+  puglSetSizeHint(view, PUGL_MIN_ASPECT, (PuglSpan)minX, (PuglSpan)minY);
+  puglSetSizeHint(view, PUGL_MAX_ASPECT, (PuglSpan)maxX, (PuglSpan)maxY);
 }
 
 /**
@@ -1451,11 +1638,23 @@ puglInitWindowAspectRatio(PuglView* view,
    On X11, parent must be a Window.
    On OSX, parent must be an NSView*.
 */
-static inline PUGL_DEPRECATED_BY("puglSetTransientFor")
+static inline PUGL_DEPRECATED_BY("puglSetTransientParent")
 void
 puglInitTransientFor(PuglView* view, uintptr_t parent)
 {
-  puglSetTransientFor(view, (PuglNativeWindow)parent);
+  puglSetTransientParent(view, (PuglNativeWindow)parent);
+}
+
+/**
+   Set transient parent before creating a window.
+
+   @deprecated Use puglSetTransientParent().
+*/
+static inline PUGL_DEPRECATED_BY("puglSetTransientParent")
+PuglStatus
+puglSetTransientFor(PuglView* view, uintptr_t parent)
+{
+  return puglSetTransientParent(view, (PuglNativeWindow)parent);
 }
 
 /**
@@ -1594,10 +1793,12 @@ puglProcessEvents(PuglView* view);
 
    @deprecated Use puglUpdate().
 */
-PUGL_API
-PUGL_DEPRECATED_BY("puglUpdate")
+static inline PUGL_DEPRECATED_BY("puglUpdate")
 PuglStatus
-puglPollEvents(PuglWorld* world, double timeout);
+puglPollEvents(PuglWorld* world, double timeout)
+{
+  return puglUpdate(world, timeout);
+}
 
 /**
    Dispatch any pending events to views.
@@ -1609,20 +1810,115 @@ puglPollEvents(PuglWorld* world, double timeout);
 
    @deprecated Use puglUpdate().
 */
-PUGL_API
-PUGL_DEPRECATED_BY("puglUpdate")
+static inline PUGL_DEPRECATED_BY("puglUpdate")
 PuglStatus
-puglDispatchEvents(PuglWorld* world);
+puglDispatchEvents(PuglWorld* world)
+{
+  return puglUpdate(world, 0.0);
+}
 
-PUGL_API
-PUGL_DEPRECATED_BY("puglShow")
+static inline PUGL_DEPRECATED_BY("puglShow")
 PuglStatus
-puglShowWindow(PuglView* view);
+puglShowWindow(PuglView* view)
+{
+  return puglShow(view);
+}
 
-PUGL_API
-PUGL_DEPRECATED_BY("puglHide")
+static inline PUGL_DEPRECATED_BY("puglHide")
 PuglStatus
-puglHideWindow(PuglView* view);
+puglHideWindow(PuglView* view)
+{
+  return puglHide(view);
+}
+
+/**
+   Set the default size of the view.
+
+   This should be called before puglRealize() to set the default size of the
+   view, which will be the initial size of the window if this is a top level
+   view.
+
+   @return #PUGL_UNKNOWN_ERROR on failure, but always succeeds if the view is
+   not yet realized.
+*/
+static inline PUGL_DEPRECATED_BY("puglSetSizeHint")
+PuglStatus
+puglSetDefaultSize(PuglView* view, int width, int height)
+{
+  return puglSetSizeHint(
+    view, PUGL_DEFAULT_SIZE, (PuglSpan)width, (PuglSpan)height);
+}
+
+/**
+   Set the minimum size of the view.
+
+   If an initial minimum size is known, this should be called before
+   puglRealize() to avoid stutter, though it can be called afterwards as well.
+
+   @return #PUGL_UNKNOWN_ERROR on failure, but always succeeds if the view is
+   not yet realized.
+*/
+static inline PUGL_DEPRECATED_BY("puglSetSizeHint")
+PuglStatus
+puglSetMinSize(PuglView* view, int width, int height)
+{
+  return puglSetSizeHint(
+    view, PUGL_MIN_SIZE, (PuglSpan)width, (PuglSpan)height);
+}
+
+/**
+   Set the maximum size of the view.
+
+   If an initial maximum size is known, this should be called before
+   puglRealize() to avoid stutter, though it can be called afterwards as well.
+
+   @return #PUGL_UNKNOWN_ERROR on failure, but always succeeds if the view is
+   not yet realized.
+*/
+static inline PUGL_DEPRECATED_BY("puglSetSizeHint")
+PuglStatus
+puglSetMaxSize(PuglView* view, int width, int height)
+{
+  return puglSetSizeHint(
+    view, PUGL_MAX_SIZE, (PuglSpan)width, (PuglSpan)height);
+}
+
+/**
+   Set the view aspect ratio range.
+
+   The x and y values here represent a ratio of width to height.  To set a
+   fixed aspect ratio, set the minimum and maximum values to the same ratio.
+
+   Note that setting different minimum and maximum constraints does not
+   currently work on MacOS (the minimum is used), so only setting a fixed
+   aspect ratio works properly across all platforms.
+
+   If an initial aspect ratio is known, this should be called before
+   puglRealize() to avoid stutter, though it can be called afterwards as well.
+
+   @return #PUGL_UNKNOWN_ERROR on failure, but always succeeds if the view is
+   not yet realized.
+*/
+static inline PUGL_DEPRECATED_BY("puglSetSizeHint")
+PuglStatus
+puglSetAspectRatio(PuglView* view, int minX, int minY, int maxX, int maxY)
+{
+  const PuglStatus st0 =
+    puglSetSizeHint(view, PUGL_MIN_ASPECT, (PuglSpan)minX, (PuglSpan)minY);
+
+  const PuglStatus st1 =
+    puglSetSizeHint(view, PUGL_MAX_ASPECT, (PuglSpan)maxX, (PuglSpan)maxY);
+
+  return st0 ? st0 : st1;
+}
+
+/// Return the native window handle
+static inline PUGL_DEPRECATED_BY("puglGetNativeView")
+PuglNativeView
+puglGetNativeWindow(PuglView* view)
+{
+  return puglGetNativeView(view);
+}
 
 #endif // PUGL_DISABLE_DEPRECATED
 

@@ -1,18 +1,5 @@
-/*
-  Copyright 2012-2020 David Robillard <d@drobilla.net>
-
-  Permission to use, copy, modify, and/or distribute this software for any
-  purpose with or without fee is hereby granted, provided that the above
-  copyright notice and this permission notice appear in all copies.
-
-  THIS SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-*/
+// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// SPDX-License-Identifier: ISC
 
 #include "stub.h"
 #include "types.h"
@@ -224,7 +211,9 @@ puglWinGlCreate(PuglView* view)
   // Create real window with desired pixel format
   if ((st = puglWinCreateWindow(view, "Pugl", &impl->hwnd, &impl->hdc))) {
     return st;
-  } else if (!SetPixelFormat(impl->hdc, impl->pfId, &impl->pfd)) {
+  }
+
+  if (!SetPixelFormat(impl->hdc, impl->pfId, &impl->pfd)) {
     ReleaseDC(impl->hwnd, impl->hdc);
     DestroyWindow(impl->hwnd);
     impl->hwnd = NULL;
@@ -237,7 +226,9 @@ puglWinGlCreate(PuglView* view)
       !(surface->hglrc = surface->procs.wglCreateContextAttribs(
           impl->hdc, 0, contextAttribs))) {
     return PUGL_CREATE_CONTEXT_FAILED;
-  } else if (!(surface->hglrc = wglCreateContext(impl->hdc))) {
+  }
+
+  if (!(surface->hglrc = wglCreateContext(impl->hdc))) {
     return PUGL_CREATE_CONTEXT_FAILED;
   }
 
@@ -251,7 +242,7 @@ puglWinGlCreate(PuglView* view)
   return PUGL_SUCCESS;
 }
 
-static PuglStatus
+static void
 puglWinGlDestroy(PuglView* view)
 {
   PuglWinGlSurface* surface = (PuglWinGlSurface*)view->impl->surface;
@@ -261,14 +252,15 @@ puglWinGlDestroy(PuglView* view)
     free(surface);
     view->impl->surface = NULL;
   }
-
-  return PUGL_SUCCESS;
 }
 
 static PuglStatus
 puglWinGlEnter(PuglView* view, const PuglExposeEvent* expose)
 {
   PuglWinGlSurface* surface = (PuglWinGlSurface*)view->impl->surface;
+  if (!surface || !surface->hglrc) {
+    return PUGL_FAILURE;
+  }
 
   wglMakeCurrent(view->impl->hdc, surface->hglrc);
 

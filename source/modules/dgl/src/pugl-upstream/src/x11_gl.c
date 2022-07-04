@@ -1,19 +1,7 @@
-/*
-  Copyright 2012-2020 David Robillard <d@drobilla.net>
+// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// SPDX-License-Identifier: ISC
 
-  Permission to use, copy, modify, and/or distribute this software for any
-  purpose with or without fee is hereby granted, provided that the above
-  copyright notice and this permission notice appear in all copies.
-
-  THIS SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-*/
-
+#include "attributes.h"
 #include "stub.h"
 #include "types.h"
 #include "x11.h"
@@ -28,6 +16,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct {
   GLXFBConfig fb_config;
@@ -55,7 +44,7 @@ puglX11GlConfigure(PuglView* view)
 {
   PuglInternals* const impl    = view->impl;
   const int            screen  = impl->screen;
-  Display* const       display = impl->display;
+  Display* const       display = view->world->impl->display;
 
   PuglX11GlSurface* const surface =
     (PuglX11GlSurface*)calloc(1, sizeof(PuglX11GlSurface));
@@ -63,9 +52,6 @@ puglX11GlConfigure(PuglView* view)
 
   // clang-format off
   const int attrs[] = {
-#ifdef DGL_USE_RGBA
-    GLX_RGBA,
-#endif
     GLX_X_RENDERABLE,  True,
     GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
     GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
@@ -89,7 +75,7 @@ puglX11GlConfigure(PuglView* view)
   }
 
   surface->fb_config = fbc[0];
-  impl->vi           = glXGetVisualFromFBConfig(impl->display, fbc[0]);
+  impl->vi           = glXGetVisualFromFBConfig(display, fbc[0]);
 
   view->hints[PUGL_RED_BITS] =
     puglX11GlGetAttrib(display, fbc[0], GLX_RED_SIZE);
@@ -112,24 +98,31 @@ puglX11GlConfigure(PuglView* view)
   return PUGL_SUCCESS;
 }
 
+PUGL_WARN_UNUSED_RESULT
 static PuglStatus
 puglX11GlEnter(PuglView* view, const PuglExposeEvent* PUGL_UNUSED(expose))
 {
   PuglX11GlSurface* surface = (PuglX11GlSurface*)view->impl->surface;
-  glXMakeCurrent(view->impl->display, view->impl->win, surface->ctx);
-  return PUGL_SUCCESS;
+  Display* const    display = view->world->impl->display;
+  if (!surface || !surface->ctx) {
+    return PUGL_FAILURE;
+  }
+
+  return glXMakeCurrent(display, view->impl->win, surface->ctx) ? PUGL_SUCCESS
+                                                                : PUGL_FAILURE;
 }
 
+PUGL_WARN_UNUSED_RESULT
 static PuglStatus
 puglX11GlLeave(PuglView* view, const PuglExposeEvent* expose)
 {
+  Display* const display = view->world->impl->display;
+
   if (expose && view->hints[PUGL_DOUBLE_BUFFER]) {
-    glXSwapBuffers(view->impl->display, view->impl->win);
+    glXSwapBuffers(display, view->impl->win);
   }
 
-  glXMakeCurrent(view->impl->display, None, NULL);
-
-  return PUGL_SUCCESS;
+  return glXMakeCurrent(display, None, NULL) ? PUGL_SUCCESS : PUGL_FAILURE;
 }
 
 static PuglStatus
@@ -137,8 +130,9 @@ puglX11GlCreate(PuglView* view)
 {
   PuglInternals* const    impl      = view->impl;
   PuglX11GlSurface* const surface   = (PuglX11GlSurface*)impl->surface;
-  Display* const          display   = impl->display;
+  Display* const          display   = view->world->impl->display;
   GLXFBConfig             fb_config = surface->fb_config;
+  PuglStatus              st        = PUGL_SUCCESS;
 
   const int ctx_attrs[] = {
     GLX_CONTEXT_MAJOR_VERSION_ARB,
@@ -156,15 +150,19 @@ puglX11GlCreate(PuglView* view)
        : GLX_CONTEXT_CORE_PROFILE_BIT_ARB),
     0};
 
-  PFNGLXCREATECONTEXTATTRIBSARBPROC create_context =
-    (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddress(
-      (const uint8_t*)"glXCreateContextAttribsARB");
+  const char* const extensions =
+    glXQueryExtensionsString(display, view->impl->screen);
 
-  PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT =
-    (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress(
-      (const uint8_t*)"glXSwapIntervalEXT");
+  // Try to create a modern context
+  if (!!strstr(extensions, "GLX_ARB_create_context")) {
+    PFNGLXCREATECONTEXTATTRIBSARBPROC create_context =
+      (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddress(
+        (const uint8_t*)"glXCreateContextAttribsARB");
 
-  surface->ctx = create_context(display, fb_config, 0, True, ctx_attrs);
+    surface->ctx = create_context(display, fb_config, 0, True, ctx_attrs);
+  }
+
+  // If that failed, fall back to the legacy API
   if (!surface->ctx) {
     surface->ctx =
       glXCreateNewContext(display, fb_config, GLX_RGBA_TYPE, 0, True);
@@ -174,36 +172,50 @@ puglX11GlCreate(PuglView* view)
     return PUGL_CREATE_CONTEXT_FAILED;
   }
 
-  const int swapInterval = view->hints[PUGL_SWAP_INTERVAL];
-  if (glXSwapIntervalEXT && swapInterval != PUGL_DONT_CARE) {
-    puglX11GlEnter(view, NULL);
-    glXSwapIntervalEXT(display, impl->win, swapInterval);
-    puglX11GlLeave(view, NULL);
+  // Set up the swap interval
+  if (!!strstr(extensions, "GLX_EXT_swap_control")) {
+    PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT =
+      (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress(
+        (const uint8_t*)"glXSwapIntervalEXT");
+
+    // Note that some drivers (NVidia) require the context to be entered here
+    if ((st = puglX11GlEnter(view, NULL))) {
+      return st;
+    }
+
+    // Set the swap interval if the user requested a specific value
+    if (view->hints[PUGL_SWAP_INTERVAL] != PUGL_DONT_CARE) {
+      glXSwapIntervalEXT(display, impl->win, view->hints[PUGL_SWAP_INTERVAL]);
+    }
+
+    // Get the actual current swap interval
+    glXQueryDrawable(display,
+                     impl->win,
+                     GLX_SWAP_INTERVAL_EXT,
+                     (unsigned int*)&view->hints[PUGL_SWAP_INTERVAL]);
+
+    if ((st = puglX11GlLeave(view, NULL))) {
+      return st;
+    }
   }
 
-  glXGetConfig(impl->display,
-               impl->vi,
-               GLX_DOUBLEBUFFER,
-               &view->hints[PUGL_DOUBLE_BUFFER]);
-
-  glXQueryDrawable(display,
-                   impl->win,
-                   GLX_SWAP_INTERVAL_EXT,
-                   (unsigned int*)&view->hints[PUGL_SWAP_INTERVAL]);
-
-  return PUGL_SUCCESS;
+  return !glXGetConfig(display,
+                       impl->vi,
+                       GLX_DOUBLEBUFFER,
+                       &view->hints[PUGL_DOUBLE_BUFFER])
+           ? PUGL_SUCCESS
+           : PUGL_UNKNOWN_ERROR;
 }
 
-static PuglStatus
+static void
 puglX11GlDestroy(PuglView* view)
 {
   PuglX11GlSurface* surface = (PuglX11GlSurface*)view->impl->surface;
   if (surface) {
-    glXDestroyContext(view->impl->display, surface->ctx);
+    glXDestroyContext(view->world->impl->display, surface->ctx);
     free(surface);
     view->impl->surface = NULL;
   }
-  return PUGL_SUCCESS;
 }
 
 PuglGlFunc

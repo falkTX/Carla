@@ -940,7 +940,7 @@ public:
    /**
       Destructor.
     */
-    virtual ~NanoBaseWidget() {}
+    ~NanoBaseWidget() override {}
 
 protected:
    /**

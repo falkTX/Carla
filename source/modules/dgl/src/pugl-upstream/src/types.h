@@ -1,36 +1,16 @@
-/*
-  Copyright 2012-2020 David Robillard <d@drobilla.net>
+// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// SPDX-License-Identifier: ISC
 
-  Permission to use, copy, modify, and/or distribute this software for any
-  purpose with or without fee is hereby granted, provided that the above
-  copyright notice and this permission notice appear in all copies.
+#ifndef PUGL_SRC_TYPES_H
+#define PUGL_SRC_TYPES_H
 
-  THIS SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-*/
-
-#ifndef PUGL_DETAIL_TYPES_H
-#define PUGL_DETAIL_TYPES_H
+#include "attributes.h"
 
 #include "pugl/pugl.h"
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
-// Unused parameter macro to suppresses warnings and make it impossible to use
-#if defined(__cplusplus)
-#  define PUGL_UNUSED(name)
-#elif defined(__GNUC__) || defined(__clang__)
-#  define PUGL_UNUSED(name) name##_unused __attribute__((__unused__))
-#else
-#  define PUGL_UNUSED(name) name
-#endif
 
 /// Platform-specific world internals
 typedef struct PuglWorldInternalsImpl PuglWorldInternals;
@@ -40,6 +20,12 @@ typedef struct PuglInternalsImpl PuglInternals;
 
 /// View hints
 typedef int PuglHints[PUGL_NUM_VIEW_HINTS];
+
+/// View size (both X and Y coordinates)
+typedef struct {
+  PuglSpan width;
+  PuglSpan height;
+} PuglViewSize;
 
 /// Blob of arbitrary data
 typedef struct {
@@ -55,22 +41,12 @@ struct PuglViewImpl {
   PuglHandle         handle;
   PuglEventFunc      eventFunc;
   char*              title;
-  PuglBlob           clipboard;
   PuglNativeView     parent;
   uintptr_t          transientParent;
   PuglRect           frame;
   PuglConfigureEvent lastConfigure;
   PuglHints          hints;
-  int                defaultWidth;
-  int                defaultHeight;
-  int                minWidth;
-  int                minHeight;
-  int                maxWidth;
-  int                maxHeight;
-  int                minAspectX;
-  int                minAspectY;
-  int                maxAspectX;
-  int                maxAspectY;
+  PuglViewSize       sizeHints[PUGL_NUM_SIZE_HINTS];
   bool               visible;
 };
 
@@ -90,22 +66,26 @@ typedef void PuglSurface;
 /// Graphics backend interface
 struct PuglBackendImpl {
   /// Get visual information from display and setup view as necessary
+  PUGL_WARN_UNUSED_RESULT
   PuglStatus (*configure)(PuglView*);
 
   /// Create surface and drawing context
+  PUGL_WARN_UNUSED_RESULT
   PuglStatus (*create)(PuglView*);
 
   /// Destroy surface and drawing context
-  PuglStatus (*destroy)(PuglView*);
+  void (*destroy)(PuglView*);
 
   /// Enter drawing context, for drawing if expose is non-null
+  PUGL_WARN_UNUSED_RESULT
   PuglStatus (*enter)(PuglView*, const PuglExposeEvent*);
 
   /// Leave drawing context, after drawing if expose is non-null
+  PUGL_WARN_UNUSED_RESULT
   PuglStatus (*leave)(PuglView*, const PuglExposeEvent*);
 
   /// Return the puglGetContext() handle for the application, if any
   void* (*getContext)(PuglView*);
 };
 
-#endif // PUGL_DETAIL_TYPES_H
+#endif // PUGL_SRC_TYPES_H

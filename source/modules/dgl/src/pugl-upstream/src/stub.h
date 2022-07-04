@@ -1,21 +1,8 @@
-/*
-  Copyright 2012-2021 David Robillard <d@drobilla.net>
+// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// SPDX-License-Identifier: ISC
 
-  Permission to use, copy, modify, and/or distribute this software for any
-  purpose with or without fee is hereby granted, provided that the above
-  copyright notice and this permission notice appear in all copies.
-
-  THIS SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-*/
-
-#ifndef PUGL_DETAIL_STUB_H
-#define PUGL_DETAIL_STUB_H
+#ifndef PUGL_SRC_STUB_H
+#define PUGL_SRC_STUB_H
 
 #include "pugl/pugl.h"
 
@@ -37,11 +24,10 @@ puglStubCreate(PuglView* const view)
   return PUGL_SUCCESS;
 }
 
-static inline PuglStatus
+static inline void
 puglStubDestroy(PuglView* const view)
 {
   (void)view;
-  return PUGL_SUCCESS;
 }
 
 static inline PuglStatus
@@ -69,4 +55,4 @@ puglStubGetContext(PuglView* const view)
 
 PUGL_END_DECLS
 
-#endif // PUGL_DETAIL_STUB_H
+#endif // PUGL_SRC_STUB_H

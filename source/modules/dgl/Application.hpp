@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -18,6 +18,12 @@
 #define DGL_APP_HPP_INCLUDED
 
 #include "Base.hpp"
+
+#ifdef DISTRHO_NAMESPACE
+START_NAMESPACE_DISTRHO
+class PluginApplication;
+END_NAMESPACE_DISTRHO
+#endif
 
 START_NAMESPACE_DGL
 
@@ -116,8 +122,10 @@ public:
 private:
     struct PrivateData;
     PrivateData* const pData;
-    friend class PluginApplication;
     friend class Window;
+   #ifdef DISTRHO_NAMESPACE
+    friend class DISTRHO_NAMESPACE::PluginApplication;
+   #endif
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Application)
 };

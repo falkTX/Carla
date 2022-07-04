@@ -1,22 +1,10 @@
-/*
-  Copyright 2012-2021 David Robillard <d@drobilla.net>
+// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// SPDX-License-Identifier: ISC
 
-  Permission to use, copy, modify, and/or distribute this software for any
-  purpose with or without fee is hereby granted, provided that the above
-  copyright notice and this permission notice appear in all copies.
+#ifndef PUGL_SRC_X11_H
+#define PUGL_SRC_X11_H
 
-  THIS SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-*/
-
-#ifndef PUGL_DETAIL_X11_H
-#define PUGL_DETAIL_X11_H
-
+#include "attributes.h"
 #include "types.h"
 
 #include "pugl/pugl.h"
@@ -39,6 +27,8 @@ typedef struct {
   Atom NET_WM_STATE;
   Atom NET_WM_STATE_DEMANDS_ATTENTION;
   Atom NET_WM_STATE_HIDDEN;
+  Atom TARGETS;
+  Atom text_uri_list;
 } PuglX11Atoms;
 
 typedef struct {
@@ -47,10 +37,23 @@ typedef struct {
   uintptr_t id;
 } PuglTimer;
 
+typedef struct {
+  Atom          selection;
+  Atom          property;
+  Window        source;
+  Atom*         formats;
+  char**        formatStrings;
+  unsigned long numFormats;
+  uint32_t      acceptedFormatIndex;
+  Atom          acceptedFormat;
+  PuglBlob      data;
+} PuglX11Clipboard;
+
 struct PuglWorldInternalsImpl {
   Display*     display;
   PuglX11Atoms atoms;
   XIM          xim;
+  double       scaleFactor;
   PuglTimer*   timers;
   size_t       numTimers;
   XID          serverTimeCounter;
@@ -60,21 +63,20 @@ struct PuglWorldInternalsImpl {
 };
 
 struct PuglInternalsImpl {
-  Display*     display;
-  XVisualInfo* vi;
-  Window       win;
-  XIC          xic;
-  PuglSurface* surface;
-  PuglEvent    pendingConfigure;
-  PuglEvent    pendingExpose;
-  int          screen;
-#ifdef HAVE_XCURSOR
-  const char* cursorName;
-#endif
+  XVisualInfo*     vi;
+  Window           win;
+  XIC              xic;
+  PuglSurface*     surface;
+  PuglEvent        pendingConfigure;
+  PuglEvent        pendingExpose;
+  PuglX11Clipboard clipboard;
+  int              screen;
+  const char*      cursorName;
 };
 
+PUGL_WARN_UNUSED_RESULT
 PUGL_API
 PuglStatus
 puglX11Configure(PuglView* view);
 
-#endif // PUGL_DETAIL_X11_H
+#endif // PUGL_SRC_X11_H

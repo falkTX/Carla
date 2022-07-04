@@ -312,14 +312,12 @@ public:
         uiData->window->setTitle(uiTitle);
     }
 
-    void setWindowTransientWinId(const uintptr_t winId)
+    void setWindowTransientWinId(const uintptr_t transientParentWindowHandle)
     {
 #if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-        ui->setTransientWindowId(winId);
-#elif 0 /* TODO */
-        glWindow.setTransientWinId(winId);
+        ui->setTransientWindowId(transientParentWindowHandle);
 #else
-        (void)winId;
+        uiData->window->setTransientParent(transientParentWindowHandle);
 #endif
     }
 

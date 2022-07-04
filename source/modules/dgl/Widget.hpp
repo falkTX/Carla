@@ -56,17 +56,16 @@ public:
    /**
       Base event data.
       These are the fields present on all Widget events.
-
-      @a mod  Currently active keyboard modifiers, @see Modifier.
-      @a mod  Event flags, @see EventFlag.
-      @a time Event timestamp (if any).
     */
     struct BaseEvent {
+        /** Currently active keyboard modifiers. @see Modifier */
         uint mod;
+        /** Event flags. @see EventFlag */
         uint flags;
+        /** Event timestamp (if any). */
         uint time;
 
-        /** Constructor */
+        /** Constructor for default/null values */
         BaseEvent() noexcept : mod(0x0), flags(0x0), time(0) {}
         /** Destuctor */
         virtual ~BaseEvent() noexcept {}
@@ -86,17 +85,17 @@ public:
       Alternatively, the raw @a keycode can be used to work directly with physical keys,
       but note that this value is not portable and differs between platforms and hardware.
 
-      @a press   True if the key was pressed, false if released.
-      @a key     Unicode point of the key pressed.
-      @a keycode Raw keycode.
       @see onKeyboard
     */
     struct KeyboardEvent : BaseEvent {
+        /** True if the key was pressed, false if released. */
         bool press;
+        /** Unicode point of the key pressed. */
         uint key;
+        /** Raw keycode. */
         uint keycode;
 
-        /** Constructor */
+        /** Constructor for default/null values */
         KeyboardEvent() noexcept
             : BaseEvent(),
               press(false),
@@ -112,9 +111,9 @@ public:
     */
     struct DISTRHO_DEPRECATED_BY("KeyboardEvent") SpecialEvent : BaseEvent {
         bool press;
-        Key  key;
+        Key key;
 
-        /** Constructor */
+        /** Constructor for default/null values */
         SpecialEvent() noexcept
             : BaseEvent(),
               press(false),
@@ -131,17 +130,17 @@ public:
       so there is not necessarily a direct correspondence between text events and physical key presses.
       For example, with some input methods a sequence of several key presses will generate a single character.
 
-      @a keycode   Raw key code.
-      @a character Unicode character code.
-      @a string    UTF-8 string.
       @see onCharacterInput
     */
     struct CharacterInputEvent : BaseEvent {
+        /** Raw key code. */
         uint keycode;
+        /** Unicode character code. */
         uint character;
+        /** UTF-8 string. */
         char string[8];
 
-        /** Constructor */
+        /** Constructor for default/null values */
         CharacterInputEvent() noexcept
             : BaseEvent(),
               keycode(0),
@@ -155,20 +154,19 @@ public:
 
    /**
       Mouse press or release event.
-
-      @a button      The button number starting from 1 (1 = left, 2 = middle, 3 = right).
-      @a press       True if the button was pressed, false if released.
-      @a pos         The widget-relative coordinates of the pointer.
-      @a absolutePos The absolute coordinates of the pointer.
       @see onMouse
     */
     struct MouseEvent : BaseEvent {
+        /** The button number starting from 1. @see MouseButton */
         uint button;
+        /** True if the button was pressed, false if released. */
         bool press;
+        /** The widget-relative coordinates of the pointer. */
         Point<double> pos;
+        /** The absolute coordinates of the pointer. */
         Point<double> absolutePos;
 
-        /** Constructor */
+        /** Constructor for default/null values */
         MouseEvent() noexcept
             : BaseEvent(),
               button(0),
@@ -179,16 +177,15 @@ public:
 
    /**
       Mouse motion event.
-
-      @a pos         The widget-relative coordinates of the pointer.
-      @a absolutePos The absolute coordinates of the pointer.
       @see onMotion
     */
     struct MotionEvent : BaseEvent {
+        /** The widget-relative coordinates of the pointer. */
         Point<double> pos;
+        /** The absolute coordinates of the pointer. */
         Point<double> absolutePos;
 
-        /** Constructor */
+        /** Constructor for default/null values */
         MotionEvent() noexcept
             : BaseEvent(),
               pos(0.0, 0.0),
@@ -204,19 +201,19 @@ public:
       Some systems and devices support finer resolution and/or higher values for fast scrolls,
       so programs should handle any value gracefully.
 
-      @a pos         The widget-relative coordinates of the pointer.
-      @a absolutePos The absolute coordinates of the pointer.
-      @a delta       The scroll distance.
-      @a direction   The direction of the scroll or "smooth".
       @see onScroll
     */
     struct ScrollEvent : BaseEvent {
+        /** The widget-relative coordinates of the pointer. */
         Point<double> pos;
+        /** The absolute coordinates of the pointer. */
         Point<double> absolutePos;
+        /** The scroll distance. */
         Point<double> delta;
+        /** The direction of the scroll or "smooth". */
         ScrollDirection direction;
 
-        /** Constructor */
+        /** Constructor for default/null values */
         ScrollEvent() noexcept
             : BaseEvent(),
               pos(0.0, 0.0),
@@ -227,15 +224,15 @@ public:
 
    /**
       Resize event.
-      @a size    The new widget size.
-      @a oldSize The previous size, may be null.
       @see onResize
     */
     struct ResizeEvent {
+        /** The new widget size. */
         Size<uint> size;
+        /** The previous size, can be null. */
         Size<uint> oldSize;
 
-        /** Constructor */
+        /** Constructor for default/null values */
         ResizeEvent() noexcept
             : size(0, 0),
               oldSize(0, 0) {}
@@ -243,15 +240,15 @@ public:
 
    /**
       Widget position changed event.
-      @a pos    The new absolute position of the widget.
-      @a oldPos The previous absolute position of the widget.
       @see onPositionChanged
     */
     struct PositionChangedEvent {
+        /** The new absolute position of the widget. */
         Point<int> pos;
+        /** The previous absolute position of the widget. */
         Point<int> oldPos;
 
-        /** Constructor */
+        /** Constructor for default/null values */
         PositionChangedEvent() noexcept
             : pos(0, 0),
               oldPos(0, 0) {}

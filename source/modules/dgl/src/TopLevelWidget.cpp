@@ -60,14 +60,14 @@ void TopLevelWidget::setSize(const Size<uint>& size)
     pData->window.setSize(size);
 }
 
+const void* TopLevelWidget::getClipboard(size_t& dataSize)
+{
+    return pData->window.getClipboard(dataSize);
+}
+
 bool TopLevelWidget::setClipboard(const char* const mimeType, const void* const data, const size_t dataSize)
 {
     return pData->window.setClipboard(mimeType, data, dataSize);
-}
-
-const void* TopLevelWidget::getClipboard(const char*& mimeType, size_t& dataSize)
-{
-    return pData->window.getClipboard(mimeType, dataSize);
 }
 
 bool TopLevelWidget::setCursor(const MouseCursor cursor)

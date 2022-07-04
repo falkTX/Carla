@@ -47,7 +47,7 @@ public:
    /**
       Destructor.
     */
-    virtual ~SubWidget();
+    ~SubWidget() override;
 
    /**
       Check if this widget contains the point defined by @a x and @a y.

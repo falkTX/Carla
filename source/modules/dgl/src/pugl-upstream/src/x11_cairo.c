@@ -1,18 +1,5 @@
-/*
-  Copyright 2012-2020 David Robillard <d@drobilla.net>
-
-  Permission to use, copy, modify, and/or distribute this software for any
-  purpose with or without fee is hereby granted, provided that the above
-  copyright notice and this permission notice appear in all copies.
-
-  THIS SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-*/
+// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// SPDX-License-Identifier: ISC
 
 #include "types.h"
 #include "x11.h"
@@ -49,7 +36,7 @@ puglX11CairoOpen(PuglView* view)
   PuglInternals* const       impl    = view->impl;
   PuglX11CairoSurface* const surface = (PuglX11CairoSurface*)impl->surface;
 
-  surface->back = cairo_xlib_surface_create(impl->display,
+  surface->back = cairo_xlib_surface_create(view->world->impl->display,
                                             impl->win,
                                             impl->vi->visual,
                                             (int)view->frame.width,
@@ -80,7 +67,7 @@ puglX11CairoCreate(PuglView* view)
   return PUGL_SUCCESS;
 }
 
-static PuglStatus
+static void
 puglX11CairoDestroy(PuglView* view)
 {
   PuglInternals* const       impl    = view->impl;
@@ -88,8 +75,6 @@ puglX11CairoDestroy(PuglView* view)
 
   puglX11CairoClose(view);
   free(surface);
-
-  return PUGL_SUCCESS;
 }
 
 static PuglStatus

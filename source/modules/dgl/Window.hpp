@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -20,13 +20,20 @@
 #include "Geometry.hpp"
 
 #ifndef DGL_FILE_BROWSER_DISABLED
-# include "../distrho/extra/FileBrowserDialog.hpp"
+# include "FileBrowserDialog.hpp"
+#endif
+
+#include <vector>
+
+#ifdef DISTRHO_NAMESPACE
+START_NAMESPACE_DISTRHO
+class PluginWindow;
+END_NAMESPACE_DISTRHO
 #endif
 
 START_NAMESPACE_DGL
 
 class Application;
-class PluginWindow;
 class TopLevelWidget;
 
 // -----------------------------------------------------------------------
@@ -57,11 +64,6 @@ class DISTRHO_API Window
    struct PrivateData;
 
 public:
-#ifndef DGL_FILE_BROWSER_DISABLED
-    typedef DISTRHO_NAMESPACE::FileBrowserHandle FileBrowserHandle;
-    typedef DISTRHO_NAMESPACE::FileBrowserOptions FileBrowserOptions;
-#endif
-
    /**
       Window graphics context as a scoped struct.
       This class gives graphics context drawing time to a window's widgets.
@@ -299,6 +301,19 @@ public:
     void setIgnoringKeyRepeat(bool ignore) noexcept;
 
    /**
+      Get the clipboard contents.
+
+      This gets the system clipboard contents,
+      which may have been set with setClipboard() or copied from another application.
+
+      Returns the clipboard contents, or null.
+
+      @note By default only "text/plain" mimetype is supported and returned.
+            Override onClipboardDataOffer for supporting other types.
+    */
+    const void* getClipboard(size_t& dataSize);
+
+   /**
       Set the clipboard contents.
 
       This sets the system clipboard contents,
@@ -308,16 +323,6 @@ public:
       The MIME type of the data "text/plain" is assumed if null is used.
     */
     bool setClipboard(const char* mimeType, const void* data, size_t dataSize);
-
-   /**
-      Get the clipboard contents.
-
-      This gets the system clipboard contents,
-      which may have been set with setClipboard() or copied from another application.
-
-      returns the clipboard contents, or null.
-    */
-    const void* getClipboard(const char*& mimeType, size_t& dataSize);
 
    /**
       Set the mouse cursor.
@@ -395,7 +400,7 @@ public:
 
       This function does not block the event loop.
     */
-    bool openFileBrowser(const FileBrowserOptions& options = FileBrowserOptions());
+    bool openFileBrowser(const DGL_NAMESPACE::FileBrowserOptions& options = FileBrowserOptions());
 #endif
 
    /**
@@ -437,6 +442,14 @@ public:
                                 bool automaticallyScale = false,
                                 bool resizeNowIfAutoScaling = true);
 
+   /**
+      Set the transient parent of the window.
+
+      Set this for transient children like dialogs, to have them properly associated with their parent window.
+      This should be not be called for embed windows, or after making the window visible.
+    */
+    void setTransientParent(uintptr_t transientParentWindowHandle);
+
    /** DEPRECATED Use isIgnoringKeyRepeat(). */
     DISTRHO_DEPRECATED_BY("isIgnoringKeyRepeat()")
     inline bool getIgnoringKeyRepeat() const noexcept { return isIgnoringKeyRepeat(); }
@@ -450,6 +463,23 @@ public:
     inline void exec(bool blockWait = false) { runAsModal(blockWait); }
 
 protected:
+   /**
+      Get the types available for the data in a clipboard.
+      Must only be called within the context of onClipboardDataOffer.
+    */
+    std::vector<ClipboardDataOffer> getClipboardDataOfferTypes();
+
+   /**
+      A function called when clipboard has data present, possibly with several datatypes.
+      While handling this event, the data types can be investigated with getClipboardDataOfferTypes() to decide whether to accept the offer.
+
+      Reimplement and return a non-zero id to accept the clipboard data offer for a particular type.
+      Applications must ignore any type they do not recognize.
+
+      The default implementation accepts the "text/plain" mimetype.
+    */
+    virtual uint32_t onClipboardDataOffer();
+
    /**
       A function called when the window is attempted to be closed.
       Returning true closes the window, which is the default behaviour.
@@ -499,8 +529,10 @@ protected:
 private:
     PrivateData* const pData;
     friend class Application;
-    friend class PluginWindow;
     friend class TopLevelWidget;
+   #ifdef DISTRHO_NAMESPACE
+    friend class DISTRHO_NAMESPACE::PluginWindow;
+   #endif
 
    /** @internal */
     explicit Window(Application& app,

@@ -151,6 +151,9 @@ struct GLNVGtexture {
 	int width, height;
 	int type;
 	int flags;
+#if defined NANOVG_GLES2
+	unsigned char* data;
+#endif
 };
 typedef struct GLNVGtexture GLNVGtexture;
 
@@ -399,7 +402,12 @@ static int glnvg__deleteTexture(GLNVGcontext* gl, int id)
 	for (i = 0; i < gl->textureContext->ntextures; i++) {
 		if (gl->textureContext->textures[i].id == id) {
 			if (gl->textureContext->textures[i].tex != 0 && (gl->textureContext->textures[i].flags & NVG_IMAGE_NODELETE) == 0)
+			{
 				glDeleteTextures(1, &gl->textureContext->textures[i].tex);
+#if defined NANOVG_GLES2
+				free(gl->textureContext->textures[i].data);
+#endif
+			}
 			memset(&gl->textureContext->textures[i], 0, sizeof(gl->textureContext->textures[i]));
 			return 1;
 		}
@@ -753,7 +761,7 @@ static int glnvg__renderCreateTexture(void* uptr, int type, int w, int h, int im
 		}
 		// No mips.
 		if (imageFlags & NVG_IMAGE_GENERATE_MIPMAPS) {
-			printf("Mip-maps is not support for non power-of-two textures (%d x %d)\n", w, h);
+			printf("Mip-maps is not supported for non power-of-two textures (%d x %d)\n", w, h);
 			imageFlags &= ~NVG_IMAGE_GENERATE_MIPMAPS;
 		}
 	}
@@ -783,10 +791,37 @@ static int glnvg__renderCreateTexture(void* uptr, int type, int w, int h, int im
 	switch (type)
 	{
 	case NVG_TEXTURE_BGR:
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+#if NANOVG_GLES2
+		// GLES2 cannot handle GL_BGR, do local conversion to GL_RGB
+		tex->data = (uint8_t*)malloc(sizeof(uint8_t) * 3 * w * h);
+		for (uint32_t i=0; i<w*h; ++i)
+		{
+			tex->data[i*3+0] = data[i*3+2];
+			tex->data[i*3+1] = data[i*3+1];
+			tex->data[i*3+2] = data[i*3+0];
+		}
+		data = tex->data;
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+#else
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+#endif
 		break;
 	case NVG_TEXTURE_BGRA:
+#if NANOVG_GLES2
+		// GLES2 cannot handle GL_BGRA, do local conversion to GL_RGBA
+		tex->data = (uint8_t*)malloc(sizeof(uint8_t) * 4 * w * h);
+		for (uint32_t i=0; i<w*h; ++i)
+		{
+			tex->data[i*3+0] = data[i*3+3];
+			tex->data[i*3+1] = data[i*3+2];
+			tex->data[i*3+2] = data[i*3+1];
+			tex->data[i*3+3] = data[i*3+0];
+		}
+		data = tex->data;
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+#else
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+#endif
 		break;
 	case NVG_TEXTURE_RGB:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);

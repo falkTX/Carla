@@ -54,7 +54,7 @@ public:
    /**
       Destructor.
     */
-    virtual ~TopLevelWidget();
+    ~TopLevelWidget() override;
 
    /**
       Get the application associated with this top-level widget's window.
@@ -101,8 +101,8 @@ public:
     void repaint(const Rectangle<uint>& rect) noexcept;
 
     // TODO group stuff after here, convenience functions present in Window class
+    const void* getClipboard(size_t& dataSize);
     bool setClipboard(const char* mimeType, const void* data, size_t dataSize);
-    const void* getClipboard(const char*& mimeType, size_t& dataSize);
     bool setCursor(MouseCursor cursor);
     bool addIdleCallback(IdleCallback* callback, uint timerFrequencyInMs = 0);
     bool removeIdleCallback(IdleCallback* callback);

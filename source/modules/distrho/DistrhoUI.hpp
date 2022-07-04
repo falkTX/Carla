@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -48,15 +48,13 @@ typedef DGL_NAMESPACE::NanoTopLevelWidget UIWidget;
 typedef DGL_NAMESPACE::TopLevelWidget UIWidget;
 #endif
 
-#ifndef DGL_FILE_BROWSER_DISABLED
+#if DISTRHO_UI_FILE_BROWSER
 # include "extra/FileBrowserDialog.hpp"
 #endif
 
-START_NAMESPACE_DGL
-class PluginWindow;
-END_NAMESPACE_DGL
-
 START_NAMESPACE_DISTRHO
+
+class PluginWindow;
 
 /* ------------------------------------------------------------------------------------------------------------
  * DPF UI */
@@ -89,7 +87,7 @@ public:
    /**
       Destructor.
     */
-    virtual ~UI();
+    ~UI() override;
 
    /* --------------------------------------------------------------------------------------------------------
     * Host state */
@@ -185,7 +183,7 @@ public:
     void sendNote(uint8_t channel, uint8_t note, uint8_t velocity);
 #endif
 
-#ifndef DGL_FILE_BROWSER_DISABLED
+#if DISTRHO_UI_FILE_BROWSER
    /**
       Open a file browser dialog with this window as transient parent.@n
       A few options can be specified to setup the dialog.
@@ -198,7 +196,7 @@ public:
       @note This is exactly the same API as provided by the Window class,
             but redeclared here so that non-embed/DGL based UIs can still use file browser related functions.
     */
-    bool openFileBrowser(const FileBrowserOptions& options = FileBrowserOptions());
+    bool openFileBrowser(const DISTRHO_NAMESPACE::FileBrowserOptions& options = FileBrowserOptions());
 #endif
 
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
@@ -297,6 +295,23 @@ protected:
 
 #if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
    /**
+      Get the types available for the data in a clipboard.
+      Must only be called within the context of uiClipboardDataOffer.
+    */
+    std::vector<DGL_NAMESPACE::ClipboardDataOffer> getClipboardDataOfferTypes();
+
+   /**
+      Window clipboard data offer function, called when clipboard has data present, possibly with several datatypes.
+      While handling this event, the data types can be investigated with getClipboardDataOfferTypes() to decide whether to accept the offer.
+
+      Reimplement and return a non-zero id to accept the clipboard data offer for a particular type.
+      UIs must ignore any type they do not recognize.
+
+      The default implementation accepts the "text/plain" mimetype.
+    */
+    virtual uint32_t uiClipboardDataOffer();
+
+   /**
       Windows focus function, called when the window gains or loses the keyboard focus.
       This function is for plugin UIs to be able to override Window::onFocus(bool, CrossingMode).
 
@@ -317,7 +332,7 @@ protected:
     virtual void uiReshape(uint width, uint height);
 #endif // !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 
-#ifndef DGL_FILE_BROWSER_DISABLED
+#if DISTRHO_UI_FILE_BROWSER
    /**
       Window file selected function, called when a path is selected by the user, as triggered by openFileBrowser().
       This function is for plugin UIs to be able to override Window::onFileSelected(const char*).
@@ -354,7 +369,7 @@ protected:
 private:
     struct PrivateData;
     PrivateData* const uiData;
-    friend class DGL_NAMESPACE::PluginWindow;
+    friend class PluginWindow;
     friend class UIExporter;
 #if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
    /** @internal */

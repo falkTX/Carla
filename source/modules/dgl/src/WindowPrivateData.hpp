@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -44,9 +44,6 @@ struct Window::PrivateData : IdleCallback {
     /** Pugl view instance. */
     PuglView* view;
 
-    /** Pugl view instance of the transient parent window. */
-    PuglView* const transientParentView;
-
     /** Reserved space for graphics context. */
     mutable uint8_t graphicsContext[sizeof(void*)];
 
@@ -80,15 +77,18 @@ struct Window::PrivateData : IdleCallback {
     /** Whether to ignore idle callback requests, useful for temporary windows. */
     bool ignoreIdleCallbacks;
 
-    /** Whether to ignore pugl events (except create and destroy), used for puglGetClipboard. */
-    bool ignoreEvents;
+    /** Whether we are waiting to receive clipboard data, ignoring some events in the process. */
+    bool waitingForClipboard;
+
+    /** The type id returned by the last onClipboardDataOffer call. */
+    uint32_t clipboardTypeId;
 
     /** Render to a picture file when non-null, automatically free+unset after saving. */
     char* filenameToRenderInto;
 
 #ifndef DGL_FILE_BROWSER_DISABLED
     /** Handle for file browser dialog operations. */
-    FileBrowserHandle fileBrowserHandle;
+    DGL_NAMESPACE::FileBrowserHandle fileBrowserHandle;
 #endif
 
     /** Modal window setup. */
@@ -165,7 +165,7 @@ struct Window::PrivateData : IdleCallback {
 
 #ifndef DGL_FILE_BROWSER_DISABLED
     // file handling
-    bool openFileBrowser(const FileBrowserOptions& options);
+    bool openFileBrowser(const DGL_NAMESPACE::FileBrowserOptions& options);
 #endif
 
     static void renderToPicture(const char* filename, const GraphicsContext& context, uint width, uint height);
@@ -185,6 +185,11 @@ struct Window::PrivateData : IdleCallback {
     void onPuglMouse(const Widget::MouseEvent& ev);
     void onPuglMotion(const Widget::MotionEvent& ev);
     void onPuglScroll(const Widget::ScrollEvent& ev);
+
+    // clipboard related handling
+    const void* getClipboard(size_t& dataSize);
+    uint32_t onClipboardDataOffer();
+    void onClipboardData(uint32_t typeId);
 
     // Pugl event handling entry point
     static PuglStatus puglEventCallback(PuglView* view, const PuglEvent* event);

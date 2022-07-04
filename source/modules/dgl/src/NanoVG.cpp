@@ -82,7 +82,9 @@ DGL_EXT(PFNGLUNIFORMBLOCKBINDINGPROC,      glUniformBlockBinding)
 // Include NanoVG OpenGL implementation
 
 //#define STB_IMAGE_STATIC
-#ifdef DGL_USE_OPENGL3
+#if defined(DGL_USE_GLES2)
+# define NANOVG_GLES2_IMPLEMENTATION
+#elif defined(DGL_USE_OPENGL3)
 # define NANOVG_GL3_IMPLEMENTATION
 #else
 # define NANOVG_GL2_IMPLEMENTATION
@@ -314,7 +316,10 @@ NanoVG::Paint::operator NVGpaint() const noexcept
 NanoVG::NanoVG(int flags)
     : fContext(nvgCreateGL(flags)),
       fInFrame(false),
-      fIsSubWidget(false) {}
+      fIsSubWidget(false)
+{
+    DISTRHO_SAFE_ASSERT(fContext);
+}
 
 NanoVG::~NanoVG()
 {
