@@ -18,7 +18,6 @@
 #ifndef AUDIO_BASE_HPP_INCLUDED
 #define AUDIO_BASE_HPP_INCLUDED
 
-#include "CarlaThread.hpp"
 #include "CarlaMathUtils.hpp"
 
 extern "C" {
@@ -344,11 +343,6 @@ public:
             return false;
 
         ad_dump_nfo(99, &fFileNfo);
-
-       #ifdef CARLA_OS_WASM
-        // FIXME pool handling with seeking and partial reads is failing
-        fFileNfo.can_seek = 0;
-       #endif
 
         // Fix for misinformation using libsndfile
         if (fFileNfo.frames % fFileNfo.channels)
