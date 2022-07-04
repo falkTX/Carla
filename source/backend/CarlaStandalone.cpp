@@ -27,7 +27,9 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 #include "ThreadSafeFFTW.hpp"
-#ifndef BUILD_BRIDGE
+
+#if !(defined(BUILD_BRIDGE) || defined(CARLA_OS_WASM))
+# define CARLA_CAN_USE_LOG_THREAD
 # include "CarlaLogThread.hpp"
 #endif
 
@@ -439,7 +441,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
 
     if (engine->init(clientName))
     {
-#ifndef BUILD_BRIDGE
+#ifdef CARLA_CAN_USE_LOG_THREAD
         if (shandle.logThreadEnabled && std::getenv("CARLA_LOGS_DISABLED") == nullptr)
             shandle.logThread.init();
 #endif
@@ -524,7 +526,7 @@ bool carla_engine_close(CarlaHostHandle handle)
     if (! closed)
         shandle.lastError = engine->getLastError();
 
-#ifndef BUILD_BRIDGE
+#ifdef CARLA_CAN_USE_LOG_THREAD
     shandle.logThread.stop();
 #endif
 
@@ -682,7 +684,7 @@ void carla_set_engine_callback(CarlaHostHandle handle, EngineCallbackFunc func, 
         shandle.engineCallback    = func;
         shandle.engineCallbackPtr = ptr;
 
-#ifndef BUILD_BRIDGE
+#ifdef CARLA_CAN_USE_LOG_THREAD
         shandle.logThread.setCallback(func, ptr);
 #endif
     }
@@ -977,11 +979,11 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
             break;
 #endif
 
-#ifndef BUILD_BRIDGE
         case CB::ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
+#ifdef CARLA_CAN_USE_LOG_THREAD
             shandle.logThreadEnabled = (value != 0);
-            break;
 #endif
+            break;
 
         case CB::ENGINE_OPTION_CLIENT_NAME_PREFIX:
             if (shandle.engineOptions.clientNamePrefix != nullptr)
