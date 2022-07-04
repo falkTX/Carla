@@ -854,7 +854,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
     {
         CARLA_SAFE_ASSERT(! pData->loadingProject);
 
-        const ScopedThreadStopper sts(this);
+        const ScopedRunnerStopper srs(this);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             pData->graph.replacePlugin(oldPlugin, plugin);
@@ -925,7 +925,7 @@ bool CarlaEngine::removePlugin(const uint id)
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin.get() != nullptr, "Could not find plugin to remove");
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
-    const ScopedThreadStopper sts(this);
+    const ScopedRunnerStopper srs(this);
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
@@ -967,7 +967,7 @@ bool CarlaEngine::removeAllPlugins()
     if (pData->curPluginCount == 0)
         return true;
 
-    const ScopedThreadStopper sts(this);
+    const ScopedRunnerStopper srs(this);
 
     const uint curPluginCount = pData->curPluginCount;
 
@@ -1112,7 +1112,7 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data");
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
 
-    const ScopedThreadStopper sts(this);
+    const ScopedRunnerStopper srs(this);
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.switchPlugins(pluginA, pluginB);

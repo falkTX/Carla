@@ -18,7 +18,7 @@
 #ifndef CARLA_ENGINE_INTERNAL_HPP_INCLUDED
 #define CARLA_ENGINE_INTERNAL_HPP_INCLUDED
 
-#include "CarlaEngineThread.hpp"
+#include "CarlaEngineRunner.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaPlugin.hpp"
 #include "LinkedList.hpp"
@@ -244,7 +244,7 @@ struct EnginePluginData {
 // CarlaEngineProtectedData
 
 struct CarlaEngine::ProtectedData {
-    CarlaEngineThread thread;
+    CarlaEngineRunner runner;
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
     CarlaEngineOsc osc;
@@ -268,7 +268,7 @@ struct CarlaEngine::ProtectedData {
     uint32_t bufferSize;
     double   sampleRate;
 
-    bool aboutToClose;    // don't re-activate thread if true
+    bool aboutToClose;    // don't re-activate runner if true
     int  isIdling;        // don't allow any operations while idling
     uint curPluginCount;  // number of plugins loaded (0...max)
     uint maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
@@ -362,18 +362,18 @@ private:
 
 // -----------------------------------------------------------------------
 
-class ScopedThreadStopper
+class ScopedRunnerStopper
 {
 public:
-    ScopedThreadStopper(CarlaEngine* engine) noexcept;
-    ~ScopedThreadStopper() noexcept;
+    ScopedRunnerStopper(CarlaEngine* engine) noexcept;
+    ~ScopedRunnerStopper() noexcept;
 
 private:
     CarlaEngine* const engine;
     CarlaEngine::ProtectedData* const pData;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPYABLE(ScopedThreadStopper)
+    CARLA_DECLARE_NON_COPYABLE(ScopedRunnerStopper)
 };
 
 // -----------------------------------------------------------------------

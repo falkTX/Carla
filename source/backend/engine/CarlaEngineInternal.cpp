@@ -377,7 +377,7 @@ EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexc
 // CarlaEngine::ProtectedData
 
 CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine)
-    : thread(engine),
+    : runner(engine),
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
       osc(engine),
 #endif
@@ -511,7 +511,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 #endif
 
     nextAction.clearAndReset();
-    thread.startThread();
+    runner.start();
 
     return true;
 }
@@ -526,7 +526,7 @@ void CarlaEngine::ProtectedData::close()
 
     aboutToClose = true;
 
-    thread.stopThread(500);
+    runner.stop();
     nextAction.clearAndReset();
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
@@ -840,19 +840,19 @@ ScopedActionLock::~ScopedActionLock() noexcept
 }
 
 // -----------------------------------------------------------------------
-// ScopedThreadStopper
+// ScopedRunnerStopper
 
-ScopedThreadStopper::ScopedThreadStopper(CarlaEngine* const e) noexcept
+ScopedRunnerStopper::ScopedRunnerStopper(CarlaEngine* const e) noexcept
     : engine(e),
       pData(e->pData)
 {
-    pData->thread.stopThread(500);
+    pData->runner.stop();
 }
 
-ScopedThreadStopper::~ScopedThreadStopper() noexcept
+ScopedRunnerStopper::~ScopedRunnerStopper() noexcept
 {
     if (engine->isRunning() && ! pData->aboutToClose)
-        pData->thread.startThread();
+        pData->runner.start();
 }
 
 // -----------------------------------------------------------------------

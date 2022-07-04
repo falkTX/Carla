@@ -1520,8 +1520,8 @@ protected:
         }
 
         // stopped during removeAllPlugins()
-        if (! pData->thread.isThreadRunning())
-            pData->thread.startThread();
+        if (! pData->runner.isRunnerActive())
+            pData->runner.start();
 
         fOptionsForced = true;
         const String state(data);

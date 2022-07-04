@@ -1311,13 +1311,13 @@ protected:
      */
     friend class CarlaEngineEventPort;
     friend class CarlaEngineOsc;
-    friend class CarlaEngineThread;
+    friend class CarlaEngineRunner;
     friend class CarlaPluginInstance;
     friend class EngineInternalGraph;
     friend class PendingRtEventsRunner;
     friend class ScopedActionLock;
     friend class ScopedEngineEnvironmentLocker;
-    friend class ScopedThreadStopper;
+    friend class ScopedRunnerStopper;
     friend class PatchbayGraph;
     friend struct ExternalGraph;
     friend struct RackGraph;

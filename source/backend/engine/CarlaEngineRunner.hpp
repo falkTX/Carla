@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,28 +19,34 @@
 #define CARLA_ENGINE_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-#include "CarlaThread.hpp"
+#include "CarlaRunner.hpp"
 
 #include "CarlaJuceUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
-// CarlaEngineThread
+// CarlaEngineRunner
 
-class CarlaEngineThread : public CarlaThread
+class CarlaEngineRunner : public CarlaRunner
 {
 public:
-    CarlaEngineThread(CarlaEngine* engine) noexcept;
-    ~CarlaEngineThread() noexcept override;
+    CarlaEngineRunner(CarlaEngine* engine) noexcept;
+    ~CarlaEngineRunner() noexcept override;
+
+    void start();
+    void stop();
 
 protected:
-    void run() noexcept override;
+    bool run() noexcept override;
 
 private:
     CarlaEngine* const kEngine;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineThread)
+    bool fIsAlwaysRunning;
+    bool fIsPlugin;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineRunner)
 };
 
 // -----------------------------------------------------------------------

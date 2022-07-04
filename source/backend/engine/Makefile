@@ -38,7 +38,7 @@ OBJS = \
 	$(OBJDIR)/CarlaEngineGraph.cpp.o \
 	$(OBJDIR)/CarlaEngineInternal.cpp.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.o \
-	$(OBJDIR)/CarlaEngineThread.cpp.o
+	$(OBJDIR)/CarlaEngineRunner.cpp.o
 
 ifeq ($(HAVE_LIBLO),true)
 OBJS += \
