@@ -205,7 +205,7 @@ OBJS_native = \
 	$(OBJDIR)/CarlaEngineNative.cpp.o \
 	$(OBJDIR)/CarlaEngineOscSend.cpp.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.o \
-	$(OBJDIR)/CarlaEngineThread.cpp.o \
+	$(OBJDIR)/CarlaEngineRunner.cpp.o \
 	$(OBJDIR)/CarlaEngineJack.cpp.o \
 	$(OBJDIR)/CarlaEngineBridge.cpp.o \
 	$(OBJDIR)/CarlaPlugin.cpp.o \
@@ -234,7 +234,7 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaEngineData.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineInternal.cpp.arch.o \
 	$(OBJDIR)/CarlaEnginePorts.cpp.arch.o \
-	$(OBJDIR)/CarlaEngineThread.cpp.arch.o \
+	$(OBJDIR)/CarlaEngineRunner.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineJack.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineBridge.cpp.arch.o \
 	$(OBJDIR)/CarlaPlugin.cpp.arch.o \

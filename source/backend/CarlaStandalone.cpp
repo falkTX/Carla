@@ -979,11 +979,13 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
             break;
 #endif
 
+#ifndef BUILD_BRIDGE
         case CB::ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
 #ifdef CARLA_CAN_USE_LOG_THREAD
             shandle.logThreadEnabled = (value != 0);
 #endif
             break;
+#endif
 
         case CB::ENGINE_OPTION_CLIENT_NAME_PREFIX:
             if (shandle.engineOptions.clientNamePrefix != nullptr)

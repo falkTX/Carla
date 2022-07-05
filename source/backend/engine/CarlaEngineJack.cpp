@@ -3503,7 +3503,7 @@ protected:
             }
         }
 
-        pData->thread.stopThread(500);
+        pData->runner.stopRunner();
         fClient = nullptr;
 
 #ifdef BUILD_BRIDGE
