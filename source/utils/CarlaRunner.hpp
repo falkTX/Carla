@@ -48,7 +48,7 @@ protected:
      */
     CarlaRunner(const char* const runnerName = nullptr) noexcept
        #ifndef CARLA_OS_WASM
-        : fRunnerThread(runnerName),
+        : fRunnerThread(this, runnerName),
        #else
         : fRunnerName(runnerName),
           fShouldStop(false),
@@ -122,7 +122,7 @@ public:
     bool stopRunner() noexcept
     {
        #ifndef CARLA_OS_WASM
-        return fRunnerThread.stopThread();
+        return fRunnerThread.stopThread(-1);
        #else
         fShouldStop = true;
         return true;
@@ -160,29 +160,32 @@ public:
 
 private:
 #ifndef CARLA_OS_WASM
-    class RunnerThread : private Thread
+    class RunnerThread : public CarlaThread
     {
-        Runner* const runner;
+        CarlaRunner* const runner;
 
-        RunnerThread(Runner* const r, const char* const tn, const uint t)
-            : Thread(rn),
-              runner(r),
-              timeInterval(t) {}
+    public:
+        RunnerThread(CarlaRunner* const r, const char* const rn)
+            : CarlaThread(rn),
+              runner(r) {}
 
+    protected:
         void run() override
         {
+            const uint timeInterval = runner->fTimeInterval;
+
             while (!shouldThreadExit())
             {
                 bool stillRunning = false;
 
                 try {
-                    stillRunning = run();
+                    stillRunning = runner->run();
                 } catch(...) {}
 
                 if (stillRunning && !shouldThreadExit())
                 {
                     if (timeInterval != 0)
-                        d_msleep(timeInterval)
+                        carla_msleep(timeInterval);
 
                     pthread_yield();
                     continue;
