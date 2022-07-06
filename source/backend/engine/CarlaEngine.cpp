@@ -95,23 +95,21 @@ uint CarlaEngine::getDriverCount()
 
     uint count = 0;
 
-#ifndef STATIC_PLUGIN_TARGET
-# ifdef HAVE_JACK
+#ifdef HAVE_JACK
     if (jackbridge_is_ok())
-        count += 1;
-# endif
+        ++count;
 #endif
 
-#ifndef BUILD_BRIDGE
-# ifdef USING_JUCE_AUDIO_DEVICES
+#ifdef USING_JUCE_AUDIO_DEVICES
     count += getJuceApiCount();
-# endif
-# ifdef USING_RTAUDIO
+#endif
+
+#ifdef USING_RTAUDIO
     count += getRtAudioApiCount();
-# endif
-# ifdef HAVE_SDL
+#endif
+
+#ifdef HAVE_SDL
     ++count;
-# endif
 #endif
 
     return count;
@@ -314,8 +312,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newDummy();
 #endif
 
-#ifndef BUILD_BRIDGE
-# ifdef USING_JUCE_AUDIO_DEVICES
+#ifdef USING_JUCE_AUDIO_DEVICES
     // -------------------------------------------------------------------
     // linux
 
@@ -337,9 +334,9 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newJuce(AUDIO_API_DIRECTSOUND);
     if (std::strcmp(driverName, "WASAPI") == 0 || std::strcmp(driverName, "Windows Audio") == 0)
         return newJuce(AUDIO_API_WASAPI);
-# endif
+#endif
 
-# ifdef USING_RTAUDIO
+#ifdef USING_RTAUDIO
     // -------------------------------------------------------------------
     // common
 
@@ -371,12 +368,11 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newRtAudio(AUDIO_API_DIRECTSOUND);
     if (std::strcmp(driverName, "WASAPI") == 0)
         return newRtAudio(AUDIO_API_WASAPI);
-# endif
+#endif
 
-# ifdef HAVE_SDL
+#ifdef HAVE_SDL
     if (std::strcmp(driverName, "SDL") == 0)
         return newSDL();
-# endif
 #endif
 
     carla_stderr("CarlaEngine::newDriverByName(\"%s\") - invalid driver name", driverName);

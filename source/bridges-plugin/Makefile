@@ -40,6 +40,10 @@ endif
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
 
+BUILD_CXX_FLAGS += -UHAVE_SDL
+BUILD_CXX_FLAGS += -UUSING_JUCE_AUDIO_DEVICES
+BUILD_CXX_FLAGS += -UUSING_RTAUDIO
+
 ifeq ($(USING_JUCE),true)
 ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
