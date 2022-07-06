@@ -53,10 +53,10 @@ ifeq ($(WINDOWS),true)
 YSFX_FLAGS += -DNOMINMAX
 endif
 
-# ifneq ($(CPU_I386),true)
-# # NOTE: not compatible with MingGW, breaks win32_utf8
-# YSFX_FLAGS += -D_FILE_OFFSET_BITS=64
-# endif
+ifneq ($(WINDOWS)$(CPU_I386),truetrue)
+# NOTE: not compatible with MingGW, breaks win32_utf8
+YSFX_FLAGS += -D_FILE_OFFSET_BITS=64
+endif
 
 ifeq ($(HAVE_YSFXGUI),true)
 ifneq ($(MACOS_OR_WINDOWS),true)
