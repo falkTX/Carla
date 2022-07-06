@@ -187,7 +187,8 @@ private:
                     if (timeInterval != 0)
                         carla_msleep(timeInterval);
 
-                    pthread_yield();
+                    // FIXME
+                    // pthread_yield();
                     continue;
                 }
 
