@@ -1652,6 +1652,7 @@ public:
             juce::OwnedArray<juce::PluginDescription> pluginDescriptions;
             juce::KnownPluginList plist;
 
+#if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
             {
                 const ScopedAbortCatcher sac;
 
@@ -1674,6 +1675,7 @@ public:
                     }
                 }
             }
+#endif
 
             if (pluginDescriptions.size() == 0)
             {
