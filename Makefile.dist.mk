@@ -176,6 +176,7 @@ TARGETS = Carla-$(VERSION)-win64.zip
 else
 TARGETS = Carla-$(VERSION)-win32.zip
 endif
+endif
 
 ifeq ($(HAVE_QT5PKG),true)
 dist: $(TARGETS)
