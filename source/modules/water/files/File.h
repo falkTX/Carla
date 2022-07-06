@@ -662,7 +662,10 @@ public:
         currentExecutableFile,
 
         /** In a plugin, this will return the path of the host executable. */
-        hostApplicationPath
+        hostApplicationPath,
+
+        /** Windows specific paths */
+        winAppData, winProgramFiles
     };
 
     /** Finds the location of a special type of file or directory, such as a home folder or

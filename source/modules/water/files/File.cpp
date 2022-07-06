@@ -1146,6 +1146,14 @@ File File::getSpecialLocation (const SpecialLocationType type)
         case hostApplicationPath:
             return WindowsFileHelpers::getModuleFileName (nullptr);
 
+        case winAppData:
+            csidlType = CSIDL_APPDATA;
+            break;
+
+        case winProgramFiles:
+            csidlType = CSIDL_PROGRAM_FILES;
+            break;
+
         default:
             wassertfalse; // unknown type?
             return File();
