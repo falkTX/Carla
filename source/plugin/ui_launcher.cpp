@@ -25,9 +25,9 @@
 
 // --------------------------------------------------------------------------------------------------------------------
 
-START_NAMESPACE_DGL
+START_NAMESPACE_DISTRHO
 
-class PluginApplication : public Application
+class PluginApplication : public DGL_NAMESPACE::Application
 {
 public:
     explicit PluginApplication()
@@ -37,7 +37,7 @@ public:
     }
 };
 
-class PluginWindow : public Window
+class PluginWindow : public DGL_NAMESPACE::Window
 {
 public:
     explicit PluginWindow(PluginApplication& app, const uintptr_t winId)
@@ -68,6 +68,12 @@ public:
             puglBackendLeave(pData->view);
     }
 };
+
+END_NAMESPACE_DISTRHO
+
+// --------------------------------------------------------------------------------------------------------------------
+
+START_NAMESPACE_DGL
 
 class CarlaButtonWidget : public TopLevelWidget,
                           private OpenGLImageButton::Callback

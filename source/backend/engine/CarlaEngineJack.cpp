@@ -2170,7 +2170,7 @@ public:
             return false;
         }
 
-        const ScopedThreadStopper sts(this);
+        const ScopedRunnerStopper srs(this);
 
         // rename on client client mode, just rename the ports
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)

@@ -81,7 +81,7 @@ bool CarlaEngineRunner::run() noexcept
 #endif
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-    if (kIsPlugin)
+    if (fIsPlugin)
         engineOsc.idle();
 #endif
 
