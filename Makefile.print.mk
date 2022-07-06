@@ -53,7 +53,7 @@ ifeq ($(HAVE_LIBLO),true)
 else
 	@printf -- "OSC support:   $(ANS_NO)  $(mS)Missing liblo$(mE)\n"
 endif
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 	@printf -- "Binary detect: $(ANS_YES)\n"
 else
 ifeq ($(HAVE_LIBMAGIC),true)
@@ -93,7 +93,7 @@ ifeq ($(MACOS),true)
 else
 	@printf -- "CoreAudio:   $(ANS_NO)  $(mZ)MacOS only$(mE)\n"
 endif
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 	@printf -- "ASIO:        $(ANS_YES)\n"
 	@printf -- "DirectSound: $(ANS_YES)\n"
 	@printf -- "WASAPI:      $(ANS_YES)\n"
@@ -114,7 +114,7 @@ endif
 	@printf -- "LADSPA:   $(ANS_YES)\n"
 	@printf -- "DSSI:     $(ANS_YES)\n"
 	@printf -- "LV2:      $(ANS_YES)\n"
-ifeq ($(MACOS_OR_WIN32),true)
+ifeq ($(MACOS_OR_WINDOWS),true)
 ifeq ($(USING_JUCE),true)
 	@printf -- "VST2:     $(ANS_YES) (with UI, using JUCE)\n"
 	@printf -- "VST3:     $(ANS_YES) (with UI, using JUCE)\n"
@@ -122,7 +122,7 @@ else  # USING_JUCE
 	@printf -- "VST2:     $(ANS_YES) (with UI)\n"
 	@printf -- "VST3:     $(ANS_NO)\n"
 endif # USING_JUCE
-else  # MACOS_OR_WIN32
+else  # MACOS_OR_WINDOWS
 ifeq ($(HAIKU),true)
 	@printf -- "VST2:     $(ANS_YES) (without UI)\n"
 	@printf -- "VST3:     $(ANS_NO)\n"
@@ -139,7 +139,7 @@ else  # HAVE_X11
 	@printf -- "VST3:     $(ANS_NO)\n"
 endif # HAVE_X11
 endif # HAIKU
-endif # MACOS_OR_WIN32
+endif # MACOS_OR_WINDOWS
 ifeq ($(MACOS),true)
 ifeq ($(USING_JUCE),true)
 	@printf -- "AU:       $(ANS_YES) (with UI, using JUCE)\n"
@@ -155,7 +155,7 @@ endif # MACOS
 	@printf -- "External: $(ANS_YES) (direct)\n"
 	@printf -- "Gtk2:     $(ANS_YES) (bridge)\n"
 	@printf -- "Gtk3:     $(ANS_YES) (bridge)\n"
-ifneq ($(MACOS_OR_WIN32),true)
+ifneq ($(MACOS_OR_WINDOWS),true)
 ifeq ($(HAVE_QT4),true)
 	@printf -- "Qt4:      $(ANS_YES) (bridge)\n"
 else
@@ -171,17 +171,17 @@ ifeq ($(HAVE_X11),true)
 else
 	@printf -- "X11:      $(ANS_NO)  $(mS)X11 missing$(mE)\n"
 endif
-else # !MACOS_OR_WIN32
+else # !MACOS_OR_WINDOWS
 	@printf -- "Qt4:      $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
 	@printf -- "Qt5:      $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
 	@printf -- "X11:      $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
-endif # !MACOS_OR_WIN32
+endif # !MACOS_OR_WINDOWS
 ifeq ($(MACOS),true)
 	@printf -- "Cocoa:    $(ANS_YES) (direct+bridge)\n"
 else
 	@printf -- "Cocoa:    $(ANS_NO)  $(mZ)MacOS only$(mE)\n"
 endif
-ifeq ($(WIN32),true)
+ifeq ($(WINDOWS),true)
 	@printf -- "Windows:  $(ANS_YES) (direct+bridge)\n"
 else
 	@printf -- "Windows:  $(ANS_NO)  $(mZ)Windows only$(mE)\n"
