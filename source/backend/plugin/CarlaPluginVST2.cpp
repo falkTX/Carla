@@ -2565,10 +2565,11 @@ public:
         sCurrentUniqueId     = static_cast<intptr_t>(uniqueId);
         sLastCarlaPluginVST2 = this;
 
-#if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
         bool wasTriggered, wasThrown = false;
         {
+           #if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
             const ScopedAbortCatcher sac;
+           #endif
 
             try {
                 fEffect = vstFn(carla_vst_audioMasterCallback);
@@ -2576,19 +2577,24 @@ public:
                 wasThrown = true;
             }
 
+           #if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
             wasTriggered = sac.wasTriggered();
+           #else
+            wasTriggered = false;
+           #endif
         }
 
         // try again if plugin blows
         if (wasTriggered || wasThrown)
         {
+           #if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
             const ScopedAbortCatcher sac;
+           #endif
 
             try {
                 fEffect = vstFn(carla_vst_audioMasterCallback);
             } CARLA_SAFE_EXCEPTION_RETURN("VST init 2nd attempt", false);
         }
-#endif
 
         sLastCarlaPluginVST2 = nullptr;
         sCurrentUniqueId     = 0;

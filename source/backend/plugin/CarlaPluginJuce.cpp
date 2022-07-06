@@ -1652,9 +1652,10 @@ public:
             juce::OwnedArray<juce::PluginDescription> pluginDescriptions;
             juce::KnownPluginList plist;
 
-#if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
             {
+               #if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
                 const ScopedAbortCatcher sac;
+               #endif
 
                 for (int i = 0; i < fFormatManager.getNumFormats(); ++i)
                 {
@@ -1667,15 +1668,16 @@ public:
                         plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *apformat);
                     } CARLA_SAFE_EXCEPTION_CONTINUE("scanAndAddFile")
 
+                   #if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
                     if (sac.wasTriggered())
                     {
                         carla_stderr("WARNING: Caught exception while scanning file, will not load this plugin");
                         pluginDescriptions.clearQuick(false);
                         break;
                     }
+                   #endif
                 }
             }
-#endif
 
             if (pluginDescriptions.size() == 0)
             {
@@ -1692,7 +1694,9 @@ public:
         juce::String error;
 
         {
+           #if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
             const ScopedAbortCatcher sac;
+           #endif
 
             try {
                 fInstance = fFormatManager.createPluginInstance(fDesc,
@@ -1701,11 +1705,13 @@ public:
                                                                 error);
             } CARLA_SAFE_EXCEPTION("createPluginInstance")
 
+           #if !(defined(CARLA_OS_WASM) || defined(CARLA_OS_WIN))
             if (sac.wasTriggered())
             {
                 fInstance = nullptr;
                 carla_stderr("WARNING: Caught exception while instantiating, will not load this plugin");
             }
+           #endif
         }
 
         if (fInstance == nullptr)
