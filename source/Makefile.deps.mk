@@ -447,15 +447,13 @@ ifeq ($(HAVE_DGL),true)
 
 ifeq ($(HAIKU),true)
 DGL_FLAGS = $(shell $(PKG_CONFIG) --cflags gl)
-DGL_LIBS  = $(shell $(PKG_CONFIG) --libs gl)
+DGL_LIBS  = $(shell $(PKG_CONFIG) --libs gl) -lbe
 else ifeq ($(MACOS),true)
 DGL_FLAGS = -DGL_SILENCE_DEPRECATION=1 -Wno-deprecated-declarations
-DGL_LIBS  = -framework OpenGL -framework Cocoa
+DGL_LIBS  = -framework OpenGL -framework Cocoa -framework CoreVideo
 else ifeq ($(WASM),true)
-ifneq ($(USE_GLES2),true)
-ifneq ($(USE_GLES3),true)
+ifneq ($(USE_GLES2)$(USE_GLES3),true)
 DGL_LIBS  = -sLEGACY_GL_EMULATION -sGL_UNSAFE_OPTS=0
-endif
 endif
 else ifeq ($(WINDOWS),true)
 DGL_LIBS  = -lopengl32 -lgdi32
