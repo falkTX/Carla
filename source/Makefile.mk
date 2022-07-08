@@ -83,6 +83,9 @@ endif
 ifeq ($(DEBUG),true)
 BASE_FLAGS += -DDEBUG -O0 -g
 LINK_OPTS   =
+ifeq ($(WASM),true)
+LINK_OPTS  += -sASSERTIONS=1
+endif
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 CXXFLAGS   += -fvisibility-inlines-hidden

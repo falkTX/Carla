@@ -366,6 +366,7 @@ HAVE_PYQT = false
 HAVE_QT4 = false
 HAVE_QT5 = false
 HAVE_QT5PKG = false
+HAVE_SDL = false
 USING_JUCE = false
 USING_JUCE_AUDIO_DEVICES = false
 USING_RTAUDIO = false

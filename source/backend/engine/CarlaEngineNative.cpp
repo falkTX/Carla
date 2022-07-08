@@ -308,13 +308,15 @@ public:
                 {
                     fParameters[rindex] = valuef;
 
+                    if (fUsesEmbed
 #ifndef CARLA_ENGINE_WITHOUT_UI
-                    if (fUsesEmbed || fUiServer.isPipeRunning())
+                        || fUiServer.isPipeRunning()
+#endif
+                        )
                     {
                         pHost->ui_parameter_changed(pHost->handle, rindex, valuef);
                     }
                     else
-#endif
                     {
                         static uint last_pluginId = pluginId;
                         static int last_value1 = value1;
@@ -331,6 +333,11 @@ public:
                     }
                 }
             }
+            break;
+
+        case ENGINE_CALLBACK_UI_STATE_CHANGED:
+            if (sendHost && fUsesEmbed)
+                pHost->ui_closed(pHost->handle);
             break;
 
         default:
