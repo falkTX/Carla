@@ -22,7 +22,7 @@
 #include "CarlaMutex.hpp"
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
-#include "CarlaThread.hpp"
+#include "CarlaRunner.hpp"
 
 #include "water/processors/AudioProcessorGraph.h"
 #include "water/text/StringArray.h"
@@ -163,7 +163,7 @@ struct RackGraph {
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
-class PatchbayGraph : private CarlaThread {
+class PatchbayGraph : private CarlaRunner {
 public:
     PatchbayConnectionList connections;
     AudioProcessorGraph graph;
@@ -216,7 +216,7 @@ public:
                  uint32_t frames);
 
 private:
-    void run() override;
+    bool run() override;
 
     CarlaEngine* const kEngine;
     CARLA_DECLARE_NON_COPYABLE(PatchbayGraph)

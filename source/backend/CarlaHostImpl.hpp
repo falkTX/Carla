@@ -22,10 +22,11 @@
 #include "CarlaUtils.h"
 #include "CarlaEngine.hpp"
 
-#ifdef BUILD_BRIDGE
-# include "CarlaString.hpp"
-#else
+#if !(defined(BUILD_BRIDGE) || defined(CARLA_OS_WASM))
+# define CARLA_CAN_USE_LOG_THREAD
 # include "CarlaLogThread.hpp"
+#else
+# include "CarlaString.hpp"
 #endif
 
 namespace CB = CARLA_BACKEND_NAMESPACE;
@@ -58,7 +59,7 @@ struct CarlaHostStandalone : CarlaHostHandleImpl {
     void*              fileCallbackPtr;
 
     EngineOptions  engineOptions;
-#ifndef BUILD_BRIDGE
+#ifdef CARLA_CAN_USE_LOG_THREAD
     CarlaLogThread logThread;
     bool           logThreadEnabled;
 #endif
@@ -72,7 +73,7 @@ struct CarlaHostStandalone : CarlaHostHandleImpl {
           fileCallback(nullptr),
           fileCallbackPtr(nullptr),
           engineOptions(),
-#ifndef BUILD_BRIDGE
+#ifdef CARLA_CAN_USE_LOG_THREAD
           logThread(),
           logThreadEnabled(false),
 #endif

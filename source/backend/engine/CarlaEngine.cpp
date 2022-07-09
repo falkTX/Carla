@@ -307,7 +307,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newJack();
 #endif
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+#if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_OS_WASM))
     if (std::strcmp(driverName, "Dummy") == 0)
         return newDummy();
 #endif

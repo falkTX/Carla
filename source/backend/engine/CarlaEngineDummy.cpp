@@ -75,7 +75,7 @@ public:
 
         pData->graph.create(2, 2, 0, 0);
 
-        if (! startThread(true))
+        if (! startThread())
         {
             close();
             setLastError("Failed to start dummy audio thread");

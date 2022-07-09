@@ -769,25 +769,24 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine,
 
     if (pData->nextAction.needsPost)
     {
+        bool engineStoppedWhileWaiting = false;
+
+      #ifndef CARLA_OS_WASM
        #if defined(DEBUG) || defined(BUILD_BRIDGE)
         // block wait for unlock on processing side
         carla_stdout(ACTION_MSG_PREFIX "ScopedPluginAction(%i) - blocking START", pluginId);
        #endif
 
-        bool engineStoppedWhileWaiting = false;
-
         if (! pData->nextAction.postDone)
         {
             for (int i = 10; --i >= 0;)
             {
-               #ifndef CARLA_OS_WASM
                 if (pData->nextAction.sem != nullptr)
                 {
                     if (carla_sem_timedwait(*pData->nextAction.sem, 200))
                         break;
                 }
                 else
-               #endif
                 {
                     carla_msleep(200);
                 }
@@ -803,6 +802,7 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine,
        #if defined(DEBUG) || defined(BUILD_BRIDGE)
         carla_stdout(ACTION_MSG_PREFIX "ScopedPluginAction(%i) - blocking DONE", pluginId);
        #endif
+      #endif
 
         // check if anything went wrong...
         if (! pData->nextAction.postDone)

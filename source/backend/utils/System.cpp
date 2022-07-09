@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,7 +17,9 @@
 
 #include "CarlaUtils.h"
 
-#include "CarlaThread.hpp"
+#ifndef CARLA_OS_WASM
+# include "CarlaThread.hpp"
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -35,7 +37,9 @@ void carla_set_process_name(const char* name)
 {
     carla_debug("carla_set_process_name(\"%s\")", name);
 
+#ifndef CARLA_OS_WASM
     CarlaThread::setCurrentThreadName(name);
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------

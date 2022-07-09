@@ -13,8 +13,6 @@
 #include "water/synthesisers/Synthesiser.h"
 #include "water/text/StringArray.h"
 
-#include "CarlaThread.hpp"
-
 namespace sfzero
 {
 

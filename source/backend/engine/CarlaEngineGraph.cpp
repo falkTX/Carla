@@ -1694,7 +1694,7 @@ private:
 PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
                              const uint32_t audioIns, const uint32_t audioOuts,
                              const uint32_t cvIns, const uint32_t cvOuts)
-    : CarlaThread("PatchbayReorderThread"),
+    : CarlaRunner("PatchbayReorderRunner"),
       connections(),
       graph(),
       audioBuffer(),
@@ -1826,12 +1826,12 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
         node->properties.set("isOSC", false);
     }
 
-    startThread();
+    startRunner(100);
 }
 
 PatchbayGraph::~PatchbayGraph()
 {
-    stopThread(-1);
+    stopRunner();
 
     connections.clear();
     extGraph.clear();
@@ -2578,13 +2578,10 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data,
     }
 }
 
-void PatchbayGraph::run()
+bool PatchbayGraph::run()
 {
-    while (! shouldThreadExit())
-    {
-        carla_msleep(100);
-        graph.reorderNowIfNeeded();
-    }
+    graph.reorderNowIfNeeded();
+    return true;
 }
 
 // -----------------------------------------------------------------------

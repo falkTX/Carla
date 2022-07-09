@@ -28,11 +28,6 @@
 #include "CarlaBase64Utils.hpp"
 #include "ThreadSafeFFTW.hpp"
 
-#if !(defined(BUILD_BRIDGE) || defined(CARLA_OS_WASM))
-# define CARLA_CAN_USE_LOG_THREAD
-# include "CarlaLogThread.hpp"
-#endif
-
 #include "water/files/File.h"
 
 #ifdef USING_JUCE
