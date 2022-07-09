@@ -375,7 +375,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 1)
 
-ifneq ($(HAIKU_OR_MACOS_OR_WASM_OR_WINDOWS),true)
+ifneq ($(HAIKU_OR_MACOS_OR_WINDOWS),true)
 LIBDL_LIBS = -ldl
 endif
 
@@ -621,7 +621,7 @@ else ifeq ($(WASM),true)
 HYLIA_FLAGS      =
 HYLIA_LIBS       =
 JACKBRIDGE_LIBS  =
-LILV_LIBS        =
+LILV_LIBS        = -ldl -lm
 RTMEMPOOL_LIBS   =
 WATER_LIBS       =
 
