@@ -48,9 +48,7 @@ extern "C" {
 # define CARLA_MLOCK(ptr, size)
 #endif
 
-#ifdef CARLA_OS_WASM
-# define DEBUG_FILE_OPS
-#endif
+// #define DEBUG_FILE_OPS
 
 typedef struct adinfo ADInfo;
 
