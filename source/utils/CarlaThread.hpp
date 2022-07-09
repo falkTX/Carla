@@ -26,6 +26,10 @@
 # include <sys/prctl.h>
 #endif
 
+#ifdef CARLA_OS_WASM
+# error Threads do not work under wasm!
+#endif
+
 // -----------------------------------------------------------------------
 // CarlaThread class
 
