@@ -188,6 +188,7 @@ void carla_sem_post(carla_sem_t& sem, const bool server = true) noexcept
     return; (void)server;
 }
 
+#ifndef CARLA_OS_WASM
 /*
  * Wait for a semaphore (lock).
  */
@@ -250,6 +251,7 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server =
     // may be unused
     (void)server;
 }
+#endif
 
 // -----------------------------------------------------------------------
 

@@ -64,6 +64,7 @@ void jackbridge_sem_post(void* sem, bool server) noexcept
 #endif
 }
 
+#ifndef CARLA_OS_WASM
 bool jackbridge_sem_timedwait(void* sem, uint msecs, bool server) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(sem != nullptr, false);
@@ -74,6 +75,7 @@ bool jackbridge_sem_timedwait(void* sem, uint msecs, bool server) noexcept
     return carla_sem_timedwait(*(carla_sem_t*)sem, msecs, server);
 #endif
 }
+#endif
 
 // -----------------------------------------------------------------------------
 
