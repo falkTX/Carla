@@ -109,13 +109,19 @@ public:
     void removeIdleCallback(IdleCallback* callback);
 
    /**
-      Set the class name of the application.
+      Get the class name of the application.
 
       This is a stable identifier for the application, used as the window class/instance name on X11 and Windows.
       It is not displayed to the user, but can be used in scripts and by window managers,
       so it should be the same for every instance of the application, but different from other applications.
 
       Plugins created with DPF have their class name automatically set based on DGL_NAMESPACE and plugin name.
+    */
+    const char* getClassName() const noexcept;
+
+   /**
+      Set the class name of the application.
+      @see getClassName
     */
     void setClassName(const char* name);
 

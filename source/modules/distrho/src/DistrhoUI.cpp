@@ -44,6 +44,7 @@
 # define x_fib_show                DISTRHO_PUGL_NAMESPACE_MACRO(plugin, x_fib_show)
 # define x_fib_status              DISTRHO_PUGL_NAMESPACE_MACRO(plugin, x_fib_status)
 # define DISTRHO_FILE_BROWSER_DIALOG_HPP_INCLUDED
+# define FILE_BROWSER_DIALOG_NAMESPACE DISTRHO_NAMESPACE
 # define FILE_BROWSER_DIALOG_DISTRHO_NAMESPACE
 START_NAMESPACE_DISTRHO
 # include "../extra/FileBrowserDialogImpl.hpp"

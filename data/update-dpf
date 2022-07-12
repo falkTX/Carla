@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -e
+
+cd $(dirname ${0})
+cd ..
+
+CARLA_DIR=$(pwd)
+DPF_DIR=/tmp/dpf-carla
+
+rm -rf ${DPF_DIR}
+git clone git@github.com:DISTRHO/DPF.git ${DPF_DIR} --depth=1 --recursive -b develop
+
+cp -v ${DPF_DIR}/dgl/*.hpp         ${CARLA_DIR}/source/modules/dgl/
+cp -v ${DPF_DIR}/dgl/src/*.cpp     ${CARLA_DIR}/source/modules/dgl/src/
+cp -v ${DPF_DIR}/dgl/src/*.hpp     ${CARLA_DIR}/source/modules/dgl/src/
+cp -v ${DPF_DIR}/distrho/*.cpp     ${CARLA_DIR}/source/modules/distrho/
+cp -v ${DPF_DIR}/distrho/*.hpp     ${CARLA_DIR}/source/modules/distrho/
+cp -v ${DPF_DIR}/distrho/src/*.cpp ${CARLA_DIR}/source/modules/distrho/src/
+cp -v ${DPF_DIR}/distrho/src/*.hpp ${CARLA_DIR}/source/modules/distrho/src/
+
+cp -v ${DPF_DIR}/distrho/extra/LeakDetector.hpp     ${CARLA_DIR}/source/modules/distrho/extra/
+cp -v ${DPF_DIR}/distrho/extra/ScopedPointer.hpp    ${CARLA_DIR}/source/modules/distrho/extra/
+cp -v ${DPF_DIR}/distrho/extra/ScopedSafeLocale.hpp ${CARLA_DIR}/source/modules/distrho/extra/
+cp -v ${DPF_DIR}/distrho/extra/String.hpp           ${CARLA_DIR}/source/modules/distrho/extra/
+
+cp -r -v ${DPF_DIR}/dgl/src/pugl-upstream/include ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/
+cp -r -v ${DPF_DIR}/dgl/src/pugl-upstream/src     ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/
+cp -r -v ${DPF_DIR}/dgl/src/pugl-upstream/AUTHORS ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/
+cp -r -v ${DPF_DIR}/dgl/src/pugl-upstream/COPYING ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/
+
+rm ${CARLA_DIR}/source/modules/dgl/Cairo.hpp
+rm ${CARLA_DIR}/source/modules/dgl/FileBrowserDialog.hpp
+rm ${CARLA_DIR}/source/modules/dgl/Vulkan.hpp
+rm ${CARLA_DIR}/source/modules/dgl/src/Cairo.cpp
+rm ${CARLA_DIR}/source/modules/dgl/src/Vulkan.cpp
+rm ${CARLA_DIR}/source/modules/dgl/src/Resources.{cpp,hpp}
+
+rm ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/src/.clang-tidy
+rm ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/include/.clang-tidy
+rm ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/include/meson.build
+rm ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/include/pugl/cairo.h
+rm ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/include/pugl/vulkan.h
+
+rm ${CARLA_DIR}/source/modules/distrho/DistrhoInfo.hpp
+rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoPlugin{JACK,LADSPA+DSSI,LV2,LV2export,VST2,VST3}.cpp
+rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoPluginVST3.hpp
+rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoUI{DSSI,LV2,VST3}.cpp
+rm ${CARLA_DIR}/source/modules/distrho/DistrhoStandaloneUtils.hpp
+
+rm -rf ${DPF_DIR}

@@ -84,6 +84,10 @@ PuglStatus puglMacOSRemoveChildWindow(PuglView* view, PuglView* child);
 // macOS specific, center view based on parent coordinates (if there is one)
 void puglMacOSShowCentered(PuglView* view);
 
+#elif defined(DISTRHO_OS_WASM)
+
+// nothing here yet
+
 #elif defined(DISTRHO_OS_WINDOWS)
 
 // win32 specific, call ShowWindow with SW_RESTORE
@@ -93,6 +97,11 @@ void puglWin32RestoreWindow(PuglView* view);
 void puglWin32ShowCentered(PuglView* view);
 
 #elif defined(HAVE_X11)
+
+#define DGL_USING_X11
+
+// X11 specific, update world without triggering exposure evente
+PuglStatus puglX11UpdateWithoutExposures(PuglWorld* world);
 
 // X11 specific, set dialog window type and pid hints
 void puglX11SetWindowTypeAndPID(const PuglView* view, bool isStandalone);

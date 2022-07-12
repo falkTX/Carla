@@ -116,7 +116,8 @@ puglWasmGlConfigure(PuglView* view)
     puglWasmGlGetAttrib(display, config, EGL_DEPTH_SIZE);
   view->hints[PUGL_STENCIL_BITS] =
     puglWasmGlGetAttrib(display, config, EGL_STENCIL_SIZE);
-  view->hints[PUGL_SAMPLES] = puglWasmGlGetAttrib(display, config, EGL_SAMPLES);
+  view->hints[PUGL_SAMPLES] =
+    puglWasmGlGetAttrib(display, config, EGL_SAMPLES);
 
   // always enabled for EGL
   view->hints[PUGL_DOUBLE_BUFFER] = 1;
@@ -136,6 +137,9 @@ puglWasmGlEnter(PuglView* view, const PuglExposeEvent* PUGL_UNUSED(expose))
     return PUGL_FAILURE;
   }
 
+  // TESTING: is it faster if we never unset context?
+  return PUGL_SUCCESS;
+
   return eglMakeCurrent(surface->display, surface->surface, surface->surface, surface->context) ? PUGL_SUCCESS : PUGL_FAILURE;
 }
 
@@ -150,6 +154,9 @@ puglWasmGlLeave(PuglView* view, const PuglExposeEvent* expose)
     eglSwapBuffers(surface->display, surface->surface);
   }
 
+  // TESTING: is it faster if we never unset context?
+  return PUGL_SUCCESS;
+
   return eglMakeCurrent(surface->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) ? PUGL_SUCCESS : PUGL_FAILURE;
 }
 
@@ -161,26 +168,26 @@ puglWasmGlCreate(PuglView* view)
   const EGLDisplay display = surface->display;
   const EGLConfig  config  = surface->config;
 
-  /*
-  const int ctx_attrs[] = {
-    GLX_CONTEXT_MAJOR_VERSION_ARB,
+  const EGLint attrs[] = {
+    EGL_CONTEXT_CLIENT_VERSION,
     view->hints[PUGL_CONTEXT_VERSION_MAJOR],
 
-    GLX_CONTEXT_MINOR_VERSION_ARB,
+    EGL_CONTEXT_MAJOR_VERSION,
+    view->hints[PUGL_CONTEXT_VERSION_MAJOR],
+
+    /*
+    EGL_CONTEXT_MINOR_VERSION,
     view->hints[PUGL_CONTEXT_VERSION_MINOR],
 
-    GLX_CONTEXT_FLAGS_ARB,
-    (view->hints[PUGL_USE_DEBUG_CONTEXT] ? GLX_CONTEXT_DEBUG_BIT_ARB : 0),
+    EGL_CONTEXT_OPENGL_DEBUG,
+    (view->hints[PUGL_USE_DEBUG_CONTEXT] ? EGL_TRUE : EGL_FALSE),
 
-    GLX_CONTEXT_PROFILE_MASK_ARB,
+    EGL_CONTEXT_OPENGL_PROFILE_MASK,
     (view->hints[PUGL_USE_COMPAT_PROFILE]
-       ? GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB
-       : GLX_CONTEXT_CORE_PROFILE_BIT_ARB),
-    0};
+       ? EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT
+       : EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT),
     */
 
-  const EGLint attrs[] = {
-    EGL_CONTEXT_CLIENT_VERSION, 2,
     EGL_NONE
   };
 
@@ -209,6 +216,9 @@ puglWasmGlCreate(PuglView* view)
   }
 
   printf("TODO: %s %d | ok\n", __func__, __LINE__);
+
+  // TESTING: is it faster if we never unset context?
+  eglMakeCurrent(surface->display, surface->surface, surface->surface, surface->context);
 
   return PUGL_SUCCESS;
 }

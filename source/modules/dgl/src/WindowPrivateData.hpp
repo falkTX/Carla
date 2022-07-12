@@ -78,7 +78,8 @@ struct Window::PrivateData : IdleCallback {
     bool ignoreIdleCallbacks;
 
     /** Whether we are waiting to receive clipboard data, ignoring some events in the process. */
-    bool waitingForClipboard;
+    bool waitingForClipboardData;
+    bool waitingForClipboardEvents;
 
     /** The type id returned by the last onClipboardDataOffer call. */
     uint32_t clipboardTypeId;

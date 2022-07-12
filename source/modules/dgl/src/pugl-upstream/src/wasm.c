@@ -49,6 +49,20 @@ puglInitViewInternals(PuglWorld* const world)
   return impl;
 }
 
+static PuglStatus
+puglDispatchEventWithContext(PuglView* const view, const PuglEvent* event)
+{
+  PuglStatus st0 = PUGL_SUCCESS;
+  PuglStatus st1 = PUGL_SUCCESS;
+
+  if (!(st0 = view->backend->enter(view, NULL))) {
+    st0 = view->eventFunc(view, event);
+    st1 = view->backend->leave(view, NULL);
+  }
+
+  return st0 ? st0 : st1;
+}
+
 static PuglKey
 keyCodeToSpecial(const unsigned long code, const unsigned long location)
 {
@@ -125,8 +139,12 @@ puglKeyCallback(const int eventType, const EmscriptenKeyboardEvent* const keyEve
 {
   PuglView* const view = (PuglView*)userData;
 
-  if (keyEvent->repeat && view->hints[PUGL_IGNORE_KEY_REPEAT])
+  if (!view->visible) {
     return EM_FALSE;
+  }
+
+  if (keyEvent->repeat && view->hints[PUGL_IGNORE_KEY_REPEAT])
+    return EM_TRUE;
 
   PuglStatus st0 = PUGL_SUCCESS;
   PuglStatus st1 = PUGL_SUCCESS;
@@ -138,6 +156,10 @@ puglKeyCallback(const int eventType, const EmscriptenKeyboardEvent* const keyEve
 
   const PuglKey special = keyCodeToSpecial(keyEvent->keyCode, keyEvent->location);
 
+  uint key = keyEvent->keyCode;
+  if (key >= 'A' && key <= 'Z' && !keyEvent->shiftKey)
+      key += 'a' - 'A';
+
   PuglEvent event = {{PUGL_NOTHING, 0}};
   event.key.type = eventType == EMSCRIPTEN_EVENT_KEYDOWN ? PUGL_KEY_PRESS : PUGL_KEY_RELEASE;
   event.key.time = keyEvent->timestamp / 1000;
@@ -145,16 +167,16 @@ puglKeyCallback(const int eventType, const EmscriptenKeyboardEvent* const keyEve
   // event.key.y     = xevent.xkey.y;
   // event.key.xRoot = xevent.xkey.x_root;
   // event.key.yRoot = xevent.xkey.y_root;
-  event.key.key     = special ? special : keyEvent->keyCode;
+  event.key.key     = special ? special : key;
   event.key.keycode = keyEvent->keyCode;
   event.key.state   = state;
-  st0 = puglDispatchEvent(view, &event);
+  st0 = puglDispatchEventWithContext(view, &event);
 
   d_debug("key event \n"
            "\tdown:     %d\n"
            "\trepeat:   %d\n"
            "\tlocation: %d\n"
-           "\tflags:    0x%x\n"
+           "\tstate:    0x%x\n"
            "\tkey[]:    '%s'\n"
            "\tcode[]:   '%s'\n"
            "\tlocale[]: '%s'\n"
@@ -172,7 +194,7 @@ puglKeyCallback(const int eventType, const EmscriptenKeyboardEvent* const keyEve
            keyEvent->which, keyEvent->which >= ' ' && keyEvent->which <= '~' ? keyEvent->which : 0,
            special);
 
-  if (event.type == PUGL_KEY_PRESS && !special) {
+  if (event.type == PUGL_KEY_PRESS && !special && !(keyEvent->ctrlKey|keyEvent->altKey|keyEvent->metaKey)) {
     char str[8] = PUGL_INIT_STRUCT;
 
     if (decodeCharacterString(keyEvent->keyCode, keyEvent->key, str)) {
@@ -181,17 +203,21 @@ puglKeyCallback(const int eventType, const EmscriptenKeyboardEvent* const keyEve
       event.text.type      = PUGL_TEXT;
       event.text.character = event.key.key;
       memcpy(event.text.string, str, sizeof(event.text.string));
-      st1 = puglDispatchEvent(view, &event);
+      st1 = puglDispatchEventWithContext(view, &event);
     }
   }
 
-  return (st0 ? st0 : st1) == PUGL_SUCCESS ? EM_FALSE : EM_TRUE;
+  return (st0 ? st0 : st1) == PUGL_SUCCESS ? EM_TRUE : EM_FALSE;
 }
 
 static EM_BOOL
 puglMouseCallback(const int eventType, const EmscriptenMouseEvent* const mouseEvent, void* const userData)
 {
   PuglView* const view = (PuglView*)userData;
+
+  if (!view->visible) {
+    return EM_FALSE;
+  }
 
   PuglEvent event = {{PUGL_NOTHING, 0}};
 
@@ -201,50 +227,78 @@ puglMouseCallback(const int eventType, const EmscriptenMouseEvent* const mouseEv
                                             mouseEvent->altKey,
                                             mouseEvent->metaKey);
 
+  const double scaleFactor = view->world->impl->scaleFactor;
+
   switch (eventType) {
   case EMSCRIPTEN_EVENT_MOUSEDOWN:
   case EMSCRIPTEN_EVENT_MOUSEUP:
     event.button.type  = eventType == EMSCRIPTEN_EVENT_MOUSEDOWN ? PUGL_BUTTON_PRESS : PUGL_BUTTON_RELEASE;
     event.button.time  = time;
-    event.button.x     = mouseEvent->targetX;
-    event.button.y     = mouseEvent->targetY;
-    event.button.xRoot = mouseEvent->screenX;
-    event.button.yRoot = mouseEvent->screenY;
+    event.button.x     = mouseEvent->targetX * scaleFactor;
+    event.button.y     = mouseEvent->targetY * scaleFactor;
+    event.button.xRoot = mouseEvent->screenX * scaleFactor;
+    event.button.yRoot = mouseEvent->screenY * scaleFactor;
     event.button.state = state;
     switch (mouseEvent->button) {
-    case 1: event.button.button = 2;
-    case 2: event.button.button = 1;
-    default: event.button.button = mouseEvent->button;
-    break;
+    case 1:
+      event.button.button = 2;
+      break;
+    case 2:
+      event.button.button = 1;
+      break;
+    default:
+      event.button.button = mouseEvent->button;
+      break;
     }
     break;
   case EMSCRIPTEN_EVENT_MOUSEMOVE:
     event.motion.type  = PUGL_MOTION;
     event.motion.time  = time;
-    event.motion.x     = mouseEvent->targetX;
-    event.motion.y     = mouseEvent->targetY;
-    event.motion.xRoot = mouseEvent->screenX;
-    event.motion.yRoot = mouseEvent->screenY;
+    if (view->impl->lastX == mouseEvent->targetX && view->impl->lastY == mouseEvent->targetY) {
+      // adjust local values for delta
+      const double movementX = mouseEvent->movementX * scaleFactor;
+      const double movementY = mouseEvent->movementY * scaleFactor;
+      view->impl->lockedX += movementX;
+      view->impl->lockedY += movementY;
+      view->impl->lockedRootX += movementX;
+      view->impl->lockedRootY += movementY;
+      // now set x, y, xRoot and yRoot
+      event.motion.x = view->impl->lockedX;
+      event.motion.y = view->impl->lockedY;
+      event.motion.xRoot = view->impl->lockedRootX;
+      event.motion.yRoot = view->impl->lockedRootY;
+    } else {
+      // cache unmodified value first, for pointer lock detection
+      view->impl->lastX = mouseEvent->targetX;
+      view->impl->lastY = mouseEvent->targetY;
+      // now set x, y, xRoot and yRoot
+      view->impl->lockedX = event.motion.x = mouseEvent->targetX * scaleFactor;
+      view->impl->lockedY = event.motion.y = mouseEvent->targetY * scaleFactor;
+      view->impl->lockedRootX = event.motion.xRoot = mouseEvent->screenX * scaleFactor;
+      view->impl->lockedRootY = event.motion.yRoot = mouseEvent->screenY * scaleFactor;
+    }
     event.motion.state = state;
     break;
   case EMSCRIPTEN_EVENT_MOUSEENTER:
   case EMSCRIPTEN_EVENT_MOUSELEAVE:
     event.crossing.type  = eventType == EMSCRIPTEN_EVENT_MOUSEENTER ? PUGL_POINTER_IN : PUGL_POINTER_OUT;
     event.crossing.time  = time;
-    event.crossing.x     = mouseEvent->targetX;
-    event.crossing.y     = mouseEvent->targetY;
-    event.crossing.xRoot = mouseEvent->screenX;
-    event.crossing.yRoot = mouseEvent->screenY;
+    event.crossing.x     = mouseEvent->targetX * scaleFactor;
+    event.crossing.y     = mouseEvent->targetY * scaleFactor;
+    event.crossing.xRoot = mouseEvent->screenX * scaleFactor;
+    event.crossing.yRoot = mouseEvent->screenY * scaleFactor;
     event.crossing.state = state;
     event.crossing.mode  = PUGL_CROSSING_NORMAL;
     break;
   }
 
   if (event.type == PUGL_NOTHING)
-    return EM_TRUE;
+    return EM_FALSE;
 
-  // FIXME must return false so keyboard events work, why?
-  return puglDispatchEvent(view, &event) == PUGL_SUCCESS ? EM_FALSE : EM_TRUE;
+  puglDispatchEventWithContext(view, &event);
+
+  // note: we must always return false, otherwise canvas never gets keyboard input
+  return EM_FALSE;
 }
 
 static EM_BOOL
@@ -252,16 +306,39 @@ puglFocusCallback(const int eventType, const EmscriptenFocusEvent* /*const focus
 {
   PuglView* const view = (PuglView*)userData;
 
+  if (!view->visible) {
+    return EM_FALSE;
+  }
+
   PuglEvent event = {{eventType == EMSCRIPTEN_EVENT_FOCUSIN ? PUGL_FOCUS_IN : PUGL_FOCUS_OUT, 0}};
   event.focus.mode = PUGL_CROSSING_NORMAL;
 
-  return puglDispatchEvent(view, &event) == PUGL_SUCCESS ? EM_FALSE : EM_TRUE;
+  puglDispatchEventWithContext(view, &event);
+
+  // note: we must always return false, otherwise canvas never gets proper focus
+  return EM_FALSE;
+}
+
+static EM_BOOL
+puglPointerLockChangeCallback(const int eventType, const EmscriptenPointerlockChangeEvent* event, void* const userData)
+{
+  PuglView* const view = (PuglView*)userData;
+
+  printf("puglPointerLockChangeCallback %d\n", event->isActive);
+  view->impl->pointerLocked = event->isActive;
+  return EM_TRUE;
 }
 
 static EM_BOOL
 puglWheelCallback(const int eventType, const EmscriptenWheelEvent* const wheelEvent, void* const userData)
 {
   PuglView* const view = (PuglView*)userData;
+
+  if (!view->visible) {
+    return EM_FALSE;
+  }
+
+  const double scaleFactor = view->world->impl->scaleFactor;
 
   PuglEvent event = {{PUGL_SCROLL, 0}};
   event.scroll.time  = wheelEvent->mouse.timestamp / 1000;
@@ -275,10 +352,35 @@ puglWheelCallback(const int eventType, const EmscriptenWheelEvent* const wheelEv
                                           wheelEvent->mouse.metaKey);
   event.scroll.direction = PUGL_SCROLL_SMOOTH;
   // FIXME handle wheelEvent->deltaMode
-  event.scroll.dx = wheelEvent->deltaX * 0.01;
-  event.scroll.dy = -wheelEvent->deltaY * 0.01;
+  event.scroll.dx = wheelEvent->deltaX * 0.01 * scaleFactor;
+  event.scroll.dy = -wheelEvent->deltaY * 0.01 * scaleFactor;
 
-  return puglDispatchEvent(view, &event) == PUGL_SUCCESS ? EM_FALSE : EM_TRUE;
+  return puglDispatchEventWithContext(view, &event) == PUGL_SUCCESS ? EM_TRUE : EM_FALSE;
+}
+
+static EM_BOOL
+puglUiCallback(const int eventType, const EmscriptenUiEvent* const uiEvent, void* const userData)
+{
+  PuglView* const view = (PuglView*)userData;
+
+  // FIXME
+  const int width = EM_ASM_INT({ return canvas.parentElement.clientWidth; });
+  const int height = EM_ASM_INT({ return canvas.parentElement.clientHeight; });
+
+  if (!width || !height)
+    return EM_FALSE;
+
+  const double scaleFactor = view->world->impl->scaleFactor = emscripten_get_device_pixel_ratio();
+
+  emscripten_set_canvas_element_size(view->world->className, width * scaleFactor, height * scaleFactor);
+
+  PuglEvent event        = {{PUGL_CONFIGURE, 0}};
+  event.configure.x      = view->frame.x;
+  event.configure.y      = view->frame.y;
+  event.configure.width  = width * scaleFactor;
+  event.configure.height = height * scaleFactor;
+  puglDispatchEvent(view, &event);
+  return EM_TRUE;
 }
 
 PuglStatus
@@ -298,11 +400,13 @@ puglRealize(PuglView* const view)
     return PUGL_BAD_BACKEND;
   }
 
+  const char* const className = view->world->className;
+  d_stdout("className is %s", className);
+
   // Set the size to the default if it has not already been set
   if (view->frame.width <= 0.0 && view->frame.height <= 0.0) {
-    const PuglViewSize defaultSize = view->sizeHints[PUGL_DEFAULT_SIZE];
+    PuglViewSize defaultSize = view->sizeHints[PUGL_DEFAULT_SIZE];
     if (!defaultSize.width || !defaultSize.height) {
-  printf("TODO: %s %d\n", __func__, __LINE__);
       return PUGL_BAD_CONFIGURATION;
     }
 
@@ -310,26 +414,8 @@ puglRealize(PuglView* const view)
     view->frame.height = defaultSize.height;
   }
 
-  // Center top-level windows if a position has not been set
-  if (!view->frame.x && !view->frame.y) {
-    int screenWidth, screenHeight;
-    emscripten_get_screen_size(&screenWidth, &screenHeight);
-
-    view->frame.x = (PuglCoord)((screenWidth - view->frame.width) / 2);
-    view->frame.y = (PuglCoord)((screenHeight - view->frame.height) / 2);
-  }
-
-  // Configure the backend to get the visual info
-//   impl->screen = screen;
-  if ((st = view->backend->configure(view)) /*|| !impl->vi*/) {
-  printf("TODO: %s %d\n", __func__, __LINE__);
-    view->backend->destroy(view);
-    return st ? st : PUGL_BACKEND_FAILED;
-  }
-
-  // Create the backend drawing context/surface
-  if ((st = view->backend->create(view))) {
-  printf("TODO: %s %d\n", __func__, __LINE__);
+  // Configure and create the backend
+  if ((st = view->backend->configure(view)) || (st = view->backend->create(view))) {
     view->backend->destroy(view);
     return st;
   }
@@ -340,8 +426,13 @@ puglRealize(PuglView* const view)
 
   puglDispatchSimpleEvent(view, PUGL_CREATE);
 
-  const char* const className = view->world->className;
-  d_stdout("className is %s", className);
+  PuglEvent event        = {{PUGL_CONFIGURE, 0}};
+  event.configure.x      = view->frame.x;
+  event.configure.y      = view->frame.y;
+  event.configure.width  = view->frame.width;
+  event.configure.height = view->frame.height;
+  puglDispatchEvent(view, &event);
+
   emscripten_set_canvas_element_size(className, view->frame.width, view->frame.height);
 //   emscripten_set_keypress_callback(className, view, false, puglKeyCallback);
   emscripten_set_keydown_callback(className, view, false, puglKeyCallback);
@@ -353,7 +444,10 @@ puglRealize(PuglView* const view)
   emscripten_set_mouseleave_callback(className, view, false, puglMouseCallback);
   emscripten_set_focusin_callback(className, view, false, puglFocusCallback);
   emscripten_set_focusout_callback(className, view, false, puglFocusCallback);
+  emscripten_set_pointerlockchange_callback(className, view, false, puglPointerLockChangeCallback);
   emscripten_set_wheel_callback(className, view, false, puglWheelCallback);
+  emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, view, false, puglUiCallback);
+  view->impl->pointerLocked = true;
 
   printf("TODO: %s %d\n", __func__, __LINE__);
   return PUGL_SUCCESS;
@@ -363,20 +457,15 @@ PuglStatus
 puglShow(PuglView* const view)
 {
   printf("TODO: %s %d\n", __func__, __LINE__);
-  PuglStatus st = PUGL_SUCCESS;
-
-  if (!st) {
-//     XMapRaised(view->world->impl->display, view->impl->win);
-    st = puglPostRedisplay(view);
-  }
-
-  return st;
+  view->visible = true;
+  return puglPostRedisplay(view);
 }
 
 PuglStatus
 puglHide(PuglView* const view)
 {
   printf("TODO: %s %d\n", __func__, __LINE__);
+  view->visible = false;
   return PUGL_FAILURE;
 }
 
@@ -401,9 +490,8 @@ puglFreeWorldInternals(PuglWorld* const world)
 }
 
 PuglStatus
-puglGrabFocus(PuglView* const view)
+puglGrabFocus(PuglView*)
 {
-  printf("TODO: %s %d\n", __func__, __LINE__);
   return PUGL_FAILURE;
 }
 
@@ -448,31 +536,19 @@ double
 puglGetTime(const PuglWorld*)
 {
 //   d_stdout("DONE %s %d", __func__, __LINE__);
-  return emscripten_get_now();
+  return emscripten_get_now() / 1000;
 }
 
 PuglStatus
 puglUpdate(PuglWorld* const world, const double timeout)
 {
 //   printf("TODO: %s %d\n", __func__, __LINE__);
-  PuglEvent event = {{PUGL_EXPOSE, 0}};
 
   for (size_t i = 0; i < world->numViews; ++i) {
     PuglView* const view = world->views[i];
 
-    static bool first = true;
-    if (first) {
-      first = false;
-      PuglEvent event = {{PUGL_CONFIGURE, 0}};
-
-      event.configure.x      = view->frame.x;
-      event.configure.y      = view->frame.y;
-      event.configure.width  = view->frame.width;
-      event.configure.height = view->frame.height;
-      d_stdout("configure at %d %d %u %u",
-              (int)view->frame.x, (int)view->frame.y,
-              (uint)view->frame.width, (uint)view->frame.height);
-      puglDispatchEvent(view, &event);
+    if (view->visible) {
+      puglDispatchSimpleEvent(view, PUGL_UPDATE);
     }
 
     if (!view->impl->needsRepaint) {
@@ -481,6 +557,7 @@ puglUpdate(PuglWorld* const world, const double timeout)
 
     view->impl->needsRepaint = false;
 
+    PuglEvent event     = {{PUGL_EXPOSE, 0}};
     event.expose.x      = view->frame.x;
     event.expose.y      = view->frame.y;
     event.expose.width  = view->frame.width;
@@ -542,26 +619,28 @@ puglSetSizeHint(PuglView* const    view,
   return PUGL_SUCCESS;
 }
 
-static void
-puglAsyncCallback(void* const arg)
+static EM_BOOL
+puglTimerLoopCallback(double timeout, void* const arg)
 {
   PuglTimer*     const timer = (PuglTimer*)arg;
   PuglInternals* const impl  = timer->view->impl;
 
-  // only handle async call if timer still present
+  // only handle active timers
   for (uint32_t i=0; i<impl->numTimers; ++i)
   {
     if (impl->timers[i].id == timer->id)
     {
       PuglEvent event = {{PUGL_TIMER, 0}};
       event.timer.id  = timer->id;
-      puglDispatchEvent(timer->view, &event);
-
-      // re-run again, keeping timer active
-      emscripten_async_call(puglAsyncCallback, timer, timer->timeout);
-      break;
+      puglDispatchEventWithContext(timer->view, &event);
+      return EM_TRUE;
     }
   }
+
+  return EM_FALSE;
+
+  // unused
+  (void)timeout;
 }
 
 PuglStatus
@@ -579,9 +658,8 @@ puglStartTimer(PuglView* const view, const uintptr_t id, const double timeout)
   PuglTimer* const timer = &impl->timers[timerIndex];
   timer->view = view;
   timer->id = id;
-  timer->timeout = timeout * 1000;
 
-  emscripten_async_call(puglAsyncCallback, timer, timer->timeout);
+  emscripten_set_timeout_loop(puglTimerLoopCallback, timeout * 1000, timer);
   return PUGL_SUCCESS;
 }
 
@@ -630,5 +708,27 @@ PuglStatus
 puglSetCursor(PuglView* const view, const PuglCursor cursor)
 {
   printf("TODO: %s %d\n", __func__, __LINE__);
+  return PUGL_FAILURE;
+}
+
+PuglStatus
+puglSetTransientParent(PuglView* const view, const PuglNativeView parent)
+{
+  printf("TODO: %s %d\n", __func__, __LINE__);
+  view->transientParent = parent;
+  return PUGL_FAILURE;
+}
+
+PuglStatus
+puglSetPosition(PuglView* const view, const int x, const int y)
+{
+  printf("TODO: %s %d\n", __func__, __LINE__);
+
+  if (x > INT16_MAX || y > INT16_MAX) {
+    return PUGL_BAD_PARAMETER;
+  }
+
+  view->frame.x = (PuglCoord)x;
+  view->frame.y = (PuglCoord)y;
   return PUGL_FAILURE;
 }

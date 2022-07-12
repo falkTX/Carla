@@ -45,6 +45,13 @@ static bool isThisTheMainThread(const d_ThreadHandle mainThreadHandle) noexcept
 
 // --------------------------------------------------------------------------------------------------------------------
 
+const char* Application::getClassName() const noexcept
+{
+    return puglGetClassName(pData->world);
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
 Application::PrivateData::PrivateData(const bool standalone)
     : world(puglNewWorld(standalone ? PUGL_PROGRAM : PUGL_MODULE,
                          standalone ? PUGL_WORLD_THREADS : 0x0)),

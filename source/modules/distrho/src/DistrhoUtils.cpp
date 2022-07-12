@@ -78,7 +78,11 @@ const char* getPluginFormatName() noexcept
 #if defined(DISTRHO_PLUGIN_TARGET_CARLA)
     return "Carla";
 #elif defined(DISTRHO_PLUGIN_TARGET_JACK)
+# ifdef DISTRHO_OS_WASM
+    return "Wasm/Standalone";
+# else
     return "JACK/Standalone";
+# endif
 #elif defined(DISTRHO_PLUGIN_TARGET_LADSPA)
     return "LADSPA";
 #elif defined(DISTRHO_PLUGIN_TARGET_DSSI)

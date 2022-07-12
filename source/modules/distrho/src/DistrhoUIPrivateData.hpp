@@ -25,6 +25,7 @@
 
 #if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 # include "../extra/Sleep.hpp"
+// TODO import and use file browser here
 #else
 # include "../../dgl/src/ApplicationPrivateData.hpp"
 # include "../../dgl/src/WindowPrivateData.hpp"
@@ -319,7 +320,7 @@ struct UI::PrivateData {
     uint fgColor;
     double scaleFactor;
     uintptr_t winId;
-#if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI && !defined(DGL_FILE_BROWSER_DISABLED)
+#if DISTRHO_UI_FILE_BROWSER && !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
     char* uiStateFileKeyRequest;
 #endif
     char* bundlePath;
@@ -346,7 +347,7 @@ struct UI::PrivateData {
           fgColor(0xffffffff),
           scaleFactor(1.0),
           winId(0),
-#if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI && !defined(DGL_FILE_BROWSER_DISABLED)
+#if DISTRHO_UI_FILE_BROWSER && !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
           uiStateFileKeyRequest(nullptr),
 #endif
           bundlePath(nullptr),
@@ -382,7 +383,7 @@ struct UI::PrivateData {
 
     ~PrivateData() noexcept
     {
-#if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI && !defined(DGL_FILE_BROWSER_DISABLED)
+#if DISTRHO_UI_FILE_BROWSER && !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
         std::free(uiStateFileKeyRequest);
 #endif
         std::free(bundlePath);
@@ -437,7 +438,7 @@ inline bool UI::PrivateData::fileRequestCallback(const char* const key)
     if (fileRequestCallbackFunc != nullptr)
         return fileRequestCallbackFunc(callbacksPtr, key);
 
-#if DISTRHO_PLUGIN_WANT_STATE && !DISTRHO_PLUGIN_HAS_EXTERNAL_UI && !defined(DGL_FILE_BROWSER_DISABLED)
+#if DISTRHO_PLUGIN_WANT_STATE && DISTRHO_UI_FILE_BROWSER && !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
     std::free(uiStateFileKeyRequest);
     uiStateFileKeyRequest = strdup(key);
     DISTRHO_SAFE_ASSERT_RETURN(uiStateFileKeyRequest != nullptr, false);
@@ -457,7 +458,7 @@ inline bool UI::PrivateData::fileRequestCallback(const char* const key)
 // -----------------------------------------------------------------------
 // PluginWindow onFileSelected that require UI::PrivateData definitions
 
-#if DISTRHO_UI_FILE_BROWSER
+#if DISTRHO_UI_FILE_BROWSER && !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 inline void PluginWindow::onFileSelected(const char* const filename)
 {
     DISTRHO_SAFE_ASSERT_RETURN(ui != nullptr,);
@@ -481,7 +482,9 @@ inline void PluginWindow::onFileSelected(const char* const filename)
     }
    #endif
 
+    puglBackendEnter(pData->view);
     ui->uiFileBrowserSelected(filename);
+    puglBackendLeave(pData->view);
 }
 #endif
 

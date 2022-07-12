@@ -10,12 +10,9 @@
 
 #include "pugl/pugl.h"
 
-#include <emscripten/emscripten.h>
-
 struct PuglTimer {
   PuglView* view;
   uintptr_t id;
-  int timeout;
 };
 
 struct PuglWorldInternalsImpl {
@@ -25,7 +22,11 @@ struct PuglWorldInternalsImpl {
 struct PuglInternalsImpl {
   PuglSurface* surface;
   bool needsRepaint;
+  bool pointerLocked;
   uint32_t numTimers;
+  long lastX, lastY;
+  double lockedX, lockedY;
+  double lockedRootX, lockedRootY;
   struct PuglTimer* timers;
 };
 
