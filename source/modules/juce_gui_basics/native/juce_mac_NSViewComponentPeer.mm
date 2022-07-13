@@ -367,7 +367,9 @@ public:
 
         if (oldViewSize.width != r.size.width || oldViewSize.height != r.size.height)
         {
+           #if USE_COREGRAPHICS_RENDERING
             numFramesToSkipMetalRenderer = 5;
+           #endif
             [view setNeedsDisplay: true];
         }
     }
@@ -1083,6 +1085,7 @@ public:
         if (msSinceLastRepaint < minimumRepaintInterval && shouldThrottleRepaint())
             return;
 
+       #if USE_COREGRAPHICS_RENDERING
         if (metalRenderer != nullptr)
         {
             const auto compBounds = getComponent().getLocalBounds().toFloat();
@@ -1108,9 +1111,11 @@ public:
                 }
             }
         }
+       #endif
 
         auto dispatchRectangles = [this]
         {
+          #if USE_COREGRAPHICS_RENDERING
            if (metalRenderer != nullptr && metalRenderer->isAttachedToView (view))
                return metalRenderer->drawRectangleList (view,
                                                         (float) [[view window] backingScaleFactor],
@@ -1118,6 +1123,7 @@ public:
                                                         getComponent(),
                                                         [this] (CGContextRef ctx, CGRect r) { drawRectWithContext (ctx, r); },
                                                         deferredRepaints);
+          #endif
 
             for (auto& i : deferredRepaints)
                 [view setNeedsDisplayInRect: makeNSRect (i)];
@@ -1889,8 +1895,10 @@ private:
     CVDisplayLinkRef displayLink = nullptr;
     dispatch_source_t displaySource = nullptr;
 
+   #if USE_COREGRAPHICS_RENDERING
     int numFramesToSkipMetalRenderer = 0;
     std::unique_ptr<CoreGraphicsMetalLayerRenderer<NSView>> metalRenderer;
+   #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NSViewComponentPeer)
 };
