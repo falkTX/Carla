@@ -1449,9 +1449,9 @@ struct carla_v3_event_list : v3_event_list_cpp {
 
 static void do_vst3_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
-    V3_ENTRYFN v3_entry;
-    V3_EXITFN v3_exit;
-    V3_GETFN v3_get;
+    V3_ENTRYFN v3_entry = nullptr;
+    V3_EXITFN v3_exit = nullptr;
+    V3_GETFN v3_get = nullptr;
 
 #ifdef CARLA_OS_MAC
     BundleLoader bundleLoader;
@@ -1515,7 +1515,7 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
 
     // call entry point
 #if defined(CARLA_OS_MAC)
-    v3_entry(bunbleLoader.ref);
+    v3_entry(bundleLoader.getRef());
 #elif defined(CARLA_OS_WIN)
     v3_entry();
 #else
