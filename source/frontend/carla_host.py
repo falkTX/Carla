@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla host code
-# Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -974,14 +974,39 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_engineConfig(self):
-        dialog = RuntimeDriverSettingsW(self.fParentOrSelf, self.host)
+        engineRunning = self.host.is_engine_running()
+
+        if engineRunning:
+            dialog = RuntimeDriverSettingsW(self.fParentOrSelf, self.host)
+
+        else:
+            if self.host.isPlugin:
+                driverName = "Plugin"
+                driverIndex = 0
+            elif self.host.audioDriverForced:
+                driverName = self.host.audioDriverForced
+                driverIndex = 0
+            else:
+                settings = QSafeSettings()
+                driverName = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, str)
+                for i in range(self.host.get_engine_driver_count()):
+                    if self.host.get_engine_driver_name(i) == driverName:
+                        driverIndex = i
+                        break
+                else:
+                    driverIndex = -1
+                del settings
+            dialog = DriverSettingsW(self.fParentOrSelf, self.host, driverIndex, driverName)
+            dialog.ui.ico_restart.hide()
+            dialog.ui.label_restart.hide()
+            dialog.adjustSize()
 
         if not dialog.exec_():
             return
 
         audioDevice, bufferSize, sampleRate = dialog.getValues()
 
-        if self.host.is_engine_running():
+        if engineRunning:
             self.host.set_engine_buffer_size_and_sample_rate(bufferSize, sampleRate)
         else:
             self.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE, 0, audioDevice)

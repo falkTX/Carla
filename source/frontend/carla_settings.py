@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla settings code
-# Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -236,6 +236,20 @@ class DriverSettingsW(QDialog):
 
     # -----------------------------------------------------------------------------------------------------------------
 
+    def getValues(self):
+        audioDevice = self.ui.cb_device.currentText()
+        bufferSize  = self.ui.cb_buffersize.currentText()
+        sampleRate  = self.ui.cb_samplerate.currentText()
+
+        if bufferSize == self.AUTOMATIC_OPTION:
+            bufferSize = "0"
+        if sampleRate == self.AUTOMATIC_OPTION:
+            sampleRate = "0"
+
+        return (audioDevice, int(bufferSize), int(sampleRate))
+
+    # -----------------------------------------------------------------------------------------------------------------
+
     def loadSettings(self):
         settings = QSafeSettings("falkTX", "Carla2")
 
@@ -321,24 +335,40 @@ class DriverSettingsW(QDialog):
             self.ui.b_panel.setEnabled(False)
 
         if self.fBufferSizes:
+            match = False
             for bsize in self.fBufferSizes:
                 sbsize = str(bsize)
                 self.ui.cb_buffersize.addItem(sbsize)
 
                 if oldBufferSize == sbsize:
+                    match = True
                     self.ui.cb_buffersize.setCurrentIndex(self.ui.cb_buffersize.count()-1)
+
+            if not match:
+                if CARLA_DEFAULT_AUDIO_BUFFER_SIZE in self.fBufferSizes:
+                    self.ui.cb_buffersize.setCurrentIndex(self.fBufferSizes.index(CARLA_DEFAULT_AUDIO_BUFFER_SIZE))
+                else:
+                    self.ui.cb_buffersize.setCurrentIndex(int(len(self.fBufferSizes)/2))
 
         else:
             self.ui.cb_buffersize.addItem(self.AUTOMATIC_OPTION)
             self.ui.cb_buffersize.setCurrentIndex(0)
 
         if self.fSampleRates:
+            match = False
             for srate in self.fSampleRates:
                 ssrate = str(int(srate))
                 self.ui.cb_samplerate.addItem(ssrate)
 
                 if oldSampleRate == ssrate:
+                    match = True
                     self.ui.cb_samplerate.setCurrentIndex(self.ui.cb_samplerate.count()-1)
+
+            if not match:
+                if CARLA_DEFAULT_AUDIO_SAMPLE_RATE in self.fSampleRates:
+                    self.ui.cb_samplerate.setCurrentIndex(self.fSampleRates.index(CARLA_DEFAULT_AUDIO_SAMPLE_RATE))
+                else:
+                    self.ui.cb_samplerate.setCurrentIndex(int(len(self.fSampleRates)/2))
 
         else:
             self.ui.cb_samplerate.addItem(self.AUTOMATIC_OPTION)
@@ -435,7 +465,7 @@ class RuntimeDriverSettingsW(QDialog):
     # -----------------------------------------------------------------------------------------------------------------
 
     def getValues(self):
-        audioDevice = self.ui.cb_buffersize.currentText()
+        audioDevice = self.ui.cb_device.currentText()
         bufferSize  = self.ui.cb_buffersize.currentText()
         sampleRate  = self.ui.cb_samplerate.currentText()
 
