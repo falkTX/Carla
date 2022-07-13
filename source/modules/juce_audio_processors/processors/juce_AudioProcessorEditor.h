@@ -50,9 +50,6 @@ protected:
     AudioProcessorEditor (AudioProcessor*) noexcept;
 
 public:
-    // FIXME
-    virtual void* getPlatformSpecificData();
-
     /** Destructor. */
     ~AudioProcessorEditor() override;
 

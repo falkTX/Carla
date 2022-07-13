@@ -42,7 +42,6 @@
 
 #include "juce_audio_processors.h"
 #include <juce_gui_extra/juce_gui_extra.h>
-#include <juce_core/containers/juce_Optional.h>
 
 //==============================================================================
 #if (JUCE_PLUGINHOST_VST || JUCE_PLUGINHOST_VST3) && (JUCE_LINUX || JUCE_BSD) && ! JUCE_AUDIOPROCESSOR_NO_GUI
@@ -157,21 +156,19 @@ private:
         }
     }
 
-    struct FlippedNSView : public ObjCClass<NSView>
+    struct InnerNSView : public ObjCClass<NSView>
     {
-        FlippedNSView()
-            : ObjCClass ("JuceFlippedNSView_")
+        InnerNSView()
+            : ObjCClass ("JuceInnerNSView_")
         {
             addIvar<NSViewComponentWithParent*> ("owner");
 
-            addMethod (@selector (isFlipped),      isFlipped);
             addMethod (@selector (isOpaque),       isOpaque);
             addMethod (@selector (didAddSubview:), didAddSubview);
 
             registerClass();
         }
 
-        static BOOL isFlipped (id, SEL) { return YES; }
         static BOOL isOpaque  (id, SEL) { return YES; }
 
         static void nudge (id self)
@@ -181,15 +178,12 @@ private:
                     owner->triggerAsyncUpdate();
         }
 
-        static void viewDidUnhide (id self, SEL)               { nudge (self); }
         static void didAddSubview (id self, SEL, NSView*)      { nudge (self); }
-        static void viewDidMoveToSuperview (id self, SEL)      { nudge (self); }
-        static void viewDidMoveToWindow (id self, SEL)         { nudge (self); }
     };
 
-    static FlippedNSView& getViewClass()
+    static InnerNSView& getViewClass()
     {
-        static FlippedNSView result;
+        static InnerNSView result;
         return result;
     }
 };
@@ -201,46 +195,51 @@ private:
 #include "utilities/juce_FlagCache.h"
 #include "format/juce_AudioPluginFormat.cpp"
 #include "format/juce_AudioPluginFormatManager.cpp"
-// #include "format_types/juce_LegacyAudioParameter.cpp"
+#include "format_types/juce_LegacyAudioParameter.cpp"
 #include "processors/juce_AudioProcessor.cpp"
 #include "processors/juce_AudioPluginInstance.cpp"
-// #include "processors/juce_AudioProcessorGraph.cpp"
+#include "processors/juce_AudioProcessorGraph.cpp"
 #if ! JUCE_AUDIOPROCESSOR_NO_GUI
  #include "processors/juce_AudioProcessorEditor.cpp"
-//  #include "processors/juce_GenericAudioProcessorEditor.cpp"
+ #include "processors/juce_GenericAudioProcessorEditor.cpp"
 #endif
 #include "processors/juce_PluginDescription.cpp"
-// #include "format_types/juce_ARACommon.cpp"
-// #include "format_types/juce_LADSPAPluginFormat.cpp"
+#include "format_types/juce_ARACommon.cpp"
+#include "format_types/juce_LADSPAPluginFormat.cpp"
 #include "format_types/juce_VSTPluginFormat.cpp"
 #include "format_types/juce_VST3PluginFormat.cpp"
 #include "format_types/juce_AudioUnitPluginFormat.mm"
-// #include "format_types/juce_ARAHosting.cpp"
+#include "format_types/juce_ARAHosting.cpp"
 #if ! JUCE_AUDIOPROCESSOR_NO_GUI
  #include "scanning/juce_KnownPluginList.cpp"
-//  #include "scanning/juce_PluginDirectoryScanner.cpp"
-//  #include "scanning/juce_PluginListComponent.cpp"
+ #include "scanning/juce_PluginDirectoryScanner.cpp"
+ #include "scanning/juce_PluginListComponent.cpp"
 #endif
 #include "processors/juce_AudioProcessorParameterGroup.cpp"
 #include "utilities/juce_AudioProcessorParameterWithID.cpp"
-// #include "utilities/juce_RangedAudioParameter.cpp"
-// #include "utilities/juce_AudioParameterFloat.cpp"
-// #include "utilities/juce_AudioParameterInt.cpp"
-// #include "utilities/juce_AudioParameterBool.cpp"
-// #include "utilities/juce_AudioParameterChoice.cpp"
-// #if ! JUCE_AUDIOPROCESSOR_NO_GUI
-//  #include "utilities/juce_ParameterAttachments.cpp"
-// #endif
-// #include "utilities/juce_AudioProcessorValueTreeState.cpp"
-// #include "utilities/juce_PluginHostType.cpp"
+#include "utilities/juce_RangedAudioParameter.cpp"
+#include "utilities/juce_AudioParameterFloat.cpp"
+#include "utilities/juce_AudioParameterInt.cpp"
+#include "utilities/juce_AudioParameterBool.cpp"
+#include "utilities/juce_AudioParameterChoice.cpp"
+#if ! JUCE_AUDIOPROCESSOR_NO_GUI
+ #include "utilities/juce_ParameterAttachments.cpp"
+#endif
+#include "utilities/juce_AudioProcessorValueTreeState.cpp"
+#include "utilities/juce_PluginHostType.cpp"
 #include "utilities/juce_NativeScaleFactorNotifier.cpp"
-// #include "utilities/ARA/juce_ARA_utils.cpp"
-// 
-// #include "format_types/juce_LV2PluginFormat.cpp"
- 
+#include "utilities/ARA/juce_ARA_utils.cpp"
+
+#include "format_types/juce_LV2PluginFormat.cpp"
+
 #if JUCE_UNIT_TESTS
- #include "format_types/juce_VST3PluginFormat_test.cpp"
- #include "format_types/juce_LV2PluginFormat_test.cpp"
+ #if JUCE_PLUGINHOST_VST3
+  #include "format_types/juce_VST3PluginFormat_test.cpp"
+ #endif
+
+ #if JUCE_PLUGINHOST_LV2
+  #include "format_types/juce_LV2PluginFormat_test.cpp"
+ #endif
 #endif
 
 #if JUCE_AUDIOPROCESSOR_NO_GUI

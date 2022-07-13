@@ -503,9 +503,12 @@ public:
                                               ? (AEffect*)fInstance->getPlatformSpecificData()
                                               : nullptr;
 
+                    /* TODO update to juce7 APIs
                     v3_plugin_view** const vst3view = fDesc.pluginFormatName == "VST3"
                                                     ? (v3_plugin_view**)editor->getPlatformSpecificData()
                                                     : nullptr;
+                    */
+                    v3_plugin_view** const vst3view = nullptr;
 
                     fWindow = new JucePluginWindow(opts.frontendWinId, opts.pluginsAreStandalone,
                                                    vst2effect, vst3view);
@@ -1553,10 +1556,12 @@ protected:
         pData->engine->touchPluginParameter(pData->id, static_cast<uint32_t>(index), false);
     }
 
-    bool getCurrentPosition(CurrentPositionInfo& result) override
+    juce::Optional<juce::AudioPlayHead::PositionInfo> getPosition() const override
     {
+        /* TODO update to juce7 APIs
         carla_copyStruct(result, fPosInfo);
-        return true;
+        */
+        return {};
     }
 
     // -------------------------------------------------------------------

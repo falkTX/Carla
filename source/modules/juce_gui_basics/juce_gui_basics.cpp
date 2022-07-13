@@ -45,6 +45,8 @@
 
 #include "juce_gui_basics.h"
 
+#include <cctype>
+
 //==============================================================================
 #if JUCE_MAC
  #import <WebKit/WebKit.h>
@@ -66,9 +68,9 @@
  #include <commdlg.h>
  #include <commctrl.h>
  #include <sapi.h>
+ #include <Dxgi.h>
 
  #if JUCE_MSVC
-  #include <Dxgi.h>
   #include <UIAutomation.h>
  #endif
 
@@ -143,105 +145,104 @@ namespace juce
 #include "mouse/juce_ComponentDragger.cpp"
 #include "mouse/juce_DragAndDropContainer.cpp"
 #include "mouse/juce_MouseEvent.cpp"
-// #include "mouse/juce_MouseInactivityDetector.cpp"
+#include "mouse/juce_MouseInactivityDetector.cpp"
 #include "mouse/juce_MouseListener.cpp"
 #include "keyboard/juce_CaretComponent.cpp"
 #include "keyboard/juce_KeyboardFocusTraverser.cpp"
 #include "keyboard/juce_KeyListener.cpp"
 #include "keyboard/juce_KeyPress.cpp"
 #include "keyboard/juce_ModifierKeys.cpp"
-// #include "buttons/juce_ArrowButton.cpp"
+#include "buttons/juce_ArrowButton.cpp"
 #include "buttons/juce_Button.cpp"
 #include "buttons/juce_DrawableButton.cpp"
-// #include "buttons/juce_HyperlinkButton.cpp"
-// #include "buttons/juce_ImageButton.cpp"
-// #include "buttons/juce_ShapeButton.cpp"
+#include "buttons/juce_HyperlinkButton.cpp"
+#include "buttons/juce_ImageButton.cpp"
+#include "buttons/juce_ShapeButton.cpp"
 #include "buttons/juce_TextButton.cpp"
-// #include "buttons/juce_ToggleButton.cpp"
-// #include "buttons/juce_ToolbarButton.cpp"
+#include "buttons/juce_ToggleButton.cpp"
+#include "buttons/juce_ToolbarButton.cpp"
 #include "drawables/juce_Drawable.cpp"
 #include "drawables/juce_DrawableComposite.cpp"
 #include "drawables/juce_DrawableImage.cpp"
 #include "drawables/juce_DrawablePath.cpp"
-// #include "drawables/juce_DrawableRectangle.cpp"
+#include "drawables/juce_DrawableRectangle.cpp"
 #include "drawables/juce_DrawableShape.cpp"
 #include "drawables/juce_DrawableText.cpp"
 #include "drawables/juce_SVGParser.cpp"
 #include "filebrowser/juce_DirectoryContentsDisplayComponent.cpp"
-// #include "filebrowser/juce_DirectoryContentsList.cpp"
-// #include "filebrowser/juce_FileBrowserComponent.cpp"
-// #include "filebrowser/juce_FileChooser.cpp"
-// #include "filebrowser/juce_FileChooserDialogBox.cpp"
-// #include "filebrowser/juce_FileListComponent.cpp"
-// #include "filebrowser/juce_FilenameComponent.cpp"
-// #include "filebrowser/juce_FileSearchPathListComponent.cpp"
-// #include "filebrowser/juce_FileTreeComponent.cpp"
-// #include "filebrowser/juce_ImagePreviewComponent.cpp"
-// #include "filebrowser/juce_ContentSharer.cpp"
+#include "filebrowser/juce_DirectoryContentsList.cpp"
+#include "filebrowser/juce_FileBrowserComponent.cpp"
+#include "filebrowser/juce_FileChooser.cpp"
+#include "filebrowser/juce_FileChooserDialogBox.cpp"
+#include "filebrowser/juce_FileListComponent.cpp"
+#include "filebrowser/juce_FilenameComponent.cpp"
+#include "filebrowser/juce_FileSearchPathListComponent.cpp"
+#include "filebrowser/juce_FileTreeComponent.cpp"
+#include "filebrowser/juce_ImagePreviewComponent.cpp"
+#include "filebrowser/juce_ContentSharer.cpp"
 #include "layout/juce_ComponentAnimator.cpp"
 #include "layout/juce_ComponentBoundsConstrainer.cpp"
-// #include "layout/juce_ComponentBuilder.cpp"
+#include "layout/juce_ComponentBuilder.cpp"
 #include "layout/juce_ComponentMovementWatcher.cpp"
 #include "layout/juce_ConcertinaPanel.cpp"
-// #include "layout/juce_GroupComponent.cpp"
-// #include "layout/juce_MultiDocumentPanel.cpp"
+#include "layout/juce_GroupComponent.cpp"
+#include "layout/juce_MultiDocumentPanel.cpp"
 #include "layout/juce_ResizableBorderComponent.cpp"
 #include "layout/juce_ResizableCornerComponent.cpp"
-// #include "layout/juce_ResizableEdgeComponent.cpp"
+#include "layout/juce_ResizableEdgeComponent.cpp"
 #include "layout/juce_ScrollBar.cpp"
-// #include "layout/juce_SidePanel.cpp"
-// #include "layout/juce_StretchableLayoutManager.cpp"
-// #include "layout/juce_StretchableLayoutResizerBar.cpp"
+#include "layout/juce_SidePanel.cpp"
+#include "layout/juce_StretchableLayoutManager.cpp"
+#include "layout/juce_StretchableLayoutResizerBar.cpp"
 #include "layout/juce_StretchableObjectResizer.cpp"
 #include "layout/juce_TabbedButtonBar.cpp"
 #include "layout/juce_TabbedComponent.cpp"
 #include "layout/juce_Viewport.cpp"
 #include "lookandfeel/juce_LookAndFeel.cpp"
 #include "lookandfeel/juce_LookAndFeel_V2.cpp"
-// #include "lookandfeel/juce_LookAndFeel_V1.cpp"
+#include "lookandfeel/juce_LookAndFeel_V1.cpp"
 #include "lookandfeel/juce_LookAndFeel_V3.cpp"
 #include "lookandfeel/juce_LookAndFeel_V4.cpp"
 #include "menus/juce_MenuBarComponent.cpp"
-// #include "menus/juce_BurgerMenuComponent.cpp"
+#include "menus/juce_BurgerMenuComponent.cpp"
 #include "menus/juce_MenuBarModel.cpp"
 #include "menus/juce_PopupMenu.cpp"
-// #include "positioning/juce_MarkerList.cpp"
-// #include "positioning/juce_RelativeCoordinate.cpp"
-// #include "positioning/juce_RelativeCoordinatePositioner.cpp"
-// #include "positioning/juce_RelativeParallelogram.cpp"
-// #include "positioning/juce_RelativePoint.cpp"
-// #include "positioning/juce_RelativePointPath.cpp"
-// #include "positioning/juce_RelativeRectangle.cpp"
-// #include "properties/juce_BooleanPropertyComponent.cpp"
-// #include "properties/juce_ButtonPropertyComponent.cpp"
+#include "positioning/juce_MarkerList.cpp"
+#include "positioning/juce_RelativeCoordinate.cpp"
+#include "positioning/juce_RelativeCoordinatePositioner.cpp"
+#include "positioning/juce_RelativeParallelogram.cpp"
+#include "positioning/juce_RelativePoint.cpp"
+#include "positioning/juce_RelativePointPath.cpp"
+#include "positioning/juce_RelativeRectangle.cpp"
+#include "properties/juce_BooleanPropertyComponent.cpp"
+#include "properties/juce_ButtonPropertyComponent.cpp"
 #include "properties/juce_ChoicePropertyComponent.cpp"
 #include "properties/juce_PropertyComponent.cpp"
-// #include "properties/juce_PropertyPanel.cpp"
-// #include "properties/juce_SliderPropertyComponent.cpp"
-// #include "properties/juce_TextPropertyComponent.cpp"
-// #include "properties/juce_MultiChoicePropertyComponent.cpp"
+#include "properties/juce_PropertyPanel.cpp"
+#include "properties/juce_SliderPropertyComponent.cpp"
+#include "properties/juce_TextPropertyComponent.cpp"
+#include "properties/juce_MultiChoicePropertyComponent.cpp"
 #include "widgets/juce_ComboBox.cpp"
-// #include "widgets/juce_ImageComponent.cpp"
+#include "widgets/juce_ImageComponent.cpp"
 #include "widgets/juce_Label.cpp"
-// #include "widgets/juce_ListBox.cpp"
+#include "widgets/juce_ListBox.cpp"
 #include "widgets/juce_ProgressBar.cpp"
 #include "widgets/juce_Slider.cpp"
 #include "widgets/juce_TableHeaderComponent.cpp"
-// #include "widgets/juce_TableListBox.cpp"
+#include "widgets/juce_TableListBox.cpp"
 #include "widgets/juce_TextEditor.cpp"
-// #include "widgets/juce_ToolbarItemComponent.cpp"
-// #include "widgets/juce_Toolbar.cpp"
-// #include "widgets/juce_ToolbarItemPalette.cpp"
-enum class Async { yes, no };
-// #include "widgets/juce_TreeView.cpp"
+#include "widgets/juce_ToolbarItemComponent.cpp"
+#include "widgets/juce_Toolbar.cpp"
+#include "widgets/juce_ToolbarItemPalette.cpp"
+#include "widgets/juce_TreeView.cpp"
 #include "windows/juce_AlertWindow.cpp"
-// #include "windows/juce_CallOutBox.cpp"
+#include "windows/juce_CallOutBox.cpp"
 #include "windows/juce_ComponentPeer.cpp"
 #include "windows/juce_DialogWindow.cpp"
 #include "windows/juce_DocumentWindow.cpp"
 #include "windows/juce_ResizableWindow.cpp"
-// #include "windows/juce_ThreadWithProgressWindow.cpp"
-// #include "windows/juce_TooltipWindow.cpp"
+#include "windows/juce_ThreadWithProgressWindow.cpp"
+#include "windows/juce_TooltipWindow.cpp"
 #include "windows/juce_TopLevelWindow.cpp"
 #include "commands/juce_ApplicationCommandInfo.cpp"
 #include "commands/juce_ApplicationCommandManager.cpp"
@@ -252,15 +253,15 @@ enum class Async { yes, no };
 #include "misc/juce_DropShadower.cpp"
 #include "misc/juce_FocusOutline.cpp"
 
-// #include "layout/juce_FlexBox.cpp"
-// #include "layout/juce_GridItem.cpp"
-// #include "layout/juce_Grid.cpp"
+#include "layout/juce_FlexBox.cpp"
+#include "layout/juce_GridItem.cpp"
+#include "layout/juce_Grid.cpp"
 
 #if JUCE_IOS || JUCE_WINDOWS
  #include "native/juce_MultiTouchMapper.h"
 #endif
 
-#if JUCE_ANDROID || JUCE_WINDOWS
+#if JUCE_ANDROID || JUCE_WINDOWS || JUCE_UNIT_TESTS
  #include "native/accessibility/juce_AccessibilityTextHelpers.h"
 #endif
 
@@ -271,7 +272,7 @@ enum class Async { yes, no };
   #include "native/accessibility/juce_ios_Accessibility.mm"
   #include "native/juce_ios_UIViewComponentPeer.mm"
   #include "native/juce_ios_Windowing.mm"
-//   #include "native/juce_ios_FileChooser.mm"
+  #include "native/juce_ios_FileChooser.mm"
 
   #if JUCE_CONTENT_SHARING
    #include "native/juce_ios_ContentSharer.cpp"
@@ -282,7 +283,7 @@ enum class Async { yes, no };
   #include "native/juce_mac_NSViewComponentPeer.mm"
   #include "native/juce_mac_Windowing.mm"
   #include "native/juce_mac_MainMenu.mm"
-//   #include "native/juce_mac_FileChooser.mm"
+  #include "native/juce_mac_FileChooser.mm"
  #endif
 
  #include "native/juce_mac_MouseCursor.mm"
@@ -299,7 +300,7 @@ enum class Async { yes, no };
  #endif
  #include "native/juce_win32_Windowing.cpp"
  #include "native/juce_win32_DragAndDrop.cpp"
-//  #include "native/juce_win32_FileChooser.cpp"
+ #include "native/juce_win32_FileChooser.cpp"
 
 #elif JUCE_LINUX || JUCE_BSD
  #include "native/x11/juce_linux_X11_Symbols.cpp"
@@ -312,13 +313,13 @@ enum class Async { yes, no };
 
  JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
-//  #include "native/juce_linux_FileChooser.cpp"
+ #include "native/juce_linux_FileChooser.cpp"
 
 #elif JUCE_ANDROID
+ #include "juce_core/files/juce_common_MimeTypes.h"
  #include "native/accessibility/juce_android_Accessibility.cpp"
  #include "native/juce_android_Windowing.cpp"
- #include "native/juce_common_MimeTypes.cpp"
-//  #include "native/juce_android_FileChooser.cpp"
+ #include "native/juce_android_FileChooser.cpp"
 
  #if JUCE_CONTENT_SHARING
   #include "native/juce_android_ContentSharer.cpp"
@@ -412,3 +413,7 @@ bool juce::isWindowOnCurrentVirtualDesktop (void* x)
 
 // Depends on types defined in platform-specific windowing files
 #include "mouse/juce_MouseCursor.cpp"
+
+#if JUCE_UNIT_TESTS
+#include "native/accessibility/juce_AccessibilityTextHelpers_test.cpp"
+#endif

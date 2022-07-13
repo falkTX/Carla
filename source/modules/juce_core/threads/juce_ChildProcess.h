@@ -101,7 +101,7 @@ public:
     */
     bool kill();
 
-    uint32 getPID() const noexcept;
+    int getPID() const noexcept;
 
 private:
     //==============================================================================

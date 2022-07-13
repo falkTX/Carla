@@ -327,7 +327,7 @@ struct Component::ComponentHelpers
     static bool hitTest (Component& comp, Point<float> localPoint)
     {
         const auto intPoint = localPoint.roundToInt();
-        return Rectangle<int> { comp.getWidth(), comp.getHeight() }.toFloat().contains (localPoint)
+        return Rectangle<int> { comp.getWidth(), comp.getHeight() }.contains (intPoint)
                && comp.hitTest (intPoint.x, intPoint.y);
     }
 
@@ -2943,6 +2943,11 @@ void Component::takeKeyboardFocus (FocusChangeType cause)
             return;
 
         WeakReference<Component> componentLosingFocus (currentlyFocusedComponent);
+
+        if (auto* losingFocus = componentLosingFocus.get())
+            if (auto* otherPeer = losingFocus->getPeer())
+                otherPeer->closeInputMethodContext();
+
         currentlyFocusedComponent = this;
 
         Desktop::getInstance().triggerFocusCallback();
@@ -3008,6 +3013,9 @@ void Component::giveAwayKeyboardFocusInternal (bool sendFocusLossEvent)
     {
         if (auto* componentLosingFocus = currentlyFocusedComponent)
         {
+            if (auto* otherPeer = componentLosingFocus->getPeer())
+                otherPeer->closeInputMethodContext();
+
             currentlyFocusedComponent = nullptr;
 
             if (sendFocusLossEvent && componentLosingFocus != nullptr)
@@ -3300,6 +3308,18 @@ AccessibilityHandler* Component::getAccessibilityHandler()
         || accessibilityHandler->getTypeIndex() != std::type_index (typeid (*this)))
     {
         accessibilityHandler = createAccessibilityHandler();
+
+        // On Android, notifying that an element was created can cause the system to request
+        // the accessibility node info for the new element. If we're not careful, this will lead
+        // to recursive calls, as each time an element is created, new node info will be requested,
+        // causing an element to be created, causing a new info request...
+        // By assigning the accessibility handler before notifying the system that an element was
+        // created, the if() predicate above should evaluate to false on recursive calls,
+        // terminating the recursion.
+        if (accessibilityHandler != nullptr)
+            notifyAccessibilityEventInternal (*accessibilityHandler, InternalAccessibilityEvent::elementCreated);
+        else
+            jassertfalse; // createAccessibilityHandler must return non-null
     }
 
     return accessibilityHandler.get();

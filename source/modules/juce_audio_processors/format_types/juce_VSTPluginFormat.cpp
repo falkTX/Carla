@@ -71,7 +71,7 @@ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4355)
 #endif
 
 #ifndef JUCE_VST_FALLBACK_HOST_NAME
- #define JUCE_VST_FALLBACK_HOST_NAME "Carla Plugin Host"
+ #define JUCE_VST_FALLBACK_HOST_NAME "Juce VST Host"
 #endif
 
 //==============================================================================
@@ -2120,7 +2120,7 @@ private:
             if (effect != nullptr && effect->interfaceIdentifier == Vst2::juceVstInterfaceIdentifier)
             {
                 jassert (effect->hostSpace2 == 0);
-                jassert (effect->effectPointer != 0);
+                jassert (effect->effectPointer != nullptr);
 
                 _fpreset(); // some dodgy plugs mess around with this
             }
@@ -2274,6 +2274,20 @@ private:
         return { nullptr, nullptr };
     }
 
+    template <typename Member, typename Value>
+    void setFromOptional (Member& target, Optional<Value> opt, int32_t flag)
+    {
+        if (opt.hasValue())
+        {
+            target = static_cast<Member> (*opt);
+            vstHostTime.flags |= flag;
+        }
+        else
+        {
+            vstHostTime.flags &= ~flag;
+        }
+    }
+
     //==============================================================================
     template <typename FloatType>
     void processAudio (AudioBuffer<FloatType>& buffer, MidiBuffer& midiMessages,
@@ -2299,34 +2313,32 @@ private:
         {
             if (auto* currentPlayHead = getPlayHead())
             {
-                AudioPlayHead::CurrentPositionInfo position;
-
-                if (currentPlayHead->getCurrentPosition (position))
+                if (const auto position = currentPlayHead->getPosition())
                 {
-                    vstHostTime.samplePosition           = (double) position.timeInSamples;
-                    vstHostTime.tempoBPM                 = position.bpm;
-                    vstHostTime.timeSignatureNumerator   = position.timeSigNumerator;
-                    vstHostTime.timeSignatureDenominator = position.timeSigDenominator;
-                    vstHostTime.musicalPosition          = position.ppqPosition;
-                    vstHostTime.lastBarPosition          = position.ppqPositionOfLastBarStart;
-                    vstHostTime.flags |= Vst2::vstTimingInfoFlagTempoValid
-                                       | Vst2::vstTimingInfoFlagTimeSignatureValid
-                                       | Vst2::vstTimingInfoFlagMusicalPositionValid
-                                       | Vst2::vstTimingInfoFlagLastBarPositionValid;
+                    if (const auto samplePos = position->getTimeInSamples())
+                        vstHostTime.samplePosition = (double) *samplePos;
+                    else
+                        jassertfalse; // VST hosts *must* call setTimeInSamples on the audio playhead
 
-                    if (const auto* hostTimeNs = getHostTimeNs())
+                    if (auto sig = position->getTimeSignature())
                     {
-                        vstHostTime.systemTimeNanoseconds = (double) *hostTimeNs;
-                        vstHostTime.flags |= Vst2::vstTimingInfoFlagNanosecondsValid;
+                        vstHostTime.flags |= Vst2::vstTimingInfoFlagTimeSignatureValid;
+                        vstHostTime.timeSignatureNumerator   = sig->numerator;
+                        vstHostTime.timeSignatureDenominator = sig->denominator;
                     }
                     else
                     {
-                        vstHostTime.flags &= ~Vst2::vstTimingInfoFlagNanosecondsValid;
+                        vstHostTime.flags &= ~Vst2::vstTimingInfoFlagTimeSignatureValid;
                     }
 
+                    setFromOptional (vstHostTime.musicalPosition,       position->getPpqPosition(),               Vst2::vstTimingInfoFlagMusicalPositionValid);
+                    setFromOptional (vstHostTime.lastBarPosition,       position->getPpqPositionOfLastBarStart(), Vst2::vstTimingInfoFlagLastBarPositionValid);
+                    setFromOptional (vstHostTime.systemTimeNanoseconds, position->getHostTimeNs(),                Vst2::vstTimingInfoFlagNanosecondsValid);
+                    setFromOptional (vstHostTime.tempoBPM,              position->getBpm(),                       Vst2::vstTimingInfoFlagTempoValid);
+
                     int32 newTransportFlags = 0;
-                    if (position.isPlaying)     newTransportFlags |= Vst2::vstTimingInfoFlagCurrentlyPlaying;
-                    if (position.isRecording)   newTransportFlags |= Vst2::vstTimingInfoFlagCurrentlyRecording;
+                    if (position->getIsPlaying())     newTransportFlags |= Vst2::vstTimingInfoFlagCurrentlyPlaying;
+                    if (position->getIsRecording())   newTransportFlags |= Vst2::vstTimingInfoFlagCurrentlyRecording;
 
                     if (newTransportFlags != (vstHostTime.flags & (Vst2::vstTimingInfoFlagCurrentlyPlaying
                                                                    | Vst2::vstTimingInfoFlagCurrentlyRecording)))
@@ -2334,15 +2346,18 @@ private:
                     else
                         vstHostTime.flags &= ~Vst2::vstTimingInfoFlagTransportChanged;
 
-                    const auto optionalFrameRate = [&fr = position.frameRate]() -> Optional<int32>
+                    const auto optionalFrameRate = [fr = position->getFrameRate()]() -> Optional<int32>
                     {
-                        switch (fr.getBaseRate())
+                        if (! fr.hasValue())
+                            return {};
+
+                        switch (fr->getBaseRate())
                         {
-                            case 24:        return fr.isPullDown() ? Vst2::vstSmpteRateFps239 : Vst2::vstSmpteRateFps24;
-                            case 25:        return fr.isPullDown() ? Vst2::vstSmpteRateFps249 : Vst2::vstSmpteRateFps25;
-                            case 30:        return fr.isPullDown() ? (fr.isDrop() ? Vst2::vstSmpteRateFps2997drop : Vst2::vstSmpteRateFps2997)
-                                                                   : (fr.isDrop() ? Vst2::vstSmpteRateFps30drop   : Vst2::vstSmpteRateFps30);
-                            case 60:        return fr.isPullDown() ? Vst2::vstSmpteRateFps599 : Vst2::vstSmpteRateFps60;
+                            case 24:        return fr->isPullDown() ? Vst2::vstSmpteRateFps239 : Vst2::vstSmpteRateFps24;
+                            case 25:        return fr->isPullDown() ? Vst2::vstSmpteRateFps249 : Vst2::vstSmpteRateFps25;
+                            case 30:        return fr->isPullDown() ? (fr->isDrop() ? Vst2::vstSmpteRateFps2997drop : Vst2::vstSmpteRateFps2997)
+                                                                    : (fr->isDrop() ? Vst2::vstSmpteRateFps30drop   : Vst2::vstSmpteRateFps30);
+                            case 60:        return fr->isPullDown() ? Vst2::vstSmpteRateFps599 : Vst2::vstSmpteRateFps60;
                         }
 
                         return {};
@@ -2350,18 +2365,24 @@ private:
 
                     vstHostTime.flags |= optionalFrameRate ? Vst2::vstTimingInfoFlagSmpteValid : 0;
                     vstHostTime.smpteRate = optionalFrameRate.orFallback (0);
-                    vstHostTime.smpteOffset = (int32) (position.timeInSeconds * 80.0 * position.frameRate.getEffectiveRate() + 0.5);
+                    const auto effectiveRate = position->getFrameRate().hasValue() ? position->getFrameRate()->getEffectiveRate() : 0.0;
+                    vstHostTime.smpteOffset = (int32) (position->getTimeInSeconds().orFallback (0.0) * 80.0 * effectiveRate + 0.5);
 
-                    if (position.isLooping)
+                    if (const auto loop = position->getLoopPoints())
                     {
-                        vstHostTime.loopStartPosition = position.ppqLoopStart;
-                        vstHostTime.loopEndPosition   = position.ppqLoopEnd;
-                        vstHostTime.flags |= (Vst2::vstTimingInfoFlagLoopPositionValid | Vst2::vstTimingInfoFlagLoopActive);
+                        vstHostTime.flags |= Vst2::vstTimingInfoFlagLoopPositionValid;
+                        vstHostTime.loopStartPosition = loop->ppqStart;
+                        vstHostTime.loopEndPosition   = loop->ppqEnd;
                     }
                     else
                     {
-                        vstHostTime.flags &= ~(Vst2::vstTimingInfoFlagLoopPositionValid | Vst2::vstTimingInfoFlagLoopActive);
+                        vstHostTime.flags &= ~Vst2::vstTimingInfoFlagLoopPositionValid;
                     }
+
+                    if (position->getIsLooping())
+                        vstHostTime.flags |= Vst2::vstTimingInfoFlagLoopActive;
+                    else
+                        vstHostTime.flags &= ~Vst2::vstTimingInfoFlagLoopActive;
                 }
             }
 

@@ -116,11 +116,11 @@
 #include "geometry/juce_PathStrokeType.cpp"
 #include "placement/juce_RectanglePlacement.cpp"
 #include "contexts/juce_GraphicsContext.cpp"
-// #include "contexts/juce_LowLevelGraphicsPostScriptRenderer.cpp"
+#include "contexts/juce_LowLevelGraphicsPostScriptRenderer.cpp"
 #include "contexts/juce_LowLevelGraphicsSoftwareRenderer.cpp"
 #include "images/juce_Image.cpp"
-// #include "images/juce_ImageCache.cpp"
-// #include "images/juce_ImageConvolutionKernel.cpp"
+#include "images/juce_ImageCache.cpp"
+#include "images/juce_ImageConvolutionKernel.cpp"
 #include "images/juce_ImageFileFormat.cpp"
 #include "image_formats/juce_GIFLoader.cpp"
 #include "image_formats/juce_JPEGLoader.cpp"
@@ -132,7 +132,7 @@
 #include "fonts/juce_GlyphArrangement.cpp"
 #include "fonts/juce_TextLayout.cpp"
 #include "effects/juce_DropShadowEffect.cpp"
-// #include "effects/juce_GlowEffect.cpp"
+#include "effects/juce_GlowEffect.cpp"
 
 #if JUCE_UNIT_TESTS
  #include "geometry/juce_Rectangle_test.cpp"

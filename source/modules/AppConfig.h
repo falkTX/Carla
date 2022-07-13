@@ -203,6 +203,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 // juce_audio_processors
 
+#define JUCE_VST_FALLBACK_HOST_NAME "Carla"
+
 //=============================================================================
 /** Config: JUCE_PLUGINHOST_VST
     Enables the VST audio plugin hosting classes. This requires the Steinberg VST SDK to be

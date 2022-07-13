@@ -318,6 +318,8 @@ public:
     /** @internal */
     void mouseWheelMove (const MouseEvent&, const MouseWheelDetails&) override;
     /** @internal */
+    void mouseDown (const MouseEvent& e) override;
+    /** @internal */
     bool keyPressed (const KeyPress&) override;
     /** @internal */
     void componentMovedOrResized (Component&, bool wasMoved, bool wasResized) override;
@@ -337,8 +339,16 @@ protected:
 
 private:
     //==============================================================================
+    class AccessibilityIgnoredComponent : public Component
+    {
+        std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override
+        {
+            return createIgnoredAccessibilityHandler (*this);
+        }
+    };
+
     std::unique_ptr<ScrollBar> verticalScrollBar, horizontalScrollBar;
-    Component contentHolder;
+    AccessibilityIgnoredComponent contentHolder;
     WeakReference<Component> contentComp;
     Rectangle<int> lastVisibleArea;
     int scrollBarThickness = 0;

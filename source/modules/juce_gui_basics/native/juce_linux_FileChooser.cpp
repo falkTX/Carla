@@ -273,6 +273,8 @@ std::shared_ptr<FileChooser::Pimpl> FileChooser::showPlatformDialog (FileChooser
 #if JUCE_MODAL_LOOPS_PERMITTED
     return std::make_shared<Native> (owner, flags);
 #else
+    ignoreUnused (owner);
+    ignoreUnused (flags);
     return nullptr;
 #endif
 }

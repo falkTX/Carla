@@ -81,7 +81,7 @@ String ChildProcess::readAllProcessOutput()
 }
 
 
-uint32 ChildProcess::getPID() const noexcept
+int ChildProcess::getPID() const noexcept
 {
     return activeProcess != nullptr ? activeProcess->getPID() : 0;
 }

@@ -25,8 +25,9 @@
 
 #pragma once
 
+#ifndef DOXYGEN
+
 #include "juce_lv2_config.h"
-#include "juce_core/containers/juce_Optional.h"
 
 #ifdef Bool
  #undef Bool // previously defined in X11/Xlib.h
@@ -134,16 +135,6 @@ struct ObjectTraits   { static constexpr auto construct = lv2_atom_forge_object;
 
 using SequenceFrame = ScopedFrame<SequenceTraits>;
 using ObjectFrame   = ScopedFrame<ObjectTraits>;
-
-template <typename Value, typename Callback>
-bool withValue (const Optional<Value>& opt, Callback&& callback)
-{
-    if (! opt.hasValue())
-        return false;
-
-    callback (*opt);
-    return true;
-}
 
 struct NumericAtomParser
 {
@@ -626,3 +617,5 @@ static inline std::vector<ParsedGroup> findStableBusOrder (const String& mainGro
 
 }
 }
+
+#endif
