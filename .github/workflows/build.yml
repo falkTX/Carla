@@ -128,7 +128,8 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make WITH_LTO=true -j $(nproc)
+        run: make -j $(nproc)
+        # FIXME WITH_LTO=true makes linker crash
 
   ubuntu-mingw-win64:
     runs-on: ubuntu-20.04
@@ -152,4 +153,5 @@ jobs:
       - name: make features
         run: make features
       - name: make
-        run: make WITH_LTO=true -j $(nproc)
+        run: make -j $(nproc)
+        # FIXME WITH_LTO=true makes linker crash
