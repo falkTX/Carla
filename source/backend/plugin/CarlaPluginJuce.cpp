@@ -1,6 +1,6 @@
 /*
  * Carla Juce Plugin
- * Copyright (C) 2013-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -87,6 +87,44 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter,
                      ? static_cast<uint32_t>(juce::jmax(0, filter->getBus(false, 0)->getMaxSupportedChannels(64)))
                      : 0;
     }
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+// ExtensionsVisitor for various formats
+
+static void* getPlatformSpecificDataForAll(const std::unique_ptr<juce::AudioPluginInstance>& instance)
+{
+    struct ExtensionsVisitorForVST2 : public juce::ExtensionsVisitor
+    {
+        void* ptr = nullptr;
+        void visitVST3Client     (const VST3Client& c)      override { ptr = c.getIComponentPtr(); }
+        void visitVSTClient      (const VSTClient& c)       override { ptr = c.getAEffectPtr(); }
+        void visitAudioUnitClient(const AudioUnitClient& c) override { ptr = c.getAudioUnitHandle(); }
+    } visitor;
+    instance->getExtensions(visitor);
+    return visitor.ptr;
+}
+
+static AEffect* getPlatformSpecificDataForVST2(const std::unique_ptr<juce::AudioPluginInstance>& instance)
+{
+    struct ExtensionsVisitorForVST2 : public juce::ExtensionsVisitor
+    {
+        AEffect* aeffect = nullptr;
+        void visitVSTClient(const VSTClient& c) override { aeffect = c.getAEffectPtr(); }
+    } visitor;
+    instance->getExtensions(visitor);
+    return visitor.aeffect;
+}
+
+static v3_component** getPlatformSpecificDataForVST3(const std::unique_ptr<juce::AudioPluginInstance>& instance)
+{
+    struct ExtensionsVisitorForVST3 : public juce::ExtensionsVisitor
+    {
+        v3_component** component = nullptr;
+        void visitVST3Client(const VST3Client& c) override { component = (v3_component**)c.getIComponentPtr(); }
+    } visitor;
+    instance->getExtensions(visitor);
+    return visitor.component;
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -313,7 +351,7 @@ public:
         if (fDesc.pluginFormatName != "VST" && fDesc.pluginFormatName != "VST2")
             return false;
 
-        AEffect* const effect = (AEffect*)fInstance->getPlatformSpecificData();
+        AEffect* const effect = getPlatformSpecificDataForVST2(fInstance);
 
         if (effect == nullptr)
             return false;
@@ -500,7 +538,7 @@ public:
                     }
 
                     AEffect* const vst2effect = fDesc.pluginFormatName == "VST" || fDesc.pluginFormatName == "VST2"
-                                              ? (AEffect*)fInstance->getPlatformSpecificData()
+                                              ? getPlatformSpecificDataForVST2(fInstance)
                                               : nullptr;
 
                     /* TODO update to juce7 APIs
@@ -685,7 +723,7 @@ public:
 
             if (isVST2)
             {
-                AEffect* const effect = (AEffect*)fInstance->getPlatformSpecificData();
+                AEffect* const effect = getPlatformSpecificDataForVST2(fInstance);
 
                 VstParameterProperties prop;
                 carla_zeroStruct(prop);
@@ -729,8 +767,9 @@ public:
             }
             else if (isVST3)
             {
-                v3_component** const component = (v3_component**)fInstance->getPlatformSpecificData();
+                v3_component** const component = getPlatformSpecificDataForVST3(fInstance);
 
+                /* FIXME query edit controller the long way too */
                 v3_edit_controller** controller = nullptr;
                 v3_cpp_obj_query_interface(component, v3_edit_controller_iid, &controller);
 
@@ -1520,7 +1559,7 @@ public:
 
     void* getNativeHandle() const noexcept override
     {
-        return (fInstance != nullptr) ? fInstance->getPlatformSpecificData() : nullptr;
+        return (fInstance != nullptr) ? getPlatformSpecificDataForAll(fInstance) : nullptr;
     }
 
     // -------------------------------------------------------------------

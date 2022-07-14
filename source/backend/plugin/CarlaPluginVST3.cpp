@@ -119,6 +119,8 @@ struct carla_v3_host_application : v3_host_application_cpp {
 
     // TODO
     static v3_result V3_API carla_create_instance(void*, v3_tuid, v3_tuid, void**) { return V3_NOT_IMPLEMENTED; }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_host_application)
 };
 
 struct carla_v3_plugin_frame : v3_plugin_frame_cpp {
@@ -189,6 +191,8 @@ private:
         // there is nothing here for input parameters, plugins are not meant to call this!
         return V3_NOT_IMPLEMENTED;
     }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_input_param_value_queue)
 };
 
 struct carla_v3_input_param_changes : v3_param_changes_cpp {
@@ -213,7 +217,7 @@ struct carla_v3_input_param_changes : v3_param_changes_cpp {
           pluginExposedCount(0)
     {
         for (uint32_t i=0; i<paramData.count; ++i)
-            queue[i] = new carla_v3_input_param_value_queue(paramData.data[i].rindex);
+            queue[i] = new carla_v3_input_param_value_queue(static_cast<v3_param_id>(paramData.data[i].rindex));
 
         query_interface = carla_query_interface;
         ref = v3_ref_static;
@@ -244,7 +248,7 @@ struct carla_v3_input_param_changes : v3_param_changes_cpp {
     // called just before plugin processing, creating local queue
     void prepare()
     {
-        uint32_t count = 0;
+        int32_t count = 0;
 
         for (uint32_t i=0; i<paramCount; ++i)
         {
@@ -293,6 +297,8 @@ private:
         // there is nothing here for input parameters, plugins are not meant to call this!
         return nullptr;
     }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_input_param_changes)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -324,6 +330,8 @@ struct carla_v3_output_param_changes : v3_param_changes_cpp {
     static int32_t V3_API carla_get_param_count(void*) { return 0; }
     static v3_param_value_queue** V3_API carla_get_param_data(void*, int32_t) { return nullptr; }
     static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*) { return nullptr; }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_output_param_changes)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -333,6 +341,7 @@ struct carla_v3_input_event_list : v3_event_list_cpp {
     uint16_t numEvents;
 
     carla_v3_input_event_list()
+        : numEvents(0)
     {
         query_interface = carla_query_interface;
         ref = v3_ref_static;
@@ -375,6 +384,8 @@ private:
         // there is nothing here for input events, plugins are not meant to call this!
         return V3_NOT_IMPLEMENTED;
     }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_input_event_list)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -407,6 +418,8 @@ private:
     static uint32_t V3_API carla_get_event_count(void*) { return 0; }
     static v3_result V3_API carla_get_event(void*, int32_t, v3_event*) { return V3_NOT_IMPLEMENTED; }
     static v3_result V3_API carla_add_event(void*, v3_event*) { return V3_NOT_IMPLEMENTED; }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_output_event_list)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -425,6 +438,7 @@ public:
           fV3Application(new carla_v3_host_application),
           fV3ClassInfo(),
           fV3(),
+          fEvents(),
           fUI()
     {
         carla_debug("CarlaPluginVST3::CarlaPluginVST3(%p, %i)", engine, id);
@@ -683,7 +697,7 @@ public:
         const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller, parameterId, fixedValue);
 
         // report value to component (next process call)
-        fEvents.paramInputs->setParamValue(parameterId, normalized);
+        fEvents.paramInputs->setParamValue(parameterId, static_cast<float>(normalized));
 
         // report value to edit controller
         v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, parameterId, normalized);
@@ -1376,14 +1390,13 @@ public:
 
         if (pData->event.portIn != nullptr)
         {
-            uint16_t numEvents = fEvents.eventInputs->numEvents;
-
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
             if (fEvents.eventInputs != nullptr && pData->extNotes.mutex.tryLock())
             {
                 ExternalMidiNote note = { 0, 0, 0 };
+                uint16_t numEvents = fEvents.eventInputs->numEvents;
 
                 for (; numEvents < kPluginMaxMidiEvents && ! pData->extNotes.data.isEmpty();)
                 {
@@ -2233,7 +2246,7 @@ private:
     v3_process_context fV3TimeContext;
 
     CarlaScopedPointer<carla_v3_host_application> fV3Application;
-    inline v3_funknown** getHostContext() const noexcept { return (v3_funknown**)&fV3Application; }
+    inline v3_funknown** getHostContext() noexcept { return (v3_funknown**)&fV3Application; }
 
     // v3_class_info_2 is ABI compatible with v3_class_info
     union ClassInfo {
@@ -2486,6 +2499,8 @@ private:
             if (paramInputs != nullptr)
                 paramInputs->prepare();
         }
+
+        CARLA_DECLARE_NON_COPYABLE(Events)
     } fEvents;
 
     struct UI {

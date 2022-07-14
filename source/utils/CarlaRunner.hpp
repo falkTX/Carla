@@ -201,6 +201,8 @@ private:
                 break;
             }
         }
+
+        CARLA_DECLARE_NON_COPYABLE(RunnerThread)
     } fRunnerThread;
 
     uint fTimeInterval;
