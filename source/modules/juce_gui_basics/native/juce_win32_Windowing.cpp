@@ -1373,6 +1373,7 @@ private:
 };
 
 //==============================================================================
+#if JUCE_MSVC
 static HMONITOR getMonitorFromOutput (ComSmartPtr<IDXGIOutput> output)
 {
     DXGI_OUTPUT_DESC desc = {};
@@ -1614,10 +1615,13 @@ private:
 };
 
 JUCE_IMPLEMENT_SINGLETON (VBlankDispatcher)
+#endif
 
 //==============================================================================
 class HWNDComponentPeer  : public ComponentPeer,
+                          #if JUCE_MSVC
                            private VBlankListener,
+                          #endif
                            private Timer
                           #if JUCE_MODULE_AVAILABLE_juce_audio_plugin_client
                            , public ModifierKeyReceiver
@@ -1656,13 +1660,19 @@ public:
             return ModifierKeys::currentModifiers;
         };
 
+       #if JUCE_MSVC
         if (updateCurrentMonitor())
             VBlankDispatcher::getInstance()->updateDisplay (*this, currentMonitor);
+       #else
+        updateCurrentMonitor();
+       #endif
     }
 
     ~HWNDComponentPeer() override
     {
+       #if JUCE_MSVC
         VBlankDispatcher::getInstance()->removeListener (*this);
+       #endif
 
         // do this first to avoid messages arriving for this window before it's destroyed
         JuceWindowIdentifier::setAsJUCEWindow (hwnd, false);
@@ -2072,10 +2082,12 @@ public:
     }
 
     //==============================================================================
+   #if JUCE_MSVC
     void onVBlank() override
     {
         dispatchDeferredRepaints();
     }
+   #endif
 
     //==============================================================================
     static HWNDComponentPeer* getOwnerOfWindow (HWND h) noexcept
@@ -3674,8 +3686,12 @@ private:
 
         handleMovedOrResized();
 
+       #if JUCE_MSVC
         if (updateCurrentMonitor())
             VBlankDispatcher::getInstance()->updateDisplay (*this, currentMonitor);
+       #else
+        updateCurrentMonitor();
+       #endif
 
         return ! dontRepaint; // to allow non-accelerated openGL windows to draw themselves correctly.
     }
@@ -3831,10 +3847,14 @@ private:
                                                                                               .getDisplayForRect (component.getScreenBounds())->userArea),
                           SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_NOSENDCHANGING);
 
+       #if JUCE_MSVC
         auto* dispatcher = VBlankDispatcher::getInstance();
         dispatcher->reconfigureDisplays();
         updateCurrentMonitor();
         dispatcher->updateDisplay (*this, currentMonitor);
+       #else
+        updateCurrentMonitor();
+       #endif
     }
 
     //==============================================================================

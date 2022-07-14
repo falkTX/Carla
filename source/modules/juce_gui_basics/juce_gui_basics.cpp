@@ -68,9 +68,9 @@
  #include <commdlg.h>
  #include <commctrl.h>
  #include <sapi.h>
- #include <Dxgi.h>
 
  #if JUCE_MSVC
+  #include <Dxgi.h>
   #include <UIAutomation.h>
  #endif
 
