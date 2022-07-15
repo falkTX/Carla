@@ -199,6 +199,11 @@ static const uint PLUGIN_HAS_INLINE_DISPLAY = 0x800;
  */
 static const uint PLUGIN_HAS_CUSTOM_EMBED_UI = 0x1000;
 
+/*!
+ * Plugin custom UI is a fake one that simply invokes an open file browser dialog.
+ */
+static const uint PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN = 0x2000;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------

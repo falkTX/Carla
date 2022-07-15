@@ -1433,6 +1433,8 @@ public:
             pData->hints |= PLUGIN_NEEDS_FIXED_BUFFERS;
         if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
+            pData->hints |= PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN;
         if (fDescriptor->hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
             pData->hints |= PLUGIN_USES_MULTI_PROGS;
         if (fDescriptor->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)

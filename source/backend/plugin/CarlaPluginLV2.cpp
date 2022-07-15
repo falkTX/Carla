@@ -3281,6 +3281,8 @@ public:
 
             if (fUI.type == UI::TYPE_EMBED || fUI.type == UI::TYPE_EXTERNAL)
                 pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
+            else if (fFilePathURI.isNotEmpty())
+                pData->hints |= PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN;
         }
 
         if (LV2_IS_GENERATOR(fRdfDescriptor->Type[0], fRdfDescriptor->Type[1]))
