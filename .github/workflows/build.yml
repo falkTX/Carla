@@ -110,9 +110,8 @@ jobs:
     env:
       CC: i686-w64-mingw32-gcc
       CXX: i686-w64-mingw32-g++
-      EXE_WRAPPER: wine
+      CROSS_COMPILING: "true"
       PKG_CONFIG: "false"
-      WINEDEBUG: "-all"
     steps:
       - uses: actions/checkout@v2
       - name: Fix GitHub's mess
@@ -124,21 +123,19 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update -qq
-          sudo apt-get install -yq binutils-mingw-w64-i686 g++-mingw-w64-i686 mingw-w64 wine-stable:i386
+          sudo apt-get install -yq binutils-mingw-w64-i686 g++-mingw-w64-i686 mingw-w64
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
-        # FIXME WITH_LTO=true makes linker crash
+        run: make WITH_LTO=true -j $(nproc)
 
   ubuntu-mingw-win64:
     runs-on: ubuntu-20.04
     env:
       CC: x86_64-w64-mingw32-gcc
       CXX: x86_64-w64-mingw32-g++
-      EXE_WRAPPER: wine
+      CROSS_COMPILING: "true"
       PKG_CONFIG: "false"
-      WINEDEBUG: "-all"
     steps:
       - uses: actions/checkout@v2
       - name: Fix GitHub's mess
@@ -149,9 +146,8 @@ jobs:
       - name: Set up dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -yq binutils-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64 wine-stable
+          sudo apt-get install -yq binutils-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64
       - name: make features
         run: make features
       - name: make
-        run: make -j $(nproc)
-        # FIXME WITH_LTO=true makes linker crash
+        run: make WITH_LTO=true -j $(nproc)

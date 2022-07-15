@@ -349,7 +349,9 @@ endif
 ifneq ($(CROSS_COMPILING),true)
 CAN_GENERATE_LV2_TTL = true
 else ifeq ($(NEEDS_WINE),true)
+ifneq ($(EXE_WRAPPER),)
 CAN_GENERATE_LV2_TTL = true
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
