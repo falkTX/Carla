@@ -390,6 +390,7 @@ clean:
 	$(MAKE) clean -C source/backend
 	$(MAKE) clean -C source/bridges-plugin
 	$(MAKE) clean -C source/bridges-ui
+	$(MAKE) clean -C source/jackbridge
 	$(MAKE) clean -C source/modules
 	$(MAKE) clean -C source/native-plugins
 	$(MAKE) clean -C source/plugin
