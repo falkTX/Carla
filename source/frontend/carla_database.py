@@ -1411,7 +1411,7 @@ class PluginRefreshW(QDialog):
     @pyqtSlot(float, str)
     def slot_handlePluginLook(self, percent, plugin):
         self.ui.progressBar.setFormat("%s" % plugin)
-        self.ui.progressBar.setValue(percent)
+        self.ui.progressBar.setValue(int(percent))
 
     # -----------------------------------------------------------------------------------------------------------------
 
