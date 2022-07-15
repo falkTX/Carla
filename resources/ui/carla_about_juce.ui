@@ -104,14 +104,12 @@
      <item>
       <widget class="QLabel" name="l_text3">
        <property name="text">
-        <string>JUCE (Jules' Utility Class Extensions) is an all-encompassing C++ class library for developing cross-platform software.
+        <string>JUCE is an open-source cross-platform C++ application framework for creating high quality desktop and mobile applications.
 
-It contains pretty much everything you're likely to need to create most applications, and is particularly well-suited for building highly-customised GUIs, and for handling graphics and sound.
+The core JUCE modules (juce_audio_basics, juce_audio_devices, juce_core and juce_events) are permissively licensed under the terms of the ISC license.
+Other modules are covered by a GNU GPL 3.0 license.
 
-JUCE is licensed under the GNU Public Licence version 2.0.
-One module (juce_core) is permissively licensed under the ISC.
-
-Copyright (C) 2017 ROLI Ltd.</string>
+Copyright (C) 2022 Raw Material Software Limited.</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>
