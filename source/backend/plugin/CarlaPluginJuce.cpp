@@ -151,7 +151,6 @@ public:
 
         fMidiBuffer.ensureSize(2048);
         fMidiBuffer.clear();
-        fPosInfo.resetToDefault();
     }
 
     ~CarlaPluginJuce() override
@@ -1323,7 +1322,7 @@ public:
 
         const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
 
-        fPosInfo.isPlaying = timeInfo.playing;
+        fPosInfo.setIsPlaying(timeInfo.playing);
 
         if (timeInfo.bbt.valid)
         {
@@ -1334,16 +1333,17 @@ public:
             const double ppqBeat = static_cast<double>(timeInfo.bbt.beat - 1);
             const double ppqTick = timeInfo.bbt.tick / timeInfo.bbt.ticksPerBeat;
 
-            fPosInfo.bpm = timeInfo.bbt.beatsPerMinute;
+            fPosInfo.setBarCount(timeInfo.bbt.bar);
+            fPosInfo.setBpm(timeInfo.bbt.beatsPerMinute);
 
-            fPosInfo.timeSigNumerator   = static_cast<int>(timeInfo.bbt.beatsPerBar);
-            fPosInfo.timeSigDenominator = static_cast<int>(timeInfo.bbt.beatType);
+            fPosInfo.setTimeSignature(TimeSignature{static_cast<int>(timeInfo.bbt.beatsPerBar+0.5f),
+                                                    static_cast<int>(timeInfo.bbt.beatType+0.5f)});
 
-            fPosInfo.timeInSamples = static_cast<int64_t>(timeInfo.frame);
-            fPosInfo.timeInSeconds = static_cast<double>(fPosInfo.timeInSamples)/pData->engine->getSampleRate();
+            fPosInfo.setTimeInSamples(static_cast<int64_t>(timeInfo.frame));
+            fPosInfo.setTimeInSeconds(static_cast<double>(timeInfo.frame)/pData->engine->getSampleRate());
 
-            fPosInfo.ppqPosition = ppqBar + ppqBeat + ppqTick;
-            fPosInfo.ppqPositionOfLastBarStart = ppqBar;
+            fPosInfo.setPpqPosition(ppqBar + ppqBeat + ppqTick);
+            fPosInfo.setPpqPositionOfLastBarStart(ppqBar);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1597,10 +1597,7 @@ protected:
 
     juce::Optional<juce::AudioPlayHead::PositionInfo> getPosition() const override
     {
-        /* TODO update to juce7 APIs
-        carla_copyStruct(result, fPosInfo);
-        */
-        return {};
+        return fPosInfo;
     }
 
     // -------------------------------------------------------------------
@@ -1831,7 +1828,7 @@ private:
 
     juce::AudioSampleBuffer fAudioBuffer;
     juce::MidiBuffer        fMidiBuffer;
-    CurrentPositionInfo     fPosInfo;
+    PositionInfo            fPosInfo;
     juce::MemoryBlock       fChunk;
     juce::String            fFormatName;
 
