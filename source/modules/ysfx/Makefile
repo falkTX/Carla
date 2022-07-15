@@ -51,10 +51,8 @@ endif
 
 ifeq ($(WINDOWS),true)
 YSFX_FLAGS += -DNOMINMAX
-endif
-
-ifeq (,$(findstring true,$(WINDOWS)$(CPU_I386)))
-# NOTE: not compatible with MingGW or i386 systems
+else
+# Not compatible with MingGW
 YSFX_FLAGS += -D_FILE_OFFSET_BITS=64
 endif
 
