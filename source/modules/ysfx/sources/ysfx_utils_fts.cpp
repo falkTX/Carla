@@ -36,7 +36,13 @@ void visit_directories(const char *rootpath, bool (*visit)(const std::string &, 
 #ifndef __EMSCRIPTEN__
     char *argv[] = {(char *)rootpath, nullptr};
 
-    auto compar = [](const FTSENT **a, const FTSENT **b) -> int {
+#if !defined(__FreeBSD__)
+    using compar_arg_t = const FTSENT **;
+#else
+    using compar_arg_t = const FTSENT *const *;
+#endif
+
+    auto compar = [](compar_arg_t a, compar_arg_t b) -> int {
         return strcmp((*a)->fts_name, (*b)->fts_name);
     };
 
