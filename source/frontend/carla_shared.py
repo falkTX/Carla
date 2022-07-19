@@ -871,19 +871,6 @@ class QMessageBoxWithBetterWidth(QMessageBox):
         QMessageBox.showEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
-# Safer QSettings class, which does not throw if type mismatches
-
-class QSafeSettings(QSettings):
-    def value(self, key, defaultValue, valueType):
-        if not isinstance(defaultValue, valueType):
-            print("QSafeSettings.value() - defaultValue type mismatch for key", key)
-
-        try:
-            return QSettings.value(self, key, defaultValue, valueType)
-        except:
-            return defaultValue
-
-# ------------------------------------------------------------------------------------------------------------
 # Custom MessageBox
 
 # pylint: disable=too-many-arguments

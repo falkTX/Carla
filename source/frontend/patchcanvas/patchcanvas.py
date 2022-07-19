@@ -63,7 +63,7 @@ from .utils import CanvasCallback, CanvasGetNewGroupPos, CanvasItemFX, CanvasRem
 from . import *
 from .scene import PatchScene
 
-from carla_shared import QSafeSettings
+from utils import QSafeSettings
 
 # ------------------------------------------------------------------------------------------------------------
 

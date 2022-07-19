@@ -27,7 +27,6 @@
 #include "water/memory/SharedResourcePointer.h"
 #include "water/text/StringArray.h"
 
-using water::Array;
 using water::File;
 using water::SharedResourcePointer;
 using water::String;

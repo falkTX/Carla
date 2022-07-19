@@ -24,9 +24,9 @@ from PyQt5.QtGui import QColor, QPainter, QPixmap
 from PyQt5.QtWidgets import QActionGroup, QMenu, QScrollArea, QWidget
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
+# Imports (Carla)
 
-from carla_shared import QSafeSettings
+from utils import QSafeSettings
 
 # ---------------------------------------------------------------------------------------------------------------------
 

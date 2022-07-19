@@ -294,6 +294,7 @@ ifeq ($(HAVE_QT5),true)
 QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=host_bins Qt5Core)
 MOC_QT5 ?= $(QT5_HOSTBINS)/moc
 RCC_QT5 ?= $(QT5_HOSTBINS)/rcc
+UIC_QT5 ?= $(QT5_HOSTBINS)/uic
 ifeq (,$(wildcard $(MOC_QT5)))
 HAVE_QT5 = false
 endif

@@ -13,6 +13,24 @@ BINDIR := $(CWD)/../bin
 RESDIR := $(CWD)/../resources
 
 # ---------------------------------------------------------------------------------------------------------------------
+
+ifeq ($(WINDOWS),true)
+QT5_LINK_FLAGS = $(shell echo $(LINK_FLAGS) | awk 'sub(" -static","")') -static-libgcc
+else
+QT5_LINK_FLAGS = $(LINK_FLAGS)
+endif
+
+ifeq ($(HAVE_QT5),true)
+QT5_PREFIX       = $(shell pkg-config --variable=prefix Qt5Core)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
+QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
+else ifeq ($(HAVE_QT5PKG),true)
+QT5_PREFIX       = $(shell pkg-config --variable=prefix Qt5OpenGLExtensions)
+BUILD_CXX_FLAGS += -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT5_PREFIX)/include/qt5
+QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib -F $(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Translations
 
 TSs = $(patsubst %,translations/carla_%.ts,$(I18N_LANGUAGES))
@@ -77,26 +95,29 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # UI code
 
-UIs = \
-	ui_carla_about.py \
-	ui_carla_about_juce.py \
-	ui_carla_add_jack.py \
-	ui_carla_database.py \
-	ui_carla_edit.py \
-	ui_carla_host.py \
-	ui_carla_osc_connect.py \
-	ui_carla_parameter.py \
-	ui_carla_plugin_calf.py \
-	ui_carla_plugin_classic.py \
-	ui_carla_plugin_compact.py \
-	ui_carla_plugin_default.py \
-	ui_carla_plugin_presets.py \
-	ui_carla_refresh.py \
-	ui_carla_settings.py \
-	ui_carla_settings_driver.py \
-	ui_inputdialog_value.py \
-	ui_midipattern.py \
-	ui_xycontroller.py
+UI_FILES = $(wildcard pluginlist/*.ui)
+
+UIs  = $(UI_FILES:%.ui=%_ui.hpp)
+UIs += $(UI_FILES:%.ui=%_ui.py)
+
+# ui_carla_about.py \
+# ui_carla_about_juce.py \
+# ui_carla_database.py \
+# ui_carla_edit.py \
+# ui_carla_host.py \
+# ui_carla_osc_connect.py \
+# ui_carla_parameter.py \
+# ui_carla_plugin_calf.py \
+# ui_carla_plugin_classic.py \
+# ui_carla_plugin_compact.py \
+# ui_carla_plugin_default.py \
+# ui_carla_plugin_presets.py \
+# ui_carla_refresh.py \
+# ui_carla_settings.py \
+# ui_carla_settings_driver.py \
+# ui_inputdialog_value.py \
+# ui_midipattern.py \
+# ui_xycontroller.py
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -104,7 +125,10 @@ all: $(QMs) $(RES) $(UIs)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-ui_%.py: $(RESDIR)/ui/%.ui
+%_ui.hpp: %.ui
+	$(UIC_QT5) $< -o $@
+
+%_ui.py: %.ui
 	$(PYUIC) $< -o $@
 
 resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
@@ -129,6 +153,16 @@ clean:
 
 debug:
 	$(MAKE) DEBUG=true
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+tests: $(UI_FILES:%.ui=%$(APP_EXT))
+
+pluginlist/jackappdialog$(APP_EXT): pluginlist/jackappdialog.cpp pluginlist/jackappdialog.ui pluginlist/jackappdialog_ui.hpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(QT5_LINK_FLAGS) -o $@
+
+pluginlist/pluginlistdialog$(APP_EXT): pluginlist/pluginlistdialog.cpp pluginlist/pluginlistdialog.ui pluginlist/pluginlistdialog_ui.hpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(QT5_LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

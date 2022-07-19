@@ -178,10 +178,11 @@ from carla_shared import (
     getIcon,
     fontMetricsHorizontalAdvance,
     splitter,
-    QSafeSettings
 )
 
 from patchcanvas.theme import Theme, getThemeName
+
+from utils import QSafeSettings
 
 # ---------------------------------------------------------------------------------------------------------------------
 # ...

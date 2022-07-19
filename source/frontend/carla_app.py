@@ -46,9 +46,10 @@ from carla_shared import (
     CARLA_DEFAULT_MAIN_PRO_THEME_COLOR,
     CWD, VERSION,
     getPaths,
-    QSafeSettings,
     gCarla
 )
+
+from utils import QSafeSettings
 
 # ------------------------------------------------------------------------------------------------------------
 

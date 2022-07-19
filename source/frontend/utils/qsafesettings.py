@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Carla plugin database code
-# Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+# Carla plugin host
+# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -19,20 +19,19 @@
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from copy import deepcopy
-from subprocess import Popen, PIPE
-
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QEventLoop, QThread
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QApplication, QDialog, QDialogButtonBox, QHeaderView, QTableWidgetItem
+from PyQt5.QtCore import QSettings
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
+# Safer QSettings class, which does not throw if type mismatches
 
-import ui_carla_add_jack
-import ui_carla_database
-import ui_carla_refresh
+class QSafeSettings(QSettings):
+    def value(self, key, defaultValue, valueType):
+        if not isinstance(defaultValue, valueType):
+            print("QSafeSettings.value() - defaultValue type mismatch for key", key)
 
-from carla_backend import *
-from carla_shared import *
-from carla_utils import getPluginTypeAsString, getPluginCategoryAsString
+        try:
+            return QSettings.value(self, key, defaultValue, valueType)
+        except:
+            return defaultValue
+
+# ---------------------------------------------------------------------------------------------------------------------

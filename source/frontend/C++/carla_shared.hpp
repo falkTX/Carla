@@ -438,32 +438,6 @@ int getIndexOfQDoubleListValue(const QList<double>& list, const double value);
 bool isQDoubleListEqual(const QList<double>& list1, const QList<double>& list2);
 
 //---------------------------------------------------------------------------------------------------------------------
-// Custom QString class with a few extra methods
-
-class QCarlaString : public QString
-{
-public:
-    inline QCarlaString()
-        : QString() {}
-
-    inline QCarlaString(const char* const ch)
-        : QString(ch) {}
-
-    inline QCarlaString(const QString& s)
-        : QString(s) {}
-
-    inline bool isNotEmpty() const
-    {
-        return !isEmpty();
-    }
-
-    inline QCarlaString& operator=(const char* const ch)
-    {
-        return (*this = fromUtf8(ch));
-    }
-};
-
-//---------------------------------------------------------------------------------------------------------------------
 // Custom QMessageBox which resizes itself to fit text
 
 class QMessageBoxWithBetterWidth : public QMessageBox
@@ -474,28 +448,6 @@ public:
 
 protected:
     void showEvent(QShowEvent* event);
-};
-
-//---------------------------------------------------------------------------------------------------------------------
-// Safer QSettings class, which does not throw if type mismatches
-
-class QSafeSettings : public QSettings
-{
-public:
-    inline QSafeSettings()
-        : QSettings() {}
-
-    inline QSafeSettings(const QString organizationName, const QString applicationName)
-        : QSettings(organizationName, applicationName) {}
-
-    bool valueBool(const QString key, const bool defaultValue) const;
-    Qt::CheckState valueCheckState(const QString key, const Qt::CheckState defaultValue) const;
-    int valueIntPositive(const QString key, const int defaultValue) const;
-    uint valueUInt(const QString key, const uint defaultValue) const;
-    double valueDouble(const QString key, const double defaultValue) const;
-    QString valueString(const QString key, const QString defaultValue) const;
-    QByteArray valueByteArray(const QString key, const QByteArray defaultValue = QByteArray()) const;
-    QStringList valueStringList(const QString key, const QStringList defaultValue = QStringList()) const;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
