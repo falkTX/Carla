@@ -34,6 +34,11 @@ YSFX_FLAGS += -DEEL_TARGET_PORTABLE
 endif
 endif
 
+# RISC-V needs portable code
+ifeq ($(CPU_RISCV64),true)
+YSFX_FLAGS += -DEEL_TARGET_PORTABLE
+endif
+
 ifeq ($(YSFX_FTS_LACKS_LFS_SUPPORT),true)
 YSFX_FLAGS += -DYSFX_FTS_LACKS_LFS_SUPPORT
 endif
