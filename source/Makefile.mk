@@ -118,8 +118,9 @@ else ifneq ($(MACOS),true)
 LINK_FLAGS += -Wl,--no-undefined
 endif
 
-ifeq ($(STATIC_BINARIES),true)
-LINK_FLAGS     += -static
+ifeq ($(WINDOWS),true)
+# Always build static binaries on Windows
+LINK_FLAGS += -static
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
