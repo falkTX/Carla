@@ -636,6 +636,9 @@ struct Parameter {
    A group can be applied to both inputs and outputs (at the same time).
    The same group cannot be used in audio ports and parameters.
 
+   When both audio and parameter groups are used, audio groups MUST be defined first.
+   That is, group indexes start with audio ports, then parameters.
+
    An audio port group logically combines ports which should be considered part of the same stream.@n
    For example, two audio ports in a group may form a stereo stream.
 

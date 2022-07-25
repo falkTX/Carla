@@ -20,7 +20,7 @@
 #include "../DistrhoUI.hpp"
 
 #ifdef DISTRHO_PLUGIN_TARGET_VST3
-# include "DistrhoPluginVST3.hpp"
+# include "DistrhoPluginVST.hpp"
 #endif
 
 #if DISTRHO_PLUGIN_HAS_EXTERNAL_UI

@@ -44,7 +44,7 @@ rm ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/include/pugl/vulkan.h
 
 rm ${CARLA_DIR}/source/modules/distrho/DistrhoInfo.hpp
 rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoPlugin{JACK,LADSPA+DSSI,LV2,LV2export,VST2,VST3}.cpp
-rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoPluginVST3.hpp
+rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoPluginVST.hpp
 rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoUI{DSSI,LV2,VST3}.cpp
 rm ${CARLA_DIR}/source/modules/distrho/DistrhoStandaloneUtils.hpp
 

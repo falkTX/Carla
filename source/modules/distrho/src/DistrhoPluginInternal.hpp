@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -20,7 +20,7 @@
 #include "../DistrhoPlugin.hpp"
 
 #ifdef DISTRHO_PLUGIN_TARGET_VST3
-# include "DistrhoPluginVST3.hpp"
+# include "DistrhoPluginVST.hpp"
 #endif
 
 #include <set>
@@ -522,6 +522,36 @@ public:
     uint32_t getAudioPortHints(const bool input, const uint32_t index) const noexcept
     {
         return getAudioPort(input, index).hints;
+    }
+    
+    uint32_t getAudioPortCountWithGroupId(const bool input, const uint32_t groupId) const noexcept
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, 0);
+
+        uint32_t numPorts = 0;
+
+        if (input)
+        {
+           #if DISTRHO_PLUGIN_NUM_INPUTS > 0
+            for (uint32_t i=0; i<DISTRHO_PLUGIN_NUM_INPUTS; ++i)
+            {
+                if (fData->audioPorts[i].groupId == groupId)
+                    ++numPorts;
+            }
+           #endif
+        }
+        else
+        {
+           #if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
+            for (uint32_t i=0; i<DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
+            {
+                if (fData->audioPorts[i + DISTRHO_PLUGIN_NUM_INPUTS].groupId == groupId)
+                    ++numPorts;
+            }
+           #endif
+        }
+
+        return numPorts;
     }
 #endif
 

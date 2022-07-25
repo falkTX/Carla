@@ -951,7 +951,7 @@ puglGrabFocus(PuglView* const view)
 {
   PuglInternals* const impl    = view->impl;
   Display* const       display = view->world->impl->display;
-  XWindowAttributes    attrs   = {0};
+  XWindowAttributes    attrs   = PUGL_INIT_STRUCT;
 
   if (!impl->win || !XGetWindowAttributes(display, impl->win, &attrs)) {
     return PUGL_UNKNOWN_ERROR;
@@ -980,7 +980,7 @@ puglRequestAttention(PuglView* const view)
   PuglInternals* const      impl    = view->impl;
   Display* const            display = view->world->impl->display;
   const PuglX11Atoms* const atoms   = &view->world->impl->atoms;
-  XEvent                    event   = {0};
+  XEvent                    event   = PUGL_INIT_STRUCT;
 
   event.type                 = ClientMessage;
   event.xclient.window       = impl->win;
@@ -1081,7 +1081,7 @@ puglStopTimer(PuglView* const view, const uintptr_t id)
 static XEvent
 eventToX(PuglView* const view, const PuglEvent* const event)
 {
-  XEvent xev          = {0};
+  XEvent xev          = PUGL_INIT_STRUCT;
   xev.xany.send_event = True;
 
   switch (event->type) {

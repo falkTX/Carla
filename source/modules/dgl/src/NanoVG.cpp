@@ -55,9 +55,9 @@ DGL_EXT(PFNGLUSEPROGRAMPROC,               glUseProgram)
 DGL_EXT(PFNGLVERTEXATTRIBPOINTERPROC,      glVertexAttribPointer)
 DGL_EXT(PFNGLBLENDFUNCSEPARATEPROC,        glBlendFuncSeparate)
 # ifdef DGL_USE_NANOVG_FBO
+DGL_EXT(PFNGLCHECKFRAMEBUFFERSTATUSPROC,   glCheckFramebufferStatus)
 DGL_EXT(PFNGLBINDFRAMEBUFFERPROC,          glBindFramebuffer)
 DGL_EXT(PFNGLBINDRENDERBUFFERPROC,         glBindRenderbuffer)
-DGL_EXT(PFNGLCHECKFRAMEBUFFERSTATUSPROC,   glCheckFramebufferStatus)
 DGL_EXT(PFNGLDELETEFRAMEBUFFERSPROC,       glDeleteFramebuffers)
 DGL_EXT(PFNGLDELETERENDERBUFFERSPROC,      glDeleteRenderbuffers)
 DGL_EXT(PFNGLFRAMEBUFFERTEXTURE2DPROC,     glFramebufferTexture2D)
@@ -140,6 +140,11 @@ NVGcontext* nvgCreateGL(int flags)
 # define DGL_EXT(PROC, func) \
       if (needsInit) func = (PROC) wglGetProcAddress ( #func ); \
       DISTRHO_SAFE_ASSERT_RETURN(func != nullptr, nullptr);
+# define DGL_EXT2(PROC, func, fallback) \
+      if (needsInit) { \
+        func = (PROC) wglGetProcAddress ( #func ); \
+        if (func == nullptr) func = (PROC) wglGetProcAddress ( #fallback ); \
+      } DISTRHO_SAFE_ASSERT_RETURN(func != nullptr, nullptr);
 DGL_EXT(PFNGLACTIVETEXTUREPROC,            glActiveTexture)
 DGL_EXT(PFNGLATTACHSHADERPROC,             glAttachShader)
 DGL_EXT(PFNGLBINDATTRIBLOCATIONPROC,       glBindAttribLocation)
@@ -169,16 +174,16 @@ DGL_EXT(PFNGLUSEPROGRAMPROC,               glUseProgram)
 DGL_EXT(PFNGLVERTEXATTRIBPOINTERPROC,      glVertexAttribPointer)
 DGL_EXT(PFNGLBLENDFUNCSEPARATEPROC,        glBlendFuncSeparate)
 # ifdef DGL_USE_NANOVG_FBO
-DGL_EXT(PFNGLBINDFRAMEBUFFERPROC,          glBindFramebuffer)
-DGL_EXT(PFNGLBINDRENDERBUFFERPROC,         glBindRenderbuffer)
 DGL_EXT(PFNGLCHECKFRAMEBUFFERSTATUSPROC,   glCheckFramebufferStatus)
-DGL_EXT(PFNGLDELETEFRAMEBUFFERSPROC,       glDeleteFramebuffers)
-DGL_EXT(PFNGLDELETERENDERBUFFERSPROC,      glDeleteRenderbuffers)
-DGL_EXT(PFNGLFRAMEBUFFERTEXTURE2DPROC,     glFramebufferTexture2D)
-DGL_EXT(PFNGLFRAMEBUFFERRENDERBUFFERPROC,  glFramebufferRenderbuffer)
-DGL_EXT(PFNGLGENFRAMEBUFFERSPROC,          glGenFramebuffers)
-DGL_EXT(PFNGLGENRENDERBUFFERSPROC,         glGenRenderbuffers)
-DGL_EXT(PFNGLRENDERBUFFERSTORAGEPROC,      glRenderbufferStorage)
+DGL_EXT2(PFNGLBINDFRAMEBUFFERPROC,         glBindFramebuffer,         glBindFramebufferEXT)
+DGL_EXT2(PFNGLBINDRENDERBUFFERPROC,        glBindRenderbuffer,        glBindRenderbufferEXT)
+DGL_EXT2(PFNGLDELETEFRAMEBUFFERSPROC,      glDeleteFramebuffers,      glDeleteFramebuffersEXT)
+DGL_EXT2(PFNGLDELETERENDERBUFFERSPROC,     glDeleteRenderbuffers,     glDeleteRenderbuffersEXT)
+DGL_EXT2(PFNGLFRAMEBUFFERTEXTURE2DPROC,    glFramebufferTexture2D,    glFramebufferTexture2DEXT)
+DGL_EXT2(PFNGLFRAMEBUFFERRENDERBUFFERPROC, glFramebufferRenderbuffer, glFramebufferRenderbufferEXT)
+DGL_EXT2(PFNGLGENFRAMEBUFFERSPROC,         glGenFramebuffers,         glGenFramebuffersEXT)
+DGL_EXT2(PFNGLGENRENDERBUFFERSPROC,        glGenRenderbuffers,        glGenRenderbuffersEXT)
+DGL_EXT2(PFNGLRENDERBUFFERSTORAGEPROC,     glRenderbufferStorage,     glRenderbufferStorageEXT)
 # endif
 # ifdef DGL_USE_OPENGL3
 DGL_EXT(PFNGLBINDBUFFERRANGEPROC,          glBindBufferRange)
@@ -190,6 +195,7 @@ DGL_EXT(PFNGLGENVERTEXARRAYSPROC,          glGenVertexArrays)
 DGL_EXT(PFNGLUNIFORMBLOCKBINDINGPROC,      glUniformBlockBinding)
 # endif
 # undef DGL_EXT
+# undef DGL_EXT2
     needsInit = false;
 # if defined(__GNUC__) && (__GNUC__ >= 9)
 #  pragma GCC diagnostic pop
@@ -318,12 +324,12 @@ NanoVG::NanoVG(int flags)
       fInFrame(false),
       fIsSubWidget(false)
 {
-    DISTRHO_SAFE_ASSERT(fContext);
+    DISTRHO_CUSTOM_SAFE_ASSERT("Failed to create NanoVG context, expect a black screen", fContext != nullptr);
 }
 
 NanoVG::~NanoVG()
 {
-    DISTRHO_SAFE_ASSERT(! fInFrame);
+    DISTRHO_CUSTOM_SAFE_ASSERT("Destroying NanoVG context with still active frame", ! fInFrame);
 
     if (fContext != nullptr && ! fIsSubWidget)
         nvgDeleteGL(fContext);

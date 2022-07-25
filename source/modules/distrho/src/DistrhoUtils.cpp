@@ -19,6 +19,7 @@
 #endif
 
 #include "../extra/String.hpp"
+#include "../DistrhoStandaloneUtils.hpp"
 
 #ifdef DISTRHO_OS_WINDOWS
 # include <windows.h>
@@ -140,6 +141,20 @@ const char* getResourcePath(const char* const bundlePath) noexcept
 
     return nullptr;
 }
+
+#ifndef DISTRHO_PLUGIN_TARGET_JACK
+// all these are null for non-standalone targets
+bool isUsingNativeAudio() noexcept { return false; }
+bool supportsAudioInput() { return false; }
+bool supportsBufferSizeChanges() { return false; }
+bool supportsMIDI() { return false; }
+bool isAudioInputEnabled() { return false; }
+bool isMIDIEnabled() { return false; }
+uint getBufferSize() { return 0; }
+bool requestAudioInput() { return false; }
+bool requestBufferSizeChange(uint) { return false; }
+bool requestMIDI() { return false; }
+#endif
 
 // -----------------------------------------------------------------------
 

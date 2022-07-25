@@ -329,53 +329,36 @@ public:
     }
 
 #if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-    bool handlePluginKeyboardVST2(const bool press, const uint key, const uint16_t mods)
+    bool handlePluginKeyboardVST(const bool press, const bool special, const uint keychar, const uint keycode, const uint16_t mods)
     {
-        DGL_NAMESPACE::Widget::KeyboardEvent ev;
-        ev.mod   = mods;
-        ev.press = press;
-        ev.key   = key;
+        using namespace DGL_NAMESPACE;
 
-        const bool ret = ui->onKeyboard(ev);
-
-        if (! press)
-            return ret;
-
-        DGL_NAMESPACE::Widget::CharacterInputEvent cev;
-        cev.mod       = mods;
-        cev.character = key;
-
-        // if shift modifier is on, convert a-z -> A-Z for character input
-        if (key >= 'a' && key <= 'z' && (mods & DGL_NAMESPACE::kModifierShift) != 0)
-            cev.character -= 'a' - 'A';
-
-        ui->onCharacterInput(cev);
-        return ret;
-    }
-
-    bool handlePluginKeyboardVST3(const bool press, const uint keychar, const uint keycode, const uint16_t mods)
-    {
-        DGL_NAMESPACE::Widget::KeyboardEvent ev;
+        Widget::KeyboardEvent ev;
         ev.mod     = mods;
         ev.press   = press;
         ev.key     = keychar;
         ev.keycode = keycode;
 
+        // keyboard events must always be lowercase
+        if (ev.key >= 'A' && ev.key <= 'Z')
+            ev.key += 'a' - 'A'; // A-Z -> a-z
+
         const bool ret = ui->onKeyboard(ev);
 
-        if (! press)
-            return ret;
+        if (press && !special && (mods & (kModifierControl|kModifierAlt|kModifierSuper)) == 0)
+        {
+            Widget::CharacterInputEvent cev;
+            cev.mod       = mods;
+            cev.character = keychar;
+            cev.keycode   = keycode;
 
-        DGL_NAMESPACE::Widget::CharacterInputEvent cev;
-        cev.mod       = mods;
-        cev.keycode   = keycode;
-        cev.character = keychar;
+            // if shift modifier is on, convert a-z -> A-Z for character input
+            if (cev.character >= 'a' && cev.character <= 'z' && (mods & kModifierShift) != 0)
+                cev.character -= 'a' - 'A';
 
-        // if shift modifier is on, convert a-z -> A-Z for character input
-        if (keychar >= 'a' && keychar <= 'z' && (mods & DGL_NAMESPACE::kModifierShift) != 0)
-            cev.character -= 'a' - 'A';
+            ui->onCharacterInput(cev);
+        }
 
-        ui->onCharacterInput(cev);
         return ret;
     }
 #endif
