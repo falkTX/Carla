@@ -27,15 +27,19 @@ YSFX_FLAGS += -Wno-sign-compare
 YSFX_FLAGS += -Wno-unused-function
 YSFX_FLAGS += -Wno-unused-parameter
 
-ifeq ($(CPU_ARM),true)
-ifneq ($(CPU_ARM64),true)
-# optimized assembly code for armhf does not run properly yet
-YSFX_FLAGS += -DEEL_TARGET_PORTABLE
-endif
+
+# ysfx/jsfx EEL has optimised code for i386, x86_64...
+ifeq ($(CPU_I386_OR_X86_64),true)
+YSFX_FTS_EEL_HAS_OPTIMISATIONS = true
 endif
 
-# RISC-V needs portable code
-ifeq ($(CPU_RISCV64),true)
+# ...and "optimized assembly code for armhf does not run properly yet", so only ARM64 is supported
+ifeq ($(CPU_ARM64),true)
+YSFX_FTS_EEL_HAS_OPTIMISATIONS = true
+endif
+
+ifneq ($(YSFX_FTS_EEL_HAS_OPTIMISATIONS),true)
+# turn on portable code for other architectures who don't have optimised code
 YSFX_FLAGS += -DEEL_TARGET_PORTABLE
 endif
 
