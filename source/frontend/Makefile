@@ -50,7 +50,6 @@ RES = \
 	$(BINDIR)/resources/carla_app.py \
 	$(BINDIR)/resources/carla_backend.py \
 	$(BINDIR)/resources/carla_backend_qt.py \
-	$(BINDIR)/resources/carla_database.py \
 	$(BINDIR)/resources/carla_host.py \
 	$(BINDIR)/resources/carla_host_control.py \
 	$(BINDIR)/resources/carla_modgui.py \
