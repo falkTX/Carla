@@ -428,6 +428,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
         XStoreName(fDisplay, fHostWindow, title);
+
+        const Atom _nwn = XInternAtom(fDisplay, "_NET_WM_NAME", False);
+        const Atom utf8 = XInternAtom(fDisplay, "UTF8_STRING", True);
+
+        XChangeProperty(fDisplay, fHostWindow, _nwn, utf8, 8,
+                        PropModeReplace,
+                        (const uchar*)(title),
+                        (int)strlen(title));
     }
 
     void setTransientWinId(const uintptr_t winId) override
