@@ -1472,7 +1472,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 CarlaPluginUI* CarlaPluginUI::newX11(Callback* const cb,
                                      const uintptr_t parentId,
                                      const bool isStandalone,
-                                     const bool isResizable, 
+                                     const bool isResizable,
                                      const bool isLV2)
 {
     return new X11PluginUI(cb, parentId, isStandalone, isResizable, isLV2);
