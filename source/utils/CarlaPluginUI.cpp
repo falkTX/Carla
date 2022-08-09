@@ -428,6 +428,21 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
         XStoreName(fDisplay, fHostWindow, title);
+
+        /* enable UTF-8 */
+        const char* kAtoms[] = {"_NET_WM_NAME", "UTF8_STRING"};
+        Atom atoms[2];
+        int result = XInternAtoms(fDisplay, const_cast<char**>(kAtoms), 2,
+                                  false, atoms);
+        if (!result)
+          {
+            carla_stderr2("XInternAtoms failed with result %d", result);
+            return;
+          }
+        XChangeProperty(fDisplay, fHostWindow, atoms[0], atoms[1], 8,
+                        PropModeReplace,
+                        reinterpret_cast<const unsigned char*>(title),
+                        (int) strlen (title));
     }
 
     void setTransientWinId(const uintptr_t winId) override
