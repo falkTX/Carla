@@ -27,6 +27,14 @@
 typedef Uint32 SDL_AudioDeviceID;
 #endif
 
+#ifndef SDL_HINT_AUDIO_DEVICE_APP_NAME
+# define SDL_HINT_AUDIO_DEVICE_APP_NAME "SDL_AUDIO_DEVICE_APP_NAME"
+#endif
+
+#ifndef SDL_HINT_AUDIO_DEVICE_STREAM_NAME
+# define SDL_HINT_AUDIO_DEVICE_STREAM_NAME "SDL_AUDIO_DEVICE_STREAM_NAME"
+#endif
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
