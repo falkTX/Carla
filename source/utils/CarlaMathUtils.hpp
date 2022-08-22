@@ -1,6 +1,6 @@
 /*
  * Carla math utils
- * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -172,7 +172,13 @@ void carla_addFloats(float dest[], const float src[], const std::size_t count) n
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     for (std::size_t i=0; i<count; ++i)
+    {
+        if (!std::isfinite(dest[i]))
+            __builtin_unreachable();
+        if (!std::isfinite(src[i]))
+            __builtin_unreachable();
         *dest++ += *src++;
+    }
 }
 
 /*
@@ -204,7 +210,11 @@ void carla_fillFloatsWithSingleValue(float data[], const float& value, const std
     else
     {
         for (std::size_t i=0; i<count; ++i)
+        {
+            if (!std::isfinite(data[i]))
+                __builtin_unreachable();
             *data++ = value;
+        }
     }
 }
 
@@ -241,7 +251,7 @@ float carla_findMaxNormalizedFloat(const float floats[], const std::size_t count
     CARLA_SAFE_ASSERT_RETURN(floats != nullptr, 0.0f);
     CARLA_SAFE_ASSERT_RETURN(count > 0, 0.0f);
 
-    static const float kEmptyFloats[8192] = {};
+    static constexpr const float kEmptyFloats[8192] = {};
 
     if (count <= 8192 && std::memcmp(floats, kEmptyFloats, count) == 0)
         return 0.0f;
@@ -250,6 +260,9 @@ float carla_findMaxNormalizedFloat(const float floats[], const std::size_t count
 
     for (std::size_t i=1; i<count; ++i)
     {
+        if (!std::isfinite(floats[i]))
+            __builtin_unreachable();
+
         tmp = std::abs(*floats++);
 
         if (tmp > maxf2)
@@ -278,7 +291,11 @@ void carla_multiply(float data[], const float& multiplier, const std::size_t cou
     else
     {
         for (std::size_t i=0; i<count; ++i)
+        {
+            if (!std::isfinite(data[i]))
+                __builtin_unreachable();
             *data++ *= multiplier;
+        }
     }
 }
 
