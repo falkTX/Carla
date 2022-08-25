@@ -220,6 +220,8 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
 
 # ifdef MAP_LOCKED
         ptr = ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_LOCKED, shm.fd, 0);
+        CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, nullptr);
+
         if (ptr == MAP_FAILED)
 # endif
         {
