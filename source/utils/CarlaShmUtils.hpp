@@ -29,9 +29,6 @@ struct carla_shm_t { HANDLE map; bool isServer; const char* filename; };
 # endif
 # include <fcntl.h>
 # include <sys/mman.h>
-# ifndef MAP_LOCKED
-#  define MAP_LOCKED 0x0
-# endif
 struct carla_shm_t { int fd; const char* filename; std::size_t size; };
 # define carla_shm_t_INIT { -1, nullptr, 0 }
 #endif
@@ -219,13 +216,27 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
             CARLA_SAFE_ASSERT_RETURN(ret == 0, nullptr);
         }
 
-        void* const ptr(::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_LOCKED, shm.fd, 0));
-        CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, nullptr);
+        void* ptr;
 
+# ifdef MAP_LOCKED
+        ptr = ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_LOCKED, shm.fd, 0);
         if (ptr == MAP_FAILED)
+# endif
         {
-            carla_stderr2("carla_shm_map() - mmap failed: %s", std::strerror(errno));
-            return nullptr;
+            ptr = ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm.fd, 0);
+            CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, nullptr);
+
+            if (ptr == MAP_FAILED)
+            {
+                carla_stderr2("carla_shm_map() - mmap failed: %s", std::strerror(errno));
+                return nullptr;
+            }
+
+# ifndef MAP_LOCKED
+            try {
+                ::mlock(ptr, size);
+            } CARLA_SAFE_EXCEPTION("carla_shm_map mlock");
+# endif
         }
 
         shm.size = size;
@@ -368,9 +379,5 @@ bool carla_shm_map(carla_shm_t& shm, T*& value) noexcept
 #endif // __WINE__
 
 // -----------------------------------------------------------------------
-
-#ifndef CARLA_OS_LINUX
-# undef MAP_LOCKED
-#endif
 
 #endif // CARLA_SHM_UTILS_HPP_INCLUDED
