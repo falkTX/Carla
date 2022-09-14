@@ -622,7 +622,7 @@ void CarlaEngine::ProtectedData::doPluginRemove(const uint pluginId) noexcept
     const uint id = curPluginCount;
 
     // reset last plugin (now removed)
-    plugins[id].plugin = nullptr;
+    plugins[id].plugin.reset();
     carla_zeroFloats(plugins[id].peaks, 4);
 }
 
