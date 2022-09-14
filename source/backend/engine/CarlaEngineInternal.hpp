@@ -117,7 +117,7 @@ public:
     void renamePlugin(CarlaPluginPtr plugin, const char* newName);
     void switchPlugins(CarlaPluginPtr pluginA, CarlaPluginPtr pluginB);
     void removePlugin(CarlaPluginPtr plugin);
-    void removeAllPlugins();
+    void removeAllPlugins(bool aboutToClose);
 
     bool isUsingExternalHost() const noexcept;
     bool isUsingExternalOSC() const noexcept;
@@ -288,6 +288,8 @@ struct CarlaEngine::ProtectedData {
     float dspLoad;
 #endif
     float peaks[4];
+
+    CarlaMutex pluginsToDeleteMutex;
     std::vector<CarlaPluginPtr> pluginsToDelete;
 
     EngineInternalEvents events;

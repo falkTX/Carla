@@ -197,7 +197,7 @@ public:
     void reconfigureForCV(CarlaPluginPtr plugin, const uint portIndex, bool added);
     void reconfigurePlugin(CarlaPluginPtr plugin, bool portsAdded);
     void removePlugin(CarlaPluginPtr plugin);
-    void removeAllPlugins();
+    void removeAllPlugins(bool aboutToClose);
 
     bool connect(bool external, uint groupA, uint portA, uint groupB, uint portB);
     bool disconnect(bool external, uint connectionId);

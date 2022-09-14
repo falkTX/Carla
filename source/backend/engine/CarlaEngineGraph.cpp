@@ -1476,9 +1476,10 @@ public:
 
     void reconfigure() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fPlugin.get() != nullptr,);
+        const CarlaPluginPtr plugin = fPlugin;
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr,);
 
-        CarlaEngineClient* const client = fPlugin->getEngineClient();
+        CarlaEngineClient* const client = plugin->getEngineClient();
         CARLA_SAFE_ASSERT_RETURN(client != nullptr,);
 
         carla_stdout("reconfigure called");
@@ -1501,7 +1502,10 @@ public:
 
     const String getName() const override
     {
-        return fPlugin->getName();
+        const CarlaPluginPtr plugin = fPlugin;
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, String());
+
+        return plugin->getName();
     }
 
     void processBlockWithCV(AudioSampleBuffer& audio,
@@ -1509,7 +1513,9 @@ public:
                             AudioSampleBuffer& cvOut,
                             MidiBuffer& midi) override
     {
-        if (fPlugin.get() == nullptr || ! fPlugin->isEnabled() || ! fPlugin->tryLock(kEngine->isOffline()))
+        const CarlaPluginPtr plugin = fPlugin;
+
+        if (plugin.get() == nullptr || !plugin->isEnabled() || !plugin->tryLock(kEngine->isOffline()))
         {
             audio.clear();
             cvOut.clear();
@@ -1517,7 +1523,7 @@ public:
             return;
         }
 
-        if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventInPort())
+        if (CarlaEngineEventPort* const port = plugin->getDefaultEventInPort())
         {
             EngineEvent* const engineEvents(port->fBuffer);
             CARLA_SAFE_ASSERT_RETURN(engineEvents != nullptr,);
@@ -1528,7 +1534,7 @@ public:
 
         midi.clear();
 
-        fPlugin->initBuffers();
+        plugin->initBuffers();
 
         const uint32_t numSamples   = audio.getNumSamples();
         const uint32_t numAudioChan = audio.getNumChannels();
@@ -1538,14 +1544,14 @@ public:
         if (numAudioChan+numCVInChan+numCVOutChan == 0)
         {
             // nothing to process
-            fPlugin->process(nullptr, nullptr, nullptr, nullptr, numSamples);
+            plugin->process(nullptr, nullptr, nullptr, nullptr, numSamples);
         }
         else if (numAudioChan != 0)
         {
             // processing audio, include code for peaks
             const uint32_t numChan2 = jmin(numAudioChan, 2U);
 
-            if (fPlugin->getAudioInCount() == 0)
+            if (plugin->getAudioInCount() == 0)
                 audio.clear();
 
             float* audioBuffers[numAudioChan];
@@ -1562,17 +1568,17 @@ public:
             float inPeaks[2] = { 0.0f };
             float outPeaks[2] = { 0.0f };
 
-            for (uint32_t i=0, count=jmin(fPlugin->getAudioInCount(), numChan2); i<count; ++i)
+            for (uint32_t i=0, count=jmin(plugin->getAudioInCount(), numChan2); i<count; ++i)
                 inPeaks[i] = carla_findMaxNormalizedFloat(audioBuffers[i], numSamples);
 
-            fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers,
-                             cvInBuffers, cvOutBuffers,
-                             numSamples);
+            plugin->process(const_cast<const float**>(audioBuffers), audioBuffers,
+                            cvInBuffers, cvOutBuffers,
+                            numSamples);
 
-            for (uint32_t i=0, count=jmin(fPlugin->getAudioOutCount(), numChan2); i<count; ++i)
+            for (uint32_t i=0, count=jmin(plugin->getAudioOutCount(), numChan2); i<count; ++i)
                 outPeaks[i] = carla_findMaxNormalizedFloat(audioBuffers[i], numSamples);
 
-            kEngine->setPluginPeaksRT(fPlugin->getId(), inPeaks, outPeaks);
+            kEngine->setPluginPeaksRT(plugin->getId(), inPeaks, outPeaks);
         }
         else
         {
@@ -1585,14 +1591,14 @@ public:
             for (uint32_t i=0; i<numCVInChan; ++i)
                 cvInBuffers[i] = cvIn.getReadPointer(i);
 
-            fPlugin->process(nullptr, nullptr,
-                             cvInBuffers, cvOutBuffers,
-                             numSamples);
+            plugin->process(nullptr, nullptr,
+                            cvInBuffers, cvOutBuffers,
+                            numSamples);
         }
 
         midi.clear();
 
-        if (CarlaEngineEventPort* const port = fPlugin->getDefaultEventOutPort())
+        if (CarlaEngineEventPort* const port = plugin->getDefaultEventOutPort())
         {
             /*const*/ EngineEvent* const engineEvents(port->fBuffer);
             CARLA_SAFE_ASSERT_RETURN(engineEvents != nullptr,);
@@ -1601,12 +1607,15 @@ public:
             carla_zeroStructs(engineEvents, kMaxEngineEventInternalCount);
         }
 
-        fPlugin->unlock();
+        plugin->unlock();
     }
 
     const String getInputChannelName(ChannelType t, uint i) const override
     {
-        CarlaEngineClient* const client = fPlugin->getEngineClient();
+        const CarlaPluginPtr plugin = fPlugin;
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, String());
+
+        CarlaEngineClient* const client = plugin->getEngineClient();
 
         switch (t)
         {
@@ -1623,7 +1632,10 @@ public:
 
     const String getOutputChannelName(ChannelType t, uint i) const override
     {
-        CarlaEngineClient* const client(fPlugin->getEngineClient());
+        const CarlaPluginPtr plugin = fPlugin;
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, String());
+
+        CarlaEngineClient* const client(plugin->getEngineClient());
 
         switch (t)
         {
@@ -1641,8 +1653,21 @@ public:
     void prepareToPlay(double, int) override {}
     void releaseResources() override {}
 
-    bool acceptsMidi()  const override { return fPlugin->getDefaultEventInPort() != nullptr; }
-    bool producesMidi() const override { return fPlugin->getDefaultEventOutPort() != nullptr; }
+    bool acceptsMidi()  const override
+    {
+        const CarlaPluginPtr plugin = fPlugin;
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, false);
+
+        return plugin->getDefaultEventInPort() != nullptr;
+    }
+
+    bool producesMidi() const override
+    {
+        const CarlaPluginPtr plugin = fPlugin;
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, false);
+
+        return plugin->getDefaultEventOutPort() != nullptr;
+    }
 
 private:
     CarlaEngine* const kEngine;
@@ -2040,9 +2065,11 @@ void PatchbayGraph::removePlugin(const CarlaPluginPtr plugin)
     CARLA_SAFE_ASSERT_RETURN(graph.removeNode(node->nodeId),);
 }
 
-void PatchbayGraph::removeAllPlugins()
+void PatchbayGraph::removeAllPlugins(const bool aboutToClose)
 {
     carla_debug("PatchbayGraph::removeAllPlugins()");
+
+    stopRunner();
 
     const bool sendHost = !usingExternalHost;
     const bool sendOSC  = !usingExternalOSC;
@@ -2062,6 +2089,9 @@ void PatchbayGraph::removeAllPlugins()
 
         graph.removeNode(node->nodeId);
     }
+
+    if (!aboutToClose)
+        startRunner(100);
 }
 
 bool PatchbayGraph::connect(const bool external,
@@ -2764,10 +2794,10 @@ void EngineInternalGraph::removePlugin(const CarlaPluginPtr plugin)
     fPatchbay->removePlugin(plugin);
 }
 
-void EngineInternalGraph::removeAllPlugins()
+void EngineInternalGraph::removeAllPlugins(const bool aboutToClose)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
-    fPatchbay->removeAllPlugins();
+    fPatchbay->removeAllPlugins(aboutToClose);
 }
 
 bool EngineInternalGraph::isUsingExternalHost() const noexcept

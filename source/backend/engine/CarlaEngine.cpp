@@ -860,7 +860,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         const float oldVolume = oldPlugin->getInternalParameterValue(PARAMETER_VOLUME);
 
         oldPlugin->prepareForDeletion();
-        pData->pluginsToDelete.push_back(oldPlugin);
+        {
+            const CarlaMutexLocker cml(pData->pluginsToDeleteMutex);
+            pData->pluginsToDelete.push_back(oldPlugin);
+        }
 
         if (plugin->getHints() & PLUGIN_CAN_DRYWET)
             plugin->setDryWet(oldDryWet, true, true);
@@ -939,12 +942,15 @@ bool CarlaEngine::removePlugin(const uint id)
     */
 #else
     pData->curPluginCount = 0;
-    pData->plugins[0].plugin = nullptr;
+    pData->plugins[0].plugin.reset();
     carla_zeroStruct(pData->plugins[0].peaks);
 #endif
 
     plugin->prepareForDeletion();
-    pData->pluginsToDelete.push_back(plugin);
+    {
+        const CarlaMutexLocker cml(pData->pluginsToDeleteMutex);
+        pData->pluginsToDelete.push_back(plugin);
+    }
 
     callback(true, true, ENGINE_CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0, 0.0f, nullptr);
     return true;
@@ -969,7 +975,7 @@ bool CarlaEngine::removeAllPlugins()
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.removeAllPlugins();
+        pData->graph.removeAllPlugins(pData->aboutToClose);
 #endif
 
     const ScopedActionLock sal(this, kEnginePostActionZeroCount, 0, 0);
@@ -982,7 +988,10 @@ bool CarlaEngine::removeAllPlugins()
         EnginePluginData& pluginData(pData->plugins[id]);
 
         pluginData.plugin->prepareForDeletion();
-        pData->pluginsToDelete.push_back(pluginData.plugin);
+        {
+            const CarlaMutexLocker cml(pData->pluginsToDeleteMutex);
+            pData->pluginsToDelete.push_back(pluginData.plugin);
+        }
 
         pluginData.plugin.reset();
         carla_zeroStruct(pluginData.peaks);

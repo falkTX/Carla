@@ -409,6 +409,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine)
       xruns(0),
       dspLoad(0.0f),
 #endif
+      pluginsToDeleteMutex(),
       pluginsToDelete(),
       events(),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -432,6 +433,8 @@ CarlaEngine::ProtectedData::~ProtectedData()
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CARLA_SAFE_ASSERT(plugins == nullptr);
 #endif
+
+    const CarlaMutexLocker cml(pluginsToDeleteMutex);
 
     if (pluginsToDelete.size() != 0)
     {
@@ -571,22 +574,27 @@ void CarlaEngine::ProtectedData::initTime(const char* const features)
 
 void CarlaEngine::ProtectedData::deletePluginsAsNeeded()
 {
-    for (bool stop;;)
-    {
-        stop = true;
+    std::vector<CarlaPluginPtr> safePluginListToDelete;
 
-        for (std::vector<CarlaPluginPtr>::iterator it = pluginsToDelete.begin(); it != pluginsToDelete.end(); ++it)
+    if (const size_t size = pluginsToDelete.size())
+        safePluginListToDelete.reserve(size);
+
+    {
+        const CarlaMutexLocker cml(pluginsToDeleteMutex);
+
+        for (std::vector<CarlaPluginPtr>::iterator it = pluginsToDelete.begin(); it != pluginsToDelete.end();)
         {
             if (it->use_count() == 1)
             {
-                stop = false;
+                const CarlaPluginPtr plugin = *it;
+                safePluginListToDelete.push_back(plugin);
                 pluginsToDelete.erase(it);
-                break;
+            }
+            else
+            {
+                 ++it;
             }
         }
-
-        if (stop)
-            break;
     }
 }
 
@@ -614,7 +622,7 @@ void CarlaEngine::ProtectedData::doPluginRemove(const uint pluginId) noexcept
     const uint id = curPluginCount;
 
     // reset last plugin (now removed)
-    plugins[id].plugin.reset();
+    plugins[id].plugin = nullptr;
     carla_zeroFloats(plugins[id].peaks, 4);
 }
 
