@@ -44,6 +44,11 @@ YSFX_FLAGS += -pthread
 endif
 endif
 
+ifeq ($(CPU_RISCV64),true)
+# FIXME
+YSFX_FLAGS += -DEEL_TARGET_PORTABLE
+endif
+
 ifeq ($(WASM),true)
 # FIXME
 YSFX_FLAGS += -DEEL_TARGET_PORTABLE

@@ -81,6 +81,9 @@ ifneq (,$(filter aarch64%,$(TARGET_PROCESSOR)))
 CPU_AARCH64 = true
 CPU_ARM_OR_AARCH64 = true
 endif
+ifneq (,$(filter riscv64%,$(TARGET_PROCESSOR)))
+CPU_RISCV64 = true
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PKG_CONFIG (can be overridden by environment variable)
