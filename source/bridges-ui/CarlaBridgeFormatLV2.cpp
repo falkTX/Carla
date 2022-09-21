@@ -103,7 +103,9 @@ enum CarlaLv2URIDs {
     // ui stuff
     kUridBackgroundColor,
     kUridForegroundColor,
+#ifndef CARLA_OS_MAC
     kUridScaleFactor,
+#endif
     kUridWindowTitle,
     // custom carla props
     kUridCarlaAtomWorkerIn,
@@ -148,7 +150,9 @@ struct Lv2PluginOptions {
         TransientWinId,
         BackgroundColor,
         ForegroundColor,
+#ifndef CARLA_OS_MAC
         ScaleFactor,
+#endif
         WindowTitle,
         Null,
         Count
@@ -192,6 +196,7 @@ struct Lv2PluginOptions {
         optForegroundColor.type    = kUridAtomInt;
         optForegroundColor.value   = &fgColor;
 
+#ifndef CARLA_OS_MAC
         LV2_Options_Option& optScaleFactor(opts[ScaleFactor]);
         optScaleFactor.context = LV2_OPTIONS_INSTANCE;
         optScaleFactor.subject = 0;
@@ -199,6 +204,7 @@ struct Lv2PluginOptions {
         optScaleFactor.size    = sizeof(float);
         optScaleFactor.type    = kUridAtomFloat;
         optScaleFactor.value   = &uiScale;
+#endif
 
         LV2_Options_Option& optTransientWinId(opts[TransientWinId]);
         optTransientWinId.context = LV2_OPTIONS_INSTANCE;
@@ -831,10 +837,12 @@ public:
         fUiOptions.useThemeColors = opts.useThemeColors;
     }
 
+#ifndef CARLA_OS_MAC
     void setScaleFactor(const double scaleFactor) override
     {
         fLv2Options.uiScale = static_cast<float>(scaleFactor);
     }
+#endif
 
     void uiResized(const uint width, const uint height) override
     {
@@ -1314,8 +1322,10 @@ private:
             return kUridBackgroundColor;
         if (std::strcmp(uri, LV2_UI__foregroundColor) == 0)
             return kUridForegroundColor;
+#ifndef CARLA_OS_MAC
         if (std::strcmp(uri, LV2_UI__scaleFactor) == 0)
             return kUridScaleFactor;
+#endif
         if (std::strcmp(uri, LV2_UI__windowTitle) == 0)
             return kUridWindowTitle;
 
@@ -1452,8 +1462,10 @@ private:
             return LV2_UI__backgroundColor;
         case kUridForegroundColor:
             return LV2_UI__foregroundColor;
+#ifndef CARLA_OS_MAC
         case kUridScaleFactor:
             return LV2_UI__scaleFactor;
+#endif
         case kUridWindowTitle:
             return LV2_UI__windowTitle;
 

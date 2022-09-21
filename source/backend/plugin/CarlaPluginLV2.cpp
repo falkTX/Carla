@@ -149,7 +149,9 @@ enum CarlaLv2URIDs {
     // ui stuff
     kUridBackgroundColor,
     kUridForegroundColor,
+#ifndef CARLA_OS_MAC
     kUridScaleFactor,
+#endif
     kUridWindowTitle,
     // custom carla props
     kUridCarlaAtomWorkerIn,
@@ -353,7 +355,9 @@ struct CarlaPluginLV2Options {
         TransientWinId,
         BackgroundColor,
         ForegroundColor,
+#ifndef CARLA_OS_MAC
         ScaleFactor,
+#endif
         WindowTitle,
         Null,
         Count
@@ -431,6 +435,7 @@ struct CarlaPluginLV2Options {
         optForegroundColor.type    = kUridAtomInt;
         optForegroundColor.value   = &fgColor;
 
+#ifndef CARLA_OS_MAC
         LV2_Options_Option& optScaleFactor(opts[ScaleFactor]);
         optScaleFactor.context = LV2_OPTIONS_INSTANCE;
         optScaleFactor.subject = 0;
@@ -438,6 +443,7 @@ struct CarlaPluginLV2Options {
         optScaleFactor.size    = sizeof(float);
         optScaleFactor.type    = kUridAtomFloat;
         optScaleFactor.value   = &uiScale;
+#endif
 
         LV2_Options_Option& optSampleRate(opts[SampleRate]);
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
@@ -7877,8 +7883,10 @@ private:
             return kUridBackgroundColor;
         if (std::strcmp(uri, LV2_UI__foregroundColor) == 0)
             return kUridForegroundColor;
+#ifndef CARLA_OS_MAC
         if (std::strcmp(uri, LV2_UI__scaleFactor) == 0)
             return kUridScaleFactor;
+#endif
         if (std::strcmp(uri, LV2_UI__windowTitle) == 0)
             return kUridWindowTitle;
 
@@ -8015,8 +8023,10 @@ private:
             return LV2_UI__backgroundColor;
         case kUridForegroundColor:
             return LV2_UI__foregroundColor;
+#ifndef CARLA_OS_MAC
         case kUridScaleFactor:
             return LV2_UI__scaleFactor;
+#endif
         case kUridWindowTitle:
             return LV2_UI__windowTitle;
 

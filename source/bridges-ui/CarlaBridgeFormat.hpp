@@ -103,10 +103,12 @@ public:
      */
     virtual void* getWidget() const noexcept = 0;
 
+#ifndef CARLA_OS_MAC
     /*!
      * TESTING
      */
     virtual void setScaleFactor(double scaleFactor) = 0;
+#endif
 
     /*!
      * TESTING

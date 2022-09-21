@@ -72,8 +72,10 @@ public:
 #endif
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr, false);
 
+#ifndef CARLA_OS_MAC
         if (options.isStandalone)
             fPlugin->setScaleFactor(carla_get_desktop_scale_factor());
+#endif
 
         fHostUI->setTitle(options.windowTitle.buffer());
 
