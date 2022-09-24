@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1368,15 +1368,15 @@ void addNodeToPatchbay(const bool sendHost, const bool sendOSC, CarlaEngine* con
                          proc->getOutputChannelName(AudioProcessor::ChannelTypeMIDI, i).toRawUTF8());
     }
 
-    if (node->properties.contains("x1"))
+    if (node->properties.position.valid)
     {
         engine->callback(sendHost, sendOSC,
                          ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
                          groupId,
-                         node->properties.getWithDefault("x1", 0),
-                         node->properties.getWithDefault("y1", 0),
-                         node->properties.getWithDefault("x2", 0),
-                         static_cast<float>(node->properties.getWithDefault("y2", 0)),
+                         node->properties.position.x1,
+                         node->properties.position.y1,
+                         node->properties.position.x2,
+                         static_cast<float>(node->properties.position.y2),
                          nullptr);
     }
 }
@@ -1774,12 +1774,12 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
         proc->setNames(false, channelNames);
 
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
-        node->properties.set("isPlugin", false);
-        node->properties.set("isOutput", false);
-        node->properties.set("isAudio", true);
-        node->properties.set("isCV", false);
-        node->properties.set("isMIDI", false);
-        node->properties.set("isOSC", false);
+        node->properties.isPlugin = false;
+        node->properties.isOutput = false;
+        node->properties.isAudio = true;
+        node->properties.isCV = false;
+        node->properties.isMIDI = false;
+        node->properties.isOSC = false;
     }
 
     if (numAudioOuts != 0)
@@ -1789,12 +1789,12 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
         proc->setNames(true, channelNames);
 
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
-        node->properties.set("isPlugin", false);
-        node->properties.set("isOutput", false);
-        node->properties.set("isAudio", true);
-        node->properties.set("isCV", false);
-        node->properties.set("isMIDI", false);
-        node->properties.set("isOSC", false);
+        node->properties.isPlugin = false;
+        node->properties.isOutput = false;
+        node->properties.isAudio = true;
+        node->properties.isCV = false;
+        node->properties.isMIDI = false;
+        node->properties.isOSC = false;
     }
 
     if (numCVIns != 0)
@@ -1804,12 +1804,12 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
         // proc->setNames(false, channelNames);
 
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
-        node->properties.set("isPlugin", false);
-        node->properties.set("isOutput", false);
-        node->properties.set("isAudio", false);
-        node->properties.set("isCV", true);
-        node->properties.set("isMIDI", false);
-        node->properties.set("isOSC", false);
+        node->properties.isPlugin = false;
+        node->properties.isOutput = false;
+        node->properties.isAudio = false;
+        node->properties.isCV = true;
+        node->properties.isMIDI = false;
+        node->properties.isOSC = false;
     }
 
     if (numCVOuts != 0)
@@ -1819,36 +1819,36 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
         // proc->setNames(true, channelNames);
 
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
-        node->properties.set("isPlugin", false);
-        node->properties.set("isOutput", false);
-        node->properties.set("isAudio", false);
-        node->properties.set("isCV", true);
-        node->properties.set("isMIDI", false);
-        node->properties.set("isOSC", false);
+        node->properties.isPlugin = false;
+        node->properties.isOutput = false;
+        node->properties.isAudio = false;
+        node->properties.isCV = true;
+        node->properties.isMIDI = false;
+        node->properties.isOSC = false;
     }
 
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::midiInputNode));
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
-        node->properties.set("isPlugin", false);
-        node->properties.set("isOutput", false);
-        node->properties.set("isAudio", false);
-        node->properties.set("isCV", false);
-        node->properties.set("isMIDI", true);
-        node->properties.set("isOSC", false);
+        node->properties.isPlugin = false;
+        node->properties.isOutput = false;
+        node->properties.isAudio = false;
+        node->properties.isCV = false;
+        node->properties.isMIDI = true;
+        node->properties.isOSC = false;
     }
 
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::midiOutputNode));
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
-        node->properties.set("isPlugin", false);
-        node->properties.set("isOutput", true);
-        node->properties.set("isAudio", false);
-        node->properties.set("isCV", false);
-        node->properties.set("isMIDI", true);
-        node->properties.set("isOSC", false);
+        node->properties.isPlugin = false;
+        node->properties.isOutput = true;
+        node->properties.isAudio = false;
+        node->properties.isCV = false;
+        node->properties.isMIDI = true;
+        node->properties.isOSC = false;
     }
 
     startRunner(100);
@@ -1906,8 +1906,8 @@ void PatchbayGraph::addPlugin(const CarlaPluginPtr plugin)
 
     plugin->setPatchbayNodeId(node->nodeId);
 
-    node->properties.set("isPlugin", true);
-    node->properties.set("pluginId", static_cast<int>(plugin->getId()));
+    node->properties.isPlugin = true;
+    node->properties.pluginId = plugin->getId();
 
     addNodeToPatchbay(sendHost, sendOSC, kEngine, node, static_cast<int>(plugin->getId()), instance);
 }
@@ -1938,8 +1938,8 @@ void PatchbayGraph::replacePlugin(const CarlaPluginPtr oldPlugin, const CarlaPlu
 
     newPlugin->setPatchbayNodeId(node->nodeId);
 
-    node->properties.set("isPlugin", true);
-    node->properties.set("pluginId", static_cast<int>(newPlugin->getId()));
+    node->properties.isPlugin = true;
+    node->properties.pluginId = newPlugin->getId();
 
     addNodeToPatchbay(sendHost, sendOSC, kEngine, node, static_cast<int>(newPlugin->getId()), instance);
 }
@@ -1975,8 +1975,8 @@ void PatchbayGraph::switchPlugins(CarlaPluginPtr pluginA, CarlaPluginPtr pluginB
     AudioProcessorGraph::Node* const nodeB(graph.getNodeForId(pluginB->getPatchbayNodeId()));
     CARLA_SAFE_ASSERT_RETURN(nodeB != nullptr,);
 
-    nodeA->properties.set("pluginId", static_cast<int>(pluginB->getId()));
-    nodeB->properties.set("pluginId", static_cast<int>(pluginA->getId()));
+    nodeA->properties.pluginId = pluginB->getId();
+    nodeB->properties.pluginId = pluginA->getId();
 }
 
 void PatchbayGraph::reconfigureForCV(const CarlaPluginPtr plugin, const uint portIndex, bool added)
@@ -2057,8 +2057,8 @@ void PatchbayGraph::removePlugin(const CarlaPluginPtr plugin)
 
         if (AudioProcessorGraph::Node* const node2 = graph.getNodeForId(plugin2->getPatchbayNodeId()))
         {
-            CARLA_SAFE_ASSERT_CONTINUE(node2->properties.getWithDefault("pluginId", -1) != water::var(-1));
-            node2->properties.set("pluginId", static_cast<int>(i-1));
+            CARLA_SAFE_ASSERT_CONTINUE(node2->properties.isPlugin);
+            node2->properties.pluginId = i - 1;
         }
     }
 
@@ -2220,10 +2220,11 @@ void PatchbayGraph::setGroupPos(const bool sendHost, const bool sendOSC, const b
     AudioProcessorGraph::Node* const node(graph.getNodeForId(groupId));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
-    node->properties.set("x1", x1);
-    node->properties.set("y1", y1);
-    node->properties.set("x2", x2);
-    node->properties.set("y2", y2);
+    node->properties.position.x1 = x1;
+    node->properties.position.y1 = y1;
+    node->properties.position.x2 = x2;
+    node->properties.position.y2 = y2;
+    node->properties.position.valid = true;
 
     kEngine->callback(sendHost, sendOSC,
                       ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
@@ -2252,8 +2253,8 @@ void PatchbayGraph::refresh(const bool sendHost, const bool sendOSC, const bool 
         int pluginId = -1;
 
         // plugin node
-        if (node->properties.getWithDefault("isPlugin", false) == water::var(true))
-            pluginId = node->properties.getWithDefault("pluginId", -1);
+        if (node->properties.isPlugin)
+            pluginId = static_cast<int>(node->properties.pluginId);
 
         addNodeToPatchbay(sendHost, sendOSC, kEngine, node, pluginId, proc);
     }
@@ -2416,7 +2417,7 @@ const CarlaEngine::PatchbayPosition* PatchbayGraph::getPositions(bool external, 
             AudioProcessorGraph::Node* const node(graph.getNode(i));
             CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);
 
-            if (! node->properties.contains("x1"))
+            if (! node->properties.position.valid)
                 continue;
 
             AudioProcessor* const proc(node->getProcessor());
@@ -2426,12 +2427,12 @@ const CarlaEngine::PatchbayPosition* PatchbayGraph::getPositions(bool external, 
 
             ppos.name = carla_strdup(proc->getName().toRawUTF8());
             ppos.dealloc = true;
-            ppos.pluginId = node->properties.getWithDefault("pluginId", -1);
+            ppos.pluginId = node->properties.isPlugin ? static_cast<int>(node->properties.pluginId) : -1;
 
-            ppos.x1 = node->properties.getWithDefault("x1", 0);
-            ppos.y1 = node->properties.getWithDefault("y1", 0);
-            ppos.x2 = node->properties.getWithDefault("x2", 0);
-            ppos.y2 = node->properties.getWithDefault("y2", 0);
+            ppos.x1 = node->properties.position.x1;
+            ppos.y1 = node->properties.position.y1;
+            ppos.x2 = node->properties.position.x2;
+            ppos.y2 = node->properties.position.y2;
         }
 
         return ret;
