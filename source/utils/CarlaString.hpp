@@ -813,7 +813,7 @@ public:
 
         const std::size_t strBufLen = std::strlen(strBuf);
         const std::size_t newBufSize = fBufferLen + strBufLen;
-        char* const newBuf = (char*)malloc(newBufSize + 1);
+        char* const newBuf = (char*)std::malloc(newBufSize + 1);
         CARLA_SAFE_ASSERT_RETURN(newBuf != nullptr, CarlaString());
 
         std::memcpy(newBuf, fBuffer, fBufferLen);
@@ -918,7 +918,7 @@ CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfte
     const std::size_t strBeforeLen = strBefore.length();
     const std::size_t strBufAfterLen = std::strlen(strBufAfter);
     const std::size_t newBufSize = strBeforeLen + strBufAfterLen;
-    char* const newBuf = (char*)malloc(newBufSize + 1);
+    char* const newBuf = (char*)std::malloc(newBufSize + 1);
     CARLA_SAFE_ASSERT_RETURN(newBuf != nullptr, CarlaString());
 
     std::memcpy(newBuf, strBefore.buffer(), strBeforeLen);
@@ -938,7 +938,7 @@ CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfte
     const std::size_t strBufBeforeLen = std::strlen(strBufBefore);
     const std::size_t strAfterLen = strAfter.length();
     const std::size_t newBufSize = strBufBeforeLen + strAfterLen;
-    char* const newBuf = (char*)malloc(newBufSize + 1);
+    char* const newBuf = (char*)std::malloc(newBufSize + 1);
     CARLA_SAFE_ASSERT_RETURN(newBuf != nullptr, CarlaString());
 
     std::memcpy(newBuf, strBufBefore, strBufBeforeLen);
