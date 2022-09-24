@@ -22,35 +22,23 @@ YSFX_FLAGS += -DYSFX_API=
 YSFX_FLAGS += -DYSFX_NO_STANDARD_MUTEX
 
 # FIXME so many warnings..
-YSFX_FLAGS += -Wno-missing-field-initializers
+# YSFX_FLAGS += -Wno-missing-field-initializers
 YSFX_FLAGS += -Wno-sign-compare
 YSFX_FLAGS += -Wno-unused-function
 YSFX_FLAGS += -Wno-unused-parameter
 
-ifeq ($(CPU_ARM),true)
-ifneq ($(CPU_ARM64),true)
-# optimized assembly code for armhf does not run properly yet
-YSFX_FLAGS += -DEEL_TARGET_PORTABLE
-endif
+ifeq ($(CPU_I386_OR_X86_64),true)
+YSFX_NATIVELY_OPTIMIZED = true
+else ifeq ($(CPU_ARM64),true)
+YSFX_NATIVELY_OPTIMIZED = true
 endif
 
 ifeq ($(YSFX_FTS_LACKS_LFS_SUPPORT),true)
 YSFX_FLAGS += -DYSFX_FTS_LACKS_LFS_SUPPORT
 endif
 
-ifneq ($(HAIKU),true)
-ifneq ($(WASM),true)
-YSFX_FLAGS += -pthread
-endif
-endif
-
-ifeq ($(CPU_RISCV64),true)
-# FIXME
-YSFX_FLAGS += -DEEL_TARGET_PORTABLE
-endif
-
-ifeq ($(WASM),true)
-# FIXME
+ifneq ($(YSFX_NATIVELY_OPTIMIZED),true)
+# missing optimized assembly code or not running properly yet, use portable slower approach
 YSFX_FLAGS += -DEEL_TARGET_PORTABLE
 endif
 
@@ -67,6 +55,12 @@ YSFX_FLAGS += -DSWELL_LICE_GDI -DSWELL_FONTCONFIG -DSWELL_FREETYPE
 endif
 else
 YSFX_FLAGS += -DYSFX_NO_GFX
+endif
+
+ifneq ($(HAIKU),true)
+ifneq ($(WASM),true)
+YSFX_FLAGS += -pthread
+endif
 endif
 
 BUILD_C_FLAGS += $(YSFX_FLAGS)

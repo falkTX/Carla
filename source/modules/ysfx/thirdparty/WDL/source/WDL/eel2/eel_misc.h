@@ -40,7 +40,11 @@ static EEL_F * NSEEL_CGEN_CALL _eel_time_precise(void *opaque, EEL_F *v)
   *v = (double)now.QuadPart / (double)freq.QuadPart;
   // *v = (EEL_F)timeGetTime() * 0.001;
 #else
+#ifdef __cplusplus
+  struct timeval tm={};
+#else
   struct timeval tm={0,};
+#endif
   gettimeofday(&tm,NULL);
   *v = tm.tv_sec + tm.tv_usec*0.000001;
 #endif
