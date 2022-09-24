@@ -46,9 +46,6 @@ BOOL WINAPI DllMain (HINSTANCE hInst, DWORD reason, LPVOID)
 
 }
 
-#include "containers/NamedValueSet.cpp"
-#include "containers/Variant.cpp"
-
 #include "files/DirectoryIterator.cpp"
 #include "files/File.cpp"
 #include "files/FileInputStream.cpp"
