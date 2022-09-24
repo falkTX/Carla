@@ -354,11 +354,16 @@ public:
                 LV2_Atom_Forge atomForge = fAtomForge;
                 lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
 
+                LV2_Atom_Forge_Frame outerFrame;
+                lv2_atom_forge_sequence_head(&atomForge, &outerFrame, 0);
+
                 const int numEvents = fNeedsNotifyFileChanged && fPreviewData.shouldSend ? 2 : 1;
 
                 if (fNeedsNotifyFileChanged)
                 {
                     fNeedsNotifyFileChanged = false;
+
+                    lv2_atom_forge_frame_time(&atomForge, 0);
 
                     LV2_Atom_Forge_Frame forgeFrame;
                     lv2_atom_forge_object(&atomForge, &forgeFrame, 0, fURIs.patchSet);
@@ -388,6 +393,8 @@ public:
                     const void* const pbuffer = fPreviewData.buffer;
                     fPreviewData.shouldSend = false;
 
+                    lv2_atom_forge_frame_time(&atomForge, 0);
+
                     LV2_Atom_Forge_Frame forgeFrame;
                     lv2_atom_forge_object(&atomForge, &forgeFrame, 0, fURIs.patchSet);
 
@@ -414,6 +421,8 @@ public:
 
                     lv2_atom_forge_pop(&atomForge, &forgeFrame);
                 }
+
+                lv2_atom_forge_pop(&atomForge, &outerFrame);
 
                 LV2_Atom* atom = (LV2_Atom*)atomBuf;
                 LV2_Atom_Sequence* const seq = fPorts.eventsOut[0];
