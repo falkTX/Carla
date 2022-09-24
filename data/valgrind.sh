@@ -29,3 +29,6 @@ while true; do
 done
 
 wait ${PID}
+
+# export PYTHONMALLOC=malloc
+# valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --gen-suppressions=all --suppressions=./data/valgrind.supp python3 ./source/frontend/carla

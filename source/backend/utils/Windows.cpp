@@ -48,6 +48,7 @@ double carla_get_desktop_scale_factor()
     if (::Display* const display = XOpenDisplay(nullptr))
     {
         XrmInitialize();
+
         if (char* const rms = XResourceManagerString(display))
         {
             if (const XrmDatabase sdb = XrmGetStringDatabase(rms))
@@ -64,8 +65,11 @@ double carla_get_desktop_scale_factor()
                     if (carla_isNotZero(dpi))
                         return dpi / 96;
                 }
+
+                XrmDestroyDatabase(sdb);
             }
         }
+
         XCloseDisplay(display);
     }
 #endif
