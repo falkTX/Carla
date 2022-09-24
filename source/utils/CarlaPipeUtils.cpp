@@ -686,7 +686,7 @@ void CarlaPipeCommon::idlePipe(const bool onlyOnce) noexcept
 
         pData->isReading = false;
 
-        delete[] msg;
+        std::free(const_cast<char*>(msg));
 
         if (onlyOnce || pData->pipeRecv == INVALID_PIPE_VALUE)
             break;

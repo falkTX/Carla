@@ -1973,13 +1973,13 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
 
         if (filename != nullptr && std::strcmp(filename, "(null)") == 0)
         {
-            delete[] filename;
+            std::free(const_cast<char*>(filename));
             filename = nullptr;
         }
 
         if (std::strcmp(name, "(null)") == 0)
         {
-            delete[] name;
+            std::free(const_cast<char*>(name));
             name = nullptr;
         }
 
@@ -1987,10 +1987,10 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
                                 filename, name, label, uniqueId, nullptr, options);
 
         if (filename != nullptr)
-            delete[] filename;
+            std::free(const_cast<char*>(filename));
         if (name != nullptr)
-            delete[] name;
-        delete[] label;
+            std::free(const_cast<char*>(name));
+        std::free(const_cast<char*>(label));
 
         fEngine->reloadFromUI();
     }
@@ -2268,8 +2268,8 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         if (const CarlaPluginPtr plugin = fEngine->getPlugin(pluginId))
             plugin->setCustomData(type, key, value, true);
 
-        delete[] type;
-        delete[] key;
+        std::free(const_cast<char*>(type));
+        std::free(const_cast<char*>(key));
     }
     else if (std::strcmp(msg, "set_chunk_data") == 0)
     {
