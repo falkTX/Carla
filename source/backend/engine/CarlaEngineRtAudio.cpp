@@ -549,8 +549,8 @@ public:
             const MidiInPort& inPort(it.getValue(fallback));
             CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
-            const uint portId(extGraph.midiPorts.getPortId(true, inPort.name));
-            CARLA_SAFE_ASSERT_CONTINUE(portId < extGraph.midiPorts.ins.count());
+            const uint portId = extGraph.midiPorts.getPortIdFromName(true, inPort.name);
+            CARLA_SAFE_ASSERT_UINT_CONTINUE(portId < extGraph.midiPorts.ins.count(), portId);
 
             ConnectionToId connectionToId;
             connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupMidiIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiIn);
@@ -575,8 +575,8 @@ public:
             const MidiOutPort& outPort(it.getValue(fallback));
             CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
-            const uint portId(extGraph.midiPorts.getPortId(false, outPort.name));
-            CARLA_SAFE_ASSERT_CONTINUE(portId < extGraph.midiPorts.outs.count());
+            const uint portId = extGraph.midiPorts.getPortIdFromName(false, outPort.name);
+            CARLA_SAFE_ASSERT_UINT_CONTINUE(portId < extGraph.midiPorts.outs.count(), portId);
 
             ConnectionToId connectionToId;
             connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiOut, kExternalGraphGroupMidiOut, portId);

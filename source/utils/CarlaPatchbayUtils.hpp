@@ -91,6 +91,7 @@ struct PortNameToId {
     uint port;
     char name[STR_MAX]; // locally unique (within the same group)
     char fullName[STR_MAX]; // globally unique
+    char identifier[STR_MAX]; // globally unique, if used
 
     void clear() noexcept
     {
@@ -98,6 +99,7 @@ struct PortNameToId {
         port        = 0;
         name[0]     = '\0';
         fullName[0] = '\0';
+        identifier[0] = '\0';
     }
 
     void setData(const uint g, const uint p, const char n[], const char fn[]) noexcept
@@ -105,6 +107,20 @@ struct PortNameToId {
         group = g;
         port  = p;
         rename(n, fn);
+    }
+
+    void setDataWithIdentifier(const uint g, const uint p, const char n[], const char id[]) noexcept
+    {
+        group = g;
+        port  = p;
+
+        std::strncpy(name, n, STR_MAX-1);
+        name[STR_MAX-1] = '\0';
+
+        fullName[0] = '\0';
+
+        std::strncpy(identifier, id, STR_MAX-1);
+        identifier[STR_MAX-1] = '\0';
     }
 
     void setFullName(const char fn[]) noexcept

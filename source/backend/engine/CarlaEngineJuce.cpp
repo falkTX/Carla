@@ -43,12 +43,14 @@ CARLA_BACKEND_START_NAMESPACE
 
 struct MidiInPort {
     juce::MidiInput* port;
-    char name[STR_MAX+1];
+    char name[STR_MAX];
+    char identifier[STR_MAX];
 };
 
 struct MidiOutPort {
     juce::MidiOutput* port;
-    char name[STR_MAX+1];
+    char name[STR_MAX];
+    char identifier[STR_MAX];
 };
 
 struct RtMidiEvent {
@@ -60,10 +62,10 @@ struct RtMidiEvent {
 // -------------------------------------------------------------------------------------------------------------------
 // Fallback data
 
-static const MidiInPort  kMidiInPortFallback    = { nullptr, { '\0' } };
-static /* */ MidiInPort  kMidiInPortFallbackNC  = { nullptr, { '\0' } };
-static const MidiOutPort kMidiOutPortFallback   = { nullptr, { '\0' } };
-static /* */ MidiOutPort kMidiOutPortFallbackNC = { nullptr, { '\0' } };
+static const MidiInPort  kMidiInPortFallback    = { nullptr, { '\0' }, { '\0' } };
+static /* */ MidiInPort  kMidiInPortFallbackNC  = { nullptr, { '\0' }, { '\0' } };
+static const MidiOutPort kMidiOutPortFallback   = { nullptr, { '\0' }, { '\0' } };
+static /* */ MidiOutPort kMidiOutPortFallbackNC = { nullptr, { '\0' }, { '\0' } };
 static const RtMidiEvent kRtMidiEventFallback   = { 0, 0, { 0 } };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -465,16 +467,18 @@ public:
 
         // MIDI In
         {
-            juce::StringArray midiIns(juce::MidiInput::getDevices());
+            juce::Array<juce::MidiDeviceInfo> midiIns(juce::MidiInput::getAvailableDevices());
 
             for (int i=0, count=midiIns.size(); i<count; ++i)
             {
-                const juce::String name(midiIns[i]);
-                if (name == "a2jmidid - port")
+                const juce::MidiDeviceInfo devInfo(midiIns[i]);
+
+                if (devInfo.name == "a2jmidid - port")
                     continue;
 
                 PortNameToId portNameToId;
-                portNameToId.setData(kExternalGraphGroupMidiIn, uint(i+1), name.toRawUTF8(), "");
+                portNameToId.setDataWithIdentifier(kExternalGraphGroupMidiIn, static_cast<uint>(i + 1),
+                                                   devInfo.name.toRawUTF8(), devInfo.identifier.toRawUTF8());
 
                 extGraph.midiPorts.ins.append(portNameToId);
             }
@@ -482,16 +486,18 @@ public:
 
         // MIDI Out
         {
-            juce::StringArray midiOuts(juce::MidiOutput::getDevices());
+            juce::Array<juce::MidiDeviceInfo> midiOuts(juce::MidiOutput::getAvailableDevices());
 
             for (int i=0, count=midiOuts.size(); i<count; ++i)
             {
-                const juce::String name(midiOuts[i]);
-                if (name == "a2jmidid - port")
+                const juce::MidiDeviceInfo devInfo(midiOuts[i]);
+
+                if (devInfo.name == "a2jmidid - port")
                     continue;
 
                 PortNameToId portNameToId;
-                portNameToId.setData(kExternalGraphGroupMidiOut, uint(i+1), name.toRawUTF8(), "");
+                portNameToId.setDataWithIdentifier(kExternalGraphGroupMidiOut, static_cast<uint>(i + 1),
+                                                   devInfo.name.toRawUTF8(), devInfo.identifier.toRawUTF8());
 
                 extGraph.midiPorts.outs.append(portNameToId);
             }
@@ -518,8 +524,9 @@ public:
             const MidiInPort& inPort(it.getValue(kMidiInPortFallback));
             CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
-            const uint portId(extGraph.midiPorts.getPortId(true, inPort.name));
-            CARLA_SAFE_ASSERT_CONTINUE(portId < extGraph.midiPorts.ins.count());
+            bool ok;
+            const uint portId = extGraph.midiPorts.getPortIdFromIdentifier(true, inPort.identifier, &ok);
+            CARLA_SAFE_ASSERT_UINT_CONTINUE(ok, portId);
 
             ConnectionToId connectionToId;
             connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupMidiIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiIn);
@@ -543,8 +550,9 @@ public:
             const MidiOutPort& outPort(it.getValue(kMidiOutPortFallback));
             CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
-            const uint portId(extGraph.midiPorts.getPortId(false, outPort.name));
-            CARLA_SAFE_ASSERT_CONTINUE(portId < extGraph.midiPorts.outs.count());
+            bool ok;
+            const uint portId = extGraph.midiPorts.getPortIdFromIdentifier(false, outPort.identifier, &ok);
+            CARLA_SAFE_ASSERT_UINT_CONTINUE(ok, portId);
 
             ConnectionToId connectionToId;
             connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiOut, kExternalGraphGroupMidiOut, portId);
@@ -754,44 +762,66 @@ protected:
             return CarlaEngine::connectExternalGraphPort(connectionType, portId, portName);
 
         case kExternalGraphConnectionMidiInput: {
-            juce::StringArray midiIns(juce::MidiInput::getDevices());
+            juce::Array<juce::MidiDeviceInfo> midiIns(juce::MidiInput::getAvailableDevices());
 
-            if (! midiIns.contains(portName))
-                return false;
+            for (int i=0, count=midiIns.size(); i<count; ++i)
+            {
+                const juce::MidiDeviceInfo devInfo(midiIns[i]);
 
-            std::unique_ptr<juce::MidiInput> juceMidiIn(juce::MidiInput::openDevice(midiIns.indexOf(portName), this));
-            juceMidiIn->start();
+                if (devInfo.name != portName)
+                    continue;
 
-            MidiInPort midiPort;
-            midiPort.port = juceMidiIn.release();
+                std::unique_ptr<juce::MidiInput> juceMidiIn(juce::MidiInput::openDevice(devInfo.identifier, this));
+                juceMidiIn->start();
 
-            std::strncpy(midiPort.name, portName, STR_MAX);
-            midiPort.name[STR_MAX] = '\0';
+                MidiInPort midiPort;
+                midiPort.port = juceMidiIn.release();
 
-            fMidiIns.append(midiPort);
-            return true;
-        }   break;
+                std::strncpy(midiPort.name, portName, STR_MAX-1);
+                midiPort.name[STR_MAX-1] = '\0';
+
+                std::strncpy(midiPort.identifier, devInfo.identifier.toRawUTF8(), STR_MAX-1);
+                midiPort.identifier[STR_MAX-1] = '\0';
+
+                carla_stdout("MIDI CON '%s' '%s'", midiPort.name, midiPort.identifier);
+
+                fMidiIns.append(midiPort);
+                return true;
+            }
+
+            return false;
+        }
 
         case kExternalGraphConnectionMidiOutput: {
-            juce::StringArray midiOuts(juce::MidiOutput::getDevices());
+            juce::Array<juce::MidiDeviceInfo> midiOuts(juce::MidiOutput::getAvailableDevices());
 
-            if (! midiOuts.contains(portName))
-                return false;
+            for (int i=0, count=midiOuts.size(); i<count; ++i)
+            {
+                const juce::MidiDeviceInfo devInfo(midiOuts[i]);
 
-            std::unique_ptr<juce::MidiOutput> juceMidiOut(juce::MidiOutput::openDevice(midiOuts.indexOf(portName)));
-            juceMidiOut->startBackgroundThread();
+                if (devInfo.name != portName)
+                    continue;
 
-            MidiOutPort midiPort;
-            midiPort.port = juceMidiOut.release();
+                std::unique_ptr<juce::MidiOutput> juceMidiOut(juce::MidiOutput::openDevice(devInfo.identifier));
+                juceMidiOut->startBackgroundThread();
 
-            std::strncpy(midiPort.name, portName, STR_MAX);
-            midiPort.name[STR_MAX] = '\0';
+                MidiOutPort midiPort;
+                midiPort.port = juceMidiOut.release();
 
-            const CarlaMutexLocker cml(fMidiOutMutex);
+                std::strncpy(midiPort.name, portName, STR_MAX-1);
+                midiPort.name[STR_MAX-1] = '\0';
 
-            fMidiOuts.append(midiPort);
-            return true;
-        }   break;
+                std::strncpy(midiPort.identifier, devInfo.identifier.toRawUTF8(), STR_MAX-1);
+                midiPort.identifier[STR_MAX-1] = '\0';
+
+                const CarlaMutexLocker cml(fMidiOutMutex);
+
+                fMidiOuts.append(midiPort);
+                return true;
+            }
+
+            return false;
+        }
         }
 
         return false;

@@ -36,8 +36,8 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Fallback data
 
-static const PortNameToId kPortNameToIdFallback   = { 0, 0, { '\0' }, { '\0' } };
-static /* */ PortNameToId kPortNameToIdFallbackNC = { 0, 0, { '\0' }, { '\0' } };
+static const PortNameToId kPortNameToIdFallback   = { 0, 0, { '\0' }, { '\0' }, { '\0' } };
+static /* */ PortNameToId kPortNameToIdFallbackNC = { 0, 0, { '\0' }, { '\0' }, { '\0' } };
 
 // -----------------------------------------------------------------------
 // External Graph stuff
@@ -108,14 +108,34 @@ const char* ExternalGraphPorts::getName(const bool isInput, const uint portId) c
     return nullptr;
 }
 
-uint ExternalGraphPorts::getPortId(const bool isInput, const char portName[], bool* const ok) const noexcept
+uint ExternalGraphPorts::getPortIdFromName(const bool isInput, const char name[], bool* const ok) const noexcept
 {
     for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin2() : outs.begin2(); it.valid(); it.next())
     {
         const PortNameToId& portNameToId(it.getValue(kPortNameToIdFallback));
         CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
 
-        if (std::strncmp(portNameToId.name, portName, STR_MAX) == 0)
+        if (std::strncmp(portNameToId.name, name, STR_MAX) == 0)
+        {
+            if (ok != nullptr)
+                *ok = true;
+            return portNameToId.port;
+        }
+    }
+
+    if (ok != nullptr)
+        *ok = false;
+    return 0;
+}
+
+uint ExternalGraphPorts::getPortIdFromIdentifier(const bool isInput, const char identifier[], bool* const ok) const noexcept
+{
+    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin2() : outs.begin2(); it.valid(); it.next())
+    {
+        const PortNameToId& portNameToId(it.getValue(kPortNameToIdFallback));
+        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
+
+        if (std::strncmp(portNameToId.identifier, identifier, STR_MAX) == 0)
         {
             if (ok != nullptr)
                 *ok = true;
@@ -420,7 +440,6 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
 
         const CarlaString groupNameIn(strBuf);
 
-        int h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = audioPorts.ins.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue(kPortNameToIdFallbackNC));
@@ -431,7 +450,7 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
             kEngine->callback(sendHost, sendOSC,
                               ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupAudioIn,
-                              ++h,
+                              portNameToId.port,
                               PATCHBAY_PORT_TYPE_AUDIO,
                               0, 0.0f,
                               portNameToId.name);
@@ -453,7 +472,6 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
 
         const CarlaString groupNameOut(strBuf);
 
-        h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = audioPorts.outs.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue(kPortNameToIdFallbackNC));
@@ -464,7 +482,7 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
             kEngine->callback(sendHost, sendOSC,
                               ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupAudioOut,
-                              ++h,
+                              portNameToId.port,
                               PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT,
                               0, 0.0f,
                               portNameToId.name);
@@ -483,7 +501,6 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
 
         const CarlaString groupNamePlus("Readable MIDI ports:");
 
-        int h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = midiPorts.ins.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue(kPortNameToIdFallbackNC));
@@ -494,7 +511,7 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
             kEngine->callback(sendHost, sendOSC,
                               ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupMidiIn,
-                              ++h,
+                              portNameToId.port,
                               PATCHBAY_PORT_TYPE_MIDI,
                               0, 0.0f,
                               portNameToId.name);
@@ -513,7 +530,6 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
 
         const CarlaString groupNamePlus("Writable MIDI ports:");
 
-        int h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = midiPorts.outs.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue(kPortNameToIdFallbackNC));
@@ -524,7 +540,7 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
             kEngine->callback(sendHost, sendOSC,
                               ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
                               kExternalGraphGroupMidiOut,
-                              ++h,
+                              portNameToId.port,
                               PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,
                               0, 0.0f,
                               portNameToId.name);
@@ -661,7 +677,7 @@ bool ExternalGraph::getGroupAndPortIdFromFullName(const char* const fullPortName
         if (const char* const portName = fullPortName+8)
         {
             bool ok;
-            portId = audioPorts.getPortId(true, portName, &ok);
+            portId = audioPorts.getPortIdFromName(true, portName, &ok);
             return ok;
         }
     }
@@ -672,7 +688,7 @@ bool ExternalGraph::getGroupAndPortIdFromFullName(const char* const fullPortName
         if (const char* const portName = fullPortName+9)
         {
             bool ok;
-            portId = audioPorts.getPortId(false, portName, &ok);
+            portId = audioPorts.getPortIdFromName(false, portName, &ok);
             return ok;
         }
     }
@@ -683,7 +699,7 @@ bool ExternalGraph::getGroupAndPortIdFromFullName(const char* const fullPortName
         if (const char* const portName = fullPortName+7)
         {
             bool ok;
-            portId = midiPorts.getPortId(true, portName, &ok);
+            portId = midiPorts.getPortIdFromName(true, portName, &ok);
             return ok;
         }
     }
@@ -694,7 +710,7 @@ bool ExternalGraph::getGroupAndPortIdFromFullName(const char* const fullPortName
         if (const char* const portName = fullPortName+8)
         {
             bool ok;
-            portId = midiPorts.getPortId(false, portName, &ok);
+            portId = midiPorts.getPortIdFromName(false, portName, &ok);
             return ok;
         }
     }

@@ -18,7 +18,7 @@
 #include "CarlaPatchbayUtils.hpp"
 
 static const GroupNameToId kGroupNameToIdFallback = { 0, { '\0' } };
-static const PortNameToId  kPortNameToIdFallback  = { 0, 0, { '\0' }, { '\0' } };
+static const PortNameToId  kPortNameToIdFallback  = { 0, 0, { '\0' }, { '\0' }, { '\0' } };
 
 uint PatchbayGroupList::getGroupId(const char* const groupName) const noexcept
 {

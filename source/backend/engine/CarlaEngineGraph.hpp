@@ -78,7 +78,8 @@ struct ExternalGraphPorts {
     LinkedList<PortNameToId> ins;
     LinkedList<PortNameToId> outs;
     const char* getName(bool isInput, uint portId) const noexcept;
-    uint getPortId(bool isInput, const char portName[], bool* ok = nullptr) const noexcept;
+    uint getPortIdFromName(bool isInput, const char name[], bool* ok = nullptr) const noexcept;
+    uint getPortIdFromIdentifier(bool isInput, const char identifier[], bool* ok = nullptr) const noexcept;
     ExternalGraphPorts() noexcept;
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE(ExternalGraphPorts)

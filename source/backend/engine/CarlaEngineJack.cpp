@@ -122,8 +122,8 @@ struct CarlaJackPortHints {
 
 #ifndef BUILD_BRIDGE
 static const GroupNameToId  kGroupNameToIdFallback   = { 0, { '\0' } };
-static /* */ PortNameToId   kPortNameToIdFallbackNC  = { 0, 0, { '\0' }, { '\0' } };
-static const PortNameToId   kPortNameToIdFallback    = { 0, 0, { '\0' }, { '\0' } };
+static /* */ PortNameToId   kPortNameToIdFallbackNC  = { 0, 0, { '\0' }, { '\0' }, { '\0' } };
+static const PortNameToId   kPortNameToIdFallback    = { 0, 0, { '\0' }, { '\0' }, { '\0' } };
 static const ConnectionToId kConnectionToIdFallback  = { 0, 0, 0, 0, 0 };
 #endif
 static EngineEvent kFallbackJackEngineEvent = {
