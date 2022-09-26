@@ -341,6 +341,7 @@ void ExternalGraph::setGroupPos(const bool sendHost, const bool sendOSC,
                                 const uint groupId, const int x1, const int y1, const int x2, const int y2)
 {
     CARLA_SAFE_ASSERT_UINT_RETURN(groupId >= kExternalGraphGroupCarla && groupId < kExternalGraphGroupMax, groupId,);
+    carla_debug("ExternalGraph::setGroupPos(%s, %s, %u, %i, %i, %i, %i)", bool2str(sendHost), bool2str(sendOSC), groupId, x1, y1, x2, y2);
 
     const PatchbayPosition ppos = { true, x1, y1, x2, y2 };
     positions[groupId] = ppos;
@@ -545,6 +546,20 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
                               0, 0.0f,
                               portNameToId.name);
         }
+    }
+
+    // positions
+    for (uint i=kExternalGraphGroupCarla; i<kExternalGraphGroupMax; ++i)
+    {
+        const PatchbayPosition& eppos(positions[i]);
+
+        if (! eppos.active)
+            continue;
+
+        kEngine->callback(sendHost, sendOSC,
+                          ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED,
+                          i, eppos.x1, eppos.y1, eppos.x2, static_cast<float>(eppos.y2),
+                          nullptr);
     }
 }
 
