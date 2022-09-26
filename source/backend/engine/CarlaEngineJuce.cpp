@@ -469,8 +469,12 @@ public:
 
             for (int i=0, count=midiIns.size(); i<count; ++i)
             {
+                const juce::String name(midiIns[i]);
+                if (name == "a2jmidid - port")
+                    continue;
+
                 PortNameToId portNameToId;
-                portNameToId.setData(kExternalGraphGroupMidiIn, uint(i+1), midiIns[i].toRawUTF8(), "");
+                portNameToId.setData(kExternalGraphGroupMidiIn, uint(i+1), name.toRawUTF8(), "");
 
                 extGraph.midiPorts.ins.append(portNameToId);
             }
@@ -482,8 +486,12 @@ public:
 
             for (int i=0, count=midiOuts.size(); i<count; ++i)
             {
+                const juce::String name(midiOuts[i]);
+                if (name == "a2jmidid - port")
+                    continue;
+
                 PortNameToId portNameToId;
-                portNameToId.setData(kExternalGraphGroupMidiOut, uint(i+1), midiOuts[i].toRawUTF8(), "");
+                portNameToId.setData(kExternalGraphGroupMidiOut, uint(i+1), name.toRawUTF8(), "");
 
                 extGraph.midiPorts.outs.append(portNameToId);
             }
