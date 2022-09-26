@@ -297,7 +297,7 @@ CARLA_DEFAULT_AUDIO_SAMPLE_RATE     = 44100
 CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER   = False
 
 if WINDOWS:
-    CARLA_DEFAULT_AUDIO_DRIVER = "DirectSound"
+    CARLA_DEFAULT_AUDIO_DRIVER = "Windows Audio"
 elif MACOS:
     CARLA_DEFAULT_AUDIO_DRIVER = "CoreAudio"
 elif os.path.exists("/usr/bin/jackd") or os.path.exists("/usr/bin/jackdbus") or os.path.exists("/usr/bin/pw-jack"):
