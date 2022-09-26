@@ -19,7 +19,14 @@
 #include "CarlaStyle.hpp"
 
 #ifdef CARLA_OS_WIN
+# if defined(__GNUC__) && __GNUC__ >= 8
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-copy"
+# endif
 # include <QtWidgets/QApplication>
+# if defined(__GNUC__) && __GNUC__ >= 8
+#  pragma GCC diagnostic pop
+# endif
 #endif
 
 CarlaStylePlugin::CarlaStylePlugin(QObject* parentObj)

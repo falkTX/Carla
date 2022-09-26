@@ -25,6 +25,11 @@
 
 #include <QtCore/Qt>
 
+#if defined(__GNUC__) && __GNUC__ >= 8
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#endif
+
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QCommonStyle>
 #else
@@ -33,17 +38,16 @@
 #  pragma clang diagnostic ignored "-Wdeprecated-register"
 # endif
 # if defined(__GNUC__) && __GNUC__ >= 8
-#  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wclass-memaccess"
-#  pragma GCC diagnostic ignored "-Wdeprecated-copy"
 # endif
 # include <QtGui/QCommonStyle>
-# if defined(__GNUC__) && __GNUC__ >= 8
-#  pragma GCC diagnostic pop
-# endif
 # ifdef __clang__
 #  pragma clang diagnostic pop
 # endif
+#endif
+
+#if defined(__GNUC__) && __GNUC__ >= 8
+# pragma GCC diagnostic pop
 #endif
 
 class CarlaStylePrivate;
