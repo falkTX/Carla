@@ -28,7 +28,9 @@ YSFX_FLAGS += -Wno-unused-function
 YSFX_FLAGS += -Wno-unused-parameter
 
 ifeq ($(CPU_I386_OR_X86_64),true)
+ifneq ($(WASM),true)
 YSFX_NATIVELY_OPTIMIZED = true
+endif
 else ifeq ($(CPU_ARM64),true)
 YSFX_NATIVELY_OPTIMIZED = true
 endif
