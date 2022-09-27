@@ -324,18 +324,24 @@ endif
 LIBS_WINE32 = $(LIBS_WIN32) $(MODULEDIR)/jackbridge.win32e.a
 LIBS_RWIN32 = $(LIBS_WIN32) $(MODULEDIR)/jackbridge.win32.a
 
-win32: $(LIBS_WINE32)
+ifeq ($(CC),x86_64-w64-mingw32-gcc)
+win32:
+	$(MAKE) AR=i686-w64-mingw32-ar CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ win32-i686
+
+win32r:
+	$(MAKE) AR=i686-w64-mingw32-ar CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ win32r-i686
+else
+win32: win32-i686
+win32r: win32r-i686
+endif
+
+win32-i686: $(LIBS_WINE32)
 	$(MAKE) BUILDING_FOR_WINE=true -C source/bridges-plugin win32
 	$(MAKE) BUILDING_FOR_WINE=true -C source/discovery win32
 
-win32r: $(LIBS_RWIN32)
-ifeq ($(CC),x86_64-w64-mingw32-gcc)
-	$(MAKE) CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ -C source/bridges-plugin win32
-	$(MAKE) CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ -C source/discovery win32
-else
+win32r-i686: $(LIBS_RWIN32)
 	$(MAKE) -C source/bridges-plugin win32
 	$(MAKE) -C source/discovery win32
-endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (win64)
