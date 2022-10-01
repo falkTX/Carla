@@ -129,6 +129,8 @@ const char* PluginType2Str(const PluginType type) noexcept
         return "PLUGIN_JACK";
     case PLUGIN_JSFX:
         return "PLUGIN_JSFX";
+    case PLUGIN_CLAP:
+        return "PLUGIN_CLAP";
     }
 
     carla_stderr("CarlaBackend::PluginType2Str(%i) - invalid type", type);
@@ -600,6 +602,8 @@ const char* getPluginTypeAsString(const PluginType type) noexcept
         return "JACK";
     case PLUGIN_JSFX:
         return "JSFX";
+    case PLUGIN_CLAP:
+        return "CLAP";
     }
 
     carla_stderr("CarlaBackend::getPluginTypeAsString(%i) - invalid type", type);
@@ -647,6 +651,8 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
         return PLUGIN_JACK;
     if (stype == "jsfx")
         return PLUGIN_JSFX;
+    if (stype == "clap")
+        return PLUGIN_CLAP;
 
     carla_stderr("CarlaBackend::getPluginTypeFromString(\"%s\") - invalid string type", ctype);
     return PLUGIN_NONE;

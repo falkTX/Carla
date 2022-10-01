@@ -487,6 +487,9 @@ PLUGIN_JACK = 12
 # JSFX plugin.
 PLUGIN_JSFX = 13
 
+# CLAP plugin.
+PLUGIN_CLAP = 14
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Category
 # Plugin category, which describes the functionality of a plugin.

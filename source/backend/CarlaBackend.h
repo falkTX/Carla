@@ -676,7 +676,12 @@ typedef enum {
     /*!
      * JSFX plugin.
      */
-    PLUGIN_JSFX = 13
+    PLUGIN_JSFX = 13,
+
+    /*!
+     * CLAP plugin.
+     */
+    PLUGIN_CLAP = 14
 
 } PluginType;
 

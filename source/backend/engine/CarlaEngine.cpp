@@ -799,6 +799,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             plugin = CarlaPlugin::newJSFX(initializer);
             break;
 
+        case PLUGIN_CLAP:
+            plugin = CarlaPlugin::newCLAP(initializer);
+            break;
+
         case PLUGIN_JACK:
 # ifdef HAVE_JACK
             plugin = CarlaPlugin::newJackApp(initializer);
@@ -812,8 +816,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         case PLUGIN_GIG:
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
-        case PLUGIN_JSFX:
         case PLUGIN_JACK:
+        case PLUGIN_JSFX:
+        case PLUGIN_CLAP:
             setLastError("Plugin bridges cannot handle this binary");
             break;
 #endif

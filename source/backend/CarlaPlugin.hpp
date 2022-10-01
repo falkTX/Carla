@@ -979,6 +979,7 @@ public:
     static CarlaPluginPtr newVST3(const Initializer& init);
     static CarlaPluginPtr newAU(const Initializer& init);
     static CarlaPluginPtr newJSFX(const Initializer& init);
+    static CarlaPluginPtr newCLAP(const Initializer& init);
 
     static CarlaPluginPtr newJuce(const Initializer& init, const char* format);
     static CarlaPluginPtr newFluidSynth(const Initializer& init, PluginType ptype, bool use16Outs);

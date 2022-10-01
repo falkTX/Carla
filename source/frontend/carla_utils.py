@@ -43,13 +43,13 @@ from carla_backend import (
     PLUGIN_VST2,
     PLUGIN_VST3,
     PLUGIN_AU,
-    PLUGIN_JSFX,
     PLUGIN_DLS,
     PLUGIN_GIG,
     PLUGIN_SF2,
     PLUGIN_SFZ,
     PLUGIN_JACK,
     PLUGIN_JSFX,
+    PLUGIN_CLAP,
     PLUGIN_CATEGORY_NONE,
     PLUGIN_CATEGORY_SYNTH,
     PLUGIN_CATEGORY_DELAY,
@@ -86,8 +86,6 @@ def getPluginTypeAsString(ptype):
         return "VST3"
     if ptype == PLUGIN_AU:
         return "AU"
-    if ptype == PLUGIN_JSFX:
-        return "JSFX"
     if ptype == PLUGIN_DLS:
         return "DLS"
     if ptype == PLUGIN_GIG:
@@ -100,6 +98,8 @@ def getPluginTypeAsString(ptype):
         return "JACK"
     if ptype == PLUGIN_JSFX:
         return "JSFX"
+    if ptype == PLUGIN_CLAP:
+        return "CLAP"
 
     print("getPluginTypeAsString(%i) - invalid type" % ptype)
     return "Unknown"
@@ -126,8 +126,6 @@ def getPluginTypeFromString(stype):
         return PLUGIN_VST3
     if stype in ("au", "audiounit"):
         return PLUGIN_AU
-    if stype == "jsfx":
-        return PLUGIN_JSFX
     if stype == "dls":
         return PLUGIN_DLS
     if stype == "gig":
@@ -140,6 +138,8 @@ def getPluginTypeFromString(stype):
         return PLUGIN_JACK
     if stype == "jsfx":
         return PLUGIN_JSFX
+    if stype == "clap":
+        return PLUGIN_CLAP
 
     print("getPluginTypeFromString(\"%s\") - invalid string type" % stype)
     return PLUGIN_NONE
