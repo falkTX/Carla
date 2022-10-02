@@ -152,7 +152,7 @@ public:
     //==============================================================================
 private:
     String originalText;
-    String::CharPointerType input;
+    CharPointer_UTF8 input;
     bool outOfData, errorOccurred;
 
     String lastError, dtdText;
@@ -160,7 +160,7 @@ private:
     bool needToLoadDTD, ignoreEmptyTextElements;
     CarlaScopedPointer<FileInputSource> inputSource;
 
-    XmlElement* parseDocumentElement (String::CharPointerType, bool outer);
+    XmlElement* parseDocumentElement (CharPointer_UTF8, bool outer);
     void setLastError (const String&, bool carryOn);
     bool parseHeader();
     bool parseDTD();

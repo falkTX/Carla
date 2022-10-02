@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -77,7 +77,7 @@ public:
         The StringRef object does NOT take ownership or copy this data, so you must
         ensure that the data does not change during the lifetime of the StringRef.
     */
-    StringRef (String::CharPointerType stringLiteral) noexcept;
+    StringRef (CharPointer_UTF8 stringLiteral) noexcept;
 
     /** Creates a StringRef from a String.
         The StringRef object does NOT take ownership or copy the data from the String,
@@ -91,9 +91,9 @@ public:
 
     //==============================================================================
     /** Returns a raw pointer to the underlying string data. */
-    operator const String::CharPointerType::CharType*() const noexcept  { return text.getAddress(); }
+    operator const char*() const noexcept      { return text.getAddress(); }
     /** Returns a pointer to the underlying string data as a char pointer object. */
-    operator String::CharPointerType() const noexcept                   { return text; }
+    operator CharPointer_UTF8() const noexcept { return text; }
 
     /** Returns true if the string is empty. */
     bool isEmpty() const noexcept                                       { return text.isEmpty(); }
@@ -103,7 +103,7 @@ public:
     int length() const noexcept                                         { return (int) text.length(); }
 
     /** Retrieves a character by index. */
-    water_uchar operator[] (int index) const noexcept                    { return text[index]; }
+    char operator[] (int index) const noexcept                          { return text[index]; }
 
     /** Compares this StringRef with a String. */
     bool operator== (const String& s) const noexcept                    { return text.compare (s.getCharPointer()) == 0; }
@@ -117,7 +117,7 @@ public:
 
     //==============================================================================
     /** The text that is referenced. */
-    String::CharPointerType text;
+    CharPointer_UTF8 text;
 };
 
 //==============================================================================

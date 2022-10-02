@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -281,16 +281,16 @@ String StringArray::joinIntoString (StringRef separator, int start, int numberTo
     if (start == last - 1)
         return strings.getReference (start);
 
-    const size_t separatorBytes = separator.text.sizeInBytes() - sizeof (String::CharPointerType::CharType);
+    const size_t separatorBytes = separator.text.sizeInBytes() - sizeof (CharPointer_UTF8::CharType);
     size_t bytesNeeded = separatorBytes * (size_t) (last - start - 1);
 
     for (int i = start; i < last; ++i)
-        bytesNeeded += strings.getReference(i).getCharPointer().sizeInBytes() - sizeof (String::CharPointerType::CharType);
+        bytesNeeded += strings.getReference(i).getCharPointer().sizeInBytes() - sizeof (CharPointer_UTF8::CharType);
 
     String result;
     result.preallocateBytes (bytesNeeded);
 
-    String::CharPointerType dest (result.getCharPointer());
+    CharPointer_UTF8 dest (result.getCharPointer());
 
     while (start < last)
     {
@@ -319,9 +319,9 @@ int StringArray::addTokens (StringRef text, StringRef breakCharacters, StringRef
 
     if (text.isNotEmpty())
     {
-        for (String::CharPointerType t (text.text);;)
+        for (CharPointer_UTF8 t (text.text);;)
         {
-            String::CharPointerType tokenEnd (CharacterFunctions::findEndOfToken (t,
+            CharPointer_UTF8 tokenEnd (CharacterFunctions::findEndOfToken (t,
                                                                                   breakCharacters.text,
                                                                                   quoteCharacters.text));
             strings.add (String (t, tokenEnd));
@@ -340,14 +340,14 @@ int StringArray::addTokens (StringRef text, StringRef breakCharacters, StringRef
 int StringArray::addLines (StringRef sourceText)
 {
     int numLines = 0;
-    String::CharPointerType text (sourceText.text);
+    CharPointer_UTF8 text (sourceText.text);
     bool finished = text.isEmpty();
 
     while (! finished)
     {
-        for (String::CharPointerType startOfLine (text);;)
+        for (CharPointer_UTF8 startOfLine (text);;)
         {
-            const String::CharPointerType endOfLine (text);
+            const CharPointer_UTF8 endOfLine (text);
 
             switch (text.getAndAdvance())
             {

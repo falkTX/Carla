@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2018 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -108,7 +108,7 @@ namespace XmlIdentifierChars
         DBG (s);
     }*/
 
-    static String::CharPointerType findEndOfToken (String::CharPointerType p)
+    static CharPointer_UTF8 findEndOfToken (CharPointer_UTF8 p)
     {
         while (isIdentifierChar (*p))
             ++p;
@@ -137,7 +137,7 @@ XmlElement* XmlDocument::getDocumentElement (const bool onlyReadOuterDocumentEle
                     text += 3;
 
                 // parse the input buffer directly to avoid copying it all to a string..
-                return parseDocumentElement (String::CharPointerType (text), onlyReadOuterDocumentElement);
+                return parseDocumentElement (CharPointer_UTF8 (text), onlyReadOuterDocumentElement);
             }
         }
     }
@@ -182,7 +182,7 @@ water_uchar XmlDocument::readNextChar() noexcept
     return c;
 }
 
-XmlElement* XmlDocument::parseDocumentElement (String::CharPointerType textToParse,
+XmlElement* XmlDocument::parseDocumentElement (CharPointer_UTF8 textToParse,
                                                const bool onlyReadOuterDocumentElement)
 {
     input = textToParse;
@@ -221,7 +221,7 @@ bool XmlDocument::parseHeader()
 
     if (CharacterFunctions::compareUpTo (input, CharPointer_UTF8 ("<?xml"), 5) == 0)
     {
-        const String::CharPointerType headerEnd (CharacterFunctions::find (input, CharPointer_UTF8 ("?>")));
+        const CharPointer_UTF8 headerEnd (CharacterFunctions::find (input, CharPointer_UTF8 ("?>")));
 
         if (headerEnd.isEmpty())
             return false;
@@ -253,7 +253,7 @@ bool XmlDocument::parseDTD()
     if (CharacterFunctions::compareUpTo (input, CharPointer_UTF8 ("<!DOCTYPE"), 9) == 0)
     {
         input += 9;
-        const String::CharPointerType dtdStart (input);
+        const CharPointer_UTF8 dtdStart (input);
 
         for (int n = 1; n > 0;)
         {
@@ -344,7 +344,7 @@ void XmlDocument::readQuotedString (String& result)
         }
         else
         {
-            const String::CharPointerType start (input);
+            const CharPointer_UTF8 start (input);
 
             for (;;)
             {
@@ -385,7 +385,7 @@ XmlElement* XmlDocument::readNextElement (const bool alsoParseSubElements)
     if (*input == '<')
     {
         ++input;
-        String::CharPointerType endOfToken (XmlIdentifierChars::findEndOfToken (input));
+        CharPointer_UTF8 endOfToken (XmlIdentifierChars::findEndOfToken (input));
 
         if (endOfToken == input)
         {
@@ -432,11 +432,11 @@ XmlElement* XmlDocument::readNextElement (const bool alsoParseSubElements)
             // get an attribute..
             if (XmlIdentifierChars::isIdentifierChar (c))
             {
-                String::CharPointerType attNameEnd (XmlIdentifierChars::findEndOfToken (input));
+                CharPointer_UTF8 attNameEnd (XmlIdentifierChars::findEndOfToken (input));
 
                 if (attNameEnd != input)
                 {
-                    const String::CharPointerType attNameStart (input);
+                    const CharPointer_UTF8 attNameStart (input);
                     input = attNameEnd;
 
                     skipNextWhiteSpace();
@@ -484,7 +484,7 @@ void XmlDocument::readChildElements (XmlElement& parent)
 
     for (;;)
     {
-        const String::CharPointerType preWhitespaceInput (input);
+        const CharPointer_UTF8 preWhitespaceInput (input);
         skipNextWhiteSpace();
 
         if (outOfData)
@@ -511,7 +511,7 @@ void XmlDocument::readChildElements (XmlElement& parent)
             if (c1 == '!' && CharacterFunctions::compareUpTo (input + 2, CharPointer_UTF8 ("[CDATA["), 7) == 0)
             {
                 input += 9;
-                const String::CharPointerType inputStart (input);
+                const CharPointer_UTF8 inputStart (input);
 
                 for (;;)
                 {
@@ -589,7 +589,7 @@ void XmlDocument::readChildElements (XmlElement& parent)
 
                     if (entity.startsWithChar ('<') && entity [1] != 0)
                     {
-                        const String::CharPointerType oldInput (input);
+                        const CharPointer_UTF8 oldInput (input);
                         const bool oldOutOfData = outOfData;
 
                         input = entity.getCharPointer();
@@ -728,7 +728,7 @@ void XmlDocument::readEntity (String& result)
     }
     else
     {
-        const String::CharPointerType entityNameStart (input);
+        const CharPointer_UTF8 entityNameStart (input);
         const int closingSemiColon = input.indexOf ((water_uchar) ';');
 
         if (closingSemiColon < 0)

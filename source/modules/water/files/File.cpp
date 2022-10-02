@@ -417,7 +417,7 @@ bool File::isAbsolutePath (StringRef path)
 
 File File::getChildFile (StringRef relativePath) const
 {
-    String::CharPointerType r = relativePath.text;
+    CharPointer_UTF8 r = relativePath.text;
 
     if (isAbsolutePath (r))
         return File (String (r));
@@ -431,7 +431,7 @@ File File::getChildFile (StringRef relativePath) const
 
     while (*r == '.')
     {
-        String::CharPointerType lastPos = r;
+        CharPointer_UTF8 lastPos = r;
         const water_uchar secondChar = *++r;
 
         if (secondChar == '.') // remove "../"
@@ -849,7 +849,7 @@ String File::createLegalFileName (const String& original)
 }
 
 //==============================================================================
-static int countNumberOfSeparators (String::CharPointerType s)
+static int countNumberOfSeparators (CharPointer_UTF8 s)
 {
     int num = 0;
 
@@ -878,12 +878,12 @@ String File::getRelativePathFrom (const File& dir)  const
                                                              : dir.fullPath));
 
     int commonBitLength = 0;
-    String::CharPointerType thisPathAfterCommon (thisPath.getCharPointer());
-    String::CharPointerType dirPathAfterCommon  (dirPath.getCharPointer());
+    CharPointer_UTF8 thisPathAfterCommon (thisPath.getCharPointer());
+    CharPointer_UTF8 dirPathAfterCommon  (dirPath.getCharPointer());
 
     {
-        String::CharPointerType thisPathIter (thisPath.getCharPointer());
-        String::CharPointerType dirPathIter  (dirPath.getCharPointer());
+        CharPointer_UTF8 thisPathIter (thisPath.getCharPointer());
+        CharPointer_UTF8 dirPathIter  (dirPath.getCharPointer());
 
         for (int i = 0;;)
         {

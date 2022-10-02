@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -318,7 +318,7 @@ void MemoryBlock::loadFromHexString (StringRef hex)
 {
     ensureSize ((size_t) hex.length() >> 1);
     char* dest = data;
-    String::CharPointerType t (hex.text);
+    CharPointer_UTF8 t (hex.text);
 
     for (;;)
     {

@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -158,7 +158,7 @@ public:
     explicit XmlElement (StringRef tagName);
 
     /** Creates an XmlElement with this tag name. */
-    XmlElement (String::CharPointerType tagNameBegin, String::CharPointerType tagNameEnd);
+    XmlElement (CharPointer_UTF8 tagNameBegin, CharPointer_UTF8 tagNameEnd);
 
     /** Creates a (deep) copy of another element. */
     XmlElement (const XmlElement&);
@@ -694,7 +694,7 @@ private:
     {
         XmlAttributeNode (const XmlAttributeNode&) noexcept;
         XmlAttributeNode (const Identifier&, const String&) noexcept;
-        XmlAttributeNode (String::CharPointerType, String::CharPointerType);
+        XmlAttributeNode (CharPointer_UTF8, CharPointer_UTF8);
 
         LinkedListPointer<XmlAttributeNode> nextListItem;
         Identifier name;

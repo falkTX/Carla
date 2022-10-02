@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -73,7 +73,7 @@ XmlElement::XmlAttributeNode::XmlAttributeNode (const Identifier& n, const Strin
     wassert (isValidXmlName (name));
 }
 
-XmlElement::XmlAttributeNode::XmlAttributeNode (String::CharPointerType nameStart, String::CharPointerType nameEnd)
+XmlElement::XmlAttributeNode::XmlAttributeNode (CharPointer_UTF8 nameStart, CharPointer_UTF8 nameEnd)
     : name (nameStart, nameEnd)
 {
     wassert (isValidXmlName (name));
@@ -104,7 +104,7 @@ XmlElement::XmlElement (const Identifier& tag)
     wassert (isValidXmlName (tagName));
 }
 
-XmlElement::XmlElement (String::CharPointerType tagNameStart, String::CharPointerType tagNameEnd)
+XmlElement::XmlElement (CharPointer_UTF8 tagNameStart, CharPointer_UTF8 tagNameEnd)
     : tagName (StartEndString (tagNameStart, tagNameEnd))
 {
     wassert (isValidXmlName (tagName));
@@ -196,7 +196,7 @@ namespace XmlOutputFunctions
 
     static void escapeIllegalXmlChars (OutputStream& outputStream, const String& text, const bool changeNewLines)
     {
-        String::CharPointerType t (text.getCharPointer());
+        CharPointer_UTF8 t (text.getCharPointer());
 
         for (;;)
         {
