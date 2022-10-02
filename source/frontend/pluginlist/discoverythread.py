@@ -85,7 +85,8 @@ from .discovery import (
     findBinaries,
     findFilenames,
     findMacVSTBundles,
-    findVST3Binaries
+    findVST3Binaries,
+    findCLAPBinaries
 )
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -657,7 +658,7 @@ class SearchPluginsThread(QThread):
         self.fLastCheckValue += self.fCurPercentValue
         return vst3Plugins
 
-    def _checkCLAP(self, OS, tool, isWine=False):
+    def _checkCLAP(self, tool, isWine=False):
         clapBinaries = []
         clapPlugins = []
 

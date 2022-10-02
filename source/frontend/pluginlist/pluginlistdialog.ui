@@ -610,7 +610,7 @@
      </column>
      <column>
       <property name="text">
-       <string>Label/URI</string>
+       <string>Label/Id/URI</string>
       </property>
      </column>
      <column>

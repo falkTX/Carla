@@ -49,6 +49,7 @@ from carla_backend import (
     PLUGIN_SFZ,
     PLUGIN_VST2,
     PLUGIN_VST3,
+    PLUGIN_CLAP,
 )
 
 from carla_shared import (
@@ -158,7 +159,6 @@ class PluginDatabaseW(QDialog):
             self.ui.ch_bridged_wine.setChecked(False)
             self.ui.ch_bridged_wine.setEnabled(False)
             self.ui.ch_bridged_wine.setVisible(False)
-            self.ui.l_arch.setVisible(False)
 
         elif not host.showWineBridges:
             self.ui.ch_bridged_wine.setChecked(False)
@@ -195,6 +195,7 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_lv2.clicked.connect(self.slot_checkFilters)
         self.ui.ch_vst.clicked.connect(self.slot_checkFilters)
         self.ui.ch_vst3.clicked.connect(self.slot_checkFilters)
+        self.ui.ch_clap.clicked.connect(self.slot_checkFilters)
         self.ui.ch_au.clicked.connect(self.slot_checkFilters)
         self.ui.ch_jsfx.clicked.connect(self.slot_checkFilters)
         self.ui.ch_kits.clicked.connect(self.slot_checkFilters)
@@ -391,6 +392,8 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_dssi.setChecked(True)
         self.ui.ch_lv2.setChecked(True)
         self.ui.ch_vst.setChecked(True)
+        self.ui.ch_vst3.setChecked(True)
+        self.ui.ch_clap.setChecked(True)
         self.ui.ch_jsfx.setChecked(True)
         self.ui.ch_kits.setChecked(True)
 
@@ -410,8 +413,6 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_gui.setChecked(False)
         self.ui.ch_inline_display.setChecked(False)
 
-        if self.ui.ch_vst3.isEnabled():
-            self.ui.ch_vst3.setChecked(True)
         if self.ui.ch_au.isEnabled():
             self.ui.ch_au.setChecked(True)
 
@@ -449,6 +450,7 @@ class PluginDatabaseW(QDialog):
         settings.setValue("PluginDatabase/ShowLV2", self.ui.ch_lv2.isChecked())
         settings.setValue("PluginDatabase/ShowVST2", self.ui.ch_vst.isChecked())
         settings.setValue("PluginDatabase/ShowVST3", self.ui.ch_vst3.isChecked())
+        settings.setValue("PluginDatabase/ShowCLAP", self.ui.ch_clap.isChecked())
         settings.setValue("PluginDatabase/ShowAU", self.ui.ch_au.isChecked())
         settings.setValue("PluginDatabase/ShowJSFX", self.ui.ch_jsfx.isChecked())
         settings.setValue("PluginDatabase/ShowKits", self.ui.ch_kits.isChecked())
@@ -509,7 +511,8 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_dssi.setChecked(settings.value("PluginDatabase/ShowDSSI", True, bool))
         self.ui.ch_lv2.setChecked(settings.value("PluginDatabase/ShowLV2", True, bool))
         self.ui.ch_vst.setChecked(settings.value("PluginDatabase/ShowVST2", True, bool))
-        self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/ShowVST3", (MACOS or WINDOWS), bool))
+        self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/ShowVST3", True, bool))
+        self.ui.ch_clap.setChecked(settings.value("PluginDatabase/ShowCLAP", True, bool))
         self.ui.ch_au.setChecked(settings.value("PluginDatabase/ShowAU", MACOS, bool))
         self.ui.ch_jsfx.setChecked(settings.value("PluginDatabase/ShowJSFX", True, bool))
         self.ui.ch_kits.setChecked(settings.value("PluginDatabase/ShowKits", True, bool))
@@ -586,6 +589,7 @@ class PluginDatabaseW(QDialog):
         hideLV2      = not self.ui.ch_lv2.isChecked()
         hideVST2     = not self.ui.ch_vst.isChecked()
         hideVST3     = not self.ui.ch_vst3.isChecked()
+        hideCLAP     = not self.ui.ch_clap.isChecked()
         hideAU       = not self.ui.ch_au.isChecked()
         hideJSFX     = not self.ui.ch_jsfx.isChecked()
         hideKits     = not self.ui.ch_kits.isChecked()
@@ -661,6 +665,8 @@ class PluginDatabaseW(QDialog):
             elif hideVST2 and ptype == PLUGIN_VST2:
                 self.ui.tableWidget.hideRow(i)
             elif hideVST3 and ptype == PLUGIN_VST3:
+                self.ui.tableWidget.hideRow(i)
+            elif hideCLAP and ptype == PLUGIN_CLAP:
                 self.ui.tableWidget.hideRow(i)
             elif hideAU and ptype == PLUGIN_AU:
                 self.ui.tableWidget.hideRow(i)
@@ -849,6 +855,16 @@ class PluginDatabaseW(QDialog):
         vst3Plugins += settingsDB.value("Plugins/VST3_win64", [], list)
 
         # ----------------------------------------------------------------------------------------------------
+        # CLAP
+
+        clapPlugins  = []
+        clapPlugins += settingsDB.value("Plugins/CLAP_native", [], list)
+        clapPlugins += settingsDB.value("Plugins/CLAP_posix32", [], list)
+        clapPlugins += settingsDB.value("Plugins/CLAP_posix64", [], list)
+        clapPlugins += settingsDB.value("Plugins/CLAP_win32", [], list)
+        clapPlugins += settingsDB.value("Plugins/CLAP_win64", [], list)
+
+        # ----------------------------------------------------------------------------------------------------
         # AU (extra non-cached)
 
         auPlugins32 = settingsDB.value("Plugins/AU_posix32", [], list) if MACOS else []
@@ -871,6 +887,7 @@ class PluginDatabaseW(QDialog):
         dssiCount   = 0
         vstCount    = 0
         vst3Count   = 0
+        clapCount   = 0
         au32Count   = 0
         jsfxCount   = len(jsfxPlugins)
         sf2Count    = 0
@@ -888,6 +905,9 @@ class PluginDatabaseW(QDialog):
         for plugins in vst3Plugins:
             vst3Count += len(plugins)
 
+        for plugins in clapPlugins:
+            clapCount += len(plugins)
+
         for plugins in auPlugins32:
             au32Count += len(plugins)
 
@@ -895,15 +915,15 @@ class PluginDatabaseW(QDialog):
             sf2Count += len(plugins)
 
         self.ui.tableWidget.setRowCount(self.fLastTableIndex +
-                                        ladspaCount + dssiCount + vstCount + vst3Count + au32Count + jsfxCount +
-                                        sf2Count + sfzCount)
+                                        ladspaCount + dssiCount + vstCount + vst3Count + clapCount +
+                                        auCount + au32Count + jsfxCount + sf2Count + sfzCount)
 
         if MACOS:
-            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3, %i AudioUnit plugins and %i JSFX plugins, plus %i Sound Kits" % (
-                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, auCount+au32Count, jsfxCount, sf2Count+sfzCount)))
+            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3, %i CLAP, %i AudioUnit and %i JSFX plugins, plus %i Sound Kits" % (
+                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, clapCount, auCount+au32Count, jsfxCount, sf2Count+sfzCount)))
         else:
-            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3 plugins and %i JSFX plugins, plus %i Sound Kits" % (
-                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, jsfxCount, sf2Count+sfzCount)))
+            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3, %i CLAP and %i JSFX plugins, plus %i Sound Kits" % (
+                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, clapCount, jsfxCount, sf2Count+sfzCount)))
 
         # ----------------------------------------------------------------------------------------------------
         # now add all plugins to the table
@@ -923,6 +943,10 @@ class PluginDatabaseW(QDialog):
         for plugins in vst3Plugins:
             for plugin in plugins:
                 self._addPluginToTable(plugin, "VST3")
+
+        for plugins in clapPlugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, "CLAP")
 
         for plugins in auPlugins32:
             for plugin in plugins:

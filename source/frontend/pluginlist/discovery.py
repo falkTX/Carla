@@ -84,8 +84,8 @@ def findVST3Binaries(binPath):
 def findCLAPBinaries(binPath):
     binaries = []
 
-    for root, dirs, files in os.walk(binPath):
-        for name in tuple(name for name in (files+dirs) if name.lower().endswith(".clap")):
+    for root, _, files in os.walk(binPath, followlinks=True):
+        for name in tuple(name for name in files if name.lower().endswith(".clap")):
             binaries.append(os.path.join(root, name))
 
     return binaries
