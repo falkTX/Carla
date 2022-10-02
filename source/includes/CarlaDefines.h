@@ -83,6 +83,7 @@
 #endif
 
 #if defined(__cplusplus) && ! defined(CARLA_PROPER_CPP11_SUPPORT)
+# define constexpr
 # define noexcept throw()
 # define override
 # define final
