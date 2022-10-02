@@ -686,6 +686,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="ch_clap">
+         <property name="text">
+          <string>CLAP</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="ch_au">
          <property name="text">
           <string>AU</string>
@@ -941,6 +948,7 @@
   <tabstop>ch_lv2</tabstop>
   <tabstop>ch_vst</tabstop>
   <tabstop>ch_vst3</tabstop>
+  <tabstop>ch_clap</tabstop>
   <tabstop>ch_au</tabstop>
   <tabstop>ch_kits</tabstop>
   <tabstop>ch_effects</tabstop>

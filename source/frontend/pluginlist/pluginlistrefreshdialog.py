@@ -166,10 +166,6 @@ class PluginRefreshW(QDialog):
                 self.ui.ico_posix32.setVisible(False)
                 self.ui.label_posix32.setVisible(False)
 
-                if not (LINUX or hasWin32 or hasWin64):
-                    self.ui.ch_vst3.setEnabled(False)
-                    self.ui.ch_vst3.setVisible(False)
-
         if MACOS:
             self.setWindowModality(Qt.WindowModal)
         else:
@@ -187,6 +183,7 @@ class PluginRefreshW(QDialog):
                 self.ui.ch_dssi.setEnabled(False)
                 self.ui.ch_vst.setEnabled(False)
                 self.ui.ch_vst3.setEnabled(False)
+                self.ui.ch_clap.setEnabled(False)
 
         if not hasLoadedLv2Plugins:
             self.ui.lv2_restart_notice.hide()
@@ -272,6 +269,7 @@ class PluginRefreshW(QDialog):
         self.ui.ch_lv2.clicked.connect(self.slot_checkTools)
         self.ui.ch_vst.clicked.connect(self.slot_checkTools)
         self.ui.ch_vst3.clicked.connect(self.slot_checkTools)
+        self.ui.ch_clap.clicked.connect(self.slot_checkTools)
         self.ui.ch_au.clicked.connect(self.slot_checkTools)
         self.ui.ch_sf2.clicked.connect(self.slot_checkTools)
         self.ui.ch_sfz.clicked.connect(self.slot_checkTools)
@@ -303,6 +301,9 @@ class PluginRefreshW(QDialog):
 
         check = settings.value("PluginDatabase/SearchVST3", True, bool) and self.ui.ch_vst3.isEnabled()
         self.ui.ch_vst3.setChecked(check)
+
+        check = settings.value("PluginDatabase/SearchCLAP", True, bool) and self.ui.ch_clap.isEnabled()
+        self.ui.ch_clap.setChecked(check)
 
         if MACOS:
             check = settings.value("PluginDatabase/SearchAU", True, bool) and self.ui.ch_au.isEnabled()
@@ -346,6 +347,7 @@ class PluginRefreshW(QDialog):
         settings.setValue("PluginDatabase/SearchLV2", self.ui.ch_lv2.isChecked())
         settings.setValue("PluginDatabase/SearchVST2", self.ui.ch_vst.isChecked())
         settings.setValue("PluginDatabase/SearchVST3", self.ui.ch_vst3.isChecked())
+        settings.setValue("PluginDatabase/SearchCLAP", self.ui.ch_clap.isChecked())
         settings.setValue("PluginDatabase/SearchAU", self.ui.ch_au.isChecked())
         settings.setValue("PluginDatabase/SearchSF2", self.ui.ch_sf2.isChecked())
         settings.setValue("PluginDatabase/SearchSFZ", self.ui.ch_sfz.isChecked())
@@ -380,14 +382,14 @@ class PluginRefreshW(QDialog):
                                                   self.ui.ch_posix32.isChecked(), self.ui.ch_posix64.isChecked(),
                                                   self.ui.ch_win32.isChecked(), self.ui.ch_win64.isChecked())
 
-        ladspa, dssi, lv2, vst, vst3, au, sf2, sfz, jsfx = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
-                                                            self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
-                                                            self.ui.ch_vst3.isChecked(), self.ui.ch_au.isChecked(),
-                                                            self.ui.ch_sf2.isChecked(), self.ui.ch_sfz.isChecked(),
-                                                            self.ui.ch_jsfx.isChecked())
+        ladspa, dssi, lv2, vst, vst3, clap, au, sf2, sfz, jsfx = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
+                                                                  self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
+                                                                  self.ui.ch_vst3.isChecked(), self.ui.ch_clap.isChecked(),
+                                                                  self.ui.ch_au.isChecked(), self.ui.ch_sf2.isChecked(),
+                                                                  self.ui.ch_sfz.isChecked(), self.ui.ch_jsfx.isChecked())
 
         self.fThread.setSearchBinaryTypes(native, posix32, posix64, win32, win64)
-        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, vst3, au, sf2, sfz, jsfx)
+        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, vst3, clap, au, sf2, sfz, jsfx)
         self.fThread.start()
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -406,9 +408,9 @@ class PluginRefreshW(QDialog):
 
         enabled2 = bool(self.ui.ch_ladspa.isChecked() or self.ui.ch_dssi.isChecked() or
                         self.ui.ch_lv2.isChecked() or self.ui.ch_vst.isChecked() or
-                        self.ui.ch_vst3.isChecked() or self.ui.ch_au.isChecked() or
-                        self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked() or
-                        self.ui.ch_jsfx.isChecked())
+                        self.ui.ch_vst3.isChecked() or self.ui.ch_clap.isChecked() or
+                        self.ui.ch_au.isChecked() or self.ui.ch_sf2.isChecked() or
+                        self.ui.ch_sfz.isChecked() or self.ui.ch_jsfx.isChecked())
 
         self.ui.b_start.setEnabled(enabled1 and enabled2)
 

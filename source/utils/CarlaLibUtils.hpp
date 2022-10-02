@@ -1,6 +1,6 @@
 /*
  * Carla library utils
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -69,7 +69,7 @@ bool lib_close(const lib_t lib) noexcept
 }
 
 /*
- * Get a library symbol (must not be null).
+ * Get a library symbol (must not be null) as a function.
  * Returns null if the symbol is not found.
  */
 template<typename Func>
@@ -85,12 +85,12 @@ Func lib_symbol(const lib_t lib, const char* const symbol) noexcept
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wcast-function-type"
 # endif
-        return (Func)::GetProcAddress(lib, symbol);
+        return reinterpret_cast<Func>(::GetProcAddress(lib, symbol));
 # if defined(__GNUC__) && (__GNUC__ >= 9)
 #  pragma GCC diagnostic pop
 # endif
 #else
-        return (Func)(uintptr_t)::dlsym(lib, symbol);
+        return reinterpret_cast<Func>(::dlsym(lib, symbol));
 #endif
     } CARLA_SAFE_EXCEPTION_RETURN("lib_symbol", nullptr);
 }

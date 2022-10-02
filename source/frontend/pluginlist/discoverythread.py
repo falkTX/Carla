@@ -35,6 +35,7 @@ from carla_backend import (
     PLUGIN_LV2,
     PLUGIN_SFZ,
     PLUGIN_VST2,
+    PLUGIN_CLAP,
 )
 
 from carla_shared import (
@@ -46,6 +47,7 @@ from carla_shared import (
     CARLA_DEFAULT_SFZ_PATH,
     CARLA_DEFAULT_VST2_PATH,
     CARLA_DEFAULT_VST3_PATH,
+    CARLA_DEFAULT_CLAP_PATH,
     CARLA_DEFAULT_WINE_AUTO_PREFIX,
     CARLA_DEFAULT_WINE_EXECUTABLE,
     CARLA_DEFAULT_WINE_FALLBACK_PREFIX,
@@ -57,6 +59,7 @@ from carla_shared import (
     CARLA_KEY_PATHS_SFZ,
     CARLA_KEY_PATHS_VST2,
     CARLA_KEY_PATHS_VST3,
+    CARLA_KEY_PATHS_CLAP,
     CARLA_KEY_WINE_AUTO_PREFIX,
     CARLA_KEY_WINE_EXECUTABLE,
     CARLA_KEY_WINE_FALLBACK_PREFIX,
@@ -78,6 +81,7 @@ from .discovery import (
     checkPluginLADSPA,
     checkPluginVST2,
     checkPluginVST3,
+    checkPluginCLAP,
     findBinaries,
     findFilenames,
     findMacVSTBundles,
@@ -107,6 +111,7 @@ class SearchPluginsThread(QThread):
         self.fCheckLV2    = False
         self.fCheckVST2   = False
         self.fCheckVST3   = False
+        self.fCheckCLAP   = False
         self.fCheckAU     = False
         self.fCheckSF2    = False
         self.fCheckSFZ    = False
@@ -152,13 +157,14 @@ class SearchPluginsThread(QThread):
         self.fCheckWin32   = win32
         self.fCheckWin64   = win64
 
-    def setSearchPluginTypes(self, ladspa: bool, dssi: bool, lv2: bool, vst2: bool, vst3: bool, au: bool,
-                                   sf2: bool, sfz: bool, jsfx: bool):
+    def setSearchPluginTypes(self, ladspa: bool, dssi: bool, lv2: bool, vst2: bool, vst3: bool, clap: bool,
+                                   au: bool, sf2: bool, sfz: bool, jsfx: bool):
         self.fCheckLADSPA = ladspa
         self.fCheckDSSI   = dssi
         self.fCheckLV2    = lv2
         self.fCheckVST2   = vst2
-        self.fCheckVST3   = vst3 and (LINUX or MACOS or WINDOWS)
+        self.fCheckVST3   = vst3
+        self.fCheckCLAP   = clap
         self.fCheckAU     = au and MACOS
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
@@ -190,23 +196,18 @@ class SearchPluginsThread(QThread):
             pluginCount += 1
         if self.fCheckVST3:
             pluginCount += 1
+        if self.fCheckCLAP:
+            pluginCount += 1
 
         # Increase count by the number of externally discoverable plugin types
         if self.fCheckNative:
             self.fCurCount += pluginCount
-            # Linux, MacOS and Windows are the only VST3 supported OSes
-            if self.fCheckVST3 and not (LINUX or MACOS or WINDOWS):
-                self.fCurCount -= 1
 
         if self.fCheckPosix32:
             self.fCurCount += pluginCount
-            if self.fCheckVST3 and not (LINUX or MACOS):
-                self.fCurCount -= 1
 
         if self.fCheckPosix64:
             self.fCurCount += pluginCount
-            if self.fCheckVST3 and not (LINUX or MACOS):
-                self.fCurCount -= 1
 
         if self.fCheckWin32:
             self.fCurCount += pluginCount
@@ -421,6 +422,43 @@ class SearchPluginsThread(QThread):
             if not self.fContinueChecking:
                 return
 
+        if self.fCheckCLAP:
+            if self.fCheckNative:
+                plugins = self._checkCLAP(self.fToolNative)
+                settingsDB.setValue("Plugins/CLAP_native", plugins)
+                if not self.fContinueChecking:
+                    return
+
+            if self.fCheckPosix32:
+                plugins = self._checkCLAP(os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
+                settingsDB.setValue("Plugins/CLAP_posix32", plugins)
+                if not self.fContinueChecking:
+                    return
+
+            if self.fCheckPosix64:
+                plugins = self._checkCLAP(os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
+                settingsDB.setValue("Plugins/CLAP_posix64", plugins)
+                if not self.fContinueChecking:
+                    return
+
+            if self.fCheckWin32:
+                tool = os.path.join(self.fPathBinaries, "carla-discovery-win32.exe")
+                plugins = self._checkCLAP(tool, not WINDOWS)
+                settingsDB.setValue("Plugins/CLAP_win32", plugins)
+                if not self.fContinueChecking:
+                    return
+
+            if self.fCheckWin64:
+                tool = os.path.join(self.fPathBinaries, "carla-discovery-win64.exe")
+                plugins = self._checkCLAP(tool, not WINDOWS)
+                settingsDB.setValue("Plugins/CLAP_win64", plugins)
+                if not self.fContinueChecking:
+                    return
+
+            settingsDB.sync()
+            if not self.fContinueChecking:
+                return
+
         if self.fCheckAU:
             if self.fCheckNative:
                 plugins = self._checkCached(False)
@@ -618,6 +656,42 @@ class SearchPluginsThread(QThread):
 
         self.fLastCheckValue += self.fCurPercentValue
         return vst3Plugins
+
+    def _checkCLAP(self, OS, tool, isWine=False):
+        clapBinaries = []
+        clapPlugins = []
+
+        self._pluginLook(self.fLastCheckValue, "CLAP plugins...")
+
+        settings = QSafeSettings("falkTX", "Carla2")
+        CLAP_PATH = settings.value(CARLA_KEY_PATHS_CLAP, CARLA_DEFAULT_CLAP_PATH, list)
+        del settings
+
+        for iPATH in CLAP_PATH:
+            binaries = findCLAPBinaries(iPATH)
+            for binary in binaries:
+                if binary not in clapBinaries:
+                    clapBinaries.append(binary)
+
+        clapBinaries.sort()
+
+        if not self.fContinueChecking:
+            return clapPlugins
+
+        for i in range(len(clapBinaries)):
+            clap    = clapBinaries[i]
+            percent = ( float(i) / len(clapBinaries) ) * self.fCurPercentValue
+            self._pluginLook(self.fLastCheckValue + percent, clap)
+
+            plugins = checkPluginCLAP(clap, tool, self.fWineSettings if isWine else None)
+            if plugins:
+                clapPlugins.append(plugins)
+
+            if not self.fContinueChecking:
+                break
+
+        self.fLastCheckValue += self.fCurPercentValue
+        return clapPlugins
 
     def _checkAU(self, tool):
         auPlugins = []

@@ -231,6 +231,7 @@ CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
 CARLA_KEY_PATHS_LV2    = "Paths/LV2"
 CARLA_KEY_PATHS_VST2   = "Paths/VST2"
 CARLA_KEY_PATHS_VST3   = "Paths/VST3"
+CARLA_KEY_PATHS_CLAP   = "Paths/CLAP"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
 CARLA_KEY_PATHS_JSFX   = "Paths/JSFX"
@@ -351,6 +352,7 @@ DEFAULT_DSSI_PATH   = ""
 DEFAULT_LV2_PATH    = ""
 DEFAULT_VST2_PATH   = ""
 DEFAULT_VST3_PATH   = ""
+DEFAULT_CLAP_PATH   = ""
 DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
 DEFAULT_JSFX_PATH   = ""
@@ -399,6 +401,9 @@ if WINDOWS:
     DEFAULT_VST3_PATH    = COMMONPROGRAMFILES + "\\VST3"
     DEFAULT_VST3_PATH   += ";" + LOCALAPPDATA + "\\Programs\\Common\\VST3"
 
+    DEFAULT_CLAP_PATH    = COMMONPROGRAMFILES + "\\CLAP"
+    DEFAULT_CLAP_PATH   += ";" + LOCALAPPDATA + "\\Programs\\Common\\CLAP"
+
     DEFAULT_SF2_PATH     = APPDATA + "\\SF2"
     DEFAULT_SFZ_PATH     = APPDATA + "\\SFZ"
 
@@ -411,6 +416,7 @@ if WINDOWS:
 
     if COMMONPROGRAMFILESx86:
         DEFAULT_VST3_PATH   += COMMONPROGRAMFILESx86 + "\\VST3"
+        DEFAULT_CLAP_PATH   += COMMONPROGRAMFILESx86 + "\\CLAP"
 
 elif HAIKU:
     splitter = ":"
@@ -432,6 +438,9 @@ elif HAIKU:
     DEFAULT_VST3_PATH    = HOME + "/.vst3"
     DEFAULT_VST3_PATH   += ":/system/add-ons/media/vst3plugins"
 
+    DEFAULT_CLAP_PATH    = HOME + "/.clap"
+    DEFAULT_CLAP_PATH   += ":/system/add-ons/media/clapplugins"
+
 elif MACOS:
     splitter = ":"
 
@@ -449,6 +458,9 @@ elif MACOS:
 
     DEFAULT_VST3_PATH    = HOME + "/Library/Audio/Plug-Ins/VST3"
     DEFAULT_VST3_PATH   += ":/Library/Audio/Plug-Ins/VST3"
+
+    DEFAULT_CLAP_PATH    = HOME + "/Library/Audio/Plug-Ins/CLAP"
+    DEFAULT_CLAP_PATH   += ":/Library/Audio/Plug-Ins/CLAP"
 
     DEFAULT_JSFX_PATH    = HOME + "/Library/Application Support/REAPER/Effects"
     #DEFAULT_JSFX_PATH   += ":/Applications/REAPER.app/Contents/InstallFiles/Effects"
@@ -482,6 +494,10 @@ else:
     DEFAULT_VST3_PATH   += ":/usr/lib/vst3"
     DEFAULT_VST3_PATH   += ":/usr/local/lib/vst3"
 
+    DEFAULT_CLAP_PATH    = HOME + "/.clap"
+    DEFAULT_CLAP_PATH   += ":/usr/lib/clap"
+    DEFAULT_CLAP_PATH   += ":/usr/local/lib/clap"
+
     DEFAULT_SF2_PATH     = HOME + "/.sounds/sf2"
     DEFAULT_SF2_PATH    += ":" + HOME + "/.sounds/sf3"
     DEFAULT_SF2_PATH    += ":/usr/share/sounds/sf2"
@@ -503,10 +519,12 @@ if not WINDOWS:
     if os.path.exists(winePrefix):
         DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VstPlugins"
         DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3"
+        DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP"
 
         if kIs64bit and os.path.exists(winePrefix + "/drive_c/Program Files (x86)"):
             DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
             DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3"
+            DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/CLAP"
 
     del winePrefix
 
@@ -539,6 +557,7 @@ if readEnvVars:
     CARLA_DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
     CARLA_DEFAULT_VST2_PATH   = os.getenv("VST_PATH",    DEFAULT_VST2_PATH).split(splitter)
     CARLA_DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
+    CARLA_DEFAULT_CLAP_PATH   = os.getenv("CLAP_PATH",   DEFAULT_CLAP_PATH).split(splitter)
     CARLA_DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
     CARLA_DEFAULT_JSFX_PATH   = os.getenv("JSFX_PATH",   DEFAULT_JSFX_PATH).split(splitter)
@@ -549,6 +568,7 @@ else:
     CARLA_DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
     CARLA_DEFAULT_VST2_PATH   = DEFAULT_VST2_PATH.split(splitter)
     CARLA_DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
+    CARLA_DEFAULT_CLAP_PATH   = DEFAULT_CLAP_PATH.split(splitter)
     CARLA_DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
     CARLA_DEFAULT_JSFX_PATH   = DEFAULT_JSFX_PATH.split(splitter)
@@ -561,6 +581,7 @@ del DEFAULT_DSSI_PATH
 del DEFAULT_LV2_PATH
 del DEFAULT_VST2_PATH
 del DEFAULT_VST3_PATH
+del DEFAULT_CLAP_PATH
 del DEFAULT_SF2_PATH
 del DEFAULT_SFZ_PATH
 

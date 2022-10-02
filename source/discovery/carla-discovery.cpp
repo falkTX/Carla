@@ -28,6 +28,7 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVst2Utils.hpp"
 #include "CarlaVst3Utils.hpp"
+#include "CarlaClapUtils.hpp"
 
 #ifdef CARLA_OS_MAC
 # include "CarlaMacUtils.cpp"
@@ -84,17 +85,17 @@ CARLA_BACKEND_USE_NAMESPACE
 // -------------------------------------------------------------------------------------------------------------------
 // Dummy values to test plugins with
 
-static const uint32_t kBufferSize  = 512;
-static const double   kSampleRate  = 44100.0;
-static const int32_t  kSampleRatei = 44100;
-static const float    kSampleRatef = 44100.0f;
+static constexpr const uint32_t kBufferSize  = 512;
+static constexpr const double   kSampleRate  = 44100.0;
+static constexpr const int32_t  kSampleRatei = 44100;
+static constexpr const float    kSampleRatef = 44100.0f;
 
 // -------------------------------------------------------------------------------------------------------------------
 // Don't print ELF/EXE related errors since discovery can find multi-architecture binaries
 
 static void print_lib_error(const char* const filename)
 {
-    const char* const error(lib_error(filename));
+    const char* const error = lib_error(filename);
 
     if (error != nullptr &&
         std::strstr(error, "wrong ELF class") == nullptr &&
@@ -150,25 +151,25 @@ static void do_cached_check(const PluginType type)
         break;
     }
 
-# ifdef USING_JUCE
+   #ifdef USING_JUCE
     if (type == PLUGIN_AU)
         CarlaJUCE::initialiseJuce_GUI();
-# endif
+   #endif
 
     const uint count = carla_get_cached_plugin_count(type, plugPath);
 
     for (uint i=0; i<count; ++i)
     {
-        const CarlaCachedPluginInfo* pinfo(carla_get_cached_plugin_info(type, i));
+        const CarlaCachedPluginInfo* pinfo = carla_get_cached_plugin_info(type, i);
         CARLA_SAFE_ASSERT_CONTINUE(pinfo != nullptr);
 
         print_cached_plugin(pinfo);
     }
 
-# ifdef USING_JUCE
+   #ifdef USING_JUCE
     if (type == PLUGIN_AU)
         CarlaJUCE::shutdownJuce_GUI();
-# endif
+   #endif
 }
 #endif
 
@@ -1845,6 +1846,285 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
 }
 #endif // ! USING_JUCE_FOR_VST3
 
+struct carla_clap_host : clap_host_t {
+    carla_clap_host()
+    {
+        clap_version = CLAP_VERSION;
+        host_data = this;
+        name = "Carla-Discovery";
+        vendor = "falkTX";
+        url = "https://kx.studio/carla";
+        version = CARLA_VERSION_STRING;
+        get_extension = carla_get_extension;
+        request_restart = carla_request_restart;
+        request_process = carla_request_process;
+        request_callback = carla_request_callback;
+    }
+
+    static const void* carla_get_extension(const clap_host_t*, const char*) { return nullptr; }
+    static void carla_request_restart(const clap_host_t*) {}
+    static void carla_request_process(const clap_host_t*) {}
+    static void carla_request_callback(const clap_host_t*) {}
+};
+
+static void do_clap_check(lib_t& libHandle, const char* const filename, const bool doInit)
+{
+    const clap_plugin_entry_t* const entry = lib_symbol<const clap_plugin_entry_t*>(libHandle, "clap_entry");
+
+    // ensure entry points are available
+    if (entry == nullptr || entry->init == nullptr || entry->deinit == nullptr || entry->get_factory == nullptr)
+    {
+        DISCOVERY_OUT("error", "Not a CLAP plugin");
+        return;
+    }
+
+    // ensure compatible version
+    if (!clap_version_is_compatible(entry->clap_version))
+    {
+        DISCOVERY_OUT("error", "Incompatible CLAP plugin");
+        return;
+    }
+
+    const water::String pluginPath(water::File(filename).getParentDirectory().getFullPathName());
+
+    entry->init(pluginPath.toRawUTF8());
+
+    const clap_plugin_factory_t* const factory = static_cast<const clap_plugin_factory_t*>(
+        entry->get_factory(CLAP_PLUGIN_FACTORY_ID));
+    CARLA_SAFE_ASSERT_RETURN(factory != nullptr
+                             && factory->get_plugin_count != nullptr
+                             && factory->get_plugin_descriptor != nullptr
+                             && factory->create_plugin != nullptr, entry->deinit());
+
+    if (const uint32_t count = factory->get_plugin_count(factory))
+    {
+        const carla_clap_host host;
+
+        for (uint32_t i=0; i<count; ++i)
+        {
+            const clap_plugin_descriptor_t* const desc = factory->get_plugin_descriptor(factory, i);
+            CARLA_SAFE_ASSERT_CONTINUE(desc != nullptr);
+
+            const clap_plugin_t* const plugin = factory->create_plugin(factory, &host, desc->id);
+            CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
+
+            uint hints = 0x0;
+            uint audioIns = 0;
+            uint audioOuts = 0;
+            // uint audioTotal = 0;
+            uint midiIns = 0;
+            uint midiOuts = 0;
+            // uint midiTotal = 0;
+            uint parametersIns = 0;
+            uint parametersOuts = 0;
+            // uint parametersTotal = 0;
+            PluginCategory category = PLUGIN_CATEGORY_NONE;
+
+            const clap_plugin_audio_ports_t* const audioPorts = static_cast<const clap_plugin_audio_ports_t*>(
+                plugin->get_extension(plugin, CLAP_EXT_AUDIO_PORTS));
+
+            const clap_plugin_note_ports_t* const notePorts = static_cast<const clap_plugin_note_ports_t*>(
+                plugin->get_extension(plugin, CLAP_EXT_NOTE_PORTS));
+
+            const clap_plugin_params_t* const params = static_cast<const clap_plugin_params_t*>(
+                plugin->get_extension(plugin, CLAP_EXT_PARAMS));
+
+            if (audioPorts != nullptr)
+            {
+                clap_audio_port_info_t info;
+
+                const uint32_t inPorts = audioPorts->count(plugin, true);
+                for (uint32_t j=0; j<inPorts; ++j)
+                {
+                    if (!audioPorts->get(plugin, j, true, &info))
+                        break;
+
+                    audioIns += info.channel_count;
+                }
+
+                const uint32_t outPorts = audioPorts->count(plugin, false);
+                for (uint32_t j=0; j<outPorts; ++j)
+                {
+                    if (!audioPorts->get(plugin, j, false, &info))
+                        break;
+
+                    audioOuts += info.channel_count;
+                }
+
+                // audioTotal = audioIns + audioOuts;
+            }
+
+            if (notePorts != nullptr)
+            {
+                clap_note_port_info_t info;
+
+                const uint32_t inPorts = notePorts->count(plugin, true);
+                for (uint32_t j=0; j<inPorts; ++j)
+                {
+                    if (!notePorts->get(plugin, j, true, &info))
+                        break;
+
+                    if (info.supported_dialects & CLAP_NOTE_DIALECT_MIDI)
+                        ++midiIns;
+                }
+
+                const uint32_t outPorts = notePorts->count(plugin, false);
+                for (uint32_t j=0; j<outPorts; ++j)
+                {
+                    if (!notePorts->get(plugin, j, false, &info))
+                        break;
+
+                    if (info.supported_dialects & CLAP_NOTE_DIALECT_MIDI)
+                        ++midiOuts;
+                }
+
+                // midiTotal = midiIns + midiOuts;
+            }
+
+            if (params != nullptr)
+            {
+                clap_param_info_t info;
+
+                const uint32_t numParams = params->count(plugin);
+                for (uint32_t j=0; j<numParams; ++j)
+                {
+                    if (!params->get_info(plugin, j, &info))
+                        break;
+
+                    if (info.flags & (CLAP_PARAM_IS_HIDDEN|CLAP_PARAM_IS_BYPASS))
+                        continue;
+
+                    if (info.flags & CLAP_PARAM_IS_READONLY)
+                        ++parametersOuts;
+                    else
+                        ++parametersIns;
+                }
+
+                // parametersTotal = parametersIns + parametersOuts;
+            }
+
+            if (desc->features != nullptr)
+            {
+                // 1st pass for main categories
+                for (uint32_t j=0; desc->features[j] != nullptr; ++j)
+                {
+                    if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_INSTRUMENT) == 0)
+                    {
+                        category = PLUGIN_CATEGORY_SYNTH;
+                        break;
+                    }
+                    if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_NOTE_EFFECT) == 0)
+                    {
+                        category = PLUGIN_CATEGORY_UTILITY;
+                        break;
+                    }
+                    if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_ANALYZER) == 0)
+                    {
+                        category = PLUGIN_CATEGORY_UTILITY;
+                        break;
+                    }
+                }
+
+                // 2nd pass for FX sub categories
+                if (category == PLUGIN_CATEGORY_NONE)
+                {
+                    /*
+                    #define CLAP_PLUGIN_FEATURE_DEESSER "de-esser"
+                    #define CLAP_PLUGIN_FEATURE_PHASE_VOCODER "phase-vocoder"
+                    #define CLAP_PLUGIN_FEATURE_GRANULAR "granular"
+                    #define CLAP_PLUGIN_FEATURE_FREQUENCY_SHIFTER "frequency-shifter"
+                    #define CLAP_PLUGIN_FEATURE_PITCH_SHIFTER "pitch-shifter"
+                    #define CLAP_PLUGIN_FEATURE_TREMOLO "tremolo"
+                    #define CLAP_PLUGIN_FEATURE_GLITCH "glitch"
+                    */
+                    for (uint32_t j=0; desc->features[j] != nullptr; ++j)
+                    {
+                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_DELAY) == 0 ||
+                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_REVERB) == 0)
+                        {
+                            category = PLUGIN_CATEGORY_DELAY;
+                            break;
+                        }
+                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_EQUALIZER) == 0)
+                        {
+                            category = PLUGIN_CATEGORY_EQ;
+                            break;
+                        }
+                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_FILTER) == 0)
+                        {
+                            category = PLUGIN_CATEGORY_FILTER;
+                            break;
+                        }
+                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_DISTORTION) == 0)
+                        {
+                            category = PLUGIN_CATEGORY_DISTORTION;
+                            break;
+                        }
+                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_COMPRESSOR) == 0 ||
+                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_LIMITER) == 0 ||
+                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_MASTERING) == 0 ||
+                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_MIXING) == 0 ||
+                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_TRANSIENT_SHAPER) == 0)
+                        {
+                            category = PLUGIN_CATEGORY_DYNAMICS;
+                            break;
+                        }
+                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_CHORUS) == 0 ||
+                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_FLANGER) == 0 ||
+                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_PHASER) == 0
+                        )
+                        {
+                            category = PLUGIN_CATEGORY_MODULATOR;
+                            break;
+                        }
+                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_PITCH_CORRECTION) == 0 ||
+                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_RESTORATION) == 0 ||
+                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_UTILITY) == 0
+                        )
+                        {
+                            category = PLUGIN_CATEGORY_UTILITY;
+                            break;
+                        }
+                    }
+                    category = PLUGIN_CATEGORY_OTHER;
+                }
+            }
+
+            if (doInit)
+            {
+                // -----------------------------------------------------------------------
+                // start crash-free plugin test
+
+                plugin->init(plugin);
+
+                // TODO
+
+                // end crash-free plugin test
+                // -----------------------------------------------------------------------
+            }
+
+            plugin->destroy(plugin);
+
+            DISCOVERY_OUT("init", "-----------");
+            DISCOVERY_OUT("build", BINARY_NATIVE);
+            DISCOVERY_OUT("hints", hints);
+            DISCOVERY_OUT("category", getPluginCategoryAsString(category));
+            DISCOVERY_OUT("name", desc->name);
+            DISCOVERY_OUT("label", desc->id);
+            DISCOVERY_OUT("maker", desc->vendor);
+            DISCOVERY_OUT("audio.ins", audioIns);
+            DISCOVERY_OUT("audio.outs", audioOuts);
+            DISCOVERY_OUT("midi.ins", midiIns);
+            DISCOVERY_OUT("midi.outs", midiOuts);
+            DISCOVERY_OUT("parameters.ins", parametersIns);
+            DISCOVERY_OUT("parameters.outs", parametersOuts);
+            DISCOVERY_OUT("end", "------------");
+        }
+    }
+
+    entry->deinit();
+}
+
 #ifdef USING_JUCE
 // -------------------------------------------------------------------------------------------------------------------
 // find all available plugin audio ports
@@ -2200,6 +2480,7 @@ int main(int argc, char* argv[])
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
     case PLUGIN_VST2:
+    case PLUGIN_CLAP:
         openLib = true;
         break;
     case PLUGIN_VST3:
@@ -2294,6 +2575,7 @@ int main(int argc, char* argv[])
     case PLUGIN_DSSI:
     case PLUGIN_VST2:
     case PLUGIN_VST3:
+    case PLUGIN_CLAP:
         removeFileFromQuarantine(filename);
         break;
     default:
@@ -2350,6 +2632,10 @@ int main(int argc, char* argv[])
         do_jsfx_check(filename, doInit);
         break;
 #endif
+
+    case PLUGIN_CLAP:
+        do_clap_check(handle, filename, doInit);
+        break;
 
     case PLUGIN_DLS:
     case PLUGIN_GIG:

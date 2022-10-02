@@ -40,6 +40,7 @@ from carla_backend import (
     PLUGIN_SFZ,
     PLUGIN_VST2,
     PLUGIN_VST3,
+    PLUGIN_CLAP,
 )
 
 from carla_shared import (
@@ -76,6 +77,15 @@ def findVST3Binaries(binPath):
 
     for root, dirs, files in os.walk(binPath):
         for name in tuple(name for name in (files+dirs) if name.lower().endswith(".vst3")):
+            binaries.append(os.path.join(root, name))
+
+    return binaries
+
+def findCLAPBinaries(binPath):
+    binaries = []
+
+    for root, dirs, files in os.walk(binPath):
+        for name in tuple(name for name in (files+dirs) if name.lower().endswith(".clap")):
             binaries.append(os.path.join(root, name))
 
     return binaries
@@ -379,6 +389,9 @@ def checkPluginVST2(filename, tool, wineSettings=None):
 
 def checkPluginVST3(filename, tool, wineSettings=None):
     return runCarlaDiscovery(PLUGIN_VST3, "VST3", filename, tool, wineSettings)
+
+def checkPluginCLAP(filename, tool, wineSettings=None):
+    return runCarlaDiscovery(PLUGIN_CLAP, "CLAP", filename, tool, wineSettings)
 
 def checkFileSF2(filename, tool):
     return runCarlaDiscovery(PLUGIN_SF2, "SF2", filename, tool)

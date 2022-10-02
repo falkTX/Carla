@@ -79,6 +79,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="ch_clap">
+            <property name="text">
+             <string>CLAP</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="ch_au">
             <property name="text">
              <string>AU</string>
