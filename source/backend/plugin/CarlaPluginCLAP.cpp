@@ -423,7 +423,7 @@ public:
         const clap_plugin_entry_t* entry;
 
        #ifdef CARLA_OS_MAC
-        if (!File(filename).existsAsFile())
+        if (!water::File(filename).existsAsFile())
         {
             if (! fBundleLoader.load(filename))
             {
