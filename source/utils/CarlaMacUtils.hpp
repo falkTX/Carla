@@ -25,7 +25,11 @@
 #include "CarlaBackend.h"
 
 // don't include Foundation.h here
+extern "C" {
 typedef struct __CFBundle* CFBundleRef;
+typedef const struct __CFString* CFStringRef;
+void* CFBundleGetFunctionPointerForName(CFBundleRef, CFStringRef);
+}
 
 CARLA_BACKEND_START_NAMESPACE
 
