@@ -106,8 +106,12 @@ struct BundleLoader::PrivateData {
             return;
 
         CFBundleCloseBundleResourceMap(ref, refNum);
-        CFBundleUnloadExecutable(ref);
-        CFRelease(ref);
+
+        if (CFGetRetainCount(ref) == 1)
+            CFBundleUnloadExecutable(ref);
+
+        if (CFGetRetainCount(ref) > 0)
+            CFRelease(ref);
     }
 
     bool load(const char* const filename)

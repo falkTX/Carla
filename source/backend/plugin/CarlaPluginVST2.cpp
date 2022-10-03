@@ -84,10 +84,9 @@ public:
           fIdleThread(kNullThread),
           fMainThread(pthread_self()),
           fProcThread(kNullThread),
-#ifdef CARLA_OS_MAC
-          fMacBundleRef(nullptr),
-          fMacBundleRefNum(0),
-#endif
+         #ifdef CARLA_OS_MAC
+          fBundleLoader(),
+         #endif
           fFirstActive(true),
           fBufferSize(engine->getBufferSize()),
           fAudioOutBuffers(nullptr),
@@ -156,21 +155,6 @@ public:
         }
 
         clearBuffers();
-
-#ifdef CARLA_OS_MAC
-        if (fMacBundleRef != nullptr)
-        {
-            CFBundleCloseBundleResourceMap(fMacBundleRef, fMacBundleRefNum);
-
-            if (CFGetRetainCount(fMacBundleRef) == 1)
-                CFBundleUnloadExecutable(fMacBundleRef);
-
-            if (CFGetRetainCount(fMacBundleRef) > 0)
-                CFRelease(fMacBundleRef);
-
-            fMacBundleRef = nullptr;
-        }
-#endif
     }
 
     // -------------------------------------------------------------------
@@ -2498,37 +2482,22 @@ public:
 
         if (filenameCheck.endsWith(".vst") || filenameCheck.endsWith(".vst/"))
         {
-            // FIXME assert returns, set engine error
-            const CFURLRef urlRef = CFURLCreateFromFileSystemRepresentation(0, (const UInt8*)filename, (CFIndex)strlen(filename), true);
-            CARLA_SAFE_ASSERT_RETURN(urlRef != nullptr, false);
-
-            fMacBundleRef = CFBundleCreate(kCFAllocatorDefault, urlRef);
-            CFRelease(urlRef);
-            CARLA_SAFE_ASSERT_RETURN(fMacBundleRef != nullptr, false);
-
-            if (! CFBundleLoadExecutable(fMacBundleRef))
+            if (! fBundleLoader.load(filename))
             {
-                CFRelease(fMacBundleRef);
-                fMacBundleRef = nullptr;
                 pData->engine->setLastError("Failed to load VST2 bundle executable");
                 return false;
             }
 
-            vstFn = (VST_Function)CFBundleGetFunctionPointerForName(fMacBundleRef, CFSTR("VSTPluginMain"));
+            vstFn = fBundleLoader.getSymbol<VST_Function>(CFSTR("VSTPluginMain"));
 
             if (vstFn == nullptr)
-                vstFn = (VST_Function)CFBundleGetFunctionPointerForName(fMacBundleRef, CFSTR("main_macho"));
+                vstFn = fBundleLoader.getSymbol<VST_Function>(CFSTR("main_macho"));
 
             if (vstFn == nullptr)
             {
-                CFBundleUnloadExecutable(fMacBundleRef);
-                CFRelease(fMacBundleRef);
-                fMacBundleRef = nullptr;
                 pData->engine->setLastError("Not a VST2 plugin");
                 return false;
             }
-
-            fMacBundleRefNum = CFBundleOpenBundleResourceMap(fMacBundleRef);
         }
         else
 #endif
@@ -2764,10 +2733,9 @@ private:
     pthread_t fMainThread;
     pthread_t fProcThread;
 
-#ifdef CARLA_OS_MAC
-    CFBundleRef    fMacBundleRef;
-    CFBundleRefNum fMacBundleRefNum;
-#endif
+   #ifdef CARLA_OS_MAC
+    BundleLoader fBundleLoader;
+   #endif
 
     bool fFirstActive; // first process() call after activate()
     uint32_t fBufferSize;

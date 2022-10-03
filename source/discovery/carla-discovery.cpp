@@ -1007,10 +1007,10 @@ static void do_vst2_check(lib_t& libHandle, const char* const filename, const bo
             return;
         }
 
-        vstFn = (VST_Function)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR("main_macho"));
+        vstFn = bundleLoader.getSymbol<VST_Function>(CFSTR("main_macho"));
 
         if (vstFn == nullptr)
-            vstFn = (VST_Function)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR("VSTPluginMain"));
+            vstFn = bundleLoader.getSymbol<VST_Function>(CFSTR("VSTPluginMain"));
 
         if (vstFn == nullptr)
         {
@@ -1468,9 +1468,9 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             return;
         }
 
-        v3_entry = (V3_ENTRYFN)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR(V3_ENTRYFNNAME));
-        v3_exit = (V3_EXITFN)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR(V3_EXITFNNAME));
-        v3_get = (V3_GETFN)CFBundleGetFunctionPointerForName(bundleLoader.getRef(), CFSTR(V3_GETFNNAME));
+        v3_entry = bundleLoader.getSymbol<V3_ENTRYFN>(CFSTR(V3_ENTRYFNNAME));
+        v3_exit = bundleLoader.getSymbol<V3_EXITFN>(CFSTR(V3_EXITFNNAME));
+        v3_get = bundleLoader.getSymbol<V3_GETFN>(CFSTR(V3_GETFNNAME));
 #else
         water::String binaryfilename = filename;
 
@@ -1869,7 +1869,27 @@ struct carla_clap_host : clap_host_t {
 
 static void do_clap_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
-    const clap_plugin_entry_t* const entry = lib_symbol<const clap_plugin_entry_t*>(libHandle, "clap_entry");
+    const clap_plugin_entry_t* entry = nullptr;
+
+   #ifdef CARLA_OS_MAC
+    BundleLoader bundleLoader;
+
+    // if passed filename is not a plugin binary directly, inspect bundle and find one
+    if (libHandle == nullptr)
+    {
+        if (! bundleLoader.load(filename))
+        {
+            DISCOVERY_OUT("error", "Failed to load CLAP bundle executable");
+            return;
+        }
+
+        entry = bundleLoader.getSymbol<const clap_plugin_entry_t*>(CFSTR("clap_entry"));
+    }
+    else
+   #endif
+    {
+        entry = lib_symbol<const clap_plugin_entry_t*>(libHandle, "clap_entry");
+    }
 
     // ensure entry points are available
     if (entry == nullptr || entry->init == nullptr || entry->deinit == nullptr || entry->get_factory == nullptr)
@@ -1887,7 +1907,11 @@ static void do_clap_check(lib_t& libHandle, const char* const filename, const bo
 
     const water::String pluginPath(water::File(filename).getParentDirectory().getFullPathName());
 
-    entry->init(pluginPath.toRawUTF8());
+    if (!entry->init(pluginPath.toRawUTF8()))
+    {
+        DISCOVERY_OUT("error", "CLAP plugin failed to initialize");
+        return;
+    }
 
     const clap_plugin_factory_t* const factory = static_cast<const clap_plugin_factory_t*>(
         entry->get_factory(CLAP_PLUGIN_FACTORY_ID));

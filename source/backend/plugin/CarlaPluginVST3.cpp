@@ -2040,9 +2040,9 @@ public:
                 return false;
             }
 
-            v3_entry = (V3_ENTRYFN)CFBundleGetFunctionPointerForName(fMacBundleLoader.getRef(), CFSTR(V3_ENTRYFNNAME));
-            v3_exit = (V3_EXITFN)CFBundleGetFunctionPointerForName(fMacBundleLoader.getRef(), CFSTR(V3_EXITFNNAME));
-            v3_get = (V3_GETFN)CFBundleGetFunctionPointerForName(fMacBundleLoader.getRef(), CFSTR(V3_GETFNNAME));
+            v3_entry = fMacBundleLoader.getSymbol<V3_ENTRYFN>(CFSTR(V3_ENTRYFNNAME));
+            v3_exit = fMacBundleLoader.getSymbol<V3_EXITFN>(CFSTR(V3_EXITFNNAME));
+            v3_get = fMacBundleLoader.getSymbol<V3_GETFN>(CFSTR(V3_GETFNNAME));
            #else
             water::String binaryfilename = filename;
 
