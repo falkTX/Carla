@@ -35,6 +35,7 @@ from carla_backend import (
     PLUGIN_LV2,
     PLUGIN_SFZ,
     PLUGIN_VST2,
+    PLUGIN_VST3,
     PLUGIN_CLAP,
 )
 
@@ -84,7 +85,7 @@ from .discovery import (
     checkPluginCLAP,
     findBinaries,
     findFilenames,
-    findMacVSTBundles,
+    findMacBundles,
     findVST3Binaries,
     findCLAPBinaries
 )
@@ -589,7 +590,7 @@ class SearchPluginsThread(QThread):
 
         for iPATH in VST2_PATH:
             if MACOS and not isWine:
-                binaries = findMacVSTBundles(iPATH, False)
+                binaries = findMacBundles(iPATH, PLUGIN_VST2)
             else:
                 binaries = findBinaries(iPATH, PLUGIN_VST2, OS)
             for binary in binaries:
@@ -631,7 +632,7 @@ class SearchPluginsThread(QThread):
 
         for iPATH in VST3_PATH:
             if MACOS and not isWine:
-                binaries = findMacVSTBundles(iPATH, True)
+                binaries = findMacBundles(iPATH, PLUGIN_VST3)
             else:
                 binaries = findVST3Binaries(iPATH)
             for binary in binaries:
@@ -669,7 +670,10 @@ class SearchPluginsThread(QThread):
         del settings
 
         for iPATH in CLAP_PATH:
-            binaries = findCLAPBinaries(iPATH)
+            if MACOS and not isWine:
+                binaries = findMacBundles(iPATH, PLUGIN_CLAP)
+            else:
+                binaries = findCLAPBinaries(iPATH)
             for binary in binaries:
                 if binary not in clapBinaries:
                     clapBinaries.append(binary)

@@ -101,9 +101,17 @@ def findLV2Bundles(bundlePath):
 
     return bundles
 
-def findMacVSTBundles(bundlePath, isVST3):
+def findMacBundles(bundlePath, pluginType):
     bundles = []
-    extension = ".vst3" if isVST3 else ".vst"
+
+    if pluginType == PLUGIN_VST2:
+        extension = ".vst"
+    elif pluginType == PLUGIN_VST3:
+        extension = ".vst3"
+    elif pluginType == PLUGIN_CLAP:
+        extension = ".clap"
+    else:
+        return bundles
 
     for root, dirs, _ in os.walk(bundlePath, followlinks=True):
         for name in tuple(name for name in dirs if name.lower().endswith(extension)):

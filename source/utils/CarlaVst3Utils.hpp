@@ -27,6 +27,8 @@
 #include "travesty/factory.h"
 #include "travesty/host.h"
 
+// --------------------------------------------------------------------------------------------------------------------
+
 #if !(defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
  #if defined(__aarch64__) || defined(__arm64__)
   #define V3_ARCHITECTURE "aarch64"
@@ -120,7 +122,11 @@ typedef void (*V3_EXITFN)(void);
 #define V3_GETFNNAME "GetPluginFactory"
 typedef v3_plugin_factory** (*V3_GETFN)(void);
 
+// --------------------------------------------------------------------------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
+
+// --------------------------------------------------------------------------------------------------------------------
 
 static inline
 PluginCategory getPluginCategoryFromV3SubCategories(const char* const subcategories) noexcept
@@ -148,6 +154,8 @@ const char* tuid2str(const v3_tuid iid) noexcept
                   v3_cconst(iid[12], iid[13], iid[14], iid[15]));
     return buf;
 }
+
+// --------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 

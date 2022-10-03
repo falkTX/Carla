@@ -2333,7 +2333,7 @@ public:
 
         for (uint32_t i=0; i < portCount; ++i)
         {
-            const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
+            const LV2_Property portTypes = fRdfDescriptor->Ports[i].Types;
 
             if (LV2_IS_PORT_AUDIO(portTypes))
             {

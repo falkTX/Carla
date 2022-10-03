@@ -67,7 +67,8 @@ public:
           fPlugin(nullptr),
           fPluginDescriptor(nullptr),
           fPluginEntry(nullptr),
-          fHost()
+          fHost(),
+          fExtensions()
     {
         carla_debug("CarlaPluginCLAP::CarlaPluginCLAP(%p, %i)", engine, id);
 
@@ -127,11 +128,17 @@ public:
         return PLUGIN_CLAP;
     }
 
-    /*
     PluginCategory getCategory() const noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fPluginDescriptor != nullptr, PLUGIN_CATEGORY_NONE);
+
+        if (fPluginDescriptor->features == nullptr)
+            return PLUGIN_CATEGORY_NONE;
+
+        return getPluginCategoryFromClapFeatures(fPluginDescriptor->features);
     }
 
+    /*
     uint32_t getLatencyInFrames() const noexcept override
     {
     }
@@ -158,11 +165,20 @@ public:
     uint getOptionsAvailable() const noexcept override
     {
     }
+    */
 
     float getParameterValue(const uint32_t parameterId) const noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr, 0.f);
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params != nullptr, 0.f);
+
+        const clap_id clapId = pData->param.data[parameterId].rindex;
+
+        double value;
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_value(fPlugin, clapId, &value), 0.f);
+
+        return value;
     }
-    */
 
     bool getLabel(char* const strBuf) const noexcept override
     {
@@ -193,15 +209,36 @@ public:
         return true;
     }
 
-    /*
     bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        const clap_id clapId = pData->param.data[parameterId].rindex;
+
+        clap_param_info_t paramInfo = {};
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_info(fPlugin, clapId, &paramInfo), false);
+
+        std::strncpy(strBuf, paramInfo.name, STR_MAX);
+        return true;
     }
 
     bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        const clap_id clapId = pData->param.data[parameterId].rindex;
+
+        double value;
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_value(fPlugin, clapId, &value), false);
+
+        return fExtensions.params->value_to_text(fPlugin, clapId, value, strBuf, STR_MAX);
     }
 
+    /*
     bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
     }
@@ -283,22 +320,309 @@ public:
     void reload() override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
-        // CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         carla_debug("CarlaPluginCLAP::reload() - start");
-
-        const EngineProcessMode processMode = pData->engine->getProccessMode();
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        const clap_plugin_audio_ports_t* const audioPorts = static_cast<const clap_plugin_audio_ports_t*>(
+        if (pData->active)
+            deactivate();
+
+        clearBuffers();
+
+        const clap_plugin_audio_ports_t* audioPortsExt = static_cast<const clap_plugin_audio_ports_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_AUDIO_PORTS));
 
-        const clap_plugin_note_ports_t* const notePorts = static_cast<const clap_plugin_note_ports_t*>(
+        const clap_plugin_note_ports_t* notePortsExt = static_cast<const clap_plugin_note_ports_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_NOTE_PORTS));
 
-        const clap_plugin_params_t* const params = static_cast<const clap_plugin_params_t*>(
+        const clap_plugin_params_t* paramsExt = static_cast<const clap_plugin_params_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_PARAMS));
+
+        if (audioPortsExt != nullptr && (audioPortsExt->count == nullptr || audioPortsExt->get == nullptr))
+            audioPortsExt = nullptr;
+
+        if (notePortsExt != nullptr && (notePortsExt->count == nullptr || notePortsExt->get == nullptr))
+            notePortsExt = nullptr;
+
+        if (paramsExt != nullptr && (paramsExt->count == nullptr || paramsExt->get_info == nullptr))
+            paramsExt = nullptr;
+
+        fExtensions.params = paramsExt;
+
+        const uint32_t numAudioInputPorts = audioPortsExt != nullptr ? audioPortsExt->count(fPlugin, true) : 0;
+        const uint32_t numAudioOutputPorts = audioPortsExt != nullptr ? audioPortsExt->count(fPlugin, false) : 0;
+        const uint32_t numNoteInputPorts = notePortsExt != nullptr ? notePortsExt->count(fPlugin, true) : 0;
+        const uint32_t numNoteOutputPorts = notePortsExt != nullptr ? notePortsExt->count(fPlugin, true) : 0;
+        const uint32_t numParameters = paramsExt != nullptr ? paramsExt->count(fPlugin) : 0;
+
+        uint32_t aIns, aOuts, params;
+        aIns = aOuts = params = 0;
+
+        bool needsCtrlIn, needsCtrlOut;
+        needsCtrlIn = needsCtrlOut = false;
+
+        for (uint32_t i=0; i<numAudioInputPorts; ++i)
+        {
+            clap_audio_port_info_t portInfo = {};
+            CARLA_SAFE_ASSERT_BREAK(audioPortsExt->get(fPlugin, i, true, &portInfo));
+
+            aIns += portInfo.channel_count;
+        }
+
+        for (uint32_t i=0; i<numAudioOutputPorts; ++i)
+        {
+            clap_audio_port_info_t portInfo = {};
+            CARLA_SAFE_ASSERT_BREAK(audioPortsExt->get(fPlugin, i, false, &portInfo));
+
+            aOuts += portInfo.channel_count;
+        }
+
+        for (uint32_t i=0; i<numParameters; ++i)
+        {
+            clap_param_info_t paramInfo = {};
+            CARLA_SAFE_ASSERT_BREAK(paramsExt->get_info(fPlugin, i, &paramInfo));
+
+            if ((paramInfo.flags & (CLAP_PARAM_IS_HIDDEN|CLAP_PARAM_IS_BYPASS)) == 0x0)
+                ++params;
+        }
+
+        if (aIns > 0)
+        {
+            pData->audioIn.createNew(aIns);
+        }
+
+        if (aOuts > 0)
+        {
+            pData->audioOut.createNew(aOuts);
+            needsCtrlIn = true;
+        }
+
+        if (numNoteInputPorts > 0)
+            needsCtrlIn = true;
+
+        if (numNoteOutputPorts > 0)
+            needsCtrlOut = true;
+
+        if (params > 0)
+        {
+            pData->param.createNew(params, false);
+            needsCtrlIn = true;
+        }
+
+        const EngineProcessMode processMode = pData->engine->getProccessMode();
+        const uint portNameSize = pData->engine->getMaxPortNameSize();
+        CarlaString portName;
+
+        // Audio Ins
+        for (uint32_t j=0; j < aIns; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (aIns > 1)
+            {
+                portName += "input_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "input";
+
+            portName.truncate(portNameSize);
+
+            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
+            pData->audioIn.ports[j].rindex = j;
+        }
+
+        // Audio Outs
+        for (uint32_t j=0; j < aOuts; ++j)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (aOuts > 1)
+            {
+                portName += "output_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "output";
+
+            portName.truncate(portNameSize);
+
+            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
+            pData->audioOut.ports[j].rindex = j;
+        }
+
+        for (uint32_t j=0; j < params; ++j)
+        {
+            const int32_t ij = static_cast<int32_t>(j);
+            pData->param.data[j].index  = j;
+            pData->param.data[j].rindex = ij;
+
+            clap_param_info_t paramInfo = {};
+            CARLA_SAFE_ASSERT_BREAK(paramsExt->get_info(fPlugin, j, &paramInfo));
+
+            if (paramInfo.flags & (CLAP_PARAM_IS_HIDDEN|CLAP_PARAM_IS_BYPASS))
+                continue;
+
+            double min, max, def, step, stepSmall, stepLarge;
+
+            min = paramInfo.min_value;
+            max = paramInfo.max_value;
+            def = paramInfo.default_value;
+
+            if (min >= max)
+                max = min + 0.1;
+
+            if (def < min)
+                def = min;
+            else if (def > max)
+                def = max;
+
+            if (paramInfo.flags & CLAP_PARAM_IS_READONLY)
+                pData->param.data[j].type = PARAMETER_OUTPUT;
+            else
+                pData->param.data[j].type = PARAMETER_INPUT;
+
+            if (paramInfo.flags & CLAP_PARAM_IS_STEPPED)
+            {
+                if (carla_isEqual(max - min, 1.0))
+                {
+                    step = stepSmall = stepLarge = 1.0;
+                    pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
+                }
+                else
+                {
+                    step = 1.0;
+                    stepSmall = 1.0;
+                    stepLarge = std::min(max - min, 10.0);
+                }
+                pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
+            }
+            else
+            {
+                double range = max - min;
+                step = range/100.0;
+                stepSmall = range/1000.0;
+                stepLarge = range/10.0;
+            }
+
+            pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
+            pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
+
+            if (paramInfo.flags & CLAP_PARAM_IS_AUTOMATABLE)
+            {
+                pData->param.data[j].hints |= PARAMETER_IS_AUTOMATABLE;
+
+                if ((paramInfo.flags & CLAP_PARAM_IS_STEPPED) == 0x0)
+                    pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+            }
+
+            pData->param.ranges[j].min = min;
+            pData->param.ranges[j].max = max;
+            pData->param.ranges[j].def = def;
+            pData->param.ranges[j].step = step;
+            pData->param.ranges[j].stepSmall = stepSmall;
+            pData->param.ranges[j].stepLarge = stepLarge;
+        }
+
+        if (needsCtrlIn)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            portName += "events-in";
+            portName.truncate(portNameSize);
+
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+           #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
+           #endif
+        }
+
+        if (needsCtrlOut)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            portName += "events-out";
+            portName.truncate(portNameSize);
+
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
+        }
+
+        // plugin hints
+        const PluginCategory category = fPluginDescriptor->features != nullptr ? getPluginCategoryFromClapFeatures(fPluginDescriptor->features)
+                                                                               : PLUGIN_CATEGORY_NONE;
+
+        pData->hints = 0x0;
+
+        if (category == PLUGIN_CATEGORY_SYNTH)
+            pData->hints |= PLUGIN_IS_SYNTH;
+
+       #ifdef CLAP_WINDOW_API_NATIVE
+        if (const clap_plugin_gui_t* const guiExt = static_cast<const clap_plugin_gui_t*>(fPlugin->get_extension(fPlugin, CLAP_EXT_GUI)))
+        {
+            if (guiExt->is_api_supported != nullptr)
+            {
+                if (guiExt->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, false))
+                {
+                    pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+                    pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+                }
+                else if (guiExt->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, false))
+                {
+                    pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+                }
+            }
+        }
+       #endif
+
+        if (aOuts > 0 && (aIns == aOuts || aIns == 1))
+            pData->hints |= PLUGIN_CAN_DRYWET;
+
+        if (aOuts > 0)
+            pData->hints |= PLUGIN_CAN_VOLUME;
+
+        if (aOuts >= 2 && aOuts % 2 == 0)
+            pData->hints |= PLUGIN_CAN_BALANCE;
+
+        // extra plugin hints
+        pData->extraHints = 0x0;
+
+        if (numNoteInputPorts > 0)
+            pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
+
+        if (numNoteOutputPorts > 0)
+            pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
+
+        bufferSizeChanged(pData->engine->getBufferSize());
+        reloadPrograms(true);
+
+        if (pData->active)
+            activate();
 
         carla_debug("CarlaPluginCLAP::reload() - end");
     }
@@ -313,15 +637,25 @@ public:
 
     void activate() noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+
+        // FIXME check return status
+        fPlugin->activate(fPlugin, pData->engine->getSampleRate(), 1, pData->engine->getBufferSize());
+        fPlugin->start_processing(fPlugin);
     }
 
     void deactivate() noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+
+        // FIXME check return status
+        fPlugin->stop_processing(fPlugin);
+        fPlugin->deactivate(fPlugin);
     }
 
-    void process(const float* const*,
+    void process(const float* const* const audioIn,
                  float** const audioOut,
-                 const float* const*,
+                 const float* const* const cvIn,
                  float** const,
                  const uint32_t frames) override
     {
@@ -336,18 +670,240 @@ public:
             return;
         }
 
+        // --------------------------------------------------------------------------------------------------------
+        // Check if needs reset
+
+        if (pData->needsReset)
+        {
+            pData->needsReset = false;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Set TimeInfo
+
+        const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
+
+        // --------------------------------------------------------------------------------------------------------
+        // Event Input and Processing
+
+        if (pData->event.portIn != nullptr)
+        {
+            // ----------------------------------------------------------------------------------------------------
+            // MIDI Input (External)
+
+            if (pData->extNotes.mutex.tryLock())
+            {
+                pData->extNotes.data.clear();
+
+                pData->extNotes.mutex.unlock();
+
+            } // End of MIDI Input (External)
+
+            // ----------------------------------------------------------------------------------------------------
+            // Event Input (System)
+
+            uint32_t startTime  = 0;
+            uint32_t timeOffset = 0;
+
+            pData->postRtEvents.trySplice();
+
+            if (frames > timeOffset)
+                processSingle(audioIn, audioOut, frames - timeOffset, timeOffset);
+
+        } // End of Event Input and Processing
+
+        // --------------------------------------------------------------------------------------------------------
+        // Plugin processing (no events)
+
+        else
+        {
+            processSingle(audioIn, audioOut, frames, 0);
+
+        } // End of Plugin processing (no events)
+
+        // --------------------------------------------------------------------------------------------------------
+        // MIDI Output
+
+        if (pData->event.portOut != nullptr)
+        {
+
+        } // End of MIDI Output
+
+        // --------------------------------------------------------------------------------------------------------
+
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        return;
+
+        // unused
+        (void)cvIn;
+#endif
+    }
+
+    bool processSingle(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    {
+        CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
+
+        if (pData->audioIn.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(inBuffer != nullptr, false);
+        }
+        if (pData->audioOut.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Try lock, silence otherwise
+
+        if (pData->engine->isOffline())
+        {
+            pData->singleMutex.lock();
+        }
+        else if (! pData->singleMutex.tryLock())
+        {
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            {
+                for (uint32_t k=0; k < frames; ++k)
+                    outBuffer[i][k+timeOffset] = 0.0f;
+            }
+
+            return false;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Run plugin
+
+        const clap_audio_buffer_const_t inBuffers[1] = {
+            {
+                inBuffer, // data32
+                nullptr, // data64
+                1, // channel_count
+                0, // latency
+                0  // constant_mask;
+            }
+        };
+        clap_audio_buffer_t outBuffers[1] = {
+            {
+                outBuffer, // data32
+                nullptr, // data64
+                1, // channel_count
+                0, // latency
+                0  // constant_mask;
+            }
+        };
+        const clap_process_t process = {
+            0, // steady_time
+            frames,
+            nullptr, // transport
+            static_cast<const clap_audio_buffer_t*>(static_cast<const void*>(inBuffers)), // audio_inputs
+            outBuffers, // audio_outputs
+            1, // audio_inputs_count
+            1, // audio_outputs_count
+            nullptr, // in_events
+            nullptr  // out_events
+        };
+
+        fPlugin->process(fPlugin, &process);
+
+        // fTimeInfo.samplePos += frames;
+
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        // --------------------------------------------------------------------------------------------------------
+        // Post-processing (dry/wet, volume and balance)
+
+        {
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
+            const bool isMono    = (pData->audioIn.count == 1);
+
+            bool isPair;
+            float bufValue, oldBufLeft[doBalance ? frames : 1];
+
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            {
+                // Dry/Wet
+                if (doDryWet)
+                {
+                    const uint32_t c = isMono ? 0 : i;
+
+                    for (uint32_t k=0; k < frames; ++k)
+                    {
+                        bufValue = inBuffer[c][k];
+                        outBuffer[i][k] = (outBuffer[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
+                    }
+                }
+
+                // Balance
+                if (doBalance)
+                {
+                    isPair = (i % 2 == 0);
+
+                    if (isPair)
+                    {
+                        CARLA_ASSERT(i+1 < pData->audioOut.count);
+                        carla_copyFloats(oldBufLeft, outBuffer[i], frames);
+                    }
+
+                    float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
+                    float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
+
+                    for (uint32_t k=0; k < frames; ++k)
+                    {
+                        if (isPair)
+                        {
+                            // left
+                            outBuffer[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
+                            outBuffer[i][k] += outBuffer[i+1][k] * (1.0f - balRangeR);
+                        }
+                        else
+                        {
+                            // right
+                            outBuffer[i][k]  = outBuffer[i][k] * balRangeR;
+                            outBuffer[i][k] += oldBufLeft[k]   * balRangeL;
+                        }
+                    }
+                }
+
+                // Volume
+                if (doVolume)
+                {
+                    for (uint32_t k=0; k < frames; ++k)
+                        outBuffer[i][k] *= pData->postProc.volume;
+                }
+            }
+
+        } // End of Post-processing
+       #endif // BUILD_BRIDGE_ALTERNATIVE_ARCH
+
+        // --------------------------------------------------------------------------------------------------------
+
+        pData->singleMutex.unlock();
+        return true;
     }
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("CarlaPluginCLAP::bufferSizeChanged(%i)", newBufferSize);
+
+        if (pData->active)
+            deactivate();
+
+        if (pData->active)
+            activate();
     }
 
     void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("CarlaPluginCLAP::sampleRateChanged(%g)", newSampleRate);
+
+        if (pData->active)
+            deactivate();
+
+        if (pData->active)
+            activate();
     }
 
     // -------------------------------------------------------------------
@@ -595,6 +1151,15 @@ private:
     const clap_plugin_descriptor_t* fPluginDescriptor;
     const clap_plugin_entry_t* fPluginEntry;
     const carla_clap_host fHost;
+
+    struct Extensions {
+        const clap_plugin_params_t* params;
+
+        Extensions()
+            : params(nullptr) {}
+
+        CARLA_DECLARE_NON_COPYABLE(Extensions)
+    } fExtensions;
 
    #ifdef CARLA_OS_MAC
     BundleLoader fBundleLoader;

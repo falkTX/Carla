@@ -851,14 +851,14 @@ public:
         clearBuffers();
 
         const int32_t numAudioInputBuses = v3_cpp_obj(fV3.component)->get_bus_count(fV3.component, V3_AUDIO, V3_INPUT);
-        const int32_t numEventInputBuses = v3_cpp_obj(fV3.component)->get_bus_count(fV3.component, V3_EVENT, V3_INPUT);
         const int32_t numAudioOutputBuses = v3_cpp_obj(fV3.component)->get_bus_count(fV3.component, V3_AUDIO, V3_OUTPUT);
+        const int32_t numEventInputBuses = v3_cpp_obj(fV3.component)->get_bus_count(fV3.component, V3_EVENT, V3_INPUT);
         const int32_t numEventOutputBuses = v3_cpp_obj(fV3.component)->get_bus_count(fV3.component, V3_EVENT, V3_OUTPUT);
         const int32_t numParameters = v3_cpp_obj(fV3.controller)->get_parameter_count(fV3.controller);
 
         CARLA_SAFE_ASSERT(numAudioInputBuses >= 0);
-        CARLA_SAFE_ASSERT(numEventInputBuses >= 0);
         CARLA_SAFE_ASSERT(numAudioOutputBuses >= 0);
+        CARLA_SAFE_ASSERT(numEventInputBuses >= 0);
         CARLA_SAFE_ASSERT(numEventOutputBuses >= 0);
         CARLA_SAFE_ASSERT(numParameters >= 0);
 
@@ -1045,8 +1045,7 @@ public:
         for (uint32_t j=0; j < params; ++j)
         {
             const int32_t ij = static_cast<int32_t>(j);
-            pData->param.data[j].type   = PARAMETER_INPUT;
-            pData->param.data[j].index  = ij;
+            pData->param.data[j].index  = j;
             pData->param.data[j].rindex = ij;
 
             v3_param_info paramInfo = {};
@@ -1055,14 +1054,14 @@ public:
             if (paramInfo.flags & (V3_PARAM_IS_BYPASS|V3_PARAM_IS_HIDDEN|V3_PARAM_PROGRAM_CHANGE))
                 continue;
 
-            float min, max, def, step, stepSmall, stepLarge;
+            double min, max, def, step, stepSmall, stepLarge;
 
-            min = static_cast<float>(v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, j, 0.0));
-            max = static_cast<float>(v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, j, 1.0));
-            def = static_cast<float>(v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, j, paramInfo.default_normalised_value));
+            min = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, j, 0.0);
+            max = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, j, 1.0);
+            def = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, j, paramInfo.default_normalised_value);
 
             if (min >= max)
-                max = min + 0.1f;
+                max = min + 0.1;
 
             if (def < min)
                 def = min;
@@ -1084,18 +1083,18 @@ public:
             /*
             else if (paramInfo.step_count != 0 && (paramInfo.flags & V3_PARAM_IS_LIST) != 0x0)
             {
-                step = 1.0f;
-                stepSmall = 1.0f;
-                stepLarge = 10.0f;
+                step = 1.0;
+                stepSmall = 1.0;
+                stepLarge = std::min(max - min, 10.0);
                 pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
             }
             */
             else
             {
                 float range = max - min;
-                step = range/100.0f;
-                stepSmall = range/1000.0f;
-                stepLarge = range/10.0f;
+                step = range/100.0;
+                stepSmall = range/1000.0;
+                stepLarge = range/10.0;
             }
 
             pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
@@ -1222,7 +1221,7 @@ public:
             }
         }
 
-        for (int32_t j=0; j<numAudioInputBuses; ++j)
+        for (int32_t j=0; j<numAudioOutputBuses; ++j)
         {
             v3_bus_info busInfo = {};
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component, V3_AUDIO, V3_OUTPUT, j, &busInfo) == V3_OK);

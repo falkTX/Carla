@@ -695,8 +695,6 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         carla_debug("CarlaPluginVST2::reload() - start");
 
-        const EngineProcessMode processMode(pData->engine->getProccessMode());
-
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
         const CarlaScopedValueSetter<bool> svs(fIsInitializing, fIsInitializing, false);
@@ -752,7 +750,8 @@ public:
             needsCtrlIn = true;
         }
 
-        const uint portNameSize(pData->engine->getMaxPortNameSize());
+        const EngineProcessMode processMode = pData->engine->getProccessMode();
+        const uint portNameSize = pData->engine->getMaxPortNameSize();
         CarlaString portName;
 
         // Audio Ins

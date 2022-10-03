@@ -2028,91 +2028,7 @@ static void do_clap_check(lib_t& libHandle, const char* const filename, const bo
             }
 
             if (desc->features != nullptr)
-            {
-                // 1st pass for main categories
-                for (uint32_t j=0; desc->features[j] != nullptr; ++j)
-                {
-                    if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_INSTRUMENT) == 0)
-                    {
-                        category = PLUGIN_CATEGORY_SYNTH;
-                        break;
-                    }
-                    if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_NOTE_EFFECT) == 0)
-                    {
-                        category = PLUGIN_CATEGORY_UTILITY;
-                        break;
-                    }
-                    if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_ANALYZER) == 0)
-                    {
-                        category = PLUGIN_CATEGORY_UTILITY;
-                        break;
-                    }
-                }
-
-                // 2nd pass for FX sub categories
-                if (category == PLUGIN_CATEGORY_NONE)
-                {
-                    /*
-                    #define CLAP_PLUGIN_FEATURE_DEESSER "de-esser"
-                    #define CLAP_PLUGIN_FEATURE_PHASE_VOCODER "phase-vocoder"
-                    #define CLAP_PLUGIN_FEATURE_GRANULAR "granular"
-                    #define CLAP_PLUGIN_FEATURE_FREQUENCY_SHIFTER "frequency-shifter"
-                    #define CLAP_PLUGIN_FEATURE_PITCH_SHIFTER "pitch-shifter"
-                    #define CLAP_PLUGIN_FEATURE_TREMOLO "tremolo"
-                    #define CLAP_PLUGIN_FEATURE_GLITCH "glitch"
-                    */
-                    for (uint32_t j=0; desc->features[j] != nullptr; ++j)
-                    {
-                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_DELAY) == 0 ||
-                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_REVERB) == 0)
-                        {
-                            category = PLUGIN_CATEGORY_DELAY;
-                            break;
-                        }
-                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_EQUALIZER) == 0)
-                        {
-                            category = PLUGIN_CATEGORY_EQ;
-                            break;
-                        }
-                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_FILTER) == 0)
-                        {
-                            category = PLUGIN_CATEGORY_FILTER;
-                            break;
-                        }
-                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_DISTORTION) == 0)
-                        {
-                            category = PLUGIN_CATEGORY_DISTORTION;
-                            break;
-                        }
-                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_COMPRESSOR) == 0 ||
-                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_LIMITER) == 0 ||
-                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_MASTERING) == 0 ||
-                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_MIXING) == 0 ||
-                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_TRANSIENT_SHAPER) == 0)
-                        {
-                            category = PLUGIN_CATEGORY_DYNAMICS;
-                            break;
-                        }
-                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_CHORUS) == 0 ||
-                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_FLANGER) == 0 ||
-                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_PHASER) == 0
-                        )
-                        {
-                            category = PLUGIN_CATEGORY_MODULATOR;
-                            break;
-                        }
-                        if (std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_PITCH_CORRECTION) == 0 ||
-                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_RESTORATION) == 0 ||
-                            std::strcmp(desc->features[j], CLAP_PLUGIN_FEATURE_UTILITY) == 0
-                        )
-                        {
-                            category = PLUGIN_CATEGORY_UTILITY;
-                            break;
-                        }
-                    }
-                    category = PLUGIN_CATEGORY_OTHER;
-                }
-            }
+                category = getPluginCategoryFromClapFeatures(desc->features);
 
             if (doInit)
             {
@@ -2504,10 +2420,10 @@ int main(int argc, char* argv[])
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
     case PLUGIN_VST2:
-    case PLUGIN_CLAP:
         openLib = true;
         break;
     case PLUGIN_VST3:
+    case PLUGIN_CLAP:
         openLib = water::File(filename).existsAsFile();
         break;
     default:
