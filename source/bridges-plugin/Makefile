@@ -342,6 +342,11 @@ $(OBJDIR)/CarlaPluginVST3.cpp.o: $(CWD)/backend/plugin/CarlaPluginVST3.cpp
 	@echo "Compiling CarlaPluginVST3.cpp (bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
 
+$(OBJDIR)/CarlaPluginCLAP.cpp.o: $(CWD)/backend/plugin/CarlaPluginCLAP.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginCLAP.cpp (bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
+
 $(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (bridge)"
@@ -436,6 +441,11 @@ $(OBJDIR)/CarlaPluginVST3.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginVST3.c
 	@echo "Compiling CarlaPluginVST3.cpp (posix32 bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
 
+$(OBJDIR)/CarlaPluginCLAP.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginCLAP.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginCLAP.cpp (posix32 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
+
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix32 bridge)"
@@ -493,6 +503,11 @@ $(OBJDIR)/CarlaPluginVST2.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginVST2.c
 $(OBJDIR)/CarlaPluginVST3.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginVST3.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginVST3.cpp (posix64 bridge)"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
+
+$(OBJDIR)/CarlaPluginCLAP.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginCLAP.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPluginCLAP.cpp (posix64 bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix64.o: CarlaBridgePlugin.cpp
