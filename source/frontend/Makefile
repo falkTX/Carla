@@ -65,8 +65,6 @@ RES = \
 	$(BINDIR)/resources/resources_rc.py \
 	$(BINDIR)/resources/ui_carla_about.py \
 	$(BINDIR)/resources/ui_carla_about_juce.py \
-	$(BINDIR)/resources/ui_carla_add_jack.py \
-	$(BINDIR)/resources/ui_carla_database.py \
 	$(BINDIR)/resources/ui_carla_edit.py \
 	$(BINDIR)/resources/ui_carla_host.py \
 	$(BINDIR)/resources/ui_carla_osc_connect.py \
@@ -76,7 +74,6 @@ RES = \
 	$(BINDIR)/resources/ui_carla_plugin_compact.py \
 	$(BINDIR)/resources/ui_carla_plugin_default.py \
 	$(BINDIR)/resources/ui_carla_plugin_presets.py \
-	$(BINDIR)/resources/ui_carla_refresh.py \
 	$(BINDIR)/resources/ui_carla_settings.py \
 	$(BINDIR)/resources/ui_carla_settings_driver.py \
 	$(BINDIR)/resources/ui_inputdialog_value.py \
@@ -99,24 +96,24 @@ UI_FILES = $(wildcard pluginlist/*.ui)
 UIs  = $(UI_FILES:%.ui=%_ui.hpp)
 UIs += $(UI_FILES:%.ui=%_ui.py)
 
-# ui_carla_about.py \
-# ui_carla_about_juce.py \
-# ui_carla_database.py \
-# ui_carla_edit.py \
-# ui_carla_host.py \
-# ui_carla_osc_connect.py \
-# ui_carla_parameter.py \
-# ui_carla_plugin_calf.py \
-# ui_carla_plugin_classic.py \
-# ui_carla_plugin_compact.py \
-# ui_carla_plugin_default.py \
-# ui_carla_plugin_presets.py \
-# ui_carla_refresh.py \
-# ui_carla_settings.py \
-# ui_carla_settings_driver.py \
-# ui_inputdialog_value.py \
-# ui_midipattern.py \
-# ui_xycontroller.py
+# old stuff, not yet converted
+UIs += \
+	ui_carla_about.py \
+	ui_carla_about_juce.py \
+	ui_carla_edit.py \
+	ui_carla_host.py \
+	ui_carla_osc_connect.py \
+	ui_carla_parameter.py \
+	ui_carla_plugin_calf.py \
+	ui_carla_plugin_classic.py \
+	ui_carla_plugin_compact.py \
+	ui_carla_plugin_default.py \
+	ui_carla_plugin_presets.py \
+	ui_carla_settings.py \
+	ui_carla_settings_driver.py \
+	ui_inputdialog_value.py \
+	ui_midipattern.py \
+	ui_xycontroller.py
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -128,6 +125,9 @@ all: $(QMs) $(RES) $(UIs)
 	$(UIC_QT5) $< -o $@
 
 %_ui.py: %.ui
+	$(PYUIC) $< -o $@
+
+ui_%.py: $(RESDIR)/ui/%.ui
 	$(PYUIC) $< -o $@
 
 resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
@@ -149,6 +149,10 @@ $(BINDIR)/resources/zynaddsubfx-ui: ../native-plugins/resources/zynaddsubfx-ui
 
 clean:
 	rm -rf $(UIs) $(RES) $(QMs) __pycache__ *.pyc
+	# old files
+	rm -f ui_carla_add_jack.py
+	rm -f ui_carla_database.py
+	rm -f ui_carla_refresh.py
 
 debug:
 	$(MAKE) DEBUG=true

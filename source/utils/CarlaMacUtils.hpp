@@ -68,8 +68,8 @@ struct BundleLoader {
     bool load(const char* const filename);
     CFBundleRef getRef() const noexcept;
 
-    inline template<typename Func>
-    Func getSymbol(const CFStringRef name) const
+    template<typename Func>
+    inline Func getSymbol(const CFStringRef name) const
     {
         return reinterpret_cast<Func>(CFBundleGetFunctionPointerForName(getRef(), name));
     }
