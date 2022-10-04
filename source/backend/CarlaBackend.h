@@ -58,29 +58,29 @@ CARLA_BACKEND_START_NAMESPACE
 /*!
  * Maximum default number of loadable plugins.
  */
-static const uint MAX_DEFAULT_PLUGINS = 512;
+static constexpr const uint MAX_DEFAULT_PLUGINS = 512;
 
 /*!
  * Maximum number of loadable plugins in rack mode.
  */
-static const uint MAX_RACK_PLUGINS = 64;
+static constexpr const uint MAX_RACK_PLUGINS = 64;
 
 /*!
  * Maximum number of loadable plugins in patchbay mode.
  */
-static const uint MAX_PATCHBAY_PLUGINS = 255;
+static constexpr const uint MAX_PATCHBAY_PLUGINS = 255;
 
 /*!
  * Maximum default number of parameters allowed.
  * @see ENGINE_OPTION_MAX_PARAMETERS
  */
-static const uint MAX_DEFAULT_PARAMETERS = 200;
+static constexpr const uint MAX_DEFAULT_PARAMETERS = 200;
 
 /*!
  * The "plugin Id" for the global Carla instance.
  * Currently only used for audio peaks.
  */
-static const uint MAIN_CARLA_PLUGIN_ID = 0xFFFF;
+static constexpr const uint MAIN_CARLA_PLUGIN_ID = 0xFFFF;
 
 /* ------------------------------------------------------------------------------------------------------------
  * Engine Driver Device Hints */
@@ -96,25 +96,25 @@ static const uint MAIN_CARLA_PLUGIN_ID = 0xFFFF;
 /*!
  * Engine driver device has custom control-panel.
  */
-static const uint ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1;
+static constexpr const uint ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL = 0x1;
 
 /*!
  * Engine driver device can use a triple-buffer (3 number of periods instead of the usual 2).
  * @see ENGINE_OPTION_AUDIO_NUM_PERIODS
  */
-static const uint ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER = 0x2;
+static constexpr const uint ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER = 0x2;
 
 /*!
  * Engine driver device can change buffer-size on the fly.
  * @see ENGINE_OPTION_AUDIO_BUFFER_SIZE
  */
-static const uint ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x4;
+static constexpr const uint ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE = 0x4;
 
 /*!
  * Engine driver device can change sample-rate on the fly.
  * @see ENGINE_OPTION_AUDIO_SAMPLE_RATE
  */
-static const uint ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8;
+static constexpr const uint ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8;
 
 /** @} */
 
@@ -133,76 +133,76 @@ static const uint ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE = 0x8;
  * Plugin is a bridge.
  * This hint is required because "bridge" itself is not a plugin type.
  */
-static const uint PLUGIN_IS_BRIDGE = 0x001;
+static constexpr const uint PLUGIN_IS_BRIDGE = 0x001;
 
 /*!
  * Plugin is hard real-time safe.
  */
-static const uint PLUGIN_IS_RTSAFE = 0x002;
+static constexpr const uint PLUGIN_IS_RTSAFE = 0x002;
 
 /*!
  * Plugin is a synth (produces sound).
  */
-static const uint PLUGIN_IS_SYNTH = 0x004;
+static constexpr const uint PLUGIN_IS_SYNTH = 0x004;
 
 /*!
  * Plugin has its own custom UI.
  * @see CarlaPlugin::showCustomUI() and carla_show_custom_ui()
  */
-static const uint PLUGIN_HAS_CUSTOM_UI = 0x008;
+static constexpr const uint PLUGIN_HAS_CUSTOM_UI = 0x008;
 
 /*!
  * Plugin can use internal Dry/Wet control.
  */
-static const uint PLUGIN_CAN_DRYWET = 0x010;
+static constexpr const uint PLUGIN_CAN_DRYWET = 0x010;
 
 /*!
  * Plugin can use internal Volume control.
  */
-static const uint PLUGIN_CAN_VOLUME = 0x020;
+static constexpr const uint PLUGIN_CAN_VOLUME = 0x020;
 
 /*!
  * Plugin can use internal (Stereo) Balance controls.
  */
-static const uint PLUGIN_CAN_BALANCE = 0x040;
+static constexpr const uint PLUGIN_CAN_BALANCE = 0x040;
 
 /*!
  * Plugin can use internal (Mono) Panning control.
  */
-static const uint PLUGIN_CAN_PANNING = 0x080;
+static constexpr const uint PLUGIN_CAN_PANNING = 0x080;
 
 /*!
  * Plugin needs a constant, fixed-size audio buffer.
  */
-static const uint PLUGIN_NEEDS_FIXED_BUFFERS = 0x100;
+static constexpr const uint PLUGIN_NEEDS_FIXED_BUFFERS = 0x100;
 
 /*!
  * Plugin needs to receive all UI events in the main thread.
  */
-static const uint PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200;
+static constexpr const uint PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200;
 
 /*!
  * Plugin uses 1 program per MIDI channel.
  * @note: Only used in some internal plugins and sf2 files.
  */
-static const uint PLUGIN_USES_MULTI_PROGS = 0x400;
+static constexpr const uint PLUGIN_USES_MULTI_PROGS = 0x400;
 
 /*!
  * Plugin can make use of inline display API.
  */
-static const uint PLUGIN_HAS_INLINE_DISPLAY = 0x800;
+static constexpr const uint PLUGIN_HAS_INLINE_DISPLAY = 0x800;
 
 /*!
  * Plugin has its own custom UI which can be embed into another Window.
  * @see CarlaPlugin::embedCustomUI() and carla_embed_custom_ui()
  * @note This is very experimental and subject to change at this point
  */
-static const uint PLUGIN_HAS_CUSTOM_EMBED_UI = 0x1000;
+static constexpr const uint PLUGIN_HAS_CUSTOM_EMBED_UI = 0x1000;
 
 /*!
  * Plugin custom UI is a fake one that simply invokes an open file browser dialog.
  */
-static const uint PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN = 0x2000;
+static constexpr const uint PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN = 0x2000;
 
 /** @} */
 
@@ -221,66 +221,66 @@ static const uint PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN = 0x2000;
 /*!
  * Use constant/fixed-size audio buffers.
  */
-static const uint PLUGIN_OPTION_FIXED_BUFFERS = 0x001;
+static constexpr const uint PLUGIN_OPTION_FIXED_BUFFERS = 0x001;
 
 /*!
  * Force mono plugin as stereo.
  */
-static const uint PLUGIN_OPTION_FORCE_STEREO = 0x002;
+static constexpr const uint PLUGIN_OPTION_FORCE_STEREO = 0x002;
 
 /*!
  * Map MIDI programs to plugin programs.
  */
-static const uint PLUGIN_OPTION_MAP_PROGRAM_CHANGES = 0x004;
+static constexpr const uint PLUGIN_OPTION_MAP_PROGRAM_CHANGES = 0x004;
 
 /*!
  * Use chunks to save and restore data instead of parameter values.
  */
-static const uint PLUGIN_OPTION_USE_CHUNKS = 0x008;
+static constexpr const uint PLUGIN_OPTION_USE_CHUNKS = 0x008;
 
 /*!
  * Send MIDI control change events.
  */
-static const uint PLUGIN_OPTION_SEND_CONTROL_CHANGES = 0x010;
+static constexpr const uint PLUGIN_OPTION_SEND_CONTROL_CHANGES = 0x010;
 
 /*!
  * Send MIDI channel pressure events.
  */
-static const uint PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020;
+static constexpr const uint PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020;
 
 /*!
  * Send MIDI note after-touch events.
  */
-static const uint PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x040;
+static constexpr const uint PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x040;
 
 /*!
  * Send MIDI pitch-bend events.
  */
-static const uint PLUGIN_OPTION_SEND_PITCHBEND = 0x080;
+static constexpr const uint PLUGIN_OPTION_SEND_PITCHBEND = 0x080;
 
 /*!
  * Send MIDI all-sounds/notes-off events, single note-offs otherwise.
  */
-static const uint PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
+static constexpr const uint PLUGIN_OPTION_SEND_ALL_SOUND_OFF = 0x100;
 
 /*!
  * Send MIDI bank/program changes.
  * @note: This option conflicts with PLUGIN_OPTION_MAP_PROGRAM_CHANGES and cannot be used at the same time.
  */
-static const uint PLUGIN_OPTION_SEND_PROGRAM_CHANGES = 0x200;
+static constexpr const uint PLUGIN_OPTION_SEND_PROGRAM_CHANGES = 0x200;
 
 /*!
  * Skip sending MIDI note events.
  * This if off-by-default as a way to keep backwards compatibility.
  * We always want notes enabled by default, not the contrary.
  */
-static const uint PLUGIN_OPTION_SKIP_SENDING_NOTES = 0x400;
+static constexpr const uint PLUGIN_OPTION_SKIP_SENDING_NOTES = 0x400;
 
 /*!
  * Special flag to indicate that plugin options are not yet set.
  * This flag exists because 0x0 as an option value is a valid one, so we need something else to indicate "null-ness".
  */
-static const uint PLUGIN_OPTIONS_NULL = 0x10000;
+static constexpr const uint PLUGIN_OPTIONS_NULL = 0x10000;
 
 /** @} */
 
@@ -298,7 +298,7 @@ static const uint PLUGIN_OPTIONS_NULL = 0x10000;
 /*!
  * Audio port should be used as sidechan.
  */
-static const uint AUDIO_PORT_IS_SIDECHAIN = 0x1;
+static constexpr const uint AUDIO_PORT_IS_SIDECHAIN = 0x1;
 
 /** @} */
 
@@ -317,65 +317,65 @@ static const uint AUDIO_PORT_IS_SIDECHAIN = 0x1;
  * Parameter value is boolean.
  * It's always at either minimum or maximum value.
  */
-static const uint PARAMETER_IS_BOOLEAN = 0x001;
+static constexpr const uint PARAMETER_IS_BOOLEAN = 0x001;
 
 /*!
  * Parameter value is integer.
  */
-static const uint PARAMETER_IS_INTEGER = 0x002;
+static constexpr const uint PARAMETER_IS_INTEGER = 0x002;
 
 /*!
  * Parameter value is logarithmic.
  */
-static const uint PARAMETER_IS_LOGARITHMIC = 0x004;
+static constexpr const uint PARAMETER_IS_LOGARITHMIC = 0x004;
 
 /*!
  * Parameter is enabled.
  * It can be viewed, changed and stored.
  */
-static const uint PARAMETER_IS_ENABLED = 0x010;
+static constexpr const uint PARAMETER_IS_ENABLED = 0x010;
 
 /*!
  * Parameter is automatable (real-time safe).
  */
-static const uint PARAMETER_IS_AUTOMATABLE = 0x020;
+static constexpr const uint PARAMETER_IS_AUTOMATABLE = 0x020;
 
 // for backwards compatibility
-static const uint PARAMETER_IS_AUTOMABLE = PARAMETER_IS_AUTOMATABLE;
+static constexpr const uint PARAMETER_IS_AUTOMABLE = PARAMETER_IS_AUTOMATABLE;
 
 /*!
  * Parameter is read-only.
  * It cannot be changed.
  */
-static const uint PARAMETER_IS_READ_ONLY = 0x040;
+static constexpr const uint PARAMETER_IS_READ_ONLY = 0x040;
 
 /*!
  * Parameter needs sample rate to work.
  * Value and ranges are multiplied by sample rate on usage and divided by sample rate on save.
  */
-static const uint PARAMETER_USES_SAMPLERATE = 0x100;
+static constexpr const uint PARAMETER_USES_SAMPLERATE = 0x100;
 
 /*!
  * Parameter uses scale points to define internal values in a meaningful way.
  */
-static const uint PARAMETER_USES_SCALEPOINTS = 0x200;
+static constexpr const uint PARAMETER_USES_SCALEPOINTS = 0x200;
 
 /*!
  * Parameter uses custom text for displaying its value.
  * @see CarlaPlugin::getParameterText() and carla_get_parameter_text()
  */
-static const uint PARAMETER_USES_CUSTOM_TEXT = 0x400;
+static constexpr const uint PARAMETER_USES_CUSTOM_TEXT = 0x400;
 
 /*!
  * Parameter can be turned into a CV control.
  */
-static const uint PARAMETER_CAN_BE_CV_CONTROLLED = 0x800;
+static constexpr const uint PARAMETER_CAN_BE_CV_CONTROLLED = 0x800;
 
 /*!
  * Parameter should not be saved as part of the project/session.
  * @note only valid for parameter inputs.
  */
-static const uint PARAMETER_IS_NOT_SAVED = 0x1000;
+static constexpr const uint PARAMETER_IS_NOT_SAVED = 0x1000;
 
 /** @} */
 
@@ -394,7 +394,7 @@ static const uint PARAMETER_IS_NOT_SAVED = 0x1000;
  * Parameter mapping uses delta value instead of full scale.
  * Only relevant for MIDI CC mappings.
  */
-static const uint PARAMETER_MAPPING_MIDI_DELTA = 0x001;
+static constexpr const uint PARAMETER_MAPPING_MIDI_DELTA = 0x001;
 
 /** @} */
 
@@ -412,27 +412,27 @@ static const uint PARAMETER_MAPPING_MIDI_DELTA = 0x001;
  * Patchbay port is input.
  * When this hint is not set, port is assumed to be output.
  */
-static const uint PATCHBAY_PORT_IS_INPUT = 0x01;
+static constexpr const uint PATCHBAY_PORT_IS_INPUT = 0x01;
 
 /*!
  * Patchbay port is of Audio type.
  */
-static const uint PATCHBAY_PORT_TYPE_AUDIO = 0x02;
+static constexpr const uint PATCHBAY_PORT_TYPE_AUDIO = 0x02;
 
 /*!
  * Patchbay port is of CV type (Control Voltage).
  */
-static const uint PATCHBAY_PORT_TYPE_CV = 0x04;
+static constexpr const uint PATCHBAY_PORT_TYPE_CV = 0x04;
 
 /*!
  * Patchbay port is of MIDI type.
  */
-static const uint PATCHBAY_PORT_TYPE_MIDI = 0x08;
+static constexpr const uint PATCHBAY_PORT_TYPE_MIDI = 0x08;
 
 /*!
  * Patchbay port is of OSC type.
  */
-static const uint PATCHBAY_PORT_TYPE_OSC = 0x10;
+static constexpr const uint PATCHBAY_PORT_TYPE_OSC = 0x10;
 
 /** @} */
 
@@ -449,22 +449,22 @@ static const uint PATCHBAY_PORT_TYPE_OSC = 0x10;
 /*!
  * Indicates that this group should be considered the "main" input.
  */
-static const uint PATCHBAY_PORT_GROUP_MAIN_INPUT = 0x01;
+static constexpr const uint PATCHBAY_PORT_GROUP_MAIN_INPUT = 0x01;
 
 /*!
  * Indicates that this group should be considered the "main" output.
  */
-static const uint PATCHBAY_PORT_GROUP_MAIN_OUTPUT = 0x02;
+static constexpr const uint PATCHBAY_PORT_GROUP_MAIN_OUTPUT = 0x02;
 
 /*!
  * A stereo port group, where the 1st port is left and the 2nd is right.
  */
-static const uint PATCHBAY_PORT_GROUP_STEREO = 0x04;
+static constexpr const uint PATCHBAY_PORT_GROUP_STEREO = 0x04;
 
 /*!
  * A mid-side stereo group, where the 1st port is center and the 2nd is side.
  */
-static const uint PATCHBAY_PORT_GROUP_MID_SIDE = 0x08;
+static constexpr const uint PATCHBAY_PORT_GROUP_MID_SIDE = 0x08;
 
 /** @} */
 
@@ -483,27 +483,27 @@ static const uint PATCHBAY_PORT_GROUP_MID_SIDE = 0x08;
  * Boolean string type URI.
  * Only "true" and "false" are valid values.
  */
-static const char* const CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/carla/boolean";
+static constexpr const char* const CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/carla/boolean";
 
 /*!
  * Chunk type URI.
  */
-static const char* const CUSTOM_DATA_TYPE_CHUNK = "http://kxstudio.sf.net/ns/carla/chunk";
+static constexpr const char* const CUSTOM_DATA_TYPE_CHUNK = "http://kxstudio.sf.net/ns/carla/chunk";
 
 /*!
  * Path type URI.
  */
-static const char* const CUSTOM_DATA_TYPE_PATH = "http://kxstudio.sf.net/ns/carla/path";
+static constexpr const char* const CUSTOM_DATA_TYPE_PATH = "http://kxstudio.sf.net/ns/carla/path";
 
 /*!
  * Property type URI.
  */
-static const char* const CUSTOM_DATA_TYPE_PROPERTY = "http://kxstudio.sf.net/ns/carla/property";
+static constexpr const char* const CUSTOM_DATA_TYPE_PROPERTY = "http://kxstudio.sf.net/ns/carla/property";
 
 /*!
  * String type URI.
  */
-static const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string";
+static constexpr const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string";
 
 /** @} */
 
@@ -521,17 +521,17 @@ static const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/ca
 /*!
  * UI position key.
  */
-static const char* const CUSTOM_DATA_KEY_UI_POSITION = "CarlaUiPosition";
+static constexpr const char* const CUSTOM_DATA_KEY_UI_POSITION = "CarlaUiPosition";
 
 /*!
  * UI size key.
  */
-static const char* const CUSTOM_DATA_KEY_UI_SIZE = "CarlaUiSize";
+static constexpr const char* const CUSTOM_DATA_KEY_UI_SIZE = "CarlaUiSize";
 
 /*!
  * UI visible key.
  */
-static const char* const CUSTOM_DATA_KEY_UI_VISIBLE = "CarlaUiVisible";
+static constexpr const char* const CUSTOM_DATA_KEY_UI_VISIBLE = "CarlaUiVisible";
 
 /** @} */
 

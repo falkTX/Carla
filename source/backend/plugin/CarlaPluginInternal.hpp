@@ -43,20 +43,20 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Maximum pre-allocated events for some plugin types
 
-const uint16_t kPluginMaxMidiEvents = 512;
+constexpr const uint16_t kPluginMaxMidiEvents = 512;
 
 // -----------------------------------------------------------------------
 // Extra parameter hints, hidden from backend
 
-const uint PARAMETER_MAPPED_RANGES_SET = 0x10000;
-const uint PARAMETER_IS_STRICT_BOUNDS  = 0x20000;
-const uint PARAMETER_IS_TRIGGER        = 0x40000;
+constexpr const uint PARAMETER_MAPPED_RANGES_SET = 0x10000;
+constexpr const uint PARAMETER_IS_STRICT_BOUNDS  = 0x20000;
+constexpr const uint PARAMETER_IS_TRIGGER        = 0x40000;
 
 // -----------------------------------------------------------------------
 // Extra plugin hints, hidden from backend
 
-const uint PLUGIN_EXTRA_HINT_HAS_MIDI_IN  = 0x01;
-const uint PLUGIN_EXTRA_HINT_HAS_MIDI_OUT = 0x02;
+constexpr const uint PLUGIN_EXTRA_HINT_HAS_MIDI_IN  = 0x01;
+constexpr const uint PLUGIN_EXTRA_HINT_HAS_MIDI_OUT = 0x02;
 
 // -----------------------------------------------------------------------
 // Special parameters
