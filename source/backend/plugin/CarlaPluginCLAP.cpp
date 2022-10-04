@@ -35,6 +35,10 @@ CARLA_BACKEND_START_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
+static_assert(kPluginMaxMidiEvents > MAX_MIDI_NOTE, "Enough space for input events");
+
+// --------------------------------------------------------------------------------------------------------------------
+
 struct carla_clap_host : clap_host_t {
     carla_clap_host()
     {
@@ -56,6 +60,118 @@ struct carla_clap_host : clap_host_t {
     static void carla_request_callback(const clap_host_t*) {}
 };
 
+struct carla_clap_input_events : clap_input_events_t {
+    union Event {
+        clap_event_header_t header;
+        clap_event_param_value_t param;
+        clap_event_param_gesture_t gesture;
+        clap_event_midi_t midi;
+        clap_event_midi_sysex_t sysex;
+    };
+
+    struct UpdatedParam {
+        bool updated;
+        double value;
+        clap_id clapId;
+        void* cookie;
+
+        UpdatedParam()
+          : updated(false),
+            value(0.f),
+            clapId(0),
+            cookie(0) {}
+    };
+
+    Event* events;
+    UpdatedParam* updatedParams;
+
+    uint32_t numEventsAllocated;
+    uint32_t numEventsUsed;
+    uint32_t numParams;
+
+    carla_clap_input_events()
+        : events(nullptr),
+          updatedParams(nullptr),
+          numEventsAllocated(0),
+          numEventsUsed(0),
+          numParams(0)
+    {
+        ctx = this;
+        size = carla_size;
+        get = carla_get;
+    }
+
+    ~carla_clap_input_events()
+    {
+        delete[] events;
+        delete[] updatedParams;
+    }
+
+    // called on plugin reload
+    // NOTE: clapId and cookie must be separately set outside this function
+    void init(const uint32_t paramCount)
+    {
+        numEventsUsed = 0;
+        numParams = paramCount;
+        delete[] events;
+        delete[] updatedParams;
+
+        if (paramCount != 0)
+        {
+            numEventsAllocated = paramCount + kPluginMaxMidiEvents;
+            events = new Event[numEventsAllocated];
+            updatedParams = new UpdatedParam[paramCount];
+        }
+        else
+        {
+            numEventsAllocated = 0;
+            events = nullptr;
+            updatedParams = nullptr;
+        }
+    }
+
+    // called just before plugin processing
+    void prepare()
+    {
+        uint32_t count = 0;
+
+        for (uint32_t i=0; i<numParams; ++i)
+        {
+            if (updatedParams[i].updated)
+            {
+                events[count++].param = {
+                    { sizeof(clap_event_param_value_t), 0, 0, CLAP_EVENT_PARAM_VALUE, 0 },
+                    updatedParams[i].clapId,
+                    updatedParams[i].cookie,
+                    -1, -1, -1, -1,
+                    updatedParams[i].value
+                };
+            }
+        }
+
+        numEventsUsed = count;
+    }
+
+    // called when a parameter is set from non-rt thread
+    void setParamValue(const uint32_t index, const double value) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < numParams,);
+
+        updatedParams[index].value = value;
+        updatedParams[index].updated = true;
+    }
+
+    static uint32_t carla_size(const clap_input_events_t* const list) noexcept
+    {
+        return static_cast<const carla_clap_input_events*>(list->ctx)->numEventsUsed;
+    }
+
+    static const clap_event_header_t* carla_get(const clap_input_events_t* const list, const uint32_t index) noexcept
+    {
+        return &static_cast<const carla_clap_input_events*>(list->ctx)->events[index].header;
+    }
+};
+
 // --------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginCLAP : public CarlaPlugin,
@@ -68,7 +184,8 @@ public:
           fPluginDescriptor(nullptr),
           fPluginEntry(nullptr),
           fHost(),
-          fExtensions()
+          fExtensions(),
+          fInputEvents()
     {
         carla_debug("CarlaPluginCLAP::CarlaPluginCLAP(%p, %i)", engine, id);
 
@@ -265,15 +382,31 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    /*
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        const float fixedValue = pData->param.getFixedValue(parameterId, value);
+
+        fInputEvents.setParamValue(parameterId, fixedValue);
+
+        CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
     void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        const float fixedValue = pData->param.getFixedValue(parameterId, value);
+
+        fInputEvents.setParamValue(parameterId, fixedValue);
+
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
+    /*
     void setChunkData(const void* const data, const std::size_t dataSize) override
     {
     }
@@ -411,6 +544,8 @@ public:
             needsCtrlIn = true;
         }
 
+        fInputEvents.init(params);
+
         const EngineProcessMode processMode = pData->engine->getProccessMode();
         const uint portNameSize = pData->engine->getMaxPortNameSize();
         CarlaString portName;
@@ -467,15 +602,14 @@ public:
 
         for (uint32_t j=0; j < params; ++j)
         {
-            const int32_t ij = static_cast<int32_t>(j);
-            pData->param.data[j].index  = j;
-            pData->param.data[j].rindex = ij;
-
             clap_param_info_t paramInfo = {};
             CARLA_SAFE_ASSERT_BREAK(paramsExt->get_info(fPlugin, j, &paramInfo));
 
             if (paramInfo.flags & (CLAP_PARAM_IS_HIDDEN|CLAP_PARAM_IS_BYPASS))
                 continue;
+
+            pData->param.data[j].index  = j;
+            pData->param.data[j].rindex = paramInfo.id;
 
             double min, max, def, step, stepSmall, stepLarge;
 
@@ -536,6 +670,9 @@ public:
             pData->param.ranges[j].step = step;
             pData->param.ranges[j].stepSmall = stepSmall;
             pData->param.ranges[j].stepLarge = stepLarge;
+
+            fInputEvents.updatedParams[j].clapId = paramInfo.id;
+            fInputEvents.updatedParams[j].cookie = paramInfo.cookie;
         }
 
         if (needsCtrlIn)
@@ -671,10 +808,46 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
+
+        fInputEvents.prepare();
+
+        // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
 
         if (pData->needsReset)
         {
+            if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+            {
+                for (uint8_t i=0, k=fInputEvents.numEventsUsed; i < MAX_MIDI_CHANNELS; ++i)
+                {
+                    fInputEvents.events[k + i].midi = {
+                        { sizeof(clap_event_midi_t), 0, 0, CLAP_EVENT_MIDI, 0 },
+                        0, // TODO multi-port MIDI
+                        { uint8_t(MIDI_STATUS_CONTROL_CHANGE | (i & MIDI_CHANNEL_BIT)), MIDI_CONTROL_ALL_NOTES_OFF, 0 }
+                    };
+                    fInputEvents.events[k + MAX_MIDI_CHANNELS + i].midi = {
+                        { sizeof(clap_event_midi_t), 0, 0, CLAP_EVENT_MIDI, 0 },
+                        0, // TODO multi-port MIDI
+                        { uint8_t(MIDI_STATUS_CONTROL_CHANGE | (i & MIDI_CHANNEL_BIT)), MIDI_CONTROL_ALL_SOUND_OFF, 0 }
+                    };
+                }
+
+                fInputEvents.numEventsUsed += MAX_MIDI_CHANNELS * 2;
+            }
+            else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
+            {
+                for (uint8_t i=0, k=fInputEvents.numEventsUsed; i < MAX_MIDI_NOTE; ++i)
+                {
+                    fInputEvents.events[k + i].midi = {
+                        { sizeof(clap_event_midi_t), 0, 0, CLAP_EVENT_MIDI, 0 },
+                        0, // TODO multi-port MIDI
+                        { uint8_t(MIDI_STATUS_NOTE_OFF | (pData->ctrlChannel & MIDI_CHANNEL_BIT)), i, 0 }
+                    };
+                }
+
+                fInputEvents.numEventsUsed += MAX_MIDI_NOTE;
+            }
+
             pData->needsReset = false;
         }
 
@@ -682,6 +855,57 @@ public:
         // Set TimeInfo
 
         const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
+
+        clap_event_transport_t clapTransport = {
+            { sizeof(clap_event_transport_t), 0, 0, CLAP_EVENT_TRANSPORT, 0 },
+            0x0, // flags
+            0, // song_pos_beats, position in beats
+            0, // song_pos_seconds, position in seconds
+            0.0, // tempo, in bpm
+            0.0, // tempo_inc, tempo increment for each samples and until the next time info event
+            0, // loop_start_beats;
+            0, // loop_end_beats;
+            0, // loop_start_seconds;
+            0, // loop_end_seconds;
+            0, // bar_start, start pos of the current bar
+            0, // bar_number, bar at song pos 0 has the number 0
+            0, // tsig_num, time signature numerator
+            0, // tsig_denom, time signature denominator
+        };
+
+        if (timeInfo.playing)
+            clapTransport.flags |= CLAP_TRANSPORT_IS_PLAYING;
+
+        // TODO song_pos_seconds (based on frame and sample rate)
+
+        if (timeInfo.bbt.valid)
+        {
+            // TODO song_pos_beats
+
+            // Tempo
+            clapTransport.tempo  = timeInfo.bbt.beatsPerMinute;
+            clapTransport.flags |= CLAP_TRANSPORT_HAS_TEMPO;
+
+            // Bar
+            // TODO bar_start
+            clapTransport.bar_number = timeInfo.bbt.bar - 1;
+
+            // Time Signature
+            clapTransport.tsig_num = static_cast<uint16_t>(timeInfo.bbt.beatsPerBar + 0.5f);
+            clapTransport.tsig_denom = static_cast<uint16_t>(timeInfo.bbt.beatType + 0.5f);
+            clapTransport.flags |= CLAP_TRANSPORT_HAS_TIME_SIGNATURE;
+        }
+        else
+        {
+            // Tempo
+            clapTransport.tempo = 120.0;
+            clapTransport.flags |= CLAP_TRANSPORT_HAS_TEMPO;
+
+            // Time Signature
+            clapTransport.tsig_num = 4;
+            clapTransport.tsig_denom = 4;
+            clapTransport.flags |= CLAP_TRANSPORT_HAS_TIME_SIGNATURE;
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
@@ -693,7 +917,24 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
-                pData->extNotes.data.clear();
+                ExternalMidiNote note = { 0, 0, 0 };
+
+                for (; fInputEvents.numEventsUsed < fInputEvents.numEventsAllocated && ! pData->extNotes.data.isEmpty();)
+                {
+                    note = pData->extNotes.data.getFirst(note, true);
+
+                    CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+
+                    fInputEvents.events[fInputEvents.numEventsUsed++].midi = {
+                        { sizeof(clap_event_midi_t), 0, 0, CLAP_EVENT_MIDI, CLAP_EVENT_IS_LIVE },
+                        0, // TODO multi-port MIDI
+                        {
+                            uint8_t((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT)),
+                            note.note,
+                            note.velo
+                        }
+                    };
+                }
 
                 pData->extNotes.mutex.unlock();
 
@@ -708,7 +949,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(audioIn, audioOut, frames - timeOffset, timeOffset);
+                processSingle(audioIn, audioOut, frames - timeOffset, timeOffset, &clapTransport);
 
         } // End of Event Input and Processing
 
@@ -717,7 +958,7 @@ public:
 
         else
         {
-            processSingle(audioIn, audioOut, frames, 0);
+            processSingle(audioIn, audioOut, frames, 0, &clapTransport);
 
         } // End of Plugin processing (no events)
 
@@ -739,7 +980,11 @@ public:
 #endif
     }
 
-    bool processSingle(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(const float* const* const inBuffer,
+                       float** const outBuffer,
+                       const uint32_t frames,
+                       const uint32_t timeOffset,
+                       clap_event_transport_t* const transport)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
@@ -794,18 +1039,20 @@ public:
         const clap_process_t process = {
             0, // steady_time
             frames,
-            nullptr, // transport
+            transport,
             static_cast<const clap_audio_buffer_t*>(static_cast<const void*>(inBuffers)), // audio_inputs
             outBuffers, // audio_outputs
             1, // audio_inputs_count
             1, // audio_outputs_count
-            nullptr, // in_events
+            &fInputEvents, // in_events
             nullptr  // out_events
         };
 
         fPlugin->process(fPlugin, &process);
 
-        // fTimeInfo.samplePos += frames;
+        fInputEvents.numEventsUsed = 0;
+
+        // TODO update transport
 
        #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
@@ -1160,6 +1407,8 @@ private:
 
         CARLA_DECLARE_NON_COPYABLE(Extensions)
     } fExtensions;
+
+    carla_clap_input_events fInputEvents;
 
    #ifdef CARLA_OS_MAC
     BundleLoader fBundleLoader;
