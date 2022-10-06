@@ -431,7 +431,7 @@ public:
     CarlaPluginVST3(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fFirstActive(true),
-          fAudioOutBuffers(nullptr),
+          fAudioAndCvOutBuffers(nullptr),
           fLastKnownLatency(0),
           fLastTimeInfo(),
           fV3TimeContext(),
@@ -932,10 +932,10 @@ public:
 
         if (aOuts + cvIns > 0)
         {
-            fAudioOutBuffers = new float*[aOuts + cvIns];
+            fAudioAndCvOutBuffers = new float*[aOuts + cvIns];
 
             for (uint32_t i=0; i < aOuts + cvIns; ++i)
-                fAudioOutBuffers[i] = nullptr;
+                fAudioAndCvOutBuffers[i] = nullptr;
         }
 
         const EngineProcessMode processMode = pData->engine->getProccessMode();
@@ -1700,7 +1700,7 @@ public:
         if (pData->audioOut.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
-            CARLA_SAFE_ASSERT_RETURN(fAudioOutBuffers != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(fAudioAndCvOutBuffers != nullptr, false);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1741,13 +1741,13 @@ public:
         {
             uint32_t i=0;
             for (; i < pData->audioOut.count; ++i)
-                bufferAudioOut[i] = fAudioOutBuffers[i]+timeOffset;
+                bufferAudioOut[i] = fAudioAndCvOutBuffers[i]+timeOffset;
             for (; i < pData->cvOut.count; ++i)
-                bufferAudioOut[i] = fAudioOutBuffers[i]+timeOffset;
+                bufferAudioOut[i] = fAudioAndCvOutBuffers[i]+timeOffset;
         }
 
         for (uint32_t i=0; i < pData->audioOut.count + pData->cvOut.count; ++i)
-            carla_zeroFloats(fAudioOutBuffers[i], frames);
+            carla_zeroFloats(fAudioAndCvOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Set MIDI events
@@ -1813,7 +1813,7 @@ public:
                     for (uint32_t k=0; k < frames; ++k)
                     {
                         bufValue = inBuffer[c][k+timeOffset];
-                        fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
+                        fAudioAndCvOutBuffers[i][k] = (fAudioAndCvOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
 
@@ -1825,7 +1825,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        carla_copyFloats(oldBufLeft, fAudioOutBuffers[i], frames);
+                        carla_copyFloats(oldBufLeft, fAudioAndCvOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1836,14 +1836,14 @@ public:
                         if (isPair)
                         {
                             // left
-                            fAudioOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
-                            fAudioOutBuffers[i][k] += fAudioOutBuffers[i+1][k] * (1.0f - balRangeR);
+                            fAudioAndCvOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
+                            fAudioAndCvOutBuffers[i][k] += fAudioAndCvOutBuffers[i+1][k] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
-                            fAudioOutBuffers[i][k]  = fAudioOutBuffers[i][k] * balRangeR;
-                            fAudioOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
+                            fAudioAndCvOutBuffers[i][k]  = fAudioAndCvOutBuffers[i][k] * balRangeR;
+                            fAudioAndCvOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
                         }
                     }
                 }
@@ -1851,17 +1851,17 @@ public:
                 // Volume (and buffer copy)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
+                        outBuffer[i][k+timeOffset] = fAudioAndCvOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
 
             for (; i < pData->cvOut.count; ++i)
-                carla_copyFloats(outBuffer[i] + timeOffset, fAudioOutBuffers[i] + timeOffset, frames);
+                carla_copyFloats(outBuffer[i] + timeOffset, fAudioAndCvOutBuffers[i] + timeOffset, frames);
 
         } // End of Post-processing
 #else // BUILD_BRIDGE_ALTERNATIVE_ARCH
         for (uint32_t i=0; i < pData->audioOut.count + pData->cvOut.count; ++i)
-            carla_copyFloats(outBuffer[i] + timeOffset, fAudioOutBuffers[i] + timeOffset, frames);
+            carla_copyFloats(outBuffer[i] + timeOffset, fAudioAndCvOutBuffers[i] + timeOffset, frames);
 #endif
 
         // --------------------------------------------------------------------------------------------------------
@@ -1880,9 +1880,9 @@ public:
 
         for (uint32_t i=0; i < pData->audioOut.count + pData->cvOut.count; ++i)
         {
-            if (fAudioOutBuffers[i] != nullptr)
-                delete[] fAudioOutBuffers[i];
-            fAudioOutBuffers[i] = new float[newBufferSize];
+            if (fAudioAndCvOutBuffers[i] != nullptr)
+                delete[] fAudioAndCvOutBuffers[i];
+            fAudioAndCvOutBuffers[i] = new float[newBufferSize];
         }
 
         v3_process_setup setup = {
@@ -1943,19 +1943,19 @@ public:
     {
         carla_debug("CarlaPluginVST2::clearBuffers() - start");
 
-        if (fAudioOutBuffers != nullptr)
+        if (fAudioAndCvOutBuffers != nullptr)
         {
             for (uint32_t i=0; i < pData->audioOut.count + pData->cvOut.count; ++i)
             {
-                if (fAudioOutBuffers[i] != nullptr)
+                if (fAudioAndCvOutBuffers[i] != nullptr)
                 {
-                    delete[] fAudioOutBuffers[i];
-                    fAudioOutBuffers[i] = nullptr;
+                    delete[] fAudioAndCvOutBuffers[i];
+                    fAudioAndCvOutBuffers[i] = nullptr;
                 }
             }
 
-            delete[] fAudioOutBuffers;
-            fAudioOutBuffers = nullptr;
+            delete[] fAudioAndCvOutBuffers;
+            fAudioAndCvOutBuffers = nullptr;
         }
 
         CarlaPlugin::clearBuffers();
@@ -2239,7 +2239,7 @@ private:
 #endif
 
     bool fFirstActive; // first process() call after activate()
-    float** fAudioOutBuffers;
+    float** fAudioAndCvOutBuffers;
     uint32_t fLastKnownLatency;
     EngineTimeInfo fLastTimeInfo;
     v3_process_context fV3TimeContext;

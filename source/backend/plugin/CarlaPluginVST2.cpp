@@ -1326,7 +1326,7 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
-                ExternalMidiNote note = { 0, 0, 0 };
+                ExternalMidiNote note = { -1, 0, 0 };
 
                 for (; fMidiEventCount < kPluginMaxMidiEvents*2 && ! pData->extNotes.data.isEmpty();)
                 {

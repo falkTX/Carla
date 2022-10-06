@@ -243,7 +243,7 @@ struct Lv2EventData {
             port = nullptr;
         }
 
-        const uint32_t rtype(type);
+        const uint32_t rtype = type;
         type = 0x0;
 
         if (rtype & CARLA_EVENT_DATA_ATOM)
