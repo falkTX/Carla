@@ -4352,6 +4352,37 @@ public:
                 fExt.worker->end_run(fHandle2);
         }
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        // --------------------------------------------------------------------------------------------------------
+        // Control Output
+
+        if (pData->event.portOut != nullptr)
+        {
+            uint8_t  channel;
+            uint16_t param;
+            float    value;
+
+            for (uint32_t k=0; k < pData->param.count; ++k)
+            {
+                if (pData->param.data[k].type != PARAMETER_OUTPUT)
+                    continue;
+
+                if (fStrictBounds >= 0 && (pData->param.data[k].hints & PARAMETER_IS_STRICT_BOUNDS) != 0)
+                    // plugin is responsible to ensure correct bounds
+                    pData->param.ranges[k].fixValue(fParamBuffers[k]);
+
+                if (pData->param.data[k].mappedControlIndex > 0)
+                {
+                    channel = pData->param.data[k].midiChannel;
+                    param   = static_cast<uint16_t>(pData->param.data[k].mappedControlIndex);
+                    value   = pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]);
+                    pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter,
+                                                            param, -1, value);
+                }
+            }
+        } // End of Control Output
+#endif
+
         // --------------------------------------------------------------------------------------------------------
         // Events/MIDI Output
 
@@ -4457,37 +4488,6 @@ public:
                 }
             }
         }
-
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        // --------------------------------------------------------------------------------------------------------
-        // Control Output
-
-        if (pData->event.portOut != nullptr)
-        {
-            uint8_t  channel;
-            uint16_t param;
-            float    value;
-
-            for (uint32_t k=0; k < pData->param.count; ++k)
-            {
-                if (pData->param.data[k].type != PARAMETER_OUTPUT)
-                    continue;
-
-                if (fStrictBounds >= 0 && (pData->param.data[k].hints & PARAMETER_IS_STRICT_BOUNDS) != 0)
-                    // plugin is responsible to ensure correct bounds
-                    pData->param.ranges[k].fixValue(fParamBuffers[k]);
-
-                if (pData->param.data[k].mappedControlIndex > 0)
-                {
-                    channel = pData->param.data[k].midiChannel;
-                    param   = static_cast<uint16_t>(pData->param.data[k].mappedControlIndex);
-                    value   = pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]);
-                    pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter,
-                                                            param, -1, value);
-                }
-            }
-        } // End of Control Output
-#endif
 
         fFirstActive = false;
 

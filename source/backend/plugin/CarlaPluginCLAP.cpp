@@ -30,12 +30,13 @@
 #endif
 
 #include "water/files/File.h"
+#include "water/misc/Time.h"
 
 // FIXME
-// #ifndef CLAP_WINDOW_API_NATIVE
-// #define CLAP_WINDOW_API_NATIVE ""
-// #define HAVE_X11 1
-// #endif
+#ifndef CLAP_WINDOW_API_NATIVE
+#define CLAP_WINDOW_API_NATIVE ""
+#define HAVE_X11 1
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -113,23 +114,46 @@ struct CarlaPluginClapEventData {
 
 // --------------------------------------------------------------------------------------------------------------------
 
+struct HostTimerDetails {
+    clap_id clapId;
+    uint32_t periodInMs;
+    uint32_t lastCallTimeInMs;
+};
+
+static constexpr const HostTimerDetails kTimerFallback   = { CLAP_INVALID_ID, 0, 0 };
+static /*           */ HostTimerDetails kTimerFallbackNC = { CLAP_INVALID_ID, 0, 0 };
+
+// --------------------------------------------------------------------------------------------------------------------
+
 struct carla_clap_host : clap_host_t {
-    class Callback {
+    class Callbacks {
     public:
-        virtual ~Callback() {}
-        virtual void hostRequestResize(uint width, uint height) = 0;
+        virtual ~Callbacks() {}
+        virtual void clapRequestRestart() = 0;
+        virtual void clapRequestProcess() = 0;
+        virtual void clapRequestCallback() = 0;
+       #ifdef CLAP_WINDOW_API_NATIVE
+        // gui
+        virtual void clapGuiResizeHintsChanged() = 0;
+        virtual bool clapGuiRequestResize(uint width, uint height) = 0;
+        virtual bool clapGuiRequestShow() = 0;
+        virtual bool clapGuiRequestHide() = 0;
+        virtual void clapGuiClosed(bool wasDestroyed) = 0;
+        // timer
+        virtual bool clapTimerRegister(uint32_t periodInMs, clap_id* timerId) = 0;
+        virtual bool clapTimerUnregister(clap_id timerId) = 0;
+       #endif
     };
 
-    Callback* const uiCallback;
+    Callbacks* const hostCallbacks;
 
+   #ifdef CLAP_WINDOW_API_NATIVE
     clap_host_gui_t gui;
     clap_host_timer_support_t timer;
+   #endif
 
-    // TESTING
-    clap_id inUseTimerId;
-
-    carla_clap_host(Callback* const uiCb)
-        : uiCallback(uiCb)
+    carla_clap_host(Callbacks* const hostCb)
+        : hostCallbacks(hostCb)
     {
         clap_version = CLAP_VERSION;
         host_data = this;
@@ -143,72 +167,88 @@ struct carla_clap_host : clap_host_t {
         request_process = carla_request_process;
         request_callback = carla_request_callback;
 
+       #ifdef CLAP_WINDOW_API_NATIVE
         gui.resize_hints_changed = carla_resize_hints_changed;
         gui.request_resize = carla_request_resize;
         gui.request_show = carla_request_show;
         gui.request_hide = carla_request_hide;
         gui.closed = carla_closed;
-
         timer.register_timer = carla_register_timer;
         timer.unregister_timer = carla_unregister_timer;
-
-        // TESTING
-        inUseTimerId = CLAP_INVALID_ID;
+       #endif
     }
 
     static const void* carla_get_extension(const clap_host_t* const host, const char* const extension_id)
     {
         const carla_clap_host* const self = static_cast<const carla_clap_host*>(host->host_data);
 
+       #ifdef CLAP_WINDOW_API_NATIVE
         if (std::strcmp(extension_id, CLAP_EXT_GUI) == 0)
             return &self->gui;
         if (std::strcmp(extension_id, CLAP_EXT_TIMER_SUPPORT) == 0)
             return &self->timer;
+       #endif
 
         return nullptr;
+
+       #ifndef CLAP_WINDOW_API_NATIVE
+        // unused
+        (void)self;
+        (void)extension_id;
+       #endif
     }
 
-    static void carla_request_restart(const clap_host_t*) {}
-    static void carla_request_process(const clap_host_t*) {}
-    static void carla_request_callback(const clap_host_t*) {}
+    static void carla_request_restart(const clap_host_t* const host)
+    {
+        static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestRestart();
+    }
 
-    static void carla_resize_hints_changed(const clap_host_t *host) {}
+    static void carla_request_process(const clap_host_t* const host)
+    {
+        static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestProcess();
+    }
+
+    static void carla_request_callback(const clap_host_t* const host)
+    {
+        static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestCallback();
+    }
+
+   #ifdef CLAP_WINDOW_API_NATIVE
+    static void carla_resize_hints_changed(const clap_host_t* const host)
+    {
+        static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiResizeHintsChanged();
+    }
 
     static bool carla_request_resize(const clap_host_t* const host, const uint32_t width, const uint32_t height)
     {
-        const carla_clap_host* const self = static_cast<const carla_clap_host*>(host->host_data);
-
-        self->uiCallback->hostRequestResize(width, height);
-        return true;
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiRequestResize(width, height);
     }
 
-    static bool carla_request_show(const clap_host_t *host) { return false; }
-    static bool carla_request_hide(const clap_host_t *host) { return false; }
-    static void carla_closed(const clap_host_t *host, bool was_destroyed) {}
-
-    static bool carla_register_timer(const clap_host_t* const host, uint32_t /*period_ms*/, clap_id* const timer_id)
+    static bool carla_request_show(const clap_host_t* const host)
     {
-        carla_clap_host* const self = static_cast<carla_clap_host*>(host->host_data);
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiRequestShow();
+    }
 
-        if (self->inUseTimerId != CLAP_INVALID_ID)
-            return false;
+    static bool carla_request_hide(const clap_host_t* const host)
+    {
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiRequestHide();
+    }
 
-        self->inUseTimerId = *timer_id = 1;
-        return true;
+    static void carla_closed(const clap_host_t* const host, bool was_destroyed)
+    {
+        static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiClosed(was_destroyed);
+    }
+
+    static bool carla_register_timer(const clap_host_t* const host, const uint32_t period_ms, clap_id* const timer_id)
+    {
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapTimerRegister(period_ms, timer_id);
     }
 
     static bool carla_unregister_timer(const clap_host_t* const host, const clap_id timer_id)
     {
-        carla_clap_host* const self = static_cast<carla_clap_host*>(host->host_data);
-
-        if (self->inUseTimerId == CLAP_INVALID_ID)
-            return false;
-        if (self->inUseTimerId != timer_id)
-            return false;
-
-        self->inUseTimerId = CLAP_INVALID_ID;
-        return true;
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapTimerUnregister(timer_id);
     }
+   #endif
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -518,7 +558,7 @@ struct carla_clap_output_events : clap_output_events_t, CarlaPluginClapEventData
 
 class CarlaPluginCLAP : public CarlaPlugin,
                         private CarlaPluginUI::Callback,
-                        private carla_clap_host::Callback
+                        private carla_clap_host::Callbacks
 {
 public:
     CarlaPluginCLAP(CarlaEngine* const engine, const uint id)
@@ -646,18 +686,28 @@ public:
         return hints;
     }
 
-    /*
     std::size_t getChunkData(void** const dataPtr) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.state != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
+
+        *dataPtr = nullptr;
+
+        // TODO
+
+        return 0;
     }
-    */
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
     uint getOptionsAvailable() const noexcept override
     {
-        uint options = PLUGIN_OPTION_USE_CHUNKS;
+        uint options = 0x0;
+
+        if (fExtensions.state != nullptr)
+            options |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (fInputEvents.portCount != 0)
         {
@@ -820,19 +870,17 @@ public:
         CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
-    /*
     void setChunkData(const void* const data, const std::size_t dataSize) override
     {
-    }
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.state != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
-    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool doingInit) noexcept override
-    {
-    }
+        // TODO
 
-    void setProgramRT(const uint32_t uindex, const bool sendCallbackLater) noexcept override
-    {
+        pData->updateParameterValues(this, true, true, false);
     }
-    */
 
     // -------------------------------------------------------------------
     // Set ui stuff
@@ -993,8 +1041,15 @@ public:
 
     void uiIdle() override
     {
-        if (fHost.inUseTimerId != CLAP_INVALID_ID && fExtensions.timer != nullptr)
-            fExtensions.timer->on_timer(fPlugin, fHost.inUseTimerId);
+        const uint32_t currentTimeInMs = water::Time::getMillisecondCounter();
+
+        for (LinkedList<HostTimerDetails>::Itenerator it = fTimers.begin2(); it.valid(); it.next())
+        {
+            HostTimerDetails& timer(it.getValue(kTimerFallbackNC));
+
+            if (currentTimeInMs > timer.lastCallTimeInMs + timer.periodInMs)
+                fExtensions.timer->on_timer(fPlugin, timer.clapId);
+        }
 
         CarlaPlugin::uiIdle();
     }
@@ -1025,6 +1080,9 @@ public:
         const clap_plugin_params_t* paramsExt = static_cast<const clap_plugin_params_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_PARAMS));
 
+        const clap_plugin_state_t* stateExt = static_cast<const clap_plugin_state_t*>(
+            fPlugin->get_extension(fPlugin, CLAP_EXT_STATE));
+
         const clap_plugin_timer_support_t* timerExt = static_cast<const clap_plugin_timer_support_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_TIMER_SUPPORT));
 
@@ -1037,10 +1095,14 @@ public:
         if (paramsExt != nullptr && (paramsExt->count == nullptr || paramsExt->get_info == nullptr))
             paramsExt = nullptr;
 
+        if (stateExt != nullptr && (stateExt->save == nullptr || stateExt->load == nullptr))
+            stateExt = nullptr;
+
         if (timerExt != nullptr && (timerExt->on_timer == nullptr))
             timerExt = nullptr;
 
         fExtensions.params = paramsExt;
+        fExtensions.state = stateExt;
         fExtensions.timer = timerExt;
 
        #ifdef CLAP_WINDOW_API_NATIVE
@@ -1069,7 +1131,7 @@ public:
         const uint32_t numAudioInputPorts = audioPortsExt != nullptr ? audioPortsExt->count(fPlugin, true) : 0;
         const uint32_t numAudioOutputPorts = audioPortsExt != nullptr ? audioPortsExt->count(fPlugin, false) : 0;
         const uint32_t numNoteInputPorts = notePortsExt != nullptr ? notePortsExt->count(fPlugin, true) : 0;
-        const uint32_t numNoteOutputPorts = notePortsExt != nullptr ? notePortsExt->count(fPlugin, true) : 0;
+        const uint32_t numNoteOutputPorts = notePortsExt != nullptr ? notePortsExt->count(fPlugin, false) : 0;
         const uint32_t numParameters = paramsExt != nullptr ? paramsExt->count(fPlugin) : 0;
 
         uint32_t aIns, aOuts, mIns, mOuts, params;
@@ -1449,12 +1511,6 @@ public:
 
         // extra plugin hints
         pData->extraHints = 0x0;
-
-        if (numNoteInputPorts > 0)
-            pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
-
-        if (numNoteOutputPorts > 0)
-            pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -2018,11 +2074,7 @@ public:
             &fOutputEvents  // out_events
         };
 
-        fOutputEvents.numEventsUsed = 0;
-
         fPlugin->process(fPlugin, &process);
-
-        fInputEvents.numEventsUsed = 0;
 
        #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
@@ -2095,13 +2147,67 @@ public:
 
         pData->singleMutex.unlock();
 
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
-        // MIDI Output
+        // Control Output
 
-        if (pData->event.portOut != nullptr)
+        if (pData->event.portOut != nullptr && fExtensions.params != nullptr)
         {
+            uint8_t  channel;
+            uint16_t param;
+            double   value;
 
-        } // End of MIDI Output
+            for (uint32_t k=0; k < pData->param.count; ++k)
+            {
+                if (pData->param.data[k].type != PARAMETER_OUTPUT)
+                    continue;
+                if (pData->param.data[k].mappedControlIndex <= 0)
+                    continue;
+                if (!fExtensions.params->get_value(fPlugin, pData->param.data[k].rindex, &value))
+                    continue;
+
+                channel = pData->param.data[k].midiChannel;
+                param   = static_cast<uint16_t>(pData->param.data[k].mappedControlIndex);
+                value   = pData->param.ranges[k].getNormalizedValue(value);
+
+                pData->event.portOut->writeControlEvent(0, channel,
+                                                        kEngineControlEventTypeParameter, param, -1,
+                                                        value);
+            }
+        } // End of Control Output
+       #endif
+
+        // --------------------------------------------------------------------------------------------------------
+        // Events/MIDI Output
+
+        for (uint32_t i=0; i<fOutputEvents.numEventsUsed; ++i)
+        {
+            const carla_clap_output_events::Event& ev(fOutputEvents.events[i]);
+
+            switch (ev.header.type)
+            {
+            case CLAP_EVENT_PARAM_VALUE:
+                for (uint32_t j=0; j<pData->param.count; ++j)
+                {
+                    if (pData->param.data[j].rindex != ev.param.param_id)
+                        continue;
+                    pData->postponeParameterChangeRtEvent(true, static_cast<int32_t>(j), ev.param.value);
+                    break;
+                }
+                break;
+            case CLAP_EVENT_MIDI:
+                for (uint32_t j=0; j<fOutputEvents.portCount; ++j)
+                {
+                    if (fOutputEvents.portData[j].clapPortIndex != ev.midi.port_index)
+                        continue;
+                    fOutputEvents.portData[j].port->writeMidiEvent(ev.midi.header.time, 3, ev.midi.data);
+                    break;
+                }
+                break;
+            }
+        }
+
+        fOutputEvents.numEventsUsed = 0;
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -2204,13 +2310,101 @@ protected:
         if (fExtensions.gui != nullptr)
             fExtensions.gui->set_size(fPlugin, width, height);
     }
+   #endif
 
-    void hostRequestResize(const uint width, const uint height) override
+    // -------------------------------------------------------------------
+
+    void clapRequestRestart() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
+    }
+
+    void clapRequestProcess() override
+    {
+    }
+
+    void clapRequestCallback() override
+    {
+    }
+
+    // -------------------------------------------------------------------
+
+   #ifdef CLAP_WINDOW_API_NATIVE
+    void clapGuiResizeHintsChanged() override
+    {
+    }
+
+    bool clapGuiRequestResize(const uint width, const uint height) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, false);
         carla_debug("CarlaPluginCLAP::hostRequestResize(%u, %u)", width, height);
 
         fUI.window->setSize(width, height, true);
+        return true;
+    }
+
+    bool clapGuiRequestShow() override
+    {
+        return false;
+    }
+
+    bool clapGuiRequestHide() override
+    {
+        return false;
+    }
+
+    void clapGuiClosed(const bool wasDestroyed) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(!fUI.isEmbed,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.isVisible,);
+
+        fUI.isVisible = false;
+
+        if (wasDestroyed)
+        {
+            CARLA_SAFE_ASSERT_RETURN(fUI.isCreated,);
+            fExtensions.gui->destroy(fPlugin);
+            fUI.isCreated = false;
+        }
+
+        pData->engine->callback(true, true,
+                                ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                pData->id,
+                                0,
+                                0, 0, 0.0f, nullptr);
+    }
+
+    // -------------------------------------------------------------------
+
+    bool clapTimerRegister(const uint32_t periodInMs, clap_id* const timerId) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.timer != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fUI.isCreated, false);
+
+        const HostTimerDetails timer = {
+            fTimers.isNotEmpty() ? fTimers.getLast(kTimerFallback).clapId + 1 : 1,
+            periodInMs,
+            0
+        };
+        fTimers.append(timer);
+
+        *timerId = timer.clapId;
+        return true;
+    }
+
+    bool clapTimerUnregister(const clap_id timerId) override
+    {
+        for (LinkedList<HostTimerDetails>::Itenerator it = fTimers.begin2(); it.valid(); it.next())
+        {
+            const HostTimerDetails& timer(it.getValue(kTimerFallback));
+
+            if (timer.clapId == timerId)
+            {
+                fTimers.remove(it);
+                return true;
+            }
+        }
+
+        return false;
     }
    #endif
 
@@ -2382,25 +2576,44 @@ public:
 
         pData->options = PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (isPluginOptionEnabled(options, PLUGIN_OPTION_USE_CHUNKS))
-            pData->options |= PLUGIN_OPTION_USE_CHUNKS;
-
-        if (fInputEvents.portCount != 0)
+        if (const clap_plugin_state_t* const stateExt =
+            static_cast<const clap_plugin_state_t*>(fPlugin->get_extension(fPlugin, CLAP_EXT_STATE)))
         {
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
-                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
-                pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
-                pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
-                pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
-                pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
-                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
-            if (isPluginOptionInverseEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
-                pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
+            if (stateExt->save != nullptr && stateExt->load != nullptr)
+                if (isPluginOptionEnabled(options, PLUGIN_OPTION_USE_CHUNKS))
+                    pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+        }
+
+        if (const clap_plugin_note_ports_t* const notePortsExt =
+            static_cast<const clap_plugin_note_ports_t*>(fPlugin->get_extension(fPlugin, CLAP_EXT_NOTE_PORTS)))
+        {
+            const uint32_t numNoteInputPorts = notePortsExt->count != nullptr && notePortsExt->get != nullptr
+                                             ? notePortsExt->count(fPlugin, true) : 0;
+
+            for (uint32_t i=0; i<numNoteInputPorts; ++i)
+            {
+                clap_note_port_info_t portInfo = {};
+                CARLA_SAFE_ASSERT_BREAK(notePortsExt->get(fPlugin, i, true, &portInfo));
+
+                if (portInfo.supported_dialects & CLAP_NOTE_DIALECT_MIDI)
+                {
+                    if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
+                        pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+                    if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CHANNEL_PRESSURE))
+                        pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                    if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH))
+                        pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                    if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
+                        pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+                    if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
+                        pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+                    if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
+                        pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+                    if (isPluginOptionInverseEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
+                        pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
+                    break;
+                }
+            }
         }
 
 //         if (fEffect->numPrograms > 1 && (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0)
@@ -2421,6 +2634,7 @@ private:
        #ifdef CLAP_WINDOW_API_NATIVE
         const clap_plugin_gui_t* gui;
        #endif
+        const clap_plugin_state_t* state;
         const clap_plugin_timer_support_t* timer;
 
         Extensions()
@@ -2428,6 +2642,7 @@ private:
            #ifdef CLAP_WINDOW_API_NATIVE
               gui(nullptr),
            #endif
+              state(nullptr),
               timer(nullptr) {}
 
         CARLA_DECLARE_NON_COPYABLE(Extensions)
@@ -2453,6 +2668,8 @@ private:
             CARLA_SAFE_ASSERT(window == nullptr);
         }
     } fUI;
+
+    LinkedList<HostTimerDetails> fTimers;
    #endif
 
     carla_clap_input_audio_buffers fInputAudioBuffers;

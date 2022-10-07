@@ -1833,12 +1833,27 @@ typedef struct _ParameterRanges {
      */
     float getNormalizedValue(const float& value) const noexcept
     {
-        const float normValue((value - min) / (max - min));
+        const float normValue = (value - min) / (max - min);
 
         if (normValue <= 0.0f)
             return 0.0f;
         if (normValue >= 1.0f)
             return 1.0f;
+        return normValue;
+    }
+
+    /*!
+     * Get a value normalized to 0.0<->1.0.
+     * Double-precision variant.
+     */
+    double getNormalizedValue(const double& value) const noexcept
+    {
+        const double normValue = (value - min) / (max - min);
+
+        if (normValue <= 0.0)
+            return 0.0;
+        if (normValue >= 1.0)
+            return 1.0;
         return normValue;
     }
 
