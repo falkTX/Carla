@@ -114,13 +114,22 @@ struct CarlaPluginClapEventData {
 // --------------------------------------------------------------------------------------------------------------------
 
 struct carla_clap_host : clap_host_t {
+    class Callback {
+    public:
+        virtual ~Callback() {}
+        virtual void hostRequestResize(uint width, uint height) = 0;
+    };
+
+    Callback* const uiCallback;
+
     clap_host_gui_t gui;
     clap_host_timer_support_t timer;
 
     // TESTING
     clap_id inUseTimerId;
 
-    carla_clap_host()
+    carla_clap_host(Callback* const uiCb)
+        : uiCallback(uiCb)
     {
         clap_version = CLAP_VERSION;
         host_data = this;
@@ -164,7 +173,15 @@ struct carla_clap_host : clap_host_t {
     static void carla_request_callback(const clap_host_t*) {}
 
     static void carla_resize_hints_changed(const clap_host_t *host) {}
-    static bool carla_request_resize(const clap_host_t *host, uint32_t width, uint32_t height) { return false; }
+
+    static bool carla_request_resize(const clap_host_t* const host, const uint32_t width, const uint32_t height)
+    {
+        const carla_clap_host* const self = static_cast<const carla_clap_host*>(host->host_data);
+
+        self->uiCallback->hostRequestResize(width, height);
+        return true;
+    }
+
     static bool carla_request_show(const clap_host_t *host) { return false; }
     static bool carla_request_hide(const clap_host_t *host) { return false; }
     static void carla_closed(const clap_host_t *host, bool was_destroyed) {}
@@ -500,7 +517,8 @@ struct carla_clap_output_events : clap_output_events_t, CarlaPluginClapEventData
 // --------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginCLAP : public CarlaPlugin,
-                        private CarlaPluginUI::Callback
+                        private CarlaPluginUI::Callback,
+                        private carla_clap_host::Callback
 {
 public:
     CarlaPluginCLAP(CarlaEngine* const engine, const uint id)
@@ -508,7 +526,7 @@ public:
           fPlugin(nullptr),
           fPluginDescriptor(nullptr),
           fPluginEntry(nullptr),
-          fHost(),
+          fHost(this),
           fExtensions(),
           fInputAudioBuffers(),
           fOutputAudioBuffers(),
@@ -840,11 +858,11 @@ public:
         if (fUI.isEmbed)
         {
             if (fUI.window != nullptr)
-                fUI.window->setTitle(pData->uiTitle.buffer());
+                fUI.window->setTitle(uiTitle.buffer());
         }
         else
         {
-            fExtensions.gui->suggest_title(fPlugin, pData->uiTitle.buffer());
+            fExtensions.gui->suggest_title(fPlugin, uiTitle.buffer());
         }
     }
 
@@ -911,15 +929,13 @@ public:
             if (carla_isNotZero(opts.uiScale))
                 fExtensions.gui->set_scale(fPlugin, opts.uiScale);
 
+            setWindowTitle(nullptr);
+
             if (fUI.isEmbed)
             {
                 clap_window_t win = { CLAP_WINDOW_API_NATIVE, {} };
                 win.ptr = fUI.window->getPtr();
                 fExtensions.gui->set_parent(fPlugin, &win);
-
-                if (pData->uiTitle.isNotEmpty())
-                    fUI.window->setTitle(pData->uiTitle.buffer());
-
                 fExtensions.gui->show(fPlugin);
                 fUI.window->show();
             }
@@ -928,12 +944,7 @@ public:
                 clap_window_t win = { CLAP_WINDOW_API_NATIVE, {} };
                 win.uptr = opts.frontendWinId;
                 fExtensions.gui->set_transient(fPlugin, &win);
-
-                if (pData->uiTitle.isNotEmpty())
-                    fExtensions.gui->suggest_title(fPlugin, pData->uiTitle.buffer());
-
                 fExtensions.gui->show(fPlugin);
-
                #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 pData->tryTransient();
                #endif
@@ -2171,9 +2182,10 @@ public:
     // -------------------------------------------------------------------
 
 protected:
+   #ifdef CLAP_WINDOW_API_NATIVE
     void handlePluginUIClosed() override
     {
-        // CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
         carla_debug("CarlaPluginCLAP::handlePluginUIClosed()");
 
         showCustomUI(false);
@@ -2186,9 +2198,21 @@ protected:
 
     void handlePluginUIResized(const uint width, const uint height) override
     {
-        // CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
         carla_debug("CarlaPluginCLAP::handlePluginUIResized(%u, %u)", width, height);
+
+        if (fExtensions.gui != nullptr)
+            fExtensions.gui->set_size(fPlugin, width, height);
     }
+
+    void hostRequestResize(const uint width, const uint height) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
+        carla_debug("CarlaPluginCLAP::hostRequestResize(%u, %u)", width, height);
+
+        fUI.window->setSize(width, height, true);
+    }
+   #endif
 
     // -------------------------------------------------------------------
 
