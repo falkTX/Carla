@@ -159,7 +159,8 @@ debug:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-tests: $(UI_FILES:%.ui=%$(APP_EXT))
+tests:
+# $(UI_FILES:%.ui=%$(APP_EXT))
 
 pluginlist/jackappdialog$(APP_EXT): pluginlist/jackappdialog.cpp pluginlist/jackappdialog.ui pluginlist/jackappdialog_ui.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(QT5_LINK_FLAGS) -o $@

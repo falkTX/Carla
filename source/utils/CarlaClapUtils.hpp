@@ -49,7 +49,8 @@ typedef struct clap_audio_buffer_with_offset {
    uint32_t channel_count;
    uint32_t latency;
    uint64_t constant_mask;
-   uint32_t offset;
+   uint16_t offset;
+   bool isMain;
 } clap_audio_buffer_with_offset_t;
 
 typedef struct clap_audio_buffer_const_with_offset {
@@ -59,7 +60,8 @@ typedef struct clap_audio_buffer_const_with_offset {
    uint32_t channel_count;
    uint32_t latency;
    uint64_t constant_mask;
-   uint32_t offset;
+   uint16_t offset;
+   bool isMain;
 } clap_audio_buffer_const_with_offset_t;
 
 }
@@ -138,6 +140,22 @@ PluginCategory getPluginCategoryFromClapFeatures(const char* const* const featur
     }
 
     return PLUGIN_CATEGORY_OTHER;
+}
+
+static inline
+bool clapFeaturesContainInstrument(const char* const* const features) noexcept
+{
+    if (features == nullptr)
+        return false;
+
+    // 1st pass for main categories
+    for (uint32_t i=0; features[i] != nullptr; ++i)
+    {
+        if (std::strcmp(features[i], CLAP_PLUGIN_FEATURE_INSTRUMENT) == 0)
+            return true;
+    }
+
+    return false;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

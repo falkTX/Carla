@@ -31,11 +31,13 @@
 
 #include "water/files/File.h"
 
+// FIXME
+// #ifndef CLAP_WINDOW_API_NATIVE
+// #define CLAP_WINDOW_API_NATIVE ""
+// #define HAVE_X11 1
+// #endif
+
 CARLA_BACKEND_START_NAMESPACE
-
-// --------------------------------------------------------------------------------------------------------------------
-
-static_assert(kPluginMaxMidiEvents > MAX_MIDI_NOTE, "Enough space for input events");
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -112,6 +114,12 @@ struct CarlaPluginClapEventData {
 // --------------------------------------------------------------------------------------------------------------------
 
 struct carla_clap_host : clap_host_t {
+    clap_host_gui_t gui;
+    clap_host_timer_support_t timer;
+
+    // TESTING
+    clap_id inUseTimerId;
+
     carla_clap_host()
     {
         clap_version = CLAP_VERSION;
@@ -120,16 +128,70 @@ struct carla_clap_host : clap_host_t {
         vendor = "falkTX";
         url = "https://kx.studio/carla";
         version = CARLA_VERSION_STRING;
+
         get_extension = carla_get_extension;
         request_restart = carla_request_restart;
         request_process = carla_request_process;
         request_callback = carla_request_callback;
+
+        gui.resize_hints_changed = carla_resize_hints_changed;
+        gui.request_resize = carla_request_resize;
+        gui.request_show = carla_request_show;
+        gui.request_hide = carla_request_hide;
+        gui.closed = carla_closed;
+
+        timer.register_timer = carla_register_timer;
+        timer.unregister_timer = carla_unregister_timer;
+
+        // TESTING
+        inUseTimerId = CLAP_INVALID_ID;
     }
 
-    static const void* carla_get_extension(const clap_host_t*, const char*) { return nullptr; }
+    static const void* carla_get_extension(const clap_host_t* const host, const char* const extension_id)
+    {
+        const carla_clap_host* const self = static_cast<const carla_clap_host*>(host->host_data);
+
+        if (std::strcmp(extension_id, CLAP_EXT_GUI) == 0)
+            return &self->gui;
+        if (std::strcmp(extension_id, CLAP_EXT_TIMER_SUPPORT) == 0)
+            return &self->timer;
+
+        return nullptr;
+    }
+
     static void carla_request_restart(const clap_host_t*) {}
     static void carla_request_process(const clap_host_t*) {}
     static void carla_request_callback(const clap_host_t*) {}
+
+    static void carla_resize_hints_changed(const clap_host_t *host) {}
+    static bool carla_request_resize(const clap_host_t *host, uint32_t width, uint32_t height) { return false; }
+    static bool carla_request_show(const clap_host_t *host) { return false; }
+    static bool carla_request_hide(const clap_host_t *host) { return false; }
+    static void carla_closed(const clap_host_t *host, bool was_destroyed) {}
+
+    static bool carla_register_timer(const clap_host_t* const host, uint32_t /*period_ms*/, clap_id* const timer_id)
+    {
+        carla_clap_host* const self = static_cast<carla_clap_host*>(host->host_data);
+
+        if (self->inUseTimerId != CLAP_INVALID_ID)
+            return false;
+
+        self->inUseTimerId = *timer_id = 1;
+        return true;
+    }
+
+    static bool carla_unregister_timer(const clap_host_t* const host, const clap_id timer_id)
+    {
+        carla_clap_host* const self = static_cast<carla_clap_host*>(host->host_data);
+
+        if (self->inUseTimerId == CLAP_INVALID_ID)
+            return false;
+        if (self->inUseTimerId != timer_id)
+            return false;
+
+        self->inUseTimerId = CLAP_INVALID_ID;
+        return true;
+    }
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -147,7 +209,7 @@ struct carla_clap_input_audio_buffers {
         delete[] buffers;
     }
 
-    void init(const uint32_t portCount)
+    void realloc(const uint32_t portCount)
     {
         delete[] buffers;
         count = portCount;
@@ -182,7 +244,7 @@ struct carla_clap_output_audio_buffers {
         delete[] buffers;
     }
 
-    void init(const uint32_t portCount)
+    void realloc(const uint32_t portCount)
     {
         delete[] buffers;
         count = portCount;
@@ -215,13 +277,13 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
         clap_event_midi_sysex_t sysex;
     };
 
-    struct UpdatedParam {
+    struct ScheduledParameterUpdate {
         bool updated;
         double value;
         clap_id clapId;
         void* cookie;
 
-        UpdatedParam()
+        ScheduledParameterUpdate()
           : updated(false),
             value(0.f),
             clapId(0),
@@ -229,7 +291,7 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
     };
 
     Event* events;
-    UpdatedParam* updatedParams;
+    ScheduledParameterUpdate* updatedParams;
 
     uint32_t numEventsAllocated;
     uint32_t numEventsUsed;
@@ -256,7 +318,7 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
 
     // called on plugin reload
     // NOTE: clapId and cookie must be separately set outside this function
-    void init(CarlaEngineEventPort* const defPortIn, const uint32_t portCount, const uint32_t paramCount)
+    void realloc(CarlaEngineEventPort* const defPortIn, const uint32_t portCount, const uint32_t paramCount)
     {
         numEventsUsed = 0;
         numParams = paramCount;
@@ -265,9 +327,11 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
 
         if (paramCount != 0)
         {
+            static_assert(kPluginMaxMidiEvents > MAX_MIDI_NOTE, "Enough space for input events");
+
             numEventsAllocated = paramCount * 2 + kPluginMaxMidiEvents * std::max(1u, portCount);
             events = new Event[numEventsAllocated];
-            updatedParams = new UpdatedParam[paramCount];
+            updatedParams = new ScheduledParameterUpdate[paramCount];
         }
         else
         {
@@ -283,7 +347,7 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
     }
 
     // called just before plugin processing
-    void prepareScheduledParameterUpdates()
+    void handleScheduledParameterUpdates()
     {
         uint32_t count = 0;
 
@@ -383,7 +447,7 @@ struct carla_clap_output_events : clap_output_events_t, CarlaPluginClapEventData
     }
 
     // called on plugin reload
-    void init(CarlaEngineEventPort* const defPortOut, const uint32_t portCount, const uint32_t paramCount)
+    void realloc(CarlaEngineEventPort* const defPortOut, const uint32_t portCount, const uint32_t paramCount)
     {
         numEventsUsed = 0;
         delete[] events;
@@ -449,38 +513,29 @@ public:
           fInputAudioBuffers(),
           fOutputAudioBuffers(),
           fInputEvents(),
-          fOutputEvents(),
-          fSteadyTime(0),
-          fAudioOutBuffers(nullptr)
+          fOutputEvents()
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        , fAudioOutBuffers(nullptr)
+       #endif
     {
         carla_debug("CarlaPluginCLAP::CarlaPluginCLAP(%p, %i)", engine, id);
-
     }
 
     ~CarlaPluginCLAP() override
     {
         carla_debug("CarlaPluginCLAP::~CarlaPluginCLAP()");
 
+       #ifdef CLAP_WINDOW_API_NATIVE
         // close UI
-//         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
-//         {
-//             if (! fUI.isEmbed)
-//                 showCustomUI(false);
-//
-//             if (fUI.isOpen)
-//             {
-//                 fUI.isOpen = false;
-//                 dispatcher(effEditClose);
-//             }
-//         }
+        if (fUI.isCreated)
+            showCustomUI(false);
+       #endif
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
 
         if (pData->client != nullptr && pData->client->isActive())
             pData->client->deactivate(true);
-
-//         CARLA_ASSERT(! fIsProcessing);
 
         if (pData->active)
         {
@@ -530,10 +585,48 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    // nothing
+    uint32_t getMidiInCount() const noexcept override
+    {
+        return fInputEvents.portCount;
+    }
+
+    uint32_t getMidiOutCount() const noexcept override
+    {
+        return fOutputEvents.portCount;
+    }
 
     // -------------------------------------------------------------------
     // Information (current data)
+
+    uint getAudioPortHints(const bool isOutput, const uint32_t portIndex) const noexcept override
+    {
+        uint hints = 0x0;
+
+        if (isOutput)
+        {
+            for (uint32_t i=0, j=0; i<fOutputAudioBuffers.count; ++i, j+=fOutputAudioBuffers.buffers[i].channel_count)
+            {
+                if (j != portIndex)
+                    continue;
+
+                if (!fOutputAudioBuffers.buffers[i].isMain)
+                    hints |= AUDIO_PORT_IS_SIDECHAIN;
+            }
+        }
+        else
+        {
+            for (uint32_t i=0, j=0; i<fInputAudioBuffers.count; ++i, j+=fInputAudioBuffers.buffers[i].channel_count)
+            {
+                if (j != portIndex)
+                    continue;
+
+                if (!fInputAudioBuffers.buffers[i].isMain)
+                    hints |= AUDIO_PORT_IS_SIDECHAIN;
+            }
+        }
+
+        return hints;
+    }
 
     /*
     std::size_t getChunkData(void** const dataPtr) noexcept override
@@ -619,6 +712,15 @@ public:
         return true;
     }
 
+    bool getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        const clap_id clapId = pData->param.data[parameterId].rindex;
+        std::snprintf(strBuf, STR_MAX, "%u", clapId);
+        return true;
+    }
+
     bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr, false);
@@ -633,15 +735,29 @@ public:
         return fExtensions.params->value_to_text(fPlugin, clapId, value, strBuf, STR_MAX);
     }
 
-    /*
-    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
-    {
-    }
-
     bool getParameterGroupName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        const clap_id clapId = pData->param.data[parameterId].rindex;
+
+        clap_param_info_t paramInfo = {};
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_info(fPlugin, clapId, &paramInfo), false);
+
+        if (paramInfo.module[0] == '\0')
+            return false;
+
+        if (char* const sep = std::strrchr(paramInfo.module, '/'))
+        {
+            paramInfo.module[STR_MAX/2-2] = sep[0] = '\0';
+            std::snprintf(strBuf, STR_MAX, "%s:%s", paramInfo.module, paramInfo.module);
+            return true;
+        }
+
+        return false;
     }
-    */
 
     // -------------------------------------------------------------------
     // Set data (state)
@@ -651,11 +767,15 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    /*
+   #ifdef CLAP_WINDOW_API_NATIVE
     void setName(const char* const newName) override
     {
+        CarlaPlugin::setName(newName);
+
+        if (fUI.isCreated && pData->uiTitle.isEmpty())
+            setWindowTitle(nullptr);
     }
-    */
+   #endif
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -699,15 +819,157 @@ public:
     // -------------------------------------------------------------------
     // Set ui stuff
 
-    /*
+   #ifdef CLAP_WINDOW_API_NATIVE
+    void setWindowTitle(const char* const title) noexcept
+    {
+        if (!fUI.isCreated)
+            return;
+
+        CarlaString uiTitle;
+
+        if (title != nullptr)
+        {
+            uiTitle = title;
+        }
+        else
+        {
+            uiTitle  = pData->name;
+            uiTitle += " (GUI)";
+        }
+
+        if (fUI.isEmbed)
+        {
+            if (fUI.window != nullptr)
+                fUI.window->setTitle(pData->uiTitle.buffer());
+        }
+        else
+        {
+            fExtensions.gui->suggest_title(fPlugin, pData->uiTitle.buffer());
+        }
+    }
+
     void setCustomUITitle(const char* const title) noexcept override
     {
+        setWindowTitle(title);
+        CarlaPlugin::setCustomUITitle(title);
     }
 
     void showCustomUI(const bool yesNo) override
     {
-    }
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.gui != nullptr,);
 
+        if (yesNo)
+        {
+            if (fUI.isVisible)
+            {
+                fExtensions.gui->show(fPlugin);
+
+                if (fUI.isEmbed)
+                {
+                    CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
+                    fUI.window->show();
+                    fUI.window->focus();
+                }
+                return;
+            }
+
+            const EngineOptions& opts(pData->engine->getOptions());
+
+            if (!fUI.initalized)
+            {
+                fUI.isEmbed = fExtensions.gui->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, false);
+                fUI.initalized = true;
+            }
+
+            if (!fUI.isCreated)
+            {
+                if (!fExtensions.gui->create(fPlugin, CLAP_WINDOW_API_NATIVE, !fUI.isEmbed))
+                {
+                    pData->engine->callback(true, true,
+                                            ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                            pData->id,
+                                            -1,
+                                            0, 0, 0.0f,
+                                            "Plugin refused to open its own UI");
+                    return;
+                }
+                fUI.isCreated = true;
+            }
+
+            const bool resizable = fExtensions.gui->can_resize(fPlugin);
+
+           #if defined(CARLA_OS_WIN)
+            fUI.window = CarlaPluginUI::newWindows(this, opts.frontendWinId, opts.pluginsAreStandalone, resizable);
+           #elif defined(CARLA_OS_MAC)
+            fUI.window = CarlaPluginUI::newCocoa(this, opts.frontendWinId, opts.pluginsAreStandalone, resizable);
+           #elif defined(HAVE_X11)
+            fUI.window = CarlaPluginUI::newX11(this, opts.frontendWinId, opts.pluginsAreStandalone, resizable, false);
+           #else
+            #error why is CLAP_WINDOW_API_NATIVE defined??
+           #endif
+
+            if (carla_isNotZero(opts.uiScale))
+                fExtensions.gui->set_scale(fPlugin, opts.uiScale);
+
+            if (fUI.isEmbed)
+            {
+                clap_window_t win = { CLAP_WINDOW_API_NATIVE, {} };
+                win.ptr = fUI.window->getPtr();
+                fExtensions.gui->set_parent(fPlugin, &win);
+
+                if (pData->uiTitle.isNotEmpty())
+                    fUI.window->setTitle(pData->uiTitle.buffer());
+
+                fExtensions.gui->show(fPlugin);
+                fUI.window->show();
+            }
+            else
+            {
+                clap_window_t win = { CLAP_WINDOW_API_NATIVE, {} };
+                win.uptr = opts.frontendWinId;
+                fExtensions.gui->set_transient(fPlugin, &win);
+
+                if (pData->uiTitle.isNotEmpty())
+                    fExtensions.gui->suggest_title(fPlugin, pData->uiTitle.buffer());
+
+                fExtensions.gui->show(fPlugin);
+
+               #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                pData->tryTransient();
+               #endif
+            }
+
+            fUI.isVisible = true;
+        }
+        else
+        {
+            fUI.isVisible = false;
+
+           #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            pData->transientTryCounter = 0;
+           #endif
+
+            if (fUI.window != nullptr)
+                fUI.window->hide();
+
+            fExtensions.gui->hide(fPlugin);
+
+            if (fUI.isCreated)
+            {
+                fExtensions.gui->destroy(fPlugin);
+                fUI.isCreated = false;
+            }
+
+            if (fUI.window != nullptr)
+            {
+                delete fUI.window;
+                fUI.window = nullptr;
+            }
+        }
+    }
+   #endif
+
+    /*
     void* embedCustomUI(void* const ptr) override
     {
     }
@@ -720,6 +982,9 @@ public:
 
     void uiIdle() override
     {
+        if (fHost.inUseTimerId != CLAP_INVALID_ID && fExtensions.timer != nullptr)
+            fExtensions.timer->on_timer(fPlugin, fHost.inUseTimerId);
+
         CarlaPlugin::uiIdle();
     }
 
@@ -749,6 +1014,9 @@ public:
         const clap_plugin_params_t* paramsExt = static_cast<const clap_plugin_params_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_PARAMS));
 
+        const clap_plugin_timer_support_t* timerExt = static_cast<const clap_plugin_timer_support_t*>(
+            fPlugin->get_extension(fPlugin, CLAP_EXT_TIMER_SUPPORT));
+
         if (audioPortsExt != nullptr && (audioPortsExt->count == nullptr || audioPortsExt->get == nullptr))
             audioPortsExt = nullptr;
 
@@ -758,7 +1026,34 @@ public:
         if (paramsExt != nullptr && (paramsExt->count == nullptr || paramsExt->get_info == nullptr))
             paramsExt = nullptr;
 
+        if (timerExt != nullptr && (timerExt->on_timer == nullptr))
+            timerExt = nullptr;
+
         fExtensions.params = paramsExt;
+        fExtensions.timer = timerExt;
+
+       #ifdef CLAP_WINDOW_API_NATIVE
+        const clap_plugin_gui_t* guiExt = static_cast<const clap_plugin_gui_t*>(
+            fPlugin->get_extension(fPlugin, CLAP_EXT_GUI));
+
+        if (guiExt != nullptr && (guiExt->is_api_supported == nullptr
+                                  || guiExt->create == nullptr
+                                  || guiExt->destroy == nullptr
+                                  || guiExt->set_scale == nullptr
+                                  || guiExt->get_size == nullptr
+                                  || guiExt->can_resize == nullptr
+                                  || guiExt->get_resize_hints == nullptr
+                                  || guiExt->adjust_size == nullptr
+                                  || guiExt->set_size == nullptr
+                                  || guiExt->set_parent == nullptr
+                                  || guiExt->set_transient == nullptr
+                                  || guiExt->suggest_title == nullptr
+                                  || guiExt->show == nullptr
+                                  || guiExt->hide == nullptr))
+            guiExt = nullptr;
+
+        fExtensions.gui = guiExt;
+       #endif
 
         const uint32_t numAudioInputPorts = audioPortsExt != nullptr ? audioPortsExt->count(fPlugin, true) : 0;
         const uint32_t numAudioOutputPorts = audioPortsExt != nullptr ? audioPortsExt->count(fPlugin, false) : 0;
@@ -772,8 +1067,8 @@ public:
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        fInputAudioBuffers.init(numAudioInputPorts);
-        fOutputAudioBuffers.init(numAudioOutputPorts);
+        fInputAudioBuffers.realloc(numAudioInputPorts);
+        fOutputAudioBuffers.realloc(numAudioOutputPorts);
 
         for (uint32_t i=0; i<numAudioInputPorts; ++i)
         {
@@ -782,6 +1077,8 @@ public:
 
             fInputAudioBuffers.buffers[i].channel_count = portInfo.channel_count;
             fInputAudioBuffers.buffers[i].offset = aIns;
+            fInputAudioBuffers.buffers[i].isMain = portInfo.flags & CLAP_AUDIO_PORT_IS_MAIN;
+
             aIns += portInfo.channel_count;
         }
 
@@ -792,6 +1089,7 @@ public:
 
             fOutputAudioBuffers.buffers[i].channel_count = portInfo.channel_count;
             fOutputAudioBuffers.buffers[i].offset = aOuts;
+            fOutputAudioBuffers.buffers[i].isMain = portInfo.flags & CLAP_AUDIO_PORT_IS_MAIN;
             for (uint32_t j=0; j<portInfo.channel_count; ++j)
                 fOutputAudioBuffers.buffers[i].constant_mask |= (1 << j);
 
@@ -833,11 +1131,13 @@ public:
         if (aOuts > 0)
         {
             pData->audioOut.createNew(aOuts);
-            fAudioOutBuffers = new float*[aOuts];
             needsCtrlIn = true;
 
+           #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            fAudioOutBuffers = new float*[aOuts];
             for (uint32_t i=0; i < aOuts; ++i)
                 fAudioOutBuffers[i] = nullptr;
+           #endif
         }
 
         if (mIns == 1)
@@ -852,8 +1152,8 @@ public:
             needsCtrlIn = true;
         }
 
-        fInputEvents.init(pData->event.portIn, mIns, params);
-        fOutputEvents.init(pData->event.portOut, mOuts, params);
+        fInputEvents.realloc(pData->event.portIn, mIns, params);
+        fOutputEvents.realloc(pData->event.portOut, mOuts, params);
 
         const EngineProcessMode processMode = pData->engine->getProccessMode();
         const uint portNameSize = pData->engine->getMaxPortNameSize();
@@ -980,10 +1280,11 @@ public:
         }
 
         // Parameters
-        for (uint32_t j=0; j < params; ++j)
+        for (uint32_t i=0, j=0; i<numParameters; ++i)
         {
             clap_param_info_t paramInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(paramsExt->get_info(fPlugin, j, &paramInfo));
+            CARLA_SAFE_ASSERT_BREAK(paramsExt->get_info(fPlugin, i, &paramInfo));
+            CARLA_SAFE_ASSERT_BREAK(j < params);
 
             if (paramInfo.flags & (CLAP_PARAM_IS_HIDDEN|CLAP_PARAM_IS_BYPASS))
                 continue;
@@ -1058,6 +1359,8 @@ public:
 
             fInputEvents.updatedParams[j].clapId = paramInfo.id;
             fInputEvents.updatedParams[j].cookie = paramInfo.cookie;
+
+            ++j;
         }
 
         if (needsCtrlIn)
@@ -1098,32 +1401,28 @@ public:
             pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
 
             if (mOuts == 1)
-                fOutputEvents.portData[0].port = pData->event.portIn;
+                fOutputEvents.portData[0].port = pData->event.portOut;
         }
 
         // plugin hints
-        const PluginCategory category = fPluginDescriptor->features != nullptr ? getPluginCategoryFromClapFeatures(fPluginDescriptor->features)
-                                                                               : PLUGIN_CATEGORY_NONE;
-
         pData->hints = 0x0;
 
-        if (category == PLUGIN_CATEGORY_SYNTH)
+        if (clapFeaturesContainInstrument(fPluginDescriptor->features))
             pData->hints |= PLUGIN_IS_SYNTH;
 
        #ifdef CLAP_WINDOW_API_NATIVE
-        if (const clap_plugin_gui_t* const guiExt = static_cast<const clap_plugin_gui_t*>(fPlugin->get_extension(fPlugin, CLAP_EXT_GUI)))
+        if (guiExt != nullptr)
         {
-            if (guiExt->is_api_supported != nullptr)
+            if (guiExt->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, false))
             {
-                if (guiExt->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, false))
-                {
-                    pData->hints |= PLUGIN_HAS_CUSTOM_UI;
-                    pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
-                }
-                else if (guiExt->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, false))
-                {
-                    pData->hints |= PLUGIN_HAS_CUSTOM_UI;
-                }
+                pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+                pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+                pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
+            }
+            else if (guiExt->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, true))
+            {
+                pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+                pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
             }
         }
        #endif
@@ -1210,14 +1509,18 @@ public:
         if (pData->audioOut.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr,);
+           #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             CARLA_SAFE_ASSERT_RETURN(fAudioOutBuffers != nullptr,);
+           #endif
         }
 
         // --------------------------------------------------------------------------------------------------------
         // Set audio buffers
 
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
             carla_zeroFloats(fAudioOutBuffers[i], frames);
+       #endif
 
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
@@ -1235,7 +1538,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        fInputEvents.prepareScheduledParameterUpdates();
+        fInputEvents.handleScheduledParameterUpdates();
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -1353,16 +1656,16 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Event Input
+        // Event Input (main port)
 
-        if (fInputEvents.portCount != 0)
+        if (pData->event.portIn != nullptr)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
             if (pData->extNotes.mutex.tryLock())
             {
-                if (fInputEvents.portCount != 0)
+                if (fInputEvents.portCount == 0)
                 {
                     // does not handle MIDI
                     pData->extNotes.data.clear();
@@ -1410,11 +1713,9 @@ public:
                 pData->event.cvSourcePorts->initPortBuffers(cvIn + pData->cvIn.count, frames, true, pData->event.portIn);
 #endif
 
-            const uint32_t numEvents = fInputEvents.defaultPort != nullptr && fInputEvents.defaultPort->port != nullptr
-                ? fInputEvents.defaultPort->port->getEventCount()
-                : 0;
+            const uint32_t numSysEvents = pData->event.portIn->getEventCount();
 
-            for (uint32_t i=0; i < numEvents; ++i)
+            for (uint32_t i=0; i < numSysEvents; ++i)
             {
                 EngineEvent& event(fInputEvents.defaultPort->port->getEvent(i));
 
@@ -1669,7 +1970,15 @@ public:
 
             pData->postRtEvents.trySplice();
 
-        } // End of Event Input and Processing
+        } // End of Event Input (main port)
+
+        // --------------------------------------------------------------------------------------------------------
+        // Event input (multi MIDI port)
+
+        if (fInputEvents.portCount > 1)
+        {
+            // TODO
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Plugin processing
@@ -1678,10 +1987,16 @@ public:
             fInputAudioBuffers.buffers[i].data32 = audioIn + fInputAudioBuffers.buffers[i].offset;
 
         for (uint32_t i=0; i<fOutputAudioBuffers.count; ++i)
+        {
+           #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             fOutputAudioBuffers.buffers[i].data32 = fAudioOutBuffers + fOutputAudioBuffers.buffers[i].offset;
+           #else
+            fOutputAudioBuffers.buffers[i].data32 = audioOut + fOutputAudioBuffers.buffers[i].offset;
+           #endif
+        }
 
         const clap_process_t process = {
-            fSteadyTime,
+            static_cast<int64_t>(timeInfo.frame),
             frames,
             &clapTransport,
             fInputAudioBuffers.cast(),
@@ -1697,7 +2012,6 @@ public:
         fPlugin->process(fPlugin, &process);
 
         fInputEvents.numEventsUsed = 0;
-        fSteadyTime += frames;
 
        #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // --------------------------------------------------------------------------------------------------------
@@ -1764,12 +2078,6 @@ public:
             }
 
         } // End of Post-processing
-       #else // BUILD_BRIDGE_ALTERNATIVE_ARCH
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
-        {
-            for (uint32_t k=0; k < frames; ++k)
-                audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k];
-        }
        #endif // BUILD_BRIDGE_ALTERNATIVE_ARCH
 
         // --------------------------------------------------------------------------------------------------------
@@ -1794,6 +2102,7 @@ public:
 #endif
     }
 
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
@@ -1812,18 +2121,7 @@ public:
         if (pData->active)
             activate();
     }
-
-    void sampleRateChanged(const double newSampleRate) override
-    {
-        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("CarlaPluginCLAP::sampleRateChanged(%g)", newSampleRate);
-
-        if (pData->active)
-            deactivate();
-
-        if (pData->active)
-            activate();
-    }
+   #endif
 
     // -------------------------------------------------------------------
     // Plugin buffers
@@ -1840,6 +2138,7 @@ public:
     {
         carla_debug("CarlaPluginCLAP::clearBuffers() - start");
 
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (fAudioOutBuffers != nullptr)
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
@@ -1854,6 +2153,7 @@ public:
             delete[] fAudioOutBuffers;
             fAudioOutBuffers = nullptr;
         }
+       #endif
 
         fInputEvents.clear(pData->event.portIn);
         fOutputEvents.clear(pData->event.portOut);
@@ -2094,19 +2394,50 @@ private:
 
     struct Extensions {
         const clap_plugin_params_t* params;
+       #ifdef CLAP_WINDOW_API_NATIVE
+        const clap_plugin_gui_t* gui;
+       #endif
+        const clap_plugin_timer_support_t* timer;
 
         Extensions()
-            : params(nullptr) {}
+            : params(nullptr),
+           #ifdef CLAP_WINDOW_API_NATIVE
+              gui(nullptr),
+           #endif
+              timer(nullptr) {}
 
         CARLA_DECLARE_NON_COPYABLE(Extensions)
     } fExtensions;
+
+   #ifdef CLAP_WINDOW_API_NATIVE
+    struct UI {
+        bool initalized;
+        bool isCreated;
+        bool isEmbed;
+        bool isVisible;
+        CarlaPluginUI* window;
+
+        UI()
+            : initalized(false),
+              isCreated(false),
+              isEmbed(false),
+              isVisible(false),
+              window(nullptr) {}
+
+        ~UI()
+        {
+            CARLA_SAFE_ASSERT(window == nullptr);
+        }
+    } fUI;
+   #endif
 
     carla_clap_input_audio_buffers fInputAudioBuffers;
     carla_clap_output_audio_buffers fOutputAudioBuffers;
     carla_clap_input_events fInputEvents;
     carla_clap_output_events fOutputEvents;
-    int64_t fSteadyTime;
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     float** fAudioOutBuffers;
+   #endif
 
    #ifdef CARLA_OS_MAC
     BundleLoader fBundleLoader;
