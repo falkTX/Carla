@@ -737,6 +737,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         switch (ptype)
         {
         case PLUGIN_NONE:
+        case PLUGIN_TYPE_COUNT:
             break;
 
         case PLUGIN_LADSPA:
@@ -1424,6 +1425,9 @@ bool CarlaEngine::loadFile(const char* const filename)
     if (extension == "vst3")
         return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST3, filename, nullptr, nullptr, 0, nullptr);
 
+    if (extension == "clap")
+        return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_CLAP, filename, nullptr, nullptr, 0, nullptr);
+
     // -------------------------------------------------------------------
 
     setLastError("Unknown file extension");
@@ -2048,7 +2052,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         break;
     case ENGINE_OPTION_PLUGIN_PATH:
         CARLA_SAFE_ASSERT_RETURN(value > PLUGIN_NONE,);
-        CARLA_SAFE_ASSERT_RETURN(value <= PLUGIN_JSFX,);
+        CARLA_SAFE_ASSERT_RETURN(value <= PLUGIN_TYPE_COUNT,);
 
         switch (value)
         {
@@ -2115,6 +2119,14 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
                 pData->options.pathJSFX = carla_strdup_safe(valueStr);
             else
                 pData->options.pathJSFX = nullptr;
+            break;
+        case PLUGIN_CLAP:
+            if (pData->options.pathCLAP != nullptr)
+                delete[] pData->options.pathCLAP;
+            if (valueStr != nullptr)
+                pData->options.pathCLAP = carla_strdup_safe(valueStr);
+            else
+                pData->options.pathCLAP = nullptr;
             break;
         default:
             return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Invalid plugin type",
@@ -2419,6 +2431,7 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
             outSettings << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
             outSettings << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
             outSettings << "  <JSFX_PATH>"   << xmlSafeString(options.pathJSFX,   true) << "</JSFX_PATH>\n";
+            outSettings << "  <CLAP_PATH>"   << xmlSafeString(options.pathCLAP,   true) << "</CLAP_PATH>\n";
         }
 
         outSettings << " </EngineSettings>\n";
@@ -2841,6 +2854,12 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     value    = PLUGIN_JSFX;
                     valueStr = text.toRawUTF8();
                 }
+                else if (tag == "CLAP_PATH")
+                {
+                    option   = ENGINE_OPTION_PLUGIN_PATH;
+                    value    = PLUGIN_CLAP;
+                    valueStr = text.toRawUTF8();
+                }
             }
 
             if (option == -1)
@@ -2853,7 +2872,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     continue;
                 if (tag == "VST3_PATH" || tag == "AU_PATH")
                     continue;
-                if (tag == "SF2_PATH" || tag == "SFZ_PATH" || tag == "JSFX_PATH")
+                if (tag == "SF2_PATH" || tag == "SFZ_PATH" || tag == "JSFX_PATH" || tag == "CLAP_PATH")
                     continue;
 
                 // hmm something is wrong..
@@ -3040,7 +3059,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             const void* extraStuff    = nullptr;
             static const char kTrue[] = "true";
 
-            const PluginType ptype(getPluginTypeFromString(stateSave.type));
+            const PluginType ptype = getPluginTypeFromString(stateSave.type);
 
             switch (ptype)
             {
@@ -3054,6 +3073,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             case PLUGIN_VST3:
             case PLUGIN_SFZ:
             case PLUGIN_JSFX:
+            case PLUGIN_CLAP:
                 if (stateSave.binary != nullptr && stateSave.binary[0] != '\0' &&
                     ! (File::isAbsolutePath(stateSave.binary) && File(stateSave.binary).exists()))
                 {
@@ -3068,6 +3088,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     case PLUGIN_SF2:    searchPath = pData->options.pathSF2;    break;
                     case PLUGIN_SFZ:    searchPath = pData->options.pathSFZ;    break;
                     case PLUGIN_JSFX:   searchPath = pData->options.pathJSFX;   break;
+                    case PLUGIN_CLAP:   searchPath = pData->options.pathCLAP;   break;
                     default:            searchPath = nullptr;                   break;
                     }
 
@@ -3089,6 +3110,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                             case PLUGIN_SF2:    searchPath = std::getenv("SF2_PATH");    break;
                             case PLUGIN_SFZ:    searchPath = std::getenv("SFZ_PATH");    break;
                             case PLUGIN_JSFX:   searchPath = std::getenv("JSFX_PATH");   break;
+                            case PLUGIN_CLAP:   searchPath = std::getenv("CLAP_PATH");   break;
                             default:            searchPath = nullptr;                    break;
                             }
 

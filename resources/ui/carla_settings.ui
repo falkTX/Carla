@@ -2159,6 +2159,11 @@
                <string>JSFX</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>CLAP</string>
+              </property>
+             </item>
             </widget>
            </item>
            <item>
@@ -2382,6 +2387,28 @@
                </property>
                <item>
                 <widget class="QListWidget" name="lw_jsfx"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_clap">
+              <layout class="QVBoxLayout" name="verticalLayout_26">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_clap"/>
                </item>
               </layout>
              </widget>

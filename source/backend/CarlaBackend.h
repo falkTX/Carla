@@ -681,7 +681,12 @@ typedef enum {
     /*!
      * CLAP plugin.
      */
-    PLUGIN_CLAP = 14
+    PLUGIN_CLAP = 14,
+
+    /*!
+     * Terminator/count, not a plugin type.
+     */
+    PLUGIN_TYPE_COUNT = 15
 
 } PluginType;
 

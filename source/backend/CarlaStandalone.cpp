@@ -272,6 +272,9 @@ static void carla_engine_init_common(const CarlaHostStandalone& standalone, Carl
     if (const char* const pathJSFX = std::getenv("ENGINE_OPTION_PLUGIN_PATH_JSFX"))
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_JSFX, pathJSFX);
 
+    if (const char* const pathCLAP = std::getenv("ENGINE_OPTION_PLUGIN_PATH_CLAP"))
+        engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_CLAP, pathCLAP);
+
     if (const char* const binaryDir = std::getenv("ENGINE_OPTION_PATH_BINARIES"))
         engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, binaryDir);
     else
@@ -338,6 +341,9 @@ static void carla_engine_init_common(const CarlaHostStandalone& standalone, Carl
 
     if (standalone.engineOptions.pathJSFX != nullptr)
         engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_JSFX, standalone.engineOptions.pathJSFX);
+
+    if (standalone.engineOptions.pathCLAP != nullptr)
+        engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_CLAP, standalone.engineOptions.pathCLAP);
 
     if (standalone.engineOptions.binaryDir != nullptr && standalone.engineOptions.binaryDir[0] != '\0')
         engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES, 0, standalone.engineOptions.binaryDir);
@@ -843,7 +849,7 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
 
         case CB::ENGINE_OPTION_PLUGIN_PATH:
             CARLA_SAFE_ASSERT_RETURN(value > CB::PLUGIN_NONE,);
-            CARLA_SAFE_ASSERT_RETURN(value <= CB::PLUGIN_JSFX,);
+            CARLA_SAFE_ASSERT_RETURN(value <= CB::PLUGIN_TYPE_COUNT,);
             CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr,);
 
             switch (value)
@@ -887,6 +893,11 @@ void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int va
                 if (shandle.engineOptions.pathJSFX != nullptr)
                     delete[] shandle.engineOptions.pathJSFX;
                 shandle.engineOptions.pathJSFX = carla_strdup_safe(valueStr);
+                break;
+            case CB::PLUGIN_CLAP:
+                if (shandle.engineOptions.pathCLAP != nullptr)
+                    delete[] shandle.engineOptions.pathCLAP;
+                shandle.engineOptions.pathCLAP = carla_strdup_safe(valueStr);
                 break;
             }
             break;

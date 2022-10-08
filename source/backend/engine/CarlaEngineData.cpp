@@ -239,6 +239,7 @@ EngineOptions::EngineOptions() noexcept
       pathSF2(nullptr),
       pathSFZ(nullptr),
       pathJSFX(nullptr),
+      pathCLAP(nullptr),
       binaryDir(nullptr),
       resourceDir(nullptr),
       clientNamePrefix(nullptr),
@@ -311,6 +312,11 @@ EngineOptions::~EngineOptions() noexcept
     {
         delete[] pathJSFX;
         pathJSFX = nullptr;
+    }
+    if (pathCLAP != nullptr)
+    {
+        delete[] pathCLAP;
+        pathCLAP = nullptr;
     }
     if (binaryDir != nullptr)
     {
