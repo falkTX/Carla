@@ -392,7 +392,7 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
         delete[] events;
         delete[] updatedParams;
 
-        if (paramCount != 0)
+        if (portCount != 0 || paramCount != 0)
         {
             static_assert(kPluginMaxMidiEvents > MAX_MIDI_NOTE, "Enough space for input events");
 
@@ -411,6 +411,11 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
 
         if (portCount != 0)
             CarlaPluginClapEventData::createNew(portCount);
+    }
+
+    const clap_input_events_t* cast() const noexcept
+    {
+        return static_cast<const clap_input_events_t*>(this);
     }
 
     // called just before plugin processing
@@ -519,7 +524,7 @@ struct carla_clap_output_events : clap_output_events_t, CarlaPluginClapEventData
         numEventsUsed = 0;
         delete[] events;
 
-        if (paramCount != 0)
+        if (portCount != 0 || paramCount != 0)
         {
             numEventsAllocated = paramCount + kPluginMaxMidiEvents * std::max(1u, portCount);
             events = new Event[numEventsAllocated];
@@ -534,6 +539,11 @@ struct carla_clap_output_events : clap_output_events_t, CarlaPluginClapEventData
 
         if (portCount != 0)
             CarlaPluginClapEventData::createNew(portCount);
+    }
+
+    const clap_output_events_t* cast() const noexcept
+    {
+        return static_cast<const clap_output_events_t*>(this);
     }
 
     bool tryPush(const clap_event_header_t* const event)
@@ -2098,8 +2108,8 @@ public:
             fOutputAudioBuffers.cast(), // audio_outputs
             fInputAudioBuffers.count, // audio_inputs_count
             fOutputAudioBuffers.count, // audio_outputs_count
-            &fInputEvents, // in_events
-            &fOutputEvents  // out_events
+            fInputEvents.cast(),
+            fOutputEvents.cast()
         };
 
         fPlugin->process(fPlugin, &process);
