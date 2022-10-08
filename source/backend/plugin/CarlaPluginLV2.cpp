@@ -6181,7 +6181,7 @@ public:
         else
         {
             CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, 1);
-            fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
+            fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true, true);
         }
 
         return 0;

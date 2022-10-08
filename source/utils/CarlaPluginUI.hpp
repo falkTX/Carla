@@ -37,7 +37,7 @@ public:
     virtual void hide() = 0;
     virtual void focus() = 0;
     virtual void idle() = 0;
-    virtual void setSize(uint with, uint height, bool forceUpdate) = 0;
+    virtual void setSize(uint with, uint height, bool forceUpdate, bool resizeChild) = 0;
     virtual void setTitle(const char* title) = 0;
     virtual void setChildWindow(void* ptr) = 0;
     virtual void setTransientWinId(uintptr_t winId) = 0;

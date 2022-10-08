@@ -178,7 +178,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(height > 0,);
         carla_debug("CarlaBridgeToolkitNative::resize(%i, %i)", width, height);
 
-        fHostUI->setSize(width, height, false);
+        fHostUI->setSize(width, height, false, false);
     }
 
     void setTitle(const char* const title) override

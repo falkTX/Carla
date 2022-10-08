@@ -1101,7 +1101,12 @@ public:
 
                 uint32_t width, height;
                 if (fExtensions.gui->get_size(fPlugin, &width, &height))
-                    fUI.window->setSize(width, height, false);
+                {
+                    fUI.isResizingFromInit = true;
+                    fUI.width = width;
+                    fUI.height = height;
+                    fUI.window->setSize(width, height, true, true);
+                }
 
                 fExtensions.gui->show(fPlugin);
                 fUI.window->show();
@@ -1162,7 +1167,48 @@ public:
 
     void uiIdle() override
     {
+       #ifdef CLAP_WINDOW_API_NATIVE
+        if (fUI.shouldClose)
+        {
+            fUI.shouldClose = false;
+            fUI.isResizingFromHost = fUI.isResizingFromInit = false;
+            fUI.isResizingFromPlugin = 0;
+
+            showCustomUI(false);
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                    pData->id,
+                                    0,
+                                    0, 0, 0.0f, nullptr);
+        }
+
+        if (fUI.isResizingFromHost)
+        {
+            fUI.isResizingFromHost = false;
+
+            if (fUI.isResizingFromPlugin == 0 && !fUI.isResizingFromInit == false)
+            {
+                carla_stdout("Host resize restarted");
+                fExtensions.gui->set_size(fPlugin, fUI.width, fUI.height);
+            }
+        }
+
+        if (fUI.window != nullptr)
+            fUI.window->idle();
+
+        if (fUI.isResizingFromPlugin == 2)
+        {
+            fUI.isResizingFromPlugin = 1;
+        }
+        else if (fUI.isResizingFromPlugin == 1)
+        {
+            fUI.isResizingFromPlugin = 0;
+            carla_stdout("Plugin resize stopped");
+        }
+       #endif
+
         runIdleCallbacksAsNeeded();
+
         CarlaPlugin::uiIdle();
     }
 
@@ -2451,23 +2497,66 @@ protected:
     void handlePluginUIClosed() override
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
-        carla_debug("CarlaPluginCLAP::handlePluginUIClosed()");
+        carla_stdout("CarlaPluginCLAP::handlePluginUIClosed()");
 
-        showCustomUI(false);
-        pData->engine->callback(true, true,
-                                ENGINE_CALLBACK_UI_STATE_CHANGED,
-                                pData->id,
-                                0,
-                                0, 0, 0.0f, nullptr);
+        fUI.shouldClose = true;
     }
 
     void handlePluginUIResized(const uint width, const uint height) override
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
-        carla_debug("CarlaPluginCLAP::handlePluginUIResized(%u, %u)", width, height);
+        carla_stdout("CarlaPluginCLAP::handlePluginUIResized(%u, %u | vs %u %u) %d %s %s",
+                     width, height,
+                     fUI.width, fUI.height,
+                     fUI.isResizingFromPlugin, bool2str(fUI.isResizingFromInit), bool2str(fUI.isResizingFromHost));
 
-        if (fExtensions.gui != nullptr)
-            fExtensions.gui->set_size(fPlugin, width, height);
+        if (fExtensions.gui == nullptr)
+            return;
+
+        if (fUI.isResizingFromPlugin != 0)
+        {
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.width == width, fUI.width, width,);
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.height == height, fUI.height, height,);
+            fUI.isResizingFromPlugin = 2;
+            return;
+        }
+
+        if (fUI.isResizingFromInit)
+        {
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.width == width, fUI.width, width,);
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.height == height, fUI.height, height,);
+            fUI.isResizingFromInit = false;
+            return;
+        }
+
+        if (fUI.isResizingFromHost)
+        {
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.width == width, fUI.width, width,);
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.height == height, fUI.height, height,);
+            fUI.isResizingFromHost = false;
+            return;
+        }
+
+        if (fUI.width != width || fUI.height != height)
+        {
+            uint width2 = width;
+            uint height2 = height;
+
+            if (fExtensions.gui->adjust_size(fPlugin, &width2, &height2))
+            {
+                if (width2 != width || height2 != height)
+                {
+                    fUI.isResizingFromHost = true;
+                    fUI.width = width2;
+                    fUI.height = height2;
+                    fUI.window->setSize(width2, height2, false, false);
+                }
+                else
+                {
+                    fExtensions.gui->set_size(fPlugin, width2, height2);
+                }
+            }
+        }
     }
    #endif
 
@@ -2511,7 +2600,10 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, false);
         carla_stdout("CarlaPluginCLAP::hostRequestResize(%u, %u)", width, height);
 
-        fUI.window->setSize(width, height, true);
+        fUI.isResizingFromPlugin = 3;
+        fUI.width = width;
+        fUI.height = height;
+        fUI.window->setSize(width, height, true, false);
         return true;
     }
 
@@ -2964,6 +3056,11 @@ private:
         bool isCreated;
         bool isEmbed;
         bool isVisible;
+        bool isResizingFromHost;
+        bool isResizingFromInit;
+        int isResizingFromPlugin;
+        bool shouldClose;
+        uint32_t width, height;
         CarlaPluginUI* window;
 
         UI()
@@ -2971,6 +3068,12 @@ private:
               isCreated(false),
               isEmbed(false),
               isVisible(false),
+              isResizingFromHost(false),
+              isResizingFromInit(false),
+              isResizingFromPlugin(0),
+              shouldClose(false),
+              width(0),
+              height(0),
               window(nullptr) {}
 
         ~UI()

@@ -589,7 +589,7 @@ public:
                         CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
 
                         if (width > 1 && height > 1)
-                            fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
+                            fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true, true);
                     }
                 }
                 else
@@ -2213,7 +2213,7 @@ protected:
             else
             {
                 CARLA_SAFE_ASSERT_BREAK(fUI.window != nullptr);
-                fUI.window->setSize(static_cast<uint>(index), static_cast<uint>(value), true);
+                fUI.window->setSize(static_cast<uint>(index), static_cast<uint>(value), true, false);
             }
             ret = 1;
             break;

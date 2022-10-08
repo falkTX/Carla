@@ -202,7 +202,7 @@ public:
                     }
 
                     if (width > 1 && height > 1)
-                        setSize(static_cast<uint>(width), static_cast<uint>(height), false);
+                        setSize(static_cast<uint>(width), static_cast<uint>(height), false, false);
                 }
 
                 const Atom _xevp = XInternAtom(fDisplay, "_XEventProc", False);
@@ -391,7 +391,7 @@ public:
         }
     }
 
-    void setSize(const uint width, const uint height, const bool forceUpdate) override
+    void setSize(const uint width, const uint height, const bool forceUpdate, const bool resizeChild) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
@@ -399,7 +399,7 @@ public:
         fSetSizeCalledAtLeastOnce = true;
         XResizeWindow(fDisplay, fHostWindow, width, height);
 
-        if (fChildWindow != 0)
+        if (fChildWindow != 0 && resizeChild)
             XResizeWindow(fDisplay, fChildWindow, width, height);
 
         if (! fIsResizable)
@@ -763,7 +763,7 @@ public:
         [NSApp activateIgnoringOtherApps:YES];
     }
 
-    void setSize(const uint width, const uint height, const bool forceUpdate) override
+    void setSize(const uint width, const uint height, const bool forceUpdate, const bool resizeChild) override
     {
         carla_debug("CocoaPluginUI::setSize(%u, %u, %s)", width, height, bool2str(forceUpdate));
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
@@ -775,7 +775,7 @@ public:
         [fWindow setContentSize:size];
 
         // this is needed for a few plugins
-        if (forceUpdate)
+        if (forceUpdate && resizeChild)
         {
             for (NSView* subview in [fView subviews])
             {
@@ -978,7 +978,7 @@ public:
             RECT rectChild, rectParent;
 
             if (fChildWindow != nullptr && GetWindowRect(fChildWindow, &rectChild))
-                setSize(rectChild.right - rectChild.left, rectChild.bottom - rectChild.top, false);
+                setSize(rectChild.right - rectChild.left, rectChild.bottom - rectChild.top, false, false);
 
             if (fParentWindow != nullptr &&
                 GetWindowRect(fWindow, &rectChild) &&
@@ -1074,7 +1074,7 @@ public:
         SetFocus(fWindow);
     }
 
-    void setSize(const uint width, const uint height, const bool forceUpdate) override
+    void setSize(const uint width, const uint height, const bool forceUpdate, bool) override
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
