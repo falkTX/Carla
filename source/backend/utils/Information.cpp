@@ -166,6 +166,7 @@ const char* const* carla_get_supported_file_extensions()
         "so",
 #endif
         "vst3",
+        "clap",
 
         // Audio files
 #ifdef HAVE_SNDFILE

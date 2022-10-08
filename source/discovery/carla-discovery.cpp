@@ -1861,10 +1861,10 @@ struct carla_clap_host : clap_host_t {
         request_callback = carla_request_callback;
     }
 
-    static const void* carla_get_extension(const clap_host_t*, const char*) { return nullptr; }
-    static void carla_request_restart(const clap_host_t*) {}
-    static void carla_request_process(const clap_host_t*) {}
-    static void carla_request_callback(const clap_host_t*) {}
+    static CLAP_ABI const void* carla_get_extension(const clap_host_t*, const char*) { return nullptr; }
+    static CLAP_ABI void carla_request_restart(const clap_host_t*) {}
+    static CLAP_ABI void carla_request_process(const clap_host_t*) {}
+    static CLAP_ABI void carla_request_callback(const clap_host_t*) {}
 };
 
 static void do_clap_check(lib_t& libHandle, const char* const filename, const bool doInit)

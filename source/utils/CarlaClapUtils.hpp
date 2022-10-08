@@ -28,6 +28,7 @@
 #include "clap/ext/note-ports.h"
 #include "clap/ext/gui.h"
 #include "clap/ext/params.h"
+#include "clap/ext/posix-fd-support.h"
 #include "clap/ext/state.h"
 #include "clap/ext/timer-support.h"
 
@@ -173,7 +174,7 @@ struct clap_istream_impl : clap_istream_t {
         read = read_impl;
     }
 
-    static int64_t read_impl(const clap_istream_t* const stream, void* const buffer, const uint64_t size) noexcept
+    static CLAP_ABI int64_t read_impl(const clap_istream_t* const stream, void* const buffer, const uint64_t size) noexcept
     {
         clap_istream_impl* const self = static_cast<clap_istream_impl*>(stream->ctx);
 
@@ -202,7 +203,7 @@ struct clap_ostream_impl : clap_ostream_t {
         write = write_impl;
     }
 
-    static int64_t write_impl(const clap_ostream* const stream, const void* const buffer, const uint64_t size) noexcept
+    static CLAP_ABI int64_t write_impl(const clap_ostream* const stream, const void* const buffer, const uint64_t size) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(size != 0, 0);
 

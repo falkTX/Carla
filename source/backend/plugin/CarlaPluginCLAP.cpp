@@ -32,11 +32,16 @@
 #include "water/files/File.h"
 #include "water/misc/Time.h"
 
-// FIXME
-#ifndef CLAP_WINDOW_API_NATIVE
-#define CLAP_WINDOW_API_NATIVE ""
-#define HAVE_X11 1
+#ifdef _POSIX_VERSION
+# include <sys/epoll.h>
+# include <sys/socket.h>
 #endif
+
+// FIXME
+// #ifndef CLAP_WINDOW_API_NATIVE
+// #define CLAP_WINDOW_API_NATIVE ""
+// #define HAVE_X11 1
+// #endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -44,6 +49,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 struct ClapEventData {
     uint16_t clapPortIndex;
+    uint32_t supportedDialects;
     CarlaEngineEventPort* port;
 };
 
@@ -112,6 +118,19 @@ struct CarlaPluginClapEventData {
     CARLA_DECLARE_NON_COPYABLE(CarlaPluginClapEventData)
 };
 
+#ifdef _POSIX_VERSION
+// --------------------------------------------------------------------------------------------------------------------
+
+struct HostPosixFileDescriptorDetails {
+    int hostFd;
+    int pluginFd;
+    clap_posix_fd_flags_t flags;
+};
+
+static constexpr const HostPosixFileDescriptorDetails kPosixFileDescriptorFallback   = { -1, -1, 0x0 };
+static /*           */ HostPosixFileDescriptorDetails kPosixFileDescriptorFallbackNC = { -1, -1, 0x0 };
+#endif
+
 // --------------------------------------------------------------------------------------------------------------------
 
 struct HostTimerDetails {
@@ -133,26 +152,35 @@ struct carla_clap_host : clap_host_t {
         virtual void clapRequestProcess() = 0;
         virtual void clapRequestCallback() = 0;
         virtual void clapMarkDirty() = 0;
-       #ifdef CLAP_WINDOW_API_NATIVE
+      #ifdef CLAP_WINDOW_API_NATIVE
         // gui
         virtual void clapGuiResizeHintsChanged() = 0;
         virtual bool clapGuiRequestResize(uint width, uint height) = 0;
         virtual bool clapGuiRequestShow() = 0;
         virtual bool clapGuiRequestHide() = 0;
         virtual void clapGuiClosed(bool wasDestroyed) = 0;
-        // timer
-        virtual bool clapTimerRegister(uint32_t periodInMs, clap_id* timerId) = 0;
-        virtual bool clapTimerUnregister(clap_id timerId) = 0;
+       #ifdef _POSIX_VERSION
+        // posix fd
+        virtual bool clapRegisterPosixFD(int fd, clap_posix_fd_flags_t flags) = 0;
+        virtual bool clapModifyPosixFD(int fd, clap_posix_fd_flags_t flags) = 0;
+        virtual bool clapUnregisterPosixFD(int fd) = 0;
        #endif
+        // timer
+        virtual bool clapRegisterTimer(uint32_t periodInMs, clap_id* timerId) = 0;
+        virtual bool clapUnregisterTimer(clap_id timerId) = 0;
+      #endif
     };
 
     Callbacks* const hostCallbacks;
 
     clap_host_state_t state;
-   #ifdef CLAP_WINDOW_API_NATIVE
+  #ifdef CLAP_WINDOW_API_NATIVE
     clap_host_gui_t gui;
-    clap_host_timer_support_t timer;
+   #ifdef _POSIX_VERSION
+    clap_host_posix_fd_support_t posixFD;
    #endif
+    clap_host_timer_support_t timer;
+  #endif
 
     carla_clap_host(Callbacks* const hostCb)
         : hostCallbacks(hostCb)
@@ -171,92 +199,116 @@ struct carla_clap_host : clap_host_t {
 
         state.mark_dirty = carla_mark_dirty;
 
-       #ifdef CLAP_WINDOW_API_NATIVE
+      #ifdef CLAP_WINDOW_API_NATIVE
         gui.resize_hints_changed = carla_resize_hints_changed;
         gui.request_resize = carla_request_resize;
         gui.request_show = carla_request_show;
         gui.request_hide = carla_request_hide;
         gui.closed = carla_closed;
 
+       #ifdef _POSIX_VERSION
+        posixFD.register_fd = carla_register_fd;
+        posixFD.modify_fd = carla_modify_fd;
+        posixFD.unregister_fd = carla_unregister_fd;
+       #endif
+
         timer.register_timer = carla_register_timer;
         timer.unregister_timer = carla_unregister_timer;
-       #endif
+      #endif
     }
 
-    static const void* carla_get_extension(const clap_host_t* const host, const char* const extension_id)
+    static CLAP_ABI const void* carla_get_extension(const clap_host_t* const host, const char* const extension_id)
     {
-        const carla_clap_host* const self = static_cast<const carla_clap_host*>(host->host_data);
+        carla_clap_host* const self = static_cast<carla_clap_host*>(host->host_data);
 
-       #ifdef CLAP_WINDOW_API_NATIVE
+        if (std::strcmp(extension_id, CLAP_EXT_STATE) == 0)
+            return &self->state;
+      #ifdef CLAP_WINDOW_API_NATIVE
         if (std::strcmp(extension_id, CLAP_EXT_GUI) == 0)
             return &self->gui;
+       #ifdef _POSIX_VERSION
+        if (std::strcmp(extension_id, CLAP_EXT_POSIX_FD_SUPPORT) == 0)
+            return &self->posixFD;
+       #endif
         if (std::strcmp(extension_id, CLAP_EXT_TIMER_SUPPORT) == 0)
             return &self->timer;
-       #endif
+      #endif
 
+        carla_stderr("Plugin requested unsupported CLAP extension '%s'", extension_id);
         return nullptr;
-
-       #ifndef CLAP_WINDOW_API_NATIVE
-        // unused
-        (void)self;
-        (void)extension_id;
-       #endif
     }
 
-    static void carla_request_restart(const clap_host_t* const host)
+    static CLAP_ABI void carla_request_restart(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestRestart();
     }
 
-    static void carla_request_process(const clap_host_t* const host)
+    static CLAP_ABI void carla_request_process(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestProcess();
     }
 
-    static void carla_request_callback(const clap_host_t* const host)
+    static CLAP_ABI void carla_request_callback(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestCallback();
     }
 
-    static void carla_mark_dirty(const clap_host_t* const host)
+    static CLAP_ABI void carla_mark_dirty(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapMarkDirty();
     }
 
    #ifdef CLAP_WINDOW_API_NATIVE
-    static void carla_resize_hints_changed(const clap_host_t* const host)
+    static CLAP_ABI void carla_resize_hints_changed(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiResizeHintsChanged();
     }
 
-    static bool carla_request_resize(const clap_host_t* const host, const uint32_t width, const uint32_t height)
+    static CLAP_ABI bool carla_request_resize(const clap_host_t* const host, const uint32_t width, const uint32_t height)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiRequestResize(width, height);
     }
 
-    static bool carla_request_show(const clap_host_t* const host)
+    static CLAP_ABI bool carla_request_show(const clap_host_t* const host)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiRequestShow();
     }
 
-    static bool carla_request_hide(const clap_host_t* const host)
+    static CLAP_ABI bool carla_request_hide(const clap_host_t* const host)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiRequestHide();
     }
 
-    static void carla_closed(const clap_host_t* const host, bool was_destroyed)
+    static CLAP_ABI void carla_closed(const clap_host_t* const host, bool was_destroyed)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiClosed(was_destroyed);
     }
 
-    static bool carla_register_timer(const clap_host_t* const host, const uint32_t period_ms, clap_id* const timer_id)
+   #ifdef _POSIX_VERSION
+    static CLAP_ABI bool carla_register_fd(const clap_host_t* const host, const int fd, const clap_posix_fd_flags_t flags)
     {
-        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapTimerRegister(period_ms, timer_id);
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRegisterPosixFD(fd, flags);
     }
 
-    static bool carla_unregister_timer(const clap_host_t* const host, const clap_id timer_id)
+    static CLAP_ABI bool carla_modify_fd(const clap_host_t* const host, const int fd, const clap_posix_fd_flags_t flags)
     {
-        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapTimerUnregister(timer_id);
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapModifyPosixFD(fd, flags);
+    }
+
+    static CLAP_ABI bool carla_unregister_fd(const clap_host_t* const host, const int fd)
+    {
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapUnregisterPosixFD(fd);
+    }
+   #endif
+
+    static CLAP_ABI bool carla_register_timer(const clap_host_t* const host, const uint32_t period_ms, clap_id* const timer_id)
+    {
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRegisterTimer(period_ms, timer_id);
+    }
+
+    static CLAP_ABI bool carla_unregister_timer(const clap_host_t* const host, const clap_id timer_id)
+    {
+        return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapUnregisterTimer(timer_id);
     }
    #endif
 };
@@ -341,6 +393,7 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
         clap_event_param_value_t param;
         clap_event_param_gesture_t gesture;
         clap_event_midi_t midi;
+        clap_event_note_t note;
         clap_event_midi_sysex_t sysex;
     };
 
@@ -480,12 +533,30 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
         };
     }
 
-    static uint32_t carla_size(const clap_input_events_t* const list) noexcept
+    void addSimpleNoteEvent(const bool isLive, const int16_t port, const uint32_t frameOffset,
+                            const uint8_t channel, const uint8_t key, const uint8_t velocity)
+    {
+        if (numEventsUsed == numEventsAllocated)
+            return;
+
+        const uint16_t eventType = velocity > 0 ? CLAP_EVENT_NOTE_ON : CLAP_EVENT_NOTE_OFF;
+
+        events[numEventsUsed++].note = {
+            { sizeof(clap_event_note_t), frameOffset, 0, eventType, isLive ? (uint32_t)CLAP_EVENT_IS_LIVE : 0u },
+            -1,
+            port,
+            channel,
+            key,
+            static_cast<double>(velocity) / 127.0
+        };
+    }
+
+    static CLAP_ABI uint32_t carla_size(const clap_input_events_t* const list) noexcept
     {
         return static_cast<const carla_clap_input_events*>(list->ctx)->numEventsUsed;
     }
 
-    static const clap_event_header_t* carla_get(const clap_input_events_t* const list, const uint32_t index) noexcept
+    static CLAP_ABI const clap_event_header_t* carla_get(const clap_input_events_t* const list, const uint32_t index) noexcept
     {
         return &static_cast<const carla_clap_input_events*>(list->ctx)->events[index].header;
     }
@@ -568,7 +639,7 @@ struct carla_clap_output_events : clap_output_events_t, CarlaPluginClapEventData
         return true;
     }
 
-    static bool carla_try_push(const clap_output_events_t* const list, const clap_event_header_t* const event)
+    static CLAP_ABI bool carla_try_push(const clap_output_events_t* const list, const clap_event_header_t* const event)
     {
         return static_cast<carla_clap_output_events*>(list->ctx)->tryPush(event);
     }
@@ -595,7 +666,8 @@ public:
        #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
           fAudioOutBuffers(nullptr),
        #endif
-          fLastChunk(nullptr)
+          fLastChunk(nullptr),
+          fNeedsIdleCallback(false)
     {
         carla_debug("CarlaPluginCLAP::CarlaPluginCLAP(%p, %i)", engine, id);
     }
@@ -603,6 +675,8 @@ public:
     ~CarlaPluginCLAP() override
     {
         carla_debug("CarlaPluginCLAP::~CarlaPluginCLAP()");
+
+        runIdleCallbacksAsNeeded();
 
        #ifdef CLAP_WINDOW_API_NATIVE
         // close UI
@@ -725,11 +799,13 @@ public:
         if (fExtensions.state->save(fPlugin, &stream))
         {
             *dataPtr = fLastChunk = stream.buffer;
+            runIdleCallbacksAsNeeded();
             return stream.size;
         }
         else
         {
             *dataPtr = fLastChunk = nullptr;
+            runIdleCallbacksAsNeeded();
             return 0;
         }
     }
@@ -743,6 +819,8 @@ public:
 
         if (fExtensions.state != nullptr)
             options |= PLUGIN_OPTION_USE_CHUNKS;
+
+        // TODO alternative if plugin does not support CLAP_NOTE_DIALECT_MIDI
 
         if (fInputEvents.portCount != 0)
         {
@@ -806,10 +884,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fExtensions.params != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
-        const clap_id clapId = pData->param.data[parameterId].rindex;
-
         clap_param_info_t paramInfo = {};
-        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_info(fPlugin, clapId, &paramInfo), false);
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_info(fPlugin, parameterId, &paramInfo), false);
 
         std::strncpy(strBuf, paramInfo.name, STR_MAX);
         return true;
@@ -844,10 +920,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fExtensions.params != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
-        const clap_id clapId = pData->param.data[parameterId].rindex;
-
         clap_param_info_t paramInfo = {};
-        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_info(fPlugin, clapId, &paramInfo), false);
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_info(fPlugin, parameterId, &paramInfo), false);
 
         if (paramInfo.module[0] == '\0')
             return false;
@@ -915,6 +989,8 @@ public:
         const clap_istream_impl stream(data, dataSize);
         if (fExtensions.state->load(fPlugin, &stream))
             pData->updateParameterValues(this, true, true, false);
+
+        runIdleCallbacksAsNeeded();
     }
 
     // -------------------------------------------------------------------
@@ -971,6 +1047,8 @@ public:
                     fUI.window->show();
                     fUI.window->focus();
                 }
+
+                runIdleCallbacksAsNeeded();
                 return;
             }
 
@@ -1018,7 +1096,13 @@ public:
             {
                 clap_window_t win = { CLAP_WINDOW_API_NATIVE, {} };
                 win.ptr = fUI.window->getPtr();
+
                 fExtensions.gui->set_parent(fPlugin, &win);
+
+                uint32_t width, height;
+                if (fExtensions.gui->get_size(fPlugin, &width, &height))
+                    fUI.window->setSize(width, height, false);
+
                 fExtensions.gui->show(fPlugin);
                 fUI.window->show();
             }
@@ -1060,6 +1144,8 @@ public:
                 fUI.window = nullptr;
             }
         }
+
+        runIdleCallbacksAsNeeded();
     }
    #endif
 
@@ -1076,19 +1162,7 @@ public:
 
     void uiIdle() override
     {
-        const uint32_t currentTimeInMs = water::Time::getMillisecondCounter();
-
-        for (LinkedList<HostTimerDetails>::Itenerator it = fTimers.begin2(); it.valid(); it.next())
-        {
-            HostTimerDetails& timer(it.getValue(kTimerFallbackNC));
-
-            if (currentTimeInMs > timer.lastCallTimeInMs + timer.periodInMs)
-            {
-                timer.lastCallTimeInMs = currentTimeInMs;
-                fExtensions.timer->on_timer(fPlugin, timer.clapId);
-            }
-        }
-
+        runIdleCallbacksAsNeeded();
         CarlaPlugin::uiIdle();
     }
 
@@ -1118,6 +1192,11 @@ public:
         const clap_plugin_params_t* paramsExt = static_cast<const clap_plugin_params_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_PARAMS));
 
+       #ifdef _POSIX_VERSION
+        const clap_plugin_posix_fd_support_t* posixFdExt = static_cast<const clap_plugin_posix_fd_support_t*>(
+            fPlugin->get_extension(fPlugin, CLAP_EXT_POSIX_FD_SUPPORT));
+       #endif
+
         const clap_plugin_state_t* stateExt = static_cast<const clap_plugin_state_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_STATE));
 
@@ -1133,6 +1212,11 @@ public:
         if (paramsExt != nullptr && (paramsExt->count == nullptr || paramsExt->get_info == nullptr))
             paramsExt = nullptr;
 
+       #ifdef _POSIX_VERSION
+        if (posixFdExt != nullptr && (posixFdExt->on_fd == nullptr))
+            posixFdExt = nullptr;
+       #endif
+
         if (stateExt != nullptr && (stateExt->save == nullptr || stateExt->load == nullptr))
             stateExt = nullptr;
 
@@ -1140,6 +1224,9 @@ public:
             timerExt = nullptr;
 
         fExtensions.params = paramsExt;
+       #ifdef _POSIX_VERSION
+        fExtensions.posixFD = posixFdExt;
+       #endif
         fExtensions.state = stateExt;
         fExtensions.timer = timerExt;
 
@@ -1212,7 +1299,7 @@ public:
             clap_note_port_info_t portInfo = {};
             CARLA_SAFE_ASSERT_BREAK(notePortsExt->get(fPlugin, i, true, &portInfo));
 
-            if (portInfo.supported_dialects & CLAP_NOTE_DIALECT_MIDI)
+            if (portInfo.supported_dialects & (CLAP_NOTE_DIALECT_CLAP|CLAP_NOTE_DIALECT_MIDI))
                 ++mIns;
         }
 
@@ -1225,13 +1312,10 @@ public:
                 ++mOuts;
         }
 
-        for (uint32_t i=0; i<numParameters; ++i)
+        for (uint32_t i=0; i<numParameters; ++i, ++params)
         {
             clap_param_info_t paramInfo = {};
             CARLA_SAFE_ASSERT_BREAK(paramsExt->get_info(fPlugin, i, &paramInfo));
-
-            if ((paramInfo.flags & (CLAP_PARAM_IS_HIDDEN|CLAP_PARAM_IS_BYPASS)) == 0x0)
-                ++params;
         }
 
         if (aIns > 0)
@@ -1325,12 +1409,14 @@ public:
         {
             clap_note_port_info_t portInfo = {};
             CARLA_SAFE_ASSERT_BREAK(notePortsExt->get(fPlugin, i, true, &portInfo));
-            CARLA_SAFE_ASSERT_BREAK(j < mIns);
 
-            if ((portInfo.supported_dialects & CLAP_NOTE_DIALECT_MIDI) == 0x0)
+            if ((portInfo.supported_dialects & (CLAP_NOTE_DIALECT_CLAP|CLAP_NOTE_DIALECT_MIDI)) == 0x0)
                 continue;
 
+            CARLA_SAFE_ASSERT_UINT2_BREAK(j < mIns, j, mIns);
+
             fInputEvents.portData[j].clapPortIndex = i;
+            fInputEvents.portData[j].supportedDialects = portInfo.supported_dialects;
 
             if (mIns > 1)
             {
@@ -1360,12 +1446,14 @@ public:
         {
             clap_note_port_info_t portInfo = {};
             CARLA_SAFE_ASSERT_BREAK(notePortsExt->get(fPlugin, i, false, &portInfo));
-            CARLA_SAFE_ASSERT_BREAK(j < mOuts);
 
             if ((portInfo.supported_dialects & CLAP_NOTE_DIALECT_MIDI) == 0x0)
                 continue;
 
+            CARLA_SAFE_ASSERT_UINT2_BREAK(j < mOuts, j, mOuts);
+
             fOutputEvents.portData[j].clapPortIndex = i;
+            fOutputEvents.portData[j].supportedDialects = portInfo.supported_dialects;
 
             if (mOuts > 1)
             {
@@ -1391,17 +1479,14 @@ public:
         }
 
         // Parameters
-        for (uint32_t i=0, j=0; i<numParameters; ++i)
+        for (uint32_t i=0; i<numParameters; ++i)
         {
             clap_param_info_t paramInfo = {};
             CARLA_SAFE_ASSERT_BREAK(paramsExt->get_info(fPlugin, i, &paramInfo));
-            CARLA_SAFE_ASSERT_BREAK(j < params);
+            CARLA_SAFE_ASSERT_BREAK(i < params);
 
-            if (paramInfo.flags & (CLAP_PARAM_IS_HIDDEN|CLAP_PARAM_IS_BYPASS))
-                continue;
-
-            pData->param.data[j].index  = j;
-            pData->param.data[j].rindex = static_cast<int32_t>(paramInfo.id);
+            pData->param.data[i].index  = i;
+            pData->param.data[i].rindex = static_cast<int32_t>(paramInfo.id);
 
             double min, max, def, step, stepSmall, stepLarge;
 
@@ -1417,14 +1502,18 @@ public:
             else if (def > max)
                 def = max;
 
-            if (paramInfo.flags & CLAP_PARAM_IS_READONLY)
+            if (paramInfo.flags & (CLAP_PARAM_IS_HIDDEN|CLAP_PARAM_IS_BYPASS))
             {
-                pData->param.data[j].type = PARAMETER_OUTPUT;
+                pData->param.data[i].type = PARAMETER_UNKNOWN;
+            }
+            else if (paramInfo.flags & CLAP_PARAM_IS_READONLY)
+            {
+                pData->param.data[i].type = PARAMETER_OUTPUT;
                 needsCtrlOut = true;
             }
             else
             {
-                pData->param.data[j].type = PARAMETER_INPUT;
+                pData->param.data[i].type = PARAMETER_INPUT;
             }
 
             if (paramInfo.flags & CLAP_PARAM_IS_STEPPED)
@@ -1432,7 +1521,7 @@ public:
                 if (carla_isEqual(max - min, 1.0))
                 {
                     step = stepSmall = stepLarge = 1.0;
-                    pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
+                    pData->param.data[i].hints |= PARAMETER_IS_BOOLEAN;
                 }
                 else
                 {
@@ -1440,7 +1529,7 @@ public:
                     stepSmall = 1.0;
                     stepLarge = std::min(max - min, 10.0);
                 }
-                pData->param.data[j].hints |= PARAMETER_IS_INTEGER;
+                pData->param.data[i].hints |= PARAMETER_IS_INTEGER;
             }
             else
             {
@@ -1450,28 +1539,29 @@ public:
                 stepLarge = range/10.0;
             }
 
-            pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-            pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
-
-            if (paramInfo.flags & CLAP_PARAM_IS_AUTOMATABLE)
+            if (pData->param.data[i].type != PARAMETER_UNKNOWN)
             {
-                pData->param.data[j].hints |= PARAMETER_IS_AUTOMATABLE;
+                pData->param.data[i].hints |= PARAMETER_IS_ENABLED;
+                pData->param.data[i].hints |= PARAMETER_USES_CUSTOM_TEXT;
 
-                if ((paramInfo.flags & CLAP_PARAM_IS_STEPPED) == 0x0)
-                    pData->param.data[j].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                if (paramInfo.flags & CLAP_PARAM_IS_AUTOMATABLE)
+                {
+                    pData->param.data[i].hints |= PARAMETER_IS_AUTOMATABLE;
+
+                    if ((paramInfo.flags & CLAP_PARAM_IS_STEPPED) == 0x0)
+                        pData->param.data[i].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                }
             }
 
-            pData->param.ranges[j].min = min;
-            pData->param.ranges[j].max = max;
-            pData->param.ranges[j].def = def;
-            pData->param.ranges[j].step = step;
-            pData->param.ranges[j].stepSmall = stepSmall;
-            pData->param.ranges[j].stepLarge = stepLarge;
+            pData->param.ranges[i].min = min;
+            pData->param.ranges[i].max = max;
+            pData->param.ranges[i].def = def;
+            pData->param.ranges[i].step = step;
+            pData->param.ranges[i].stepSmall = stepSmall;
+            pData->param.ranges[i].stepLarge = stepLarge;
 
-            fInputEvents.updatedParams[j].clapId = paramInfo.id;
-            fInputEvents.updatedParams[j].cookie = paramInfo.cookie;
-
-            ++j;
+            fInputEvents.updatedParams[i].clapId = paramInfo.id;
+            fInputEvents.updatedParams[i].cookie = paramInfo.cookie;
         }
 
         if (needsCtrlIn)
@@ -1555,6 +1645,8 @@ public:
 
         if (pData->active)
             activate();
+        else
+            runIdleCallbacksAsNeeded();
 
         carla_debug("CarlaPluginCLAP::reload() - end");
     }
@@ -1574,6 +1666,8 @@ public:
         // FIXME check return status
         fPlugin->activate(fPlugin, pData->engine->getSampleRate(), 1, pData->engine->getBufferSize());
         fPlugin->start_processing(fPlugin);
+
+        runIdleCallbacksAsNeeded();
     }
 
     void deactivate() noexcept override
@@ -1583,6 +1677,8 @@ public:
         // FIXME check return status
         fPlugin->stop_processing(fPlugin);
         fPlugin->deactivate(fPlugin);
+
+        runIdleCallbacksAsNeeded();
     }
 
     void process(const float* const* const audioIn,
@@ -1650,6 +1746,8 @@ public:
 
         if (pData->needsReset)
         {
+            // TODO alternative if plugin does not support CLAP_NOTE_DIALECT_MIDI
+
             if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (uint32_t p=0; p<fInputEvents.portCount; ++p)
@@ -1786,12 +1884,19 @@ public:
 
                         CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                        const uint8_t data[3] = {
-                            uint8_t((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT)),
-                            note.note,
-                            note.velo
-                        };
-                        fInputEvents.addSimpleMidiEvent(true, p, 0, data);
+                        if (fInputEvents.portData[0].supportedDialects & CLAP_NOTE_DIALECT_MIDI)
+                        {
+                            const uint8_t data[3] = {
+                                uint8_t((note.velo > 0 ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) | (note.channel & MIDI_CHANNEL_BIT)),
+                                note.note,
+                                note.velo
+                            };
+                            fInputEvents.addSimpleMidiEvent(true, p, 0, data);
+                        }
+                        else
+                        {
+                            fInputEvents.addSimpleNoteEvent(true, -1, 0, note.channel, note.note, note.velo);
+                        }
                     }
                 }
 
@@ -2028,33 +2133,49 @@ public:
                     if (midiEvent.size > sizeof(clap_event_midi::data)/sizeof(clap_event_midi::data[0]))
                         continue;
 
+                    CARLA_SAFE_ASSERT_BREAK(midiEvent.port < fInputEvents.portCount);
+
                     const uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
 
-                    if ((status == MIDI_STATUS_NOTE_OFF || status == MIDI_STATUS_NOTE_ON) && (pData->options & PLUGIN_OPTION_SKIP_SENDING_NOTES))
-                        continue;
-                    if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
-                        continue;
-                    if (status == MIDI_STATUS_CONTROL_CHANGE && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
-                        continue;
-                    if (status == MIDI_STATUS_POLYPHONIC_AFTERTOUCH && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
-                        continue;
-                    if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
-                        continue;
-
-                    // put back channel in data
-                    uint8_t midiData[3] = { uint8_t(status | (event.channel & MIDI_CHANNEL_BIT)), 0, 0 };
-
-                    switch (midiEvent.size)
+                    if (status == MIDI_STATUS_NOTE_OFF || status == MIDI_STATUS_NOTE_ON)
                     {
-                    case 3:
-                        midiData[2] = midiEvent.data[2];
-                        // fall through
-                    case 2:
-                        midiData[1] = midiEvent.data[1];
-                        break;
+                        if (pData->options & PLUGIN_OPTION_SKIP_SENDING_NOTES)
+                            continue;
+
+                        // plugin does not support MIDI, send a simple note instead
+                        if ((fInputEvents.portData[midiEvent.port].supportedDialects & CLAP_NOTE_DIALECT_MIDI) == 0x0)
+                        {
+                            fInputEvents.addSimpleNoteEvent(true, midiEvent.port, event.time,
+                                                            event.channel, midiEvent.data[1], midiEvent.data[2]);
+                        }
                     }
 
-                    fInputEvents.addSimpleMidiEvent(true, midiEvent.port, eventTime, midiData);
+                    if (fInputEvents.portData[midiEvent.port].supportedDialects & CLAP_NOTE_DIALECT_MIDI)
+                    {
+                        if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                            continue;
+                        if (status == MIDI_STATUS_CONTROL_CHANGE && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                            continue;
+                        if (status == MIDI_STATUS_POLYPHONIC_AFTERTOUCH && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                            continue;
+                        if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                            continue;
+
+                        // put back channel in data
+                        uint8_t midiData[3] = { uint8_t(status | (event.channel & MIDI_CHANNEL_BIT)), 0, 0 };
+
+                        switch (midiEvent.size)
+                        {
+                        case 3:
+                            midiData[2] = midiEvent.data[2];
+                            // fall through
+                        case 2:
+                            midiData[1] = midiEvent.data[1];
+                            break;
+                        }
+
+                        fInputEvents.addSimpleMidiEvent(true, midiEvent.port, eventTime, midiData);
+                    }
 
                     switch (status)
                     {
@@ -2354,20 +2475,27 @@ protected:
 
     void clapRequestRestart() override
     {
+        carla_stdout("CarlaPluginCLAP::clapRequestRestart()");
     }
 
     void clapRequestProcess() override
     {
+        carla_stdout("CarlaPluginCLAP::clapRequestProcess()");
     }
 
     void clapRequestCallback() override
     {
+        carla_stdout("CarlaPluginCLAP::clapRequestCallback()");
+
+        if (fPlugin->on_main_thread != nullptr)
+            fNeedsIdleCallback = true;
     }
 
     // -------------------------------------------------------------------
 
     void clapMarkDirty() override
     {
+        carla_stdout("CarlaPluginCLAP::clapMarkDirty()");
     }
 
     // -------------------------------------------------------------------
@@ -2375,12 +2503,13 @@ protected:
    #ifdef CLAP_WINDOW_API_NATIVE
     void clapGuiResizeHintsChanged() override
     {
+        carla_stdout("CarlaPluginCLAP::clapGuiResizeHintsChanged()");
     }
 
     bool clapGuiRequestResize(const uint width, const uint height) override
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, false);
-        carla_debug("CarlaPluginCLAP::hostRequestResize(%u, %u)", width, height);
+        carla_stdout("CarlaPluginCLAP::hostRequestResize(%u, %u)", width, height);
 
         fUI.window->setSize(width, height, true);
         return true;
@@ -2388,16 +2517,19 @@ protected:
 
     bool clapGuiRequestShow() override
     {
+        carla_stdout("CarlaPluginCLAP::clapGuiRequestShow()");
         return false;
     }
 
     bool clapGuiRequestHide() override
     {
+        carla_stdout("CarlaPluginCLAP::clapGuiRequestHide()");
         return false;
     }
 
     void clapGuiClosed(const bool wasDestroyed) override
     {
+        carla_stdout("CarlaPluginCLAP::clapGuiClosed(%s)", bool2str(wasDestroyed));
         CARLA_SAFE_ASSERT_RETURN(!fUI.isEmbed,);
         CARLA_SAFE_ASSERT_RETURN(fUI.isVisible,);
 
@@ -2419,10 +2551,127 @@ protected:
 
     // -------------------------------------------------------------------
 
-    bool clapTimerRegister(const uint32_t periodInMs, clap_id* const timerId) override
+   #ifdef _POSIX_VERSION
+    bool clapRegisterPosixFD(const int fd, const clap_posix_fd_flags_t flags) override
     {
+        carla_stdout("CarlaPluginCLAP::clapRegisterPosixFD(%i, %x)", fd, flags);
+
+        // NOTE some plugins wont have their posix fd extension ready when first loaded, so try again here
+        if (fExtensions.posixFD == nullptr)
+        {
+            const clap_plugin_posix_fd_support_t* const posixFdExt = static_cast<const clap_plugin_posix_fd_support_t*>(
+            fPlugin->get_extension(fPlugin, CLAP_EXT_POSIX_FD_SUPPORT));
+
+            if (posixFdExt != nullptr && posixFdExt->on_fd != nullptr)
+                fExtensions.posixFD = posixFdExt;
+        }
+
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.posixFD != nullptr, false);
+
+        // FIXME events only driven as long as UI is open
+        // CARLA_SAFE_ASSERT_RETURN(fUI.isCreated, false);
+
+        if (flags & (CLAP_POSIX_FD_READ|CLAP_POSIX_FD_WRITE))
+        {
+            const int epollfd = ::epoll_create1(0);
+            CARLA_SAFE_ASSERT_RETURN(epollfd >= 0, false);
+
+            epoll_event ev = {};
+            if (flags & CLAP_POSIX_FD_READ)
+                ev.events |= EPOLLIN;
+            if (flags & CLAP_POSIX_FD_WRITE)
+                ev.events |= EPOLLOUT;
+            ev.data.fd = fd;
+
+            if (::epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev) < 0)
+            {
+                ::close(epollfd);
+                return false;
+            }
+
+            const HostPosixFileDescriptorDetails posixFD = {
+                epollfd,
+                fd,
+                flags,
+            };
+            fPosixFileDescriptors.append(posixFD);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool clapModifyPosixFD(const int fd, const clap_posix_fd_flags_t flags) override
+    {
+        carla_stdout("CarlaPluginCLAP::clapTimerUnregister(%i, %x)", fd, flags);
+        for (LinkedList<HostPosixFileDescriptorDetails>::Itenerator it = fPosixFileDescriptors.begin2(); it.valid(); it.next())
+        {
+            HostPosixFileDescriptorDetails& posixFD(it.getValue(kPosixFileDescriptorFallbackNC));
+
+            if (posixFD.pluginFd == fd)
+            {
+                if (posixFD.flags == flags)
+                    return true;
+
+                epoll_event ev = {};
+                if (flags & CLAP_POSIX_FD_READ)
+                    ev.events |= EPOLLIN;
+                if (flags & CLAP_POSIX_FD_WRITE)
+                    ev.events |= EPOLLOUT;
+                ev.data.fd = fd;
+
+                if (::epoll_ctl(posixFD.hostFd, EPOLL_CTL_MOD, fd, &ev) < 0)
+                    return false;
+
+                posixFD.flags = flags;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool clapUnregisterPosixFD(const int fd) override
+    {
+        carla_stdout("CarlaPluginCLAP::clapTimerUnregister(%i)", fd);
+        for (LinkedList<HostPosixFileDescriptorDetails>::Itenerator it = fPosixFileDescriptors.begin2(); it.valid(); it.next())
+        {
+            const HostPosixFileDescriptorDetails& posixFD(it.getValue(kPosixFileDescriptorFallback));
+
+            if (posixFD.pluginFd == fd)
+            {
+                ::epoll_ctl(posixFD.hostFd, EPOLL_CTL_DEL, fd, nullptr);
+                ::close(posixFD.hostFd);
+                fPosixFileDescriptors.remove(it);
+                return true;
+            }
+        }
+
+        return false;
+    }
+   #endif
+
+    // -------------------------------------------------------------------
+
+    bool clapRegisterTimer(const uint32_t periodInMs, clap_id* const timerId) override
+    {
+        carla_stdout("CarlaPluginCLAP::clapTimerRegister(%u, %p)", periodInMs, timerId);
+
+        // NOTE some plugins wont have their timer extension ready when first loaded, so try again here
+        if (fExtensions.timer == nullptr)
+        {
+            const clap_plugin_timer_support_t* const timerExt = static_cast<const clap_plugin_timer_support_t*>(
+                fPlugin->get_extension(fPlugin, CLAP_EXT_TIMER_SUPPORT));
+
+            if (timerExt != nullptr && timerExt->on_timer != nullptr)
+                fExtensions.timer = timerExt;
+        }
+
         CARLA_SAFE_ASSERT_RETURN(fExtensions.timer != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(fUI.isCreated, false);
+
+        // FIXME events only driven as long as UI is open
+        // CARLA_SAFE_ASSERT_RETURN(fUI.isCreated, false);
 
         const HostTimerDetails timer = {
             fTimers.isNotEmpty() ? fTimers.getLast(kTimerFallback).clapId + 1 : 1,
@@ -2435,8 +2684,9 @@ protected:
         return true;
     }
 
-    bool clapTimerUnregister(const clap_id timerId) override
+    bool clapUnregisterTimer(const clap_id timerId) override
     {
+        carla_stdout("CarlaPluginCLAP::clapTimerUnregister(%u)", timerId);
         for (LinkedList<HostTimerDetails>::Itenerator it = fTimers.begin2(); it.valid(); it.next())
         {
             const HostTimerDetails& timer(it.getValue(kTimerFallback));
@@ -2647,6 +2897,8 @@ public:
                 clap_note_port_info_t portInfo = {};
                 CARLA_SAFE_ASSERT_BREAK(notePortsExt->get(fPlugin, i, true, &portInfo));
 
+                // TODO alternative if plugin does not support CLAP_NOTE_DIALECT_MIDI
+
                 if (portInfo.supported_dialects & CLAP_NOTE_DIALECT_MIDI)
                 {
                     if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
@@ -2686,21 +2938,27 @@ private:
        #ifdef CLAP_WINDOW_API_NATIVE
         const clap_plugin_gui_t* gui;
        #endif
+       #ifdef _POSIX_VERSION
+        const clap_plugin_posix_fd_support_t* posixFD;
+       #endif
         const clap_plugin_state_t* state;
         const clap_plugin_timer_support_t* timer;
 
         Extensions()
             : params(nullptr),
-           #ifdef CLAP_WINDOW_API_NATIVE
+             #ifdef CLAP_WINDOW_API_NATIVE
               gui(nullptr),
-           #endif
+             #endif
+             #ifdef _POSIX_VERSION
+              posixFD(nullptr),
+             #endif
               state(nullptr),
               timer(nullptr) {}
 
         CARLA_DECLARE_NON_COPYABLE(Extensions)
     } fExtensions;
 
-   #ifdef CLAP_WINDOW_API_NATIVE
+  #ifdef CLAP_WINDOW_API_NATIVE
     struct UI {
         bool initalized;
         bool isCreated;
@@ -2721,8 +2979,11 @@ private:
         }
     } fUI;
 
-    LinkedList<HostTimerDetails> fTimers;
+   #ifdef _POSIX_VERSION
+    LinkedList<HostPosixFileDescriptorDetails> fPosixFileDescriptors;
    #endif
+    LinkedList<HostTimerDetails> fTimers;
+  #endif
 
     carla_clap_input_audio_buffers fInputAudioBuffers;
     carla_clap_output_audio_buffers fOutputAudioBuffers;
@@ -2732,10 +2993,59 @@ private:
     float** fAudioOutBuffers;
    #endif
     void* fLastChunk;
+    bool fNeedsIdleCallback;
 
    #ifdef CARLA_OS_MAC
     BundleLoader fBundleLoader;
    #endif
+
+    void runIdleCallbacksAsNeeded()
+    {
+        if (fNeedsIdleCallback)
+        {
+            fNeedsIdleCallback = false;
+            fPlugin->on_main_thread(fPlugin);
+        }
+
+      #ifdef CLAP_WINDOW_API_NATIVE
+       #ifdef _POSIX_VERSION
+        for (LinkedList<HostPosixFileDescriptorDetails>::Itenerator it = fPosixFileDescriptors.begin2(); it.valid(); it.next())
+        {
+            const HostPosixFileDescriptorDetails& posixFD(it.getValue(kPosixFileDescriptorFallback));
+
+            epoll_event events;
+            for (int i=0; i<50; ++i)
+            {
+                switch (::epoll_wait(posixFD.hostFd, &events, 1, 0))
+                {
+                case 1:
+                    fExtensions.posixFD->on_fd(fPlugin, posixFD.pluginFd, posixFD.flags);
+                    break;
+                case -1:
+                    fExtensions.posixFD->on_fd(fPlugin, posixFD.pluginFd, posixFD.flags | CLAP_POSIX_FD_ERROR);
+                    // fall through
+                case 0:
+                    i = 50;
+                    break;
+                }
+            }
+        }
+       #endif
+
+        const uint32_t currentTimeInMs = water::Time::getMillisecondCounter();
+
+        for (LinkedList<HostTimerDetails>::Itenerator it = fTimers.begin2(); it.valid(); it.next())
+        {
+            HostTimerDetails& timer(it.getValue(kTimerFallbackNC));
+
+            if (currentTimeInMs > timer.lastCallTimeInMs + timer.periodInMs)
+            {
+                timer.lastCallTimeInMs = currentTimeInMs;
+                fExtensions.timer->on_timer(fPlugin, timer.clapId);
+            }
+        }
+      #endif
+    }
 };
 
 // --------------------------------------------------------------------------------------------------------------------
