@@ -521,7 +521,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         prepareForSave(true);
     }
 
-    const PluginType pluginType(getType());
+    const PluginType pluginType = getType();
 
     char strBuf[STR_MAX+1];
     carla_zeroChars(strBuf, STR_MAX+1);
@@ -567,7 +567,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     if (pData->options & PLUGIN_OPTION_USE_CHUNKS)
     {
         void* data = nullptr;
-        const std::size_t dataSize(getChunkData(&data));
+        const std::size_t dataSize = getChunkData(&data);
 
         if (data != nullptr && dataSize > 0)
         {
@@ -601,7 +601,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     // ---------------------------------------------------------------
     // Parameters
 
-    const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
+    const float sampleRate = static_cast<float>(pData->engine->getSampleRate());
 
     for (uint32_t i=0; i < pData->param.count; ++i)
     {
@@ -683,8 +683,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
 void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 {
-    const bool usesMultiProgs(pData->hints & PLUGIN_USES_MULTI_PROGS);
-    const PluginType pluginType(getType());
+    const bool usesMultiProgs = pData->hints & PLUGIN_USES_MULTI_PROGS;
+    const PluginType pluginType = getType();
 
     char strBuf[STR_MAX+1];
     carla_zeroChars(strBuf, STR_MAX+1);
@@ -753,7 +753,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     LinkedList<ParamSymbol*> paramSymbols;
 
-    if (pluginType == PLUGIN_LADSPA || pluginType == PLUGIN_LV2)
+    if (pluginType == PLUGIN_LADSPA || pluginType == PLUGIN_LV2 || pluginType == PLUGIN_CLAP)
     {
         for (uint32_t i=0; i < pData->param.count; ++i)
         {
@@ -771,7 +771,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 4b - set parameter values (carefully)
 
-    const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
+    const float sampleRate = static_cast<float>(pData->engine->getSampleRate());
 
     for (CarlaStateSave::ParameterItenerator it = stateSave.parameters.begin2(); it.valid(); it.next())
     {
@@ -805,7 +805,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                 index = stateParameter->index;
             }
         }
-        else if (pluginType == PLUGIN_LV2)
+        else if (pluginType == PLUGIN_LV2 || pluginType == PLUGIN_CLAP)
         {
             // Symbol only
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
@@ -823,12 +823,21 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                     }
                 }
                 if (index == -1)
-                    carla_stderr("Failed to find LV2 parameter symbol '%s' for '%s'",
-                                 stateParameter->symbol, pData->name);
+                {
+                    if (pluginType == PLUGIN_LV2)
+                        carla_stderr("Failed to find LV2 parameter symbol '%s' for '%s'",
+                                    stateParameter->symbol, pData->name);
+                    else
+                        carla_stderr("Failed to find CLAP parameter id '%s' for '%s'",
+                                    stateParameter->symbol, pData->name);
+                }
             }
             else
             {
-                carla_stderr("LV2 Plugin parameter '%s' has no symbol", stateParameter->name);
+                if (pluginType == PLUGIN_LV2)
+                    carla_stderr("LV2 Plugin parameter '%s' has no symbol", stateParameter->name);
+                else
+                    carla_stderr("CLAP Plugin parameter '%s' has no id", stateParameter->name);
             }
         }
         else
@@ -941,7 +950,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 6 - set internal stuff
 
-    const uint availOptions(getOptionsAvailable());
+    const uint availOptions = getOptionsAvailable();
 
     for (uint i=0; i<10; ++i) // FIXME - get this value somehow...
     {

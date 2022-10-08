@@ -132,6 +132,7 @@ struct carla_clap_host : clap_host_t {
         virtual void clapRequestRestart() = 0;
         virtual void clapRequestProcess() = 0;
         virtual void clapRequestCallback() = 0;
+        virtual void clapMarkDirty() = 0;
        #ifdef CLAP_WINDOW_API_NATIVE
         // gui
         virtual void clapGuiResizeHintsChanged() = 0;
@@ -147,6 +148,7 @@ struct carla_clap_host : clap_host_t {
 
     Callbacks* const hostCallbacks;
 
+    clap_host_state_t state;
    #ifdef CLAP_WINDOW_API_NATIVE
     clap_host_gui_t gui;
     clap_host_timer_support_t timer;
@@ -167,12 +169,15 @@ struct carla_clap_host : clap_host_t {
         request_process = carla_request_process;
         request_callback = carla_request_callback;
 
+        state.mark_dirty = carla_mark_dirty;
+
        #ifdef CLAP_WINDOW_API_NATIVE
         gui.resize_hints_changed = carla_resize_hints_changed;
         gui.request_resize = carla_request_resize;
         gui.request_show = carla_request_show;
         gui.request_hide = carla_request_hide;
         gui.closed = carla_closed;
+
         timer.register_timer = carla_register_timer;
         timer.unregister_timer = carla_unregister_timer;
        #endif
@@ -211,6 +216,11 @@ struct carla_clap_host : clap_host_t {
     static void carla_request_callback(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestCallback();
+    }
+
+    static void carla_mark_dirty(const clap_host_t* const host)
+    {
+        static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapMarkDirty();
     }
 
    #ifdef CLAP_WINDOW_API_NATIVE
@@ -571,10 +581,11 @@ public:
           fInputAudioBuffers(),
           fOutputAudioBuffers(),
           fInputEvents(),
-          fOutputEvents()
+          fOutputEvents(),
        #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        , fAudioOutBuffers(nullptr)
+          fAudioOutBuffers(nullptr),
        #endif
+          fLastChunk(nullptr)
     {
         carla_debug("CarlaPluginCLAP::CarlaPluginCLAP(%p, %i)", engine, id);
     }
@@ -605,6 +616,12 @@ public:
         {
             fPlugin->destroy(fPlugin);
             fPlugin = nullptr;
+        }
+
+        if (fLastChunk != nullptr)
+        {
+            std::free(fLastChunk);
+            fLastChunk = nullptr;
         }
 
         clearBuffers();
@@ -692,11 +709,19 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fExtensions.state != nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
 
-        *dataPtr = nullptr;
+        std::free(fLastChunk);
 
-        // TODO
-
-        return 0;
+        clap_ostream_impl stream;
+        if (fExtensions.state->save(fPlugin, &stream))
+        {
+            *dataPtr = fLastChunk = stream.buffer;
+            return stream.size;
+        }
+        else
+        {
+            *dataPtr = fLastChunk = nullptr;
+            return 0;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -877,9 +902,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
-        // TODO
-
-        pData->updateParameterValues(this, true, true, false);
+        const clap_istream_impl stream(data, dataSize);
+        if (fExtensions.state->load(fPlugin, &stream))
+            pData->updateParameterValues(this, true, true, false);
     }
 
     // -------------------------------------------------------------------
@@ -1048,7 +1073,10 @@ public:
             HostTimerDetails& timer(it.getValue(kTimerFallbackNC));
 
             if (currentTimeInMs > timer.lastCallTimeInMs + timer.periodInMs)
+            {
+                timer.lastCallTimeInMs = currentTimeInMs;
                 fExtensions.timer->on_timer(fPlugin, timer.clapId);
+            }
         }
 
         CarlaPlugin::uiIdle();
@@ -1363,7 +1391,7 @@ public:
                 continue;
 
             pData->param.data[j].index  = j;
-            pData->param.data[j].rindex = paramInfo.id;
+            pData->param.data[j].rindex = static_cast<int32_t>(paramInfo.id);
 
             double min, max, def, step, stepSmall, stepLarge;
 
@@ -2189,7 +2217,7 @@ public:
             case CLAP_EVENT_PARAM_VALUE:
                 for (uint32_t j=0; j<pData->param.count; ++j)
                 {
-                    if (pData->param.data[j].rindex != ev.param.param_id)
+                    if (pData->param.data[j].rindex != static_cast<int32_t>(ev.param.param_id))
                         continue;
                     pData->postponeParameterChangeRtEvent(true, static_cast<int32_t>(j), ev.param.value);
                     break;
@@ -2328,6 +2356,12 @@ protected:
 
     // -------------------------------------------------------------------
 
+    void clapMarkDirty() override
+    {
+    }
+
+    // -------------------------------------------------------------------
+
    #ifdef CLAP_WINDOW_API_NATIVE
     void clapGuiResizeHintsChanged() override
     {
@@ -2431,12 +2465,6 @@ public:
             return false;
         }
 
-        if (id == nullptr || id[0] == '\0')
-        {
-            pData->engine->setLastError("null label/id");
-            return false;
-        }
-
         // ---------------------------------------------------------------
 
         const clap_plugin_entry_t* entry;
@@ -2512,28 +2540,42 @@ public:
 
         if (const uint32_t count = factory->get_plugin_count(factory))
         {
-            for (uint32_t i=0; i<count; ++i)
+            // null id requested, use first available plugin
+            if (id == nullptr || id[0] == '\0')
             {
-                const clap_plugin_descriptor_t* const desc = factory->get_plugin_descriptor(factory, i);
-                CARLA_SAFE_ASSERT_CONTINUE(desc != nullptr);
-                CARLA_SAFE_ASSERT_CONTINUE(desc->id != nullptr);
+                fPluginDescriptor = factory->get_plugin_descriptor(factory, 0);
 
-                if (std::strcmp(desc->id, id) == 0)
+                if (fPluginDescriptor == nullptr)
                 {
-                    fPluginDescriptor = desc;
-                    break;
+                    pData->engine->setLastError("Plugin library does not contain a valid first plugin");
+                    return false;
+                }
+            }
+            else
+            {
+                for (uint32_t i=0; i<count; ++i)
+                {
+                    const clap_plugin_descriptor_t* const desc = factory->get_plugin_descriptor(factory, i);
+                    CARLA_SAFE_ASSERT_CONTINUE(desc != nullptr);
+                    CARLA_SAFE_ASSERT_CONTINUE(desc->id != nullptr);
+
+                    if (std::strcmp(desc->id, id) == 0)
+                    {
+                        fPluginDescriptor = desc;
+                        break;
+                    }
+                }
+
+                if (fPluginDescriptor == nullptr)
+                {
+                    pData->engine->setLastError("Plugin library does not contain the requested plugin");
+                    return false;
                 }
             }
         }
         else
         {
             pData->engine->setLastError("Plugin library contains no plugins");
-            return false;
-        }
-
-        if (fPluginDescriptor == nullptr)
-        {
-            pData->engine->setLastError("Plugin library does not contain the requested plugin");
             return false;
         }
 
@@ -2679,6 +2721,7 @@ private:
    #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     float** fAudioOutBuffers;
    #endif
+    void* fLastChunk;
 
    #ifdef CARLA_OS_MAC
     BundleLoader fBundleLoader;

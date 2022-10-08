@@ -429,7 +429,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         {
                             stateParameter->name = xmlSafeStringCharDup(pText, false);
                         }
-                        else if (pTag == "Symbol")
+                        else if (pTag == "Symbol" || pTag == "Identifier")
                         {
                             stateParameter->symbol = xmlSafeStringCharDup(pText, false);
                         }
@@ -559,6 +559,8 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 
 void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
 {
+    const PluginType pluginType = getPluginTypeFromString(type);
+
     {
         MemoryOutputStream infoXml;
 
@@ -566,7 +568,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         infoXml << "   <Type>" << String(type != nullptr ? type : "") << "</Type>\n";
         infoXml << "   <Name>" << xmlSafeString(name, true) << "</Name>\n";
 
-        switch (getPluginTypeFromString(type))
+        switch (pluginType)
         {
         case PLUGIN_NONE:
             break;
@@ -666,7 +668,12 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         parameterXml << "    <Name>"  << xmlSafeString(stateParameter->name, true) << "</Name>\n";
 
         if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
-            parameterXml << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
+        {
+            if (pluginType == PLUGIN_CLAP)
+                parameterXml << "    <Identifier>" << xmlSafeString(stateParameter->symbol, true) << "</Identifier>\n";
+            else
+                parameterXml << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
+        }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (stateParameter->mappedControlIndex > CONTROL_INDEX_NONE && stateParameter->mappedControlIndex <= CONTROL_INDEX_MAX_ALLOWED)

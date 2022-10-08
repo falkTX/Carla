@@ -148,7 +148,6 @@ bool clapFeaturesContainInstrument(const char* const* const features) noexcept
     if (features == nullptr)
         return false;
 
-    // 1st pass for main categories
     for (uint32_t i=0; features[i] != nullptr; ++i)
     {
         if (std::strcmp(features[i], CLAP_PLUGIN_FEATURE_INSTRUMENT) == 0)
@@ -157,6 +156,72 @@ bool clapFeaturesContainInstrument(const char* const* const features) noexcept
 
     return false;
 }
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct clap_istream_impl : clap_istream_t {
+    const void* buffer;
+    const uint64_t size;
+    uint64_t readPos;
+
+    clap_istream_impl(const void* const buf, const uint64_t bufsize) noexcept
+        : buffer(buf),
+          size(bufsize),
+          readPos(0)
+    {
+        ctx = this;
+        read = read_impl;
+    }
+
+    static int64_t read_impl(const clap_istream_t* const stream, void* const buffer, const uint64_t size) noexcept
+    {
+        clap_istream_impl* const self = static_cast<clap_istream_impl*>(stream->ctx);
+
+        if (const uint64_t bytesRead = std::min(self->size - self->readPos, size))
+        {
+            std::memcpy(buffer, static_cast<const uint8_t*>(self->buffer) + self->readPos, bytesRead);
+            self->readPos += bytesRead;
+            return bytesRead;
+        }
+
+        return 0;
+    }
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct clap_ostream_impl : clap_ostream_t {
+    void* buffer;
+    uint64_t size;
+
+    clap_ostream_impl() noexcept
+        : buffer(nullptr),
+          size(0)
+    {
+        ctx = this;
+        write = write_impl;
+    }
+
+    static int64_t write_impl(const clap_ostream* const stream, const void* const buffer, const uint64_t size) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(size != 0, 0);
+
+        clap_ostream_impl* const self = static_cast<clap_ostream_impl*>(stream->ctx);
+
+        void* const oldBuffer = self->buffer;
+        self->buffer = std::realloc(self->buffer, self->size + size);
+
+        if (self->buffer == nullptr)
+        {
+            std::free(oldBuffer);
+            return -1;
+        }
+
+        std::memcpy(static_cast<uint8_t*>(self->buffer) + self->size, buffer, size);
+        self->size += size;
+        return size;
+    }
+};
 
 // --------------------------------------------------------------------------------------------------------------------
 
