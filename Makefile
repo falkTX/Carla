@@ -469,6 +469,7 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/carla/resources/translations
 	install -d $(DESTDIR)$(DATADIR)/carla/modgui
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
+	install -d $(DESTDIR)$(DATADIR)/carla/pluginlist
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
 endif
 
