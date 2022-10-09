@@ -12,8 +12,8 @@ env:
   HOMEBREW_NO_AUTO_UPDATE: 1
 
 jobs:
-  macos-10_15:
-    runs-on: macos-10.15
+  macos-11:
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
       - name: Set up dependencies
