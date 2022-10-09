@@ -292,24 +292,30 @@ endif
 
 ifeq ($(HAVE_QT5),true)
 QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=host_bins Qt5Core)
+else ifeq ($(HAVE_QT5PKG),true)
+QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)/bin
+endif
+
 MOC_QT5 ?= $(QT5_HOSTBINS)/moc
 RCC_QT5 ?= $(QT5_HOSTBINS)/rcc
 UIC_QT5 ?= $(QT5_HOSTBINS)/uic
+
 ifeq (,$(wildcard $(MOC_QT5)))
 HAVE_QT5 = false
 endif
 ifeq (,$(wildcard $(RCC_QT5)))
 HAVE_QT5 = false
 endif
+ifeq (,$(wildcard $(UIC_QT5)))
+HAVE_QT5 = false
 endif
 
 ifeq ($(HAVE_QT4),true)
 HAVE_QT = true
-endif
-ifeq ($(HAVE_QT5),true)
+else ifeq ($(HAVE_QT5),true)
 HAVE_QT = true
-endif
-ifeq ($(WINDOWS),true)
+# FIXME
+else ifeq ($(WINDOWS),true)
 HAVE_QT = true
 endif
 

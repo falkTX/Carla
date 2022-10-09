@@ -21,11 +21,11 @@ QT5_LINK_FLAGS = $(LINK_FLAGS)
 endif
 
 ifeq ($(HAVE_QT5),true)
-QT5_PREFIX       = $(shell pkg-config --variable=prefix Qt5Core)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
-QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
+QT5_PREFIX       = $(shell $(PKG_CONFIG) --variable=prefix Qt5Core)
+BUILD_CXX_FLAGS += $(shell $(PKG_CONFIG) --cflags Qt5Core Qt5Gui Qt5Widgets)
+QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib $(shell $(PKG_CONFIG) --libs Qt5Core Qt5Gui Qt5Widgets)
 else ifeq ($(HAVE_QT5PKG),true)
-QT5_PREFIX       = $(shell pkg-config --variable=prefix Qt5OpenGLExtensions)
+QT5_PREFIX       = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)
 BUILD_CXX_FLAGS += -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT5_PREFIX)/include/qt5
 QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib -F $(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
 else
