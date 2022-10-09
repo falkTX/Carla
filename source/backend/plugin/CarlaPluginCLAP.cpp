@@ -2674,8 +2674,9 @@ protected:
            #ifdef CARLA_CLAP_POSIX_KQUEUE
             const int hostFd = ::kqueue();
            #else
-            CARLA_SAFE_ASSERT_RETURN(hostFd >= 0, false);
+            const int hostFd = ::epoll_create1(0);
            #endif
+            CARLA_SAFE_ASSERT_RETURN(hostFd >= 0, false);
 
            #ifndef CARLA_CLAP_POSIX_KQUEUE
             struct epoll_event ev = {};
