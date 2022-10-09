@@ -15,7 +15,7 @@ RESDIR := $(CWD)/../resources
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(WINDOWS),true)
-QT5_LINK_FLAGS = $(shell echo $(LINK_FLAGS) | awk 'sub(" -static","")') -static-libgcc
+QT5_LINK_FLAGS = $(shell echo $(LINK_FLAGS) | awk 'sub(" -static","")')
 else
 QT5_LINK_FLAGS = $(LINK_FLAGS)
 endif
@@ -28,6 +28,8 @@ else ifeq ($(HAVE_QT5PKG),true)
 QT5_PREFIX       = $(shell pkg-config --variable=prefix Qt5OpenGLExtensions)
 BUILD_CXX_FLAGS += -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT5_PREFIX)/include/qt5
 QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib -F $(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
+else
+$(error Trying to build frontend without Qt5, cannot continue)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -159,7 +161,7 @@ debug:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-tests:
+tests: pluginlist/jackappdialog$(APP_EXT)
 # $(UI_FILES:%.ui=%$(APP_EXT))
 
 pluginlist/jackappdialog$(APP_EXT): pluginlist/jackappdialog.cpp pluginlist/jackappdialog.ui pluginlist/jackappdialog_ui.hpp

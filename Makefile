@@ -623,6 +623,10 @@ endif
 		$(DESTDIR)$(DATADIR)/carla/modgui/
 
 	install -m 644 \
+		source/frontend/pluginlist/*.py \
+		$(DESTDIR)$(DATADIR)/carla/pluginlist/
+
+	install -m 644 \
 		source/frontend/patchcanvas/*.py \
 		$(DESTDIR)$(DATADIR)/carla/patchcanvas/
 
