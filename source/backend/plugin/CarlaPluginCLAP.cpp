@@ -33,8 +33,14 @@
 #include "water/misc/Time.h"
 
 #ifdef _POSIX_VERSION
-# include <sys/epoll.h>
-# include <sys/socket.h>
+# if defined(CARLA_OS_MAC) || defined(CARLA_OS_BSD)
+#  define CARLA_CLAP_POSIX_KQUEUE
+#  include <sys/event.h>
+#  include <sys/types.h>
+# else
+#  define CARLA_CLAP_POSIX_EPOLL
+#  include <sys/epoll.h>
+# endif
 #endif
 
 // FIXME
@@ -2665,24 +2671,29 @@ protected:
 
         if (flags & (CLAP_POSIX_FD_READ|CLAP_POSIX_FD_WRITE))
         {
-            const int epollfd = ::epoll_create1(0);
-            CARLA_SAFE_ASSERT_RETURN(epollfd >= 0, false);
+           #ifdef CARLA_CLAP_POSIX_KQUEUE
+            const int hostFd = ::kqueue();
+           #else
+            CARLA_SAFE_ASSERT_RETURN(hostFd >= 0, false);
+           #endif
 
-            epoll_event ev = {};
+           #ifndef CARLA_CLAP_POSIX_KQUEUE
+            struct epoll_event ev = {};
             if (flags & CLAP_POSIX_FD_READ)
                 ev.events |= EPOLLIN;
             if (flags & CLAP_POSIX_FD_WRITE)
                 ev.events |= EPOLLOUT;
             ev.data.fd = fd;
 
-            if (::epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev) < 0)
+            if (::epoll_ctl(hostFd, EPOLL_CTL_ADD, fd, &ev) < 0)
             {
-                ::close(epollfd);
+                ::close(hostFd);
                 return false;
             }
+           #endif
 
             const HostPosixFileDescriptorDetails posixFD = {
-                epollfd,
+                hostFd,
                 fd,
                 flags,
             };
@@ -2706,7 +2717,8 @@ protected:
                 if (posixFD.flags == flags)
                     return true;
 
-                epoll_event ev = {};
+               #ifndef CARLA_CLAP_POSIX_KQUEUE
+                struct epoll_event ev = {};
                 if (flags & CLAP_POSIX_FD_READ)
                     ev.events |= EPOLLIN;
                 if (flags & CLAP_POSIX_FD_WRITE)
@@ -2715,6 +2727,7 @@ protected:
 
                 if (::epoll_ctl(posixFD.hostFd, EPOLL_CTL_MOD, fd, &ev) < 0)
                     return false;
+               #endif
 
                 posixFD.flags = flags;
                 return true;
@@ -2733,7 +2746,9 @@ protected:
 
             if (posixFD.pluginFd == fd)
             {
+               #ifndef CARLA_CLAP_POSIX_KQUEUE
                 ::epoll_ctl(posixFD.hostFd, EPOLL_CTL_DEL, fd, nullptr);
+               #endif
                 ::close(posixFD.hostFd);
                 fPosixFileDescriptors.remove(it);
                 return true;
@@ -3116,10 +3131,22 @@ private:
         {
             const HostPosixFileDescriptorDetails& posixFD(it.getValue(kPosixFileDescriptorFallback));
 
-            epoll_event events;
+           #ifdef CARLA_CLAP_POSIX_KQUEUE
+            const int16_t filter = posixFD.flags & CLAP_POSIX_FD_WRITE ? EVFILT_WRITE : EVFILT_READ;
+            struct kevent kev = {}, event;
+            struct timespec timeout = {};
+            EV_SET(&kev, posixFD.pluginFd, filter, EV_ADD|EV_ENABLE, 0, 0, nullptr);
+           #else
+            epoll_event event;
+           #endif
+
             for (int i=0; i<50; ++i)
             {
-                switch (::epoll_wait(posixFD.hostFd, &events, 1, 0))
+               #ifdef CARLA_CLAP_POSIX_KQUEUE
+                switch (kevent(posixFD.hostFd, &kev, 1, &event, 1, &timeout))
+               #else
+                switch (::epoll_wait(posixFD.hostFd, &event, 1, 0))
+               #endif
                 {
                 case 1:
                     fExtensions.posixFD->on_fd(fPlugin, posixFD.pluginFd, posixFD.flags);
@@ -3128,6 +3155,10 @@ private:
                     fExtensions.posixFD->on_fd(fPlugin, posixFD.pluginFd, posixFD.flags | CLAP_POSIX_FD_ERROR);
                     // fall through
                 case 0:
+                    i = 50;
+                    break;
+                default:
+                    carla_safe_exception("posix fd received abnormal value", __FILE__, __LINE__);
                     i = 50;
                     break;
                 }
