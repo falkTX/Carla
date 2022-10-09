@@ -114,6 +114,7 @@ endif
 	@printf -- "LADSPA:   $(ANS_YES)\n"
 	@printf -- "DSSI:     $(ANS_YES)\n"
 	@printf -- "LV2:      $(ANS_YES)\n"
+	@printf -- "CLAP:     $(ANS_YES)\n"
 ifeq ($(MACOS_OR_WINDOWS),true)
 ifeq ($(USING_JUCE),true)
 	@printf -- "VST2:     $(ANS_YES) (with UI, using JUCE)\n"
