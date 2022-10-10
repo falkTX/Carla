@@ -654,7 +654,9 @@ struct carla_clap_output_events : clap_output_events_t, CarlaPluginClapEventData
 // --------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginCLAP : public CarlaPlugin,
+                       #ifdef CLAP_WINDOW_API_NATIVE
                         private CarlaPluginUI::Callback,
+                       #endif
                         private carla_clap_host::Callbacks
 {
 public:
