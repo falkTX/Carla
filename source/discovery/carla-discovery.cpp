@@ -1861,10 +1861,26 @@ struct carla_clap_host : clap_host_t {
         request_callback = carla_request_callback;
     }
 
-    static CLAP_ABI const void* carla_get_extension(const clap_host_t*, const char*) { return nullptr; }
-    static CLAP_ABI void carla_request_restart(const clap_host_t*) {}
-    static CLAP_ABI void carla_request_process(const clap_host_t*) {}
-    static CLAP_ABI void carla_request_callback(const clap_host_t*) {}
+    static CLAP_ABI const void* carla_get_extension(const clap_host_t* const host, const char* const extension_id)
+    {
+        carla_stdout("carla_get_extension %p %s", host, extension_id);
+        return nullptr;
+    }
+
+    static CLAP_ABI void carla_request_restart(const clap_host_t* const host)
+    {
+        carla_stdout("carla_request_restart %p", host);
+    }
+
+    static CLAP_ABI void carla_request_process(const clap_host_t* const host)
+    {
+        carla_stdout("carla_request_process %p", host);
+    }
+
+    static CLAP_ABI void carla_request_callback(const clap_host_t* const host)
+    {
+        carla_stdout("carla_request_callback %p", host);
+    }
 };
 
 static void do_clap_check(lib_t& libHandle, const char* const filename, const bool doInit)
@@ -1931,6 +1947,13 @@ static void do_clap_check(lib_t& libHandle, const char* const filename, const bo
 
             const clap_plugin_t* const plugin = factory->create_plugin(factory, &host, desc->id);
             CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
+
+            // FIXME this is not needed per spec, but JUCE-based CLAP plugins crash without it :(
+            if (!plugin->init(plugin))
+            {
+                plugin->destroy(plugin);
+                continue;
+            }
 
             uint hints = 0x0;
             uint audioIns = 0;
@@ -2035,7 +2058,8 @@ static void do_clap_check(lib_t& libHandle, const char* const filename, const bo
                 // -----------------------------------------------------------------------
                 // start crash-free plugin test
 
-                plugin->init(plugin);
+                // FIXME already initiated before, because broken plugins etc
+                // plugin->init(plugin);
 
                 // TODO
 
