@@ -1976,6 +1976,11 @@ static void do_clap_check(lib_t& libHandle, const char* const filename, const bo
             const clap_plugin_params_t* const params = static_cast<const clap_plugin_params_t*>(
                 plugin->get_extension(plugin, CLAP_EXT_PARAMS));
 
+           #ifdef CLAP_WINDOW_API_NATIVE
+            const clap_plugin_gui_t* const gui = static_cast<const clap_plugin_gui_t*>(
+                plugin->get_extension(plugin, CLAP_EXT_GUI));
+           #endif
+
             if (audioPorts != nullptr)
             {
                 clap_audio_port_info_t info;
@@ -2052,6 +2057,14 @@ static void do_clap_check(lib_t& libHandle, const char* const filename, const bo
 
             if (desc->features != nullptr)
                 category = getPluginCategoryFromClapFeatures(desc->features);
+
+            if (category == PLUGIN_CATEGORY_SYNTH)
+                hints |= PLUGIN_IS_SYNTH;
+
+           #ifdef CLAP_WINDOW_API_NATIVE
+            if (gui != nullptr)
+                hints |= PLUGIN_HAS_CUSTOM_UI;
+           #endif
 
             if (doInit)
             {
