@@ -231,25 +231,25 @@ public:
 
         if (fPorts.numMidiIns > 0 || fPorts.hasUI)
         {
-            uint32_t numEventsIn;
+            uint32_t numEventPortsIn;
 
             if (fPorts.numMidiIns > 0)
             {
-                numEventsIn = fPorts.numMidiIns;
+                numEventPortsIn = fPorts.numMidiIns;
                 fMidiEventCount = 0;
                 carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
             }
             else
             {
-                numEventsIn = 1;
+                numEventPortsIn = 1;
             }
 
-            for (uint32_t i=0; i < numEventsIn; ++i)
+            for (uint32_t i=0; i < numEventPortsIn; ++i)
             {
-                const LV2_Atom_Sequence* const eventsIn(fPorts.eventsIn[i]);
-                CARLA_SAFE_ASSERT_CONTINUE(eventsIn != nullptr);
+                const LV2_Atom_Sequence* const eventPortIn(fPorts.eventsIn[i]);
+                CARLA_SAFE_ASSERT_CONTINUE(eventPortIn != nullptr);
 
-                LV2_ATOM_SEQUENCE_FOREACH(eventsIn, event)
+                LV2_ATOM_SEQUENCE_FOREACH(eventPortIn, event)
                 {
                     if (event == nullptr)
                         continue;
@@ -351,19 +351,16 @@ public:
             if (fNeedsNotifyFileChanged || fPreviewData.shouldSend)
             {
                 uint8_t atomBuf[4096];
-                LV2_Atom_Forge atomForge = fAtomForge;
-                lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
-
-                LV2_Atom_Forge_Frame outerFrame;
-                lv2_atom_forge_sequence_head(&atomForge, &outerFrame, 0);
-
-                const int numEvents = fNeedsNotifyFileChanged && fPreviewData.shouldSend ? 2 : 1;
+                LV2_Atom* atom = (LV2_Atom*)atomBuf;
+                LV2_Atom_Sequence* const seq = fPorts.eventsOut[0];
+                Ports::EventsOutData& mData(fPorts.eventsOutData[0]);
 
                 if (fNeedsNotifyFileChanged)
                 {
                     fNeedsNotifyFileChanged = false;
 
-                    lv2_atom_forge_frame_time(&atomForge, 0);
+                    LV2_Atom_Forge atomForge = fAtomForge;
+                    lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
 
                     LV2_Atom_Forge_Frame forgeFrame;
                     lv2_atom_forge_object(&atomForge, &forgeFrame, 0, fURIs.patchSet);
@@ -384,6 +381,20 @@ public:
                                         static_cast<uint32_t>(fLoadedFile.length()+1));
 
                     lv2_atom_forge_pop(&atomForge, &forgeFrame);
+
+                    if (sizeof(LV2_Atom_Event) + atom->size <= mData.capacity - mData.offset)
+                    {
+                        LV2_Atom_Event* const aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + mData.offset);
+
+                        aev->time.frames = 0;
+                        aev->body.size   = atom->size;
+                        aev->body.type   = atom->type;
+                        std::memcpy(LV2_ATOM_BODY(&aev->body), atom + 1, atom->size);
+
+                        const uint32_t size = lv2_atom_pad_size(static_cast<uint32_t>(sizeof(LV2_Atom_Event) + atom->size));
+                        mData.offset       += size;
+                        seq->atom.size     += size;
+                    }
                 }
 
                 if (fPreviewData.shouldSend)
@@ -393,7 +404,8 @@ public:
                     const void* const pbuffer = fPreviewData.buffer;
                     fPreviewData.shouldSend = false;
 
-                    lv2_atom_forge_frame_time(&atomForge, 0);
+                    LV2_Atom_Forge atomForge = fAtomForge;
+                    lv2_atom_forge_set_buffer(&atomForge, atomBuf, sizeof(atomBuf));
 
                     LV2_Atom_Forge_Frame forgeFrame;
                     lv2_atom_forge_object(&atomForge, &forgeFrame, 0, fURIs.patchSet);
@@ -420,16 +432,7 @@ public:
                     }
 
                     lv2_atom_forge_pop(&atomForge, &forgeFrame);
-                }
 
-                lv2_atom_forge_pop(&atomForge, &outerFrame);
-
-                LV2_Atom* atom = (LV2_Atom*)atomBuf;
-                LV2_Atom_Sequence* const seq = fPorts.eventsOut[0];
-                Ports::EventsOutData& mData(fPorts.eventsOutData[0]);
-
-                for (int i=0; i<numEvents; ++i)
-                {
                     if (sizeof(LV2_Atom_Event) + atom->size <= mData.capacity - mData.offset)
                     {
                         LV2_Atom_Event* const aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + mData.offset);
@@ -443,8 +446,6 @@ public:
                         mData.offset       += size;
                         seq->atom.size     += size;
                     }
-
-                    atom = (LV2_Atom*)(atomBuf + lv2_atom_total_size(atom));
                 }
             }
         }
