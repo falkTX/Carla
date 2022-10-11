@@ -233,6 +233,11 @@ public:
         return false;
     }
 
+    bool hasIdleOnMainThread() const noexcept override
+    {
+        return true;
+    }
+
     bool isRunning() const noexcept override
     {
         return fDeviceId != 0 /*&& SDL_GetAudioDeviceStatus(fDeviceId) == SDL_AUDIO_PLAYING*/;

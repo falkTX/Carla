@@ -909,6 +909,12 @@ public:
     virtual void idle() noexcept;
 
     /*!
+     * Check if engine implementation calls idle on the main thread.
+     * Typically true unless running Carla as a plugin.
+     */
+    virtual bool hasIdleOnMainThread() const noexcept = 0;
+
+    /*!
      * Check if engine is running.
      */
     virtual bool isRunning() const noexcept = 0;

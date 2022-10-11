@@ -204,6 +204,12 @@ static constexpr const uint PLUGIN_HAS_CUSTOM_EMBED_UI = 0x1000;
  */
 static constexpr const uint PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN = 0x2000;
 
+/*!
+ * Plugin needs all idle events in the main thread.
+ * @note Not possible on all engine implementations.
+ */
+static constexpr const uint PLUGIN_NEEDS_MAIN_THREAD_IDLE = 0x4000;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------

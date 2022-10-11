@@ -270,6 +270,11 @@ public:
         return true;
     }
 
+    bool hasIdleOnMainThread() const noexcept override
+    {
+        return true;
+    }
+
     bool isRunning() const noexcept override
     {
         if (fClosingDown)

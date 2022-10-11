@@ -1729,6 +1729,11 @@ public:
 #endif
     }
 
+    bool hasIdleOnMainThread() const noexcept override
+    {
+        return true;
+    }
+
     bool isRunning() const noexcept override
     {
 #ifdef BUILD_BRIDGE

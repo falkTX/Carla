@@ -442,6 +442,11 @@ public:
         return !hasError;
     }
 
+    bool hasIdleOnMainThread() const noexcept override
+    {
+        return true;
+    }
+
     bool isRunning() const noexcept override
     {
         return fAudio.isStreamOpen();

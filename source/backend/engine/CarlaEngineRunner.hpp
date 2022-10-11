@@ -43,6 +43,7 @@ protected:
 private:
     CarlaEngine* const kEngine;
 
+    bool fEngineHasIdleOnMainThread;
     bool fIsAlwaysRunning;
     bool fIsPlugin;
 

@@ -467,11 +467,21 @@ void CarlaEngine::idle() noexcept
                         } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
                     }
                 }
-                else if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+                else
                 {
-                    try {
-                        plugin->uiIdle();
-                    } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
+                    if (hints & PLUGIN_NEEDS_MAIN_THREAD_IDLE)
+                    {
+                        try {
+                            plugin->idle();
+                        } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin idle");
+                    }
+
+                    if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+                    {
+                        try {
+                            plugin->uiIdle();
+                        } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
+                    }
                 }
             }
         }

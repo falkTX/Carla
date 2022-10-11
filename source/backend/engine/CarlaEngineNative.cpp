@@ -240,6 +240,11 @@ public:
         return true;
     }
 
+    bool hasIdleOnMainThread() const noexcept override
+    {
+        return false;
+    }
+
     bool isRunning() const noexcept override
     {
         return fIsRunning;

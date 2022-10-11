@@ -28,6 +28,7 @@ CARLA_BACKEND_START_NAMESPACE
 CarlaEngineRunner::CarlaEngineRunner(CarlaEngine* const engine) noexcept
     : CarlaRunner("CarlaEngineRunner"),
       kEngine(engine),
+      fEngineHasIdleOnMainThread(false),
       fIsAlwaysRunning(false),
       fIsPlugin(false)
 {
@@ -46,7 +47,8 @@ void CarlaEngineRunner::start()
     if (isRunnerActive())
         stopRunner();
 
-    fIsPlugin        = kEngine->getType() == kEngineTypePlugin;
+    fEngineHasIdleOnMainThread = kEngine->hasIdleOnMainThread();
+    fIsPlugin = kEngine->getType() == kEngineTypePlugin;
     fIsAlwaysRunning = kEngine->getType() == kEngineTypeBridge || fIsPlugin;
 
     startRunner(25);
@@ -93,14 +95,18 @@ bool CarlaEngineRunner::run() noexcept
         CARLA_SAFE_ASSERT_UINT2(i == plugin->getId(), i, plugin->getId());
 
         const uint hints = plugin->getHints();
+        const bool useIdle = (hints & PLUGIN_NEEDS_MAIN_THREAD_IDLE) == 0 || !fEngineHasIdleOnMainThread;
         const bool updateUI = (hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) == 0;
 
         // -----------------------------------------------------------
         // DSP Idle
 
-        try {
-            plugin->idle();
-        } CARLA_SAFE_EXCEPTION("idle()")
+        if (useIdle)
+        {
+            try {
+                plugin->idle();
+            } CARLA_SAFE_EXCEPTION("idle()")
+        }
 
         // -----------------------------------------------------------
         // Post-poned events
