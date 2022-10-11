@@ -32,7 +32,7 @@
 #include "water/files/File.h"
 #include "water/misc/Time.h"
 
-#ifdef _POSIX_VERSION
+#if defined(CLAP_WINDOW_API_NATIVE) && defined(_POSIX_VERSION)
 # if defined(CARLA_OS_LINUX)
 #  define CARLA_CLAP_POSIX_EPOLL
 #  include <sys/epoll.h>
@@ -2596,7 +2596,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-   #ifdef CLAP_WINDOW_API_NATIVE
+  #ifdef CLAP_WINDOW_API_NATIVE
     void clapGuiResizeHintsChanged() override
     {
         carla_stdout("CarlaPluginCLAP::clapGuiResizeHintsChanged()");
@@ -2759,7 +2759,7 @@ protected:
 
         return false;
     }
-   #endif
+   #endif // _POSIX_VERSION
 
     // -------------------------------------------------------------------
 
@@ -2809,7 +2809,7 @@ protected:
 
         return false;
     }
-   #endif
+  #endif // CLAP_WINDOW_API_NATIVE
 
     // -------------------------------------------------------------------
 
@@ -3166,7 +3166,7 @@ private:
                 }
             }
         }
-       #endif
+       #endif // _POSIX_VERSION
 
         const uint32_t currentTimeInMs = water::Time::getMillisecondCounter();
 
@@ -3180,7 +3180,7 @@ private:
                 fExtensions.timer->on_timer(fPlugin, timer.clapId);
             }
         }
-      #endif
+      #endif // CLAP_WINDOW_API_NATIVE
     }
 };
 
