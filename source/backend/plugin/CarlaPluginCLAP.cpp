@@ -33,13 +33,12 @@
 #include "water/misc/Time.h"
 
 #ifdef _POSIX_VERSION
-# if defined(CARLA_OS_MAC) || defined(CARLA_OS_BSD)
-#  define CARLA_CLAP_POSIX_KQUEUE
-#  include <sys/event.h>
-#  include <sys/types.h>
-# else
+# if defined(CARLA_OS_LINUX)
 #  define CARLA_CLAP_POSIX_EPOLL
 #  include <sys/epoll.h>
+# else
+#  include <sys/event.h>
+#  include <sys/types.h>
 # endif
 #endif
 
@@ -2673,14 +2672,14 @@ protected:
 
         if (flags & (CLAP_POSIX_FD_READ|CLAP_POSIX_FD_WRITE))
         {
-           #ifdef CARLA_CLAP_POSIX_KQUEUE
-            const int hostFd = ::kqueue();
-           #else
+           #ifdef CARLA_CLAP_POSIX_EPOLL
             const int hostFd = ::epoll_create1(0);
+           #else
+            const int hostFd = ::kqueue();
            #endif
             CARLA_SAFE_ASSERT_RETURN(hostFd >= 0, false);
 
-           #ifndef CARLA_CLAP_POSIX_KQUEUE
+           #ifdef CARLA_CLAP_POSIX_EPOLL
             struct epoll_event ev = {};
             if (flags & CLAP_POSIX_FD_READ)
                 ev.events |= EPOLLIN;
@@ -2720,7 +2719,7 @@ protected:
                 if (posixFD.flags == flags)
                     return true;
 
-               #ifndef CARLA_CLAP_POSIX_KQUEUE
+               #ifdef CARLA_CLAP_POSIX_EPOLL
                 struct epoll_event ev = {};
                 if (flags & CLAP_POSIX_FD_READ)
                     ev.events |= EPOLLIN;
@@ -2749,7 +2748,7 @@ protected:
 
             if (posixFD.pluginFd == fd)
             {
-               #ifndef CARLA_CLAP_POSIX_KQUEUE
+               #ifdef CARLA_CLAP_POSIX_EPOLL
                 ::epoll_ctl(posixFD.hostFd, EPOLL_CTL_DEL, fd, nullptr);
                #endif
                 ::close(posixFD.hostFd);
@@ -3134,21 +3133,21 @@ private:
         {
             const HostPosixFileDescriptorDetails& posixFD(it.getValue(kPosixFileDescriptorFallback));
 
-           #ifdef CARLA_CLAP_POSIX_KQUEUE
+           #ifdef CARLA_CLAP_POSIX_EPOLL
+            epoll_event event;
+           #else
             const int16_t filter = posixFD.flags & CLAP_POSIX_FD_WRITE ? EVFILT_WRITE : EVFILT_READ;
             struct kevent kev = {}, event;
             struct timespec timeout = {};
             EV_SET(&kev, posixFD.pluginFd, filter, EV_ADD|EV_ENABLE, 0, 0, nullptr);
-           #else
-            epoll_event event;
            #endif
 
             for (int i=0; i<50; ++i)
             {
-               #ifdef CARLA_CLAP_POSIX_KQUEUE
-                switch (kevent(posixFD.hostFd, &kev, 1, &event, 1, &timeout))
-               #else
+               #ifdef CARLA_CLAP_POSIX_EPOLL
                 switch (::epoll_wait(posixFD.hostFd, &event, 1, 0))
+               #else
+                switch (kevent(posixFD.hostFd, &kev, 1, &event, 1, &timeout))
                #endif
                 {
                 case 1:
