@@ -2162,7 +2162,7 @@ public:
                 pData->options = optionEn;
 
                #ifdef HAVE_X11
-                if (fBridgeVersion < 9)
+                if (fBridgeVersion < 9 || fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
                #endif
                 {
                     pData->hints &= ~PLUGIN_HAS_CUSTOM_EMBED_UI;
