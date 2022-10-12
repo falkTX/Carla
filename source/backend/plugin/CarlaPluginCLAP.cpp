@@ -716,7 +716,6 @@ public:
           fLastChunk(nullptr),
           fLastKnownLatency(0),
           kEngineHasIdleOnMainThread(engine->hasIdleOnMainThread()),
-          fLatencyChanged(false),
           fNeedsParamFlush(false),
           fNeedsRestart(false),
           fNeedsProcess(false),
@@ -1764,10 +1763,15 @@ public:
 
         if (const uint32_t latency = fExtensions.latency != nullptr ? fExtensions.latency->get(fPlugin) : 0)
         {
+            fLastKnownLatency = latency;
             pData->client->setLatency(latency);
            #ifndef BUILD_BRIDGE
             pData->latency.recreateBuffers(std::max(aIns, aOuts), latency);
            #endif
+        }
+        else
+        {
+            fLastKnownLatency = 0;
         }
 
         bufferSizeChanged(pData->engine->getBufferSize());
@@ -2676,7 +2680,7 @@ protected:
         carla_stdout("CarlaPluginCLAP::clapLatencyChanged()");
         CARLA_SAFE_ASSERT_RETURN(fExtensions.latency != nullptr,);
 
-        fLatencyChanged = true;
+        fLastKnownLatency = fExtensions.latency->get(fPlugin);
     }
 
     // -------------------------------------------------------------------
@@ -3217,7 +3221,6 @@ private:
     void* fLastChunk;
     uint32_t fLastKnownLatency;
     const bool kEngineHasIdleOnMainThread;
-    bool fLatencyChanged;
     bool fNeedsParamFlush;
     bool fNeedsRestart;
     bool fNeedsProcess;
@@ -3259,13 +3262,11 @@ private:
             carla_clap_input_events copy;
             copy.reallocEqualTo(fInputEvents);
 
-            carla_stdout("lock flush start");
             {
                 const ScopedSingleProcessLocker sspl(this, true);
                 fInputEvents.handleScheduledParameterUpdates();
                 fInputEvents.swap(copy);
             }
-            carla_stdout("lock flush end");
 
             fExtensions.params->flush(fPlugin, copy.cast(), nullptr);
         }
@@ -3274,12 +3275,6 @@ private:
         {
             fNeedsIdleCallback = false;
             fPlugin->on_main_thread(fPlugin);
-        }
-
-        if (fLatencyChanged)
-        {
-            fLatencyChanged = false;
-            fLastKnownLatency = fExtensions.latency->get(fPlugin);
         }
 
       #ifdef CLAP_WINDOW_API_NATIVE
