@@ -1119,8 +1119,6 @@ public:
                 return;
             }
 
-            const EngineOptions& opts(pData->engine->getOptions());
-
             if (!fUI.initalized)
             {
                 fUI.isEmbed = fExtensions.gui->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, false);
@@ -1144,6 +1142,8 @@ public:
 
             const bool resizable = fExtensions.gui->can_resize(fPlugin);
 
+            const EngineOptions& opts(pData->engine->getOptions());
+
            #if defined(CARLA_OS_WIN)
             fUI.window = CarlaPluginUI::newWindows(this, opts.frontendWinId, opts.pluginsAreStandalone, resizable);
            #elif defined(CARLA_OS_MAC)
@@ -1154,8 +1154,10 @@ public:
             #error why is CLAP_WINDOW_API_NATIVE defined??
            #endif
 
+           #ifndef CARLA_OS_MAC
             if (carla_isNotZero(opts.uiScale))
                 fExtensions.gui->set_scale(fPlugin, opts.uiScale);
+           #endif
 
             setWindowTitle(nullptr);
 
@@ -1221,11 +1223,61 @@ public:
     }
    #endif
 
-    /*
     void* embedCustomUI(void* const ptr) override
     {
+        CARLA_SAFE_ASSERT_RETURN(fUI.window == nullptr, nullptr);
+
+        if (!fUI.initalized)
+        {
+            fUI.isEmbed = fExtensions.gui->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, false);
+            fUI.initalized = true;
+        }
+
+        if (!fUI.isCreated)
+        {
+            if (!fExtensions.gui->create(fPlugin, CLAP_WINDOW_API_NATIVE, false))
+            {
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                        pData->id,
+                                        -1,
+                                        0, 0, 0.0f,
+                                        "Plugin refused to open its own UI");
+                return nullptr;
+            }
+            fUI.isCreated = true;
+        }
+
+        fUI.isVisible = true;
+
+       #ifndef CARLA_OS_MAC
+        const EngineOptions& opts(pData->engine->getOptions());
+
+        if (carla_isNotZero(opts.uiScale))
+            fExtensions.gui->set_scale(fPlugin, opts.uiScale);
+       #endif
+
+        clap_window_t win = { CLAP_WINDOW_API_NATIVE, {} };
+        win.ptr = ptr;
+
+        fExtensions.gui->set_parent(fPlugin, &win);
+
+        uint32_t width, height;
+        if (fExtensions.gui->get_size(fPlugin, &width, &height))
+        {
+            fUI.isResizingFromInit = true;
+            fUI.width = width;
+            fUI.height = height;
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_EMBED_UI_RESIZED,
+                                    pData->id, width, height,
+                                    0, 0.0f, nullptr);
+        }
+
+        fExtensions.gui->show(fPlugin);
+
+        return nullptr;
     }
-    */
 
     void idle() override
     {
