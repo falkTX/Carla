@@ -2099,9 +2099,9 @@ void CarlaPlugin::idle()
     if (! pData->enabled)
         return;
 
-    const bool hasUI(pData->hints & PLUGIN_HAS_CUSTOM_UI);
-    const bool needsUiMainThread(pData->hints & PLUGIN_NEEDS_UI_MAIN_THREAD);
-    const uint32_t latency(getLatencyInFrames());
+    const bool hasUI = pData->hints & PLUGIN_HAS_CUSTOM_UI;
+    const bool needsUiMainThread = pData->hints & PLUGIN_NEEDS_UI_MAIN_THREAD;
+    const uint32_t latency = getLatencyInFrames();
 
     if (pData->latency.frames != latency)
     {

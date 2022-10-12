@@ -157,6 +157,7 @@ struct carla_clap_host : clap_host_t {
         virtual void clapRequestProcess() = 0;
         virtual void clapRequestCallback() = 0;
         virtual void clapMarkDirty() = 0;
+        virtual void clapLatencyChanged() = 0;
       #ifdef CLAP_WINDOW_API_NATIVE
         // gui
         virtual void clapGuiResizeHintsChanged() = 0;
@@ -178,6 +179,7 @@ struct carla_clap_host : clap_host_t {
 
     Callbacks* const hostCallbacks;
 
+    clap_host_latency_t latency;
     clap_host_state_t state;
   #ifdef CLAP_WINDOW_API_NATIVE
     clap_host_gui_t gui;
@@ -201,6 +203,8 @@ struct carla_clap_host : clap_host_t {
         request_restart = carla_request_restart;
         request_process = carla_request_process;
         request_callback = carla_request_callback;
+
+        latency.changed = carla_latency_changed;
 
         state.mark_dirty = carla_mark_dirty;
 
@@ -226,6 +230,8 @@ struct carla_clap_host : clap_host_t {
     {
         carla_clap_host* const self = static_cast<carla_clap_host*>(host->host_data);
 
+        if (std::strcmp(extension_id, CLAP_EXT_LATENCY) == 0)
+            return &self->latency;
         if (std::strcmp(extension_id, CLAP_EXT_STATE) == 0)
             return &self->state;
       #ifdef CLAP_WINDOW_API_NATIVE
@@ -258,12 +264,17 @@ struct carla_clap_host : clap_host_t {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestCallback();
     }
 
+    static CLAP_ABI void carla_latency_changed(const clap_host_t* const host)
+    {
+        static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapLatencyChanged();
+    }
+
     static CLAP_ABI void carla_mark_dirty(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapMarkDirty();
     }
 
-   #ifdef CLAP_WINDOW_API_NATIVE
+  #ifdef CLAP_WINDOW_API_NATIVE
     static CLAP_ABI void carla_resize_hints_changed(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiResizeHintsChanged();
@@ -315,7 +326,7 @@ struct carla_clap_host : clap_host_t {
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapUnregisterTimer(timer_id);
     }
-   #endif
+  #endif
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -469,6 +480,35 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
 
         if (portCount != 0)
             CarlaPluginClapEventData::createNew(portCount);
+    }
+
+    // used for temporary copies (this instance must be empty)
+    void reallocEqualTo(const carla_clap_input_events& other)
+    {
+        numParams = other.numParams;
+        numEventsAllocated = other.numEventsAllocated;
+
+        if (numEventsAllocated != 0)
+        {
+            events = new Event[numEventsAllocated];
+            updatedParams = new ScheduledParameterUpdate[numParams];
+
+            for (uint32_t i=0; i<numParams; ++i)
+            {
+                updatedParams[i].clapId = other.updatedParams[i].clapId;
+                updatedParams[i].cookie = other.updatedParams[i].cookie;
+            }
+        }
+    }
+
+    void swap(carla_clap_input_events& other)
+    {
+        CARLA_SAFE_ASSERT_RETURN(numParams == other.numParams,);
+        CARLA_SAFE_ASSERT_RETURN(numEventsAllocated == other.numEventsAllocated,);
+
+        std::swap(numEventsUsed, other.numEventsUsed);
+        std::swap(updatedParams, other.updatedParams);
+        std::swap(events, other.events);
     }
 
     const clap_input_events_t* cast() const noexcept
@@ -670,10 +710,16 @@ public:
           fOutputAudioBuffers(),
           fInputEvents(),
           fOutputEvents(),
-       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+         #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
           fAudioOutBuffers(nullptr),
-       #endif
+         #endif
           fLastChunk(nullptr),
+          fLastKnownLatency(0),
+          kEngineHasIdleOnMainThread(engine->hasIdleOnMainThread()),
+          fLatencyChanged(false),
+          fNeedsParamFlush(false),
+          fNeedsRestart(false),
+          fNeedsProcess(false),
           fNeedsIdleCallback(false)
     {
         carla_debug("CarlaPluginCLAP::CarlaPluginCLAP(%p, %i)", engine, id);
@@ -683,7 +729,7 @@ public:
     {
         carla_debug("CarlaPluginCLAP::~CarlaPluginCLAP()");
 
-        runIdleCallbacksAsNeeded();
+        runIdleCallbacksAsNeeded(false);
 
        #ifdef CLAP_WINDOW_API_NATIVE
         // close UI
@@ -742,11 +788,12 @@ public:
         return getPluginCategoryFromClapFeatures(fPluginDescriptor->features);
     }
 
-    /*
     uint32_t getLatencyInFrames() const noexcept override
     {
+        // under clap we can only request plugin latency in main thread,
+        // which is unsuitable for this call
+        return fLastKnownLatency;
     }
-    */
 
     // -------------------------------------------------------------------
     // Information (count)
@@ -806,13 +853,13 @@ public:
         if (fExtensions.state->save(fPlugin, &stream))
         {
             *dataPtr = fLastChunk = stream.buffer;
-            runIdleCallbacksAsNeeded();
+            runIdleCallbacksAsNeeded(false);
             return stream.size;
         }
         else
         {
             *dataPtr = fLastChunk = nullptr;
-            runIdleCallbacksAsNeeded();
+            runIdleCallbacksAsNeeded(false);
             return 0;
         }
     }
@@ -827,20 +874,38 @@ public:
         if (fExtensions.state != nullptr)
             options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        // TODO alternative if plugin does not support CLAP_NOTE_DIALECT_MIDI
-
-        if (fInputEvents.portCount != 0)
+        for (uint32_t i=0; i<fInputEvents.portCount; ++i)
         {
-            options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-            options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
-            options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
+            if (fInputEvents.portData[i].supportedDialects & CLAP_NOTE_DIALECT_MIDI)
+            {
+                options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+                options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                options |= PLUGIN_OPTION_SEND_PITCHBEND;
+                options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+                options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+                options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
+                break;
+            }
+            if (fInputEvents.portData[i].supportedDialects & CLAP_NOTE_DIALECT_CLAP)
+            {
+                options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
+                // nobreak, in case another port supports MIDI
+            }
         }
 
         return options;
+    }
+
+    double getBestParameterValue(const uint32_t parameterId, const clap_id clapId) const noexcept
+    {
+        if (fInputEvents.updatedParams[parameterId].updated)
+            return fInputEvents.updatedParams[parameterId].value;
+
+        double value;
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_value(fPlugin, clapId, &value), 0.0);
+
+        return value;
     }
 
     float getParameterValue(const uint32_t parameterId) const noexcept override
@@ -848,12 +913,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr, 0.f);
         CARLA_SAFE_ASSERT_RETURN(fExtensions.params != nullptr, 0.f);
 
-        const clap_id clapId = pData->param.data[parameterId].rindex;
-
-        double value;
-        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_value(fPlugin, clapId, &value), 0.f);
-
-        return value;
+        return getBestParameterValue(parameterId, pData->param.data[parameterId].rindex);
     }
 
     bool getLabel(char* const strBuf) const noexcept override
@@ -914,9 +974,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
         const clap_id clapId = pData->param.data[parameterId].rindex;
-
-        double value;
-        CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_value(fPlugin, clapId, &value), false);
+        const double value = getBestParameterValue(parameterId, clapId);
 
         return fExtensions.params->value_to_text(fPlugin, clapId, value, strBuf, STR_MAX);
     }
@@ -972,6 +1030,9 @@ public:
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
         fInputEvents.setParamValue(parameterId, fixedValue);
 
+        if (!pData->active && fExtensions.params->flush != nullptr)
+            fNeedsParamFlush = true;
+
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
@@ -997,7 +1058,7 @@ public:
         if (fExtensions.state->load(fPlugin, &stream))
             pData->updateParameterValues(this, true, true, false);
 
-        runIdleCallbacksAsNeeded();
+        runIdleCallbacksAsNeeded(false);
     }
 
     // -------------------------------------------------------------------
@@ -1055,7 +1116,7 @@ public:
                     fUI.window->focus();
                 }
 
-                runIdleCallbacksAsNeeded();
+                runIdleCallbacksAsNeeded(false);
                 return;
             }
 
@@ -1157,7 +1218,7 @@ public:
             }
         }
 
-        runIdleCallbacksAsNeeded();
+        runIdleCallbacksAsNeeded(false);
     }
    #endif
 
@@ -1169,6 +1230,9 @@ public:
 
     void idle() override
     {
+        if (kEngineHasIdleOnMainThread)
+            runIdleCallbacksAsNeeded(true);
+
         CarlaPlugin::idle();
     }
 
@@ -1214,7 +1278,8 @@ public:
         }
        #endif
 
-        runIdleCallbacksAsNeeded();
+        if (!kEngineHasIdleOnMainThread)
+            runIdleCallbacksAsNeeded(true);
 
         CarlaPlugin::uiIdle();
     }
@@ -1239,16 +1304,14 @@ public:
         const clap_plugin_audio_ports_t* audioPortsExt = static_cast<const clap_plugin_audio_ports_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_AUDIO_PORTS));
 
+        const clap_plugin_latency_t* latencyExt = static_cast<const clap_plugin_latency_t*>(
+            fPlugin->get_extension(fPlugin, CLAP_EXT_LATENCY));
+
         const clap_plugin_note_ports_t* notePortsExt = static_cast<const clap_plugin_note_ports_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_NOTE_PORTS));
 
         const clap_plugin_params_t* paramsExt = static_cast<const clap_plugin_params_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_PARAMS));
-
-       #ifdef _POSIX_VERSION
-        const clap_plugin_posix_fd_support_t* posixFdExt = static_cast<const clap_plugin_posix_fd_support_t*>(
-            fPlugin->get_extension(fPlugin, CLAP_EXT_POSIX_FD_SUPPORT));
-       #endif
 
         const clap_plugin_state_t* stateExt = static_cast<const clap_plugin_state_t*>(
             fPlugin->get_extension(fPlugin, CLAP_EXT_STATE));
@@ -1259,27 +1322,23 @@ public:
         if (audioPortsExt != nullptr && (audioPortsExt->count == nullptr || audioPortsExt->get == nullptr))
             audioPortsExt = nullptr;
 
+        if (latencyExt != nullptr && latencyExt->get == nullptr)
+            latencyExt = nullptr;
+
         if (notePortsExt != nullptr && (notePortsExt->count == nullptr || notePortsExt->get == nullptr))
             notePortsExt = nullptr;
 
         if (paramsExt != nullptr && (paramsExt->count == nullptr || paramsExt->get_info == nullptr))
             paramsExt = nullptr;
 
-       #ifdef _POSIX_VERSION
-        if (posixFdExt != nullptr && (posixFdExt->on_fd == nullptr))
-            posixFdExt = nullptr;
-       #endif
-
         if (stateExt != nullptr && (stateExt->save == nullptr || stateExt->load == nullptr))
             stateExt = nullptr;
 
-        if (timerExt != nullptr && (timerExt->on_timer == nullptr))
+        if (timerExt != nullptr && timerExt->on_timer == nullptr)
             timerExt = nullptr;
 
+        fExtensions.latency = latencyExt;
         fExtensions.params = paramsExt;
-       #ifdef _POSIX_VERSION
-        fExtensions.posixFD = posixFdExt;
-       #endif
         fExtensions.state = stateExt;
         fExtensions.timer = timerExt;
 
@@ -1304,6 +1363,16 @@ public:
             guiExt = nullptr;
 
         fExtensions.gui = guiExt;
+       #endif
+
+       #if defined(CLAP_WINDOW_API_NATIVE) && defined(_POSIX_VERSION)
+        const clap_plugin_posix_fd_support_t* posixFdExt = static_cast<const clap_plugin_posix_fd_support_t*>(
+            fPlugin->get_extension(fPlugin, CLAP_EXT_POSIX_FD_SUPPORT));
+
+        if (posixFdExt != nullptr && posixFdExt->on_fd == nullptr)
+            posixFdExt = nullptr;
+
+        fExtensions.posixFD = posixFdExt;
        #endif
 
         const uint32_t numAudioInputPorts = audioPortsExt != nullptr ? audioPortsExt->count(fPlugin, true) : 0;
@@ -1659,7 +1728,7 @@ public:
         }
 
         // plugin hints
-        pData->hints = 0x0;
+        pData->hints = PLUGIN_NEEDS_MAIN_THREAD_IDLE;
 
         if (clapFeaturesContainInstrument(fPluginDescriptor->features))
             pData->hints |= PLUGIN_IS_SYNTH;
@@ -1693,13 +1762,21 @@ public:
         // extra plugin hints
         pData->extraHints = 0x0;
 
+        if (const uint32_t latency = fExtensions.latency != nullptr ? fExtensions.latency->get(fPlugin) : 0)
+        {
+            pData->client->setLatency(latency);
+           #ifndef BUILD_BRIDGE
+            pData->latency.recreateBuffers(std::max(aIns, aOuts), latency);
+           #endif
+        }
+
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 
         if (pData->active)
             activate();
         else
-            runIdleCallbacksAsNeeded();
+            runIdleCallbacksAsNeeded(false);
 
         carla_debug("CarlaPluginCLAP::reload() - end");
     }
@@ -1720,7 +1797,8 @@ public:
         fPlugin->activate(fPlugin, pData->engine->getSampleRate(), 1, pData->engine->getBufferSize());
         fPlugin->start_processing(fPlugin);
 
-        runIdleCallbacksAsNeeded();
+        fNeedsParamFlush = false;
+        runIdleCallbacksAsNeeded(false);
     }
 
     void deactivate() noexcept override
@@ -1731,7 +1809,7 @@ public:
         fPlugin->stop_processing(fPlugin);
         fPlugin->deactivate(fPlugin);
 
-        runIdleCallbacksAsNeeded();
+        runIdleCallbacksAsNeeded(false);
     }
 
     void process(const float* const* const audioIn,
@@ -2183,7 +2261,7 @@ public:
                 case kEngineEventTypeMidi: {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    if (midiEvent.size > sizeof(clap_event_midi::data)/sizeof(clap_event_midi::data[0]))
+                    if (midiEvent.size > 3)
                         continue;
 
                     CARLA_SAFE_ASSERT_BREAK(midiEvent.port < fInputEvents.portCount);
@@ -2572,11 +2650,15 @@ protected:
     void clapRequestRestart() override
     {
         carla_stdout("CarlaPluginCLAP::clapRequestRestart()");
+
+        fNeedsRestart = true;
     }
 
     void clapRequestProcess() override
     {
         carla_stdout("CarlaPluginCLAP::clapRequestProcess()");
+
+        fNeedsProcess = true;
     }
 
     void clapRequestCallback() override
@@ -2585,6 +2667,16 @@ protected:
 
         if (fPlugin->on_main_thread != nullptr)
             fNeedsIdleCallback = true;
+    }
+
+    // -------------------------------------------------------------------
+
+    void clapLatencyChanged() override
+    {
+        carla_stdout("CarlaPluginCLAP::clapLatencyChanged()");
+        CARLA_SAFE_ASSERT_RETURN(fExtensions.latency != nullptr,);
+
+        fLatencyChanged = true;
     }
 
     // -------------------------------------------------------------------
@@ -2680,7 +2772,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(hostFd >= 0, false);
 
            #ifdef CARLA_CLAP_POSIX_EPOLL
-            struct epoll_event ev = {};
+            struct ::epoll_event ev = {};
             if (flags & CLAP_POSIX_FD_READ)
                 ev.events |= EPOLLIN;
             if (flags & CLAP_POSIX_FD_WRITE)
@@ -2720,7 +2812,7 @@ protected:
                     return true;
 
                #ifdef CARLA_CLAP_POSIX_EPOLL
-                struct epoll_event ev = {};
+                struct ::epoll_event ev = {};
                 if (flags & CLAP_POSIX_FD_READ)
                     ev.events |= EPOLLIN;
                 if (flags & CLAP_POSIX_FD_WRITE)
@@ -3006,8 +3098,6 @@ public:
                 clap_note_port_info_t portInfo = {};
                 CARLA_SAFE_ASSERT_BREAK(notePortsExt->get(fPlugin, i, true, &portInfo));
 
-                // TODO alternative if plugin does not support CLAP_NOTE_DIALECT_MIDI
-
                 if (portInfo.supported_dialects & CLAP_NOTE_DIALECT_MIDI)
                 {
                     if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
@@ -3026,6 +3116,12 @@ public:
                         pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
                     break;
                 }
+                if (portInfo.supported_dialects & CLAP_NOTE_DIALECT_CLAP)
+                {
+                    if (isPluginOptionInverseEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
+                        pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
+                    // nobreak, in case another port supports MIDI
+                }
             }
         }
 
@@ -3043,26 +3139,30 @@ private:
     const carla_clap_host fHost;
 
     struct Extensions {
+        const clap_plugin_latency_t* latency;
         const clap_plugin_params_t* params;
-       #ifdef CLAP_WINDOW_API_NATIVE
+        const clap_plugin_state_t* state;
+        const clap_plugin_timer_support_t* timer;
+      #ifdef CLAP_WINDOW_API_NATIVE
         const clap_plugin_gui_t* gui;
-       #endif
        #ifdef _POSIX_VERSION
         const clap_plugin_posix_fd_support_t* posixFD;
        #endif
-        const clap_plugin_state_t* state;
-        const clap_plugin_timer_support_t* timer;
+      #endif
 
         Extensions()
-            : params(nullptr),
-             #ifdef CLAP_WINDOW_API_NATIVE
-              gui(nullptr),
-             #endif
-             #ifdef _POSIX_VERSION
-              posixFD(nullptr),
-             #endif
+            : latency(nullptr),
+              params(nullptr),
               state(nullptr),
-              timer(nullptr) {}
+              timer(nullptr)
+          #ifdef CLAP_WINDOW_API_NATIVE
+            , gui(nullptr)
+           #ifdef _POSIX_VERSION
+            , posixFD(nullptr)
+           #endif
+          #endif
+        {
+        }
 
         CARLA_DECLARE_NON_COPYABLE(Extensions)
     } fExtensions;
@@ -3097,6 +3197,8 @@ private:
         {
             CARLA_SAFE_ASSERT(window == nullptr);
         }
+
+        CARLA_DECLARE_NON_COPYABLE(UI)
     } fUI;
 
    #ifdef _POSIX_VERSION
@@ -3113,18 +3215,71 @@ private:
     float** fAudioOutBuffers;
    #endif
     void* fLastChunk;
+    uint32_t fLastKnownLatency;
+    const bool kEngineHasIdleOnMainThread;
+    bool fLatencyChanged;
+    bool fNeedsParamFlush;
+    bool fNeedsRestart;
+    bool fNeedsProcess;
     bool fNeedsIdleCallback;
 
    #ifdef CARLA_OS_MAC
     BundleLoader fBundleLoader;
    #endif
 
-    void runIdleCallbacksAsNeeded()
+    void runIdleCallbacksAsNeeded(const bool isIdleCallback)
     {
+        if (isIdleCallback && (fNeedsRestart || fNeedsProcess))
+        {
+            carla_stdout("runIdleCallbacksAsNeeded %d %d", fNeedsRestart, fNeedsProcess);
+            const bool needsRestart = fNeedsRestart;
+
+            if (needsRestart)
+            {
+                fNeedsRestart = false;
+                setActive(false, true, true);
+            }
+
+            if (fNeedsProcess)
+            {
+                fNeedsProcess = false;
+                setEnabled(true);
+                setActive(true, true, true);
+            }
+            else if (needsRestart)
+            {
+                setActive(true, true, true);
+            }
+        }
+
+        if (fNeedsParamFlush)
+        {
+            fNeedsParamFlush = false;
+
+            carla_clap_input_events copy;
+            copy.reallocEqualTo(fInputEvents);
+
+            carla_stdout("lock flush start");
+            {
+                const ScopedSingleProcessLocker sspl(this, true);
+                fInputEvents.handleScheduledParameterUpdates();
+                fInputEvents.swap(copy);
+            }
+            carla_stdout("lock flush end");
+
+            fExtensions.params->flush(fPlugin, copy.cast(), nullptr);
+        }
+
         if (fNeedsIdleCallback)
         {
             fNeedsIdleCallback = false;
             fPlugin->on_main_thread(fPlugin);
+        }
+
+        if (fLatencyChanged)
+        {
+            fLatencyChanged = false;
+            fLastKnownLatency = fExtensions.latency->get(fPlugin);
         }
 
       #ifdef CLAP_WINDOW_API_NATIVE
@@ -3134,11 +3289,11 @@ private:
             const HostPosixFileDescriptorDetails& posixFD(it.getValue(kPosixFileDescriptorFallback));
 
            #ifdef CARLA_CLAP_POSIX_EPOLL
-            epoll_event event;
+            struct ::epoll_event event;
            #else
             const int16_t filter = posixFD.flags & CLAP_POSIX_FD_WRITE ? EVFILT_WRITE : EVFILT_READ;
-            struct kevent kev = {}, event;
-            struct timespec timeout = {};
+            struct ::kevent kev = {}, event;
+            struct ::timespec timeout = {};
             EV_SET(&kev, posixFD.pluginFd, filter, EV_ADD|EV_ENABLE, 0, 0, nullptr);
            #endif
 
@@ -3147,7 +3302,7 @@ private:
                #ifdef CARLA_CLAP_POSIX_EPOLL
                 switch (::epoll_wait(posixFD.hostFd, &event, 1, 0))
                #else
-                switch (kevent(posixFD.hostFd, &kev, 1, &event, 1, &timeout))
+                switch (::kevent(posixFD.hostFd, &kev, 1, &event, 1, &timeout))
                #endif
                 {
                 case 1:
