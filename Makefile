@@ -470,6 +470,7 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/carla/modgui
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
 	install -d $(DESTDIR)$(DATADIR)/carla/pluginlist
+	install -d $(DESTDIR)$(DATADIR)/carla/utils
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
 endif
 
@@ -624,12 +625,16 @@ endif
 		$(DESTDIR)$(DATADIR)/carla/modgui/
 
 	install -m 644 \
+		source/frontend/patchcanvas/*.py \
+		$(DESTDIR)$(DATADIR)/carla/patchcanvas/
+
+	install -m 644 \
 		source/frontend/pluginlist/*.py \
 		$(DESTDIR)$(DATADIR)/carla/pluginlist/
 
 	install -m 644 \
-		source/frontend/patchcanvas/*.py \
-		$(DESTDIR)$(DATADIR)/carla/patchcanvas/
+		source/frontend/utils/*.py \
+		$(DESTDIR)$(DATADIR)/carla/utils/
 
 	install -m 644 \
 		source/frontend/widgets/*.py \
