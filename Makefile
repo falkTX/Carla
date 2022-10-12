@@ -23,7 +23,7 @@ MODULEDIR := $(CURDIR)/build/modules/Release
 endif
 
 # see also source/frontend/carla_shared.py and source/includes/CarlaDefines.h
-VERSION   := 2.5.1
+VERSION   := 2.6.0-alpha1
 
 -include Makefile.user.mk
 
