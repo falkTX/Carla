@@ -22,10 +22,6 @@
 #include "CarlaString.hpp"
 #include "CarlaProcessUtils.hpp"
 
-#ifdef CARLA_OS_LINUX
-# include <sys/prctl.h>
-#endif
-
 #ifdef CARLA_OS_WASM
 # error Threads do not work under wasm!
 #endif

@@ -1235,17 +1235,17 @@ public:
             {
                 fMidiEventCount = MAX_MIDI_CHANNELS*2;
 
-                for (uint8_t i=0, k=MAX_MIDI_CHANNELS; i < MAX_MIDI_CHANNELS; ++i)
+                for (uint8_t i=0; i < MAX_MIDI_CHANNELS; ++i)
                 {
-                    fMidiEvents[k].type = kVstMidiType;
-                    fMidiEvents[k].byteSize    = kVstMidiEventSize;
-                    fMidiEvents[k].midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
-                    fMidiEvents[k].midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                    fMidiEvents[i].type = kVstMidiType;
+                    fMidiEvents[i].byteSize    = kVstMidiEventSize;
+                    fMidiEvents[i].midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (i & MIDI_CHANNEL_BIT));
+                    fMidiEvents[i].midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
 
-                    fMidiEvents[k+i].type = kVstMidiType;
-                    fMidiEvents[k+i].byteSize    = kVstMidiEventSize;
-                    fMidiEvents[k+i].midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (k & MIDI_CHANNEL_BIT));
-                    fMidiEvents[k+i].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                    fMidiEvents[MAX_MIDI_CHANNELS + i].type = kVstMidiType;
+                    fMidiEvents[MAX_MIDI_CHANNELS + i].byteSize    = kVstMidiEventSize;
+                    fMidiEvents[MAX_MIDI_CHANNELS + i].midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (i & MIDI_CHANNEL_BIT));
+                    fMidiEvents[MAX_MIDI_CHANNELS + i].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                 }
             }
             else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
@@ -1342,7 +1342,7 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
-                ExternalMidiNote note = { 0, 0, 0 };
+                ExternalMidiNote note = { -1, 0, 0 };
 
                 for (; fMidiEventCount < kPluginMaxMidiEvents*2 && ! pData->extNotes.data.isEmpty();)
                 {

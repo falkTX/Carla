@@ -28,6 +28,7 @@ TARGETS = $(BINDIR)/libcarla_utils$(LIB_EXT)
 
 LIBS  = $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/water.files.a
+LIBS += $(MODULEDIR)/ysfx.a
 
 ifeq ($(USING_JUCE),true)
 LIBS += $(MODULEDIR)/carla_juce.a
@@ -43,6 +44,7 @@ endif
 
 LINK_FLAGS += $(LILV_LIBS)
 LINK_FLAGS += $(WATER_LIBS)
+LINK_FLAGS += $(YSFX_GRAPHICS_LIBS)
 
 ifeq ($(HAVE_X11),true)
 LINK_FLAGS += $(X11_LIBS)
@@ -64,9 +66,6 @@ LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
-
-LINK_FLAGS += $(MODULEDIR)/ysfx.a
-LINK_FLAGS += $(YSFX_GRAPHICS_LIBS)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
