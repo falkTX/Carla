@@ -1214,7 +1214,8 @@ uint32_t carla_get_current_plugin_count(CarlaHostHandle handle)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr, 0);
 
-    carla_debug("carla_get_current_plugin_count(%p)", handle);
+    // too noisy!
+    // carla_debug("carla_get_current_plugin_count(%p)", handle);
 
     return handle->engine->getCurrentPluginCount();
 }
