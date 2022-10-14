@@ -382,11 +382,11 @@ endif
 # Binaries (wine)
 
 wine32:
-	$(MAKE) WITH_LTO=false -C source/jackbridge wine32
+	$(MAKE) -C source/jackbridge wine32
 	cp -f $(MODULEDIR)/jackbridge-wine32.dll$(LIB_EXT) $(CURDIR)/bin/jackbridge-wine32.dll
 
 wine64:
-	$(MAKE) WITH_LTO=false -C source/jackbridge wine64
+	$(MAKE) -C source/jackbridge wine64
 	cp -f $(MODULEDIR)/jackbridge-wine64.dll$(LIB_EXT) $(CURDIR)/bin/jackbridge-wine64.dll
 
 # ---------------------------------------------------------------------------------------------------------------------
