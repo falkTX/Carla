@@ -1221,7 +1221,6 @@ public:
 
         runIdleCallbacksAsNeeded(false);
     }
-   #endif
 
     void* embedCustomUI(void* const ptr) override
     {
@@ -1278,6 +1277,7 @@ public:
 
         return nullptr;
     }
+   #endif
 
     void idle() override
     {
