@@ -1731,7 +1731,11 @@ public:
 
     bool hasIdleOnMainThread() const noexcept override
     {
+       #ifndef BUILD_BRIDGE
+        return !fIsInternalClient;
+       #else
         return true;
+       #endif
     }
 
     bool isRunning() const noexcept override

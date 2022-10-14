@@ -445,6 +445,7 @@ void CarlaEngine::idle() noexcept
     CARLA_SAFE_ASSERT_RETURN(getType() != kEngineTypePlugin,);
 
     const bool engineNotRunning = !isRunning();
+    const bool engineHasIdleOnMainThread = hasIdleOnMainThread();
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
@@ -469,7 +470,7 @@ void CarlaEngine::idle() noexcept
                 }
                 else
                 {
-                    if (hints & PLUGIN_NEEDS_MAIN_THREAD_IDLE)
+                    if (engineHasIdleOnMainThread && (hints & PLUGIN_NEEDS_MAIN_THREAD_IDLE) != 0)
                     {
                         try {
                             plugin->idle();
