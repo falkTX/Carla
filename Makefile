@@ -706,6 +706,8 @@ endif
 	# Install resources (re-use python files)
 	$(LINK) ../modgui                      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../patchcanvas                 $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../pluginlist                  $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../utils                       $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../widgets                     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
