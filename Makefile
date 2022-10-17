@@ -712,7 +712,6 @@ endif
 	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend_qt.py         $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_database.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_host_control.py       $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_settings.py           $(DESTDIR)$(DATADIR)/carla/resources
@@ -724,8 +723,6 @@ endif
 	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_about_juce.py      $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_add_jack.py        $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_database.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_host.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_parameter.py       $(DESTDIR)$(DATADIR)/carla/resources
@@ -734,7 +731,6 @@ endif
 	$(LINK) ../ui_carla_plugin_compact.py  $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_plugin_default.py  $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_plugin_presets.py  $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_refresh.py         $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_settings.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_settings_driver.py $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_inputdialog_value.py     $(DESTDIR)$(DATADIR)/carla/resources
