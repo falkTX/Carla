@@ -54,10 +54,12 @@ int QSafeSettings::valueIntPositive(const QString& key, const int defaultValue) 
     QVariant var(value(key, defaultValue));
 
     if (!var.isNull() && var.convert(QVariant::Int) && var.isValid())
-        return defaultValue;
+    {
+        const int value = var.toInt();
+        return value >= 0 ? value : defaultValue;
+    }
 
-    const int value = var.toInt();
-    return value >= 0 ? value : defaultValue;
+    return defaultValue;
 }
 
 uint QSafeSettings::valueUInt(const QString& key, const uint defaultValue) const

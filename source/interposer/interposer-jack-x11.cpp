@@ -31,7 +31,11 @@ struct ScopedLibOpen {
     long long winId;
 
     ScopedLibOpen() noexcept
+       #ifdef CARLA_OS_MAC
+        : handle(dlopen("libjack.dylib", RTLD_NOW|RTLD_LOCAL)),
+       #else
         : handle(dlopen("libjack.so.0", RTLD_NOW|RTLD_LOCAL)),
+       #endif
           winId(-1)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);

@@ -586,12 +586,14 @@ class CarlaSettingsW(QDialog):
 
         if not LINUX:
             self.ui.ch_exp_wine_bridges.setVisible(False)
-            self.ui.ch_exp_jack_apps.setVisible(False)
             self.ui.ch_exp_prevent_bad_behaviour.setVisible(False)
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
         if not MACOS:
             self.ui.label_engine_ui_bridges_mac_note.setVisible(False)
+
+        if not (LINUX or MACOS):
+            self.ui.ch_exp_jack_apps.setVisible(False)
 
         # FIXME, not implemented yet
         self.ui.ch_engine_uis_always_on_top.hide()

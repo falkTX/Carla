@@ -18,7 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef CARLA_OS_LINUX
+#if defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC)
 
 #include "CarlaLibJackHints.h"
 #include "CarlaBackendUtils.hpp"
@@ -142,14 +142,20 @@ public:
     {
         const EngineOptions& options(kEngine->getOptions());
         CarlaString binaryDir(options.binaryDir);
-#ifdef HAVE_LIBLO
+       #ifdef HAVE_LIBLO
         const int sessionManager = fSetupLabel[4U] - '0';
-#endif
+       #endif
 
         CarlaString ret;
+       #ifdef CARLA_OS_MAC
+        ret += "export DYLD_LIBRARY_PATH=" + binaryDir + "/jack\n";
+        ret += "export DYLD_INSERT_LIBRARIES=" + binaryDir + "/libcarla_interposer-jack-x11.dylib\n";
+        ret += "export DYLD_FORCE_FLAT_NAMESPACE=1\n";
+       #else
         ret += "export LD_LIBRARY_PATH=" + binaryDir + "/jack\n";
         ret += "export LD_PRELOAD=" + binaryDir + "/libcarla_interposer-jack-x11.so\n";
-#ifdef HAVE_LIBLO
+       #endif
+       #ifdef HAVE_LIBLO
         if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
         {
             for (int i=50; fOscServer == nullptr && --i>=0;)
@@ -159,7 +165,7 @@ public:
             ret += lo_server_get_url(fOscServer);
             ret += "\n";
         }
-#endif
+       #endif
 
         if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
             ret += "export CARLA_FRONTEND_WIN_ID=" + CarlaString(options.frontendWinId) + "\n";
@@ -362,15 +368,25 @@ protected:
             winIdStr[STR_MAX] = '\0';
 
             const CarlaString libjackdir(CarlaString(options.binaryDir) + "/jack");
+           #ifdef CARLA_OS_MAC
+            const CarlaString ldpreload(CarlaString(options.binaryDir) + "/libcarla_interposer-jack-x11.dylib");
+           #else
             const CarlaString ldpreload(CarlaString(options.binaryDir) + "/libcarla_interposer-jack-x11.so");
+           #endif
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
+           #ifdef CARLA_OS_MAC
+            const CarlaScopedEnvVar sev2("DYLD_LIBRARY_PATH", libjackdir.buffer());
+            const CarlaScopedEnvVar sev1("DYLD_INSERT_LIBRARIES", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
+            const CarlaScopedEnvVar sev0("DYLD_FORCE_FLAT_NAMESPACE", "1");
+           #else
             const CarlaScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
             const CarlaScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
-#ifdef HAVE_LIBLO
+           #endif
+           #ifdef HAVE_LIBLO
             const CarlaScopedEnvVar sev3("NSM_URL", lo_server_get_url(fOscServer));
-#endif
+           #endif
 
             if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
                 carla_setenv("CARLA_FRONTEND_WIN_ID", winIdStr);
@@ -2048,7 +2064,7 @@ CarlaPluginPtr CarlaPlugin::newJackApp(const Initializer& init)
     carla_debug("CarlaPlugin::newJackApp({%p, \"%s\", \"%s\", \"%s\"})",
                 init.engine, init.filename, init.name, init.label);
 
-#ifdef CARLA_OS_LINUX
+#if defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC)
     std::shared_ptr<CarlaPluginJack> plugin(new CarlaPluginJack(init.engine, init.id));
 
     if (! plugin->init(plugin, init.filename, init.name, init.label, init.options))

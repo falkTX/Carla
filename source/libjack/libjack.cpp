@@ -21,7 +21,6 @@
 #include "CarlaJuceUtils.hpp"
 
 #include <signal.h>
-#include <sys/prctl.h>
 #include <sys/time.h>
 
 // ---------------------------------------------------------------------------------------------------------------------

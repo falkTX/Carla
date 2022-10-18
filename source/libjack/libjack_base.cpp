@@ -29,8 +29,14 @@ int jack_carla_interposed_action(uint, uint, void*)
         printWarning = false;
         carla_stderr2("Non-exported jack_carla_interposed_action called, this should not happen!!");
         carla_stderr("Printing some info:");
+       #ifdef CARLA_OS_MAC
+        carla_stderr("\tDYLD_LIBRARY_PATH:         '%s'", std::getenv("DYLD_LIBRARY_PATH"));
+        carla_stderr("\tDYLD_INSERT_LIBRARIES:     '%s'", std::getenv("DYLD_INSERT_LIBRARIES"));
+        carla_stderr("\tDYLD_FORCE_FLAT_NAMESPACE: '%s'", std::getenv("DYLD_FORCE_FLAT_NAMESPACE"));
+       #else
         carla_stderr("\tLD_LIBRARY_PATH: '%s'", std::getenv("LD_LIBRARY_PATH"));
         carla_stderr("\tLD_PRELOAD:      '%s'", std::getenv("LD_PRELOAD"));
+       #endif
         std::fflush(stderr);
     }
 
