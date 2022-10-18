@@ -55,13 +55,14 @@ import ui_carla_host
 from carla_app import *
 from carla_backend import *
 from carla_backend_qt import CarlaHostQtDLL, CarlaHostQtNull
+from carla_frontend import CarlaFrontendLib
 from carla_shared import *
 from carla_settings import *
 from carla_utils import *
 from carla_widgets import *
 
 from patchcanvas import patchcanvas
-from pluginlist import PluginDatabaseW
+from pluginlist import PluginDatabaseW, JackApplicationW
 from widgets.digitalpeakmeter import DigitalPeakMeter
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
@@ -1235,16 +1236,16 @@ class HostWindow(QMainWindow):
         return (btype, ptype, filename, label, uniqueId, extraPtr)
 
     def showAddJackAppDialog(self):
-        dialog = JackApplicationW(self.fParentOrSelf, self.fProjectFilename)
+        ret = gCarla.felib.createAndExecJackApplicationW(self.fParentOrSelf, self.fProjectFilename)
 
-        if not dialog.exec_():
+        if not ret:
             return
 
         if not self.host.is_engine_running():
             QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
             return
 
-        return dialog.getCommandAndFlags()
+        return ret
 
     @pyqtSlot()
     def slot_favoritePluginAdd(self):
@@ -1351,16 +1352,16 @@ class HostWindow(QMainWindow):
         if data is None:
             return
 
-        filename, name, label = data
-
-        if not filename:
+        if not data['command']:
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Cannot add jack application"),
-                                   self.tr("command is empty"), QMessageBox.Ok, QMessageBox.Ok)
+                             self.tr("command is empty"), QMessageBox.Ok, QMessageBox.Ok)
             return
 
-        if not self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, filename, name, label, 0, None, PLUGIN_OPTIONS_NULL):
+        if not self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK,
+                                    data['command'], data['name'], data['labelSetup'],
+                                    0, None, PLUGIN_OPTIONS_NULL):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"),
-                                   self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+                             self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins (macros)
@@ -3234,6 +3235,7 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
 
     libname   = "libcarla_%s2.%s" % ("control" if isControl else "standalone", DLL_EXTENSION)
     libname   = os.path.join(pathBinaries, libname)
+    felibname = os.path.join(pathBinaries, "libcarla_frontend.%s" % (DLL_EXTENSION))
     utilsname = os.path.join(pathBinaries, "libcarla_utils.%s" % (DLL_EXTENSION))
 
     # --------------------------------------------------------------------------------------------------------
@@ -3274,6 +3276,12 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
 
         if not isControl:
             host.nsmOK = host.nsm_init(os.getpid(), initName)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Init frontend lib
+
+    if not gCarla.nogui:
+        gCarla.felib = CarlaFrontendLib(felibname)
 
     # --------------------------------------------------------------------------------------------------------
     # Init utils

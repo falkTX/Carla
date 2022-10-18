@@ -12,6 +12,20 @@ include $(CWD)/Makefile.mk
 BINDIR := $(CWD)/../bin
 RESDIR := $(CWD)/../resources
 
+ifeq ($(DEBUG),true)
+OBJDIR := $(CWD)/../build/frontend/Debug
+else
+OBJDIR := $(CWD)/../build/frontend/Release
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
+
+BUILD_CXX_FLAGS += -Iutils
+
+BUILD_CXX_FLAGS += -I../backend
+BUILD_CXX_FLAGS += -I../includes
+BUILD_CXX_FLAGS += -I../utils
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(WINDOWS),true)
@@ -37,6 +51,15 @@ endif
 
 TSs = $(patsubst %,translations/carla_%.ts,$(I18N_LANGUAGES))
 QMs = $(patsubst %,translations/carla_%.qm,$(I18N_LANGUAGES))
+
+# ---------------------------------------------------------------------------------------------------------------------
+# C++ files
+
+CPP_FILES = \
+	carla_frontend.cpp \
+	pluginlist/jackappdialog.cpp
+
+OBJS = $(CPP_FILES:%=$(OBJDIR)/%.o)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Resources
@@ -119,7 +142,7 @@ UIs += \
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-all: $(QMs) $(RES) $(UIs)
+all: $(BINDIR)/libcarla_frontend$(LIB_EXT) $(QMs) $(RES) $(UIs)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -149,8 +172,22 @@ $(BINDIR)/resources/zynaddsubfx-ui: ../native-plugins/resources/zynaddsubfx-ui
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+$(BINDIR)/libcarla_frontend$(LIB_EXT): $(OBJS) $(LIBS)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking libcarla_frontend$(LIB_EXT)"
+	$(SILENT)$(CXX) $(OBJS) $(BUILD_CXX_FLAGS) $(QT5_LINK_FLAGS) $(SHARED) -o $@
+
+$(OBJDIR)/%.cpp.o: %.cpp $(UIs)
+	-@mkdir -p $(shell dirname $@)
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+-include $(OBJS:%.o=%.d)
+
+# ---------------------------------------------------------------------------------------------------------------------
+
 clean:
-	rm -rf $(UIs) $(RES) $(QMs) __pycache__ *.pyc
+	rm -rf $(BINDIR)/libcarla_frontend$(LIB_EXT) $(UIs) $(RES) $(QMs) __pycache__ *.pyc
 	# old files
 	rm -f ui_carla_add_jack.py
 	rm -f ui_carla_database.py

@@ -15,6 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "QtWidgets/qboxlayout.h"
 #ifdef __clang__
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
@@ -25,7 +26,8 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include <QtWidgets/QDialog>
+#include <QtWidgets/QFrame>
+#include <QtWidgets/QVBoxLayout>
 
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -33,14 +35,12 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "../utils/qcarlastring.hpp"
-
 #include "CarlaDefines.h"
 
 // --------------------------------------------------------------------------------------------------------------------
 // Jack Application Dialog
 
-class JackApplicationW : public QDialog
+class CollapsibleBox : public QFrame
 {
     struct Self;
     Self& self;
@@ -48,46 +48,26 @@ class JackApplicationW : public QDialog
     // ----------------------------------------------------------------------------------------------------------------
 
 public:
-    explicit JackApplicationW(QWidget* parent, const char* projectFilename);
-    ~JackApplicationW() override;
+    explicit CollapsibleBox(QWidget* parent);
+    ~CollapsibleBox() override;
 
     // ----------------------------------------------------------------------------------------------------------------
     // public methods
 
-    struct CommandAndFlags {
-        QString command;
-        QString name;
-        QString labelSetup;
-    };
-    CommandAndFlags getCommandAndFlags() const;
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // private methods
-
-private:
-    void checkIfButtonBoxShouldBeEnabled(int index, const QCarlaString& text);
-    void loadSettings();
+    QVBoxLayout* getContentLayout() const noexcept;
 
     // ----------------------------------------------------------------------------------------------------------------
     // private slots
 
 private slots:
-    void slot_commandChanged(const QString& command);
-    void slot_sessionManagerChanged(int);
-    void slot_saveSettings();
+    void toolButtonPressed(bool toggled);
 };
 
 // --------------------------------------------------------------------------------------------------------------------
 
 extern "C" {
 
-struct JackApplicationDialogResults {
-    const char* command;
-    const char* name;
-    const char* labelSetup;
-};
-
-CARLA_API JackApplicationDialogResults* carla_frontend_createAndExecJackApplicationW(void* parent, const char* projectFilename);
+CARLA_API void* carla_frontend_createCollapsibleBox(void* parent);
 
 }
 

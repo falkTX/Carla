@@ -38,8 +38,10 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "../utils/qsafesettings.hpp"
-#include "../../includes/CarlaLibJackHints.h"
+#include "qsafesettings.hpp"
+
+#include "CarlaLibJackHints.h"
+#include "CarlaString.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 // Jack Application Dialog
@@ -113,7 +115,7 @@ JackApplicationW::CommandAndFlags JackApplicationW::getCommandAndFlags() const
     }
 
     SessionManager smgr;
-    switch(self.ui.cb_session_mgr->currentIndex())
+    switch (self.ui.cb_session_mgr->currentIndex())
     {
     case UI_SESSION_LADISH:
         smgr = LIBJACK_SESSION_MANAGER_LADISH;
@@ -239,6 +241,35 @@ void JackApplicationW::slot_saveSettings()
 }
 
 // --------------------------------------------------------------------------------------------------------------------
+
+JackApplicationDialogResults* carla_frontend_createAndExecJackApplicationW(void* const parent, const char* const projectFilename)
+{
+    JackApplicationW gui(reinterpret_cast<QWidget*>(parent), projectFilename);
+
+    if (gui.exec())
+    {
+        static JackApplicationDialogResults ret = {};
+        static CarlaString retCommand;
+        static CarlaString retName;
+        static CarlaString retLabelSetup;
+
+        const JackApplicationW::CommandAndFlags cafs = gui.getCommandAndFlags();
+        retCommand = cafs.command.toUtf8().constData();
+        retName = cafs.name.toUtf8().constData();
+        retLabelSetup = cafs.labelSetup.toUtf8().constData();
+
+        ret.command = retCommand;
+        ret.name = retName;
+        ret.labelSetup = retLabelSetup;
+
+        return &ret;
+    }
+
+    return nullptr;
+}
+
+#if 0
+// --------------------------------------------------------------------------------------------------------------------
 // Testing
 
 #include "../utils/qsafesettings.cpp"
@@ -246,19 +277,17 @@ void JackApplicationW::slot_saveSettings()
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
-    JackApplicationW gui(nullptr, "");
-    gui.show();
 
-    if (gui.exec())
+    if (JackApplicationDialogResults* const res = carla_frontend_createAndExecJackApplicationW(nullptr, ""))
     {
-        auto cf = gui.getCommandAndFlags();
         printf("Results:\n");
-        printf("\tCommand:    %s\n", cf.command.toUtf8().constData());
-        printf("\tName:       %s\n", cf.name.toUtf8().constData());
-        printf("\tLabelSetup: %s\n", cf.labelSetup.toUtf8().constData());
+        printf("\tCommand:    %s\n", res->command);
+        printf("\tName:       %s\n", res->name);
+        printf("\tLabelSetup: %s\n", res->labelSetup);
     }
 
     return 0;
 }
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------

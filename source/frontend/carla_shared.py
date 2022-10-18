@@ -594,6 +594,7 @@ class CarlaObject():
         self.gui      = None  # Host Window
         self.nogui    = False # Skip UI
         self.term     = False # Terminated by OS signal
+        self.felib    = None  # Frontend lib object
         self.utils    = None  # Utils object
 
 gCarla = CarlaObject()
