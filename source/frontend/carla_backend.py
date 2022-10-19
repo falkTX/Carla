@@ -20,9 +20,7 @@
 # Imports (Global)
 
 from abc import abstractmethod
-from platform import architecture
 from struct import pack
-from sys import platform, maxsize
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (ctypes)
@@ -34,45 +32,18 @@ from ctypes import (
     CDLL, CFUNCTYPE, RTLD_GLOBAL, RTLD_LOCAL, POINTER
 )
 
-# ---------------------------------------------------------------------------------------------------------------------
-# 64bit check
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Custom)
 
-kIs64bit = bool(architecture()[0] == "64bit" and maxsize > 2**32)
+from common import (
+    kIs64bit, HAIKU, LINUX, MACOS, WINDOWS, VERSION
+)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Define custom types
 
 c_enum = c_int
 c_uintptr = c_uint64 if kIs64bit else c_uint32
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Set Platform
-
-if platform == "darwin":
-    HAIKU   = False
-    LINUX   = False
-    MACOS   = True
-    WINDOWS = False
-elif "haiku" in platform:
-    HAIKU   = True
-    LINUX   = False
-    MACOS   = False
-    WINDOWS = False
-elif "linux" in platform:
-    HAIKU   = False
-    LINUX   = True
-    MACOS   = False
-    WINDOWS = False
-elif platform in ("win32", "win64", "cygwin"):
-    HAIKU   = False
-    LINUX   = False
-    MACOS   = False
-    WINDOWS = True
-else:
-    HAIKU   = False
-    LINUX   = False
-    MACOS   = False
-    WINDOWS = False
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Convert a ctypes c_char_p into a python string

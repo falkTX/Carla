@@ -62,7 +62,7 @@ from carla_utils import *
 from carla_widgets import *
 
 from patchcanvas import patchcanvas
-from pluginlist import PluginDatabaseW, JackApplicationW
+from pluginlist import PluginDatabaseW
 from widgets.digitalpeakmeter import DigitalPeakMeter
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
@@ -2109,7 +2109,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_aboutJuce(self):
-        JuceAboutW(self.fParentOrSelf).exec_()
+        gCarla.felib.createAndExecAboutJuceW(self.fParentOrSelf)
 
     @pyqtSlot()
     def slot_aboutQt(self):

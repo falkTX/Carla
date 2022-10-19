@@ -47,13 +47,14 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox
 # Imports (Custom)
 
 from carla_backend import (
-    kIs64bit, HAIKU, LINUX, MACOS, WINDOWS,
     MAX_DEFAULT_PARAMETERS,
     ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,
     ENGINE_PROCESS_MODE_PATCHBAY,
     ENGINE_TRANSPORT_MODE_INTERNAL,
     ENGINE_TRANSPORT_MODE_JACK
 )
+
+from common import kIs64bit, HAIKU, LINUX, MACOS, WINDOWS, VERSION
 
 # ------------------------------------------------------------------------------------------------------------
 # Config
@@ -67,11 +68,6 @@ X_DATADIR_X = None
 
 if WINDOWS:
     WINDIR = os.getenv("WINDIR")
-
-# ------------------------------------------------------------------------------------------------------------
-# Set Version
-
-VERSION = "2.6.0-alpha1"
 
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP

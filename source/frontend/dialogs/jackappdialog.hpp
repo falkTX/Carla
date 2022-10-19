@@ -33,9 +33,7 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "../utils/qcarlastring.hpp"
-
-#include "CarlaDefines.h"
+#include "qcarlastring.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 // Jack Application Dialog

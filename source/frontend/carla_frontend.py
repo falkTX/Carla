@@ -60,10 +60,17 @@ class CarlaFrontendLib():
     def __init__(self, filename):
         self.lib = cdll.LoadLibrary(filename)
 
+        self.lib.carla_frontend_createAndExecAboutJuceW.argtypes = (c_void_p,)
+        self.lib.carla_frontend_createAndExecAboutJuceW.restype = None
+
         self.lib.carla_frontend_createAndExecJackApplicationW.argtypes = (c_void_p, c_char_p)
         self.lib.carla_frontend_createAndExecJackApplicationW.restype = POINTER(JackApplicationDialogResults)
 
     # --------------------------------------------------------------------------------------------------------
+
+    def createAndExecAboutJuceW(self, parent):
+        # FIXME cast(c_void_p, voidptr(parent))
+        self.lib.carla_frontend_createAndExecAboutJuceW(None)
 
     def createAndExecJackApplicationW(self, parent, projectFilename):
         # FIXME cast(c_void_p, voidptr(parent))

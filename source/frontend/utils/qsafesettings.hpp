@@ -35,6 +35,8 @@
 # pragma GCC diagnostic pop
 #endif
 
+#include "CarlaDefines.h"
+
 //---------------------------------------------------------------------------------------------------------------------
 // Safer QSettings class, which does not throw if type mismatches
 

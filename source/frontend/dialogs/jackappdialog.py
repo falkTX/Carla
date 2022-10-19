@@ -32,7 +32,7 @@ from utils import QSafeSettings
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Local)
 
-from .jackappdialog_ui import Ui_Dialog
+from .jackappdialog_ui import Ui_JackAppDialog
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (API)
@@ -59,7 +59,7 @@ UI_SESSION_NSM    = 2
 class JackApplicationW(QDialog):
     def __init__(self, parent: QWidget, projectFilename: str):
         QDialog.__init__(self, parent)
-        self.ui = Ui_Dialog()
+        self.ui = Ui_JackAppDialog()
         self.ui.setupUi(self)
 
         self.fProjectFilename = projectFilename

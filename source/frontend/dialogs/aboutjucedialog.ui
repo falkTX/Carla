@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>JuceAboutW</class>
- <widget class="QDialog" name="JuceAboutW">
+ <class>AboutJuceDialog</class>
+ <widget class="QDialog" name="AboutJuceDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -154,7 +154,7 @@ Copyright (C) 2022 Raw Material Software Limited.</string>
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>JuceAboutW</receiver>
+   <receiver>AboutJuceDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -170,7 +170,7 @@ Copyright (C) 2022 Raw Material Software Limited.</string>
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>JuceAboutW</receiver>
+   <receiver>AboutJuceDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

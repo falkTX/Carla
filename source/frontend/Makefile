@@ -24,6 +24,7 @@ BUILD_CXX_FLAGS += -Iutils
 
 BUILD_CXX_FLAGS += -I../backend
 BUILD_CXX_FLAGS += -I../includes
+BUILD_CXX_FLAGS += -I../modules
 BUILD_CXX_FLAGS += -I../utils
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -46,6 +47,15 @@ else
 $(error Trying to build frontend without Qt5, cannot continue)
 endif
 
+QT5_LINK_FLAGS += -L$(BINDIR) -lcarla_utils
+
+ifeq ($(MACOS),true)
+QT5_LINK_FLAGS += -install_name @rpath/libcarla_frontend.dylib
+# FIXME this does not work: -Wl,-rpath,@loader_path
+else
+QT5_LINK_FLAGS += -Wl,-rpath,'$${ORIGIN}'
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Translations
 
@@ -57,7 +67,8 @@ QMs = $(patsubst %,translations/carla_%.qm,$(I18N_LANGUAGES))
 
 CPP_FILES = \
 	carla_frontend.cpp \
-	pluginlist/jackappdialog.cpp
+	dialogs/aboutjucedialog.cpp \
+	dialogs/jackappdialog.cpp
 
 OBJS = $(CPP_FILES:%=$(OBJDIR)/%.o)
 
@@ -89,7 +100,6 @@ RES = \
 	$(BINDIR)/resources/xycontroller-ui \
 	$(BINDIR)/resources/resources_rc.py \
 	$(BINDIR)/resources/ui_carla_about.py \
-	$(BINDIR)/resources/ui_carla_about_juce.py \
 	$(BINDIR)/resources/ui_carla_edit.py \
 	$(BINDIR)/resources/ui_carla_host.py \
 	$(BINDIR)/resources/ui_carla_osc_connect.py \
@@ -116,7 +126,8 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # UI code
 
-UI_FILES = $(wildcard pluginlist/*.ui)
+UI_FILES  = $(wildcard dialogs/*.ui)
+UI_FILES += $(wildcard pluginlist/*.ui)
 
 UIs  = $(UI_FILES:%.ui=%_ui.hpp)
 UIs += $(UI_FILES:%.ui=%_ui.py)
@@ -124,7 +135,6 @@ UIs += $(UI_FILES:%.ui=%_ui.py)
 # old stuff, not yet converted
 UIs += \
 	ui_carla_about.py \
-	ui_carla_about_juce.py \
 	ui_carla_edit.py \
 	ui_carla_host.py \
 	ui_carla_osc_connect.py \
@@ -176,6 +186,10 @@ $(BINDIR)/libcarla_frontend$(LIB_EXT): $(OBJS) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_frontend$(LIB_EXT)"
 	$(SILENT)$(CXX) $(OBJS) $(BUILD_CXX_FLAGS) $(QT5_LINK_FLAGS) $(SHARED) -o $@
+ifeq ($(MACOS),true)
+# FIXME this does not work: -Wl,-rpath,@loader_path
+	$(SILENT)install_name_tool -change ../../../bin/libcarla_utils.dylib @loader_path/libcarla_utils.dylib $@
+endif
 
 $(OBJDIR)/%.cpp.o: %.cpp $(UIs)
 	-@mkdir -p $(shell dirname $@)
@@ -189,23 +203,13 @@ $(OBJDIR)/%.cpp.o: %.cpp $(UIs)
 clean:
 	rm -rf $(BINDIR)/libcarla_frontend$(LIB_EXT) $(UIs) $(RES) $(QMs) __pycache__ *.pyc
 	# old files
+	rm -f ui_carla_about_juce.py
 	rm -f ui_carla_add_jack.py
 	rm -f ui_carla_database.py
 	rm -f ui_carla_refresh.py
 
 debug:
 	$(MAKE) DEBUG=true
-
-# ---------------------------------------------------------------------------------------------------------------------
-
-tests: pluginlist/jackappdialog$(APP_EXT)
-# $(UI_FILES:%.ui=%$(APP_EXT))
-
-pluginlist/jackappdialog$(APP_EXT): pluginlist/jackappdialog.cpp pluginlist/jackappdialog.ui pluginlist/jackappdialog_ui.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QT5_LINK_FLAGS) -o $@
-
-pluginlist/pluginlistdialog$(APP_EXT): pluginlist/pluginlistdialog.cpp pluginlist/pluginlistdialog.ui pluginlist/pluginlistdialog_ui.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(QT5_LINK_FLAGS) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

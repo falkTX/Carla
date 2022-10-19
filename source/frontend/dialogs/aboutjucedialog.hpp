@@ -15,8 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#pragma once
-
 #ifdef __clang__
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
@@ -27,7 +25,7 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include <QtCore/QString>
+#include <QtWidgets/QDialog>
 
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -37,30 +35,27 @@
 
 #include "CarlaDefines.h"
 
-//---------------------------------------------------------------------------------------------------------------------
-// Custom QString class with a few extra methods
+// --------------------------------------------------------------------------------------------------------------------
+// About JUCE dialog
 
-class QCarlaString : public QString
+class AboutJuceW : public QDialog
 {
+    struct Self;
+    Self& self;
+
+    // ----------------------------------------------------------------------------------------------------------------
+
 public:
-    explicit inline QCarlaString()
-        : QString() {}
-
-    explicit inline QCarlaString(const char* const str)
-        : QString(fromUtf8(str)) {}
-
-    inline QCarlaString(const QString& s)
-        : QString(s) {}
-
-    inline bool isNotEmpty() const
-    {
-        return !isEmpty();
-    }
-
-    inline QCarlaString& operator=(const char* const str)
-    {
-        return (*this = fromUtf8(str));
-    }
+    explicit AboutJuceW(QWidget* parent);
+    ~AboutJuceW() override;
 };
 
-//---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
+
+extern "C" {
+
+CARLA_API void carla_frontend_createAndExecAboutJuceW(void* parent);
+
+}
+
+// --------------------------------------------------------------------------------------------------------------------

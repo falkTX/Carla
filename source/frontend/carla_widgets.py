@@ -32,7 +32,6 @@ from PyQt5.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu, QMessageB
 # Imports (Custom)
 
 import ui_carla_about
-import ui_carla_about_juce
 import ui_carla_edit
 import ui_carla_parameter
 
@@ -226,31 +225,6 @@ class CarlaAboutW(QDialog):
         self.adjustSize()
         self.ui.tabWidget.setCurrentIndex(0)
 
-        self.setFixedSize(self.size())
-
-        flags  = self.windowFlags()
-        flags &= ~Qt.WindowContextHelpButtonHint
-
-        if WINDOWS:
-            flags |= Qt.MSWindowsFixedSizeDialogHint
-
-        self.setWindowFlags(flags)
-
-        if MACOS:
-            self.setWindowModality(Qt.WindowModal)
-
-# ------------------------------------------------------------------------------------------------------------
-# JUCE About dialog
-
-class JuceAboutW(QDialog):
-    def __init__(self, parent):
-        QDialog.__init__(self, parent)
-        self.ui = ui_carla_about_juce.Ui_JuceAboutW()
-        self.ui.setupUi(self)
-
-        self.ui.l_text2.setText(self.tr("This program uses JUCE version %s." % gCarla.utils.get_juce_version()))
-
-        self.adjustSize()
         self.setFixedSize(self.size())
 
         flags  = self.windowFlags()

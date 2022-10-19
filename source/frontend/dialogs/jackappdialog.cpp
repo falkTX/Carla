@@ -53,7 +53,7 @@ enum {
 };
 
 struct JackApplicationW::Self {
-    Ui_Dialog ui;
+    Ui_JackAppDialog ui;
     const QString fProjectFilename;
 
     Self(const char* const projectFilename)
@@ -76,8 +76,14 @@ JackApplicationW::JackApplicationW(QWidget* const parent, const char* const proj
     // UI setup
 
     self.ui.group_error->setVisible(false);
+
     adjustSize();
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+   #ifdef CARLA_OS_MAC
+    if (parent != nullptr)
+        setWindowModality(Qt::WindowModal);
+   #endif
 
     // -------------------------------------------------------------------------------------------------------------
     // Load settings

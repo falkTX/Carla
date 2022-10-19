@@ -467,6 +467,8 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
 	install -d $(DESTDIR)$(DATADIR)/carla/resources/translations
+	install -d $(DESTDIR)$(DATADIR)/carla/common
+	install -d $(DESTDIR)$(DATADIR)/carla/dialogs
 	install -d $(DESTDIR)$(DATADIR)/carla/modgui
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
 	install -d $(DESTDIR)$(DATADIR)/carla/pluginlist
@@ -621,6 +623,14 @@ endif
 		$(DESTDIR)$(DATADIR)/carla/
 
 	install -m 644 \
+		source/frontend/common/*.py \
+		$(DESTDIR)$(DATADIR)/carla/common/
+
+	install -m 644 \
+		source/frontend/dialogs/*.py \
+		$(DESTDIR)$(DATADIR)/carla/dialogs/
+
+	install -m 644 \
 		source/frontend/modgui/*.py \
 		$(DESTDIR)$(DATADIR)/carla/modgui/
 
@@ -704,6 +714,8 @@ endif
 	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 
 	# Install resources (re-use python files)
+	$(LINK) ../common                      $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../dialogs                     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../modgui                      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../patchcanvas                 $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../pluginlist                  $(DESTDIR)$(DATADIR)/carla/resources
@@ -722,7 +734,6 @@ endif
 	$(LINK) ../externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_about_juce.py      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_host.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_parameter.py       $(DESTDIR)$(DATADIR)/carla/resources
