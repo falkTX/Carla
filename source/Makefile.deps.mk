@@ -319,6 +319,10 @@ else ifeq ($(WINDOWS),true)
 HAVE_QT = true
 endif
 
+ifeq ($(HAVE_QT5),true)
+HAVE_THEME = true
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PyQt tools
 
@@ -328,6 +332,9 @@ PYUIC5 ?= $(shell which pyuic5 2>/dev/null)
 ifneq ($(PYUIC5),)
 ifneq ($(PYRCC5),)
 HAVE_PYQT = true
+ifeq ($(HAVE_QT5),true)
+HAVE_FRONTEND = true
+endif
 endif
 endif
 
@@ -336,10 +343,6 @@ endif
 
 PYRCC ?= $(PYRCC5)
 PYUIC ?= $(PYUIC5)
-
-ifeq ($(HAVE_QT5),true)
-HAVE_THEME = true
-endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Set USING_JUCE

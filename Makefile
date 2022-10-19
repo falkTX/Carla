@@ -22,7 +22,7 @@ else
 MODULEDIR := $(CURDIR)/build/modules/Release
 endif
 
-# see also source/frontend/carla_shared.py and source/includes/CarlaDefines.h
+# see also source/common/__init__.py and source/includes/CarlaDefines.h
 VERSION   := 2.6.0-alpha1
 
 -include Makefile.user.mk
@@ -185,7 +185,7 @@ discovery: libs
 	@$(MAKE) -C source/discovery
 
 frontend: libs
-ifeq ($(HAVE_PYQT),true)
+ifeq ($(HAVE_FRONTEND),true)
 	@$(MAKE) -C source/frontend
 endif
 
@@ -454,8 +454,8 @@ endif
 endif
 endif
 
-ifeq ($(HAVE_PYQT),true)
-	# Create directories (gui)
+ifeq ($(HAVE_FRONTEND),true)
+	# Create directories (frontend)
 	install -d $(DESTDIR)$(LIBDIR)/carla/styles
 	install -d $(DESTDIR)$(PREFIX)/share/appdata
 	install -d $(DESTDIR)$(DATADIR)/applications
@@ -567,7 +567,7 @@ endif
 
 	# -------------------------------------------------------------------------------------------------------------
 
-ifeq ($(HAVE_PYQT),true)
+ifeq ($(HAVE_FRONTEND),true)
 ifneq ($(CPPMODE),true)
 	# Install script files (gui)
 	install -m 755 \
@@ -752,7 +752,7 @@ endif
 	$(foreach l,$(I18N_LANGUAGES),install -m 644 \
 		source/frontend/translations/carla_$(l).qm \
 		$(DESTDIR)$(DATADIR)/carla/resources/translations/;)
-endif # HAVE_PYQT
+endif # HAVE_FRONTEND
 
 	# -------------------------------------------------------------------------------------------------------------
 
@@ -778,7 +778,7 @@ ifeq ($(LINUX),true)
 endif
 endif # CAN_GENERATE_LV2_TTL
 
-ifeq ($(HAVE_PYQT),true)
+ifeq ($(HAVE_FRONTEND),true)
 	# Link resources for lv2 plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
 	$(LINK) ../../../share/carla/resources $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
@@ -791,7 +791,7 @@ endif
 	# -------------------------------------------------------------------------------------------------------------
 
 ifneq ($(HAIKU),true)
-ifeq ($(HAVE_PYQT),true)
+ifeq ($(HAVE_FRONTEND),true)
 	# Install vst plugin
 	install -d $(DESTDIR)$(LIBDIR)/vst/carla.vst
 
@@ -822,7 +822,7 @@ endif
 
 	# -------------------------------------------------------------------------------------------------------------
 
-ifneq ($(HAVE_PYQT),true)
+ifneq ($(HAVE_FRONTEND),true)
 	# Remove gui files for non-gui build
 	rm $(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
 ifeq ($(CAN_GENERATE_LV2_TTL),true)

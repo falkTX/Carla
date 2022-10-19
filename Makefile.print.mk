@@ -26,7 +26,7 @@ endif
 
 features_print_main:
 	@printf -- "$(tS)---> Main features $(tE)\n"
-ifeq ($(HAVE_PYQT),true)
+ifeq ($(HAVE_FRONTEND),true)
 	@printf -- "Front-End:     $(ANS_YES)\n"
 	@printf -- "LV2 plugin:    $(ANS_YES)\n"
 ifneq ($(HAIKU),true)
@@ -35,7 +35,7 @@ else
 	@printf -- "VST2 plugin:   $(ANS_NO)  $(mZ)Not available for Haiku$(mE)\n"
 endif
 else
-	@printf -- "Front-End:     $(ANS_NO)  $(mS)Missing PyQt$(mE)\n"
+	@printf -- "Front-End:     $(ANS_NO)  $(mS)Missing Qt and/or PyQt$(mE)\n"
 	@printf -- "LV2 plugin:    $(ANS_NO)  $(mS)No front-end$(mE)\n"
 	@printf -- "VST2 plugin:   $(ANS_NO)  $(mS)No front-end$(mE)\n"
 endif
