@@ -31,7 +31,7 @@ from carla_shared import gCarla
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Local)
 
-from .aboutjucedialog_ui import Ui_AboutJuceDialog
+from aboutjucedialog_ui import Ui_AboutJuceDialog
 
 # ------------------------------------------------------------------------------------------------------------
 # About JUCE dialog
@@ -67,8 +67,11 @@ if __name__ == '__main__':
     from PyQt5.QtWidgets import QApplication
     # pylint: enable=ungrouped-imports
 
+    # from carla_utils import CarlaUtils
+    # gCarla.utils = CarlaUtils(os.path.dirname(__file__) + "/../../../bin/libcarla_utils.dylib")
+
     _app = QApplication(sys.argv)
-    _gui = AboutJuceW(None, "")
+    _gui = AboutJuceW(None)
     _gui.exec_()
 
 # ---------------------------------------------------------------------------------------------------------------------

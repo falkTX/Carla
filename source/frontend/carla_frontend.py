@@ -23,12 +23,12 @@
 # Imports (ctypes)
 
 from ctypes import (
-    c_bool, c_char_p, c_double, c_int, c_uint, c_uint32, c_void_p, cast,
+    c_char_p, c_void_p, cast,
     cdll, Structure,
-    CFUNCTYPE, POINTER
+    POINTER
 )
 
-from sip import voidptr
+from sip import unwrapinstance
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -69,11 +69,9 @@ class CarlaFrontendLib():
     # --------------------------------------------------------------------------------------------------------
 
     def createAndExecAboutJuceW(self, parent):
-        # FIXME cast(c_void_p, voidptr(parent))
-        self.lib.carla_frontend_createAndExecAboutJuceW(None)
+        self.lib.carla_frontend_createAndExecAboutJuceW(unwrapinstance(parent))
 
     def createAndExecJackApplicationW(self, parent, projectFilename):
-        # FIXME cast(c_void_p, voidptr(parent))
-        return structToDictOrNull(self.lib.carla_frontend_createAndExecJackApplicationW(None, projectFilename.encode("utf-8")))
+        return structToDictOrNull(self.lib.carla_frontend_createAndExecJackApplicationW(unwrapinstance(parent), projectFilename.encode("utf-8")))
 
 # ------------------------------------------------------------------------------------------------------------

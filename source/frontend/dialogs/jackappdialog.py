@@ -32,7 +32,7 @@ from utils import QSafeSettings
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Local)
 
-from .jackappdialog_ui import Ui_JackAppDialog
+from jackappdialog_ui import Ui_JackAppDialog
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (API)
