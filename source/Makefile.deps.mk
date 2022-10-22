@@ -372,6 +372,7 @@ ifeq ($(STATIC_PLUGIN_TARGET),true)
 HAVE_ALSA = false
 HAVE_JACK = false
 HAVE_JACKLIB = false
+HAVE_FRONTEND = false
 HAVE_HYLIA = false
 HAVE_LIBLO = false
 HAVE_PULSEAUDIO = false
