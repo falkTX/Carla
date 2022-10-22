@@ -332,31 +332,38 @@ struct carla_clap_host : clap_host_t {
 // --------------------------------------------------------------------------------------------------------------------
 
 struct carla_clap_input_audio_buffers {
-    clap_audio_buffer_const_with_offset_t* buffers;
+    clap_audio_buffer_const_t* buffers;
+    clap_audio_buffer_extra_data_t* extra;
     uint32_t count;
 
     carla_clap_input_audio_buffers() noexcept
         : buffers(nullptr),
+          extra(nullptr),
           count(0) {}
 
     ~carla_clap_input_audio_buffers()
     {
         delete[] buffers;
+        delete[] extra;
     }
 
     void realloc(const uint32_t portCount)
     {
         delete[] buffers;
+        delete[] extra;
         count = portCount;
 
         if (portCount != 0)
         {
-            buffers = new clap_audio_buffer_const_with_offset_t[portCount];
+            buffers = new clap_audio_buffer_const_t[portCount];
+            extra = new clap_audio_buffer_extra_data_t[portCount];
             carla_zeroStructs(buffers, portCount);
+            carla_zeroStructs(extra, portCount);
         }
         else
         {
             buffers = nullptr;
+            extra = nullptr;
         }
     }
 
@@ -367,37 +374,39 @@ struct carla_clap_input_audio_buffers {
 };
 
 struct carla_clap_output_audio_buffers {
-    clap_audio_buffer_with_offset_t* buffers;
+    clap_audio_buffer_t* buffers;
+    clap_audio_buffer_extra_data_t* extra;
     uint32_t count;
 
     carla_clap_output_audio_buffers() noexcept
         : buffers(nullptr),
+          extra(nullptr),
           count(0) {}
 
     ~carla_clap_output_audio_buffers()
     {
         delete[] buffers;
+        delete[] extra;
     }
 
     void realloc(const uint32_t portCount)
     {
         delete[] buffers;
+        delete[] extra;
         count = portCount;
 
         if (portCount != 0)
         {
-            buffers = new clap_audio_buffer_with_offset_t[portCount];
+            buffers = new clap_audio_buffer_t[portCount];
+            extra = new clap_audio_buffer_extra_data_t[portCount];
             carla_zeroStructs(buffers, portCount);
+            carla_zeroStructs(extra, portCount);
         }
         else
         {
             buffers = nullptr;
+            extra = nullptr;
         }
-    }
-
-    clap_audio_buffer_t* cast() noexcept
-    {
-        return static_cast<clap_audio_buffer_t*>(static_cast<void*>(buffers));
     }
 };
 
@@ -821,7 +830,7 @@ public:
                 if (j != portIndex)
                     continue;
 
-                if (!fOutputAudioBuffers.buffers[i].isMain)
+                if (!fOutputAudioBuffers.extra[i].isMain)
                     hints |= AUDIO_PORT_IS_SIDECHAIN;
             }
         }
@@ -832,7 +841,7 @@ public:
                 if (j != portIndex)
                     continue;
 
-                if (!fInputAudioBuffers.buffers[i].isMain)
+                if (!fInputAudioBuffers.extra[i].isMain)
                     hints |= AUDIO_PORT_IS_SIDECHAIN;
             }
         }
@@ -1445,10 +1454,11 @@ public:
         {
             clap_audio_port_info_t portInfo = {};
             CARLA_SAFE_ASSERT_BREAK(audioPortsExt->get(fPlugin, i, true, &portInfo));
+            CARLA_SAFE_ASSERT(portInfo.channel_count != 0);
 
             fInputAudioBuffers.buffers[i].channel_count = portInfo.channel_count;
-            fInputAudioBuffers.buffers[i].offset = aIns;
-            fInputAudioBuffers.buffers[i].isMain = portInfo.flags & CLAP_AUDIO_PORT_IS_MAIN;
+            fInputAudioBuffers.extra[i].offset = aIns;
+            fInputAudioBuffers.extra[i].isMain = portInfo.flags & CLAP_AUDIO_PORT_IS_MAIN;
 
             aIns += portInfo.channel_count;
         }
@@ -1457,10 +1467,11 @@ public:
         {
             clap_audio_port_info_t portInfo = {};
             CARLA_SAFE_ASSERT_BREAK(audioPortsExt->get(fPlugin, i, false, &portInfo));
+            CARLA_SAFE_ASSERT(portInfo.channel_count != 0);
 
             fOutputAudioBuffers.buffers[i].channel_count = portInfo.channel_count;
-            fOutputAudioBuffers.buffers[i].offset = aOuts;
-            fOutputAudioBuffers.buffers[i].isMain = portInfo.flags & CLAP_AUDIO_PORT_IS_MAIN;
+            fOutputAudioBuffers.extra[i].offset = aOuts;
+            fOutputAudioBuffers.extra[i].isMain = portInfo.flags & CLAP_AUDIO_PORT_IS_MAIN;
             for (uint32_t j=0; j<portInfo.channel_count; ++j)
                 fOutputAudioBuffers.buffers[i].constant_mask |= (1 << j);
 
@@ -2397,12 +2408,12 @@ public:
         // Plugin processing
 
         for (uint32_t i=0; i<fInputAudioBuffers.count; ++i)
-            fInputAudioBuffers.buffers[i].data32 = audioIn + fInputAudioBuffers.buffers[i].offset;
+            fInputAudioBuffers.buffers[i].data32 = audioIn + fInputAudioBuffers.extra[i].offset;
 
         for (uint32_t i=0; i<fOutputAudioBuffers.count; ++i)
         {
            #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-            fOutputAudioBuffers.buffers[i].data32 = fAudioOutBuffers + fOutputAudioBuffers.buffers[i].offset;
+            fOutputAudioBuffers.buffers[i].data32 = fAudioOutBuffers + fOutputAudioBuffers.extra[i].offset;
            #else
             fOutputAudioBuffers.buffers[i].data32 = audioOut + fOutputAudioBuffers.buffers[i].offset;
            #endif
@@ -2413,9 +2424,9 @@ public:
             frames,
             &clapTransport,
             fInputAudioBuffers.cast(),
-            fOutputAudioBuffers.cast(), // audio_outputs
-            fInputAudioBuffers.count, // audio_inputs_count
-            fOutputAudioBuffers.count, // audio_outputs_count
+            fOutputAudioBuffers.buffers,
+            fInputAudioBuffers.count,
+            fOutputAudioBuffers.count,
             fInputEvents.cast(),
             fOutputEvents.cast()
         };

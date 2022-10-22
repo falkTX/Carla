@@ -45,26 +45,18 @@
 
 extern "C" {
 
-typedef struct clap_audio_buffer_with_offset {
-   float  **data32;
-   double **data64;
-   uint32_t channel_count;
-   uint32_t latency;
-   uint64_t constant_mask;
-   uint16_t offset;
-   bool isMain;
-} clap_audio_buffer_with_offset_t;
-
-typedef struct clap_audio_buffer_const_with_offset {
-   // Either data32 or data64 pointer will be set.
+typedef struct clap_audio_buffer_const {
    const float* const* data32;
    const double* const* data64;
    uint32_t channel_count;
    uint32_t latency;
    uint64_t constant_mask;
+} clap_audio_buffer_const_t;
+
+typedef struct clap_audio_buffer_extra_data {
    uint16_t offset;
    bool isMain;
-} clap_audio_buffer_const_with_offset_t;
+} clap_audio_buffer_extra_data_t;
 
 }
 
