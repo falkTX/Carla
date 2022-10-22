@@ -2415,7 +2415,7 @@ public:
            #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             fOutputAudioBuffers.buffers[i].data32 = fAudioOutBuffers + fOutputAudioBuffers.extra[i].offset;
            #else
-            fOutputAudioBuffers.buffers[i].data32 = audioOut + fOutputAudioBuffers.buffers[i].offset;
+            fOutputAudioBuffers.buffers[i].data32 = audioOut + fOutputAudioBuffers.extra[i].offset;
            #endif
         }
 
