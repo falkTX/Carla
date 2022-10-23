@@ -184,7 +184,7 @@ bridges-ui: libs
 discovery: libs
 	@$(MAKE) -C source/discovery
 
-frontend: libs
+frontend: backend
 ifeq ($(HAVE_FRONTEND),true)
 	@$(MAKE) -C source/frontend
 endif
