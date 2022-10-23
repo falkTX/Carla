@@ -62,7 +62,7 @@ from carla_utils import *
 from carla_widgets import *
 
 from patchcanvas import patchcanvas
-from pluginlist import PluginDatabaseW
+from pluginlist import PluginListDialog
 from widgets.digitalpeakmeter import DigitalPeakMeter
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
@@ -1208,9 +1208,14 @@ class HostWindow(QMainWindow):
     # Plugins (menu actions)
 
     def showAddPluginDialog(self):
+        #ret = gCarla.felib.createAndExecPluginListDialog(self.fParentOrSelf,
+                                                         #self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
+        #print(ret)
+        #return
+
         if self.fPluginDatabaseDialog is None:
-            self.fPluginDatabaseDialog = PluginDatabaseW(self.fParentOrSelf, self.host,
-                                                         self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
+            self.fPluginDatabaseDialog = PluginListDialog(self.fParentOrSelf, self.host,
+                                                          self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
         dialog = self.fPluginDatabaseDialog
         dialog.hasLoadedLv2Plugins = self.fHasLoadedLv2Plugins
 
@@ -1236,7 +1241,7 @@ class HostWindow(QMainWindow):
         return (btype, ptype, filename, label, uniqueId, extraPtr)
 
     def showAddJackAppDialog(self):
-        ret = gCarla.felib.createAndExecJackApplicationW(self.fParentOrSelf, self.fProjectFilename)
+        ret = gCarla.felib.createAndExecJackAppDialog(self.fParentOrSelf, self.fProjectFilename)
 
         if not ret:
             return
@@ -2109,7 +2114,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_aboutJuce(self):
-        gCarla.felib.createAndExecAboutJuceW(self.fParentOrSelf)
+        gCarla.felib.createAndExecAboutJuceDialog(self.fParentOrSelf)
 
     @pyqtSlot()
     def slot_aboutQt(self):

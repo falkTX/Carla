@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "aboutjucedialog.hpp"
+#include "pluginlistdialog.hpp"
 
 #ifdef __clang__
 # pragma clang diagnostic push
@@ -27,7 +27,7 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include "aboutjucedialog_ui.hpp"
+#include "pluginlistdialog_ui.hpp"
 
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -35,13 +35,13 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "CarlaUtils.h"
+#include "CarlaString.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 // Jack Application Dialog
 
-struct AboutJuceDialog::Self {
-    Ui_AboutJuceDialog ui;
+struct PluginListDialog::Self {
+    Ui_PluginListDialog ui;
 
     Self() {}
 
@@ -52,7 +52,7 @@ struct AboutJuceDialog::Self {
     }
 };
 
-AboutJuceDialog::AboutJuceDialog(QWidget* const parent)
+PluginListDialog::PluginListDialog(QWidget* const parent, const bool useSystemIcons)
     : QDialog(parent),
       self(Self::create())
 {
@@ -61,36 +61,48 @@ AboutJuceDialog::AboutJuceDialog(QWidget* const parent)
     // -------------------------------------------------------------------------------------------------------------
     // UI setup
 
-    self.ui.l_text2->setText(tr("This program uses JUCE version") + " " + carla_get_juce_version() + ".");
+    // -------------------------------------------------------------------------------------------------------------
+    // Load settings
 
-    adjustSize();
-    setFixedSize(size());
-
-    Qt::WindowFlags flags = windowFlags();
-    flags &= ~Qt::WindowContextHelpButtonHint;
-
-   #ifdef CARLA_OS_WIN
-    flags |= Qt::MSWindowsFixedSizeDialogHint;
-   #endif
-
-    setWindowFlags(flags);
-
-   #ifdef CARLA_OS_MAC
-    if (parent != nullptr)
-        setWindowModality(Qt::WindowModal);
-   #endif
+    // -------------------------------------------------------------------------------------------------------------
+    // Set-up connections
 }
 
-AboutJuceDialog::~AboutJuceDialog()
+PluginListDialog::~PluginListDialog()
 {
     delete &self;
 }
 
+// -----------------------------------------------------------------------------------------------------------------
+// public methods
+
+// -----------------------------------------------------------------------------------------------------------------
+// private methods
+
+// -----------------------------------------------------------------------------------------------------------------
+// private slots
+
 // --------------------------------------------------------------------------------------------------------------------
 
-void carla_frontend_createAndExecAboutJuceDialog(void* const parent)
+PluginListDialogResults* carla_frontend_createAndExecPluginListDialog(void* const parent, const bool useSystemIcons)
 {
-    AboutJuceDialog(reinterpret_cast<QWidget*>(parent)).exec();
+    PluginListDialog gui(reinterpret_cast<QWidget*>(parent), useSystemIcons);
+
+    if (gui.exec())
+    {
+        static PluginListDialogResults ret = {};
+        static CarlaString retBinary;
+        static CarlaString retLabel;
+
+        // TODO
+
+        ret.binary = retBinary;
+        ret.label = retLabel;
+
+        return &ret;
+    }
+
+    return nullptr;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -38,9 +38,9 @@
 #include "CarlaDefines.h"
 
 // --------------------------------------------------------------------------------------------------------------------
-// About JUCE dialog
+// Jack Application Dialog
 
-class AboutJuceDialog : public QDialog
+class PluginListDialog : public QDialog
 {
     struct Self;
     Self& self;
@@ -48,15 +48,32 @@ class AboutJuceDialog : public QDialog
     // ----------------------------------------------------------------------------------------------------------------
 
 public:
-    explicit AboutJuceDialog(QWidget* parent);
-    ~AboutJuceDialog() override;
+    explicit PluginListDialog(QWidget* parent, bool useSystemIcons);
+    ~PluginListDialog() override;
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // public methods
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // private methods
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // private slots
 };
 
 // --------------------------------------------------------------------------------------------------------------------
 
 extern "C" {
 
-CARLA_API void carla_frontend_createAndExecAboutJuceDialog(void* parent);
+struct PluginListDialogResults {
+    int btype;
+    int ptype;
+    const char* binary;
+    const char* label;
+    // TODO
+};
+
+CARLA_API PluginListDialogResults* carla_frontend_createAndExecPluginListDialog(void* parent, bool useSystemIcons);
 
 }
 

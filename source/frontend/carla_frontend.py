@@ -23,7 +23,7 @@
 # Imports (ctypes)
 
 from ctypes import (
-    c_char_p, c_void_p, cast,
+    c_bool, c_char_p, c_int, c_void_p, cast,
     cdll, Structure,
     POINTER
 )
@@ -53,6 +53,14 @@ class JackApplicationDialogResults(Structure):
         ("labelSetup", c_char_p)
     ]
 
+class PluginListDialogResults(Structure):
+    _fields_ = [
+        ("btype", c_int),
+        ("ptype", c_int),
+        ("binary", c_char_p),
+        ("label", c_char_p)
+    ]
+
 # ------------------------------------------------------------------------------------------------------------
 # Carla Frontend object using a DLL
 
@@ -60,18 +68,24 @@ class CarlaFrontendLib():
     def __init__(self, filename):
         self.lib = cdll.LoadLibrary(filename)
 
-        self.lib.carla_frontend_createAndExecAboutJuceW.argtypes = (c_void_p,)
-        self.lib.carla_frontend_createAndExecAboutJuceW.restype = None
+        self.lib.carla_frontend_createAndExecAboutJuceDialog.argtypes = (c_void_p,)
+        self.lib.carla_frontend_createAndExecAboutJuceDialog.restype = None
 
-        self.lib.carla_frontend_createAndExecJackApplicationW.argtypes = (c_void_p, c_char_p)
-        self.lib.carla_frontend_createAndExecJackApplicationW.restype = POINTER(JackApplicationDialogResults)
+        self.lib.carla_frontend_createAndExecJackAppDialog.argtypes = (c_void_p, c_char_p)
+        self.lib.carla_frontend_createAndExecJackAppDialog.restype = POINTER(JackApplicationDialogResults)
+
+        self.lib.carla_frontend_createAndExecPluginListDialog.argtypes = (c_void_p, c_bool)
+        self.lib.carla_frontend_createAndExecPluginListDialog.restype = POINTER(JackApplicationDialogResults)
 
     # --------------------------------------------------------------------------------------------------------
 
-    def createAndExecAboutJuceW(self, parent):
-        self.lib.carla_frontend_createAndExecAboutJuceW(unwrapinstance(parent))
+    def createAndExecAboutJuceDialog(self, parent):
+        self.lib.carla_frontend_createAndExecAboutJuceDialog(unwrapinstance(parent))
 
-    def createAndExecJackApplicationW(self, parent, projectFilename):
-        return structToDictOrNull(self.lib.carla_frontend_createAndExecJackApplicationW(unwrapinstance(parent), projectFilename.encode("utf-8")))
+    def createAndExecJackAppDialog(self, parent, projectFilename):
+        return structToDictOrNull(self.lib.carla_frontend_createAndExecJackAppDialog(unwrapinstance(parent), projectFilename.encode("utf-8")))
+
+    def createAndExecPluginListDialog(self, parent, useSystemIcons):
+        self.lib.carla_frontend_createAndExecPluginListDialog(unwrapinstance(parent), useSystemIcons)
 
 # ------------------------------------------------------------------------------------------------------------

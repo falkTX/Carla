@@ -56,7 +56,7 @@ UI_SESSION_NONE   = 0
 UI_SESSION_LADISH = 1
 UI_SESSION_NSM    = 2
 
-class JackApplicationW(QDialog):
+class JackAppDialog(QDialog):
     def __init__(self, parent: QWidget, projectFilename: str):
         QDialog.__init__(self, parent)
         self.ui = Ui_JackAppDialog()
@@ -209,7 +209,7 @@ if __name__ == '__main__':
     # pylint: enable=ungrouped-imports
 
     _app = QApplication(sys.argv)
-    _gui = JackApplicationW(None, "")
+    _gui = JackAppDialog(None, "")
 
     if _gui.exec_():
         _command, _name, _labelSetup = _gui.getCommandAndFlags()

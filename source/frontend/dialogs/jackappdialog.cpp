@@ -52,7 +52,7 @@ enum {
     UI_SESSION_NSM    = 2,
 };
 
-struct JackApplicationW::Self {
+struct JackAppDialog::Self {
     Ui_JackAppDialog ui;
     const QString fProjectFilename;
 
@@ -66,7 +66,7 @@ struct JackApplicationW::Self {
     }
 };
 
-JackApplicationW::JackApplicationW(QWidget* const parent, const char* const projectFilename)
+JackAppDialog::JackAppDialog(QWidget* const parent, const char* const projectFilename)
     : QDialog(parent),
       self(Self::create(projectFilename))
 {
@@ -94,14 +94,14 @@ JackApplicationW::JackApplicationW(QWidget* const parent, const char* const proj
     // Set-up connections
 
     connect(this, &QDialog::finished, 
-            this, &JackApplicationW::slot_saveSettings);
+            this, &JackAppDialog::slot_saveSettings);
     connect(self.ui.cb_session_mgr, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &JackApplicationW::slot_sessionManagerChanged);
+            this, &JackAppDialog::slot_sessionManagerChanged);
     connect(self.ui.le_command, &QLineEdit::textChanged,
-            this, &JackApplicationW::slot_commandChanged);
+            this, &JackAppDialog::slot_commandChanged);
 }
 
-JackApplicationW::~JackApplicationW()
+JackAppDialog::~JackAppDialog()
 {
     delete &self;
 }
@@ -109,7 +109,7 @@ JackApplicationW::~JackApplicationW()
 // -----------------------------------------------------------------------------------------------------------------
 // public methods
 
-JackApplicationW::CommandAndFlags JackApplicationW::getCommandAndFlags() const
+JackAppDialog::CommandAndFlags JackAppDialog::getCommandAndFlags() const
 {
     const QString command = self.ui.le_command->text();
     QString name          = self.ui.le_name->text();
@@ -159,7 +159,7 @@ JackApplicationW::CommandAndFlags JackApplicationW::getCommandAndFlags() const
 // -----------------------------------------------------------------------------------------------------------------
 // private methods
 
-void JackApplicationW::checkIfButtonBoxShouldBeEnabled(const int index, const QCarlaString& command)
+void JackAppDialog::checkIfButtonBoxShouldBeEnabled(const int index, const QCarlaString& command)
 {
     bool enabled = command.isNotEmpty();
     QCarlaString showErr;
@@ -190,7 +190,7 @@ void JackApplicationW::checkIfButtonBoxShouldBeEnabled(const int index, const QC
         button->setEnabled(enabled);
 }
 
-void JackApplicationW::loadSettings()
+void JackAppDialog::loadSettings()
 {
     const QSafeSettings settings("falkTX", "CarlaAddJackApp");
 
@@ -221,17 +221,17 @@ void JackApplicationW::loadSettings()
 // -----------------------------------------------------------------------------------------------------------------
 // private slots
 
-void JackApplicationW::slot_commandChanged(const QString& command)
+void JackAppDialog::slot_commandChanged(const QString& command)
 {
     checkIfButtonBoxShouldBeEnabled(self.ui.cb_session_mgr->currentIndex(), command);
 }
 
-void JackApplicationW::slot_sessionManagerChanged(const int index)
+void JackAppDialog::slot_sessionManagerChanged(const int index)
 {
     checkIfButtonBoxShouldBeEnabled(index, self.ui.le_command->text());
 }
 
-void JackApplicationW::slot_saveSettings()
+void JackAppDialog::slot_saveSettings()
 {
     QSafeSettings settings("falkTX", "CarlaAddJackApp");
     settings.setValue("Command", self.ui.le_command->text());
@@ -248,18 +248,18 @@ void JackApplicationW::slot_saveSettings()
 
 // --------------------------------------------------------------------------------------------------------------------
 
-JackApplicationDialogResults* carla_frontend_createAndExecJackApplicationW(void* const parent, const char* const projectFilename)
+JackAppDialogResults* carla_frontend_createAndExecJackAppDialog(void* const parent, const char* const projectFilename)
 {
-    JackApplicationW gui(reinterpret_cast<QWidget*>(parent), projectFilename);
+    JackAppDialog gui(reinterpret_cast<QWidget*>(parent), projectFilename);
 
     if (gui.exec())
     {
-        static JackApplicationDialogResults ret = {};
+        static JackAppDialogResults ret = {};
         static CarlaString retCommand;
         static CarlaString retName;
         static CarlaString retLabelSetup;
 
-        const JackApplicationW::CommandAndFlags cafs = gui.getCommandAndFlags();
+        const JackAppDialog::CommandAndFlags cafs = gui.getCommandAndFlags();
         retCommand = cafs.command.toUtf8().constData();
         retName = cafs.name.toUtf8().constData();
         retLabelSetup = cafs.labelSetup.toUtf8().constData();
@@ -284,7 +284,7 @@ int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
 
-    if (JackApplicationDialogResults* const res = carla_frontend_createAndExecJackApplicationW(nullptr, ""))
+    if (JackAppDialogResults* const res = carla_frontend_createAndExecJackAppDialog(nullptr, ""))
     {
         printf("Results:\n");
         printf("\tCommand:    %s\n", res->command);

@@ -74,13 +74,13 @@ from utils import QSafeSettings
 # Imports (Local)
 
 from .discovery import PLUGIN_QUERY_API_VERSION, checkPluginCached
-from .pluginlistdialog_ui import Ui_PluginDatabaseW
+from .pluginlistdialog_ui import Ui_PluginListDialog
 from .pluginlistrefreshdialog import PluginRefreshW
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Database Dialog
 
-class PluginDatabaseW(QDialog):
+class PluginListDialog(QDialog):
     TABLEWIDGET_ITEM_FAVORITE = 0
     TABLEWIDGET_ITEM_NAME     = 1
     TABLEWIDGET_ITEM_LABEL    = 2
@@ -90,7 +90,7 @@ class PluginDatabaseW(QDialog):
     def __init__(self, parent: QWidget, host, useSystemIcons: bool):
         QDialog.__init__(self, parent)
         self.host = host
-        self.ui = Ui_PluginDatabaseW()
+        self.ui = Ui_PluginListDialog()
         self.ui.setupUi(self)
 
         # To be changed by parent
@@ -987,7 +987,7 @@ if __name__ == '__main__':
     _host = _host()
 
     _app = QApplication(sys.argv)
-    _gui = PluginDatabaseW(None, _host, True)
+    _gui = PluginListDialog(None, _host, True)
 
     if _gui.exec_():
         print(f"Result: {_gui.fRetPlugin}")

@@ -36,7 +36,7 @@ from aboutjucedialog_ui import Ui_AboutJuceDialog
 # ------------------------------------------------------------------------------------------------------------
 # About JUCE dialog
 
-class AboutJuceW(QDialog):
+class AboutJuceDialog(QDialog):
     def __init__(self, parent):
         QDialog.__init__(self, parent)
         self.ui = Ui_AboutJuceDialog()
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     # gCarla.utils = CarlaUtils(os.path.dirname(__file__) + "/../../../bin/libcarla_utils.dylib")
 
     _app = QApplication(sys.argv)
-    _gui = AboutJuceW(None)
+    _gui = AboutJuceDialog(None)
     _gui.exec_()
 
 # ---------------------------------------------------------------------------------------------------------------------

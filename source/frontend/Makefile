@@ -68,7 +68,8 @@ QMs = $(patsubst %,translations/carla_%.qm,$(I18N_LANGUAGES))
 CPP_FILES = \
 	carla_frontend.cpp \
 	dialogs/aboutjucedialog.cpp \
-	dialogs/jackappdialog.cpp
+	dialogs/jackappdialog.cpp \
+	pluginlist/pluginlistdialog.cpp
 
 OBJS = $(CPP_FILES:%=$(OBJDIR)/%.o)
 

@@ -15,6 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#pragma once
+
 #ifdef __clang__
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
@@ -38,7 +40,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 // Jack Application Dialog
 
-class JackApplicationW : public QDialog
+class JackAppDialog : public QDialog
 {
     struct Self;
     Self& self;
@@ -46,8 +48,8 @@ class JackApplicationW : public QDialog
     // ----------------------------------------------------------------------------------------------------------------
 
 public:
-    explicit JackApplicationW(QWidget* parent, const char* projectFilename);
-    ~JackApplicationW() override;
+    explicit JackAppDialog(QWidget* parent, const char* projectFilename);
+    ~JackAppDialog() override;
 
     // ----------------------------------------------------------------------------------------------------------------
     // public methods
@@ -79,13 +81,13 @@ private slots:
 
 extern "C" {
 
-struct JackApplicationDialogResults {
+struct JackAppDialogResults {
     const char* command;
     const char* name;
     const char* labelSetup;
 };
 
-CARLA_API JackApplicationDialogResults* carla_frontend_createAndExecJackApplicationW(void* parent, const char* projectFilename);
+CARLA_API JackAppDialogResults* carla_frontend_createAndExecJackAppDialog(void* parent, const char* projectFilename);
 
 }
 
