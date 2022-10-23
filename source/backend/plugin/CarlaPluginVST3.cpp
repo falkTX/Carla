@@ -569,9 +569,11 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
-        const double normalized = v3_cpp_obj(fV3.controller)->get_parameter_normalised(fV3.controller, parameterId);
+        const v3_param_id v3id = pData->param.data[parameterId].rindex;
+        const double normalized = v3_cpp_obj(fV3.controller)->get_parameter_normalised(fV3.controller, v3id);
+
         return static_cast<float>(
-            v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, parameterId, normalized));
+            v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id, normalized));
     }
 
     /* TODO
@@ -628,16 +630,20 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
-        const double normalized = v3_cpp_obj(fV3.controller)->get_parameter_normalised(fV3.controller, parameterId);
+        const v3_param_id v3id = pData->param.data[parameterId].rindex;
+        const double normalized = v3_cpp_obj(fV3.controller)->get_parameter_normalised(fV3.controller, v3id);
 
         v3_str_128 paramText;
-        CARLA_SAFE_ASSERT_RETURN(v3_cpp_obj(fV3.controller)->get_parameter_string_for_value(fV3.controller, parameterId, normalized, paramText) == V3_OK, false);
+        CARLA_SAFE_ASSERT_RETURN(v3_cpp_obj(fV3.controller)->get_parameter_string_for_value(fV3.controller,
+                                                                                            v3id,
+                                                                                            normalized,
+                                                                                            paramText) == V3_OK, false);
 
         if (paramText[0] != '\0')
             strncpy_utf8(strBuf, paramText, STR_MAX);
         else
             std::snprintf(strBuf, STR_MAX, "%.12g",
-                          v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, parameterId, normalized));
+                          v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id, normalized));
 
         return true;
     }
@@ -693,14 +699,17 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
+        const v3_param_id v3id = pData->param.data[parameterId].rindex;
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
-        const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller, parameterId, fixedValue);
+        const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller,
+                                                                                            v3id,
+                                                                                            fixedValue);
 
         // report value to component (next process call)
         fEvents.paramInputs->setParamValue(parameterId, static_cast<float>(normalized));
 
         // report value to edit controller
-        v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, parameterId, normalized);
+        v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, v3id, normalized);
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
@@ -710,6 +719,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
+        // const v3_param_id v3id = pData->param.data[parameterId].rindex;
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
 
         // TODO append value to V3 changes queue list
@@ -1044,21 +1054,22 @@ public:
 
         for (uint32_t j=0; j < params; ++j)
         {
-            const int32_t ij = static_cast<int32_t>(j);
-            pData->param.data[j].index  = j;
-            pData->param.data[j].rindex = ij;
-
             v3_param_info paramInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.controller)->get_parameter_info(fV3.controller, ij, &paramInfo) == V3_OK);
+            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.controller)->get_parameter_info(fV3.controller, j, &paramInfo) == V3_OK);
+
+            const v3_param_id v3id = paramInfo.param_id;
+            pData->param.data[j].index  = j;
+            pData->param.data[j].rindex = v3id;
 
             if (paramInfo.flags & (V3_PARAM_IS_BYPASS|V3_PARAM_IS_HIDDEN|V3_PARAM_PROGRAM_CHANGE))
                 continue;
 
             double min, max, def, step, stepSmall, stepLarge;
 
-            min = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, j, 0.0);
-            max = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, j, 1.0);
-            def = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, j, paramInfo.default_normalised_value);
+            min = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id, 0.0);
+            max = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id, 1.0);
+            def = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id,
+                                                                            paramInfo.default_normalised_value);
 
             if (min >= max)
                 max = min + 0.1;
@@ -1971,8 +1982,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
-        const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller, index, value);
-        v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, index, normalized);
+        const v3_param_id v3id = pData->param.data[index].rindex;
+        const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller,
+                                                                                            v3id, value);
+        v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, v3id, normalized);
     }
 
     // ----------------------------------------------------------------------------------------------------------------
