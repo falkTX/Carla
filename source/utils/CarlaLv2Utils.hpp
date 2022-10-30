@@ -273,6 +273,7 @@ public:
 
     // Port Data Types
     Lilv::Node midi_binding;
+    Lilv::Node midi_ctlrNumber;
     Lilv::Node midi_event;
     Lilv::Node patch_message;
     Lilv::Node time_position;
@@ -411,6 +412,7 @@ public:
           rz_minSize         (new_uri(LV2_RESIZE_PORT__minimumSize)),
 
           midi_binding       (new_uri(LV2_MIDI__binding)),
+          midi_ctlrNumber    (new_uri(LV2_MIDI__controllerNumber)),
           midi_event         (new_uri(LV2_MIDI__MidiEvent)),
           patch_message      (new_uri(LV2_PATCH__Message)),
           time_position      (new_uri(LV2_TIME__Position)),
@@ -2161,18 +2163,41 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
             if (LilvNode* const bindingNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.midi_binding.me))
             {
-                if (const char* const bindingAsString = lilv_node_as_string(bindingNode))
+                if (lilv_node_is_string(bindingNode))
                 {
-                    if (std::strncmp(bindingAsString, "B0", 2) == 0 && std::strlen(bindingAsString) == 6)
+                    if (const char* const bindingAsString = lilv_node_as_string(bindingNode))
                     {
-                        const char binding[3] = { bindingAsString[2], bindingAsString[3], '\0' };
-                        const long number = std::strtol(binding, nullptr, 16);
-
-                        if (number >= 0 && number <= 0xff)
+                        if (std::strncmp(bindingAsString, "B0", 2) == 0 && std::strlen(bindingAsString) == 6)
                         {
-                            rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
-                            rdfPort->MidiMap.Number = static_cast<uint32_t>(number);
+                            const char binding[3] = { bindingAsString[2], bindingAsString[3], '\0' };
+                            const long number = std::strtol(binding, nullptr, 16);
+
+                            if (number >= 0 && number <= 0xff)
+                            {
+                                rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
+                                rdfPort->MidiMap.Number = static_cast<uint32_t>(number);
+                            }
                         }
+                    }
+                }
+                else
+                {
+                    if (lilv_node_is_blank(bindingNode))
+                    {
+                        Lilv::Nodes ctrlNumNodes(lv2World.find_nodes(bindingNode, lv2World.midi_ctlrNumber, nullptr));
+
+                        if (ctrlNumNodes.size() == 1)
+                        {
+                            const int midiCC = ctrlNumNodes.get_first().as_int();
+
+                            if (midiCC >= 0 && midiCC <= 0xff)
+                            {
+                                rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
+                                rdfPort->MidiMap.Number = static_cast<uint32_t>(midiCC);
+                            }
+                        }
+
+                        lilv_nodes_free(const_cast<LilvNodes*>(ctrlNumNodes.me));
                     }
                 }
 
