@@ -1323,6 +1323,8 @@ public:
         const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
 
         fPosInfo.setIsPlaying(timeInfo.playing);
+        fPosInfo.setTimeInSamples(static_cast<int64_t>(timeInfo.frame));
+        fPosInfo.setTimeInSeconds(static_cast<double>(timeInfo.frame)/pData->engine->getSampleRate());
 
         if (timeInfo.bbt.valid)
         {
@@ -1338,9 +1340,6 @@ public:
 
             fPosInfo.setTimeSignature(TimeSignature{static_cast<int>(timeInfo.bbt.beatsPerBar+0.5f),
                                                     static_cast<int>(timeInfo.bbt.beatType+0.5f)});
-
-            fPosInfo.setTimeInSamples(static_cast<int64_t>(timeInfo.frame));
-            fPosInfo.setTimeInSeconds(static_cast<double>(timeInfo.frame)/pData->engine->getSampleRate());
 
             fPosInfo.setPpqPosition(ppqBar + ppqBeat + ppqTick);
             fPosInfo.setPpqPositionOfLastBarStart(ppqBar);
