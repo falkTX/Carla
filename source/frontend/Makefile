@@ -47,7 +47,11 @@ else
 $(error Trying to build frontend without Qt5, cannot continue)
 endif
 
+ifeq ($(WINDOWS),true)
+QT5_LINK_FLAGS += -L$(BINDIR) $(BINDIR)/libcarla_utils.dll
+else
 QT5_LINK_FLAGS += -L$(BINDIR) -lcarla_utils
+endif
 
 ifeq ($(MACOS),true)
 QT5_LINK_FLAGS += -install_name @rpath/libcarla_frontend.dylib

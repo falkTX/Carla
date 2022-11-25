@@ -91,22 +91,24 @@ _CARLA_HOST_FILES += carla-discovery-win32$(APP_EXT)
 endif
 
 _CARLA_APP_FILES = \
-	Carla$(APP_EXT) \
 	$(_CARLA_HOST_FILES) \
 	$(_PYTHON_FILES) \
 	$(_QT5_DLLS) \
 	$(_QT5_PLUGINS) \
 	$(_THEME_FILES) \
+	libcarla_frontend$(LIB_EXT) \
 	resources/lib
 
 ifneq ($(EMBED_TARGET),true)
 _CARLA_APP_FILES += \
+	Carla$(APP_EXT) \
 	libcarla_host-plugin$(LIB_EXT) \
 	libcarla_native-plugin$(LIB_EXT) \
 	libcarla_standalone2$(LIB_EXT)
 
 _CARLA_CONTROL_APP_FILES = \
 	Carla-Control$(APP_EXT) \
+	libcarla_frontend$(LIB_EXT) \
 	libcarla_utils$(LIB_EXT) \
 	$(_PYTHON_FILES) \
 	$(_QT5_DLLS) \
@@ -369,6 +371,9 @@ build/Carla/lib/library.zip: $(CARLA_PLUGIN_ZIPS) data/windows/app-gui.py source
 		zip -r -9 ../library.zip *)
 	rm -rf build/Carla/lib/_lib
 	rm -rf build/Carla/lib/library-main.zip
+ifeq ($(EMBED_TARGET),true)
+	rm -f build/Carla/Carla.exe
+endif
 
 build/Carla-Control/lib/library.zip: data/windows/app-gui.py source/frontend/* resources/ico/carla-control.ico
 	$(call GENERATE_LIBRARY_ZIP,Carla-Control)
