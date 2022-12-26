@@ -1212,6 +1212,10 @@ class HostWindow(QMainWindow):
                                                          #self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
         #print(ret)
         #return
+        #ret = gCarla.felib.createAndExecPluginListRefreshDialog(self.fParentOrSelf,
+                                                                #self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
+        #print(ret)
+        #return
 
         if self.fPluginDatabaseDialog is None:
             self.fPluginDatabaseDialog = PluginListDialog(self.fParentOrSelf, self.host,

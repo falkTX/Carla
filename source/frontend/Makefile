@@ -73,7 +73,8 @@ CPP_FILES = \
 	carla_frontend.cpp \
 	dialogs/aboutjucedialog.cpp \
 	dialogs/jackappdialog.cpp \
-	pluginlist/pluginlistdialog.cpp
+	pluginlist/pluginlistdialog.cpp \
+	pluginlist/pluginlistrefreshdialog.cpp
 
 OBJS = $(CPP_FILES:%=$(OBJDIR)/%.o)
 
