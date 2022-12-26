@@ -293,10 +293,12 @@ CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 512
 CARLA_DEFAULT_AUDIO_SAMPLE_RATE     = 44100
 CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER   = False
 
-if WINDOWS:
-    CARLA_DEFAULT_AUDIO_DRIVER = "Windows Audio"
+if HAIKU:
+    CARLA_DEFAULT_AUDIO_DRIVER = "SDL"
 elif MACOS:
     CARLA_DEFAULT_AUDIO_DRIVER = "CoreAudio"
+elif WINDOWS:
+    CARLA_DEFAULT_AUDIO_DRIVER = "Windows Audio"
 elif os.path.exists("/usr/bin/jackd") or os.path.exists("/usr/bin/jackdbus") or os.path.exists("/usr/bin/pw-jack"):
     CARLA_DEFAULT_AUDIO_DRIVER = "JACK"
 else:
