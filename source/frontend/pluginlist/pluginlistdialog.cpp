@@ -39,7 +39,60 @@
 #include "qcarlastring.hpp"
 #include "qsafesettings.hpp"
 
+#include "CarlaBackendUtils.hpp"
+#include "CarlaUtils.h"
+
 #include "CarlaString.hpp"
+
+using namespace CarlaBackend;
+
+// --------------------------------------------------------------------------------------------------------------------
+
+typedef QList<PluginInfo> QPluginInfoList;
+
+class QSafePluginListSettings : public QSafeSettings
+{
+public:
+    inline QSafePluginListSettings()
+        : QSafeSettings() {}
+
+    inline QSafePluginListSettings(const QString& organization, const QString& application)
+        : QSafeSettings(organization, application) {}
+
+    QPluginInfoList valuePluginInfoList(const QString& key, QPluginInfoList defaultValue = {}) const
+    {
+        /*
+        QVariant var(value(key, defaultValue));
+
+        if (!var.isNull() && var.convert(QVariant::List) && var.isValid())
+        {
+            QList<QVariant> varVariant(var.toList());
+            QPluginInfoList varReal;
+
+            varReal.reserve(varVariant.size());
+
+            for (QVariant v : varVariant)
+            {
+                CARLA_SAFE_ASSERT_BREAK(!v.isNull());
+                CARLA_SAFE_ASSERT_BREAK(v.convert(QVariant::UserType));
+                CARLA_SAFE_ASSERT_BREAK(v.isValid());
+                // varReal.append(v.toU);
+            }
+        }
+        */
+
+        return defaultValue;
+    }
+
+    void setValue(const QString& key, const uint value)
+    {
+        QSafeSettings::setValue(key, value);
+    }
+
+    void setValue(const QString& key, const QPluginInfoList& value)
+    {
+    }
+};
 
 // --------------------------------------------------------------------------------------------------------------------
 // Jack Application Dialog
@@ -75,6 +128,188 @@ struct PluginListDialog::Self {
     {
         Self* const self = new Self();
         return *self;
+    }
+
+    void createFavoritePluginDict()
+    {
+//         return {
+//             'name'    : plugin['name'],
+//             'build'   : plugin['build'],
+//             'type'    : plugin['type'],
+//             'filename': plugin['filename'],
+//             'label'   : plugin['label'],
+//             'uniqueId': plugin['uniqueId'],
+//         }
+    }
+
+    void checkFilters()
+    {
+    }
+
+    void addPluginToTable(uint plugin, const PluginType ptype)
+    {
+    }
+
+    PluginInfo checkPluginCached(const CarlaCachedPluginInfo* const desc, const PluginType ptype)
+    {
+        PluginInfo pinfo = {};
+        pinfo.build = BINARY_NATIVE;
+        pinfo.type  = ptype;
+        pinfo.hints = desc->hints;
+        pinfo.name  = desc->name;
+        pinfo.label = desc->label;
+        pinfo.maker = desc->maker;
+        pinfo.category = getPluginCategoryAsString(desc->category);
+
+        pinfo.audioIns  = desc->audioIns;
+        pinfo.audioOuts = desc->audioOuts;
+
+        pinfo.cvIns  = desc->cvIns;
+        pinfo.cvOuts = desc->cvOuts;
+
+        pinfo.midiIns  = desc->midiIns;
+        pinfo.midiOuts = desc->midiOuts;
+
+        pinfo.parametersIns  = desc->parameterIns;
+        pinfo.parametersOuts = desc->parameterOuts;
+
+        switch (ptype)
+        {
+        case PLUGIN_LV2:
+            {
+                QString label(desc->label);
+                pinfo.filename = label.split(CARLA_OS_SEP).first();
+                pinfo.label = label.section(CARLA_OS_SEP, 1);
+            }
+            break;
+        case PLUGIN_SFZ:
+            pinfo.filename = pinfo.label;
+            pinfo.label    = pinfo.name;
+            break;
+        default:
+            break;
+        }
+
+        return pinfo;
+    }
+
+    uint reAddInternalHelper(QSafePluginListSettings& settingsDB, const PluginType ptype, const char* const path)
+    {
+        QString ptypeStr, ptypeStrTr;
+
+        switch (ptype)
+        {
+        case PLUGIN_INTERNAL:
+            ptypeStr   = "Internal";
+            ptypeStrTr = "Internal"; // self.tr("Internal")
+            break;
+        case PLUGIN_LV2:
+            ptypeStr   = "LV2";
+            ptypeStrTr = ptypeStr;
+            break;
+        case PLUGIN_AU:
+            ptypeStr   = "AU";
+            ptypeStrTr = ptypeStr;
+            break;
+        case PLUGIN_SFZ:
+            ptypeStr   = "SFZ";
+            ptypeStrTr = ptypeStr;
+            break;
+        // TODO(jsfx) what to do here?
+        default:
+            return 0;
+        }
+
+        QPluginInfoList plugins = settingsDB.valuePluginInfoList("Plugins/" + ptypeStr);
+        uint pluginCount = settingsDB.valueUInt("PluginCount/" + ptypeStr, 0);
+
+        if (ptype == PLUGIN_AU)
+            carla_juce_init();
+
+        const uint pluginCountNew = carla_get_cached_plugin_count(ptype, path);
+
+        if (pluginCountNew != pluginCount || plugins.size() != pluginCount ||
+            (plugins.size() > 0 && plugins[0].API != PLUGIN_QUERY_API_VERSION))
+        {
+            plugins.clear();
+            pluginCount = pluginCountNew;
+
+            QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents, 50);
+
+            if (ptype == PLUGIN_AU)
+                carla_juce_idle();
+
+            for (uint i=0; i<pluginCountNew; ++i)
+            {
+                const CarlaCachedPluginInfo* const descInfo = carla_get_cached_plugin_info(ptype, i);
+
+                if (descInfo == nullptr)
+                    continue;
+
+                const PluginInfo info = checkPluginCached(descInfo, ptype);
+                plugins.append(info);
+
+                if ((i % 50) == 0)
+                {
+                    QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents, 50);
+
+                    if (ptype == PLUGIN_AU)
+                        carla_juce_idle();
+                }
+            }
+
+            settingsDB.setValue("Plugins/" + ptypeStr, plugins);
+            settingsDB.setValue("PluginCount/" + ptypeStr, pluginCount);
+        }
+
+        if (ptype == PLUGIN_AU)
+            carla_juce_cleanup();
+
+        // prepare rows in advance
+        ui.tableWidget->setRowCount(fLastTableIndex + plugins.size());
+
+//         for plugin in plugins:
+//             self._addPluginToTable(plugin, ptypeStrTr)
+
+        return pluginCount;
+    }
+
+    void reAddPlugins()
+    {
+        QSafePluginListSettings settingsDB("falkTX", "CarlaPlugins5");
+
+        fLastTableIndex = 0;
+        ui.tableWidget->setSortingEnabled(false);
+        ui.tableWidget->clearContents();
+
+        QString LV2_PATH;
+        {
+            const QSafeSettings settings("falkTX", "Carla2");
+            // LV2_PATH = splitter.join()
+            // settings.valueStringList(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH);
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+        // plugins handled through backend
+
+        const uint internalCount = reAddInternalHelper(settingsDB, PLUGIN_INTERNAL, "");
+        const uint lv2Count = reAddInternalHelper(settingsDB, PLUGIN_LV2, LV2_PATH.toUtf8());
+       #ifdef CARLA_OS_MAC
+        const uint auCount = reAddInternalHelper(settingsDB, PLUGIN_AU, "");
+       #else
+        const uint auCount = 0;
+       #endif
+
+        // ------------------------------------------------------------------------------------------------------------
+        // LADSPA
+
+        QStringList ladspaPlugins;
+        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_native");
+        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_posix32");
+        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_posix64");
+        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_win32");
+        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_win64");
+
     }
 };
 
@@ -128,8 +363,8 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
     self.ui.tab_info->tabBar()->hide();
     self.ui.tab_reqs->tabBar()->hide();
     // FIXME, why /2 needed?
-//     self.ui.tab_info->setMinimumWidth(int(self.ui.la_id->width()/2) +
-//                                          fontMetricsHorizontalAdvance(self.ui.l_id->fontMetrics(), "9999999999") + 6*3);
+    self.ui.tab_info->setMinimumWidth(self.ui.la_id->width()/2 +
+                                      self.ui.l_id->fontMetrics().horizontalAdvance("9999999999") + 6*3);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -166,7 +401,7 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
 //         self.ui.b_cancel.setIcon(getIcon('dialog-cancel', 16, 'svgz'))
 //         self.ui.b_clear_filters.setIcon(getIcon('edit-clear', 16, 'svgz'))
 //         self.ui.b_refresh.setIcon(getIcon('view-refresh', 16, 'svgz'))
-//         hhi = self.ui.tableWidget.horizontalHeaderItem(self.TABLEWIDGET_ITEM_FAVORITE)
+        QTableWidgetItem* const hhi = self.ui.tableWidget->horizontalHeaderItem(self.TABLEWIDGET_ITEM_FAVORITE);
 //         hhi.setIcon(getIcon('bookmarks', 16, 'svgz'))
     }
 
@@ -220,7 +455,7 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
     // ----------------------------------------------------------------------------------------------------------------
     // Post-connect setup
 
-//     reAddPlugins();
+    self.reAddPlugins();
     slot_focusSearchFieldAndSelectAll();
 }
 
@@ -229,10 +464,19 @@ PluginListDialog::~PluginListDialog()
     delete &self;
 }
 
-// -----------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // public methods
 
-// -----------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
+// protected methods
+
+void PluginListDialog::showEvent(QShowEvent* const event)
+{
+    slot_focusSearchFieldAndSelectAll();
+    QDialog::showEvent(event);
+}
+
+// --------------------------------------------------------------------------------------------------------------------
 // private methods
 
 void PluginListDialog::loadSettings()
@@ -321,19 +565,19 @@ void PluginListDialog::slot_cellClicked(int row, int column)
 {
     if (column == self.TABLEWIDGET_ITEM_FAVORITE)
     {
-        // widget = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_FAVORITE);
+        QTableWidgetItem* const widget = self.ui.tableWidget->item(row, self.TABLEWIDGET_ITEM_FAVORITE);
         // plugin = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1);
         // plugin = self._createFavoritePluginDict(plugin);
 
-//         if (widget->checkState() == Qt.Checked)
-//         {
+        if (widget->checkState() == Qt::Checked)
+        {
 //             if (not plugin in self.fFavoritePlugins)
 //             {
 //                 self.fFavoritePlugins.append(plugin);
 //                 self.fFavoritePluginsChanged = true;
 //             }
-//         }
-//         else
+        }
+        else
         {
 //             try:
 //                 self.fFavoritePlugins.remove(plugin);
@@ -627,12 +871,8 @@ carla_frontend_createAndExecPluginListDialog(void* const parent/*, const HostSet
     {
         static PluginListDialogResults ret = {};
         static CarlaString retBinary;
-        static CarlaString retLabel;
 
         // TODO
-
-        ret.binary = retBinary;
-        ret.label = retLabel;
 
         return &ret;
     }

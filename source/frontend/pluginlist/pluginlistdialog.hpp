@@ -37,10 +37,33 @@
 
 #include "CarlaDefines.h"
 
+static constexpr const uint PLUGIN_QUERY_API_VERSION = 12;
+
 struct HostSettings {
     bool showPluginBridges;
     bool showWineBridges;
     bool useSystemIcons;
+};
+
+struct PluginInfo {
+    uint API;
+    uint build;
+    uint type;
+    uint hints;
+    QString category;
+    QString filename;
+    QString name;
+    QString label;
+    QString maker;
+    uint64_t uniqueId;
+    uint audioIns;
+    uint audioOuts;
+    uint cvIns;
+    uint cvOuts;
+    uint midiIns;
+    uint midiOuts;
+    uint parametersIns;
+    uint parametersOuts;
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -61,10 +84,15 @@ public:
     // public methods
 
     // ----------------------------------------------------------------------------------------------------------------
+    // protected methods
+
+protected:
+    void showEvent(QShowEvent*) override;
+
+    // ----------------------------------------------------------------------------------------------------------------
     // private methods
 
     void loadSettings();
-    void reAddPlugins();
 
     // ----------------------------------------------------------------------------------------------------------------
     // private slots
@@ -88,11 +116,24 @@ private slots:
 extern "C" {
 
 struct PluginListDialogResults {
-    int btype;
-    int ptype;
-    const char* binary;
+    uint API;
+    uint build;
+    uint type;
+    uint hints;
+    const char* category;
+    const char* filename;
+    const char* name;
     const char* label;
-    // TODO
+    const char* maker;
+    uint64_t uniqueId;
+    uint audioIns;
+    uint audioOuts;
+    uint cvIns;
+    uint cvOuts;
+    uint midiIns;
+    uint midiOuts;
+    uint parametersIns;
+    uint parametersOuts;
 };
 
 CARLA_API
