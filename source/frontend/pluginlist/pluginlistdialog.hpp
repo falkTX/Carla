@@ -37,6 +37,12 @@
 
 #include "CarlaDefines.h"
 
+struct HostSettings {
+    bool showPluginBridges;
+    bool showWineBridges;
+    bool useSystemIcons;
+};
+
 // --------------------------------------------------------------------------------------------------------------------
 // Jack Application Dialog
 
@@ -48,7 +54,7 @@ class PluginListDialog : public QDialog
     // ----------------------------------------------------------------------------------------------------------------
 
 public:
-    explicit PluginListDialog(QWidget* parent, bool useSystemIcons);
+    explicit PluginListDialog(QWidget* parent, const HostSettings& hostSettings);
     ~PluginListDialog() override;
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -57,8 +63,24 @@ public:
     // ----------------------------------------------------------------------------------------------------------------
     // private methods
 
+    void loadSettings();
+    void reAddPlugins();
+
     // ----------------------------------------------------------------------------------------------------------------
     // private slots
+
+private slots:
+    void slot_cellClicked(int row, int column);
+    void slot_cellDoubleClicked(int row, int column);
+    void slot_focusSearchFieldAndSelectAll();
+    void slot_addPlugin();
+    void slot_checkPlugin(int row);
+    void slot_checkFilters();
+    void slot_checkFiltersCategoryAll(bool clicked);
+    void slot_checkFiltersCategorySpecific(bool clicked);
+    void slot_refreshPlugins();
+    void slot_clearFilters();
+    void slot_saveSettings();
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -73,7 +95,8 @@ struct PluginListDialogResults {
     // TODO
 };
 
-CARLA_API PluginListDialogResults* carla_frontend_createAndExecPluginListDialog(void* parent, bool useSystemIcons);
+CARLA_API
+PluginListDialogResults* carla_frontend_createAndExecPluginListDialog(void* parent/*, const HostSettings& hostSettings*/);
 
 }
 

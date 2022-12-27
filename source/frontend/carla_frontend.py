@@ -79,7 +79,7 @@ class CarlaFrontendLib():
         self.lib.carla_frontend_createAndExecJackAppDialog.argtypes = (c_void_p, c_char_p)
         self.lib.carla_frontend_createAndExecJackAppDialog.restype = POINTER(JackApplicationDialogResults)
 
-        self.lib.carla_frontend_createAndExecPluginListDialog.argtypes = (c_void_p, c_bool)
+        self.lib.carla_frontend_createAndExecPluginListDialog.argtypes = (c_void_p,) # , c_bool)
         self.lib.carla_frontend_createAndExecPluginListDialog.restype = POINTER(PluginListDialogResults)
 
         self.lib.carla_frontend_createAndExecPluginListRefreshDialog.argtypes = (c_void_p, c_bool)
@@ -95,8 +95,7 @@ class CarlaFrontendLib():
                                                                                      projectFilename.encode("utf-8")))
 
     def createAndExecPluginListDialog(self, parent, useSystemIcons):
-        return structToDictOrNull(self.lib.carla_frontend_createAndExecPluginListDialog(unwrapinstance(parent),
-                                                                                        useSystemIcons))
+        return structToDictOrNull(self.lib.carla_frontend_createAndExecPluginListDialog(unwrapinstance(parent)))
 
     def createAndExecPluginListRefreshDialog(self, parent, useSystemIcons):
         return structToDictOrNull(self.lib.carla_frontend_createAndExecPluginListRefreshDialog(unwrapinstance(parent),
