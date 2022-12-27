@@ -368,7 +368,7 @@ class CanvasPreviewFrame(QFrame):
             fixPos = True
 
         if fixPos:
-            globalPos = self.mapToGlobal(QPoint(self.fInitialX + x, self.fInitialY + y))
+            globalPos = self.mapToGlobal(QPoint(int(self.fInitialX + x), int(self.fInitialY + y)))
             self.cursor().setPos(globalPos)
 
         x = self.fRenderSource.width() * x / self.fInternalWidth
