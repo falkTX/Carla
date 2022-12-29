@@ -724,6 +724,7 @@ endif
 	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_backend_qt.py         $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_frontend.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_host_control.py       $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_settings.py           $(DESTDIR)$(DATADIR)/carla/resources
