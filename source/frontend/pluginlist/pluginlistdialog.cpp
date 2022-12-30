@@ -47,6 +47,19 @@
 using namespace CarlaBackend;
 
 // --------------------------------------------------------------------------------------------------------------------
+// Backwards-compatible horizontalAdvance/width call, depending on Qt version
+
+static inline
+int fontMetricsHorizontalAdvance(const QFontMetrics& fontMetrics, const QString& string)
+{
+#if QT_VERSION >= 0x50b00
+    return fontMetrics.horizontalAdvance(string);
+#else
+    return fontMetrics.width(string);
+#endif
+}
+
+// --------------------------------------------------------------------------------------------------------------------
 
 typedef QList<PluginInfo> QPluginInfoList;
 
@@ -364,7 +377,7 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
     self.ui.tab_reqs->tabBar()->hide();
     // FIXME, why /2 needed?
     self.ui.tab_info->setMinimumWidth(self.ui.la_id->width()/2 +
-                                      self.ui.l_id->fontMetrics().horizontalAdvance("9999999999") + 6*3);
+                                      fontMetricsHorizontalAdvance(self.ui.l_id->fontMetrics(), "9999999999") + 6*3);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     // ----------------------------------------------------------------------------------------------------------------
