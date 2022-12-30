@@ -16,7 +16,7 @@ jobs:
   macos-11:
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up dependencies
         run: |
           brew install fluid-synth liblo libmagic libsndfile pkg-config pyqt@5 qt@5 sdl2
@@ -31,8 +31,8 @@ jobs:
       #run:
         #shell: msys2 {0}
     #steps:
-      #- uses: actions/checkout@v2
-      #- uses: msys2/setup-msys2@v2
+      #- uses: actions/checkout@v3
+      #- uses: msys2/setup-msys2@v3
         #with:
           #msystem: mingw32
           #install: base-devel make mingw-w64-i686-toolchain mingw-w64-i686-fluidsynth mingw-w64-i686-liblo mingw-w64-i686-libsndfile mingw-w64-i686-pkg-config mingw-w64-i686-python-pyqt5
@@ -47,8 +47,8 @@ jobs:
       #run:
         #shell: msys2 {0}
     #steps:
-      #- uses: actions/checkout@v2
-      #- uses: msys2/setup-msys2@v2
+      #- uses: actions/checkout@v3
+      #- uses: msys2/setup-msys2@v3
         #with:
           #msystem: mingw64
           #install: base-devel make mingw-w64-x86_64-toolchain mingw-w64-x86_64-fluidsynth mingw-w64-x86_64-liblo mingw-w64-x86_64-libsndfile mingw-w64-x86_64-pkg-config mingw-w64-x86_64-python-pyqt5
@@ -60,7 +60,7 @@ jobs:
   ubuntu-18_04:
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up dependencies
         run: |
           sudo dpkg --add-architecture i386
@@ -82,7 +82,7 @@ jobs:
   ubuntu-20_04:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Fix GitHub's mess
         run: |
           sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
@@ -114,7 +114,7 @@ jobs:
       CROSS_COMPILING: "true"
       PKG_CONFIG: "false"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Fix GitHub's mess
         run: |
           sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
@@ -139,7 +139,7 @@ jobs:
       CROSS_COMPILING: "true"
       PKG_CONFIG: "false"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Fix GitHub's mess
         run: |
           sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
