@@ -657,6 +657,8 @@ public:
           fAtomBufferWorkerResp(),
           fAtomBufferUiOutTmpData(nullptr),
           fAtomBufferWorkerInTmpData(nullptr),
+          fAtomBufferRealtime(nullptr),
+          fAtomBufferRealtimeSize(0),
           fEventsIn(),
           fEventsOut(),
           fLv2Options(),
@@ -856,6 +858,12 @@ public:
         {
             delete[] fAtomBufferWorkerInTmpData;
             fAtomBufferWorkerInTmpData = nullptr;
+        }
+
+        if (fAtomBufferRealtime != nullptr)
+        {
+            std::free(fAtomBufferRealtime);
+            fAtomBufferRealtime = nullptr;
         }
 
         clearBuffers();
@@ -2131,14 +2139,19 @@ public:
             CARLA_SAFE_ASSERT_RETURN(tmpRingBuffer.isDataAvailableForReading(),);
             CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr,);
 
+            const size_t localSize = fAtomBufferWorkerIn.getSize();
+            uint8_t* const localData = new uint8_t[localSize];
+            LV2_Atom* const localAtom = static_cast<LV2_Atom*>(static_cast<void*>(localData));
+            localAtom->size = localSize;
             uint32_t portIndex;
-            const LV2_Atom* atom;
 
-            for (; tmpRingBuffer.get(atom, portIndex);)
+            for (; tmpRingBuffer.get(portIndex, localAtom); localAtom->size = localSize)
             {
-                CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerIn);
-                fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
+                CARLA_SAFE_ASSERT_CONTINUE(localAtom->type == kUridCarlaAtomWorkerIn);
+                fExt.worker->work(fHandle, carla_lv2_worker_respond, this, localAtom->size, LV2_ATOM_BODY_CONST(localAtom));
             }
+
+            delete[] localData;
         }
 
         if (fInlineDisplayNeedsRedraw)
@@ -2200,29 +2213,35 @@ public:
             Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferUiOut, fAtomBufferUiOutTmpData);
             CARLA_SAFE_ASSERT(tmpRingBuffer.isDataAvailableForReading());
 
+            const size_t localSize = fAtomBufferUiOut.getSize();
+            uint8_t* const localData = new uint8_t[localSize];
+            LV2_Atom* const localAtom = static_cast<LV2_Atom*>(static_cast<void*>(localData));
+            localAtom->size = localSize;
+
             uint32_t portIndex;
-            const LV2_Atom* atom;
             const bool hasPortEvent(fUI.handle != nullptr &&
                                     fUI.descriptor != nullptr &&
                                     fUI.descriptor->port_event != nullptr);
 
-            for (; tmpRingBuffer.get(atom, portIndex);)
+            for (; tmpRingBuffer.get(portIndex, localAtom); localAtom->size = localSize)
             {
 #ifndef LV2_UIS_ONLY_INPROCESS
                 if (fUI.type == UI::TYPE_BRIDGE)
                 {
                     if (fPipeServer.isPipeRunning())
-                        fPipeServer.writeLv2AtomMessage(portIndex, atom);
+                        fPipeServer.writeLv2AtomMessage(portIndex, localAtom);
                 }
                 else
 #endif
                 {
                     if (hasPortEvent && ! fNeedsUiClose)
-                        fUI.descriptor->port_event(fUI.handle, portIndex, lv2_atom_total_size(atom), kUridAtomTransferEvent, atom);
+                        fUI.descriptor->port_event(fUI.handle, portIndex, lv2_atom_total_size(localAtom), kUridAtomTransferEvent, localAtom);
                 }
 
-                inspectAtomForParameterChange(atom);
+                inspectAtomForParameterChange(localAtom);
             }
+
+            delete[] localData;
         }
 
 #ifndef LV2_UIS_ONLY_INPROCESS
@@ -3221,7 +3240,9 @@ public:
         {
             fAtomBufferWorkerIn.createBuffer(eventBufferSize);
             fAtomBufferWorkerResp.createBuffer(eventBufferSize);
-            fAtomBufferWorkerInTmpData = new uint8_t[fAtomBufferWorkerIn.getSize()];
+            fAtomBufferRealtimeSize = fAtomBufferWorkerIn.getSize(); // actual buffer size will be next power of 2
+            fAtomBufferRealtime = static_cast<LV2_Atom*>(std::malloc(fAtomBufferRealtimeSize));
+            fAtomBufferWorkerInTmpData = new uint8_t[fAtomBufferRealtimeSize];
         }
 
         if (fRdfDescriptor->ParameterCount > 0 ||
@@ -3869,10 +3890,11 @@ public:
             {
                 if (fAtomBufferEvIn.isDataAvailableForReading())
                 {
-                    const LV2_Atom* atom;
                     uint32_t j, portIndex;
+                    LV2_Atom* const atom = fAtomBufferRealtime;
+                    atom->size = fAtomBufferRealtimeSize;
 
-                    for (; fAtomBufferEvIn.get(atom, portIndex);)
+                    for (; fAtomBufferEvIn.get(portIndex, atom); atom->size = fAtomBufferRealtimeSize)
                     {
                         j = (portIndex < fEventsIn.count) ? portIndex : fEventsIn.ctrlIndex;
 
@@ -4331,10 +4353,11 @@ public:
         {
             if (fAtomBufferWorkerResp.isDataAvailableForReading())
             {
-                const LV2_Atom* atom;
                 uint32_t portIndex;
+                LV2_Atom* const atom = fAtomBufferRealtime;
+                atom->size = fAtomBufferRealtimeSize;
 
-                for (; fAtomBufferWorkerResp.get(atom, portIndex);)
+                for (; fAtomBufferWorkerResp.get(portIndex, atom); atom->size = fAtomBufferRealtimeSize)
                 {
                     CARLA_SAFE_ASSERT_CONTINUE(atom->type == kUridCarlaAtomWorkerResp);
                     fExt.worker->work_response(fHandle, atom->size, LV2_ATOM_BODY_CONST(atom));
@@ -7472,6 +7495,8 @@ private:
     Lv2AtomRingBuffer fAtomBufferWorkerResp;
     uint8_t*          fAtomBufferUiOutTmpData;
     uint8_t*          fAtomBufferWorkerInTmpData;
+    LV2_Atom*         fAtomBufferRealtime;
+    uint32_t          fAtomBufferRealtimeSize;
 
     CarlaPluginLV2EventData fEventsIn;
     CarlaPluginLV2EventData fEventsOut;

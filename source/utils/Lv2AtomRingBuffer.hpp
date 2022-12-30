@@ -32,9 +32,6 @@ public:
         : fMutex(),
           fHeapBuffer(HeapBuffer_INIT),
           fNeedsDataDelete(true)
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        , fRetAtom{{0,0}, {0}}
-#endif
     {
         carla_zeroStruct(fHeapBuffer);
     }
@@ -43,9 +40,6 @@ public:
         : fMutex(),
           fHeapBuffer(HeapBuffer_INIT),
           fNeedsDataDelete(false)
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        , fRetAtom{{0,0}, {0}}
-#endif
     {
         carla_zeroStruct(fHeapBuffer);
 
@@ -120,14 +114,12 @@ public:
     // -------------------------------------------------------------------
 
     // NOTE: must have been locked before
-    bool get(const LV2_Atom*& atom, uint32_t& portIndex) noexcept
+    bool get(uint32_t& portIndex, LV2_Atom* const retAtom) noexcept
     {
-        if (const LV2_Atom* const retAtom = readAtom(portIndex))
-        {
-            atom = retAtom;
+        if (readAtom(portIndex, retAtom))
             return true;
-        }
 
+        retAtom->size = retAtom->type = 0;
         return false;
     }
 
@@ -155,29 +147,32 @@ public:
 protected:
     // -------------------------------------------------------------------
 
-    const LV2_Atom* readAtom(uint32_t& portIndex) noexcept
+    bool readAtom(uint32_t& portIndex, LV2_Atom* const retAtom) noexcept
     {
-        fRetAtom.atom.size = 0;
-        fRetAtom.atom.type = 0;
+        const uint32_t maxAtomSize = retAtom->size - sizeof(LV2_Atom);
 
-        if (! tryRead(&fRetAtom.atom, sizeof(LV2_Atom)))
-            return nullptr;
-        if (fRetAtom.atom.size == 0 || fRetAtom.atom.type == 0)
-            return nullptr;
+        LV2_Atom atom = {};
 
-        CARLA_SAFE_ASSERT_UINT2_RETURN(fRetAtom.atom.size < kMaxAtomDataSize, fRetAtom.atom.size, kMaxAtomDataSize, nullptr);
+        if (! tryRead(&atom, sizeof(LV2_Atom)))
+            return false;
+        if (atom.size == 0 || atom.type == 0)
+            return false;
+
+        CARLA_SAFE_ASSERT_UINT2_RETURN(atom.size < maxAtomSize, atom.size, maxAtomSize, false);
 
         int32_t index = -1;
         if (! tryRead(&index, sizeof(int32_t)))
-            return nullptr;
+            return false;
         if (index < 0)
-            return nullptr;
+            return false;
 
-        if (! tryRead(fRetAtom.data, fRetAtom.atom.size))
-            return nullptr;
+        if (! tryRead(retAtom + 1, atom.size))
+            return false;
 
         portIndex = static_cast<uint32_t>(index);
-        return &fRetAtom.atom;
+        retAtom->size = atom.size;
+        retAtom->type = atom.type;
+        return true;
     }
 
     // -------------------------------------------------------------------
@@ -202,13 +197,6 @@ private:
     CarlaMutex fMutex;
     HeapBuffer fHeapBuffer;
     const bool fNeedsDataDelete;
-
-    static const std::size_t kMaxAtomDataSize = 32768 - sizeof(LV2_Atom);
-
-    struct RetAtom {
-        LV2_Atom atom;
-        char     data[kMaxAtomDataSize];
-    } fRetAtom;
 
     friend class Lv2AtomQueue;
 
