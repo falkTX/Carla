@@ -95,7 +95,7 @@ const char* carla_get_complete_license_text()
 #ifdef HAVE_SNDFILE
         "<li>libsndfile library for base audio file support</li>"
 #endif
-        "<li>rtmempool library by Nedko Arnaudov"</li>"
+        "<li>rtmempool library by Nedko Arnaudov</li>"
         "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
 #ifdef USING_RTAUDIO
         "<li>RtAudio v" RTAUDIO_VERSION " and RtMidi v" RTMIDI_VERSION " for native Audio and MIDI support</li>"
