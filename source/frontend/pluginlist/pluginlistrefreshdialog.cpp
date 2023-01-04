@@ -327,8 +327,8 @@ PluginListRefreshDialog::PluginListRefreshDialog(QWidget* const parent, const bo
    #ifdef CARLA_OS_MAC
     if (! hasFeature(features, "juce"))
     {
-        self.ui.ch_au.setChecked(false);
-        self.ui.ch_au.setEnabled(false);
+        self.ui.ch_au->setChecked(false);
+        self.ui.ch_au->setEnabled(false);
     }
    #endif
 
