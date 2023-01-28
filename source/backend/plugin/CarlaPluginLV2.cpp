@@ -3247,7 +3247,15 @@ public:
 
         if (fRdfDescriptor->ParameterCount > 0 ||
             (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+        {
             fAtomBufferEvIn.createBuffer(eventBufferSize);
+
+            if (fAtomBufferRealtimeSize == 0)
+            {
+                fAtomBufferRealtimeSize = fAtomBufferEvIn.getSize(); // actual buffer size will be next power of 2
+                fAtomBufferRealtime = static_cast<LV2_Atom*>(std::malloc(fAtomBufferRealtimeSize));
+            }
+        }
 
         if (hasPatchParameterOutputs ||
             (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
