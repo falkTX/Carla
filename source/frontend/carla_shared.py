@@ -38,7 +38,7 @@ except:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (PyQt5)
 
-from PyQt5.Qt import PYQT_VERSION_STR
+from PyQt5.QtCore import PYQT_VERSION_STR
 from PyQt5.QtCore import qFatal, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
