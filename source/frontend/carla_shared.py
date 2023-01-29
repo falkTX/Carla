@@ -38,7 +38,12 @@ except:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (PyQt5)
 
-from PyQt5.Qt import PYQT_VERSION_STR
+# import changed in PyQt 5.15.8, so try both
+try:
+    from PyQt5.Qt import PYQT_VERSION_STR
+except ImportError:
+    from PyQt5.QtCore import PYQT_VERSION_STR
+
 from PyQt5.QtCore import qFatal, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
