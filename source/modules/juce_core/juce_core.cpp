@@ -152,10 +152,6 @@
 #include "misc/juce_Result.cpp"
 #include "misc/juce_Uuid.cpp"
 #include "misc/juce_ConsoleApplication.cpp"
-#include "network/juce_MACAddress.cpp"
-#include "network/juce_NamedPipe.cpp"
-#include "network/juce_Socket.cpp"
-#include "network/juce_IPAddress.cpp"
 #include "streams/juce_BufferedInputStream.cpp"
 #include "streams/juce_FileInputSource.cpp"
 #include "streams/juce_InputStream.cpp"
@@ -197,15 +193,11 @@
 #if ! JUCE_WINDOWS
  #include "native/juce_posix_SharedCode.h"
  #include "native/juce_posix_NamedPipe.cpp"
- #if ! JUCE_ANDROID || __ANDROID_API__ >= 24
-  #include "native/juce_posix_IPAddress.h"
- #endif
 #endif
 
 //==============================================================================
 #if JUCE_MAC || JUCE_IOS
  #include "native/juce_mac_Files.mm"
- #include "native/juce_mac_Network.mm"
  #include "native/juce_mac_Strings.mm"
  #include "native/juce_intel_SharedCode.h"
  #include "native/juce_mac_SystemStats.mm"
@@ -214,7 +206,6 @@
 //==============================================================================
 #elif JUCE_WINDOWS
  #include "native/juce_win32_Files.cpp"
- #include "native/juce_win32_Network.cpp"
  #include "native/juce_win32_Registry.cpp"
  #include "native/juce_win32_SystemStats.cpp"
  #include "native/juce_win32_Threads.cpp"
@@ -223,10 +214,6 @@
 #elif JUCE_LINUX || JUCE_BSD
  #include "native/juce_linux_CommonFile.cpp"
  #include "native/juce_linux_Files.cpp"
- #include "native/juce_linux_Network.cpp"
- #if JUCE_USE_CURL
-  #include "native/juce_curl_Network.cpp"
- #endif
  #if JUCE_BSD
   #include "native/juce_intel_SharedCode.h"
  #endif
@@ -240,7 +227,6 @@
  #include "native/juce_android_JNIHelpers.cpp"
  #include "native/juce_android_Files.cpp"
  #include "native/juce_android_Misc.cpp"
- #include "native/juce_android_Network.cpp"
  #include "native/juce_android_SystemStats.cpp"
  #include "native/juce_android_Threads.cpp"
  #include "native/juce_android_RuntimePermissions.cpp"
@@ -254,11 +240,9 @@
 #include "files/juce_common_MimeTypes.cpp"
 #include "threads/juce_HighResolutionTimer.cpp"
 #include "threads/juce_WaitableEvent.cpp"
-#include "network/juce_URL.cpp"
 
 #if ! JUCE_WASM
  #include "threads/juce_ChildProcess.cpp"
- #include "network/juce_WebInputStream.cpp"
  #include "streams/juce_URLInputSource.cpp"
 #endif
 
