@@ -14,7 +14,7 @@ git clone git@github.com:DISTRHO/DISTRHO-Ports.git ${DISTRHO_PORTS_DIR} --depth=
 CARLA_MODULES_DIR=${CARLA_DIR}/source/modules
 JUCE_MODULES_DIR=${DISTRHO_PORTS_DIR}/libs/juce7/source/modules
 
-MODULES=("juce_audio_basics juce_audio_devices juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics juce_gui_extra")
+MODULES=("juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_dsp juce_events juce_graphics juce_gui_basics juce_gui_extra")
 
 for M in ${MODULES}; do
   echo ${CARLA_MODULES_DIR}/${M};

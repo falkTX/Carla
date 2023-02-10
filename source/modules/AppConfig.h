@@ -18,6 +18,10 @@
 #ifndef CARLA_JUCE_APPCONFIG_H_INCLUDED
 #define CARLA_JUCE_APPCONFIG_H_INCLUDED
 
+#if defined(DEBUG) && defined(NDEBUG)
+# undef DEBUG
+#endif
+
 // --------------------------------------------------------------------------------------------------------------------
 // Check OS
 
@@ -167,14 +171,14 @@
     If your app doesn't need to read FLAC files, you might want to disable this to
     reduce the size of your codebase and build time.
 */
-#define JUCE_USE_FLAC 1
+#define JUCE_USE_FLAC 0
 
 /** Config: JUCE_USE_OGGVORBIS
     Enables the Ogg-Vorbis audio codec classes (available on all platforms).
     If your app doesn't need to read Ogg-Vorbis files, you might want to disable this to
     reduce the size of your codebase and build time.
 */
-#define JUCE_USE_OGGVORBIS 1
+#define JUCE_USE_OGGVORBIS 0
 
 /** Config: JUCE_USE_MP3AUDIOFORMAT
     Enables the software-based MP3AudioFormat class.
@@ -193,7 +197,7 @@
 /** Config: JUCE_USE_LAME_AUDIO_FORMAT
     Enables the LameEncoderAudioFormat class.
 */
-#define JUCE_USE_LAME_AUDIO_FORMAT 1
+#define JUCE_USE_LAME_AUDIO_FORMAT 0
 
 /** Config: JUCE_USE_WINDOWS_MEDIA_FORMAT
     Enables the Windows Media SDK codecs.
@@ -325,6 +329,75 @@
 // juce_data_structures
 
 // nothing here
+
+// --------------------------------------------------------------------------------------------------------------------
+// juce_dsp
+
+//==============================================================================
+/** Config: JUCE_ASSERTION_FIRFILTER
+
+    When this flag is enabled, an assertion will be generated during the
+    execution of DEBUG configurations if you use a FIRFilter class to process
+    FIRCoefficients with a size higher than 128, to tell you that's it would be
+    more efficient to use the Convolution class instead. It is enabled by
+    default, but you may want to disable it if you really want to process such
+    a filter in the time domain.
+*/
+#define JUCE_ASSERTION_FIRFILTER 0
+
+/** Config: JUCE_DSP_USE_INTEL_MKL
+
+    If this flag is set, then JUCE will use Intel's MKL for JUCE's FFT and
+    convolution classes.
+
+    If you're using the Projucer's Visual Studio exporter, you should also set
+    the "Use MKL Library (oneAPI)" option in the exporter settings to
+    "Sequential" or "Parallel". If you're not using the Visual Studio exporter,
+    the folder containing the mkl_dfti.h header must be in your header search
+    paths, and you must link against all the necessary MKL libraries.
+*/
+#define JUCE_DSP_USE_INTEL_MKL 0
+
+/** Config: JUCE_DSP_USE_SHARED_FFTW
+
+    If this flag is set, then JUCE will search for the fftw shared libraries
+    at runtime and use the library for JUCE's FFT and convolution classes.
+
+    If the library is not found, then JUCE's fallback FFT routines will be used.
+
+    This is especially useful on linux as fftw often comes pre-installed on
+    popular linux distros.
+
+    You must respect the FFTW license when enabling this option.
+*/
+#define JUCE_DSP_USE_SHARED_FFTW 0
+
+/** Config: JUCE_DSP_USE_STATIC_FFTW
+
+    If this flag is set, then JUCE will use the statically linked fftw libraries
+    for JUCE's FFT and convolution classes.
+
+    You must add the fftw header/library folder to the extra header/library search
+    paths of your JUCE project. You also need to add the fftw library itself
+    to the extra libraries supplied to your JUCE project during linking.
+
+    You must respect the FFTW license when enabling this option.
+*/
+#define JUCE_DSP_USE_STATIC_FFTW 0
+
+/** Config: JUCE_DSP_ENABLE_SNAP_TO_ZERO
+
+    Enables code in the dsp module to avoid floating point denormals during the
+    processing of some of the dsp module's filters.
+
+    Enabling this will add a slight performance overhead to the DSP module's
+    filters and algorithms. If your audio app already disables denormals altogether
+    (for example, by using the ScopedNoDenormals class or the
+    FloatVectorOperations::disableDenormalisedNumberSupport method), then you
+    can safely disable this flag to shave off a few cpu cycles from the DSP module's
+    filters and algorithms.
+*/
+#define JUCE_DSP_ENABLE_SNAP_TO_ZERO 0
 
 // --------------------------------------------------------------------------------------------------------------------
 // juce_events
