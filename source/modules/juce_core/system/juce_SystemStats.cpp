@@ -71,11 +71,6 @@ StringArray SystemStats::getDeviceIdentifiers()
     {
         ids.add (String::toHexString ((int64) num));
     }
-    else
-    {
-        for (auto& address : MACAddress::getAllAddresses())
-            ids.add (address.toString());
-    }
 
     jassert (! ids.isEmpty()); // Failed to create any IDs!
     return ids;

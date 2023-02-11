@@ -826,10 +826,7 @@ std::unique_ptr<URL::DownloadTask> URL::downloadToFile (const File& targetLocati
                                                         DownloadTask::Listener* listener,
                                                         bool usePostCommand)
 {
-    auto options = DownloadTaskOptions().withExtraHeaders (std::move (extraHeaders))
-                                        .withListener (listener)
-                                        .withUsePost (usePostCommand);
-    return downloadToFile (targetLocation, std::move (options));
+    return nullptr;
 }
 
 } // namespace juce

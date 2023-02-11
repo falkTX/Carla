@@ -86,10 +86,7 @@
 #include "broadcasters/juce_ChangeBroadcaster.h"
 #include "timers/juce_Timer.h"
 #include "timers/juce_MultiTimer.h"
-#include "interprocess/juce_InterprocessConnection.h"
-#include "interprocess/juce_InterprocessConnectionServer.h"
 #include "interprocess/juce_ConnectedChildProcess.h"
-#include "interprocess/juce_NetworkServiceDiscovery.h"
 #include "native/juce_ScopedLowPowerModeDisabler.h"
 
 #if JUCE_LINUX || JUCE_BSD

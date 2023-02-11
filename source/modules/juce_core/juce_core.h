@@ -325,13 +325,6 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "threads/juce_ReadWriteLock.h"
 #include "threads/juce_ScopedReadLock.h"
 #include "threads/juce_ScopedWriteLock.h"
-#include "network/juce_IPAddress.h"
-#include "network/juce_MACAddress.h"
-#include "network/juce_NamedPipe.h"
-#include "network/juce_Socket.h"
-#include "network/juce_URL.h"
-#include "network/juce_WebInputStream.h"
-#include "streams/juce_URLInputSource.h"
 #include "time/juce_PerformanceCounter.h"
 #include "unit_tests/juce_UnitTest.h"
 #include "xml/juce_XmlDocument.h"
@@ -343,7 +336,6 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "memory/juce_SharedResourcePointer.h"
 #include "memory/juce_AllocationHooks.h"
 #include "memory/juce_Reservoir.h"
-#include "files/juce_AndroidDocument.h"
 
 #if JUCE_CORE_INCLUDE_OBJC_HELPERS && (JUCE_MAC || JUCE_IOS)
  #include "native/juce_mac_ObjCHelpers.h"

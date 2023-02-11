@@ -153,9 +153,6 @@
 #include "misc/juce_Result.cpp"
 #include "misc/juce_Uuid.cpp"
 #include "misc/juce_ConsoleApplication.cpp"
-#include "network/juce_MACAddress.cpp"
-#include "network/juce_NamedPipe.cpp"
-#include "network/juce_Socket.cpp"
 #include "streams/juce_BufferedInputStream.cpp"
 #include "streams/juce_FileInputSource.cpp"
 #include "streams/juce_InputStream.cpp"
@@ -196,7 +193,6 @@
 //==============================================================================
 #if ! JUCE_WINDOWS
  #include "native/juce_posix_SharedCode.h"
- #include "native/juce_posix_NamedPipe.cpp"
 #endif
 
 //==============================================================================
@@ -244,11 +240,9 @@
 #include "files/juce_common_MimeTypes.cpp"
 #include "threads/juce_HighResolutionTimer.cpp"
 #include "threads/juce_WaitableEvent.cpp"
-#include "network/juce_URL.cpp"
 
 #if ! JUCE_WASM
  #include "threads/juce_ChildProcess.cpp"
- #include "streams/juce_URLInputSource.cpp"
 #endif
 
 //==============================================================================
