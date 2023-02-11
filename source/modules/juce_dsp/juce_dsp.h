@@ -58,7 +58,7 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_formats/juce_audio_formats.h>
 
-#if defined(_M_X64) || defined(__amd64__) || defined(__SSE2__) || (defined(_M_IX86_FP) && _M_IX86_FP == 2)
+#if defined(_M_X64) || defined(__amd64__) || defined(__SSE2__) || (defined(_M_IX86_FP) && _M_IX86_FP == 2) || defined(__riscv) || defined(__EMSCRIPTEN__)
 
  #if defined(_M_X64) || defined(__amd64__)
   #ifndef __SSE2__
@@ -221,7 +221,7 @@ namespace juce
  #include "native/juce_fallback_SIMDNativeOps.h"
 
  // include the correct native file for this build target CPU
- #if defined(__i386__) || defined(__amd64__) || defined(_M_X64) || defined(_X86_) || defined(_M_IX86)
+ #if defined(__i386__) || defined(__amd64__) || defined(_M_X64) || defined(_X86_) || defined(_M_IX86) || defined(__riscv) || defined(__EMSCRIPTEN__)
   #ifdef __AVX2__
    #include "native/juce_avx_SIMDNativeOps.h"
   #else

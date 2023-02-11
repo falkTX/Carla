@@ -73,6 +73,7 @@
  #endif
 
  #if JUCE_WASM
+  #include <emscripten.h>
   #include <stdio.h>
   #include <sys/types.h>
   #include <sys/socket.h>
@@ -240,6 +241,7 @@
 #include "files/juce_common_MimeTypes.cpp"
 #include "threads/juce_HighResolutionTimer.cpp"
 #include "threads/juce_WaitableEvent.cpp"
+#include "network/juce_URL.cpp"
 
 #if ! JUCE_WASM
  #include "threads/juce_ChildProcess.cpp"
