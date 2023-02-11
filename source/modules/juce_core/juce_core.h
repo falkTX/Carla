@@ -325,6 +325,8 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "threads/juce_ReadWriteLock.h"
 #include "threads/juce_ScopedReadLock.h"
 #include "threads/juce_ScopedWriteLock.h"
+#include "network/juce_NamedPipe.h"
+#include "network/juce_URL.h"
 #include "time/juce_PerformanceCounter.h"
 #include "unit_tests/juce_UnitTest.h"
 #include "xml/juce_XmlDocument.h"
