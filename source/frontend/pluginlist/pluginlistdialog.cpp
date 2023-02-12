@@ -44,7 +44,7 @@
 
 #include "CarlaString.hpp"
 
-using namespace CarlaBackend;
+CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 // Backwards-compatible horizontalAdvance/width call, depending on Qt version
