@@ -25,19 +25,12 @@ include $(CWD)/Makefile.deps.mk
 BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP -fno-common
 BASE_OPTS  = -O3 -ffast-math -fdata-sections -ffunction-sections
 
-ifeq ($(CPU_I386_OR_X86_64),true)
-BASE_OPTS += -mtune=generic
 ifeq ($(WASM),true)
-# BASE_OPTS += -msse -msse2 -msse3 -msimd128
-else
-BASE_OPTS += -msse -msse2 -mfpmath=sse
-endif
-endif
-
-ifeq ($(CPU_ARM),true)
-ifneq ($(CPU_ARM64),true)
+BASE_OPTS += -msse -msse2 -msse3 -msimd128
+else ifeq ($(CPU_ARM32),true)
 BASE_OPTS += -mfpu=neon-vfpv4 -mfloat-abi=hard
-endif
+else ifeq ($(CPU_I386_OR_X86_64),true)
+BASE_OPTS += -mtune=generic -msse -msse2 -mfpmath=sse
 endif
 
 ifeq ($(MACOS),true)
