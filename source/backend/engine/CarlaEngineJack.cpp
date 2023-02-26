@@ -4194,8 +4194,6 @@ private:
         PostPonedJackEvent nullEvent;
         carla_zeroStruct(nullEvent);
 
-        CarlaStringList clientsToIgnore, portsToIgnore;
-
         for (; ! shouldThreadExit();)
         {
             if (fIsInternalClient)
@@ -4217,41 +4215,6 @@ private:
                 continue;
             }
 
-            // 1st iteration, fill in what things we ought to ignore and do unregistration
-            clientsToIgnore.clear();
-            portsToIgnore.clear();
-
-            for (LinkedList<PostPonedJackEvent>::Itenerator it = events.begin2(); it.valid(); it.next())
-            {
-                const PostPonedJackEvent& ev(it.getValue(nullEvent));
-                CARLA_SAFE_ASSERT_CONTINUE(ev.type != PostPonedJackEvent::kTypeNull);
-
-                switch (ev.type)
-                {
-                case PostPonedJackEvent::kTypeClientRegister:
-                    clientsToIgnore.removeOne(ev.clientRegister.name);
-                    break;
-                case PostPonedJackEvent::kTypeClientUnregister:
-                    clientsToIgnore.append(ev.clientUnregister.name);
-                    handleJackClientUnregistrationCallback(ev.clientUnregister.name);
-                    break;
-                case PostPonedJackEvent::kTypePortRegister:
-                    portsToIgnore.removeOne(ev.portRegister.fullName);
-                    break;
-                case PostPonedJackEvent::kTypePortUnregister:
-                    portsToIgnore.append(ev.portUnregister.fullName);
-                    handleJackPortUnregistrationCallback(ev.portUnregister.fullName);
-                    break;
-                case PostPonedJackEvent::kTypePortDisconnect:
-                    handleJackPortDisconnectCallback(ev.portDisconnect.portNameA,
-                                                     ev.portDisconnect.portNameB);
-                    break;
-                default:
-                    break;
-                }
-            }
-
-            // 2nd iteration, go through all postponed events while ignoring some
             for (LinkedList<PostPonedJackEvent>::Itenerator it = events.begin2(); it.valid(); it.next())
             {
                 const PostPonedJackEvent& ev(it.getValue(nullEvent));
@@ -4260,54 +4223,43 @@ private:
                 switch (ev.type)
                 {
                 case PostPonedJackEvent::kTypeNull:
-                case PostPonedJackEvent::kTypeClientRegister:
+                    break;
+
                 case PostPonedJackEvent::kTypeClientUnregister:
-                case PostPonedJackEvent::kTypePortUnregister:
-                case PostPonedJackEvent::kTypePortDisconnect:
+                    handleJackClientUnregistrationCallback(ev.clientUnregister.name);
                     break;
 
                 case PostPonedJackEvent::kTypeClientPositionChange:
-                {
-                    char uuidstr[JACK_UUID_STRING_SIZE];
-                    carla_zeroStruct(uuidstr);
-                    jackbridge_uuid_unparse(ev.clientPositionChange.uuid, uuidstr);
-
-                    if (clientsToIgnore.count() != 0)
-                    {
-                        const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
-
-                        const char* const clientname = jackbridge_get_client_name_by_uuid(fClient, uuidstr);
-                        CARLA_SAFE_ASSERT_CONTINUE(clientname != nullptr && clientname[0] != '\0');
-
-                        if (clientsToIgnore.contains(clientname))
-                            continue;
-                    }
-
                     handleJackClientPositionChangeCallback(ev.clientPositionChange.uuid);
                     break;
-                }
 
                 case PostPonedJackEvent::kTypePortRegister:
-                    if (portsToIgnore.contains(ev.portRegister.fullName))
-                        continue;
                     handleJackPortRegistrationCallback(ev.portRegister.fullName,
                                                        ev.portRegister.shortName,
                                                        ev.portRegister.hints);
                     break;
 
+                case PostPonedJackEvent::kTypePortUnregister:
+                    handleJackPortUnregistrationCallback(ev.portUnregister.fullName);
+                    break;
+
                 case PostPonedJackEvent::kTypePortConnect:
-                    if (portsToIgnore.contains(ev.portConnect.portNameA))
-                        continue;
-                    if (portsToIgnore.contains(ev.portConnect.portNameB))
-                        continue;
                     handleJackPortConnectCallback(ev.portConnect.portNameA,
                                                   ev.portConnect.portNameB);
+                    break;
+
+                case PostPonedJackEvent::kTypePortDisconnect:
+                    handleJackPortDisconnectCallback(ev.portDisconnect.portNameA,
+                                                     ev.portDisconnect.portNameB);
                     break;
 
                 case PostPonedJackEvent::kTypePortRename:
                     handleJackPortRenameCallback(ev.portRename.oldFullName,
                                                  ev.portRename.newFullName,
                                                  ev.portRename.newShortName);
+                    break;
+
+                case PostPonedJackEvent::kTypeClientRegister:
                     break;
                 }
             }
@@ -4316,8 +4268,6 @@ private:
         }
 
         events.clear();
-        clientsToIgnore.clear();
-        portsToIgnore.clear();
     }
 #endif //  BUILD_BRIDGE
 
