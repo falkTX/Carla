@@ -482,8 +482,8 @@ else
 DGL_FLAGS = $(shell $(PKG_CONFIG) --cflags gl x11 xcursor xext xrandr)
 DGL_LIBS  = $(shell $(PKG_CONFIG) --libs gl x11 xcursor xext xrandr)
 ifeq ($(HAVE_DBUS)$(STATIC_PLUGIN_TARGET)$(USING_CUSTOM_DPF),truetruetrue)
-DGL_FLAGS += $(shell $(PKG_CONFIG) --cflags dbus)
-DGL_LIBS  += $(shell $(PKG_CONFIG) --libs dbus)
+DGL_FLAGS += $(shell $(PKG_CONFIG) --cflags dbus-1)
+DGL_LIBS  += $(shell $(PKG_CONFIG) --libs dbus-1)
 endif
 endif
 
