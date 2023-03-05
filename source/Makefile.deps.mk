@@ -411,7 +411,7 @@ endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 FLUIDSYNTH_FLAGS = $(shell $(PKG_CONFIG) --cflags fluidsynth)
-FLUIDSYNTH_LIBS  = $(shell $(PKG_CONFIG) --libs fluidsynth) -lintl
+FLUIDSYNTH_LIBS  = $(shell $(PKG_CONFIG) --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_JACKLIB),true)
