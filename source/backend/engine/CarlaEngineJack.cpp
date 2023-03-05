@@ -1808,7 +1808,7 @@ public:
             {
             case PostPonedJackEvent::kTypeNull:
                 break;
-            case PostPonedJackEvent::kTypeClientRegister:
+            case PostPonedJackEvent::kTypeClientUnregister:
                 handleJackClientUnregistrationCallback(ev.clientUnregister.name);
                 break;
             case PostPonedJackEvent::kTypeClientUnregister:
