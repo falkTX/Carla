@@ -170,10 +170,6 @@ $(error jackbridge direct mode requested, but jack not available)
 endif
 endif
 
-ifeq ($(HAVE_DBUS),true)
-BASE_FLAGS += -DHAVE_DBUS
-endif
-
 ifeq ($(HAVE_DGL),true)
 BASE_FLAGS += -DHAVE_DGL
 BASE_FLAGS += -DHAVE_OPENGL
@@ -234,18 +230,6 @@ endif
 
 ifeq ($(HAVE_X11),true)
 BASE_FLAGS += -DHAVE_X11
-endif
-
-ifeq ($(HAVE_XCURSOR),true)
-BASE_FLAGS += -DHAVE_XCURSOR
-endif
-
-ifeq ($(HAVE_XEXT),true)
-BASE_FLAGS += -DHAVE_XEXT -DHAVE_XSYNC
-endif
-
-ifeq ($(HAVE_XRANDR),true)
-BASE_FLAGS += -DHAVE_XRANDR
 endif
 
 ifeq ($(USING_JUCE),true)
