@@ -178,9 +178,13 @@ ifeq ($(MACOS_OR_WASM_OR_WINDOWS),true)
 HAVE_DGL     = true
 HAVE_YSFXGUI = true
 else
-HAVE_DGL     = $(shell $(PKG_CONFIG) --exists gl x11 && echo true)
+HAVE_DBUS    = $(shell $(PKG_CONFIG) --exists dbus-1 && echo true)
+HAVE_DGL     = $(shell $(PKG_CONFIG) --exists gl x11 xcursor xext xrandr && echo true)
 HAVE_YSFXGUI = $(shell $(PKG_CONFIG) --exists freetype2 fontconfig gl x11 && echo true)
 HAVE_X11     = $(shell $(PKG_CONFIG) --exists x11 && echo true)
+HAVE_XCURSOR = $(shell $(PKG_CONFIG) --exists xcursor && echo true)
+HAVE_XEXT    = $(shell $(PKG_CONFIG) --exists xext && echo true)
+HAVE_XRANDR  = $(shell $(PKG_CONFIG) --exists xrandr && echo true)
 endif
 
 # FIXME update to DGL with wasm compat
@@ -475,8 +479,12 @@ endif
 else ifeq ($(WINDOWS),true)
 DGL_LIBS  = -lopengl32 -lgdi32
 else
-DGL_FLAGS = $(shell $(PKG_CONFIG) --cflags gl x11)
-DGL_LIBS  = $(shell $(PKG_CONFIG) --libs gl x11)
+DGL_FLAGS = $(shell $(PKG_CONFIG) --cflags gl x11 xcursor xext xrandr)
+DGL_LIBS  = $(shell $(PKG_CONFIG) --libs gl x11 xcursor xext xrandr)
+ifeq ($(HAVE_DBUS)$(STATIC_PLUGIN_TARGET)$(USING_CUSTOM_DPF),truetruetrue)
+DGL_FLAGS += $(shell $(PKG_CONFIG) --cflags dbus)
+DGL_LIBS  += $(shell $(PKG_CONFIG) --libs dbus)
+endif
 endif
 
 endif
