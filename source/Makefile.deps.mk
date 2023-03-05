@@ -323,7 +323,7 @@ else ifeq ($(WINDOWS),true)
 HAVE_QT = true
 endif
 
-ifeq ($(HAVE_QT5),true)
+ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)))
 HAVE_THEME = true
 endif
 
@@ -336,7 +336,7 @@ PYUIC5 ?= $(shell which pyuic5 2>/dev/null)
 ifneq ($(PYUIC5),)
 ifneq ($(PYRCC5),)
 HAVE_PYQT = true
-ifeq ($(HAVE_QT5),true)
+ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)))
 HAVE_FRONTEND = true
 endif
 endif
@@ -411,7 +411,7 @@ endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 FLUIDSYNTH_FLAGS = $(shell $(PKG_CONFIG) --cflags fluidsynth)
-FLUIDSYNTH_LIBS  = $(shell $(PKG_CONFIG) --libs fluidsynth)
+FLUIDSYNTH_LIBS  = $(shell $(PKG_CONFIG) --libs fluidsynth) -lintl
 endif
 
 ifeq ($(HAVE_JACKLIB),true)

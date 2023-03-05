@@ -1790,7 +1790,7 @@ public:
     void idle() noexcept override
     {
         LinkedList<PostPonedJackEvent> events;
-        PostPonedJackEvent nullEvent = {};
+        const PostPonedJackEvent nullEvent = {};
 
         {
             const CarlaMutexLocker cml(fPostPonedEventsMutex);
@@ -1807,9 +1807,6 @@ public:
             switch (ev.type)
             {
             case PostPonedJackEvent::kTypeNull:
-                break;
-            case PostPonedJackEvent::kTypeClientUnregister:
-                handleJackClientUnregistrationCallback(ev.clientUnregister.name);
                 break;
             case PostPonedJackEvent::kTypeClientUnregister:
                 handleJackClientUnregistrationCallback(ev.clientUnregister.name);
