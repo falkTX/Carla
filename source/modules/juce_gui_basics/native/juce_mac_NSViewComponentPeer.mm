@@ -23,8 +23,6 @@
   ==============================================================================
 */
 
-#include "juce_mac_CGMetalLayerRenderer.h"
-
 @interface NSEvent (DeviceDelta)
 - (float)deviceDeltaX;
 - (float)deviceDeltaY;

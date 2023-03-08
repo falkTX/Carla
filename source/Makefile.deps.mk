@@ -292,14 +292,18 @@ endif
 
 ifeq ($(HAVE_QT5),true)
 QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=host_bins Qt5Core)
+else ifeq ($(HAVE_QT5PKG),true)
+QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)/bin
+endif
+
 MOC_QT5 ?= $(QT5_HOSTBINS)/moc
 RCC_QT5 ?= $(QT5_HOSTBINS)/rcc
+
 ifeq (,$(wildcard $(MOC_QT5)))
 HAVE_QT5 = false
 endif
 ifeq (,$(wildcard $(RCC_QT5)))
 HAVE_QT5 = false
-endif
 endif
 
 ifeq ($(HAVE_QT4),true)
@@ -330,7 +334,7 @@ endif
 PYRCC ?= $(PYRCC5)
 PYUIC ?= $(PYUIC5)
 
-ifeq ($(HAVE_QT5),true)
+ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)))
 HAVE_THEME = true
 endif
 
