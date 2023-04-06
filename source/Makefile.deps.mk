@@ -697,7 +697,10 @@ ifeq ($(EXTERNAL_PLUGINS),true)
 ifneq ($(DEBUG),true)
 ifneq ($(TESTBUILD),true)
 ifeq ($(shell $(PKG_CONFIG) --exists liblo fftw3 mxml zlib && echo true),true)
-STATIC_CARLA_PLUGIN_LIBS += $(shell $(PKG_CONFIG) --libs liblo fftw3 mxml zlib) -pthread
+STATIC_CARLA_PLUGIN_LIBS += $(filter-out -lpthread,$(shell $(PKG_CONFIG) --libs liblo fftw3 mxml zlib))
+ifneq ($(WASM),true)
+STATIC_CARLA_PLUGIN_LIBS += -pthread
+endif
 endif
 endif
 endif
