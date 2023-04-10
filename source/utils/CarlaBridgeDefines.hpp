@@ -1,6 +1,6 @@
 /*
  * Carla Bridge definitions
- * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,6 +25,14 @@
 
 // current API version, bumped when something is added
 #define CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT 10
+
+// -------------------------------------------------------------------------------------------------------------------
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
