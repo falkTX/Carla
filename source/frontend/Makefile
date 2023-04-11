@@ -20,7 +20,7 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -Iutils
+BUILD_CXX_FLAGS += -I. -Iutils
 
 BUILD_CXX_FLAGS += -I../backend
 BUILD_CXX_FLAGS += -I../includes
@@ -132,11 +132,14 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # UI code
 
-UI_FILES  = $(wildcard dialogs/*.ui)
-UI_FILES += $(wildcard pluginlist/*.ui)
+DIALOG_UI_FILES     = $(wildcard dialogs/*.ui)
+PLUGINLIST_UI_FILES = $(wildcard pluginlist/*.ui)
 
-UIs  = $(UI_FILES:%.ui=%_ui.hpp)
-UIs += $(UI_FILES:%.ui=%_ui.py)
+UIs  = $(DIALOG_UI_FILES:dialogs/%.ui=dialogs/ui_%.h)
+UIs += $(PLUGINLIST_UI_FILES:pluginlist/%.ui=pluginlist/ui_%.h)
+
+UIs += $(DIALOG_UI_FILES:%.ui=%_ui.py)
+UIs += $(PLUGINLIST_UI_FILES:%.ui=%_ui.py)
 
 # old stuff, not yet converted
 UIs += \
@@ -162,7 +165,10 @@ all: $(BINDIR)/libcarla_frontend$(LIB_EXT) $(QMs) $(RES) $(UIs)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-%_ui.hpp: %.ui
+dialogs/ui_%.h: dialogs/%.ui
+	$(UIC_QT5) $< -o $@
+
+pluginlist/ui_%.h: pluginlist/%.ui
 	$(UIC_QT5) $< -o $@
 
 %_ui.py: %.ui

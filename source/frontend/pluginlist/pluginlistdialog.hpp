@@ -1,6 +1,6 @@
 /*
  * Carla plugin host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -110,35 +110,5 @@ private slots:
     void slot_clearFilters();
     void slot_saveSettings();
 };
-
-// --------------------------------------------------------------------------------------------------------------------
-
-extern "C" {
-
-struct PluginListDialogResults {
-    uint API;
-    uint build;
-    uint type;
-    uint hints;
-    const char* category;
-    const char* filename;
-    const char* name;
-    const char* label;
-    const char* maker;
-    uint64_t uniqueId;
-    uint audioIns;
-    uint audioOuts;
-    uint cvIns;
-    uint cvOuts;
-    uint midiIns;
-    uint midiOuts;
-    uint parametersIns;
-    uint parametersOuts;
-};
-
-CARLA_API
-PluginListDialogResults* carla_frontend_createAndExecPluginListDialog(void* parent/*, const HostSettings& hostSettings*/);
-
-}
 
 // --------------------------------------------------------------------------------------------------------------------

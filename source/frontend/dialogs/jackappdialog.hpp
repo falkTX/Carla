@@ -78,17 +78,3 @@ private slots:
 };
 
 // --------------------------------------------------------------------------------------------------------------------
-
-extern "C" {
-
-struct JackAppDialogResults {
-    const char* command;
-    const char* name;
-    const char* labelSetup;
-};
-
-CARLA_API JackAppDialogResults* carla_frontend_createAndExecJackAppDialog(void* parent, const char* projectFilename);
-
-}
-
-// --------------------------------------------------------------------------------------------------------------------

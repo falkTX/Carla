@@ -1,6 +1,6 @@
 /*
  * Carla plugin host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include "aboutjucedialog_ui.hpp"
+#include "ui_aboutjucedialog.h"
 
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -35,6 +35,7 @@
 # pragma GCC diagnostic pop
 #endif
 
+#include "CarlaFrontend.h"
 #include "CarlaUtils.h"
 
 // --------------------------------------------------------------------------------------------------------------------

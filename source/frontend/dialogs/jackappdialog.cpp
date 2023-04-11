@@ -1,6 +1,6 @@
 /*
  * Carla plugin host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include "jackappdialog_ui.hpp"
+#include "ui_jackappdialog.h"
 #include <QtCore/QFileInfo>
 #include <QtCore/QVector>
 #include <QtWidgets/QPushButton>
@@ -40,6 +40,7 @@
 
 #include "qsafesettings.hpp"
 
+#include "CarlaFrontend.h"
 #include "CarlaLibJackHints.h"
 #include "CarlaString.hpp"
 
@@ -93,7 +94,7 @@ JackAppDialog::JackAppDialog(QWidget* const parent, const char* const projectFil
     // -------------------------------------------------------------------------------------------------------------
     // Set-up connections
 
-    connect(this, &QDialog::finished, 
+    connect(this, &QDialog::finished,
             this, &JackAppDialog::slot_saveSettings);
     connect(self.ui.cb_session_mgr, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &JackAppDialog::slot_sessionManagerChanged);

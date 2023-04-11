@@ -79,16 +79,3 @@ private slots:
 };
 
 // --------------------------------------------------------------------------------------------------------------------
-
-extern "C" {
-
-struct PluginListRefreshDialogResults {
-    char todo;
-};
-
-CARLA_API
-PluginListRefreshDialogResults* carla_frontend_createAndExecPluginListRefreshDialog(void* parent, bool useSystemIcons);
-
-}
-
-// --------------------------------------------------------------------------------------------------------------------

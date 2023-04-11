@@ -1,6 +1,6 @@
 /*
  * Carla plugin host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include "pluginlistdialog_ui.hpp"
+#include "ui_pluginlistdialog.h"
 #include <QtCore/QList>
 
 #ifdef __clang__
@@ -40,6 +40,7 @@
 #include "qsafesettings.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaFrontend.h"
 #include "CarlaUtils.h"
 
 #include "CarlaString.hpp"

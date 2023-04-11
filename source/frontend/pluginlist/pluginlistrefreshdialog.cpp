@@ -27,7 +27,7 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include "pluginlistrefreshdialog_ui.hpp"
+#include "ui_pluginlistrefreshdialog.h"
 #include <QtCore/QFileInfo>
 #include <QtWidgets/QPushButton>
 
@@ -39,6 +39,7 @@
 
 #include "qsafesettings.hpp"
 
+#include "CarlaFrontend.h"
 #include "CarlaUtils.h"
 
 #include <cstring>
