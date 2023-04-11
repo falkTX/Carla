@@ -52,9 +52,9 @@ typedef struct {
     uint parametersOuts;
 } PluginListDialogResults;
 
-struct PluginListRefreshDialogResults {
+typedef struct {
     char todo;
-};
+} PluginListRefreshDialogResults;
 
 // --------------------------------------------------------------------------------------------------------------------
 
