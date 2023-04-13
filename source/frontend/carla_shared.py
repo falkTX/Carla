@@ -98,7 +98,7 @@ del envTMP
 envHOME = os.getenv("HOME")
 
 if envHOME is None:
-    if LINUX or MACOS:
+    if not WINDOWS:
         qWarning("HOME variable not set")
     HOME = QDir.toNativeSeparators(QDir.homePath())
 else:
@@ -469,9 +469,9 @@ elif MACOS:
     #DEFAULT_JSFX_PATH   += ":/Applications/REAPER.app/Contents/InstallFiles/Effects"
 
 else:
-    CONFIG_HOME = os.getenv("XDG_CONFIG_HOME", HOME + "/.config")
-
     splitter = ":"
+
+    CONFIG_HOME = os.getenv("XDG_CONFIG_HOME", HOME + "/.config")
 
     DEFAULT_LADSPA_PATH  = HOME + "/.ladspa"
     DEFAULT_LADSPA_PATH += ":/usr/lib/ladspa"

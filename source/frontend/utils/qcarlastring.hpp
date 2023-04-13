@@ -61,6 +61,11 @@ public:
     {
         return (*this = fromUtf8(str));
     }
+
+    inline QCarlaString strip() const
+    {
+        return simplified().remove(' ');
+    }
 };
 
 //---------------------------------------------------------------------------------------------------------------------

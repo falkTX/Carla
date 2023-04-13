@@ -35,7 +35,7 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "CarlaDefines.h"
+#include "CarlaBackend.h"
 
 static constexpr const uint PLUGIN_QUERY_API_VERSION = 12;
 
@@ -48,7 +48,7 @@ struct HostSettings {
 struct PluginInfo {
     uint API;
     uint build;
-    uint type;
+    CARLA_BACKEND_NAMESPACE::PluginType type;
     uint hints;
     QString category;
     QString filename;
@@ -79,6 +79,11 @@ class PluginListDialog : public QDialog
 public:
     explicit PluginListDialog(QWidget* parent, const HostSettings& hostSettings);
     ~PluginListDialog() override;
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // public methods
+
+    const PluginInfo& getSelectedPluginInfo() const;
 
     // ----------------------------------------------------------------------------------------------------------------
     // protected methods

@@ -28,6 +28,8 @@
 #endif
 
 #include "ui_pluginlistdialog.h"
+#include <QtCore/QDir>
+#include <QtCore/QFileInfo>
 #include <QtCore/QList>
 
 #ifdef __clang__
@@ -45,13 +47,314 @@
 
 #include "CarlaString.hpp"
 
+#include <cstdlib>
+
 CARLA_BACKEND_USE_NAMESPACE
+
+// --------------------------------------------------------------------------------------------------------------------
+// Carla Settings keys
+
+#define CARLA_KEY_PATHS_LADSPA "Paths/LADSPA"
+#define CARLA_KEY_PATHS_DSSI   "Paths/DSSI"
+#define CARLA_KEY_PATHS_LV2    "Paths/LV2"
+#define CARLA_KEY_PATHS_VST2   "Paths/VST2"
+#define CARLA_KEY_PATHS_VST3   "Paths/VST3"
+#define CARLA_KEY_PATHS_CLAP   "Paths/CLAP"
+#define CARLA_KEY_PATHS_SF2    "Paths/SF2"
+#define CARLA_KEY_PATHS_SFZ    "Paths/SFZ"
+#define CARLA_KEY_PATHS_JSFX   "Paths/JSFX"
+
+// --------------------------------------------------------------------------------------------------------------------
+// Carla Settings defaults
+
+// --------------------------------------------------------------------------------------------------------------------
+// utils
+
+const char* getEnv(const char* const env, const char* const fallback)
+{
+    if (const char* const value = std::getenv(env))
+        return value;
+
+    return fallback;
+}
+
+QCarlaString getTMP()
+{
+    QCarlaString tmp;
+
+    if (const char* const envTMP = std::getenv("TMP"))
+    {
+        tmp = envTMP;
+    }
+    else
+    {
+#ifdef CARLA_OS_WIN
+        qWarning("TMP variable not set")
+#endif
+        tmp = QDir::tempPath();
+    }
+
+    if (!QDir(tmp).exists())
+    {
+        qWarning("TMP does not exist");
+        tmp = "/";
+    }
+
+    return tmp;
+}
+
+QCarlaString getHome()
+{
+    QCarlaString home;
+
+    if (const char* const envHOME = std::getenv("HOME"))
+    {
+        home = envHOME;
+    }
+    else
+    {
+#ifndef CARLA_OS_WIN
+        qWarning("HOME variable not set");
+#endif
+        home = QDir::toNativeSeparators(QDir::homePath());
+    }
+
+    if (!QDir(home).exists())
+    {
+        qWarning("HOME does not exist");
+        home = getTMP();
+    }
+
+    return home;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+// Default Plugin Folders (get)
+
+struct DefaultPaths {
+    QCarlaString ladspa;
+    QCarlaString dssi;
+    QCarlaString lv2;
+    QCarlaString vst2;
+    QCarlaString vst3;
+    QCarlaString clap;
+    QCarlaString sf2;
+    QCarlaString sfz;
+    QCarlaString jsfx;
+
+    void init()
+    {
+        const QCarlaString HOME = getHome();
+
+#if defined(CARLA_OS_WIN)
+        APPDATA = os.getenv("APPDATA");
+        LOCALAPPDATA = os.getenv("LOCALAPPDATA", APPDATA);
+        PROGRAMFILES = os.getenv("PROGRAMFILES");
+        PROGRAMFILESx86 = os.getenv("PROGRAMFILES(x86)");
+        COMMONPROGRAMFILES = os.getenv("COMMONPROGRAMFILES");
+        COMMONPROGRAMFILESx86 = os.getenv("COMMONPROGRAMFILES(x86)");
+
+        // Small integrity tests
+        if not APPDATA:
+        {
+            qFatal("APPDATA variable not set, cannot continue");
+            sys.exit(1);
+        }
+
+        if not PROGRAMFILES:
+        {
+            qFatal("PROGRAMFILES variable not set, cannot continue");
+            sys.exit(1);
+        }
+
+        if not COMMONPROGRAMFILES:
+        {
+            qFatal("COMMONPROGRAMFILES variable not set, cannot continue");
+            sys.exit(1);
+        }
+
+        ladspa  = APPDATA + "\\LADSPA";
+        ladspa += ";" + PROGRAMFILES + "\\LADSPA";
+
+        dssi    = APPDATA + "\\DSSI";
+        dssi   += ";" + PROGRAMFILES + "\\DSSI";
+
+        lv2     = APPDATA + "\\LV2";
+        lv2    += ";" + COMMONPROGRAMFILES + "\\LV2";
+
+        vst2    = PROGRAMFILES + "\\VstPlugins";
+        vst2   += ";" + PROGRAMFILES + "\\Steinberg\\VstPlugins";
+
+        jsfx    = APPDATA + "\\REAPER\\Effects";
+        //jsfx   += ";" + PROGRAMFILES + "\\REAPER\\InstallData\\Effects";
+
+        // TODO ifdef 64bit build
+       #if 1
+        vst2  += ";" + COMMONPROGRAMFILES + "\\VST2";
+       #endif
+
+        vst3    = COMMONPROGRAMFILES + "\\VST3";
+        vst3   += ";" + LOCALAPPDATA + "\\Programs\\Common\\VST3";
+
+        clap    = COMMONPROGRAMFILES + "\\CLAP";
+        clap   += ";" + LOCALAPPDATA + "\\Programs\\Common\\CLAP";
+
+        DEFAULT_SF2_PATH     = APPDATA + "\\SF2";
+        DEFAULT_SFZ_PATH     = APPDATA + "\\SFZ";
+
+        if PROGRAMFILESx86:
+            ladspa += ";" + PROGRAMFILESx86 + "\\LADSPA";
+            dssi   += ";" + PROGRAMFILESx86 + "\\DSSI";
+            vst2   += ";" + PROGRAMFILESx86 + "\\VstPlugins";
+            vst2   += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins";
+            //jsfx   += ";" + PROGRAMFILESx86 + "\\REAPER\\InstallData\\Effects";
+
+        if COMMONPROGRAMFILESx86:
+            vst3   += COMMONPROGRAMFILESx86 + "\\VST3";
+            clap   += COMMONPROGRAMFILESx86 + "\\CLAP";
+
+#elif defined(CARLA_OS_HAIKU)
+        ladspa  = HOME + "/.ladspa";
+        ladspa += ":/system/add-ons/media/ladspaplugins";
+        ladspa += ":/system/lib/ladspa";
+
+        dssi    = HOME + "/.dssi";
+        dssi   += ":/system/add-ons/media/dssiplugins";
+        dssi   += ":/system/lib/dssi";
+
+        lv2     = HOME + "/.lv2";
+        lv2    += ":/system/add-ons/media/lv2plugins";
+
+        vst2    = HOME + "/.vst";
+        vst2   += ":/system/add-ons/media/vstplugins";
+
+        vst3    = HOME + "/.vst3";
+        vst3   += ":/system/add-ons/media/vst3plugins";
+
+        clap    = HOME + "/.clap";
+        clap   += ":/system/add-ons/media/clapplugins";
+
+#elif defined(CARLA_OS_MAC)
+        ladspa  = HOME + "/Library/Audio/Plug-Ins/LADSPA";
+        ladspa += ":/Library/Audio/Plug-Ins/LADSPA";
+
+        dssi    = HOME + "/Library/Audio/Plug-Ins/DSSI";
+        dssi   += ":/Library/Audio/Plug-Ins/DSSI";
+
+        lv2     = HOME + "/Library/Audio/Plug-Ins/LV2";
+        lv2    += ":/Library/Audio/Plug-Ins/LV2";
+
+        vst2    = HOME + "/Library/Audio/Plug-Ins/VST";
+        vst2   += ":/Library/Audio/Plug-Ins/VST";
+
+        vst3    = HOME + "/Library/Audio/Plug-Ins/VST3";
+        vst3   += ":/Library/Audio/Plug-Ins/VST3";
+
+        clap    = HOME + "/Library/Audio/Plug-Ins/CLAP";
+        clap   += ":/Library/Audio/Plug-Ins/CLAP";
+
+        jsfx    = HOME + "/Library/Application Support/REAPER/Effects";
+        //jsfx   += ":/Applications/REAPER.app/Contents/InstallFiles/Effects";
+
+#else
+        const QCarlaString CONFIG_HOME(getEnv("XDG_CONFIG_HOME", (HOME + "/.config").toUtf8()));
+
+        ladspa  = HOME + "/.ladspa";
+        ladspa += ":/usr/lib/ladspa";
+        ladspa += ":/usr/local/lib/ladspa";
+
+        dssi    = HOME + "/.dssi";
+        dssi   += ":/usr/lib/dssi";
+        dssi   += ":/usr/local/lib/dssi";
+
+        lv2     = HOME + "/.lv2";
+        lv2    += ":/usr/lib/lv2";
+        lv2    += ":/usr/local/lib/lv2";
+
+        vst2    = HOME + "/.vst";
+        vst2   += ":/usr/lib/vst";
+        vst2   += ":/usr/local/lib/vst";
+
+        vst2   += HOME + "/.lxvst";
+        vst2   += ":/usr/lib/lxvst";
+        vst2   += ":/usr/local/lib/lxvst";
+
+        vst3    = HOME + "/.vst3";
+        vst3   += ":/usr/lib/vst3";
+        vst3   += ":/usr/local/lib/vst3";
+
+        clap    = HOME + "/.clap";
+        clap   += ":/usr/lib/clap";
+        clap   += ":/usr/local/lib/clap";
+
+        sf2     = HOME + "/.sounds/sf2";
+        sf2    += ":" + HOME + "/.sounds/sf3";
+        sf2    += ":/usr/share/sounds/sf2";
+        sf2    += ":/usr/share/sounds/sf3";
+        sf2    += ":/usr/share/soundfonts";
+
+        sfz     = HOME + "/.sounds/sfz";
+        sfz    += ":/usr/share/sounds/sfz";
+
+        jsfx    = CONFIG_HOME + "/REAPER/Effects";
+        //jsfx   += ":" + "/opt/REAPER/InstallData/Effects";
+#endif
+
+#ifndef CARLA_OS_WIN
+        QCarlaString winePrefix;
+
+        if (const char* const envWINEPREFIX = std::getenv("WINEPREFIX"))
+            winePrefix = envWINEPREFIX;
+
+        if (winePrefix.isEmpty())
+            winePrefix = HOME + "/.wine";
+
+        if (QDir(winePrefix).exists())
+        {
+            vst2 += ":" + winePrefix + "/drive_c/Program Files/VstPlugins";
+            vst3 += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3";
+            clap += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP";
+
+            // TODO ifdef 64bit build
+            if (QDir(winePrefix + "/drive_c/Program Files (x86)").exists())
+            {
+                vst2 += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins";
+                vst3 += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3";
+                clap += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/CLAP";
+            }
+        }
+#endif
+    }
+
+    void loadFromEnv()
+    {
+        if (const char* const envLADSPA = std::getenv("LADSPA_PATH"))
+            ladspa = envLADSPA;
+        if (const char* const envDSSI = std::getenv("DSSI_PATH"))
+            dssi = envDSSI;
+        if (const char* const envLV2 = std::getenv("LV2_PATH"))
+            lv2 = envLV2;
+        if (const char* const envVST = std::getenv("VST_PATH"))
+            vst2 = envVST;
+        if (const char* const envVST3 = std::getenv("VST3_PATH"))
+            vst3 = envVST3;
+        if (const char* const envCLAP = std::getenv("CLAP_PATH"))
+            clap = envCLAP;
+        if (const char* const envSF2 = std::getenv("SF2_PATH"))
+            sf2 = envSF2;
+        if (const char* const envSFZ = std::getenv("SFZ_PATH"))
+            sfz = envSFZ;
+        if (const char* const envJSFX = std::getenv("JSFX_PATH"))
+            jsfx = envJSFX;
+    }
+};
 
 // --------------------------------------------------------------------------------------------------------------------
 
 PluginInfo checkPluginCached(const CarlaCachedPluginInfo* const desc, const PluginType ptype)
 {
     PluginInfo pinfo = {};
+    pinfo.API   = PLUGIN_QUERY_API_VERSION;
     pinfo.build = BINARY_NATIVE;
     pinfo.type  = ptype;
     pinfo.hints = desc->hints;
@@ -72,11 +375,18 @@ PluginInfo checkPluginCached(const CarlaCachedPluginInfo* const desc, const Plug
     pinfo.parametersIns  = desc->parameterIns;
     pinfo.parametersOuts = desc->parameterOuts;
 
+//     if ptype == PLUGIN_LV2:
+//         pinfo['filename'], pinfo['label'] = pinfo['label'].split('\\' if WINDOWS else '/',1)
+//
+//     elif ptype == PLUGIN_SFZ:
+//         pinfo['filename'] = pinfo['label']
+//         pinfo['label']    = pinfo['name']
+
     switch (ptype)
     {
     case PLUGIN_LV2:
         {
-            QString label(desc->label);
+            const QString label(desc->label);
             pinfo.filename = label.split(CARLA_OS_SEP).first();
             pinfo.label = label.section(CARLA_OS_SEP, 1);
         }
@@ -118,10 +428,10 @@ public:
     inline QSafePluginListSettings(const QString& organization, const QString& application)
         : QSafeSettings(organization, application) {}
 
-    QPluginInfoList valuePluginInfoList(const QString& key, QPluginInfoList defaultValue = {}) const
+    QPluginInfoList valuePluginInfoList(const QString& key) const
     {
         /*
-        QVariant var(value(key, defaultValue));
+        QVariant var(value(key, {}));
 
         if (!var.isNull() && var.convert(QVariant::List) && var.isValid())
         {
@@ -140,7 +450,7 @@ public:
         }
         */
 
-        return defaultValue;
+        return {};
     }
 
     void setValue(const QString& key, const uint value)
@@ -152,6 +462,126 @@ public:
     {
     }
 };
+
+// --------------------------------------------------------------------------------------------------------------------
+
+template <class T> inline T static_cast_void(const void* ptr)
+{
+    return static_cast<T>(ptr);
+}
+
+struct PluginInfoBytes {
+    uint API;
+    uint build;
+    uint type;
+    uint hints;
+    uint64_t uniqueId;
+    uint audioIns;
+    uint audioOuts;
+    uint cvIns;
+    uint cvOuts;
+    uint midiIns;
+    uint midiOuts;
+    uint parametersIns;
+    uint parametersOuts;
+};
+
+QVariant asVariant(const PluginInfo& plugin)
+{
+    const PluginInfoBytes data = {
+        plugin.API,
+        plugin.build,
+        plugin.type,
+        plugin.hints,
+        plugin.uniqueId,
+        plugin.audioIns,
+        plugin.audioOuts,
+        plugin.cvIns,
+        plugin.cvOuts,
+        plugin.midiIns,
+        plugin.midiOuts,
+        plugin.parametersIns,
+        plugin.parametersOuts
+    };
+    QByteArray qdata(static_cast_void<const char*>(&data), sizeof(data));
+
+    {
+        const QByteArray qcategory(plugin.category.toUtf8());
+        qdata += qcategory.constData();
+        qdata += '\0';
+    }
+
+    {
+        const QByteArray qfilename(plugin.filename.toUtf8());
+        qdata += qfilename.constData();
+        qdata += '\0';
+    }
+
+    {
+        const QByteArray qname(plugin.name.toUtf8());
+        qdata += qname.constData();
+        qdata += '\0';
+    }
+
+    {
+        const QByteArray qlabel(plugin.label.toUtf8());
+        qdata += qlabel.constData();
+        qdata += '\0';
+    }
+
+    {
+        const QByteArray qmaker(plugin.maker.toUtf8());
+        qdata += qmaker.constData();
+        qdata += '\0';
+    }
+
+    QVariant var;
+    var.setValue(qdata);
+    return var;
+}
+
+PluginInfo asPluginInfo(const QVariant& var)
+{
+    const QByteArray qdata(var.toByteArray());
+    CARLA_SAFE_ASSERT_RETURN((size_t)qdata.size() >= sizeof(PluginInfoBytes) + sizeof(char)*5, {});
+
+    const PluginInfoBytes* const data = static_cast_void<const PluginInfoBytes*>(qdata.constData());
+    PluginInfo plugin = {
+        data->API,
+        data->build,
+        static_cast<PluginType>(data->type),
+        data->hints,
+        {}, {}, {}, {}, {},
+        data->uniqueId,
+        data->audioIns,
+        data->audioOuts,
+        data->cvIns,
+        data->cvOuts,
+        data->midiIns,
+        data->midiOuts,
+        data->parametersIns,
+        data->parametersOuts
+    };
+
+    const char* sdata = static_cast_void<const char*>(data) + sizeof(PluginInfoBytes);
+
+    plugin.category = QString::fromUtf8(sdata);
+    sdata += plugin.category.size() + 1;
+
+    plugin.filename = QString::fromUtf8(sdata);
+    sdata += plugin.filename.size() + 1;
+
+    plugin.name = QString::fromUtf8(sdata);
+    sdata += plugin.name.size() + 1;
+
+    plugin.label = QString::fromUtf8(sdata);
+    sdata += plugin.label.size() + 1;
+
+    plugin.maker = QString::fromUtf8(sdata);
+    sdata += plugin.maker.size() + 1;
+
+    return plugin;
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 // Plugin List Dialog
@@ -172,7 +602,7 @@ struct PluginListDialog::Self {
     HostSettings hostSettings = {};
 
     int fLastTableIndex = 0;
-    PluginListDialogResults fRetPlugin = {};
+    PluginInfo fRetPlugin;
     QWidget* const fRealParent;
     QStringList fFavoritePlugins;
     bool fFavoritePluginsChanged = false;
@@ -193,6 +623,11 @@ struct PluginListDialog::Self {
         return *self;
     }
 
+    inline QString tr(const char* const txt)
+    {
+        return fRealParent != nullptr ? fRealParent->tr(txt) : QString::fromUtf8(txt);
+    }
+
     void createFavoritePluginDict()
     {
 #if 0
@@ -209,36 +644,36 @@ struct PluginListDialog::Self {
 
     void checkFilters()
     {
+        const QCarlaString text = ui.lineEdit->text().toLower();
+
+        const bool hideEffects     = !ui.ch_effects->isChecked();
+        const bool hideInstruments = !ui.ch_instruments->isChecked();
+        const bool hideMidi        = !ui.ch_midi->isChecked();
+        const bool hideOther       = !ui.ch_other->isChecked();
+
+        const bool hideInternal = !ui.ch_internal->isChecked();
+        const bool hideLadspa   = !ui.ch_ladspa->isChecked();
+        const bool hideDssi     = !ui.ch_dssi->isChecked();
+        const bool hideLV2      = !ui.ch_lv2->isChecked();
+        const bool hideVST2     = !ui.ch_vst->isChecked();
+        const bool hideVST3     = !ui.ch_vst3->isChecked();
+        const bool hideCLAP     = !ui.ch_clap->isChecked();
+        const bool hideAU       = !ui.ch_au->isChecked();
+        const bool hideJSFX     = !ui.ch_jsfx->isChecked();
+        const bool hideKits     = !ui.ch_kits->isChecked();
+
+        const bool hideNative  = !ui.ch_native->isChecked();
+        const bool hideBridged = !ui.ch_bridged->isChecked();
+        const bool hideBridgedWine = !ui.ch_bridged_wine->isChecked();
+
+        const bool hideNonFavs   = ui.ch_favorites->isChecked();
+        const bool hideNonRtSafe = ui.ch_rtsafe->isChecked();
+        const bool hideNonCV     = ui.ch_cv->isChecked();
+        const bool hideNonGui    = ui.ch_gui->isChecked();
+        const bool hideNonIDisp  = ui.ch_inline_display->isChecked();
+        const bool hideNonStereo = ui.ch_stereo->isChecked();
+
 #if 0
-        text = self.ui.lineEdit.text().lower()
-
-        hideEffects     = not self.ui.ch_effects.isChecked()
-        hideInstruments = not self.ui.ch_instruments.isChecked()
-        hideMidi        = not self.ui.ch_midi.isChecked()
-        hideOther       = not self.ui.ch_other.isChecked()
-
-        hideInternal = not self.ui.ch_internal.isChecked()
-        hideLadspa   = not self.ui.ch_ladspa.isChecked()
-        hideDssi     = not self.ui.ch_dssi.isChecked()
-        hideLV2      = not self.ui.ch_lv2.isChecked()
-        hideVST2     = not self.ui.ch_vst.isChecked()
-        hideVST3     = not self.ui.ch_vst3.isChecked()
-        hideCLAP     = not self.ui.ch_clap.isChecked()
-        hideAU       = not self.ui.ch_au.isChecked()
-        hideJSFX     = not self.ui.ch_jsfx.isChecked()
-        hideKits     = not self.ui.ch_kits.isChecked()
-
-        hideNative  = not self.ui.ch_native.isChecked()
-        hideBridged = not self.ui.ch_bridged.isChecked()
-        hideBridgedWine = not self.ui.ch_bridged_wine.isChecked()
-
-        hideNonFavs   = self.ui.ch_favorites.isChecked()
-        hideNonRtSafe = self.ui.ch_rtsafe.isChecked()
-        hideNonCV     = self.ui.ch_cv.isChecked()
-        hideNonGui    = self.ui.ch_gui.isChecked()
-        hideNonIDisp  = self.ui.ch_inline_display.isChecked()
-        hideNonStereo = self.ui.ch_stereo.isChecked()
-
         if HAIKU or LINUX or MACOS:
             nativeBins = [BINARY_POSIX32, BINARY_POSIX64]
             wineBins   = [BINARY_WIN32, BINARY_WIN64]
@@ -248,126 +683,159 @@ struct PluginListDialog::Self {
         else:
             nativeBins = []
             wineBins   = []
-
-        self.ui.tableWidget.setRowCount(self.fLastTableIndex)
-
-        for i in range(self.fLastTableIndex):
-            plugin = self.ui.tableWidget.item(i, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
-            ptext  = self.ui.tableWidget.item(i, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+2)
-            aIns   = plugin['audio.ins']
-            aOuts  = plugin['audio.outs']
-            cvIns  = plugin['cv.ins']
-            cvOuts = plugin['cv.outs']
-            mIns   = plugin['midi.ins']
-            mOuts  = plugin['midi.outs']
-            phints = plugin['hints']
-            ptype  = plugin['type']
-            categ  = plugin['category']
-            isSynth  = bool(phints & PLUGIN_IS_SYNTH)
-            isEffect = bool(aIns > 0 < aOuts and not isSynth)
-            isMidi   = bool(aIns == 0 and aOuts == 0 and mIns > 0 < mOuts)
-            isKit    = bool(ptype in (PLUGIN_SF2, PLUGIN_SFZ))
-            isOther  = bool(not (isEffect or isSynth or isMidi or isKit))
-            isNative = bool(plugin['build'] == BINARY_NATIVE)
-            isRtSafe = bool(phints & PLUGIN_IS_RTSAFE)
-            isStereo = bool(aIns == 2 and aOuts == 2) or (isSynth and aOuts == 2)
-            hasCV    = bool(cvIns + cvOuts > 0)
-            hasGui   = bool(phints & PLUGIN_HAS_CUSTOM_UI)
-            hasIDisp = bool(phints & PLUGIN_HAS_INLINE_DISPLAY)
-
-            isBridged = bool(not isNative and plugin['build'] in nativeBins)
-            isBridgedWine = bool(not isNative and plugin['build'] in wineBins)
-
-            if hideEffects and isEffect:
-                self.ui.tableWidget.hideRow(i)
-            elif hideInstruments and isSynth:
-                self.ui.tableWidget.hideRow(i)
-            elif hideMidi and isMidi:
-                self.ui.tableWidget.hideRow(i)
-            elif hideOther and isOther:
-                self.ui.tableWidget.hideRow(i)
-            elif hideKits and isKit:
-                self.ui.tableWidget.hideRow(i)
-            elif hideInternal and ptype == PLUGIN_INTERNAL:
-                self.ui.tableWidget.hideRow(i)
-            elif hideLadspa and ptype == PLUGIN_LADSPA:
-                self.ui.tableWidget.hideRow(i)
-            elif hideDssi and ptype == PLUGIN_DSSI:
-                self.ui.tableWidget.hideRow(i)
-            elif hideLV2 and ptype == PLUGIN_LV2:
-                self.ui.tableWidget.hideRow(i)
-            elif hideVST2 and ptype == PLUGIN_VST2:
-                self.ui.tableWidget.hideRow(i)
-            elif hideVST3 and ptype == PLUGIN_VST3:
-                self.ui.tableWidget.hideRow(i)
-            elif hideCLAP and ptype == PLUGIN_CLAP:
-                self.ui.tableWidget.hideRow(i)
-            elif hideAU and ptype == PLUGIN_AU:
-                self.ui.tableWidget.hideRow(i)
-            elif hideJSFX and ptype == PLUGIN_JSFX:
-                self.ui.tableWidget.hideRow(i)
-            elif hideNative and isNative:
-                self.ui.tableWidget.hideRow(i)
-            elif hideBridged and isBridged:
-                self.ui.tableWidget.hideRow(i)
-            elif hideBridgedWine and isBridgedWine:
-                self.ui.tableWidget.hideRow(i)
-            elif hideNonRtSafe and not isRtSafe:
-                self.ui.tableWidget.hideRow(i)
-            elif hideNonCV and not hasCV:
-                self.ui.tableWidget.hideRow(i)
-            elif hideNonGui and not hasGui:
-                self.ui.tableWidget.hideRow(i)
-            elif hideNonIDisp and not hasIDisp:
-                self.ui.tableWidget.hideRow(i)
-            elif hideNonStereo and not isStereo:
-                self.ui.tableWidget.hideRow(i)
-            elif text and not all(t in ptext for t in text.strip().split(' ')):
-                self.ui.tableWidget.hideRow(i)
-            elif hideNonFavs and self._createFavoritePluginDict(plugin) not in self.fFavoritePlugins:
-                self.ui.tableWidget.hideRow(i)
-            elif (self.ui.ch_cat_all.isChecked() or
-                  (self.ui.ch_cat_delay.isChecked() and categ == "delay") or
-                  (self.ui.ch_cat_distortion.isChecked() and categ == "distortion") or
-                  (self.ui.ch_cat_dynamics.isChecked() and categ == "dynamics") or
-                  (self.ui.ch_cat_eq.isChecked() and categ == "eq") or
-                  (self.ui.ch_cat_filter.isChecked() and categ == "filter") or
-                  (self.ui.ch_cat_modulator.isChecked() and categ == "modulator") or
-                  (self.ui.ch_cat_synth.isChecked() and categ == "synth") or
-                  (self.ui.ch_cat_utility.isChecked() and categ == "utility") or
-                  (self.ui.ch_cat_other.isChecked() and categ == "other")):
-                self.ui.tableWidget.showRow(i)
-            else:
-                self.ui.tableWidget.hideRow(i)
 #endif
+
+        ui.tableWidget->setRowCount(fLastTableIndex);
+
+        for (int i=0; i<fLastTableIndex; ++i)
+        {
+            const PluginInfo plugin = asPluginInfo(ui.tableWidget->item(i, TABLEWIDGET_ITEM_NAME)->data(Qt::UserRole+1));
+
+            const QString ptext  = ui.tableWidget->item(i, TABLEWIDGET_ITEM_NAME)->data(Qt::UserRole+2).toString();
+            const uint aIns   = plugin.audioIns;
+            const uint aOuts  = plugin.audioOuts;
+            const uint cvIns  = plugin.cvIns;
+            const uint cvOuts = plugin.cvOuts;
+            const uint mIns   = plugin.midiIns;
+            const uint mOuts  = plugin.midiOuts;
+            const uint phints = plugin.hints;
+            const PluginType ptype  = plugin.type;
+            const QString categ = plugin.category;
+            const bool isSynth  = phints & PLUGIN_IS_SYNTH;
+            const bool isEffect = aIns > 0 && aOuts > 0  && !isSynth;
+            const bool isMidi   = aIns == 0 && aOuts == 0 && mIns > 0 && mOuts > 0;
+            const bool isKit    = ptype == PLUGIN_SF2 || ptype == PLUGIN_SFZ;
+            const bool isOther  = !(isEffect || isSynth || isMidi || isKit);
+            const bool isNative = plugin.build == BINARY_NATIVE;
+            const bool isRtSafe = phints & PLUGIN_IS_RTSAFE;
+            const bool isStereo = (aIns == 2 && aOuts == 2) || (isSynth && aOuts == 2);
+            const bool hasCV    = cvIns + cvOuts > 0;
+            const bool hasGui   = phints & PLUGIN_HAS_CUSTOM_UI;
+            const bool hasIDisp = phints & PLUGIN_HAS_INLINE_DISPLAY;
+
+#if 0
+            const bool isBridged = bool(not isNative and plugin.build in nativeBins);
+            const bool isBridgedWine = bool(not isNative and plugin.build in wineBins);
+#else
+            const bool isBridged = false;
+            const bool isBridgedWine = false;
+#endif
+
+            const auto hasText = [text, ptext]() {
+                const QStringList textSplit = text.strip().split(' ');
+                for (const QString& t : textSplit)
+                    if (ptext.contains(t))
+                        return true;
+                return false;
+            };
+
+            /**/ if (hideEffects && isEffect)
+                ui.tableWidget->hideRow(i);
+            else if (hideInstruments && isSynth)
+                ui.tableWidget->hideRow(i);
+            else if (hideMidi && isMidi)
+                ui.tableWidget->hideRow(i);
+            else if (hideOther && isOther)
+                ui.tableWidget->hideRow(i);
+            else if (hideKits && isKit)
+                ui.tableWidget->hideRow(i);
+            else if (hideInternal && ptype == PLUGIN_INTERNAL)
+                ui.tableWidget->hideRow(i);
+            else if (hideLadspa && ptype == PLUGIN_LADSPA)
+                ui.tableWidget->hideRow(i);
+            else if (hideDssi && ptype == PLUGIN_DSSI)
+                ui.tableWidget->hideRow(i);
+            else if (hideLV2 && ptype == PLUGIN_LV2)
+                ui.tableWidget->hideRow(i);
+            else if (hideVST2 && ptype == PLUGIN_VST2)
+                ui.tableWidget->hideRow(i);
+            else if (hideVST3 && ptype == PLUGIN_VST3)
+                ui.tableWidget->hideRow(i);
+            else if (hideCLAP && ptype == PLUGIN_CLAP)
+                ui.tableWidget->hideRow(i);
+            else if (hideAU && ptype == PLUGIN_AU)
+                ui.tableWidget->hideRow(i);
+            else if (hideJSFX && ptype == PLUGIN_JSFX)
+                ui.tableWidget->hideRow(i);
+            else if (hideNative && isNative)
+                ui.tableWidget->hideRow(i);
+            else if (hideBridged && isBridged)
+                ui.tableWidget->hideRow(i);
+            else if (hideBridgedWine && isBridgedWine)
+                ui.tableWidget->hideRow(i);
+            else if (hideNonRtSafe && not isRtSafe)
+                ui.tableWidget->hideRow(i);
+            else if (hideNonCV && not hasCV)
+                ui.tableWidget->hideRow(i);
+            else if (hideNonGui && not hasGui)
+                ui.tableWidget->hideRow(i);
+            else if (hideNonIDisp && not hasIDisp)
+                ui.tableWidget->hideRow(i);
+            else if (hideNonStereo && not isStereo)
+                ui.tableWidget->hideRow(i);
+            else if (text.isNotEmpty() && ! hasText())
+                ui.tableWidget->hideRow(i);
+#if 0
+            else if (hideNonFavs && _createFavoritePluginDict(plugin) not in fFavoritePlugins)
+                ui.tableWidget->hideRow(i);
+#endif
+            else if (ui.ch_cat_all->isChecked() or
+                     (ui.ch_cat_delay->isChecked() && categ == "delay") or
+                     (ui.ch_cat_distortion->isChecked() && categ == "distortion") or
+                     (ui.ch_cat_dynamics->isChecked() && categ == "dynamics") or
+                     (ui.ch_cat_eq->isChecked() && categ == "eq") or
+                     (ui.ch_cat_filter->isChecked() && categ == "filter") or
+                     (ui.ch_cat_modulator->isChecked() && categ == "modulator") or
+                     (ui.ch_cat_synth->isChecked() && categ == "synth") or
+                     (ui.ch_cat_utility->isChecked() && categ == "utility") or
+                     (ui.ch_cat_other->isChecked() && categ == "other"))
+                ui.tableWidget->showRow(i);
+            else
+                ui.tableWidget->hideRow(i);
+        }
     }
 
-    void addPluginToTable(uint plugin, const PluginType ptype)
+    void addPluginToTable(const PluginInfo& plugin, const PluginType ptype)
     {
+        if (plugin.API != PLUGIN_QUERY_API_VERSION)
+            return;
+
+        PluginInfo plugincopy = plugin;
+        switch (ptype)
+        {
+        case PLUGIN_INTERNAL:
+        case PLUGIN_LV2:
+        case PLUGIN_SF2:
+        case PLUGIN_SFZ:
+        case PLUGIN_JSFX:
+            plugincopy.build = BINARY_NATIVE;
+            break;
+        default:
+            break;
+        }
+
+        const int index = fLastTableIndex;
 #if 0
-        if plugin['API'] != PLUGIN_QUERY_API_VERSION:
-            return
-        if ptype in (self.tr("Internal"), "LV2", "SF2", "SFZ", "JSFX"):
-            plugin['build'] = BINARY_NATIVE
-
-        index = self.fLastTableIndex
-
-        isFav = bool(self._createFavoritePluginDict(plugin) in self.fFavoritePlugins)
-        favItem = QTableWidgetItem()
-        favItem.setCheckState(Qt.Checked if isFav else Qt.Unchecked)
-        favItem.setText(" " if isFav else "  ")
-
-        pluginText = (plugin['name']+plugin['label']+plugin['maker']+plugin['filename']).lower()
-        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_FAVORITE, favItem)
-        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_NAME, QTableWidgetItem(plugin['name']))
-        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_LABEL, QTableWidgetItem(plugin['label']))
-        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_MAKER, QTableWidgetItem(plugin['maker']))
-        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_BINARY, QTableWidgetItem(os.path.basename(plugin['filename'])))
-        self.ui.tableWidget.item(index, self.TABLEWIDGET_ITEM_NAME).setData(Qt.UserRole+1, plugin)
-        self.ui.tableWidget.item(index, self.TABLEWIDGET_ITEM_NAME).setData(Qt.UserRole+2, pluginText)
-
-        self.fLastTableIndex += 1
+        const bool isFav = bool(self._createFavoritePluginDict(plugin) in self.fFavoritePlugins)
+#else
+        const bool isFav = false;
 #endif
+        QTableWidgetItem* const itemFav = new QTableWidgetItem;
+        itemFav->setCheckState(isFav ? Qt::Checked : Qt::Unchecked);
+        itemFav->setText(isFav ? " " : "  ");
+
+        const QString pluginText = (plugin.name + plugin.label + plugin.maker + plugin.filename).toLower();
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_FAVORITE, itemFav);
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_NAME, new QTableWidgetItem(plugin.name));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_LABEL, new QTableWidgetItem(plugin.label));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_MAKER, new QTableWidgetItem(plugin.maker));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_BINARY, new QTableWidgetItem(QFileInfo(plugin.filename).fileName()));
+
+        QTableWidgetItem* const itemName = ui.tableWidget->item(index, TABLEWIDGET_ITEM_NAME);
+        itemName->setData(Qt::UserRole+1, asVariant(plugincopy));
+        itemName->setData(Qt::UserRole+2, pluginText);
+
+        fLastTableIndex += 1;
     }
 
     uint reAddInternalHelper(QSafePluginListSettings& settingsDB, const PluginType ptype, const char* const path)
@@ -378,7 +846,7 @@ struct PluginListDialog::Self {
         {
         case PLUGIN_INTERNAL:
             ptypeStr   = "Internal";
-            ptypeStrTr = "Internal"; // self.tr("Internal")
+            ptypeStrTr = tr("Internal");
             break;
         case PLUGIN_LV2:
             ptypeStr   = "LV2";
@@ -405,8 +873,10 @@ struct PluginListDialog::Self {
 
         const uint pluginCountNew = carla_get_cached_plugin_count(ptype, path);
 
+#if 0
         if (pluginCountNew != pluginCount || plugins.size() != pluginCount ||
             (plugins.size() > 0 && plugins[0].API != PLUGIN_QUERY_API_VERSION))
+#endif
         {
             plugins.clear();
             pluginCount = pluginCountNew;
@@ -445,10 +915,8 @@ struct PluginListDialog::Self {
         // prepare rows in advance
         ui.tableWidget->setRowCount(fLastTableIndex + plugins.size());
 
-#if 0
-        for plugin in plugins:
-            self._addPluginToTable(plugin, ptypeStrTr)
-#endif
+        for (const PluginInfo& plugin : plugins)
+            addPluginToTable(plugin, ptype);
 
         return pluginCount;
     }
@@ -461,13 +929,14 @@ struct PluginListDialog::Self {
         ui.tableWidget->setSortingEnabled(false);
         ui.tableWidget->clearContents();
 
-        QString LV2_PATH;
+        DefaultPaths paths;
+        paths.init();
+        paths.loadFromEnv();
+
+        QCarlaString LV2_PATH;
         {
             const QSafeSettings settings("falkTX", "Carla2");
-#if 0
-            LV2_PATH = splitter.join()
-            settings.valueStringList(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH);
-#endif
+            LV2_PATH = settings.valueString(CARLA_KEY_PATHS_LV2, paths.lv2);
         }
 
         // ------------------------------------------------------------------------------------------------------------
@@ -484,161 +953,261 @@ struct PluginListDialog::Self {
         // ------------------------------------------------------------------------------------------------------------
         // LADSPA
 
-        QStringList ladspaPlugins;
-        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_native");
-        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_posix32");
-        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_posix64");
-        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_win32");
-        ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_win64");
+        QList<QPluginInfoList> ladspaPlugins;
+        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_native");
+        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_posix32");
+        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_posix64");
+        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_win32");
+        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_win64");
 
-#if 0
-        # ----------------------------------------------------------------------------------------------------
-        # DSSI
+        // ------------------------------------------------------------------------------------------------------------
+        // DSSI
 
-        dssiPlugins  = []
-        dssiPlugins += settingsDB.value("Plugins/DSSI_native", [], list)
-        dssiPlugins += settingsDB.value("Plugins/DSSI_posix32", [], list)
-        dssiPlugins += settingsDB.value("Plugins/DSSI_posix64", [], list)
-        dssiPlugins += settingsDB.value("Plugins/DSSI_win32", [], list)
-        dssiPlugins += settingsDB.value("Plugins/DSSI_win64", [], list)
+        QList<QPluginInfoList> dssiPlugins;
+        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_native");
+        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_posix32");
+        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_posix64");
+        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_win32");
+        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_win64");
 
-        # ----------------------------------------------------------------------------------------------------
-        # VST2
+        // ------------------------------------------------------------------------------------------------------------
+        // VST2
 
-        vst2Plugins  = []
-        vst2Plugins += settingsDB.value("Plugins/VST2_native", [], list)
-        vst2Plugins += settingsDB.value("Plugins/VST2_posix32", [], list)
-        vst2Plugins += settingsDB.value("Plugins/VST2_posix64", [], list)
-        vst2Plugins += settingsDB.value("Plugins/VST2_win32", [], list)
-        vst2Plugins += settingsDB.value("Plugins/VST2_win64", [], list)
+        QList<QPluginInfoList> vst2Plugins;
+        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_native");
+        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_posix32");
+        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_posix64");
+        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_win32");
+        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_win64");
 
-        # ----------------------------------------------------------------------------------------------------
-        # VST3
+        // ------------------------------------------------------------------------------------------------------------
+        // VST3
 
-        vst3Plugins  = []
-        vst3Plugins += settingsDB.value("Plugins/VST3_native", [], list)
-        vst3Plugins += settingsDB.value("Plugins/VST3_posix32", [], list)
-        vst3Plugins += settingsDB.value("Plugins/VST3_posix64", [], list)
-        vst3Plugins += settingsDB.value("Plugins/VST3_win32", [], list)
-        vst3Plugins += settingsDB.value("Plugins/VST3_win64", [], list)
+        QList<QPluginInfoList> vst3Plugins;
+        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_native");
+        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_posix32");
+        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_posix64");
+        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_win32");
+        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_win64");
 
-        # ----------------------------------------------------------------------------------------------------
-        # CLAP
+        // ------------------------------------------------------------------------------------------------------------
+        // CLAP
 
-        clapPlugins  = []
-        clapPlugins += settingsDB.value("Plugins/CLAP_native", [], list)
-        clapPlugins += settingsDB.value("Plugins/CLAP_posix32", [], list)
-        clapPlugins += settingsDB.value("Plugins/CLAP_posix64", [], list)
-        clapPlugins += settingsDB.value("Plugins/CLAP_win32", [], list)
-        clapPlugins += settingsDB.value("Plugins/CLAP_win64", [], list)
+        QList<QPluginInfoList> clapPlugins;
+        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_native");
+        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_posix32");
+        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_posix64");
+        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_win32");
+        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_win64");
 
-        # ----------------------------------------------------------------------------------------------------
-        # AU (extra non-cached)
+       #ifdef CARLA_OS_MAC
+        // ------------------------------------------------------------------------------------------------------------
+        // AU (extra non-cached)
 
-        auPlugins32 = settingsDB.value("Plugins/AU_posix32", [], list) if MACOS else []
+        QList<QPluginInfoList> auPlugins32 = settingsDB.valuePluginInfoList("Plugins/AU_posix32");
+       #endif
 
-        # ----------------------------------------------------------------------------------------------------
-        # JSFX
+        // ------------------------------------------------------------------------------------------------------------
+        // JSFX
 
-        jsfxPlugins = settingsDB.value("Plugins/JSFX", [], list)
+        QPluginInfoList jsfxPlugins = settingsDB.valuePluginInfoList("Plugins/JSFX");
 
-        # ----------------------------------------------------------------------------------------------------
-        # Kits
+        // ------------------------------------------------------------------------------------------------------------
+        // Kits
 
-        sf2s = settingsDB.value("Plugins/SF2", [], list)
-        sfzs = settingsDB.value("Plugins/SFZ", [], list)
+        QList<QPluginInfoList> sf2s;
+        sf2s += settingsDB.valuePluginInfoList("Plugins/SF2");
 
-        # ----------------------------------------------------------------------------------------------------
-        # count plugins first, so we can create rows in advance
+        QPluginInfoList sfzs = settingsDB.valuePluginInfoList("Plugins/SFZ");
 
-        ladspaCount = 0
-        dssiCount   = 0
-        vstCount    = 0
-        vst3Count   = 0
-        clapCount   = 0
-        au32Count   = 0
-        jsfxCount   = len(jsfxPlugins)
-        sf2Count    = 0
-        sfzCount    = len(sfzs)
+        // ------------------------------------------------------------------------------------------------------------
+        // count plugins first, so we can create rows in advance
 
-        for plugins in ladspaPlugins:
-            ladspaCount += len(plugins)
+        int ladspaCount = 0;
+        int dssiCount   = 0;
+        int vstCount    = 0;
+        int vst3Count   = 0;
+        int clapCount   = 0;
+        int au32Count   = 0;
+        int jsfxCount   = jsfxPlugins.size();
+        int sf2Count    = 0;
+        int sfzCount    = sfzs.size();
 
-        for plugins in dssiPlugins:
-            dssiCount += len(plugins)
+        for (const QPluginInfoList& plugins : ladspaPlugins)
+            ladspaCount += plugins.size();
 
-        for plugins in vst2Plugins:
-            vstCount += len(plugins)
+        for (const QPluginInfoList& plugins : dssiPlugins)
+            dssiCount += plugins.size();
 
-        for plugins in vst3Plugins:
-            vst3Count += len(plugins)
+        for (const QPluginInfoList& plugins : vst2Plugins)
+            vstCount += plugins.size();
 
-        for plugins in clapPlugins:
-            clapCount += len(plugins)
+        for (const QPluginInfoList& plugins : vst3Plugins)
+            vst3Count += plugins.size();
 
-        for plugins in auPlugins32:
-            au32Count += len(plugins)
+        for (const QPluginInfoList& plugins : clapPlugins)
+            clapCount += plugins.size();
 
-        for plugins in sf2s:
-            sf2Count += len(plugins)
+       #ifdef CARLA_OS_MAC
+        for (const QPluginInfoList& plugins : auPlugins32)
+            au32Count += plugins.size();
+       #endif
 
-        self.ui.tableWidget.setRowCount(self.fLastTableIndex +
-                                        ladspaCount + dssiCount + vstCount + vst3Count + clapCount +
-                                        auCount + au32Count + jsfxCount + sf2Count + sfzCount)
+        for (const QPluginInfoList& plugins : sf2s)
+            sf2Count += plugins.size();
 
-        if MACOS:
-            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3, %i CLAP, %i AudioUnit and %i JSFX plugins, plus %i Sound Kits" % (
-                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, clapCount, auCount+au32Count, jsfxCount, sf2Count+sfzCount)))
-        else:
-            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3, %i CLAP and %i JSFX plugins, plus %i Sound Kits" % (
-                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, clapCount, jsfxCount, sf2Count+sfzCount)))
+        ui.tableWidget->setRowCount(fLastTableIndex +
+                                    ladspaCount + dssiCount + vstCount + vst3Count + clapCount +
+                                    auCount + au32Count + jsfxCount + sf2Count + sfzCount);
 
-        # ----------------------------------------------------------------------------------------------------
-        # now add all plugins to the table
+        constexpr const char* const txt = "Have %1 Internal, %2 LADSPA, %3 DSSI, %4 LV2, %5 VST2, %6 VST3, %7 CLAP"
+                                         #ifdef CARLA_OS_MAC
+                                          ", %8 AudioUnit and %9 JSFX plugins, plus %10 Sound Kits"
+                                         #endif
+                                          " and %8 JSFX plugins, plus %9 Sound Kits";
 
-        for plugins in ladspaPlugins:
-            for plugin in plugins:
-                self._addPluginToTable(plugin, "LADSPA")
+        ui.label->setText(fRealParent->tr(txt)
+            .arg(QString::number(internalCount))
+            .arg(QString::number(ladspaCount))
+            .arg(QString::number(dssiCount))
+            .arg(QString::number(lv2Count))
+            .arg(QString::number(vstCount))
+            .arg(QString::number(vst3Count))
+            .arg(QString::number(clapCount))
+           #ifdef CARLA_OS_MAC
+            .arg(QString::number(auCount+au32Count))
+           #endif
+            .arg(QString::number(jsfxCount))
+            .arg(QString::number(sf2Count+sfzCount))
+        );
 
-        for plugins in dssiPlugins:
-            for plugin in plugins:
-                self._addPluginToTable(plugin, "DSSI")
+        // ------------------------------------------------------------------------------------------------------------
+        // now add all plugins to the table
 
-        for plugins in vst2Plugins:
-            for plugin in plugins:
-                self._addPluginToTable(plugin, "VST2")
+        for (const QPluginInfoList& plugins : ladspaPlugins)
+            for (const PluginInfo& plugin : plugins)
+                addPluginToTable(plugin, PLUGIN_LADSPA);
 
-        for plugins in vst3Plugins:
-            for plugin in plugins:
-                self._addPluginToTable(plugin, "VST3")
+        for (const QPluginInfoList& plugins : dssiPlugins)
+            for (const PluginInfo& plugin : plugins)
+                addPluginToTable(plugin, PLUGIN_DSSI);
 
-        for plugins in clapPlugins:
-            for plugin in plugins:
-                self._addPluginToTable(plugin, "CLAP")
+        for (const QPluginInfoList& plugins : vst2Plugins)
+            for (const PluginInfo& plugin : plugins)
+                addPluginToTable(plugin, PLUGIN_VST2);
 
-        for plugins in auPlugins32:
-            for plugin in plugins:
-                self._addPluginToTable(plugin, "AU")
+        for (const QPluginInfoList& plugins : vst3Plugins)
+            for (const PluginInfo& plugin : plugins)
+                addPluginToTable(plugin, PLUGIN_VST3);
 
-        for plugin in jsfxPlugins:
-            self._addPluginToTable(plugin, "JSFX")
+        for (const QPluginInfoList& plugins : clapPlugins)
+            for (const PluginInfo& plugin : plugins)
+                addPluginToTable(plugin, PLUGIN_CLAP);
 
-        for sf2 in sf2s:
-            for sf2_i in sf2:
-                self._addPluginToTable(sf2_i, "SF2")
+       #ifdef CARLA_OS_MAC
+        for (const QPluginInfoList& plugins : auPlugins32)
+            for (const PluginInfo& plugin : plugins)
+                addPluginToTable(plugin, PLUGIN_AU);
+       #endif
 
-        for sfz in sfzs:
-            self._addPluginToTable(sfz, "SFZ")
+        for (const PluginInfo& plugin : jsfxPlugins)
+            addPluginToTable(plugin, PLUGIN_JSFX);
 
-        # ----------------------------------------------------------------------------------------------------
+        for (const QPluginInfoList& sf2 : sf2s)
+            for (const PluginInfo& sf2_i : sf2)
+                addPluginToTable(sf2_i, PLUGIN_SF2);
 
-#endif
+        for (const PluginInfo& sfz : sfzs)
+            addPluginToTable(sfz, PLUGIN_SFZ);
+
+        // ------------------------------------------------------------------------------------------------------------
+
         ui.tableWidget->setSortingEnabled(true);
-        checkFilters();
 
-#if 0
-        self.slot_checkPlugin(self.ui.tableWidget.currentRow())
-#endif
+        checkFilters();
+        checkPlugin(ui.tableWidget->currentRow());
+    }
+
+    void checkPlugin(const int row)
+    {
+        if (row >= 0)
+        {
+            ui.b_add->setEnabled(true);
+
+            PluginInfo plugin = asPluginInfo(ui.tableWidget->item(row, TABLEWIDGET_ITEM_NAME)->data(Qt::UserRole+1));
+
+            const bool isSynth  = plugin.hints & PLUGIN_IS_SYNTH;
+            const bool isEffect = plugin.audioIns > 0 && plugin.audioOuts > 0 && !isSynth;
+            const bool isMidi   = plugin.audioIns == 0 &&
+                                  plugin.audioOuts == 0 &&
+                                  plugin.midiIns > 0 && plugin.midiOuts > 0;
+            // const bool isKit    = plugin['type'] in (PLUGIN_SF2, PLUGIN_SFZ);
+            // const bool isOther  = ! (isEffect || isSynth || isMidi || isKit);
+
+            QString ptype;
+            /**/ if (isSynth)
+                ptype = "Instrument";
+            else if (isEffect)
+                ptype = "Effect";
+            else if (isMidi)
+                ptype = "MIDI Plugin";
+            else
+                ptype = "Other";
+
+            QString parch;
+            /**/ if (plugin.build == BINARY_NATIVE)
+                parch = fTrNative;
+            else if (plugin.build == BINARY_POSIX32)
+                parch = "posix32";
+            else if (plugin.build == BINARY_POSIX64)
+                parch = "posix64";
+            else if (plugin.build == BINARY_WIN32)
+                parch = "win32";
+            else if (plugin.build == BINARY_WIN64)
+                parch = "win64";
+            else if (plugin.build == BINARY_OTHER)
+                parch = tr("Other");
+            else if (plugin.build == BINARY_WIN32)
+                parch = tr("Unknown");
+
+            ui.l_format->setText(getPluginTypeAsString(plugin.type));
+
+            ui.l_type->setText(ptype);
+            ui.l_arch->setText(parch);
+            ui.l_id->setText(QString::number(plugin.uniqueId));
+            ui.l_ains->setText(QString::number(plugin.audioIns));
+            ui.l_aouts->setText(QString::number(plugin.audioOuts));
+            ui.l_cvins->setText(QString::number(plugin.cvIns));
+            ui.l_cvouts->setText(QString::number(plugin.cvOuts));
+            ui.l_mins->setText(QString::number(plugin.midiIns));
+            ui.l_mouts->setText(QString::number(plugin.midiOuts));
+            ui.l_pins->setText(QString::number(plugin.parametersIns));
+            ui.l_pouts->setText(QString::number(plugin.parametersOuts));
+            ui.l_gui->setText(plugin.hints & PLUGIN_HAS_CUSTOM_UI ? fTrYes : fTrNo);
+            ui.l_idisp->setText(plugin.hints & PLUGIN_HAS_INLINE_DISPLAY ? fTrYes : fTrNo);
+            ui.l_bridged->setText(plugin.hints & PLUGIN_IS_BRIDGE ? fTrYes : fTrNo);
+            ui.l_synth->setText(isSynth ? fTrYes : fTrNo);
+        }
+        else
+        {
+            ui.b_add->setEnabled(false);
+            ui.l_format->setText("---");
+            ui.l_type->setText("---");
+            ui.l_arch->setText("---");
+            ui.l_id->setText("---");
+            ui.l_ains->setText("---");
+            ui.l_aouts->setText("---");
+            ui.l_cvins->setText("---");
+            ui.l_cvouts->setText("---");
+            ui.l_mins->setText("---");
+            ui.l_mouts->setText("---");
+            ui.l_pins->setText("---");
+            ui.l_pouts->setText("---");
+            ui.l_gui->setText("---");
+            ui.l_idisp->setText("---");
+            ui.l_bridged->setText("---");
+            ui.l_synth->setText("---");
+        }
     }
 };
 
@@ -799,6 +1368,14 @@ PluginListDialog::~PluginListDialog()
 }
 
 // --------------------------------------------------------------------------------------------------------------------
+// public methods
+
+const PluginInfo& PluginListDialog::getSelectedPluginInfo() const
+{
+    return self.fRetPlugin;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
 // protected methods
 
 void PluginListDialog::showEvent(QShowEvent* const event)
@@ -844,7 +1421,7 @@ void PluginListDialog::loadSettings()
     self.ui.ch_stereo->setChecked(settings.valueBool("PluginDatabase/ShowStereoOnly", false));
     self.ui.lineEdit->setText(settings.valueString("PluginDatabase/SearchText", ""));
 
-    QString categories = settings.valueString("PluginDatabase/ShowCategory", "all");
+    const QString categories = settings.valueString("PluginDatabase/ShowCategory", "all");
     if (categories == "all" or categories.length() < 2)
     {
         self.ui.ch_cat_all->setChecked(true);
@@ -872,7 +1449,7 @@ void PluginListDialog::loadSettings()
         self.ui.ch_cat_other->setChecked(categories.contains(":other:"));
     }
 
-    QByteArray tableGeometry = settings.valueByteArray("PluginDatabase/TableGeometry_6");
+    const QByteArray tableGeometry = settings.valueByteArray("PluginDatabase/TableGeometry_6");
     QHeaderView* const horizontalHeader = self.ui.tableWidget->horizontalHeader();
     if (! tableGeometry.isNull())
     {
@@ -880,13 +1457,15 @@ void PluginListDialog::loadSettings()
     }
     else
     {
-        horizontalHeader->setSectionResizeMode(self.TABLEWIDGET_ITEM_FAVORITE, QHeaderView::Fixed);
-        self.ui.tableWidget->setColumnWidth(self.TABLEWIDGET_ITEM_FAVORITE, 24);
         self.ui.tableWidget->setColumnWidth(self.TABLEWIDGET_ITEM_NAME, 250);
         self.ui.tableWidget->setColumnWidth(self.TABLEWIDGET_ITEM_LABEL, 200);
         self.ui.tableWidget->setColumnWidth(self.TABLEWIDGET_ITEM_MAKER, 150);
         self.ui.tableWidget->sortByColumn(self.TABLEWIDGET_ITEM_NAME, Qt::AscendingOrder);
     }
+
+    horizontalHeader->setSectionResizeMode(self.TABLEWIDGET_ITEM_FAVORITE, QHeaderView::Fixed);
+    self.ui.tableWidget->setColumnWidth(self.TABLEWIDGET_ITEM_FAVORITE, 24);
+    self.ui.tableWidget->setSortingEnabled(true);
 }
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -894,34 +1473,34 @@ void PluginListDialog::loadSettings()
 
 void PluginListDialog::slot_cellClicked(int row, int column)
 {
-    if (column == self.TABLEWIDGET_ITEM_FAVORITE)
-    {
-        QTableWidgetItem* const widget = self.ui.tableWidget->item(row, self.TABLEWIDGET_ITEM_FAVORITE);
+    if (column != self.TABLEWIDGET_ITEM_FAVORITE)
+        return;
+
+    const QTableWidgetItem* const widget = self.ui.tableWidget->item(row, self.TABLEWIDGET_ITEM_FAVORITE);
+    const PluginInfo plugin = asPluginInfo(self.ui.tableWidget->item(row, self.TABLEWIDGET_ITEM_NAME)->data(Qt::UserRole+1));
 #if 0
-        plugin = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_NAME).data(Qt::UserRole+1);
-        plugin = self._createFavoritePluginDict(plugin);
+    plugin = self._createFavoritePluginDict(plugin);
 #endif
 
-        if (widget->checkState() == Qt::Checked)
-        {
+    if (widget->checkState() == Qt::Checked)
+    {
 #if 0
-            if (not plugin in self.fFavoritePlugins)
-            {
-                self.fFavoritePlugins.append(plugin);
-                self.fFavoritePluginsChanged = true;
-            }
-#endif
-        }
-        else
+        if (not plugin in self.fFavoritePlugins)
         {
-#if 0
-            try:
-                self.fFavoritePlugins.remove(plugin);
-                self.fFavoritePluginsChanged = True;
-            except ValueError:
-                pass
-#endif
+            self.fFavoritePlugins.append(plugin);
+            self.fFavoritePluginsChanged = true;
         }
+#endif
+    }
+    else
+    {
+#if 0
+        try:
+            self.fFavoritePlugins.remove(plugin);
+            self.fFavoritePluginsChanged = True;
+        except ValueError:
+            pass
+#endif
     }
 }
 
@@ -941,10 +1520,8 @@ void PluginListDialog::slot_addPlugin()
 {
     if (self.ui.tableWidget->currentRow() >= 0)
     {
-#if 0
-        self.fRetPlugin = self.ui.tableWidget->item(self.ui.tableWidget->currentRow(),
-                                                    self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1);
-#endif
+        self.fRetPlugin = asPluginInfo(self.ui.tableWidget->item(self.ui.tableWidget->currentRow(),
+                                                                 self.TABLEWIDGET_ITEM_NAME)->data(Qt::UserRole+1));
         accept();
     }
     else
@@ -953,94 +1530,9 @@ void PluginListDialog::slot_addPlugin()
     }
 }
 
-void PluginListDialog::slot_checkPlugin(int row)
+void PluginListDialog::slot_checkPlugin(const int row)
 {
-    if (row >= 0)
-    {
-        self.ui.b_add->setEnabled(true);
-#if 0
-        auto plugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(),
-                                               self.TABLEWIDGET_ITEM_NAME).data(Qt::UserRole+1);
-
-        const bool isSynth  = plugin['hints'] & PLUGIN_IS_SYNTH;
-        const bool isEffect = plugin['audio.ins'] > 0 && plugin['audio.outs'] > 0 && !isSynth;
-        const bool isMidi   = plugin['audio.ins'] == 0 &&
-                              plugin['audio.outs'] == 0 &&
-                              plugin['midi.ins'] > 0 < plugin['midi.outs'];
-        // const bool isKit    = plugin['type'] in (PLUGIN_SF2, PLUGIN_SFZ);
-        // const bool isOther  = ! (isEffect || isSynth || isMidi || isKit);
-#endif
-
-        QString ptype;
-#if 0
-        /**/ if (isSynth)
-            ptype = "Instrument";
-        else if (isEffect)
-            ptype = "Effect";
-        else if (isMidi)
-            ptype = "MIDI Plugin";
-        else
-            ptype = "Other";
-#endif
-
-        QString parch;
-#if 0
-        /**/ if (plugin['build'] == BINARY_NATIVE)
-            parch = self.fTrNative;
-        else if (plugin['build'] == BINARY_POSIX32)
-            parch = "posix32";
-        else if (plugin['build'] == BINARY_POSIX64)
-            parch = "posix64";
-        else if (plugin['build'] == BINARY_WIN32)
-            parch = "win32";
-        else if (plugin['build'] == BINARY_WIN64)
-            parch = "win64";
-        else if (plugin['build'] == BINARY_OTHER)
-            parch = tr("Other");
-        else if (plugin['build'] == BINARY_WIN32)
-            parch = tr("Unknown");
-
-        self.ui.l_format->setText(getPluginTypeAsString(plugin['type']));
-#endif
-
-        self.ui.l_type->setText(ptype);
-        self.ui.l_arch->setText(parch);
-#if 0
-        self.ui.l_id->setText(str(plugin['uniqueId']));
-        self.ui.l_ains->setText(str(plugin['audio.ins']));
-        self.ui.l_aouts->setText(str(plugin['audio.outs']));
-        self.ui.l_cvins->setText(str(plugin['cv.ins']));
-        self.ui.l_cvouts->setText(str(plugin['cv.outs']));
-        self.ui.l_mins->setText(str(plugin['midi.ins']));
-        self.ui.l_mouts->setText(str(plugin['midi.outs']));
-        self.ui.l_pins->setText(str(plugin['parameters.ins']));
-        self.ui.l_pouts->setText(str(plugin['parameters.outs']));
-        self.ui.l_gui->setText(plugin['hints'] & PLUGIN_HAS_CUSTOM_UI ? self.fTrYes : self.fTrNo);
-        self.ui.l_idisp->setText(plugin['hints'] & PLUGIN_HAS_INLINE_DISPLAY ? self.fTrYes : self.fTrNo);
-        self.ui.l_bridged->setText(plugin['hints'] & PLUGIN_IS_BRIDGE ? self.fTrYes : self.fTrNo);
-        self.ui.l_synth->setText(isSynth ? self.fTrYes : self.fTrNo);
-#endif
-    }
-    else
-    {
-        self.ui.b_add->setEnabled(false);
-        self.ui.l_format->setText("---");
-        self.ui.l_type->setText("---");
-        self.ui.l_arch->setText("---");
-        self.ui.l_id->setText("---");
-        self.ui.l_ains->setText("---");
-        self.ui.l_aouts->setText("---");
-        self.ui.l_cvins->setText("---");
-        self.ui.l_cvouts->setText("---");
-        self.ui.l_mins->setText("---");
-        self.ui.l_mouts->setText("---");
-        self.ui.l_pins->setText("---");
-        self.ui.l_pouts->setText("---");
-        self.ui.l_gui->setText("---");
-        self.ui.l_idisp->setText("---");
-        self.ui.l_bridged->setText("---");
-        self.ui.l_synth->setText("---");
-    }
+    self.checkPlugin(row);
 }
 
 void PluginListDialog::slot_checkFilters()
@@ -1219,10 +1711,38 @@ carla_frontend_createAndExecPluginListDialog(void* const parent/*, const HostSet
 
     if (gui.exec())
     {
-        static PluginListDialogResults ret = {};
-        static CarlaString retBinary;
+        static PluginListDialogResults ret;
+        static CarlaString category;
+        static CarlaString filename;
+        static CarlaString name;
+        static CarlaString label;
+        static CarlaString maker;
 
-        // TODO
+        const PluginInfo& plugin(gui.getSelectedPluginInfo());
+
+        category = plugin.category.toUtf8();
+        filename = plugin.filename.toUtf8();
+        name = plugin.name.toUtf8();
+        label = plugin.label.toUtf8();
+        maker = plugin.maker.toUtf8();
+
+        ret.API = plugin.API;
+        ret.build = plugin.build;
+        ret.type = plugin.type;
+        ret.hints = plugin.hints;
+        ret.category = category;
+        ret.filename = filename;
+        ret.name = name;
+        ret.label = label;
+        ret.maker = maker;
+        ret.audioIns = plugin.audioIns;
+        ret.audioOuts = plugin.audioOuts;
+        ret.cvIns = plugin.cvIns;
+        ret.cvOuts = plugin.cvOuts;
+        ret.midiIns = plugin.midiIns;
+        ret.midiOuts = plugin.midiOuts;
+        ret.parametersIns = plugin.parametersIns;
+        ret.parametersOuts = plugin.parametersOuts;
 
         return &ret;
     }

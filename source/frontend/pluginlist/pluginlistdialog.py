@@ -233,21 +233,23 @@ class PluginListDialog(QDialog):
 
     @pyqtSlot(int, int)
     def slot_cellClicked(self, row, column):
-        if column == self.TABLEWIDGET_ITEM_FAVORITE:
-            widget = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_FAVORITE)
-            plugin = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
-            plugin = self._createFavoritePluginDict(plugin)
+        if column != self.TABLEWIDGET_ITEM_FAVORITE:
+            return
 
-            if widget.checkState() == Qt.Checked:
-                if not plugin in self.fFavoritePlugins:
-                    self.fFavoritePlugins.append(plugin)
-                    self.fFavoritePluginsChanged = True
-            else:
-                try:
-                    self.fFavoritePlugins.remove(plugin)
-                    self.fFavoritePluginsChanged = True
-                except ValueError:
-                    pass
+        widget = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_FAVORITE)
+        plugin = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
+        plugin = self._createFavoritePluginDict(plugin)
+
+        if widget.checkState() == Qt.Checked:
+            if not plugin in self.fFavoritePlugins:
+                self.fFavoritePlugins.append(plugin)
+                self.fFavoritePluginsChanged = True
+        else:
+            try:
+                self.fFavoritePlugins.remove(plugin)
+                self.fFavoritePluginsChanged = True
+            except ValueError:
+                pass
 
     @pyqtSlot(int, int)
     def slot_cellDoubleClicked(self, _, column):
@@ -272,8 +274,7 @@ class PluginListDialog(QDialog):
     def slot_checkPlugin(self, row):
         if row >= 0:
             self.ui.b_add.setEnabled(True)
-            plugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(),
-                                              self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
+            plugin = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
 
             isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
             isEffect = bool(plugin['audio.ins'] > 0 < plugin['audio.outs'] and not isSynth)
@@ -556,12 +557,14 @@ class PluginListDialog(QDialog):
         if not tableGeometry.isNull():
             horizontalHeader.restoreState(tableGeometry)
         else:
-            horizontalHeader.setSectionResizeMode(self.TABLEWIDGET_ITEM_FAVORITE, QHeaderView.Fixed)
-            self.ui.tableWidget.setColumnWidth(self.TABLEWIDGET_ITEM_FAVORITE, 24)
             self.ui.tableWidget.setColumnWidth(self.TABLEWIDGET_ITEM_NAME, 250)
             self.ui.tableWidget.setColumnWidth(self.TABLEWIDGET_ITEM_LABEL, 200)
             self.ui.tableWidget.setColumnWidth(self.TABLEWIDGET_ITEM_MAKER, 150)
             self.ui.tableWidget.sortByColumn(self.TABLEWIDGET_ITEM_NAME, Qt.AscendingOrder)
+
+        horizontalHeader.setSectionResizeMode(self.TABLEWIDGET_ITEM_FAVORITE, QHeaderView.Fixed)
+        self.ui.tableWidget.setColumnWidth(self.TABLEWIDGET_ITEM_FAVORITE, 24)
+        self.ui.tableWidget.setSortingEnabled(True)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -636,7 +639,7 @@ class PluginListDialog(QDialog):
             isOther  = bool(not (isEffect or isSynth or isMidi or isKit))
             isNative = bool(plugin['build'] == BINARY_NATIVE)
             isRtSafe = bool(phints & PLUGIN_IS_RTSAFE)
-            isStereo = bool(aIns == 2 and aOuts == 2) or (isSynth and aOuts == 2)
+            isStereo = bool((aIns == 2 and aOuts == 2) or (isSynth and aOuts == 2))
             hasCV    = bool(cvIns + cvOuts > 0)
             hasGui   = bool(phints & PLUGIN_HAS_CUSTOM_UI)
             hasIDisp = bool(phints & PLUGIN_HAS_INLINE_DISPLAY)
@@ -711,24 +714,26 @@ class PluginListDialog(QDialog):
     def _addPluginToTable(self, plugin, ptype):
         if plugin['API'] != PLUGIN_QUERY_API_VERSION:
             return
-        if ptype in (self.tr("Internal"), "LV2", "SF2", "SFZ", "JSFX"):
+        if ptype in (PLUGIN_INTERNAL, PLUGIN_LV2, PLUGIN_SF2, PLUGIN_SFZ, PLUGIN_JSFX):
             plugin['build'] = BINARY_NATIVE
 
         index = self.fLastTableIndex
 
         isFav = bool(self._createFavoritePluginDict(plugin) in self.fFavoritePlugins)
-        favItem = QTableWidgetItem()
-        favItem.setCheckState(Qt.Checked if isFav else Qt.Unchecked)
-        favItem.setText(" " if isFav else "  ")
+        itemFav = QTableWidgetItem()
+        itemFav.setCheckState(Qt.Checked if isFav else Qt.Unchecked)
+        itemFav.setText(" " if isFav else "  ")
 
         pluginText = (plugin['name']+plugin['label']+plugin['maker']+plugin['filename']).lower()
-        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_FAVORITE, favItem)
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_FAVORITE, itemFav)
         self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_NAME, QTableWidgetItem(plugin['name']))
         self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_LABEL, QTableWidgetItem(plugin['label']))
         self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_MAKER, QTableWidgetItem(plugin['maker']))
         self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_BINARY, QTableWidgetItem(os.path.basename(plugin['filename'])))
-        self.ui.tableWidget.item(index, self.TABLEWIDGET_ITEM_NAME).setData(Qt.UserRole+1, plugin)
-        self.ui.tableWidget.item(index, self.TABLEWIDGET_ITEM_NAME).setData(Qt.UserRole+2, pluginText)
+
+        itemName = self.ui.tableWidget.item(index, self.TABLEWIDGET_ITEM_NAME)
+        itemName.setData(Qt.UserRole+1, plugin)
+        itemName.setData(Qt.UserRole+2, pluginText)
 
         self.fLastTableIndex += 1
 
@@ -792,7 +797,7 @@ class PluginListDialog(QDialog):
         self.ui.tableWidget.setRowCount(self.fLastTableIndex + len(plugins))
 
         for plugin in plugins:
-            self._addPluginToTable(plugin, ptypeStrTr)
+            self._addPluginToTable(plugin, ptype)
 
         return pluginCount
 
@@ -930,37 +935,37 @@ class PluginListDialog(QDialog):
 
         for plugins in ladspaPlugins:
             for plugin in plugins:
-                self._addPluginToTable(plugin, "LADSPA")
+                self._addPluginToTable(plugin, PLUGIN_LADSPA)
 
         for plugins in dssiPlugins:
             for plugin in plugins:
-                self._addPluginToTable(plugin, "DSSI")
+                self._addPluginToTable(plugin, PLUGIN_DSSI)
 
         for plugins in vst2Plugins:
             for plugin in plugins:
-                self._addPluginToTable(plugin, "VST2")
+                self._addPluginToTable(plugin, PLUGIN_VST2)
 
         for plugins in vst3Plugins:
             for plugin in plugins:
-                self._addPluginToTable(plugin, "VST3")
+                self._addPluginToTable(plugin, PLUGIN_VST3)
 
         for plugins in clapPlugins:
             for plugin in plugins:
-                self._addPluginToTable(plugin, "CLAP")
+                self._addPluginToTable(plugin, PLUGIN_CLAP)
 
         for plugins in auPlugins32:
             for plugin in plugins:
-                self._addPluginToTable(plugin, "AU")
+                self._addPluginToTable(plugin, PLUGIN_AU)
 
         for plugin in jsfxPlugins:
-            self._addPluginToTable(plugin, "JSFX")
+            self._addPluginToTable(plugin, PLUGIN_JSFX)
 
         for sf2 in sf2s:
             for sf2_i in sf2:
-                self._addPluginToTable(sf2_i, "SF2")
+                self._addPluginToTable(sf2_i, PLUGIN_SF2)
 
         for sfz in sfzs:
-            self._addPluginToTable(sfz, "SFZ")
+            self._addPluginToTable(sfz, PLUGIN_SFZ)
 
         # ----------------------------------------------------------------------------------------------------
 
