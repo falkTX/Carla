@@ -249,7 +249,8 @@ void JackAppDialog::slot_saveSettings()
 
 // --------------------------------------------------------------------------------------------------------------------
 
-JackAppDialogResults* carla_frontend_createAndExecJackAppDialog(void* const parent, const char* const projectFilename)
+const JackAppDialogResults*
+carla_frontend_createAndExecJackAppDialog(void* const parent, const char* const projectFilename)
 {
     JackAppDialog gui(reinterpret_cast<QWidget*>(parent), projectFilename);
 

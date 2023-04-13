@@ -572,8 +572,8 @@ void PluginListRefreshDialog::slot_handlePluginThreadFinished()
 
 // --------------------------------------------------------------------------------------------------------------------
 
-PluginListRefreshDialogResults* carla_frontend_createAndExecPluginListRefreshDialog(void* const parent,
-                                                                                    const bool useSystemIcons)
+const PluginListRefreshDialogResults*
+carla_frontend_createAndExecPluginListRefreshDialog(void* const parent, const bool useSystemIcons)
 {
     PluginListRefreshDialog gui(reinterpret_cast<QWidget*>(parent), useSystemIcons);
 

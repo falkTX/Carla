@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "CarlaDefines.h"
+#include "CarlaBackend.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,16 +58,17 @@ typedef struct {
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_API
-void carla_frontend_createAndExecAboutJuceDialog(void* parent);
+CARLA_API void
+carla_frontend_createAndExecAboutJuceDialog(void* parent);
 
-CARLA_API JackAppDialogResults* carla_frontend_createAndExecJackAppDialog(void* parent, const char* projectFilename);
+CARLA_API const JackAppDialogResults*
+carla_frontend_createAndExecJackAppDialog(void* parent, const char* projectFilename);
 
-CARLA_API
-PluginListDialogResults* carla_frontend_createAndExecPluginListDialog(void* parent/*, const HostSettings& hostSettings*/);
+CARLA_API const PluginListDialogResults*
+carla_frontend_createAndExecPluginListDialog(void* parent/*, const HostSettings& hostSettings*/);
 
-CARLA_API
-PluginListRefreshDialogResults* carla_frontend_createAndExecPluginListRefreshDialog(void* parent, bool useSystemIcons);
+CARLA_API const PluginListRefreshDialogResults*
+carla_frontend_createAndExecPluginListRefreshDialog(void* parent, bool useSystemIcons);
 
 // --------------------------------------------------------------------------------------------------------------------
 

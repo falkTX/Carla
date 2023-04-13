@@ -48,6 +48,51 @@
 CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
+
+PluginInfo checkPluginCached(const CarlaCachedPluginInfo* const desc, const PluginType ptype)
+{
+    PluginInfo pinfo = {};
+    pinfo.build = BINARY_NATIVE;
+    pinfo.type  = ptype;
+    pinfo.hints = desc->hints;
+    pinfo.name  = desc->name;
+    pinfo.label = desc->label;
+    pinfo.maker = desc->maker;
+    pinfo.category = getPluginCategoryAsString(desc->category);
+
+    pinfo.audioIns  = desc->audioIns;
+    pinfo.audioOuts = desc->audioOuts;
+
+    pinfo.cvIns  = desc->cvIns;
+    pinfo.cvOuts = desc->cvOuts;
+
+    pinfo.midiIns  = desc->midiIns;
+    pinfo.midiOuts = desc->midiOuts;
+
+    pinfo.parametersIns  = desc->parameterIns;
+    pinfo.parametersOuts = desc->parameterOuts;
+
+    switch (ptype)
+    {
+    case PLUGIN_LV2:
+        {
+            QString label(desc->label);
+            pinfo.filename = label.split(CARLA_OS_SEP).first();
+            pinfo.label = label.section(CARLA_OS_SEP, 1);
+        }
+        break;
+    case PLUGIN_SFZ:
+        pinfo.filename = pinfo.label;
+        pinfo.label    = pinfo.name;
+        break;
+    default:
+        break;
+    }
+
+    return pinfo;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
 // Backwards-compatible horizontalAdvance/width call, depending on Qt version
 
 static inline
@@ -109,7 +154,7 @@ public:
 };
 
 // --------------------------------------------------------------------------------------------------------------------
-// Jack Application Dialog
+// Plugin List Dialog
 
 struct PluginListDialog::Self {
     enum TableIndex {
@@ -124,87 +169,205 @@ struct PluginListDialog::Self {
     bool hasLoadedLv2Plugins = false;
 
     Ui_PluginListDialog ui;
-    HostSettings hostSettings;
+    HostSettings hostSettings = {};
 
-    int fLastTableIndex;
-    PluginListDialogResults fRetPlugin;
-    QWidget* fRealParent;
+    int fLastTableIndex = 0;
+    PluginListDialogResults fRetPlugin = {};
+    QWidget* const fRealParent;
     QStringList fFavoritePlugins;
-    bool fFavoritePluginsChanged;
+    bool fFavoritePluginsChanged = false;
 
-    QString fTrYes;
-    QString fTrNo;
-    QString fTrNative;
+    const QString fTrYes;
+    const QString fTrNo;
+    const QString fTrNative;
 
-    Self() {}
+    Self(QWidget* const parent)
+        : fRealParent(parent),
+          fTrYes(tr("Yes")),
+          fTrNo(tr("No")),
+          fTrNative(tr("Native")) {}
 
-    static Self& create()
+    static Self& create(QWidget* const parent)
     {
-        Self* const self = new Self();
+        Self* const self = new Self(parent);
         return *self;
     }
 
     void createFavoritePluginDict()
     {
-//         return {
-//             'name'    : plugin['name'],
-//             'build'   : plugin['build'],
-//             'type'    : plugin['type'],
-//             'filename': plugin['filename'],
-//             'label'   : plugin['label'],
-//             'uniqueId': plugin['uniqueId'],
-//         }
+#if 0
+        return {
+            'name'    : plugin['name'],
+            'build'   : plugin['build'],
+            'type'    : plugin['type'],
+            'filename': plugin['filename'],
+            'label'   : plugin['label'],
+            'uniqueId': plugin['uniqueId'],
+        }
+#endif
     }
 
     void checkFilters()
     {
+#if 0
+        text = self.ui.lineEdit.text().lower()
+
+        hideEffects     = not self.ui.ch_effects.isChecked()
+        hideInstruments = not self.ui.ch_instruments.isChecked()
+        hideMidi        = not self.ui.ch_midi.isChecked()
+        hideOther       = not self.ui.ch_other.isChecked()
+
+        hideInternal = not self.ui.ch_internal.isChecked()
+        hideLadspa   = not self.ui.ch_ladspa.isChecked()
+        hideDssi     = not self.ui.ch_dssi.isChecked()
+        hideLV2      = not self.ui.ch_lv2.isChecked()
+        hideVST2     = not self.ui.ch_vst.isChecked()
+        hideVST3     = not self.ui.ch_vst3.isChecked()
+        hideCLAP     = not self.ui.ch_clap.isChecked()
+        hideAU       = not self.ui.ch_au.isChecked()
+        hideJSFX     = not self.ui.ch_jsfx.isChecked()
+        hideKits     = not self.ui.ch_kits.isChecked()
+
+        hideNative  = not self.ui.ch_native.isChecked()
+        hideBridged = not self.ui.ch_bridged.isChecked()
+        hideBridgedWine = not self.ui.ch_bridged_wine.isChecked()
+
+        hideNonFavs   = self.ui.ch_favorites.isChecked()
+        hideNonRtSafe = self.ui.ch_rtsafe.isChecked()
+        hideNonCV     = self.ui.ch_cv.isChecked()
+        hideNonGui    = self.ui.ch_gui.isChecked()
+        hideNonIDisp  = self.ui.ch_inline_display.isChecked()
+        hideNonStereo = self.ui.ch_stereo.isChecked()
+
+        if HAIKU or LINUX or MACOS:
+            nativeBins = [BINARY_POSIX32, BINARY_POSIX64]
+            wineBins   = [BINARY_WIN32, BINARY_WIN64]
+        elif WINDOWS:
+            nativeBins = [BINARY_WIN32, BINARY_WIN64]
+            wineBins   = []
+        else:
+            nativeBins = []
+            wineBins   = []
+
+        self.ui.tableWidget.setRowCount(self.fLastTableIndex)
+
+        for i in range(self.fLastTableIndex):
+            plugin = self.ui.tableWidget.item(i, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1)
+            ptext  = self.ui.tableWidget.item(i, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+2)
+            aIns   = plugin['audio.ins']
+            aOuts  = plugin['audio.outs']
+            cvIns  = plugin['cv.ins']
+            cvOuts = plugin['cv.outs']
+            mIns   = plugin['midi.ins']
+            mOuts  = plugin['midi.outs']
+            phints = plugin['hints']
+            ptype  = plugin['type']
+            categ  = plugin['category']
+            isSynth  = bool(phints & PLUGIN_IS_SYNTH)
+            isEffect = bool(aIns > 0 < aOuts and not isSynth)
+            isMidi   = bool(aIns == 0 and aOuts == 0 and mIns > 0 < mOuts)
+            isKit    = bool(ptype in (PLUGIN_SF2, PLUGIN_SFZ))
+            isOther  = bool(not (isEffect or isSynth or isMidi or isKit))
+            isNative = bool(plugin['build'] == BINARY_NATIVE)
+            isRtSafe = bool(phints & PLUGIN_IS_RTSAFE)
+            isStereo = bool(aIns == 2 and aOuts == 2) or (isSynth and aOuts == 2)
+            hasCV    = bool(cvIns + cvOuts > 0)
+            hasGui   = bool(phints & PLUGIN_HAS_CUSTOM_UI)
+            hasIDisp = bool(phints & PLUGIN_HAS_INLINE_DISPLAY)
+
+            isBridged = bool(not isNative and plugin['build'] in nativeBins)
+            isBridgedWine = bool(not isNative and plugin['build'] in wineBins)
+
+            if hideEffects and isEffect:
+                self.ui.tableWidget.hideRow(i)
+            elif hideInstruments and isSynth:
+                self.ui.tableWidget.hideRow(i)
+            elif hideMidi and isMidi:
+                self.ui.tableWidget.hideRow(i)
+            elif hideOther and isOther:
+                self.ui.tableWidget.hideRow(i)
+            elif hideKits and isKit:
+                self.ui.tableWidget.hideRow(i)
+            elif hideInternal and ptype == PLUGIN_INTERNAL:
+                self.ui.tableWidget.hideRow(i)
+            elif hideLadspa and ptype == PLUGIN_LADSPA:
+                self.ui.tableWidget.hideRow(i)
+            elif hideDssi and ptype == PLUGIN_DSSI:
+                self.ui.tableWidget.hideRow(i)
+            elif hideLV2 and ptype == PLUGIN_LV2:
+                self.ui.tableWidget.hideRow(i)
+            elif hideVST2 and ptype == PLUGIN_VST2:
+                self.ui.tableWidget.hideRow(i)
+            elif hideVST3 and ptype == PLUGIN_VST3:
+                self.ui.tableWidget.hideRow(i)
+            elif hideCLAP and ptype == PLUGIN_CLAP:
+                self.ui.tableWidget.hideRow(i)
+            elif hideAU and ptype == PLUGIN_AU:
+                self.ui.tableWidget.hideRow(i)
+            elif hideJSFX and ptype == PLUGIN_JSFX:
+                self.ui.tableWidget.hideRow(i)
+            elif hideNative and isNative:
+                self.ui.tableWidget.hideRow(i)
+            elif hideBridged and isBridged:
+                self.ui.tableWidget.hideRow(i)
+            elif hideBridgedWine and isBridgedWine:
+                self.ui.tableWidget.hideRow(i)
+            elif hideNonRtSafe and not isRtSafe:
+                self.ui.tableWidget.hideRow(i)
+            elif hideNonCV and not hasCV:
+                self.ui.tableWidget.hideRow(i)
+            elif hideNonGui and not hasGui:
+                self.ui.tableWidget.hideRow(i)
+            elif hideNonIDisp and not hasIDisp:
+                self.ui.tableWidget.hideRow(i)
+            elif hideNonStereo and not isStereo:
+                self.ui.tableWidget.hideRow(i)
+            elif text and not all(t in ptext for t in text.strip().split(' ')):
+                self.ui.tableWidget.hideRow(i)
+            elif hideNonFavs and self._createFavoritePluginDict(plugin) not in self.fFavoritePlugins:
+                self.ui.tableWidget.hideRow(i)
+            elif (self.ui.ch_cat_all.isChecked() or
+                  (self.ui.ch_cat_delay.isChecked() and categ == "delay") or
+                  (self.ui.ch_cat_distortion.isChecked() and categ == "distortion") or
+                  (self.ui.ch_cat_dynamics.isChecked() and categ == "dynamics") or
+                  (self.ui.ch_cat_eq.isChecked() and categ == "eq") or
+                  (self.ui.ch_cat_filter.isChecked() and categ == "filter") or
+                  (self.ui.ch_cat_modulator.isChecked() and categ == "modulator") or
+                  (self.ui.ch_cat_synth.isChecked() and categ == "synth") or
+                  (self.ui.ch_cat_utility.isChecked() and categ == "utility") or
+                  (self.ui.ch_cat_other.isChecked() and categ == "other")):
+                self.ui.tableWidget.showRow(i)
+            else:
+                self.ui.tableWidget.hideRow(i)
+#endif
     }
 
     void addPluginToTable(uint plugin, const PluginType ptype)
     {
-    }
+#if 0
+        if plugin['API'] != PLUGIN_QUERY_API_VERSION:
+            return
+        if ptype in (self.tr("Internal"), "LV2", "SF2", "SFZ", "JSFX"):
+            plugin['build'] = BINARY_NATIVE
 
-    PluginInfo checkPluginCached(const CarlaCachedPluginInfo* const desc, const PluginType ptype)
-    {
-        PluginInfo pinfo = {};
-        pinfo.build = BINARY_NATIVE;
-        pinfo.type  = ptype;
-        pinfo.hints = desc->hints;
-        pinfo.name  = desc->name;
-        pinfo.label = desc->label;
-        pinfo.maker = desc->maker;
-        pinfo.category = getPluginCategoryAsString(desc->category);
+        index = self.fLastTableIndex
 
-        pinfo.audioIns  = desc->audioIns;
-        pinfo.audioOuts = desc->audioOuts;
+        isFav = bool(self._createFavoritePluginDict(plugin) in self.fFavoritePlugins)
+        favItem = QTableWidgetItem()
+        favItem.setCheckState(Qt.Checked if isFav else Qt.Unchecked)
+        favItem.setText(" " if isFav else "  ")
 
-        pinfo.cvIns  = desc->cvIns;
-        pinfo.cvOuts = desc->cvOuts;
+        pluginText = (plugin['name']+plugin['label']+plugin['maker']+plugin['filename']).lower()
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_FAVORITE, favItem)
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_NAME, QTableWidgetItem(plugin['name']))
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_LABEL, QTableWidgetItem(plugin['label']))
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_MAKER, QTableWidgetItem(plugin['maker']))
+        self.ui.tableWidget.setItem(index, self.TABLEWIDGET_ITEM_BINARY, QTableWidgetItem(os.path.basename(plugin['filename'])))
+        self.ui.tableWidget.item(index, self.TABLEWIDGET_ITEM_NAME).setData(Qt.UserRole+1, plugin)
+        self.ui.tableWidget.item(index, self.TABLEWIDGET_ITEM_NAME).setData(Qt.UserRole+2, pluginText)
 
-        pinfo.midiIns  = desc->midiIns;
-        pinfo.midiOuts = desc->midiOuts;
-
-        pinfo.parametersIns  = desc->parameterIns;
-        pinfo.parametersOuts = desc->parameterOuts;
-
-        switch (ptype)
-        {
-        case PLUGIN_LV2:
-            {
-                QString label(desc->label);
-                pinfo.filename = label.split(CARLA_OS_SEP).first();
-                pinfo.label = label.section(CARLA_OS_SEP, 1);
-            }
-            break;
-        case PLUGIN_SFZ:
-            pinfo.filename = pinfo.label;
-            pinfo.label    = pinfo.name;
-            break;
-        default:
-            break;
-        }
-
-        return pinfo;
+        self.fLastTableIndex += 1
+#endif
     }
 
     uint reAddInternalHelper(QSafePluginListSettings& settingsDB, const PluginType ptype, const char* const path)
@@ -282,8 +445,10 @@ struct PluginListDialog::Self {
         // prepare rows in advance
         ui.tableWidget->setRowCount(fLastTableIndex + plugins.size());
 
-//         for plugin in plugins:
-//             self._addPluginToTable(plugin, ptypeStrTr)
+#if 0
+        for plugin in plugins:
+            self._addPluginToTable(plugin, ptypeStrTr)
+#endif
 
         return pluginCount;
     }
@@ -299,8 +464,10 @@ struct PluginListDialog::Self {
         QString LV2_PATH;
         {
             const QSafeSettings settings("falkTX", "Carla2");
-            // LV2_PATH = splitter.join()
-            // settings.valueStringList(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH);
+#if 0
+            LV2_PATH = splitter.join()
+            settings.valueStringList(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH);
+#endif
         }
 
         // ------------------------------------------------------------------------------------------------------------
@@ -324,36 +491,171 @@ struct PluginListDialog::Self {
         ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_win32");
         ladspaPlugins << settingsDB.valueStringList("Plugins/LADSPA_win64");
 
+#if 0
+        # ----------------------------------------------------------------------------------------------------
+        # DSSI
+
+        dssiPlugins  = []
+        dssiPlugins += settingsDB.value("Plugins/DSSI_native", [], list)
+        dssiPlugins += settingsDB.value("Plugins/DSSI_posix32", [], list)
+        dssiPlugins += settingsDB.value("Plugins/DSSI_posix64", [], list)
+        dssiPlugins += settingsDB.value("Plugins/DSSI_win32", [], list)
+        dssiPlugins += settingsDB.value("Plugins/DSSI_win64", [], list)
+
+        # ----------------------------------------------------------------------------------------------------
+        # VST2
+
+        vst2Plugins  = []
+        vst2Plugins += settingsDB.value("Plugins/VST2_native", [], list)
+        vst2Plugins += settingsDB.value("Plugins/VST2_posix32", [], list)
+        vst2Plugins += settingsDB.value("Plugins/VST2_posix64", [], list)
+        vst2Plugins += settingsDB.value("Plugins/VST2_win32", [], list)
+        vst2Plugins += settingsDB.value("Plugins/VST2_win64", [], list)
+
+        # ----------------------------------------------------------------------------------------------------
+        # VST3
+
+        vst3Plugins  = []
+        vst3Plugins += settingsDB.value("Plugins/VST3_native", [], list)
+        vst3Plugins += settingsDB.value("Plugins/VST3_posix32", [], list)
+        vst3Plugins += settingsDB.value("Plugins/VST3_posix64", [], list)
+        vst3Plugins += settingsDB.value("Plugins/VST3_win32", [], list)
+        vst3Plugins += settingsDB.value("Plugins/VST3_win64", [], list)
+
+        # ----------------------------------------------------------------------------------------------------
+        # CLAP
+
+        clapPlugins  = []
+        clapPlugins += settingsDB.value("Plugins/CLAP_native", [], list)
+        clapPlugins += settingsDB.value("Plugins/CLAP_posix32", [], list)
+        clapPlugins += settingsDB.value("Plugins/CLAP_posix64", [], list)
+        clapPlugins += settingsDB.value("Plugins/CLAP_win32", [], list)
+        clapPlugins += settingsDB.value("Plugins/CLAP_win64", [], list)
+
+        # ----------------------------------------------------------------------------------------------------
+        # AU (extra non-cached)
+
+        auPlugins32 = settingsDB.value("Plugins/AU_posix32", [], list) if MACOS else []
+
+        # ----------------------------------------------------------------------------------------------------
+        # JSFX
+
+        jsfxPlugins = settingsDB.value("Plugins/JSFX", [], list)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Kits
+
+        sf2s = settingsDB.value("Plugins/SF2", [], list)
+        sfzs = settingsDB.value("Plugins/SFZ", [], list)
+
+        # ----------------------------------------------------------------------------------------------------
+        # count plugins first, so we can create rows in advance
+
+        ladspaCount = 0
+        dssiCount   = 0
+        vstCount    = 0
+        vst3Count   = 0
+        clapCount   = 0
+        au32Count   = 0
+        jsfxCount   = len(jsfxPlugins)
+        sf2Count    = 0
+        sfzCount    = len(sfzs)
+
+        for plugins in ladspaPlugins:
+            ladspaCount += len(plugins)
+
+        for plugins in dssiPlugins:
+            dssiCount += len(plugins)
+
+        for plugins in vst2Plugins:
+            vstCount += len(plugins)
+
+        for plugins in vst3Plugins:
+            vst3Count += len(plugins)
+
+        for plugins in clapPlugins:
+            clapCount += len(plugins)
+
+        for plugins in auPlugins32:
+            au32Count += len(plugins)
+
+        for plugins in sf2s:
+            sf2Count += len(plugins)
+
+        self.ui.tableWidget.setRowCount(self.fLastTableIndex +
+                                        ladspaCount + dssiCount + vstCount + vst3Count + clapCount +
+                                        auCount + au32Count + jsfxCount + sf2Count + sfzCount)
+
+        if MACOS:
+            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3, %i CLAP, %i AudioUnit and %i JSFX plugins, plus %i Sound Kits" % (
+                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, clapCount, auCount+au32Count, jsfxCount, sf2Count+sfzCount)))
+        else:
+            self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST2, %i VST3, %i CLAP and %i JSFX plugins, plus %i Sound Kits" % (
+                                          internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, clapCount, jsfxCount, sf2Count+sfzCount)))
+
+        # ----------------------------------------------------------------------------------------------------
+        # now add all plugins to the table
+
+        for plugins in ladspaPlugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, "LADSPA")
+
+        for plugins in dssiPlugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, "DSSI")
+
+        for plugins in vst2Plugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, "VST2")
+
+        for plugins in vst3Plugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, "VST3")
+
+        for plugins in clapPlugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, "CLAP")
+
+        for plugins in auPlugins32:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, "AU")
+
+        for plugin in jsfxPlugins:
+            self._addPluginToTable(plugin, "JSFX")
+
+        for sf2 in sf2s:
+            for sf2_i in sf2:
+                self._addPluginToTable(sf2_i, "SF2")
+
+        for sfz in sfzs:
+            self._addPluginToTable(sfz, "SFZ")
+
+        # ----------------------------------------------------------------------------------------------------
+
+#endif
+        ui.tableWidget->setSortingEnabled(true);
+        checkFilters();
+
+#if 0
+        self.slot_checkPlugin(self.ui.tableWidget.currentRow())
+#endif
     }
 };
 
 PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& hostSettings)
     : QDialog(parent),
-      self(Self::create())
+      self(Self::create(parent))
 {
     self.ui.setupUi(this);
     self.hostSettings = hostSettings;
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // Internal stuff
-
-    self.fLastTableIndex = 0;
-    self.fRetPlugin  = {};
-    self.fRealParent = parent;
-    self.fFavoritePlugins.clear();
-    self.fFavoritePluginsChanged = false;
-
-    self.fTrYes    = tr("Yes");
-    self.fTrNo     = tr("No");
-    self.fTrNative = tr("Native");
 
     // ----------------------------------------------------------------------------------------------------------------
     // Set-up GUI
 
     self.ui.b_add->setEnabled(false);
     addAction(self.ui.act_focus_search);
-    // TODO
-    // self.ui.act_focus_search.triggered.connect(self.slot_focusSearchFieldAndSelectAll);
+    QObject::connect(self.ui.act_focus_search, &QAction::triggered,
+                     this, &PluginListDialog::slot_focusSearchFieldAndSelectAll);
 
    #if BINARY_NATIVE == BINARY_POSIX32 || BINARY_NATIVE == BINARY_WIN32
     self.ui.ch_bridged->setText(tr("Bridged (64bit)"));
@@ -389,82 +691,100 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
     // ----------------------------------------------------------------------------------------------------------------
     // Disable bridges if not enabled in settings
 
+#if 0
     // NOTE: We Assume win32 carla build will not run win64 plugins
-//     if (WINDOWS and not kIs64bit) or not host.showPluginBridges:
-//         self.ui.ch_native.setChecked(True)
-//         self.ui.ch_native.setEnabled(False)
-//         self.ui.ch_native.setVisible(True)
-//         self.ui.ch_bridged.setChecked(False)
-//         self.ui.ch_bridged.setEnabled(False)
-//         self.ui.ch_bridged.setVisible(False)
-//         self.ui.ch_bridged_wine.setChecked(False)
-//         self.ui.ch_bridged_wine.setEnabled(False)
-//         self.ui.ch_bridged_wine.setVisible(False)
-//
-//     elif not host.showWineBridges:
-//         self.ui.ch_bridged_wine.setChecked(False)
-//         self.ui.ch_bridged_wine.setEnabled(False)
-//         self.ui.ch_bridged_wine.setVisible(False)
+    if (WINDOWS and not kIs64bit) or not host.showPluginBridges:
+        self.ui.ch_native.setChecked(True)
+        self.ui.ch_native.setEnabled(False)
+        self.ui.ch_native.setVisible(True)
+        self.ui.ch_bridged.setChecked(False)
+        self.ui.ch_bridged.setEnabled(False)
+        self.ui.ch_bridged.setVisible(False)
+        self.ui.ch_bridged_wine.setChecked(False)
+        self.ui.ch_bridged_wine.setEnabled(False)
+        self.ui.ch_bridged_wine.setVisible(False)
+
+    elif not host.showWineBridges:
+        self.ui.ch_bridged_wine.setChecked(False)
+        self.ui.ch_bridged_wine.setEnabled(False)
+        self.ui.ch_bridged_wine.setVisible(False)
+#endif
 
     // ----------------------------------------------------------------------------------------------------------------
     // Set-up Icons
 
     if (hostSettings.useSystemIcons)
     {
-//         self.ui.b_add.setIcon(getIcon('list-add', 16, 'svgz'))
-//         self.ui.b_cancel.setIcon(getIcon('dialog-cancel', 16, 'svgz'))
-//         self.ui.b_clear_filters.setIcon(getIcon('edit-clear', 16, 'svgz'))
-//         self.ui.b_refresh.setIcon(getIcon('view-refresh', 16, 'svgz'))
+#if 0
+        self.ui.b_add.setIcon(getIcon('list-add', 16, 'svgz'))
+        self.ui.b_cancel.setIcon(getIcon('dialog-cancel', 16, 'svgz'))
+        self.ui.b_clear_filters.setIcon(getIcon('edit-clear', 16, 'svgz'))
+        self.ui.b_refresh.setIcon(getIcon('view-refresh', 16, 'svgz'))
         QTableWidgetItem* const hhi = self.ui.tableWidget->horizontalHeaderItem(self.TABLEWIDGET_ITEM_FAVORITE);
-//         hhi.setIcon(getIcon('bookmarks', 16, 'svgz'))
+        hhi.setIcon(getIcon('bookmarks', 16, 'svgz'))
+#endif
     }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Set-up connections
 
-//     self.finished.connect(self.slot_saveSettings)
-//     self.ui.b_add.clicked.connect(self.slot_addPlugin)
-//     self.ui.b_cancel.clicked.connect(self.reject)
-//     self.ui.b_refresh.clicked.connect(self.slot_refreshPlugins)
-//     self.ui.b_clear_filters.clicked.connect(self.slot_clearFilters)
-//     self.ui.lineEdit.textChanged.connect(self.slot_checkFilters)
-//     self.ui.tableWidget.currentCellChanged.connect(self.slot_checkPlugin)
-//     self.ui.tableWidget.cellClicked.connect(self.slot_cellClicked)
-//     self.ui.tableWidget.cellDoubleClicked.connect(self.slot_cellDoubleClicked)
-//
-//     self.ui.ch_internal.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_ladspa.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_dssi.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_lv2.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_vst.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_vst3.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_clap.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_au.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_jsfx.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_kits.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_effects.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_instruments.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_midi.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_other.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_native.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_bridged.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_bridged_wine.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_favorites.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_rtsafe.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_cv.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_gui.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_inline_display.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_stereo.clicked.connect(self.slot_checkFilters)
-//     self.ui.ch_cat_all.clicked.connect(self.slot_checkFiltersCategoryAll)
-//     self.ui.ch_cat_delay.clicked.connect(self.slot_checkFiltersCategorySpecific)
-//     self.ui.ch_cat_distortion.clicked.connect(self.slot_checkFiltersCategorySpecific)
-//     self.ui.ch_cat_dynamics.clicked.connect(self.slot_checkFiltersCategorySpecific)
-//     self.ui.ch_cat_eq.clicked.connect(self.slot_checkFiltersCategorySpecific)
-//     self.ui.ch_cat_filter.clicked.connect(self.slot_checkFiltersCategorySpecific)
-//     self.ui.ch_cat_modulator.clicked.connect(self.slot_checkFiltersCategorySpecific)
-//     self.ui.ch_cat_synth.clicked.connect(self.slot_checkFiltersCategorySpecific)
-//     self.ui.ch_cat_utility.clicked.connect(self.slot_checkFiltersCategorySpecific)
-//     self.ui.ch_cat_other.clicked.connect(self.slot_checkFiltersCategorySpecific)
+    QObject::connect(this, &QDialog::finished, this, &PluginListDialog::slot_saveSettings);
+    QObject::connect(self.ui.b_add, &QPushButton::clicked, this, &PluginListDialog::slot_addPlugin);
+    QObject::connect(self.ui.b_cancel, &QPushButton::clicked, this, &QDialog::reject);
+
+    QObject::connect(self.ui.b_refresh, &QPushButton::clicked, this, &PluginListDialog::slot_refreshPlugins);
+    QObject::connect(self.ui.b_clear_filters, &QPushButton::clicked, this, &PluginListDialog::slot_clearFilters);
+    QObject::connect(self.ui.lineEdit, &QLineEdit::textChanged, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.tableWidget, &QTableWidget::currentCellChanged,
+                     this, &PluginListDialog::slot_checkPlugin);
+    QObject::connect(self.ui.tableWidget, &QTableWidget::cellClicked,
+                     this, &PluginListDialog::slot_cellClicked);
+    QObject::connect(self.ui.tableWidget, &QTableWidget::cellDoubleClicked,
+                     this, &PluginListDialog::slot_cellDoubleClicked);
+
+    QObject::connect(self.ui.ch_internal, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_ladspa, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_dssi, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_lv2, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_vst, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_vst3, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_clap, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_au, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_jsfx, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_kits, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_effects, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_instruments, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_midi, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_other, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_native, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_bridged, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_bridged_wine, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_favorites, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_rtsafe, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_cv, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_gui, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_inline_display, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_stereo, &QCheckBox::clicked, this, &PluginListDialog::slot_checkFilters);
+    QObject::connect(self.ui.ch_cat_all, &QCheckBox::clicked,
+                     this, &PluginListDialog::slot_checkFiltersCategoryAll);
+    QObject::connect(self.ui.ch_cat_delay, &QCheckBox::clicked,
+                     this, &PluginListDialog::slot_checkFiltersCategorySpecific);
+    QObject::connect(self.ui.ch_cat_distortion, &QCheckBox::clicked,
+                     this, &PluginListDialog::slot_checkFiltersCategorySpecific);
+    QObject::connect(self.ui.ch_cat_dynamics, &QCheckBox::clicked,
+                     this, &PluginListDialog::slot_checkFiltersCategorySpecific);
+    QObject::connect(self.ui.ch_cat_eq, &QCheckBox::clicked,
+                     this, &PluginListDialog::slot_checkFiltersCategorySpecific);
+    QObject::connect(self.ui.ch_cat_filter, &QCheckBox::clicked,
+                     this, &PluginListDialog::slot_checkFiltersCategorySpecific);
+    QObject::connect(self.ui.ch_cat_modulator, &QCheckBox::clicked,
+                     this, &PluginListDialog::slot_checkFiltersCategorySpecific);
+    QObject::connect(self.ui.ch_cat_synth, &QCheckBox::clicked,
+                     this, &PluginListDialog::slot_checkFiltersCategorySpecific);
+    QObject::connect(self.ui.ch_cat_utility, &QCheckBox::clicked,
+                     this, &PluginListDialog::slot_checkFiltersCategorySpecific);
+    QObject::connect(self.ui.ch_cat_other, &QCheckBox::clicked, this,
+                     &PluginListDialog::slot_checkFiltersCategorySpecific);
 
     // ----------------------------------------------------------------------------------------------------------------
     // Post-connect setup
@@ -477,9 +797,6 @@ PluginListDialog::~PluginListDialog()
 {
     delete &self;
 }
-
-// --------------------------------------------------------------------------------------------------------------------
-// public methods
 
 // --------------------------------------------------------------------------------------------------------------------
 // protected methods
@@ -527,8 +844,8 @@ void PluginListDialog::loadSettings()
     self.ui.ch_stereo->setChecked(settings.valueBool("PluginDatabase/ShowStereoOnly", false));
     self.ui.lineEdit->setText(settings.valueString("PluginDatabase/SearchText", ""));
 
-    QString categoryhash = settings.valueString("PluginDatabase/ShowCategory", "all");
-    if (categoryhash == "all" or categoryhash.length() < 2)
+    QString categories = settings.valueString("PluginDatabase/ShowCategory", "all");
+    if (categories == "all" or categories.length() < 2)
     {
         self.ui.ch_cat_all->setChecked(true);
         self.ui.ch_cat_delay->setChecked(false);
@@ -544,15 +861,15 @@ void PluginListDialog::loadSettings()
     else
     {
         self.ui.ch_cat_all->setChecked(false);
-        self.ui.ch_cat_delay->setChecked(categoryhash.contains(":delay:"));
-        self.ui.ch_cat_distortion->setChecked(categoryhash.contains(":distortion:"));
-        self.ui.ch_cat_dynamics->setChecked(categoryhash.contains(":dynamics:"));
-        self.ui.ch_cat_eq->setChecked(categoryhash.contains(":eq:"));
-        self.ui.ch_cat_filter->setChecked(categoryhash.contains(":filter:"));
-        self.ui.ch_cat_modulator->setChecked(categoryhash.contains(":modulator:"));
-        self.ui.ch_cat_synth->setChecked(categoryhash.contains(":synth:"));
-        self.ui.ch_cat_utility->setChecked(categoryhash.contains(":utility:"));
-        self.ui.ch_cat_other->setChecked(categoryhash.contains(":other:"));
+        self.ui.ch_cat_delay->setChecked(categories.contains(":delay:"));
+        self.ui.ch_cat_distortion->setChecked(categories.contains(":distortion:"));
+        self.ui.ch_cat_dynamics->setChecked(categories.contains(":dynamics:"));
+        self.ui.ch_cat_eq->setChecked(categories.contains(":eq:"));
+        self.ui.ch_cat_filter->setChecked(categories.contains(":filter:"));
+        self.ui.ch_cat_modulator->setChecked(categories.contains(":modulator:"));
+        self.ui.ch_cat_synth->setChecked(categories.contains(":synth:"));
+        self.ui.ch_cat_utility->setChecked(categories.contains(":utility:"));
+        self.ui.ch_cat_other->setChecked(categories.contains(":other:"));
     }
 
     QByteArray tableGeometry = settings.valueByteArray("PluginDatabase/TableGeometry_6");
@@ -580,24 +897,30 @@ void PluginListDialog::slot_cellClicked(int row, int column)
     if (column == self.TABLEWIDGET_ITEM_FAVORITE)
     {
         QTableWidgetItem* const widget = self.ui.tableWidget->item(row, self.TABLEWIDGET_ITEM_FAVORITE);
-        // plugin = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1);
-        // plugin = self._createFavoritePluginDict(plugin);
+#if 0
+        plugin = self.ui.tableWidget.item(row, self.TABLEWIDGET_ITEM_NAME).data(Qt::UserRole+1);
+        plugin = self._createFavoritePluginDict(plugin);
+#endif
 
         if (widget->checkState() == Qt::Checked)
         {
-//             if (not plugin in self.fFavoritePlugins)
-//             {
-//                 self.fFavoritePlugins.append(plugin);
-//                 self.fFavoritePluginsChanged = true;
-//             }
+#if 0
+            if (not plugin in self.fFavoritePlugins)
+            {
+                self.fFavoritePlugins.append(plugin);
+                self.fFavoritePluginsChanged = true;
+            }
+#endif
         }
         else
         {
-//             try:
-//                 self.fFavoritePlugins.remove(plugin);
-//                 self.fFavoritePluginsChanged = True;
-//             except ValueError:
-//                 pass
+#if 0
+            try:
+                self.fFavoritePlugins.remove(plugin);
+                self.fFavoritePluginsChanged = True;
+            except ValueError:
+                pass
+#endif
         }
     }
 }
@@ -618,8 +941,10 @@ void PluginListDialog::slot_addPlugin()
 {
     if (self.ui.tableWidget->currentRow() >= 0)
     {
-//         self.fRetPlugin = self.ui.tableWidget->item(self.ui.tableWidget->currentRow(),
-//                                                     self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1);
+#if 0
+        self.fRetPlugin = self.ui.tableWidget->item(self.ui.tableWidget->currentRow(),
+                                                    self.TABLEWIDGET_ITEM_NAME).data(Qt.UserRole+1);
+#endif
         accept();
     }
     else
@@ -633,59 +958,68 @@ void PluginListDialog::slot_checkPlugin(int row)
     if (row >= 0)
     {
         self.ui.b_add->setEnabled(true);
-//         auto plugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(),
-//                                                self.TABLEWIDGET_ITEM_NAME).data(Qt::UserRole+1);
-//
-//         const bool isSynth  = plugin['hints'] & PLUGIN_IS_SYNTH;
-//         const bool isEffect = plugin['audio.ins'] > 0 && plugin['audio.outs'] > 0 && !isSynth;
-//         const bool isMidi   = plugin['audio.ins'] == 0 &&
-//                               plugin['audio.outs'] == 0 &&
-//                               plugin['midi.ins'] > 0 < plugin['midi.outs'];
-//         // const bool isKit    = plugin['type'] in (PLUGIN_SF2, PLUGIN_SFZ);
-//         // const bool isOther  = ! (isEffect || isSynth || isMidi || isKit);
+#if 0
+        auto plugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(),
+                                               self.TABLEWIDGET_ITEM_NAME).data(Qt::UserRole+1);
+
+        const bool isSynth  = plugin['hints'] & PLUGIN_IS_SYNTH;
+        const bool isEffect = plugin['audio.ins'] > 0 && plugin['audio.outs'] > 0 && !isSynth;
+        const bool isMidi   = plugin['audio.ins'] == 0 &&
+                              plugin['audio.outs'] == 0 &&
+                              plugin['midi.ins'] > 0 < plugin['midi.outs'];
+        // const bool isKit    = plugin['type'] in (PLUGIN_SF2, PLUGIN_SFZ);
+        // const bool isOther  = ! (isEffect || isSynth || isMidi || isKit);
+#endif
 
         QString ptype;
-//         /**/ if (isSynth)
-//             ptype = "Instrument";
-//         else if (isEffect)
-//             ptype = "Effect";
-//         else if (isMidi)
-//             ptype = "MIDI Plugin";
-//         else
-//             ptype = "Other";
+#if 0
+        /**/ if (isSynth)
+            ptype = "Instrument";
+        else if (isEffect)
+            ptype = "Effect";
+        else if (isMidi)
+            ptype = "MIDI Plugin";
+        else
+            ptype = "Other";
+#endif
 
         QString parch;
-//         /**/ if (plugin['build'] == BINARY_NATIVE)
-//             parch = self.fTrNative;
-//         else if (plugin['build'] == BINARY_POSIX32)
-//             parch = "posix32";
-//         else if (plugin['build'] == BINARY_POSIX64)
-//             parch = "posix64";
-//         else if (plugin['build'] == BINARY_WIN32)
-//             parch = "win32";
-//         else if (plugin['build'] == BINARY_WIN64)
-//             parch = "win64";
-//         else if (plugin['build'] == BINARY_OTHER)
-//             parch = tr("Other");
-//         else if (plugin['build'] == BINARY_WIN32)
-//             parch = tr("Unknown");
+#if 0
+        /**/ if (plugin['build'] == BINARY_NATIVE)
+            parch = self.fTrNative;
+        else if (plugin['build'] == BINARY_POSIX32)
+            parch = "posix32";
+        else if (plugin['build'] == BINARY_POSIX64)
+            parch = "posix64";
+        else if (plugin['build'] == BINARY_WIN32)
+            parch = "win32";
+        else if (plugin['build'] == BINARY_WIN64)
+            parch = "win64";
+        else if (plugin['build'] == BINARY_OTHER)
+            parch = tr("Other");
+        else if (plugin['build'] == BINARY_WIN32)
+            parch = tr("Unknown");
 
-//         self.ui.l_format->setText(getPluginTypeAsString(plugin['type']));
+        self.ui.l_format->setText(getPluginTypeAsString(plugin['type']));
+#endif
+
         self.ui.l_type->setText(ptype);
         self.ui.l_arch->setText(parch);
-//         self.ui.l_id->setText(str(plugin['uniqueId']));
-//         self.ui.l_ains->setText(str(plugin['audio.ins']));
-//         self.ui.l_aouts->setText(str(plugin['audio.outs']));
-//         self.ui.l_cvins->setText(str(plugin['cv.ins']));
-//         self.ui.l_cvouts->setText(str(plugin['cv.outs']));
-//         self.ui.l_mins->setText(str(plugin['midi.ins']));
-//         self.ui.l_mouts->setText(str(plugin['midi.outs']));
-//         self.ui.l_pins->setText(str(plugin['parameters.ins']));
-//         self.ui.l_pouts->setText(str(plugin['parameters.outs']));
-//         self.ui.l_gui->setText(plugin['hints'] & PLUGIN_HAS_CUSTOM_UI ? self.fTrYes : self.fTrNo);
-//         self.ui.l_idisp->setText(plugin['hints'] & PLUGIN_HAS_INLINE_DISPLAY ? self.fTrYes : self.fTrNo);
-//         self.ui.l_bridged->setText(plugin['hints'] & PLUGIN_IS_BRIDGE ? self.fTrYes : self.fTrNo);
-//         self.ui.l_synth->setText(isSynth ? self.fTrYes : self.fTrNo);
+#if 0
+        self.ui.l_id->setText(str(plugin['uniqueId']));
+        self.ui.l_ains->setText(str(plugin['audio.ins']));
+        self.ui.l_aouts->setText(str(plugin['audio.outs']));
+        self.ui.l_cvins->setText(str(plugin['cv.ins']));
+        self.ui.l_cvouts->setText(str(plugin['cv.outs']));
+        self.ui.l_mins->setText(str(plugin['midi.ins']));
+        self.ui.l_mouts->setText(str(plugin['midi.outs']));
+        self.ui.l_pins->setText(str(plugin['parameters.ins']));
+        self.ui.l_pouts->setText(str(plugin['parameters.outs']));
+        self.ui.l_gui->setText(plugin['hints'] & PLUGIN_HAS_CUSTOM_UI ? self.fTrYes : self.fTrNo);
+        self.ui.l_idisp->setText(plugin['hints'] & PLUGIN_HAS_INLINE_DISPLAY ? self.fTrYes : self.fTrNo);
+        self.ui.l_bridged->setText(plugin['hints'] & PLUGIN_IS_BRIDGE ? self.fTrYes : self.fTrNo);
+        self.ui.l_synth->setText(isSynth ? self.fTrYes : self.fTrNo);
+#endif
     }
     else
     {
@@ -711,7 +1045,7 @@ void PluginListDialog::slot_checkPlugin(int row)
 
 void PluginListDialog::slot_checkFilters()
 {
-    // TODO
+    self.checkFilters();
 }
 
 void PluginListDialog::slot_checkFiltersCategoryAll(const bool clicked)
@@ -726,7 +1060,7 @@ void PluginListDialog::slot_checkFiltersCategoryAll(const bool clicked)
     self.ui.ch_cat_synth->setChecked(notClicked);
     self.ui.ch_cat_utility->setChecked(notClicked);
     self.ui.ch_cat_other->setChecked(notClicked);
-    slot_checkFilters();
+    self.checkFilters();
 }
 
 void PluginListDialog::slot_checkFiltersCategorySpecific(bool clicked)
@@ -747,13 +1081,15 @@ void PluginListDialog::slot_checkFiltersCategorySpecific(bool clicked)
     {
         self.ui.ch_cat_all->setChecked(true);
     }
-    slot_checkFilters();
+    self.checkFilters();
 }
 
 void PluginListDialog::slot_refreshPlugins()
 {
-//     if (PluginRefreshW(this, self.hostSettings, self.hasLoadedLv2Plugins).exec())
-//         reAddPlugins();
+#if 0
+    if (PluginRefreshW(this, self.hostSettings, self.hasLoadedLv2Plugins).exec())
+        reAddPlugins();
+#endif
 }
 
 void PluginListDialog::slot_clearFilters()
@@ -804,7 +1140,7 @@ void PluginListDialog::slot_clearFilters()
 
     blockSignals(false);
 
-    slot_checkFilters();
+    self.checkFilters();
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -845,28 +1181,28 @@ void PluginListDialog::slot_saveSettings()
     }
     else
     {
-        QCarlaString categoryhash;
+        QCarlaString categories;
         if (self.ui.ch_cat_delay->isChecked())
-            categoryhash += ":delay";
+            categories += ":delay";
         if (self.ui.ch_cat_distortion->isChecked())
-            categoryhash += ":distortion";
+            categories += ":distortion";
         if (self.ui.ch_cat_dynamics->isChecked())
-            categoryhash += ":dynamics";
+            categories += ":dynamics";
         if (self.ui.ch_cat_eq->isChecked())
-            categoryhash += ":eq";
+            categories += ":eq";
         if (self.ui.ch_cat_filter->isChecked())
-            categoryhash += ":filter";
+            categories += ":filter";
         if (self.ui.ch_cat_modulator->isChecked())
-            categoryhash += ":modulator";
+            categories += ":modulator";
         if (self.ui.ch_cat_synth->isChecked())
-            categoryhash += ":synth";
+            categories += ":synth";
         if (self.ui.ch_cat_utility->isChecked())
-            categoryhash += ":utility";
+            categories += ":utility";
         if (self.ui.ch_cat_other->isChecked())
-            categoryhash += ":other";
-        if (categoryhash.isNotEmpty())
-            categoryhash += ":";
-        settings.setValue("PluginDatabase/ShowCategory", categoryhash);
+            categories += ":other";
+        if (categories.isNotEmpty())
+            categories += ":";
+        settings.setValue("PluginDatabase/ShowCategory", categories);
     }
 
     if (self.fFavoritePluginsChanged)
@@ -875,7 +1211,7 @@ void PluginListDialog::slot_saveSettings()
 
 // --------------------------------------------------------------------------------------------------------------------
 
-PluginListDialogResults*
+const PluginListDialogResults*
 carla_frontend_createAndExecPluginListDialog(void* const parent/*, const HostSettings& hostSettings*/)
 {
     const HostSettings hostSettings = {};

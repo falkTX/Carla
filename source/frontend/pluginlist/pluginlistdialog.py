@@ -104,7 +104,7 @@ class PluginListDialog(QDialog):
         self.fRealParent = parent
         self.fFavoritePlugins = []
         self.fFavoritePluginsChanged = False
-        self.fUseSystemIcons = useSystemIcons
+        self.fUseSystemIcons = useSystemIcons # TODO cpp
 
         self.fTrYes    = self.tr("Yes")
         self.fTrNo     = self.tr("No")
@@ -468,28 +468,28 @@ class PluginListDialog(QDialog):
         if self.ui.ch_cat_all.isChecked():
             settings.setValue("PluginDatabase/ShowCategory", "all")
         else:
-            categoryhash = ""
+            categories = ""
             if self.ui.ch_cat_delay.isChecked():
-                categoryhash += ":delay"
+                categories += ":delay"
             if self.ui.ch_cat_distortion.isChecked():
-                categoryhash += ":distortion"
+                categories += ":distortion"
             if self.ui.ch_cat_dynamics.isChecked():
-                categoryhash += ":dynamics"
+                categories += ":dynamics"
             if self.ui.ch_cat_eq.isChecked():
-                categoryhash += ":eq"
+                categories += ":eq"
             if self.ui.ch_cat_filter.isChecked():
-                categoryhash += ":filter"
+                categories += ":filter"
             if self.ui.ch_cat_modulator.isChecked():
-                categoryhash += ":modulator"
+                categories += ":modulator"
             if self.ui.ch_cat_synth.isChecked():
-                categoryhash += ":synth"
+                categories += ":synth"
             if self.ui.ch_cat_utility.isChecked():
-                categoryhash += ":utility"
+                categories += ":utility"
             if self.ui.ch_cat_other.isChecked():
-                categoryhash += ":other"
-            if categoryhash:
-                categoryhash += ":"
-            settings.setValue("PluginDatabase/ShowCategory", categoryhash)
+                categories += ":other"
+            if categories:
+                categories += ":"
+            settings.setValue("PluginDatabase/ShowCategory", categories)
 
         if self.fFavoritePluginsChanged:
             settings.setValue("PluginDatabase/Favorites", self.fFavoritePlugins)
@@ -527,8 +527,8 @@ class PluginListDialog(QDialog):
         self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, bool))
         self.ui.lineEdit.setText(settings.value("PluginDatabase/SearchText", "", str))
 
-        categoryhash = settings.value("PluginDatabase/ShowCategory", "all", str)
-        if categoryhash == "all" or len(categoryhash) < 2:
+        categories = settings.value("PluginDatabase/ShowCategory", "all", str)
+        if categories == "all" or len(categories) < 2:
             self.ui.ch_cat_all.setChecked(True)
             self.ui.ch_cat_delay.setChecked(False)
             self.ui.ch_cat_distortion.setChecked(False)
@@ -541,15 +541,15 @@ class PluginListDialog(QDialog):
             self.ui.ch_cat_other.setChecked(False)
         else:
             self.ui.ch_cat_all.setChecked(False)
-            self.ui.ch_cat_delay.setChecked(":delay:" in categoryhash)
-            self.ui.ch_cat_distortion.setChecked(":distortion:" in categoryhash)
-            self.ui.ch_cat_dynamics.setChecked(":dynamics:" in categoryhash)
-            self.ui.ch_cat_eq.setChecked(":eq:" in categoryhash)
-            self.ui.ch_cat_filter.setChecked(":filter:" in categoryhash)
-            self.ui.ch_cat_modulator.setChecked(":modulator:" in categoryhash)
-            self.ui.ch_cat_synth.setChecked(":synth:" in categoryhash)
-            self.ui.ch_cat_utility.setChecked(":utility:" in categoryhash)
-            self.ui.ch_cat_other.setChecked(":other:" in categoryhash)
+            self.ui.ch_cat_delay.setChecked(":delay:" in categories)
+            self.ui.ch_cat_distortion.setChecked(":distortion:" in categories)
+            self.ui.ch_cat_dynamics.setChecked(":dynamics:" in categories)
+            self.ui.ch_cat_eq.setChecked(":eq:" in categories)
+            self.ui.ch_cat_filter.setChecked(":filter:" in categories)
+            self.ui.ch_cat_modulator.setChecked(":modulator:" in categories)
+            self.ui.ch_cat_synth.setChecked(":synth:" in categories)
+            self.ui.ch_cat_utility.setChecked(":utility:" in categories)
+            self.ui.ch_cat_other.setChecked(":other:" in categories)
 
         tableGeometry = settings.value("PluginDatabase/TableGeometry_6", QByteArray(), QByteArray)
         horizontalHeader = self.ui.tableWidget.horizontalHeader()

@@ -180,6 +180,10 @@ ui_%.py: $(RESDIR)/ui/%.ui
 resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
 	$(PYRCC) $< -o $@
 
+test: $(OBJS) $(LIBS) test.cpp
+	@echo "Linking test"
+	$(SILENT)$(CXX) $(OBJS) test.cpp $(BUILD_CXX_FLAGS) -Wl,-rpath,$(abspath $(BINDIR)) $(QT5_LINK_FLAGS) -o $@
+
 $(BINDIR)/resources/%: %
 	-@mkdir -p $(BINDIR)/resources
 	$(LINK) $(CURDIR)/$* $(BINDIR)/resources/

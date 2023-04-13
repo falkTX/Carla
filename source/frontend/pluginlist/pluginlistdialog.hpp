@@ -67,7 +67,7 @@ struct PluginInfo {
 };
 
 // --------------------------------------------------------------------------------------------------------------------
-// Jack Application Dialog
+// Plugin List Dialog
 
 class PluginListDialog : public QDialog
 {
@@ -79,9 +79,6 @@ class PluginListDialog : public QDialog
 public:
     explicit PluginListDialog(QWidget* parent, const HostSettings& hostSettings);
     ~PluginListDialog() override;
-
-    // ----------------------------------------------------------------------------------------------------------------
-    // public methods
 
     // ----------------------------------------------------------------------------------------------------------------
     // protected methods
@@ -97,7 +94,7 @@ protected:
     // ----------------------------------------------------------------------------------------------------------------
     // private slots
 
-private slots:
+private Q_SLOTS:
     void slot_cellClicked(int row, int column);
     void slot_cellDoubleClicked(int row, int column);
     void slot_focusSearchFieldAndSelectAll();
