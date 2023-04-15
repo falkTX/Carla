@@ -89,7 +89,7 @@ QCarlaString getTMP()
     else
     {
 #ifdef CARLA_OS_WIN
-        qWarning("TMP variable not set")
+        qWarning("TMP variable not set");
 #endif
         tmp = QDir::tempPath();
     }
@@ -147,31 +147,36 @@ struct DefaultPaths {
         const QCarlaString HOME = getHome();
 
 #if defined(CARLA_OS_WIN)
-        APPDATA = os.getenv("APPDATA");
-        LOCALAPPDATA = os.getenv("LOCALAPPDATA", APPDATA);
-        PROGRAMFILES = os.getenv("PROGRAMFILES");
-        PROGRAMFILESx86 = os.getenv("PROGRAMFILES(x86)");
-        COMMONPROGRAMFILES = os.getenv("COMMONPROGRAMFILES");
-        COMMONPROGRAMFILESx86 = os.getenv("COMMONPROGRAMFILES(x86)");
+        const char* const envAPPDATA = std::getenv("APPDATA");
+        const char* const envLOCALAPPDATA = getEnv("LOCALAPPDATA", envAPPDATA);
+        const char* const envPROGRAMFILES = std::getenv("PROGRAMFILES");
+        const char* const envPROGRAMFILESx86 = std::getenv("PROGRAMFILES(x86)");
+        const char* const envCOMMONPROGRAMFILES = std::getenv("COMMONPROGRAMFILES");
+        const char* const envCOMMONPROGRAMFILESx86 = std::getenv("COMMONPROGRAMFILES(x86)");
 
         // Small integrity tests
-        if not APPDATA:
+        if (envAPPDATA == nullptr)
         {
             qFatal("APPDATA variable not set, cannot continue");
-            sys.exit(1);
+            abort();
         }
 
-        if not PROGRAMFILES:
+        if (envPROGRAMFILES == nullptr)
         {
             qFatal("PROGRAMFILES variable not set, cannot continue");
-            sys.exit(1);
+            abort();
         }
 
-        if not COMMONPROGRAMFILES:
+        if (envCOMMONPROGRAMFILES == nullptr)
         {
             qFatal("COMMONPROGRAMFILES variable not set, cannot continue");
-            sys.exit(1);
+            abort();
         }
+
+        const QCarlaString APPDATA(envAPPDATA);
+        const QCarlaString LOCALAPPDATA(envLOCALAPPDATA);
+        const QCarlaString PROGRAMFILES(envPROGRAMFILES);
+        const QCarlaString COMMONPROGRAMFILES(envCOMMONPROGRAMFILES);
 
         ladspa  = APPDATA + "\\LADSPA";
         ladspa += ";" + PROGRAMFILES + "\\LADSPA";
@@ -188,8 +193,7 @@ struct DefaultPaths {
         jsfx    = APPDATA + "\\REAPER\\Effects";
         //jsfx   += ";" + PROGRAMFILES + "\\REAPER\\InstallData\\Effects";
 
-        // TODO ifdef 64bit build
-       #if 1
+       #ifdef CARLA_OS_WIN64
         vst2  += ";" + COMMONPROGRAMFILES + "\\VST2";
        #endif
 
@@ -199,19 +203,25 @@ struct DefaultPaths {
         clap    = COMMONPROGRAMFILES + "\\CLAP";
         clap   += ";" + LOCALAPPDATA + "\\Programs\\Common\\CLAP";
 
-        DEFAULT_SF2_PATH     = APPDATA + "\\SF2";
-        DEFAULT_SFZ_PATH     = APPDATA + "\\SFZ";
+        sf2     = APPDATA + "\\SF2";
+        sfz     = APPDATA + "\\SFZ";
 
-        if PROGRAMFILESx86:
+        if (envPROGRAMFILESx86 != nullptr)
+        {
+            const QCarlaString PROGRAMFILESx86(envPROGRAMFILESx86);
             ladspa += ";" + PROGRAMFILESx86 + "\\LADSPA";
             dssi   += ";" + PROGRAMFILESx86 + "\\DSSI";
             vst2   += ";" + PROGRAMFILESx86 + "\\VstPlugins";
             vst2   += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins";
             //jsfx   += ";" + PROGRAMFILESx86 + "\\REAPER\\InstallData\\Effects";
+        }
 
-        if COMMONPROGRAMFILESx86:
+        if (envCOMMONPROGRAMFILESx86 != nullptr)
+        {
+            const QCarlaString COMMONPROGRAMFILESx86(envCOMMONPROGRAMFILESx86);
             vst3   += COMMONPROGRAMFILESx86 + "\\VST3";
             clap   += COMMONPROGRAMFILESx86 + "\\CLAP";
+        }
 
 #elif defined(CARLA_OS_HAIKU)
         ladspa  = HOME + "/.ladspa";
@@ -315,13 +325,14 @@ struct DefaultPaths {
             vst3 += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3";
             clap += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP";
 
-            // TODO ifdef 64bit build
+           #ifdef CARLA_OS_64BIT
             if (QDir(winePrefix + "/drive_c/Program Files (x86)").exists())
             {
                 vst2 += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins";
                 vst3 += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3";
                 clap += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/CLAP";
             }
+           #endif
         }
 #endif
     }
