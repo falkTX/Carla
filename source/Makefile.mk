@@ -305,15 +305,6 @@ SILENT = @
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Set combined object CLI arg
-
-ifeq ($(MACOS),true)
-COMBINE = -r -keep_private_externs
-else
-COMBINE = -r
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
 # Set shared library CLI arg
 
 ifeq ($(MACOS),true)

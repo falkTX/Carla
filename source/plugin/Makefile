@@ -258,7 +258,7 @@ else
 wine: $(BINDIR)/CarlaVstShellBridged.dll.so $(BINDIR)/CarlaVstFxShellBridged.dll.so
 endif
 
-static: $(BINDIR)/libcarla_host-plugin.a
+static: $(OBJDIR)/carla-host-plugin.cpp.o
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -298,19 +298,6 @@ $(BINDIR)/libcarla_host-plugin$(LIB_EXT): $(OBJDIR)/carla-host-plugin.cpp.o $(LI
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla-host-plugin$(LIB_EXT)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_juce) $(LIBS_END) $(SHARED) $(NATIVE_LINK_FLAGS) -o $@
-
-# ---------------------------------------------------------------------------------------------------------------------
-
-$(BINDIR)/libcarla_host-plugin.a: $(OBJDIR)/libcarla_host-plugin.o
-	-@mkdir -p $(BINDIR)
-	@echo "Creating libcarla_host-plugin.a"
-	$(SILENT)rm -f $@
-	$(SILENT)$(AR) crs $@ $^
-
-$(OBJDIR)/libcarla_host-plugin.o: $(OBJDIR)/carla-host-plugin.cpp.o $(LIBS) $(LIBS_juce)
-	-@mkdir -p $(BINDIR)
-	@echo "Linking libcarla-host-plugin.o"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(LIBS_START) $(LIBS) $(LIBS_juce) $(LIBS_END) $(COMBINE) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
