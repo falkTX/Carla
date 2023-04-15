@@ -77,9 +77,7 @@ LIBS += $(MODULEDIR)/sfzero.a
 LIBS += $(MODULEDIR)/zita-resampler.a
 
 ifeq ($(HAVE_DGL),true)
-ifeq ($(STATIC_PLUGIN_TARGET)$(USING_CUSTOM_DPF),truetrue)
-# nothing
-else ifeq ($(USING_CUSTOM_DPF),true)
+ifeq ($(USING_CUSTOM_DPF),true)
 LIBS += $(CUSTOM_DPF_PATH)/build/libdgl-opengl.a
 else
 LIBS += $(MODULEDIR)/dgl.a
