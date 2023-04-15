@@ -125,7 +125,8 @@ enum JackStatus {
     JackShmFailure    = 0x0200,
     JackVersionError  = 0x0400,
     JackBackendError  = 0x0800,
-    JackClientZombie  = 0x1000
+    JackClientZombie  = 0x1000,
+    JackBridgeNativeFailed = 0x10000
 };
 
 enum JackLatencyCallbackMode {
