@@ -50,10 +50,12 @@ ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 endif
 
-BUILD_CXX_FLAGS += $(YSFX_FLAGS)
-
 ifeq ($(HAVE_X11),true)
 BUILD_CXX_FLAGS += $(X11_FLAGS)
+endif
+
+ifeq ($(HAVE_YSFX),true)
+BUILD_CXX_FLAGS += $(YSFX_FLAGS)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -88,6 +90,10 @@ ifeq ($(HAVE_HYLIA),true)
 LIBS += $(MODULEDIR)/hylia.a
 endif
 
+ifeq ($(HAVE_YSFX),true)
+LIBS += $(MODULEDIR)/ysfx.a
+endif
+
 ifeq ($(USING_JUCE),true)
 LIBS_juce  = $(MODULEDIR)/carla_juce.a
 LIBS_juce += $(MODULEDIR)/juce_audio_basics.a
@@ -99,8 +105,6 @@ LIBS_juce += $(MODULEDIR)/juce_graphics.a
 LIBS_juce += $(MODULEDIR)/juce_gui_basics.a
 LIBS_juce += $(MODULEDIR)/juce_gui_extra.a
 endif
-
-LIBS += $(MODULEDIR)/ysfx.a
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Link flags

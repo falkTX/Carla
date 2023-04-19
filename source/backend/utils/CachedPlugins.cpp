@@ -99,6 +99,7 @@ static void findSFZs(const char* const sfzPaths)
 }
 // -------------------------------------------------------------------------------------------------------------------
 
+#ifdef HAVE_YSFX
 static std::vector<CB::CarlaJsfxUnit> gJSFXs;
 
 static void findJSFXs(const char* const jsfxPaths)
@@ -131,6 +132,7 @@ static void findJSFXs(const char* const jsfxPaths)
         }
     }
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -665,6 +667,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& fil
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#ifdef HAVE_YSFX
 static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CB::CarlaJsfxUnit& unit)
 {
     static CarlaCachedPluginInfo info;
@@ -737,6 +740,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CB::CarlaJsfxUn
 
     return &info;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -771,10 +775,12 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
         return static_cast<uint>(gSFZs.size());
     }
 
+#ifdef HAVE_YSFX
     case CB::PLUGIN_JSFX: {
         findJSFXs(pluginPath);
         return static_cast<uint>(gJSFXs.size());
     }
+#endif
 
     default:
         return 0;
@@ -821,10 +827,12 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
         return get_cached_plugin_sfz(gSFZs[index]);
     }
 
+#ifdef HAVE_YSFX
     case CB::PLUGIN_JSFX: {
         CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gJSFXs.size()));
         return get_cached_plugin_jsfx(gJSFXs[index]);
     }
+#endif
 
     default:
         break;

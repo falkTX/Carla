@@ -1,6 +1,6 @@
 /*
  * Carla JSFX Plugin
- * Copyright (C) 2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,6 +19,9 @@
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
+
+#ifdef HAVE_YSFX
+
 #include "CarlaJsfxUtils.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaUtils.hpp"
@@ -1067,6 +1070,12 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJSFX)
 };
 
+CARLA_BACKEND_END_NAMESPACE
+
+#endif // HAVE_YSFX
+
+CARLA_BACKEND_START_NAMESPACE
+
 // -------------------------------------------------------------------------------------------------------------------
 
 CarlaPluginPtr CarlaPlugin::newJSFX(const Initializer& init)
@@ -1074,12 +1083,17 @@ CarlaPluginPtr CarlaPlugin::newJSFX(const Initializer& init)
     carla_debug("CarlaPlugin::newJSFX({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})",
                 init.engine, init.filename, init.name, init.label, init.uniqueId);
 
+#ifdef HAVE_YSFX
     std::shared_ptr<CarlaPluginJSFX> plugin(new CarlaPluginJSFX(init.engine, init.id));
 
     if (! plugin->initJSFX(plugin, init.filename, init.name, init.label, init.options))
         return nullptr;
 
     return plugin;
+#else
+    init.engine->setLastError("JSFX support not available");
+    return nullptr;
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------

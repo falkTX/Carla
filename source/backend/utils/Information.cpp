@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -77,8 +77,9 @@ const char* carla_get_complete_license_text()
 #if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
         "<li>AU plugin support (using JUCE)</li>"
 #endif
-
+#ifdef HAVE_YSFX
         "<li>JSFX plugin support (using ysfx)</li>"
+#endif
 
         // Sample kit libraries
 #if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
@@ -190,8 +191,10 @@ const char* const* carla_get_supported_file_extensions()
         // SFZ
         "sfz",
 
+#ifdef HAVE_YSFX
         // JSFX
         "jsfx",
+#endif
 
         // terminator
         nullptr
@@ -222,6 +225,9 @@ const char* const* carla_get_supported_features()
 #endif
 #ifdef HAVE_PYQT
         "gui",
+#endif
+#ifdef HAVE_YSFX
+        "jsfx",
 #endif
 #ifdef USING_JUCE
         "juce",

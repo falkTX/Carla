@@ -233,6 +233,10 @@ ifeq ($(HAVE_X11),true)
 BASE_FLAGS += -DHAVE_X11
 endif
 
+ifeq ($(HAVE_YSFX),true)
+BASE_FLAGS += -DHAVE_YSFX
+endif
+
 ifeq ($(USING_JUCE),true)
 BASE_FLAGS += -DUSING_JUCE
 BASE_FLAGS += -DJUCE_APP_CONFIG_HEADER='"AppConfig.h"'

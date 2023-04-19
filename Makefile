@@ -70,6 +70,10 @@ ifeq ($(HAVE_QT5),true)
 3RD_LIBS += $(MODULEDIR)/theme.qt5.a
 endif
 
+ifeq ($(HAVE_YSFX),true)
+3RD_LIBS += $(MODULEDIR)/ysfx.a
+endif
+
 ifeq ($(USING_JUCE),true)
 3RD_LIBS += $(MODULEDIR)/carla_juce.a
 3RD_LIBS += $(MODULEDIR)/juce_audio_basics.a
@@ -89,8 +93,6 @@ ifeq ($(USING_RTAUDIO),true)
 3RD_LIBS += $(MODULEDIR)/rtaudio.a
 3RD_LIBS += $(MODULEDIR)/rtmidi.a
 endif
-
-3RD_LIBS += $(MODULEDIR)/ysfx.a
 
 ALL_LIBS += $(3RD_LIBS)
 

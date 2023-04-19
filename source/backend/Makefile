@@ -50,6 +50,10 @@ ifeq ($(HAVE_HYLIA),true)
 STANDALONE_LIBS += $(MODULEDIR)/hylia.a
 endif
 
+ifeq ($(HAVE_YSFX),true)
+STANDALONE_LIBS += $(MODULEDIR)/ysfx.a
+endif
+
 ifeq ($(USING_JUCE),true)
 STANDALONE_LIBS += $(MODULEDIR)/carla_juce.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_basics.a
@@ -70,8 +74,6 @@ STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 endif
 
-STANDALONE_LIBS += $(MODULEDIR)/ysfx.a
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 STANDALONE_LINK_FLAGS  = $(HYLIA_LIBS)
@@ -86,6 +88,10 @@ STANDALONE_LINK_FLAGS += $(MAGIC_LIBS)
 STANDALONE_LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 STANDALONE_LINK_FLAGS += $(SDL_LIBS)
 STANDALONE_LINK_FLAGS += $(X11_LIBS)
+
+ifeq ($(HAVE_YSFX),true)
+STANDALONE_LINK_FLAGS += $(YSFX_GRAPHICS_LIBS)
+endif
 
 ifeq ($(USING_JUCE),true)
 STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
@@ -105,8 +111,6 @@ ifeq ($(USING_RTAUDIO),true)
 STANDALONE_LINK_FLAGS += $(RTAUDIO_LIBS)
 STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
 endif
-
-STANDALONE_LINK_FLAGS += $(YSFX_GRAPHICS_LIBS)
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
 STANDALONE_LINK_FLAGS += $(JACK_LIBS)

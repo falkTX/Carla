@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -44,6 +44,7 @@
 
 #ifdef BUILD_BRIDGE
 # undef HAVE_FLUIDSYNTH
+# undef HAVE_YSFX
 #endif
 
 #ifdef HAVE_FLUIDSYNTH
@@ -2373,9 +2374,9 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
 static void do_jsfx_check(const char* const filename, bool doInit)
 {
+#ifdef HAVE_YSFX
     const water::File file(filename);
 
     ysfx_config_u config(ysfx_config_new());
@@ -2429,8 +2430,15 @@ static void do_jsfx_check(const char* const filename, bool doInit)
     DISCOVERY_OUT("midi.outs", midiOuts);
     DISCOVERY_OUT("parameters.ins", parameters);
     DISCOVERY_OUT("end", "------------");
-}
+#else // HAVE_YSFX
+    DISCOVERY_OUT("error", "JSFX support not available");
+    return;
+
+    // unused
+    (void)filename;
+    (void)doInit;
 #endif
+}
 
 // ------------------------------ main entry point ------------------------------
 

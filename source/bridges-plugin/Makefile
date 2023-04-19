@@ -93,6 +93,11 @@ LIBS_win32   += $(MODULEDIR)/water.win32.a
 LIBS_win64   += $(MODULEDIR)/water.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 
+ifeq ($(HAVE_YSFX),true)
+LIBS_native += $(MODULEDIR)/ysfx.a
+LINK_FLAGS  += $(YSFX_GRAPHICS_LIBS)
+endif
+
 ifeq ($(USING_JUCE),true)
 LIBS_native  += $(MODULEDIR)/carla_juce.a
 LIBS_posix32 += $(MODULEDIR)/carla_juce.posix32.a
@@ -156,9 +161,6 @@ LIBS_win32   += $(MODULEDIR)/juce_gui_extra.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_gui_extra.win64.a
 LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
 endif
-
-LIBS_native += $(MODULEDIR)/ysfx.a
-LINK_FLAGS  += $(YSFX_GRAPHICS_LIBS)
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
 LINK_FLAGS += $(JACK_LIBS)

@@ -192,6 +192,9 @@ ifeq ($(WASM),true)
 HAVE_DGL = false
 endif
 
+# NOTE opt-out rather than opt-in
+HAVE_YSFX = true
+
 # NOTE not yet implemented, disabled for now
 HAVE_YSFXGUI = false
 
@@ -636,7 +639,7 @@ WATER_LIBS       = -ldl -pthread -lrt
 else ifeq ($(MACOS),true)
 
 HYLIA_FLAGS      = -DLINK_PLATFORM_MACOSX=1
-HYLIA_LIBS       = 
+HYLIA_LIBS       =
 JACKBRIDGE_LIBS  = -ldl -pthread
 LILV_LIBS        = -ldl -lm
 RTMEMPOOL_LIBS   = -pthread
