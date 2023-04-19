@@ -3224,7 +3224,7 @@ private:
                                     pData->id,
                                     0,
                                     0, 0, 0.0f,
-                                    "Loading JACK application");
+                                    "Loading plugin bridge");
         }
 #endif
 
