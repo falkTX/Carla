@@ -35,7 +35,7 @@
 #include "water/misc/Time.h"
 #include "water/threads/ChildProcess.h"
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 using water::ChildProcess;
 using water::File;
@@ -45,12 +45,12 @@ using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Fallback data
 
 static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 static String findWinePrefix(const String filename, const int recursionLimit = 10)
 {
@@ -65,7 +65,7 @@ static String findWinePrefix(const String filename, const int recursionLimit = 1
     return findWinePrefix(path, recursionLimit-1);
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 struct BridgeParamInfo {
     float value;
@@ -82,7 +82,7 @@ struct BridgeParamInfo {
     CARLA_DECLARE_NON_COPYABLE(BridgeParamInfo)
 };
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginBridgeThread : public CarlaThread
 {
@@ -2325,17 +2325,14 @@ public:
                 const uint32_t hints  = fShmNonRtServerControl.readUInt();
                 const  int16_t ctrl   = fShmNonRtServerControl.readShort();
 
-                CARLA_SAFE_ASSERT_BREAK(ctrl >= CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED);
-                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+                CARLA_SAFE_ASSERT_INT_BREAK(ctrl >= CONTROL_INDEX_NONE && ctrl <= CONTROL_INDEX_MAX_ALLOWED, ctrl);
+                CARLA_SAFE_ASSERT_UINT2_BREAK(index < pData->param.count, index, pData->param.count);
 
-                if (index < pData->param.count)
-                {
-                    pData->param.data[index].type   = static_cast<ParameterType>(type);
-                    pData->param.data[index].index  = static_cast<int32_t>(index);
-                    pData->param.data[index].rindex = rindex;
-                    pData->param.data[index].hints  = hints;
-                    pData->param.data[index].mappedControlIndex = ctrl;
-                }
+                pData->param.data[index].type   = static_cast<ParameterType>(type);
+                pData->param.data[index].index  = static_cast<int32_t>(index);
+                pData->param.data[index].rindex = rindex;
+                pData->param.data[index].hints  = hints;
+                pData->param.data[index].mappedControlIndex = ctrl;
             }   break;
 
             case kPluginBridgeNonRtServerParameterData2: {
@@ -2360,14 +2357,11 @@ public:
                 carla_zeroChars(unit, unitSize+1);
                 fShmNonRtServerControl.readCustomData(unit, unitSize);
 
-                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+                CARLA_SAFE_ASSERT_UINT2_BREAK(index < pData->param.count, index, pData->param.count);
 
-                if (index < pData->param.count)
-                {
-                    fParams[index].name   = name;
-                    fParams[index].symbol = symbol;
-                    fParams[index].unit   = unit;
-                }
+                fParams[index].name   = name;
+                fParams[index].symbol = symbol;
+                fParams[index].unit   = unit;
             }   break;
 
             case kPluginBridgeNonRtServerParameterRanges: {
@@ -2383,17 +2377,14 @@ public:
                 CARLA_SAFE_ASSERT_BREAK(min < max);
                 CARLA_SAFE_ASSERT_BREAK(def >= min);
                 CARLA_SAFE_ASSERT_BREAK(def <= max);
-                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+                CARLA_SAFE_ASSERT_UINT2_BREAK(index < pData->param.count, index, pData->param.count);
 
-                if (index < pData->param.count)
-                {
-                    pData->param.ranges[index].def = def;
-                    pData->param.ranges[index].min = min;
-                    pData->param.ranges[index].max = max;
-                    pData->param.ranges[index].step      = step;
-                    pData->param.ranges[index].stepSmall = stepSmall;
-                    pData->param.ranges[index].stepLarge = stepLarge;
-                }
+                pData->param.ranges[index].def = def;
+                pData->param.ranges[index].min = min;
+                pData->param.ranges[index].max = max;
+                pData->param.ranges[index].step      = step;
+                pData->param.ranges[index].stepSmall = stepSmall;
+                pData->param.ranges[index].stepLarge = stepLarge;
             }   break;
 
             case kPluginBridgeNonRtServerParameterValue: {
