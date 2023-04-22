@@ -18,10 +18,6 @@ ifeq ($(WINDOWS),true)
 BUILD_CXX_FLAGS += -I$(CWD)/modules/rtaudio/include
 endif
 
-ifeq ($(WINDOWS),true)
-BUILD_CXX_FLAGS += -I../mingw-std-threads
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)

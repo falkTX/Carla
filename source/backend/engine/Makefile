@@ -14,12 +14,6 @@ BUILD_CXX_FLAGS += -Wno-undef
 endif
 endif
 
-ifeq ($(USING_JUCE),true)
-ifeq ($(WINDOWS),true)
-BUILD_CXX_FLAGS += -I$(CWD)/modules/mingw-std-threads
-endif
-endif
-
 BUILD_CXX_FLAGS += $(MAGIC_FLAGS)
 
 ifneq ($(HAIKU),true)

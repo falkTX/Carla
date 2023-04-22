@@ -12,10 +12,6 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I.. -std=gnu++14
 
-ifeq ($(WINDOWS),true)
-BUILD_CXX_FLAGS += -I../mingw-std-threads
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)

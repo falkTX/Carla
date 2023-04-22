@@ -16,10 +16,6 @@ BUILD_CXX_FLAGS += $(JUCE_CORE_FLAGS) -I.. -std=gnu++14
 # BUILD_CXX_FLAGS += -w
 # endif
 
-ifeq ($(WINDOWS),true)
-BUILD_CXX_FLAGS += -I../mingw-std-threads
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)

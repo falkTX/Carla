@@ -21,9 +21,6 @@
 
 #ifdef LINK_PLATFORM_WINDOWS
 #define _USE_MATH_DEFINES
-#include "mingw-std-threads/mingw.condition_variable.h"
-#include "mingw-std-threads/mingw.mutex.h"
-#include "mingw-std-threads/mingw.thread.h"
 #if __BIG_ENDIAN__
 # define htonll(x) (x)
 # define ntohll(x) (x)

@@ -1,3 +1,0 @@
-#pragma once
-#include_next <mutex>
-#include "mingw.mutex.h"
