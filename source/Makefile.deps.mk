@@ -469,20 +469,22 @@ endif
 
 ifeq ($(HAVE_DGL),true)
 
+DGL_FLAGS  = -DHAVE_OPENGL -DDGL_OPENGL -DHAVE_DGL
+
 ifeq ($(HAIKU),true)
-DGL_FLAGS = $(shell $(PKG_CONFIG) --cflags gl)
-DGL_LIBS  = $(shell $(PKG_CONFIG) --libs gl) -lbe
+DGL_FLAGS += $(shell $(PKG_CONFIG) --cflags gl)
+DGL_LIBS   = $(shell $(PKG_CONFIG) --libs gl) -lbe
 else ifeq ($(MACOS),true)
-DGL_FLAGS = -DGL_SILENCE_DEPRECATION=1 -Wno-deprecated-declarations
-DGL_LIBS  = -framework OpenGL -framework Cocoa -framework CoreVideo
+DGL_FLAGS += -DGL_SILENCE_DEPRECATION=1 -Wno-deprecated-declarations
+DGL_LIBS   = -framework OpenGL -framework Cocoa -framework CoreVideo
 else ifeq ($(WASM),true)
 ifneq ($(USE_GLES2)$(USE_GLES3),true)
-DGL_LIBS  = -sLEGACY_GL_EMULATION -sGL_UNSAFE_OPTS=0
+DGL_LIBS   = -sLEGACY_GL_EMULATION -sGL_UNSAFE_OPTS=0
 endif
 else ifeq ($(WINDOWS),true)
-DGL_LIBS  = -lopengl32 -lgdi32
+DGL_LIBS   = -lopengl32 -lgdi32
 else
-DGL_FLAGS  = -DHAVE_XCURSOR -DHAVE_XEXT -DHAVE_XSYNC -DHAVE_XRANDR
+DGL_FLAGS += -DHAVE_X11 -DHAVE_XCURSOR -DHAVE_XEXT -DHAVE_XSYNC -DHAVE_XRANDR
 DGL_FLAGS += $(shell $(PKG_CONFIG) --cflags gl x11 xcursor xext xrandr)
 DGL_LIBS   = $(shell $(PKG_CONFIG) --libs gl x11 xcursor xext xrandr)
 ifeq ($(HAVE_DBUS)$(STATIC_PLUGIN_TARGET)$(USING_CUSTOM_DPF),truetruetrue)
