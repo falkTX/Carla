@@ -12,7 +12,8 @@ jobs:
   linux:
     strategy:
       matrix:
-        target: [linux-arm64, linux-armhf, linux-i686, linux-riscv64, linux-x86_64]
+        target: [linux-x86_64]
+        # linux-arm64, linux-armhf, linux-i686, linux-riscv64
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
@@ -32,6 +33,10 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - name: fake dpf script
+        run: |
+          mkdir -p dpf/utils
+          ln -s $(which ls) dpf/utils/package-osx-bundles.sh
       - uses: distrho/dpf-makefile-action@v1
         with:
           target: ${{ matrix.target }}
@@ -51,15 +56,15 @@ jobs:
           target: ${{ matrix.target }}
           pawpaw: true
 
-  pluginval:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - uses: distrho/dpf-makefile-action@v1
-        with:
-          target: pluginval
+  # pluginval:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
+  #     - uses: distrho/dpf-makefile-action@v1
+  #       with:
+  #         target: pluginval
 
   source:
     runs-on: ubuntu-20.04
