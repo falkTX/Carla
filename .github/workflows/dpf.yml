@@ -23,6 +23,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           pawpaw: true
+          release: false
 
   macos:
     strategy:
@@ -37,10 +38,12 @@ jobs:
         run: |
           mkdir -p dpf/utils
           ln -s $(which ls) dpf/utils/package-osx-bundles.sh
+          touch carla-macOS.pkg
       - uses: distrho/dpf-makefile-action@v1
         with:
           target: ${{ matrix.target }}
           pawpaw: true
+          release: false
 
   windows:
     strategy:
@@ -55,6 +58,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           pawpaw: true
+          release: false
 
   # pluginval:
   #   runs-on: ubuntu-20.04
@@ -75,3 +79,4 @@ jobs:
       - uses: distrho/dpf-makefile-action@v1
         with:
           target: source
+          release: false
