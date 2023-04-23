@@ -110,22 +110,22 @@ $(OBJDIR)/serd.c.arm32.o: serd.c
 $(OBJDIR)/sord.c.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -fno-strict-aliasing -c -o $@
 
 $(OBJDIR)/sord.c.%32.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(32BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -fno-strict-aliasing $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/sord.c.%64.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(64BIT_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -fno-strict-aliasing $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/sord.c.arm32.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (ARM32)"
-	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(ARM32_FLAGS) -c -o $@
+	$(SILENT)$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -fno-strict-aliasing $(ARM32_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
