@@ -117,16 +117,16 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerMidiProgramData,    // uint/index, uint/bank, uint/program, uint/size, str[] (name)
     kPluginBridgeNonRtServerSetCustomData,      // uint/size, str[], uint/size, str[], uint/size, str[]
     kPluginBridgeNonRtServerSetChunkDataFile,   // uint/size, str[] (filename, base64 content)
-    kPluginBridgeNonRtServerSetLatency,         // uint
+    kPluginBridgeNonRtServerSetLatency,         // uint/latency
     kPluginBridgeNonRtServerSetParameterText,   // uint/index, uint/size, str[] (name)
     kPluginBridgeNonRtServerReady,
     kPluginBridgeNonRtServerSaved,
     kPluginBridgeNonRtServerUiClosed,
     kPluginBridgeNonRtServerError,              // uint/size, str[]
     // stuff added in API 7
-    kPluginBridgeNonRtServerVersion,            // uint
+    kPluginBridgeNonRtServerVersion,            // uint/version
     // stuff added in API 9
-    kPluginBridgeNonRtServerRespEmbedUI,        // ulong
+    kPluginBridgeNonRtServerRespEmbedUI,        // ulong/window-id
     kPluginBridgeNonRtServerResizeEmbedUI,      // uint/width, uint/height
 };
 
