@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API (C++)
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -567,6 +567,7 @@ public:
             return handlePtr->uiMIDIEvent(static_cast<uint8_t>(index),
                                           static_cast<uint8_t*>(ptr));
         case NATIVE_PLUGIN_OPCODE_HOST_USES_EMBED:
+        case NATIVE_PLUGIN_OPCODE_HOST_OPTION:
             return 0;
         }
 

@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -68,6 +68,11 @@ CARLA_API_EXPORT const NativePluginDescriptor* carla_get_native_patchbay_cv8_plu
  * Get the native plugin descriptor for the carla-patchbay-cv32 plugin.
  */
 CARLA_API_EXPORT const NativePluginDescriptor* carla_get_native_patchbay_cv32_plugin(void);
+
+/*!
+ * Get the native plugin descriptor for the carla-patchbay OBS plugin.
+ */
+CARLA_API_EXPORT const NativePluginDescriptor* carla_get_native_patchbay_obs_plugin(void);
 
 /*!
  * Create a CarlaHostHandle suitable for CarlaHost API calls.
