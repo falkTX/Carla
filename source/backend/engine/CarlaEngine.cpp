@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -319,7 +319,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         return newJack();
 #endif
 
-#if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_OS_WASM))
+#if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_OS_WASM) || defined(STATIC_PLUGIN_TARGET))
     if (std::strcmp(driverName, "Dummy") == 0)
         return newDummy();
 #endif
@@ -574,7 +574,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 
     uint id;
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     CarlaPluginPtr oldPlugin;
 
     if (pData->nextPluginId < pData->curPluginCount)
@@ -587,7 +587,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         CARLA_SAFE_ASSERT_RETURN_ERR(oldPlugin.get() != nullptr, "Invalid replace plugin Id");
     }
     else
-#endif
+   #endif
     {
         id = pData->curPluginCount;
 
@@ -597,9 +597,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             return false;
         }
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins[id].plugin.get() == nullptr, "Invalid engine internal data");
-#endif
+       #endif
     }
 
     CarlaPlugin::Initializer initializer = {
@@ -617,13 +617,13 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 
     if (bridgeBinary.isNotEmpty())
     {
-#ifndef CARLA_OS_WIN
+       #ifndef CARLA_OS_WIN
         if (btype == BINARY_NATIVE)
         {
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native";
         }
         else
-#endif
+       #endif
         {
             switch (btype)
             {
@@ -634,18 +634,18 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-posix64";
                 break;
             case BINARY_WIN32:
-#if defined(CARLA_OS_WIN) && !defined(CARLA_OS_64BIT)
+               #if defined(CARLA_OS_WIN) && !defined(CARLA_OS_64BIT)
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native.exe";
-#else
+               #else
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-win32.exe";
-#endif
+               #endif
                 break;
             case BINARY_WIN64:
-#if defined(CARLA_OS_WIN) && defined(CARLA_OS_64BIT)
+               #if defined(CARLA_OS_WIN) && defined(CARLA_OS_64BIT)
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native.exe";
-#else
+               #else
                 bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-win64.exe";
-#endif
+               #endif
                 break;
             default:
                 bridgeBinary.clear();
@@ -669,16 +669,16 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
     bool preferBridges = pData->options.preferPluginBridges;
     const char* needsArchBridge = nullptr;
 
-#ifdef CARLA_OS_MAC
+   #ifdef CARLA_OS_MAC
     // Plugin might be in quarentine due to Apple stupid notarization rules, let's remove that if possible
     if (canBeBridged && ptype != PLUGIN_LV2 && ptype != PLUGIN_AU)
         removeFileFromQuarantine(filename);
-#endif
+   #endif
 
-#ifndef BUILD_BRIDGE
+   #ifndef BUILD_BRIDGE
     if (canBeBridged && ! preferBridges)
     {
-# if 0
+        /*
         if (ptype == PLUGIN_LV2 && label != nullptr)
         {
             if (std::strncmp(label, "http://calf.sourceforge.net/plugins/", 36) == 0 ||
@@ -688,8 +688,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                 preferBridges = true;
             }
         }
-# endif
-# ifdef ADAPT_FOR_APPLE_SILLICON
+        */
+       #ifdef ADAPT_FOR_APPLE_SILLICON
         // see if this binary needs bridging
         if (ptype == PLUGIN_VST2 || ptype == PLUGIN_VST3)
         {
@@ -699,13 +699,13 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                 if (const char* const output = magic.getFileDescription(vst2Binary))
                 {
                     carla_stdout("VST binary magic output is '%s'", output);
-#  ifdef __aarch64__
+                   #ifdef __aarch64__
                     if (std::strstr(output, "arm64") == nullptr && std::strstr(output, "x86_64") != nullptr)
                         needsArchBridge = "x86_64";
-#  else
+                   #else
                     if (std::strstr(output, "x86_64") == nullptr && std::strstr(output, "arm64") != nullptr)
                         needsArchBridge = "arm64";
-#  endif
+                   #endif
                 }
                 else
                 {
@@ -717,11 +717,21 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
                 carla_stdout("Search for binary in VST bundle failed");
             }
         }
-# endif
+       #endif // ADAPT_FOR_APPLE_SILLICON
     }
-#endif // ! BUILD_BRIDGE
+   #endif // ! BUILD_BRIDGE
 
-#ifndef CARLA_OS_WASM
+   #if defined(CARLA_PLUGIN_ONLY_BRIDGE)
+    if (bridgeBinary.isNotEmpty())
+    {
+        plugin = CarlaPlugin::newBridge(initializer, btype, ptype, needsArchBridge, bridgeBinary);
+    }
+    else
+    {
+        setLastError("Cannot load plugin, the required plugin bridge is not available");
+        return false;
+    }
+   #elif !defined(CARLA_OS_WASM)
     if (canBeBridged && (needsArchBridge || btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
     {
         if (bridgeBinary.isNotEmpty())
@@ -735,11 +745,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         }
     }
     else
-#endif
+   #endif
+   #ifndef CARLA_PLUGIN_ONLY_BRIDGE
     {
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         bool use16Outs;
-#endif
+       #endif
         setLastError("Invalid or unsupported plugin type");
 
         // Some stupid plugins mess up with global signals, err!!
@@ -779,7 +790,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             plugin = CarlaPlugin::newCLAP(initializer);
             break;
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         case PLUGIN_INTERNAL:
             plugin = CarlaPlugin::newNative(initializer);
             break;
@@ -792,7 +803,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             break;
 
         case PLUGIN_SFZ:
-# ifdef SFZ_FILES_USING_SFIZZ
+           #ifdef SFZ_FILES_USING_SFIZZ
             {
                 CarlaPlugin::Initializer sfizzInitializer = {
                     this,
@@ -806,9 +817,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 
                 plugin = CarlaPlugin::newLV2(sfizzInitializer);
             }
-# else
+           #else
             plugin = CarlaPlugin::newSFZero(initializer);
-# endif
+           #endif
             break;
 
         case PLUGIN_JSFX:
@@ -816,13 +827,13 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             break;
 
         case PLUGIN_JACK:
-# ifdef HAVE_JACK
+           #ifdef HAVE_JACK
             plugin = CarlaPlugin::newJackApp(initializer);
-# else
+           #else
             setLastError("JACK plugin target is not available");
-# endif
+           #endif
             break;
-#else
+       #else
         case PLUGIN_INTERNAL:
         case PLUGIN_DLS:
         case PLUGIN_GIG:
@@ -832,16 +843,17 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         case PLUGIN_JSFX:
             setLastError("Plugin bridges cannot handle this binary");
             break;
-#endif
+       #endif // BUILD_BRIDGE_ALTERNATIVE_ARCH
         }
     }
+   #endif // CARLA_PLUGIN_ONLY_BRIDGE
 
     if (plugin.get() == nullptr)
         return false;
 
     plugin->reload();
 
-#ifdef SFZ_FILES_USING_SFIZZ
+   #ifdef SFZ_FILES_USING_SFIZZ
     if (ptype == PLUGIN_SFZ && plugin->getType() == PLUGIN_LV2)
     {
         plugin->setCustomData(LV2_ATOM__Path,
@@ -851,7 +863,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
 
         plugin->restoreLV2State(true);
     }
-#endif
+   #endif
 
     bool canRun = true;
 
@@ -873,7 +885,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
     pluginData.plugin = plugin;
     carla_zeroFloats(pluginData.peaks, 4);
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (oldPlugin.get() != nullptr)
     {
         CARLA_SAFE_ASSERT(! pData->loadingProject);
@@ -905,7 +917,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         callback(true, true, ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0, 0.0f, nullptr);
     }
     else if (! pData->loadingProject)
-#endif
+   #endif
     {
         plugin->setEnabled(true);
 
@@ -915,13 +927,18 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
         if (getType() != kEngineTypeBridge)
             plugin->setActive(true, true, true);
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             pData->graph.addPlugin(plugin);
-#endif
+       #endif
     }
 
     return true;
+
+   #if defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE)
+    // unused
+    (void)extra;
+   #endif
 }
 
 bool CarlaEngine::addPlugin(const PluginType ptype,
@@ -2947,7 +2964,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 
             CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+          #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
             // compatibility code to load projects with GIG files
             // FIXME Remove on 2.1 release
             if (std::strcmp(stateSave.type, "GIG") == 0)
@@ -3008,7 +3025,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
                 continue;
             }
-# ifdef SFZ_FILES_USING_SFIZZ
+           #ifdef SFZ_FILES_USING_SFIZZ
             if (std::strcmp(stateSave.type, "SFZ") == 0)
             {
                 if (addPlugin(PLUGIN_LV2, "", stateSave.name, "http://sfztools.github.io/sfizz", 0, nullptr))
@@ -3063,8 +3080,8 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
                 continue;
             }
-# endif
-#endif
+           #endif
+          #endif
 
             const void* extraStuff    = nullptr;
             static const char kTrue[] = "true";

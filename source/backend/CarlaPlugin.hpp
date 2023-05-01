@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -451,10 +451,12 @@ public:
      */
     bool loadStateFromFile(const char* filename);
 
+   #ifndef CARLA_PLUGIN_ONLY_BRIDGE
     /*!
      * Export this plugin as its own LV2 plugin, using a carla wrapper around it for the LV2 functionality.
      */
     bool exportAsLV2(const char* lv2path);
+   #endif
 
     // -------------------------------------------------------------------
     // Set data (internal stuff)
@@ -967,10 +969,12 @@ public:
         const uint options; // see PluginOptions
     };
 
-    static CarlaPluginPtr newNative(const Initializer& init);
     static CarlaPluginPtr newBridge(const Initializer& init,
                                     BinaryType btype, PluginType ptype,
                                     const char* binaryArchName, const char* bridgeBinary);
+
+   #ifndef CARLA_PLUGIN_ONLY_BRIDGE
+    static CarlaPluginPtr newNative(const Initializer& init);
 
     static CarlaPluginPtr newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* rdfDescriptor);
     static CarlaPluginPtr newDSSI(const Initializer& init);
@@ -986,6 +990,7 @@ public:
     static CarlaPluginPtr newSFZero(const Initializer& init);
 
     static CarlaPluginPtr newJackApp(const Initializer& init);
+   #endif
 #endif
 
     // -------------------------------------------------------------------

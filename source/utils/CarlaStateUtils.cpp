@@ -1,6 +1,6 @@
 /*
  * Carla State utils
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -122,16 +122,16 @@ CarlaStateSave::Parameter::Parameter() noexcept
       index(-1),
       name(nullptr),
       symbol(nullptr),
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+     #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
       value(0.0f),
       mappedControlIndex(CONTROL_INDEX_NONE),
       midiChannel(0),
       mappedRangeValid(false),
       mappedMinimum(0.0f),
       mappedMaximum(1.0f) {}
-#else
+     #else
       value(0.0f) {}
-#endif
+     #endif
 
 CarlaStateSave::Parameter::~Parameter() noexcept
 {
@@ -191,9 +191,9 @@ CarlaStateSave::CarlaStateSave() noexcept
       label(nullptr),
       binary(nullptr),
       uniqueId(0),
-      options(0x0),
+      options(PLUGIN_OPTIONS_NULL),
       temporary(false),
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+     #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
       active(false),
       dryWet(1.0f),
       volume(1.0f),
@@ -201,7 +201,7 @@ CarlaStateSave::CarlaStateSave() noexcept
       balanceRight(1.0f),
       panning(0.0f),
       ctrlChannel(-1),
-#endif
+     #endif
       currentProgramIndex(-1),
       currentProgramName(nullptr),
       currentMidiBank(-1),
@@ -249,9 +249,9 @@ void CarlaStateSave::clear() noexcept
     }
 
     uniqueId = 0;
-    options  = 0x0;
+    options  = PLUGIN_OPTIONS_NULL;
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
     active = false;
     dryWet = 1.0f;
     volume = 1.0f;
@@ -259,7 +259,7 @@ void CarlaStateSave::clear() noexcept
     balanceRight = 1.0f;
     panning      = 0.0f;
     ctrlChannel  = -1;
-#endif
+   #endif
 
     currentProgramIndex = -1;
     currentMidiBank     = -1;
@@ -327,11 +327,17 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 const String& tag(xmlData->getTagName());
                 const String  text(xmlData->getAllSubText().trim());
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 // -------------------------------------------------------
                 // Internal Data
 
-                /**/ if (tag == "Active")
+                /**/ if (tag == "Options")
+                {
+                    const int value(text.getHexValue32());
+                    if (value > 0)
+                        options = static_cast<uint>(value);
+                }
+               #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+                else if (tag == "Active")
                 {
                     active = (text == "Yes");
                 }
@@ -364,15 +370,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             ctrlChannel = static_cast<int8_t>(value-1);
                     }
                 }
-                else if (tag == "Options")
-                {
-                    const int value(text.getHexValue32());
-                    if (value > 0)
-                        options = static_cast<uint>(value);
-                }
-#else
-                if (false) {}
-#endif
+               #endif
 
                 // -------------------------------------------------------
                 // Program (current)
@@ -410,9 +408,9 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 else if (tag == "Parameter")
                 {
                     Parameter* const stateParameter(new Parameter());
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
                     bool hasMappedMinimum = false, hasMappedMaximum = false;
-#endif
+                   #endif
 
                     for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
                     {
@@ -438,7 +436,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             stateParameter->dummy = false;
                             stateParameter->value = pText.getFloatValue();
                         }
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                       #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
                         else if (pTag == "MidiChannel")
                         {
                             const int channel(pText.getIntValue());
@@ -468,13 +466,13 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             hasMappedMaximum = true;
                             stateParameter->mappedMaximum = pText.getFloatValue();
                         }
-#endif
+                       #endif
                     }
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
                     if (hasMappedMinimum && hasMappedMaximum)
                         stateParameter->mappedRangeValid = true;
-#endif
+                   #endif
 
                     parameters.append(stateParameter);
                 }
@@ -627,7 +625,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
 
     content << "  <Data>\n";
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
     {
         MemoryOutputStream dataXml;
 
@@ -653,7 +651,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
 
         content << dataXml;
     }
-#endif
+   #endif
 
     for (ParameterItenerator it = parameters.begin2(); it.valid(); it.next())
     {
@@ -675,7 +673,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
                 parameterXml << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
         }
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+       #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
         if (stateParameter->mappedControlIndex > CONTROL_INDEX_NONE && stateParameter->mappedControlIndex <= CONTROL_INDEX_MAX_ALLOWED)
         {
             parameterXml << "    <MidiChannel>"   << stateParameter->midiChannel+1 << "</MidiChannel>\n";
@@ -691,7 +689,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
             if (stateParameter->mappedControlIndex > 0 && stateParameter->mappedControlIndex < MAX_MIDI_CONTROL)
                 parameterXml << "    <MidiCC>" << stateParameter->mappedControlIndex << "</MidiCC>\n";
         }
-#endif
+       #endif
 
         if (! stateParameter->dummy)
             parameterXml << "    <Value>" << String(stateParameter->value, 15) << "</Value>\n";

@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -536,14 +536,14 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     pData->stateSave.name     = carla_strdup(pData->name);
     pData->stateSave.label    = carla_strdup(strBuf);
     pData->stateSave.uniqueId = getUniqueId();
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+// #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     pData->stateSave.options  = pData->options;
-#endif
+// #endif
 
     if (pData->filename != nullptr)
         pData->stateSave.binary = carla_strdup(pData->filename);
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
     // ---------------------------------------------------------------
     // Internals
 
@@ -554,7 +554,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     pData->stateSave.balanceRight = pData->postProc.balanceRight;
     pData->stateSave.panning      = pData->postProc.panning;
     pData->stateSave.ctrlChannel  = pData->ctrlChannel;
-#endif
+   #endif
 
     if (pData->hints & PLUGIN_IS_BRIDGE)
         waitForBridgeSaveSignal();
@@ -621,7 +621,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
         stateParameter->dummy = dummy;
         stateParameter->index = paramData.index;
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+       #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
         if (paramData.mappedControlIndex != CONTROL_INDEX_MIDI_LEARN)
         {
             stateParameter->mappedControlIndex = paramData.mappedControlIndex;
@@ -640,7 +640,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
                 }
             }
         }
-#endif
+       #endif
 
         if (! getParameterName(i, strBuf))
             strBuf[0] = '\0';
@@ -859,7 +859,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                 setParameterValue(static_cast<uint32_t>(index), stateParameter->value, true, true, true);
             }
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+           #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
             if (stateParameter->mappedRangeValid)
             {
                 if (pData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
@@ -876,7 +876,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
             setParameterMappedControlIndex(static_cast<uint32_t>(index),
                                            stateParameter->mappedControlIndex, true, true, false);
             setParameterMidiChannel(static_cast<uint32_t>(index), stateParameter->midiChannel, true, true);
-#endif
+           #endif
         }
         else
             carla_stderr("Could not set parameter '%s' value for '%s'",
@@ -939,14 +939,14 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     if (stateSave.chunk != nullptr && (pData->options & PLUGIN_OPTION_USE_CHUNKS) != 0)
     {
         std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stateSave.chunk));
-#ifdef CARLA_PROPER_CPP11_SUPPORT
+       #ifdef CARLA_PROPER_CPP11_SUPPORT
         setChunkData(chunk.data(), chunk.size());
-#else
+       #else
         setChunkData(&chunk.front(), chunk.size());
-#endif
+       #endif
     }
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
     // ---------------------------------------------------------------
     // Part 6 - set internal stuff
 
@@ -970,7 +970,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     if (! pData->engine->isLoadingProject())
         pData->engine->callback(true, true, ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0, 0.0f, nullptr);
-#endif
+   #endif
 }
 
 bool CarlaPlugin::saveStateToFile(const char* const filename)
@@ -1026,6 +1026,7 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     return false;
 }
 
+#ifndef CARLA_PLUGIN_ONLY_BRIDGE
 bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 {
     CARLA_SAFE_ASSERT_RETURN(lv2path != nullptr && lv2path[0] != '\0', false);
@@ -1343,6 +1344,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
     return true;
 }
+#endif
 
 // -------------------------------------------------------------------
 // Set data (internal stuff)
