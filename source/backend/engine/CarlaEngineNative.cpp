@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1604,6 +1604,11 @@ public:
         return new CarlaEngineNative(host, true, true, 64, 64, 32, 32);
     }
 
+    static NativePluginHandle _instantiatePatchbayOBS(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, true, true, 8, 8);
+    }
+
     static void _cleanup(NativePluginHandle handle)
     {
         delete handlePtr;
@@ -1707,6 +1712,9 @@ public:
             return 0;
         case NATIVE_PLUGIN_OPCODE_HOST_USES_EMBED:
             handlePtr->fUsesEmbed = true;
+            return 0;
+        case NATIVE_PLUGIN_OPCODE_HOST_OPTION:
+            handlePtr->setOption(static_cast<EngineOption>(index), value, static_cast<const char*>(ptr));
             return 0;
         }
 
@@ -2939,9 +2947,64 @@ static const NativePluginDescriptor carlaPatchbayCV32Desc = {
     /* ui_height  */ kUiHeight
 };
 
+static const NativePluginDescriptor carlaPatchbayOBS = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME
+                                                  |NATIVE_PLUGIN_USES_UI_SIZE),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 8,
+    /* audioOuts */ 8,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ kNumInParams,
+    /* paramOuts */ kNumOutParams,
+    /* name      */ "Carla-Patchbay (OBS)",
+    /* label     */ "carlapatchbayOBS",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiatePatchbayOBS,
+    CarlaEngineNative::_cleanup,
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    /* _get_midi_program_count */ nullptr,
+    /* _get_midi_program_info  */ nullptr,
+    CarlaEngineNative::_set_parameter_value,
+    /* _set_midi_program       */ nullptr,
+    /* _set_custom_data        */ nullptr,
+#ifndef CARLA_ENGINE_WITHOUT_UI
+    CarlaEngineNative::_ui_show,
+#else
+    nullptr,
+#endif
+    CarlaEngineNative::_ui_idle,
+    CarlaEngineNative::_ui_set_parameter_value,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher,
+    /* _render_inline_dsplay */ nullptr,
+    /* cvIns  */ 0,
+    /* cvOuts */ 0,
+    /* _get_buffer_port_name */ nullptr,
+    /* _get_buffer_port_range */ nullptr,
+    /* ui_width   */ kUiWidth,
+    /* ui_height  */ kUiHeight
+};
+
 CARLA_BACKEND_END_NAMESPACE
 
 // -----------------------------------------------------------------------
+
+#ifndef STATIC_PLUGIN_TARGET
 
 CARLA_API_EXPORT
 void carla_register_native_plugin_carla();
@@ -2958,6 +3021,8 @@ void carla_register_native_plugin_carla()
     carla_register_native_plugin(&carlaPatchbay64Desc);
     carla_register_native_plugin(&carlaPatchbayCVDesc);
 }
+
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -3007,6 +3072,12 @@ const NativePluginDescriptor* carla_get_native_patchbay_cv32_plugin()
 {
     CARLA_BACKEND_USE_NAMESPACE;
     return &carlaPatchbayCV32Desc;
+}
+
+const NativePluginDescriptor* carla_get_native_patchbay_obs_plugin()
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    return &carlaPatchbayOBS;
 }
 
 // -----------------------------------------------------------------------
