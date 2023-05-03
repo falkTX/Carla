@@ -34,7 +34,7 @@ struct CarlaStateSave {
         const char* name;
         const char* symbol;
         float       value;
-       #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         int16_t mappedControlIndex;
         uint8_t midiChannel;
         bool    mappedRangeValid;
@@ -76,7 +76,7 @@ struct CarlaStateSave {
     // saved during clone, rename or similar
     bool temporary;
 
-   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool   active;
     float  dryWet;
     float  volume;

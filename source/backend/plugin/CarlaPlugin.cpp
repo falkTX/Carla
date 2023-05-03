@@ -543,7 +543,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     if (pData->filename != nullptr)
         pData->stateSave.binary = carla_strdup(pData->filename);
 
-   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // ---------------------------------------------------------------
     // Internals
 
@@ -621,7 +621,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
         stateParameter->dummy = dummy;
         stateParameter->index = paramData.index;
-       #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (paramData.mappedControlIndex != CONTROL_INDEX_MIDI_LEARN)
         {
             stateParameter->mappedControlIndex = paramData.mappedControlIndex;
@@ -859,7 +859,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
                 setParameterValue(static_cast<uint32_t>(index), stateParameter->value, true, true, true);
             }
 
-           #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+           #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             if (stateParameter->mappedRangeValid)
             {
                 if (pData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
@@ -946,7 +946,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
        #endif
     }
 
-   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // ---------------------------------------------------------------
     // Part 6 - set internal stuff
 

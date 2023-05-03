@@ -122,7 +122,7 @@ CarlaStateSave::Parameter::Parameter() noexcept
       index(-1),
       name(nullptr),
       symbol(nullptr),
-     #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+     #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       value(0.0f),
       mappedControlIndex(CONTROL_INDEX_NONE),
       midiChannel(0),
@@ -193,7 +193,7 @@ CarlaStateSave::CarlaStateSave() noexcept
       uniqueId(0),
       options(PLUGIN_OPTIONS_NULL),
       temporary(false),
-     #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+     #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       active(false),
       dryWet(1.0f),
       volume(1.0f),
@@ -251,7 +251,7 @@ void CarlaStateSave::clear() noexcept
     uniqueId = 0;
     options  = PLUGIN_OPTIONS_NULL;
 
-   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     active = false;
     dryWet = 1.0f;
     volume = 1.0f;
@@ -336,7 +336,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                     if (value > 0)
                         options = static_cast<uint>(value);
                 }
-               #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+               #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                 else if (tag == "Active")
                 {
                     active = (text == "Yes");
@@ -408,7 +408,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 else if (tag == "Parameter")
                 {
                     Parameter* const stateParameter(new Parameter());
-                   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+                   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                     bool hasMappedMinimum = false, hasMappedMaximum = false;
                    #endif
 
@@ -436,7 +436,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             stateParameter->dummy = false;
                             stateParameter->value = pText.getFloatValue();
                         }
-                       #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+                       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                         else if (pTag == "MidiChannel")
                         {
                             const int channel(pText.getIntValue());
@@ -469,7 +469,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                        #endif
                     }
 
-                   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+                   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
                     if (hasMappedMinimum && hasMappedMaximum)
                         stateParameter->mappedRangeValid = true;
                    #endif
@@ -625,7 +625,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
 
     content << "  <Data>\n";
 
-   #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     {
         MemoryOutputStream dataXml;
 
@@ -673,7 +673,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
                 parameterXml << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
         }
 
-       #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (stateParameter->mappedControlIndex > CONTROL_INDEX_NONE && stateParameter->mappedControlIndex <= CONTROL_INDEX_MAX_ALLOWED)
         {
             parameterXml << "    <MidiChannel>"   << stateParameter->midiChannel+1 << "</MidiChannel>\n";
