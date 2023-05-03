@@ -642,10 +642,10 @@ else ifeq ($(MACOS),true)
 
 HYLIA_FLAGS      = -DLINK_PLATFORM_MACOSX=1
 HYLIA_LIBS       =
-JACKBRIDGE_LIBS  = -ldl -pthread
-LILV_LIBS        = -ldl -lm
+JACKBRIDGE_LIBS  = -pthread
+LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -pthread
-WATER_LIBS       = -framework AppKit
+WATER_LIBS       = -pthread -framework AppKit
 
 else ifeq ($(WASM),true)
 
@@ -663,7 +663,7 @@ HYLIA_LIBS       = -liphlpapi
 JACKBRIDGE_LIBS  = -pthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -pthread
-WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+WATER_LIBS       = -pthread -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 
 endif
 
