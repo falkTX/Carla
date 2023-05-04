@@ -1,6 +1,6 @@
 /*
  * Carla semaphore utils
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -82,7 +82,10 @@ bool carla_sem_create2(carla_sem_t& sem, const bool externalIPC) noexcept
     std::snprintf(sem.bootname, 31, "crlsm_%i_%i_%p", ++bootcounter, ::getpid(), &sem);
     sem.bootname[31] = '\0';
 
+   #pragma clang diagnostic push
+   #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     if (::bootstrap_register(bootport, sem.bootname, sem.sem) == KERN_SUCCESS)
+   #pragma clang diagnostic pop
         return true;
 
     sem.bootname[0] = '\0';
