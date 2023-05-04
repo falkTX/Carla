@@ -834,7 +834,9 @@ public:
                 }
             }
 
-            def = parameter->getDefaultValue();
+            // this gives wrong values!
+            // def = parameter->getDefaultValue();
+            def = parameter->getValue();
 
             if (def < min)
                 def = min;
