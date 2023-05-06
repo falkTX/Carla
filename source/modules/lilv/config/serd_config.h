@@ -7,7 +7,7 @@
 
 #define HAVE_FILENO 1
 
-#if defined(__APPLE__) || defined(__WIN32__)
+#if defined(__APPLE__) || defined(_WIN32)
  // nothing
 #elif defined(__HAIKU__)
  #define HAVE_POSIX_MEMALIGN 1
