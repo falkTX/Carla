@@ -47,11 +47,11 @@ static const carla_shm_t gNullCarlaShm = carla_shm_t_INIT;
 static inline
 bool carla_is_shm_valid(const carla_shm_t& shm) noexcept
 {
-#ifdef CARLA_OS_WIN
+   #ifdef CARLA_OS_WIN
     return (shm.filename != nullptr);
-#else
+   #else
     return (shm.fd >= 0);
-#endif
+   #endif
 }
 
 /*
@@ -74,11 +74,11 @@ carla_shm_t carla_shm_create(const char* const filename) noexcept
 
     carla_shm_t ret;
 
-#ifdef CARLA_OS_WIN
+   #ifdef CARLA_OS_WIN
     ret.map      = INVALID_HANDLE_VALUE;
     ret.isServer = true;
     ret.filename = carla_strdup_safe(filename);
-#else
+   #else
     try {
         ret.fd       = ::shm_open(filename, O_CREAT|O_EXCL|O_RDWR, 0600);
         ret.filename = (ret.fd >= 0) ? carla_strdup_safe(filename) : nullptr;
@@ -91,7 +91,7 @@ carla_shm_t carla_shm_create(const char* const filename) noexcept
             ret.fd = -1;
         }
     } CARLA_SAFE_EXCEPTION_RETURN("carla_shm_create", gNullCarlaShm);
-#endif
+   #endif
 
     return ret;
 }
@@ -106,17 +106,17 @@ carla_shm_t carla_shm_attach(const char* const filename) noexcept
 
     carla_shm_t ret;
 
-#ifdef CARLA_OS_WIN
+   #ifdef CARLA_OS_WIN
     ret.map      = INVALID_HANDLE_VALUE;
     ret.isServer = false;
     ret.filename = carla_strdup_safe(filename);
-#else
+   #else
     try {
         ret.fd       = ::shm_open(filename, O_RDWR, 0);
         ret.filename = nullptr;
         ret.size     = 0;
     } CARLA_SAFE_EXCEPTION_RETURN("carla_shm_attach", gNullCarlaShm);
-#endif
+   #endif
 
     return ret;
 }
@@ -128,16 +128,16 @@ static inline
 void carla_shm_close(carla_shm_t& shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
-#ifdef CARLA_OS_WIN
+   #ifdef CARLA_OS_WIN
     if (shm.isServer) {
         CARLA_SAFE_ASSERT(shm.map == INVALID_HANDLE_VALUE);
     }
-#endif
+   #endif
 
-#ifdef CARLA_OS_WIN
+   #ifdef CARLA_OS_WIN
     if (shm.filename != nullptr)
         delete[] shm.filename;
-#else
+   #else
     try {
         ::close(shm.fd);
 
@@ -147,7 +147,7 @@ void carla_shm_close(carla_shm_t& shm) noexcept
             delete[] shm.filename;
         }
     } CARLA_SAFE_EXCEPTION("carla_shm_close");
-#endif
+   #endif
 
     shm = gNullCarlaShm;
 }
@@ -161,14 +161,14 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), nullptr);
     CARLA_SAFE_ASSERT_RETURN(size > 0, nullptr);
-#ifdef CARLA_OS_WIN
+   #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT_RETURN(shm.map == INVALID_HANDLE_VALUE, nullptr);
-#else
+   #else
     CARLA_SAFE_ASSERT_RETURN(shm.size == 0, nullptr);
-#endif
+   #endif
 
     try {
-#ifdef CARLA_OS_WIN
+      #ifdef CARLA_OS_WIN
         HANDLE map;
 
         if (shm.isServer)
@@ -210,7 +210,7 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
 
         shm.map = map;
         return ptr;
-#else
+      #else
         if (shm.filename != nullptr)
         {
             const int ret(::ftruncate(shm.fd, static_cast<off_t>(size)));
@@ -219,12 +219,12 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
 
         void* ptr;
 
-# ifdef MAP_LOCKED
+       #ifdef MAP_LOCKED
         ptr = ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_LOCKED, shm.fd, 0);
         CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, nullptr);
 
         if (ptr == MAP_FAILED)
-# endif
+       #endif
         {
             ptr = ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm.fd, 0);
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, nullptr);
@@ -235,16 +235,16 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
                 return nullptr;
             }
 
-# ifndef MAP_LOCKED
+           #ifndef MAP_LOCKED
             try {
                 ::mlock(ptr, size);
             } CARLA_SAFE_EXCEPTION("carla_shm_map mlock");
-# endif
+           #endif
         }
 
         shm.size = size;
         return ptr;
-#endif
+      #endif
     } CARLA_SAFE_EXCEPTION_RETURN("carla_shm_map", nullptr);
 }
 
@@ -256,26 +256,26 @@ void carla_shm_unmap(carla_shm_t& shm, void* const ptr) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
     CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
-#ifdef CARLA_OS_WIN
+   #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT_RETURN(shm.map != INVALID_HANDLE_VALUE,);
-#else
+   #else
     CARLA_SAFE_ASSERT_RETURN(shm.size > 0,);
-#endif
+   #endif
 
     try {
-#ifdef CARLA_OS_WIN
+       #ifdef CARLA_OS_WIN
         const HANDLE map = shm.map;
         shm.map = INVALID_HANDLE_VALUE;
 
         ::UnmapViewOfFile(ptr);
         ::CloseHandle(map);
-#else
+       #else
         const std::size_t size(shm.size);
         shm.size = 0;
 
         const int ret(::munmap(ptr, size));
         CARLA_SAFE_ASSERT(ret == 0);
-#endif
+       #endif
     } CARLA_SAFE_EXCEPTION("carla_shm_unmap");
 }
 
@@ -311,7 +311,7 @@ carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
         for (std::size_t c = fileBaseLen - 6; c < fileBaseLen; ++c)
             fileBase[c] = charSet[std::rand() % charSetLen];
 
-#ifdef CARLA_OS_WIN
+       #ifdef CARLA_OS_WIN
         // Windows: check if file already exists
         const HANDLE h = ::CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr,
                                               PAGE_READWRITE|SEC_COMMIT, 0, 8, fileBase);
@@ -330,7 +330,7 @@ carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
             carla_stderr("carla_shm_create_temp(%s) - file exists, retrying", fileBase);
             continue;
         }
-#endif
+       #endif
 
         // (try to) create new shm for this filename
         const carla_shm_t shm = carla_shm_create(fileBase);
@@ -339,7 +339,7 @@ carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
         if (carla_is_shm_valid(shm))
             return shm;
 
-#ifndef CARLA_OS_WIN
+       #ifndef CARLA_OS_WIN
         // Non-Windows: if file already exists, keep trying
         if (errno == EEXIST)
         {
@@ -348,7 +348,7 @@ carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
         }
         const int localerrno = errno;
         carla_stderr("carla_shm_create_temp(%s) - failed, error code %i", fileBase, localerrno);
-#endif
+       #endif
 
         // some unknown error occurred, return null
         return gNullCarlaShm;
