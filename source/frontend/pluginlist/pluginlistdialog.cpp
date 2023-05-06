@@ -1015,7 +1015,8 @@ struct PluginListDialog::Self {
         // ------------------------------------------------------------------------------------------------------------
         // AU (extra non-cached)
 
-        QList<QPluginInfoList> auPlugins32 = settingsDB.valuePluginInfoList("Plugins/AU_posix32");
+        QList<QPluginInfoList> auPlugins32;
+        auPlugins32 += settingsDB.valuePluginInfoList("Plugins/AU_posix32");
        #endif
 
         // ------------------------------------------------------------------------------------------------------------

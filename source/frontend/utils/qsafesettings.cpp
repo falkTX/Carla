@@ -17,19 +17,17 @@
 
 #include "qsafesettings.hpp"
 
-#if QT_VERSION >= 0x60000
- #define QT6_COMPAT(type) QMetaType(type)
-#else
- #define QT6_COMPAT(type) type
-#endif
-
 //---------------------------------------------------------------------------------------------------------------------
 
 bool QSafeSettings::valueBool(const QString& key, const bool defaultValue) const
 {
     QVariant var(value(key, defaultValue));
 
-    if (!var.isNull() && var.convert(QT6_COMPAT(QVariant::Bool)) && var.isValid())
+   #if QT_VERSION >= 0x60000
+    if (!var.isNull() && var.convert(QMetaType(QMetaType::Bool)) && var.isValid())
+   #else
+    if (!var.isNull() && var.convert(QVariant::Bool) && var.isValid())
+   #endif
         return var.toBool();
 
     return defaultValue;
@@ -39,7 +37,11 @@ Qt::CheckState QSafeSettings::valueCheckState(const QString& key, const Qt::Chec
 {
     QVariant var(value(key, defaultValue));
 
-    if (!var.isNull() && var.convert(QT6_COMPAT(QVariant::UInt)) && var.isValid())
+   #if QT_VERSION >= 0x60000
+    if (!var.isNull() && var.convert(QMetaType(QMetaType::UInt)) && var.isValid())
+   #else
+    if (!var.isNull() && var.convert(QVariant::UInt) && var.isValid())
+   #endif
     {
         const uint value = var.toUInt();
 
@@ -59,7 +61,11 @@ int QSafeSettings::valueIntPositive(const QString& key, const int defaultValue) 
 {
     QVariant var(value(key, defaultValue));
 
-    if (!var.isNull() && var.convert(QT6_COMPAT(QVariant::Int)) && var.isValid())
+   #if QT_VERSION >= 0x60000
+    if (!var.isNull() && var.convert(QMetaType(QMetaType::Int)) && var.isValid())
+   #else
+    if (!var.isNull() && var.convert(QVariant::Int) && var.isValid())
+   #endif
     {
         const int value = var.toInt();
         return value >= 0 ? value : defaultValue;
@@ -72,7 +78,11 @@ uint QSafeSettings::valueUInt(const QString& key, const uint defaultValue) const
 {
     QVariant var(value(key, defaultValue));
 
-    if (!var.isNull() && var.convert(QT6_COMPAT(QVariant::UInt)) && var.isValid())
+   #if QT_VERSION >= 0x60000
+    if (!var.isNull() && var.convert(QMetaType(QMetaType::UInt)) && var.isValid())
+   #else
+    if (!var.isNull() && var.convert(QVariant::UInt) && var.isValid())
+   #endif
         return var.toUInt();
 
     return defaultValue;
@@ -82,7 +92,11 @@ double QSafeSettings::valueDouble(const QString& key, const double defaultValue)
 {
     QVariant var(value(key, defaultValue));
 
-    if (!var.isNull() && var.convert(QT6_COMPAT(QVariant::Double)) && var.isValid())
+   #if QT_VERSION >= 0x60000
+    if (!var.isNull() && var.convert(QMetaType(QMetaType::Double)) && var.isValid())
+   #else
+    if (!var.isNull() && var.convert(QVariant::Double) && var.isValid())
+   #endif
         return var.toDouble();
 
     return defaultValue;
@@ -92,7 +106,11 @@ QString QSafeSettings::valueString(const QString& key, const QString& defaultVal
 {
     QVariant var(value(key, defaultValue));
 
-    if (!var.isNull() && var.convert(QT6_COMPAT(QVariant::String)) && var.isValid())
+   #if QT_VERSION >= 0x60000
+    if (!var.isNull() && var.convert(QMetaType(QMetaType::QString)) && var.isValid())
+   #else
+    if (!var.isNull() && var.convert(QVariant::String) && var.isValid())
+   #endif
         return var.toString();
 
     return defaultValue;
@@ -102,7 +120,11 @@ QByteArray QSafeSettings::valueByteArray(const QString& key, const QByteArray de
 {
     QVariant var(value(key, defaultValue));
 
-    if (!var.isNull() && var.convert(QT6_COMPAT(QVariant::ByteArray)) && var.isValid())
+   #if QT_VERSION >= 0x60000
+    if (!var.isNull() && var.convert(QMetaType(QMetaType::QByteArray)) && var.isValid())
+   #else
+    if (!var.isNull() && var.convert(QVariant::ByteArray) && var.isValid())
+   #endif
         return var.toByteArray();
 
     return defaultValue;
@@ -112,7 +134,11 @@ QStringList QSafeSettings::valueStringList(const QString& key, const QStringList
 {
     QVariant var(value(key, defaultValue));
 
-    if (!var.isNull() && var.convert(QT6_COMPAT(QVariant::StringList)) && var.isValid())
+   #if QT_VERSION >= 0x60000
+    if (!var.isNull() && var.convert(QMetaType(QMetaType::QStringList)) && var.isValid())
+   #else
+    if (!var.isNull() && var.convert(QVariant::StringList) && var.isValid())
+   #endif
         return var.toStringList();
 
     return defaultValue;
