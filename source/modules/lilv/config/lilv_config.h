@@ -13,7 +13,7 @@
 #define HAVE_FILENO 1
 #define HAVE_CLOCK_GETTIME 1
 
-#ifdef __WIN32__
+#ifdef _WIN32
  #define LILV_PATH_SEP ";"
  #define LILV_DIR_SEP "\\"
 #else
@@ -28,7 +28,7 @@
  #define LILV_DEFAULT_LV2_PATH "~/.lv2:/lv2"
 #elif defined(__HAIKU__)
  #define LILV_DEFAULT_LV2_PATH "~/.lv2:/system/add-ons/media/lv2plugins"
-#elif defined(__WIN32__)
+#elif defined(_WIN32)
  #define LILV_DEFAULT_LV2_PATH "%APPDATA%\\LV2;%COMMONPROGRAMFILES%\\LV2"
 #else
  #define LILV_DEFAULT_LV2_PATH "~/.lv2:/usr/lib/lv2:/usr/local/lib/lv2"
