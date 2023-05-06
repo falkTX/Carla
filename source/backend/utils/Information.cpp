@@ -44,7 +44,9 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "water/files/File.h"
+#if !(defined(USE_QT) || defined(BUILDING_CARLA_OBS))
+# include "water/files/File.h"
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -64,56 +66,56 @@ const char* carla_get_complete_license_text()
         "<li>LADSPA plugin support</li>"
         "<li>DSSI plugin support</li>"
         "<li>LV2 plugin support</li>"
-#if defined(USING_JUCE) && JUCE_PLUGINHOST_VST
+       #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST
         "<li>VST2 plugin support (using JUCE)</li>"
-#else
+       #else
         "<li>VST2 plugin support (using VeSTige header by Javier Serrano Polo)</li>"
-#endif
-#if defined(USING_JUCE) && JUCE_PLUGINHOST_VST3
+       #endif
+       #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST3
         "<li>VST3 plugin support (using JUCE)</li>"
-#else
+       #else
         "<li>VST3 plugin support (using Travesty header files)</li>"
-#endif
-#if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
+       #endif
+       #if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
         "<li>AU plugin support (using JUCE)</li>"
-#endif
-#ifdef HAVE_YSFX
+       #endif
+       #ifdef HAVE_YSFX
         "<li>JSFX plugin support (using ysfx)</li>"
-#endif
+       #endif
 
         // Sample kit libraries
-#if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+       #if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
         "<li>FluidSynth library v" FLUIDSYNTH_VERSION " for SF2/3 support</li>"
-#endif
+       #endif
         "<li>SFZero module for SFZ support</li>"
 
         // misc libs
         "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
         "<li>dr_mp3 for mp3 file support</li>"
-#ifdef HAVE_LIBLO
+       #ifdef HAVE_LIBLO
         "<li>liblo library for OSC support</li>"
-#endif
-#ifdef HAVE_SNDFILE
+       #endif
+       #ifdef HAVE_SNDFILE
         "<li>libsndfile library for base audio file support</li>"
-#endif
+       #endif
         "<li>rtmempool library by Nedko Arnaudov</li>"
         "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
-#ifdef USING_RTAUDIO
+       #ifdef USING_RTAUDIO
         "<li>RtAudio v" RTAUDIO_VERSION " and RtMidi v" RTMIDI_VERSION " for native Audio and MIDI support</li>"
-#endif
+       #endif
         "<li>zita-resampler for audio file sample rate resampling</li>"
 
         // Internal plugins
         "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
 
         // External plugins
-#ifdef HAVE_EXTERNAL_PLUGINS
+      #ifdef HAVE_EXTERNAL_PLUGINS
         "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
         "<li>VectorJuice and WobbleJuice plugin code by Andre Sklenar</li>"
-# ifdef HAVE_ZYN_DEPS
+       #ifdef HAVE_ZYN_DEPS
         "<li>ZynAddSubFX plugin code by Mark McCurry and Nasca Octavian Paul</li>"
-# endif
-#endif // HAVE_EXTERNAL_PLUGINS
+       #endif
+      #endif
 
         // end
         "</ul>";
@@ -128,7 +130,7 @@ const char* carla_get_juce_version()
 
     static CarlaString retVersion;
 
-#ifdef USING_JUCE
+   #ifdef USING_JUCE
     if (retVersion.isEmpty())
     {
         if (const char* const version = CarlaJUCE::getVersion())
@@ -136,7 +138,7 @@ const char* carla_get_juce_version()
         else
             retVersion = "Unknown";
     }
-#endif
+   #endif
 
     return retVersion;
 }
@@ -151,39 +153,39 @@ const char* const* carla_get_supported_file_extensions()
         "carxp", "carxs",
 
         // plugin files and resources
-#ifdef HAVE_FLUIDSYNTH
+       #ifdef HAVE_FLUIDSYNTH
         "sf2", "sf3",
-#endif
-#ifdef HAVE_FLUIDSYNTH_INSTPATCH
+       #endif
+       #ifdef HAVE_FLUIDSYNTH_INSTPATCH
         "dls", "gig",
-#endif
-#ifdef HAVE_ZYN_DEPS
+       #endif
+       #ifdef HAVE_ZYN_DEPS
         "xmz", "xiz",
-#endif
-#ifdef CARLA_OS_MAC
+       #endif
+       #ifdef CARLA_OS_MAC
         "vst",
-#else
+       #else
         "dll",
         "so",
-#endif
+       #endif
         "vst3",
         "clap",
 
         // Audio files
-#ifdef HAVE_SNDFILE
+       #ifdef HAVE_SNDFILE
         "aif", "aifc", "aiff", "au", "bwf", "flac", "htk", "iff", "mat4", "mat5", "oga", "ogg", "opus",
         "paf", "pvf", "pvf5", "sd2", "sf", "snd", "svx", "vcc", "w64", "wav", "xi",
-#endif
-#ifdef HAVE_FFMPEG
+       #endif
+      #ifdef HAVE_FFMPEG
         "3g2", "3gp", "aac", "ac3", "amr", "ape", "mp2", "mp3", "mpc", "wma",
-# ifndef HAVE_SNDFILE
+       #ifndef HAVE_SNDFILE
         // FFmpeg without sndfile
         "flac", "oga", "ogg", "w64", "wav",
-# endif
-#else
+       #endif
+      #else
         // dr_mp3
         "mp3",
-#endif
+      #endif
 
         // MIDI files
         "mid", "midi",
@@ -191,10 +193,10 @@ const char* const* carla_get_supported_file_extensions()
         // SFZ
         "sfz",
 
-#ifdef HAVE_YSFX
+       #ifdef HAVE_YSFX
         // JSFX
         "jsfx",
-#endif
+       #endif
 
         // terminator
         nullptr
@@ -208,33 +210,33 @@ const char* const* carla_get_supported_features()
     carla_debug("carla_get_supported_features()");
 
     static const char* const features[] = {
-#ifdef HAVE_FLUIDSYNTH
+       #ifdef HAVE_FLUIDSYNTH
         "sf2",
-#endif
-#ifdef HAVE_FLUIDSYNTH_INSTPATCH
+       #endif
+       #ifdef HAVE_FLUIDSYNTH_INSTPATCH
         "dls", "gig",
-#endif
-#ifdef HAVE_HYLIA
+       #endif
+       #ifdef HAVE_HYLIA
         "link",
-#endif
-#ifdef HAVE_LIBLO
+       #endif
+       #ifdef HAVE_LIBLO
         "osc",
-#endif
-#if defined(HAVE_LIBMAGIC) || defined(CARLA_OS_WIN)
+       #endif
+       #if defined(HAVE_LIBMAGIC) || defined(CARLA_OS_WIN)
         "bridges",
-#endif
-#ifdef HAVE_PYQT
+       #endif
+       #ifdef HAVE_PYQT
         "gui",
-#endif
-#ifdef HAVE_YSFX
+       #endif
+       #ifdef HAVE_YSFX
         "jsfx",
-#endif
-#ifdef USING_JUCE
+       #endif
+      #ifdef USING_JUCE
         "juce",
-# if defined(CARLA_OS_MAC)
+       #if defined(CARLA_OS_MAC)
         "au",
-# endif
-#endif
+       #endif
+      #endif
         nullptr
     };
 
@@ -243,6 +245,7 @@ const char* const* carla_get_supported_features()
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#if !(defined(USE_QT) || defined(BUILDING_CARLA_OBS))
 const char* carla_get_library_filename()
 {
     carla_debug("carla_get_library_filename()");
@@ -272,5 +275,6 @@ const char* carla_get_library_folder()
 
     return ret;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
