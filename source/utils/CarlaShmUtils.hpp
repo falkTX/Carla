@@ -1,6 +1,6 @@
 /*
  * Carla shared memory utils
- * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -312,8 +312,8 @@ carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
 
 #ifdef CARLA_OS_WIN
         // Windows: check if file already exists
-        const HANDLE h = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr,
-                                             PAGE_READWRITE|SEC_COMMIT, 0, 8, fileBase);
+        const HANDLE h = ::CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr,
+                                              PAGE_READWRITE|SEC_COMMIT, 0, 8, fileBase);
 
         if (h == INVALID_HANDLE_VALUE)
         {
