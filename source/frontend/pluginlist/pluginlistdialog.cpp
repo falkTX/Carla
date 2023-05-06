@@ -455,6 +455,9 @@ public:
         */
 
         return {};
+
+        // TODO
+        (void)key;
     }
 
     void setValue(const QString& key, const uint value)
@@ -464,6 +467,10 @@ public:
 
     void setValue(const QString& key, const QPluginInfoList& value)
     {
+        return;
+        // TODO
+        (void)key;
+        (void)value;
     }
 };
 
