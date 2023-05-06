@@ -1,6 +1,6 @@
 /*
  * Carla String
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -419,7 +419,7 @@ public:
 
         if (char* const subStrBuf = std::strstr(fBuffer, strBuf))
         {
-            const ssize_t ret(subStrBuf - fBuffer);
+            const ssize_t ret = subStrBuf - fBuffer;
 
             if (ret < 0)
             {

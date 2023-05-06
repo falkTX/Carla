@@ -1,6 +1,6 @@
 /*
  * Carla math utils
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -173,10 +173,12 @@ void carla_addFloats(float dest[], const float src[], const std::size_t count) n
 
     for (std::size_t i=0; i<count; ++i)
     {
+       #ifdef __GNUC__
         if (!std::isfinite(dest[i]))
             __builtin_unreachable();
         if (!std::isfinite(src[i]))
             __builtin_unreachable();
+       #endif
         *dest++ += *src++;
     }
 }
@@ -211,8 +213,10 @@ void carla_fillFloatsWithSingleValue(float data[], const float& value, const std
     {
         for (std::size_t i=0; i<count; ++i)
         {
+           #ifdef __GNUC__
             if (!std::isfinite(data[i]))
                 __builtin_unreachable();
+           #endif
             *data++ = value;
         }
     }
@@ -260,8 +264,10 @@ float carla_findMaxNormalizedFloat(const float floats[], const std::size_t count
 
     for (std::size_t i=1; i<count; ++i)
     {
+       #ifdef __GNUC__
         if (!std::isfinite(floats[i]))
             __builtin_unreachable();
+       #endif
 
         tmp = std::abs(floats[i]);
 
@@ -292,8 +298,10 @@ void carla_multiply(float data[], const float& multiplier, const std::size_t cou
     {
         for (std::size_t i=0; i<count; ++i)
         {
+           #ifdef __GNUC__
             if (!std::isfinite(data[i]))
                 __builtin_unreachable();
+           #endif
             *data++ *= multiplier;
         }
     }

@@ -1,6 +1,6 @@
 /*
  * Carla Mutex
- * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -39,7 +39,12 @@ public:
     {
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
+       #ifdef __GNUC__
         pthread_mutexattr_setprotocol(&attr, inheritPriority ? PTHREAD_PRIO_INHERIT : PTHREAD_PRIO_NONE);
+       #else
+        // unsupported?
+        (void)inheritPriority;
+       #endif
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
         pthread_mutex_init(&fMutex, &attr);
         pthread_mutexattr_destroy(&attr);
@@ -110,22 +115,22 @@ public:
      * Constructor.
      */
     CarlaRecursiveMutex() noexcept
-#ifdef CARLA_OS_WIN
+       #ifdef CARLA_OS_WIN
         : fSection()
-#else
+       #else
         : fMutex()
-#endif
+       #endif
     {
-#ifdef CARLA_OS_WIN
+       #ifdef CARLA_OS_WIN
         InitializeCriticalSection(&fSection);
-#else
+       #else
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
         pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&fMutex, &attr);
         pthread_mutexattr_destroy(&attr);
-#endif
+       #endif
     }
 
     /*
@@ -133,11 +138,11 @@ public:
      */
     ~CarlaRecursiveMutex() noexcept
     {
-#ifdef CARLA_OS_WIN
+       #ifdef CARLA_OS_WIN
         DeleteCriticalSection(&fSection);
-#else
+       #else
         pthread_mutex_destroy(&fMutex);
-#endif
+       #endif
     }
 
     /*
@@ -145,12 +150,12 @@ public:
      */
     bool lock() const noexcept
     {
-#ifdef CARLA_OS_WIN
+       #ifdef CARLA_OS_WIN
         EnterCriticalSection(&fSection);
         return true;
-#else
+       #else
         return (pthread_mutex_lock(&fMutex) == 0);
-#endif
+       #endif
     }
 
     /*
@@ -159,11 +164,11 @@ public:
      */
     bool tryLock() const noexcept
     {
-#ifdef CARLA_OS_WIN
+       #ifdef CARLA_OS_WIN
         return (TryEnterCriticalSection(&fSection) != FALSE);
-#else
+       #else
         return (pthread_mutex_trylock(&fMutex) == 0);
-#endif
+       #endif
     }
 
     /*
@@ -171,19 +176,19 @@ public:
      */
     void unlock() const noexcept
     {
-#ifdef CARLA_OS_WIN
+       #ifdef CARLA_OS_WIN
         LeaveCriticalSection(&fSection);
-#else
+       #else
         pthread_mutex_unlock(&fMutex);
-#endif
+       #endif
     }
 
 private:
-#ifdef CARLA_OS_WIN
+   #ifdef CARLA_OS_WIN
     mutable CRITICAL_SECTION fSection;
-#else
+   #else
     mutable pthread_mutex_t fMutex;
-#endif
+   #endif
 
     CARLA_DECLARE_NON_COPYABLE(CarlaRecursiveMutex)
 };
