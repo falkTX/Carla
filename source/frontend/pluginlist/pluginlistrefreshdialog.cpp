@@ -87,7 +87,7 @@ PluginListRefreshDialog::PluginListRefreshDialog(QWidget* const parent, const bo
    #ifdef CARLA_OS_WIN
     #define APP_EXT ".exe"
    #else
-    #define APP_EXT ".exe"
+    #define APP_EXT ""
    #endif
 
     QString hostPathBinaries;

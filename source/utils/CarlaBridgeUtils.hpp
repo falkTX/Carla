@@ -1,6 +1,6 @@
 /*
  * Carla Bridge utils
- * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -214,8 +214,8 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static const std::size_t kBridgeRtClientDataMidiOutSize = 511*4;
-static const std::size_t kBridgeBaseMidiOutHeaderSize   = 6U /* time, port and size */;
+static constexpr const std::size_t kBridgeRtClientDataMidiOutSize = 511*4;
+static constexpr const std::size_t kBridgeBaseMidiOutHeaderSize   = 6U /* time, port and size */;
 
 // Server => Client RT
 struct BridgeRtClientData {
