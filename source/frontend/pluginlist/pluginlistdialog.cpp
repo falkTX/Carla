@@ -484,7 +484,7 @@ template <class T> inline T static_cast_void(const void* ptr)
 struct PluginInfoBytes {
     uint API;
     uint build;
-    uint type;
+    CARLA_BACKEND_NAMESPACE::PluginType type;
     uint hints;
     uint64_t uniqueId;
     uint audioIns;
