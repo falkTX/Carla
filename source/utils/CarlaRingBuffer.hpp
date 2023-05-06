@@ -1,6 +1,6 @@
 /*
  * Carla Ring Buffer
- * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -62,21 +62,21 @@ struct HeapBuffer {
 };
 
 struct SmallStackBuffer {
-    static const uint32_t size = 4096;
+    static constexpr const uint32_t size = 4096;
     uint32_t head, tail, wrtn;
     bool     invalidateCommit;
     uint8_t  buf[size];
 };
 
 struct BigStackBuffer {
-    static const uint32_t size = 16384;
+    static constexpr const uint32_t size = 16384;
     uint32_t head, tail, wrtn;
     bool     invalidateCommit;
     uint8_t  buf[size];
 };
 
 struct HugeStackBuffer {
-    static const uint32_t size = 65536;
+    static constexpr const uint32_t size = 65536;
     uint32_t head, tail, wrtn;
     bool     invalidateCommit;
     uint8_t  buf[size];
@@ -238,6 +238,42 @@ public:
 
     // -------------------------------------------------------------------
 
+    void skipRead(const uint32_t size) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(size > 0,);
+        CARLA_SAFE_ASSERT_RETURN(size < fBuffer->size,);
+
+        // empty
+        if (fBuffer->head == fBuffer->tail)
+            return;
+
+        const uint32_t head = fBuffer->head;
+        const uint32_t tail = fBuffer->tail;
+        const uint32_t wrap = head > tail ? 0 : fBuffer->size;
+
+        if (size > wrap + head - tail)
+        {
+            if (! fErrorReading)
+            {
+                fErrorReading = true;
+                carla_stderr2("CarlaRingBuffer::skipRead(%u): failed, not enough space", size);
+            }
+            return;
+        }
+
+        uint32_t readto = tail + size;
+
+        if (readto >= fBuffer->size)
+            readto -= fBuffer->size;
+
+        fBuffer->tail = readto;
+        fErrorReading = false;
+        return;
+    }
+
+    // -------------------------------------------------------------------
+
     bool writeBool(const bool value) noexcept
     {
         return tryWrite(&value, sizeof(bool));
@@ -320,14 +356,14 @@ protected:
     bool tryRead(void* const buf, const uint32_t size) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
-        #if defined(__clang__)
-        # pragma clang diagnostic push
-        # pragma clang diagnostic ignored "-Wtautological-pointer-compare"
-        #endif
+       #if defined(__clang__)
+        #pragma clang diagnostic push
+        #pragma clang diagnostic ignored "-Wtautological-pointer-compare"
+       #endif
         CARLA_SAFE_ASSERT_RETURN(fBuffer->buf != nullptr, false);
-        #if defined(__clang__)
-        # pragma clang diagnostic pop
-        #endif
+       #if defined(__clang__)
+        #pragma clang diagnostic pop
+       #endif
         CARLA_SAFE_ASSERT_RETURN(buf != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(size > 0, false);
         CARLA_SAFE_ASSERT_RETURN(size < fBuffer->size, false);
@@ -336,23 +372,23 @@ protected:
         if (fBuffer->head == fBuffer->tail)
             return false;
 
-        uint8_t* const bytebuf(static_cast<uint8_t*>(buf));
+        uint8_t* const bytebuf = static_cast<uint8_t*>(buf);
 
-        const uint32_t head(fBuffer->head);
-        const uint32_t tail(fBuffer->tail);
-        const uint32_t wrap((head > tail) ? 0 : fBuffer->size);
+        const uint32_t head = fBuffer->head;
+        const uint32_t tail = fBuffer->tail;
+        const uint32_t wrap = head > tail ? 0 : fBuffer->size;
 
         if (size > wrap + head - tail)
         {
             if (! fErrorReading)
             {
                 fErrorReading = true;
-                carla_stderr2("CarlaRingBuffer::tryRead(%p, " P_SIZE "): failed, not enough space", buf, size);
+                carla_stderr2("CarlaRingBuffer::tryRead(%p, %u): failed, not enough space", buf, size);
             }
             return false;
         }
 
-        uint32_t readto(tail + size);
+        uint32_t readto = tail + size;
 
         if (readto > fBuffer->size)
         {
@@ -364,7 +400,7 @@ protected:
             }
             else
             {
-                const uint32_t firstpart(fBuffer->size - tail);
+                const uint32_t firstpart = fBuffer->size - tail;
                 std::memcpy(bytebuf, fBuffer->buf + tail, firstpart);
                 std::memcpy(bytebuf + firstpart, fBuffer->buf, readto);
             }
@@ -389,24 +425,24 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(size > 0, false);
         CARLA_SAFE_ASSERT_UINT2_RETURN(size < fBuffer->size, size, fBuffer->size, false);
 
-        const uint8_t* const bytebuf(static_cast<const uint8_t*>(buf));
+        const uint8_t* const bytebuf = static_cast<const uint8_t*>(buf);
 
-        const uint32_t tail(fBuffer->tail);
-        const uint32_t wrtn(fBuffer->wrtn);
-        const uint32_t wrap((tail > wrtn) ? 0 : fBuffer->size);
+        const uint32_t tail = fBuffer->tail;
+        const uint32_t wrtn = fBuffer->wrtn;
+        const uint32_t wrap = tail > wrtn ? 0 : fBuffer->size;
 
         if (size >= wrap + tail - wrtn)
         {
             if (! fErrorWriting)
             {
                 fErrorWriting = true;
-                carla_stderr2("CarlaRingBuffer::tryWrite(%p, " P_SIZE "): failed, not enough space", buf, size);
+                carla_stderr2("CarlaRingBuffer::tryWrite(%p, %u): failed, not enough space", buf, size);
             }
             fBuffer->invalidateCommit = true;
             return false;
         }
 
-        uint32_t writeto(wrtn + size);
+        uint32_t writeto = wrtn + size;
 
         if (writeto > fBuffer->size)
         {
@@ -418,7 +454,7 @@ protected:
             }
             else
             {
-                const uint32_t firstpart(fBuffer->size - wrtn);
+                const uint32_t firstpart = fBuffer->size - wrtn;
                 std::memcpy(fBuffer->buf + wrtn, bytebuf, firstpart);
                 std::memcpy(fBuffer->buf, bytebuf + firstpart, writeto);
             }
@@ -484,7 +520,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHeapBuffer.buf == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-        const uint32_t p2size(carla_nextPowerOf2(size));
+        const uint32_t p2size = carla_nextPowerOf2(size);
 
         try {
             fHeapBuffer.buf = new uint8_t[p2size];
