@@ -6,4 +6,4 @@ Name: carla-standalone
 Version: X-VERSION-X
 Description: Carla Host Standalone
 Libs: -Wl,-rpath,${libdir}/carla -L${libdir}/carla -lcarla_standalone2
-Cflags: -DREAL_BUILD -I${includedir}/carla -I${includedir}/carla/includes
+Cflags: -I${includedir}/carla -I${includedir}/carla/includes

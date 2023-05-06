@@ -6,4 +6,4 @@ Name: carla-utils
 Version: X-VERSION-X
 Description: Carla Host Utilities
 Libs: -Wl,-rpath,${libdir}/carla -L${libdir}/carla -lcarla_utils
-Cflags: -DREAL_BUILD -I${includedir}/carla -I${includedir}/carla/includes -I${includedir}/carla/utils
+Cflags: -I${includedir}/carla -I${includedir}/carla/includes -I${includedir}/carla/utils

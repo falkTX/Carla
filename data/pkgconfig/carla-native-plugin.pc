@@ -6,4 +6,4 @@ Name: carla-native-plugin
 Version: X-VERSION-X
 Description: Carla Native Plugin
 Libs: -Wl,-rpath,${libdir}/carla -L${libdir}/carla -lcarla_native-plugin
-Cflags: -DREAL_BUILD -I${includedir}/carla -I${includedir}/carla/includes
+Cflags: -I${includedir}/carla -I${includedir}/carla/includes
