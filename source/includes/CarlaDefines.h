@@ -325,6 +325,7 @@ typedef unsigned int uint;
 typedef unsigned long int ulong;
 typedef unsigned long long int ulonglong;
 #ifdef _MSC_VER
+# include <basetsd.h>
 typedef SSIZE_T ssize_t;
 #endif
 
