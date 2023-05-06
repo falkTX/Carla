@@ -178,7 +178,8 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
             sa.nLength = sizeof(sa);
             sa.bInheritHandle = TRUE;
 
-            map = ::CreateFileMappingA(INVALID_HANDLE_VALUE, &sa, PAGE_READWRITE|SEC_COMMIT, 0, size, shm.filename);
+            map = ::CreateFileMappingA(INVALID_HANDLE_VALUE, &sa,
+                                       PAGE_READWRITE|SEC_COMMIT, 0, static_cast<DWORD>(size), shm.filename);
 
             if (map == nullptr || map == INVALID_HANDLE_VALUE)
             {
