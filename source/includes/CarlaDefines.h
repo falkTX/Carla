@@ -1,6 +1,6 @@
 /*
  * Carla common defines
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -161,6 +161,13 @@
 # endif
 #endif
 
+/* Define unlikely */
+#ifdef __GNUC__
+# define unlikely(x) __builtin_expect(x,0)
+#else
+# define unlikely(x) x
+#endif
+
 /* Define CARLA_ASSERT* */
 #if defined(CARLA_NO_ASSERTS)
 # define CARLA_ASSERT(cond)
@@ -177,40 +184,40 @@
 #endif
 
 /* Define CARLA_SAFE_ASSERT* */
-#define CARLA_SAFE_ASSERT(cond)               if (__builtin_expect(!(cond),0)) carla_safe_assert      (#cond, __FILE__, __LINE__);
-#define CARLA_SAFE_ASSERT_INT(cond, value)    if (__builtin_expect(!(cond),0)) carla_safe_assert_int  (#cond, __FILE__, __LINE__, static_cast<int>(value));
-#define CARLA_SAFE_ASSERT_INT2(cond, v1, v2)  if (__builtin_expect(!(cond),0)) carla_safe_assert_int2 (#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2));
-#define CARLA_SAFE_ASSERT_UINT(cond, value)   if (__builtin_expect(!(cond),0)) carla_safe_assert_uint (#cond, __FILE__, __LINE__, static_cast<uint>(value));
-#define CARLA_SAFE_ASSERT_UINT2(cond, v1, v2) if (__builtin_expect(!(cond),0)) carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2));
+#define CARLA_SAFE_ASSERT(cond)               if (unlikely(!(cond))) carla_safe_assert      (#cond, __FILE__, __LINE__);
+#define CARLA_SAFE_ASSERT_INT(cond, value)    if (unlikely(!(cond))) carla_safe_assert_int  (#cond, __FILE__, __LINE__, static_cast<int>(value));
+#define CARLA_SAFE_ASSERT_INT2(cond, v1, v2)  if (unlikely(!(cond))) carla_safe_assert_int2 (#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2));
+#define CARLA_SAFE_ASSERT_UINT(cond, value)   if (unlikely(!(cond))) carla_safe_assert_uint (#cond, __FILE__, __LINE__, static_cast<uint>(value));
+#define CARLA_SAFE_ASSERT_UINT2(cond, v1, v2) if (unlikely(!(cond))) carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2));
 
-#define CARLA_SAFE_ASSERT_BREAK(cond)         if (__builtin_expect(!(cond),0)) { carla_safe_assert(#cond, __FILE__, __LINE__); break; }
-#define CARLA_SAFE_ASSERT_CONTINUE(cond)      if (__builtin_expect(!(cond),0)) { carla_safe_assert(#cond, __FILE__, __LINE__); continue; }
-#define CARLA_SAFE_ASSERT_RETURN(cond, ret)   if (__builtin_expect(!(cond),0)) { carla_safe_assert(#cond, __FILE__, __LINE__); return ret; }
+#define CARLA_SAFE_ASSERT_BREAK(cond)         if (unlikely(!(cond))) { carla_safe_assert(#cond, __FILE__, __LINE__); break; }
+#define CARLA_SAFE_ASSERT_CONTINUE(cond)      if (unlikely(!(cond))) { carla_safe_assert(#cond, __FILE__, __LINE__); continue; }
+#define CARLA_SAFE_ASSERT_RETURN(cond, ret)   if (unlikely(!(cond))) { carla_safe_assert(#cond, __FILE__, __LINE__); return ret; }
 
-#define CARLA_CUSTOM_SAFE_ASSERT(msg, cond)             if (__builtin_expect(!(cond),0)) carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__);
-#define CARLA_CUSTOM_SAFE_ASSERT_BREAK(msg, cond)       if (__builtin_expect(!(cond),0)) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); break; }
-#define CARLA_CUSTOM_SAFE_ASSERT_CONTINUE(msg, cond)    if (__builtin_expect(!(cond),0)) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); continue; }
-#define CARLA_CUSTOM_SAFE_ASSERT_RETURN(msg, cond, ret) if (__builtin_expect(!(cond),0)) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); return ret; }
+#define CARLA_CUSTOM_SAFE_ASSERT(msg, cond)             if (unlikely(!(cond))) carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__);
+#define CARLA_CUSTOM_SAFE_ASSERT_BREAK(msg, cond)       if (unlikely(!(cond))) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); break; }
+#define CARLA_CUSTOM_SAFE_ASSERT_CONTINUE(msg, cond)    if (unlikely(!(cond))) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); continue; }
+#define CARLA_CUSTOM_SAFE_ASSERT_RETURN(msg, cond, ret) if (unlikely(!(cond))) { carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); return ret; }
 
-#define CARLA_CUSTOM_SAFE_ASSERT_ONCE_BREAK(msg, cond)       if (__builtin_expect(!(cond),0)) { static bool _p; if (!_p) { _p = true; carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); } break; }
-#define CARLA_CUSTOM_SAFE_ASSERT_ONCE_CONTINUE(msg, cond)    if (__builtin_expect(!(cond),0)) { static bool _p; if (!_p) { _p = true; carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); } continue; }
-#define CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN(msg, cond, ret) if (__builtin_expect(!(cond),0)) { static bool _p; if (!_p) { _p = true; carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); } return ret; }
+#define CARLA_CUSTOM_SAFE_ASSERT_ONCE_BREAK(msg, cond)       if (unlikely(!(cond))) { static bool _p; if (!_p) { _p = true; carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); } break; }
+#define CARLA_CUSTOM_SAFE_ASSERT_ONCE_CONTINUE(msg, cond)    if (unlikely(!(cond))) { static bool _p; if (!_p) { _p = true; carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); } continue; }
+#define CARLA_CUSTOM_SAFE_ASSERT_ONCE_RETURN(msg, cond, ret) if (unlikely(!(cond))) { static bool _p; if (!_p) { _p = true; carla_custom_safe_assert(msg, #cond, __FILE__, __LINE__); } return ret; }
 
-#define CARLA_SAFE_ASSERT_INT_BREAK(cond, value)       if (__builtin_expect(!(cond),0)) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); break; }
-#define CARLA_SAFE_ASSERT_INT_CONTINUE(cond, value)    if (__builtin_expect(!(cond),0)) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); continue; }
-#define CARLA_SAFE_ASSERT_INT_RETURN(cond, value, ret) if (__builtin_expect(!(cond),0)) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); return ret; }
+#define CARLA_SAFE_ASSERT_INT_BREAK(cond, value)       if (unlikely(!(cond))) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); break; }
+#define CARLA_SAFE_ASSERT_INT_CONTINUE(cond, value)    if (unlikely(!(cond))) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); continue; }
+#define CARLA_SAFE_ASSERT_INT_RETURN(cond, value, ret) if (unlikely(!(cond))) { carla_safe_assert_int(#cond, __FILE__, __LINE__, static_cast<int>(value)); return ret; }
 
-#define CARLA_SAFE_ASSERT_INT2_BREAK(cond, v1, v2)        if (__builtin_expect(!(cond),0)) { carla_safe_assert_int2(#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2)); break; }
-#define CARLA_SAFE_ASSERT_INT2_CONTINUE(cond, v1, v2)     if (__builtin_expect(!(cond),0)) { carla_safe_assert_int2(#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2)); continue; }
-#define CARLA_SAFE_ASSERT_INT2_RETURN(cond, v1, v2, ret)  if (__builtin_expect(!(cond),0)) { carla_safe_assert_int2(#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2)); return ret; }
+#define CARLA_SAFE_ASSERT_INT2_BREAK(cond, v1, v2)        if (unlikely(!(cond))) { carla_safe_assert_int2(#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2)); break; }
+#define CARLA_SAFE_ASSERT_INT2_CONTINUE(cond, v1, v2)     if (unlikely(!(cond))) { carla_safe_assert_int2(#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2)); continue; }
+#define CARLA_SAFE_ASSERT_INT2_RETURN(cond, v1, v2, ret)  if (unlikely(!(cond))) { carla_safe_assert_int2(#cond, __FILE__, __LINE__, static_cast<int>(v1), static_cast<int>(v2)); return ret; }
 
-#define CARLA_SAFE_ASSERT_UINT_BREAK(cond, value)       if (__builtin_expect(!(cond),0)) { carla_safe_assert_uint(#cond, __FILE__, __LINE__, static_cast<uint>(value); break; }
-#define CARLA_SAFE_ASSERT_UINT_CONTINUE(cond, value)    if (__builtin_expect(!(cond),0)) { carla_safe_assert_uint(#cond, __FILE__, __LINE__, static_cast<uint>(value)); continue; }
-#define CARLA_SAFE_ASSERT_UINT_RETURN(cond, value, ret) if (__builtin_expect(!(cond),0)) { carla_safe_assert_uint(#cond, __FILE__, __LINE__, static_cast<uint>(value)); return ret; }
+#define CARLA_SAFE_ASSERT_UINT_BREAK(cond, value)       if (unlikely(!(cond))) { carla_safe_assert_uint(#cond, __FILE__, __LINE__, static_cast<uint>(value); break; }
+#define CARLA_SAFE_ASSERT_UINT_CONTINUE(cond, value)    if (unlikely(!(cond))) { carla_safe_assert_uint(#cond, __FILE__, __LINE__, static_cast<uint>(value)); continue; }
+#define CARLA_SAFE_ASSERT_UINT_RETURN(cond, value, ret) if (unlikely(!(cond))) { carla_safe_assert_uint(#cond, __FILE__, __LINE__, static_cast<uint>(value)); return ret; }
 
-#define CARLA_SAFE_ASSERT_UINT2_BREAK(cond, v1, v2)       if (__builtin_expect(!(cond),0)) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); break; }
-#define CARLA_SAFE_ASSERT_UINT2_CONTINUE(cond, v1, v2)    if (__builtin_expect(!(cond),0)) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); continue; }
-#define CARLA_SAFE_ASSERT_UINT2_RETURN(cond, v1, v2, ret) if (__builtin_expect(!(cond),0)) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); return ret; }
+#define CARLA_SAFE_ASSERT_UINT2_BREAK(cond, v1, v2)       if (unlikely(!(cond))) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); break; }
+#define CARLA_SAFE_ASSERT_UINT2_CONTINUE(cond, v1, v2)    if (unlikely(!(cond))) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); continue; }
+#define CARLA_SAFE_ASSERT_UINT2_RETURN(cond, v1, v2, ret) if (unlikely(!(cond))) { carla_safe_assert_uint2(#cond, __FILE__, __LINE__, static_cast<uint>(v1), static_cast<uint>(v2)); return ret; }
 
 #if defined(__GNUC__) && defined(CARLA_PROPER_CPP11_SUPPORT) && ! defined(__clang__)
 # define CARLA_CATCH_UNWIND catch (abi::__forced_unwind&) { throw; }
