@@ -643,7 +643,7 @@ public:
             "abcdefghijklmnopqrstuvwxyz"
             "0123456789+/";
 
-        const std::size_t kTmpBufSize = std::min(carla_nextPowerOf2(static_cast<uint32_t>(dataSize/3)), 65536U);
+        static constexpr const std::size_t kTmpBufSize = 65536U;
 
         const uchar* bytesToEncode((const uchar*)data);
 
