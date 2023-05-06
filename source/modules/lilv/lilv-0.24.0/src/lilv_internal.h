@@ -29,6 +29,7 @@ extern "C" {
 #ifdef _WIN32
 #    include <windows.h>
 #    include <direct.h>
+#    include <stdio.h>
 #    define dlopen(path, flags) LoadLibrary(path)
 #    define dlclose(lib)        FreeLibrary((HMODULE)lib)
 #    define unlink(path)        _unlink(path)
