@@ -113,8 +113,8 @@ void carla_debug(const char* const fmt, ...) noexcept
     static FILE* const output = __carla_fopen("/tmp/carla.debug.log", stdout);
 
     try {
-        ::va_list args;
-        ::va_start(args, fmt);
+        va_list args;
+        va_start(args, fmt);
 
         if (output == stdout)
         {
@@ -134,7 +134,7 @@ void carla_debug(const char* const fmt, ...) noexcept
         }
 
         std::fflush(output);
-        ::va_end(args);
+        va_end(args);
     } CARLA_CATCH_UNWIND catch (...) {}
 }
 #endif
@@ -148,8 +148,8 @@ void carla_stdout(const char* const fmt, ...) noexcept
     static FILE* const output = __carla_fopen("/tmp/carla.stdout.log", stdout);
 
     try {
-        ::va_list args;
-        ::va_start(args, fmt);
+        va_list args;
+        va_start(args, fmt);
         std::fprintf(output, "[carla] ");
         std::vfprintf(output, fmt, args);
         std::fprintf(output, "\n");
@@ -157,7 +157,7 @@ void carla_stdout(const char* const fmt, ...) noexcept
         if (output != stdout)
 #endif
             std::fflush(output);
-        ::va_end(args);
+        va_end(args);
     } CARLA_CATCH_UNWIND catch (...) {}
 }
 
@@ -170,8 +170,8 @@ void carla_stderr(const char* const fmt, ...) noexcept
     static FILE* const output = __carla_fopen("/tmp/carla.stderr.log", stderr);
 
     try {
-        ::va_list args;
-        ::va_start(args, fmt);
+        va_list args;
+        va_start(args, fmt);
         std::fprintf(output, "[carla] ");
         std::vfprintf(output, fmt, args);
         std::fprintf(output, "\n");
@@ -179,7 +179,7 @@ void carla_stderr(const char* const fmt, ...) noexcept
         if (output != stderr)
 #endif
             std::fflush(output);
-        ::va_end(args);
+        va_end(args);
     } CARLA_CATCH_UNWIND catch (...) {}
 }
 
@@ -192,8 +192,8 @@ void carla_stderr2(const char* const fmt, ...) noexcept
     static FILE* const output = __carla_fopen("/tmp/carla.stderr2.log", stderr);
 
     try {
-        ::va_list args;
-        ::va_start(args, fmt);
+        va_list args;
+        va_start(args, fmt);
 
         if (output == stderr)
         {
@@ -209,7 +209,7 @@ void carla_stderr2(const char* const fmt, ...) noexcept
         }
 
         std::fflush(output);
-        ::va_end(args);
+        va_end(args);
     } CARLA_CATCH_UNWIND catch (...) {}
 }
 
