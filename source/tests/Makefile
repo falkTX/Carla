@@ -21,7 +21,7 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BASE_FLAGS      += -DBUILDING_CARLA -DREAL_BUILD
+BASE_FLAGS      += -DBUILDING_CARLA
 BASE_FLAGS      += -I. -I.. -I../backend -I../includes -I../modules -I../utils
 BUILD_CXX_FLAGS += -I$(CWD)/modules
 

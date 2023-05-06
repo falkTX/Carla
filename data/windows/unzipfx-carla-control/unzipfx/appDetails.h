@@ -2,7 +2,6 @@
 #ifndef __APP_DETAILS_H__
 #define __APP_DETAILS_H__
 
-#define REAL_BUILD
 #include "../../../../source/includes/CarlaDefines.h"
 
 #define SFX_APP_MININAME_TITLE "CarlaControl"

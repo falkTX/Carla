@@ -7,4 +7,4 @@ Name: carla-host-plugin
 Version: X-VERSION-X
 Description: Carla Host as Native Plugin
 Libs: -Wl,-rpath,${carla_libdir} -L${carla_libdir} -lcarla_host-plugin
-Cflags: -DREAL_BUILD -I${includedir}/carla -I${includedir}/carla/includes
+Cflags: -I${includedir}/carla -I${includedir}/carla/includes

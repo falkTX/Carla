@@ -22,7 +22,7 @@ include $(CWD)/Makefile.deps.mk
 # ---------------------------------------------------------------------------------------------------------------------
 # Set build and link flags
 
-BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP -fno-common
+BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -MD -MP -fno-common
 BASE_OPTS  = -O3 -ffast-math -fdata-sections -ffunction-sections
 
 ifeq ($(WASM),true)
