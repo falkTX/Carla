@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,15 +21,26 @@
 #include "CarlaString.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLv2Utils.hpp"
-#include "CarlaJsfxUtils.hpp"
 
 #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
 # include "AppConfig.h"
 # include "juce_audio_processors/juce_audio_processors.h"
 #endif
 
-#include "water/containers/Array.h"
-#include "water/files/File.h"
+#ifndef STATIC_PLUGIN_TARGET
+# define HAVE_SFZ
+# include "water/containers/Array.h"
+#endif
+
+#ifdef HAVE_YSFX
+# include "CarlaJsfxUtils.hpp"
+#endif
+
+#ifdef BUILDING_CARLA_OBS
+# include <QtCore/QFileInfo>
+#else
+# include "water/files/File.h"
+#endif
 
 namespace CB = CARLA_BACKEND_NAMESPACE;
 
@@ -73,6 +84,7 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#ifdef HAVE_SFZ
 static std::vector<water::File> gSFZs;
 
 static void findSFZs(const char* const sfzPaths)
@@ -97,6 +109,8 @@ static void findSFZs(const char* const sfzPaths)
         }
     }
 }
+#endif
+
 // -------------------------------------------------------------------------------------------------------------------
 
 #ifdef HAVE_YSFX
@@ -194,10 +208,14 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
         if (char* const bundle = lilv_file_uri_parse(lilvPlugin.get_bundle_uri().as_uri(), nullptr))
         {
-            water::File fbundle(bundle);
-            lilv_free(bundle);
-
+           #ifdef BUILDING_CARLA_OBS
+            const QFileInfo fbundle(QString::fromUtf8(bundle));
+            suri = (fbundle.fileName() + CARLA_OS_SEP).toUtf8().constData() + suri;
+           #else
+            const water::File fbundle(bundle);
             suri = (fbundle.getFileName() + CARLA_OS_SEP).toRawUTF8() + suri;
+           #endif
+            lilv_free(bundle);
         }
         else
         {
@@ -633,6 +651,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String plug
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#ifdef HAVE_SFZ
 static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& file)
 {
     static CarlaCachedPluginInfo info;
@@ -664,6 +683,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& fil
     info.copyright = gCachedPluginsNullCharPtr;
     return &info;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -763,24 +783,23 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
         return lv2World.getPluginCount();
     }
 
-#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-    case CB::PLUGIN_AU: {
+   #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
+    case CB::PLUGIN_AU:
         findAUs();
         return static_cast<uint>(gCachedAuPluginResults.size());
-    }
-#endif
+   #endif
 
-    case CB::PLUGIN_SFZ: {
+   #ifdef HAVE_SFZ
+    case CB::PLUGIN_SFZ:
         findSFZs(pluginPath);
         return static_cast<uint>(gSFZs.size());
-    }
+   #endif
 
-#ifdef HAVE_YSFX
-    case CB::PLUGIN_JSFX: {
+   #ifdef HAVE_YSFX
+    case CB::PLUGIN_JSFX:
         findJSFXs(pluginPath);
         return static_cast<uint>(gJSFXs.size());
-    }
-#endif
+   #endif
 
     default:
         return 0;
@@ -815,24 +834,23 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
         return get_cached_plugin_lv2(lv2World, lilvPlugin);
     }
 
-#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-    case CB::PLUGIN_AU: {
+   #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
+    case CB::PLUGIN_AU:
         CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gCachedAuPluginResults.size()));
         return get_cached_plugin_au(gCachedAuPluginResults.strings.getUnchecked(static_cast<int>(index)));
-    }
-#endif
+   #endif
 
-    case CB::PLUGIN_SFZ: {
+   #ifdef HAVE_SFZ
+    case CB::PLUGIN_SFZ:
         CARLA_SAFE_ASSERT_BREAK(index < gSFZs.size());
         return get_cached_plugin_sfz(gSFZs[index]);
-    }
+   #endif
 
-#ifdef HAVE_YSFX
-    case CB::PLUGIN_JSFX: {
+   #ifdef HAVE_YSFX
+    case CB::PLUGIN_JSFX:
         CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gJSFXs.size()));
         return get_cached_plugin_jsfx(gJSFXs[index]);
-    }
-#endif
+   #endif
 
     default:
         break;
