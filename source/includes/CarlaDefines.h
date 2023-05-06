@@ -324,5 +324,8 @@ typedef unsigned short int ushort;
 typedef unsigned int uint;
 typedef unsigned long int ulong;
 typedef unsigned long long int ulonglong;
+#ifdef _MSC_VER
+typedef SSIZE_T ssize_t;
+#endif
 
 #endif /* CARLA_DEFINES_H_INCLUDED */

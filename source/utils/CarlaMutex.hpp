@@ -215,7 +215,9 @@ public:
 
         pthread_mutexattr_t mattr;
         pthread_mutexattr_init(&mattr);
+       #ifdef __GNUC__
         pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
+       #endif
         pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_NORMAL);
         pthread_mutex_init(&fMutex, &mattr);
         pthread_mutexattr_destroy(&mattr);
