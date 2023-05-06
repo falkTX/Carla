@@ -27,7 +27,9 @@
 #include <cstring>
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-# include <cxxabi.h>
+# ifndef _MSC_VER
+#  include <cxxabi.h>
+# endif
 # include <cstdint>
 #else
 # include <stdint.h>
