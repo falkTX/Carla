@@ -83,7 +83,7 @@
 
 #include "lv2_rdf.hpp"
 
-#ifdef USE_QT
+#if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
 # include <QtCore/QStringList>
 #else
 # include "water/text/StringArray.h"
@@ -1822,7 +1822,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
             if (replaceNode.is_uri())
             {
-#ifdef USE_QT
+               #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
                 const QString replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
@@ -1835,7 +1835,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     if (ok && uniqueId != 0)
                         rdfDescriptor->UniqueID = uniqueId;
                 }
-#else
+               #else
                 const water::String replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
@@ -1845,7 +1845,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     if (uniqueId > 0)
                         rdfDescriptor->UniqueID = static_cast<ulong>(uniqueId);
                 }
-#endif
+               #endif
             }
         }
 
@@ -2752,7 +2752,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         if (presetNodes.size() > 0)
         {
             // create a list of preset URIs (for sorting and unique-ness)
-#ifdef USE_QT
+           #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
             QStringList presetListURIs;
 
             LILV_FOREACH(nodes, it, presetNodes)
@@ -2768,7 +2768,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             presetListURIs.sort();
 
             rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.count());
-#else
+           #else
             water::StringArray presetListURIs;
 
             LILV_FOREACH(nodes, it, presetNodes)
@@ -2784,7 +2784,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             presetListURIs.sortNatural();
 
             rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.size());
-#endif
+           #endif
 
             // create presets with unique URIs
             rdfDescriptor->Presets = new LV2_RDF_Preset[rdfDescriptor->PresetCount];
@@ -2813,11 +2813,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                 if (presetLabelNodes.size() > 0)
                 {
-#ifdef USE_QT
-                    const int index(presetListURIs.indexOf(QString(presetURI)));
-#else
-                    const int index(presetListURIs.indexOf(water::String(presetURI)));
-#endif
+                   #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+                    const int index = presetListURIs.indexOf(QString(presetURI));
+                   #else
+                    const int index = presetListURIs.indexOf(water::String(presetURI));
+                   #endif
                     CARLA_SAFE_ASSERT_CONTINUE(index >= 0 && index < static_cast<int>(rdfDescriptor->PresetCount));
 
                     LV2_RDF_Preset* const rdfPreset(&rdfDescriptor->Presets[index]);

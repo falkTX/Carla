@@ -36,7 +36,7 @@
 # include "CarlaJsfxUtils.hpp"
 #endif
 
-#ifdef BUILDING_CARLA_OBS
+#if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
 # include <QtCore/QFileInfo>
 #else
 # include "water/files/File.h"
