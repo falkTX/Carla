@@ -64,8 +64,8 @@ BridgeAudioPool::~BridgeAudioPool() noexcept
 
 bool BridgeAudioPool::initializeServer() noexcept
 {
-    char tmpFileBase[64];
-    std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL "XXXXXX");
+    char tmpFileBase[64] = {};
+    std::snprintf(tmpFileBase, sizeof(tmpFileBase)-1, PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL "XXXXXX");
 
     const carla_shm_t shm2 = carla_shm_create_temp(tmpFileBase);
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm2), false);
@@ -167,8 +167,8 @@ BridgeRtClientControl::~BridgeRtClientControl() noexcept
 
 bool BridgeRtClientControl::initializeServer() noexcept
 {
-    char tmpFileBase[64];
-    std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT "XXXXXX");
+    char tmpFileBase[64] = {};
+    std::snprintf(tmpFileBase, sizeof(tmpFileBase)-1, PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT "XXXXXX");
 
     const carla_shm_t shm2 = carla_shm_create_temp(tmpFileBase);
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm2), false);
@@ -337,8 +337,8 @@ BridgeNonRtClientControl::~BridgeNonRtClientControl() noexcept
 
 bool BridgeNonRtClientControl::initializeServer() noexcept
 {
-    char tmpFileBase[64];
-    std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "XXXXXX");
+    char tmpFileBase[64] = {};
+    std::snprintf(tmpFileBase, sizeof(tmpFileBase)-1, PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "XXXXXX");
 
     const carla_shm_t shm2 = carla_shm_create_temp(tmpFileBase);
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm2), false);
@@ -477,8 +477,8 @@ BridgeNonRtServerControl::~BridgeNonRtServerControl() noexcept
 
 bool BridgeNonRtServerControl::initializeServer() noexcept
 {
-    char tmpFileBase[64];
-    std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "XXXXXX");
+    char tmpFileBase[64] = {};
+    std::snprintf(tmpFileBase, sizeof(tmpFileBase)-1, PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "XXXXXX");
 
     const carla_shm_t shm2 = carla_shm_create_temp(tmpFileBase);
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm2), false);
