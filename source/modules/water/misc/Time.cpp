@@ -35,12 +35,8 @@
 #endif
 
 #ifdef _MSC_VER
-# ifndef NOMINMAX
-#  define NOMINMAX
-# endif
-# define WIN32_LEAN_AND_MEAN 1
-# include <winsock2.h>
-# include <windows.h>
+# include <sys/timeb.h>
+# include <sys/types.h>
 #else
 # include <sys/time.h>
 #endif
@@ -134,9 +130,9 @@ Time Time::getCurrentTime() noexcept
 int64 Time::currentTimeMillis() noexcept
 {
    #ifdef _MSC_VER
-    struct _timeb t;
-    _ftime_s (&t);
-    return ((int64) t.time) * 1000 + t.millitm;
+    struct _timeb tb;
+    _ftime_s (&tb);
+    return ((int64) tb.time) * 1000 + tb.millitm;
    #else
     struct timeval tv;
     gettimeofday (&tv, nullptr);
