@@ -2336,7 +2336,7 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerParameterData1: {
-                // uint/index, int/rindex, uint/type, uint/hints, int/cc
+                // uint/index, int/rindex, uint/type, uint/hints, short/cc
                 const uint32_t index  = fShmNonRtServerControl.readUInt();
                 const  int32_t rindex = fShmNonRtServerControl.readInt();
                 const uint32_t type   = fShmNonRtServerControl.readUInt();
