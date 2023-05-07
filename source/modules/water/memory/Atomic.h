@@ -28,6 +28,15 @@
 
 #include "../water.h"
 
+#ifdef _MSC_VER
+# ifndef NOMINMAX
+#  define NOMINMAX
+# endif
+# define WIN32_LEAN_AND_MEAN 1
+# include <winsock2.h>
+# include <windows.h>
+#endif
+
 #include <stdint.h>
 
 namespace water {
@@ -161,7 +170,7 @@ public:
    #else
     __attribute__ ((aligned (4)))
    #endif
-    volatile Type value;
+    mutable volatile Type value;
 
 private:
     template <typename Dest, typename Source>
@@ -171,8 +180,10 @@ private:
     static inline Type castFrom64Bit (int64 value)  noexcept  { return castTo <Type, int64>  (value); }
     static inline Type castFrom32Bit (uint32 value) noexcept  { return castTo <Type, uint32> (value); }
     static inline Type castFrom64Bit (uint64 value) noexcept  { return castTo <Type, uint64> (value); }
+    static inline Type castFromLong (long value) noexcept     { return castTo <Type, long>   (value); }
     static inline int32 castTo32Bit (Type value) noexcept     { return castTo <int32, Type>  (value); }
     static inline int64 castTo64Bit (Type value) noexcept     { return castTo <int64, Type>  (value); }
+    static inline long castToLong   (Type value) noexcept     { return castTo <long, Type>   (value); }
 
     Type operator++ (int); // better to just use pre-increment with atomics..
     Type operator-- (int);
@@ -202,7 +213,11 @@ inline int32 Atomic<int32>::get() const noexcept
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     static_wassert (sizeof (int32) == 4);
 #endif
+#ifdef _MSC_VER
+    return castFromLong (_InterlockedExchangeAdd (reinterpret_cast<volatile long*> (&value), 0));
+#else
     return castFrom32Bit ((int32) __sync_add_and_fetch (const_cast<volatile int32*>(&value), 0));
+#endif
 }
 
 template<>
@@ -211,7 +226,11 @@ inline int64 Atomic<int64>::get() const noexcept
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     static_wassert (sizeof (int64) == 8);
 #endif
+#ifdef _MSC_VER
+    return castFrom64Bit (_InterlockedExchangeAdd64 (reinterpret_cast<volatile int64*> (&value), 0));
+#else
     return castFrom64Bit ((int64) __sync_add_and_fetch (const_cast<volatile int64*>(&value), 0));
+#endif
 }
 
 template<>
@@ -220,7 +239,11 @@ inline uint32 Atomic<uint32>::get() const noexcept
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     static_wassert (sizeof (uint32) == 4);
 #endif
+#ifdef _MSC_VER
+    return castFromLong (_InterlockedExchangeAdd (reinterpret_cast<volatile long*> (&value), 0));
+#else
     return castFrom32Bit ((uint32) __sync_add_and_fetch (const_cast<volatile uint32*>(&value), 0));
+#endif
 }
 
 template<>
@@ -229,21 +252,35 @@ inline uint64 Atomic<uint64>::get() const noexcept
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     static_wassert (sizeof (uint64) == 8);
 #endif
+#ifdef _MSC_VER
+    return castFrom64Bit (_InterlockedExchangeAdd64 (reinterpret_cast<volatile int64*> (&value), 0));
+#else
     return castFrom64Bit ((uint64) __sync_add_and_fetch (const_cast<volatile uint64*>(&value), 0));
+#endif
 }
 
 template <typename Type>
 inline Type Atomic<Type>::exchange (const Type newValue) noexcept
 {
+#ifdef _MSC_VER
+    return sizeof (Type) == 4 ? castFromLong (_InterlockedExchange (reinterpret_cast<volatile long*> (&value), castToLong (newValue)))
+                              : castFrom64Bit (_InterlockedExchange64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (newValue)));
+#else
     Type currentVal = value;
     while (! compareAndSetBool (newValue, currentVal)) { currentVal = value; }
     return currentVal;
+#endif
 }
 
 template <typename Type>
 inline Type Atomic<Type>::operator+= (const Type amountToAdd) noexcept
 {
+#ifdef _MSC_VER
+    return sizeof (Type) == 4 ? castFromLong (_InterlockedExchangeAdd (reinterpret_cast<volatile long*> (&value), castToLong (amountToAdd)))
+                              : castFrom64Bit (_InterlockedExchangeAdd64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (amountToAdd)));
+#else
     return (Type) __sync_add_and_fetch (&value, amountToAdd);
+#endif
 }
 
 template <typename Type>
@@ -255,35 +292,58 @@ inline Type Atomic<Type>::operator-= (const Type amountToSubtract) noexcept
 template <typename Type>
 inline Type Atomic<Type>::operator++() noexcept
 {
+#ifdef _MSC_VER
+    return sizeof (Type) == 4 ? castFromLong (_InterlockedIncrement (reinterpret_cast<volatile long*> (&value)))
+                              : castFrom64Bit (_InterlockedIncrement64 (reinterpret_cast<volatile int64*> (&value)));
+#else
     return sizeof (Type) == 4 ? (Type) __sync_add_and_fetch (&value, (Type) 1)
                               : (Type) __sync_add_and_fetch ((volatile int64*) &value, 1);
+#endif
 }
 
 template <typename Type>
 inline Type Atomic<Type>::operator--() noexcept
 {
+#ifdef _MSC_VER
+    return sizeof (Type) == 4 ? castFromLong (_InterlockedDecrement (reinterpret_cast<volatile long*> (&value)))
+                              : castFrom64Bit (_InterlockedDecrement64 (reinterpret_cast<volatile int64*> (&value)));
+#else
     return sizeof (Type) == 4 ? (Type) __sync_add_and_fetch (&value, (Type) -1)
                               : (Type) __sync_add_and_fetch ((volatile int64*) &value, -1);
+#endif
 }
 
 template <typename Type>
 inline bool Atomic<Type>::compareAndSetBool (const Type newValue, const Type valueToCompare) noexcept
 {
+#ifdef _MSC_VER
+    return compareAndSetValue (newValue, valueToCompare) == valueToCompare;
+#else
     return sizeof (Type) == 4 ? __sync_bool_compare_and_swap ((volatile int32*) &value, castTo32Bit (valueToCompare), castTo32Bit (newValue))
                               : __sync_bool_compare_and_swap ((volatile int64*) &value, castTo64Bit (valueToCompare), castTo64Bit (newValue));
+#endif
 }
 
 template <typename Type>
 inline Type Atomic<Type>::compareAndSetValue (const Type newValue, const Type valueToCompare) noexcept
 {
-    return sizeof (Type) == 4 ? castFrom32Bit ((int32) __sync_val_compare_and_swap ((volatile int32*) &value, castTo32Bit (valueToCompare), castTo32Bit (newValue)))
-                              : castFrom64Bit ((int64) __sync_val_compare_and_swap ((volatile int64*) &value, castTo64Bit (valueToCompare), castTo64Bit (newValue)));
+#ifdef _MSC_VER
+    return sizeof (Type) == 4 ? castFromLong (_InterlockedCompareExchange (reinterpret_cast<volatile long*> (&value), castToLong (valueToCompare), castToLong (newValue)))
+                              : castFrom64Bit (_InterlockedCompareExchange64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (valueToCompare), castTo64Bit (newValue)));
+#else
+    return sizeof (Type) == 4 ? castFrom32Bit ((int32) __sync_val_compare_and_swap (reinterpret_cast<volatile int32*> (&value), castTo32Bit (valueToCompare), castTo32Bit (newValue)))
+                              : castFrom64Bit ((int64) __sync_val_compare_and_swap (reinterpret_cast<volatile int64*> (&value), castTo64Bit (valueToCompare), castTo64Bit (newValue)));
+#endif
 }
 
 template <typename Type>
 inline void Atomic<Type>::memoryBarrier() noexcept
 {
+#ifdef _MSC_VER
+    _ReadWriteBarrier();
+#else
     __sync_synchronize();
+#endif
 }
 
 #if defined(__clang__)

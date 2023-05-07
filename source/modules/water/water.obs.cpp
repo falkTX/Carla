@@ -64,7 +64,7 @@ HINSTANCE getCurrentModuleInstanceHandle() noexcept
 #include "streams/OutputStream.cpp"
 
 // #include "synthesisers/Synthesiser.cpp"
-//
+
 #include "text/CharacterFunctions.cpp"
 #include "text/Identifier.cpp"
 #include "text/StringArray.cpp"
