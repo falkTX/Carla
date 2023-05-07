@@ -295,58 +295,138 @@ inline uint64 Atomic<uint64>::get() const noexcept
 }
 #endif // WATER_ATOMIC_64_SUPPORTED
 
+#ifdef _MSC_VER
+template <>
+inline int32 Atomic<int32>::exchange (const int32 newValue) noexcept
+{
+    return castFromLong (_InterlockedExchange (reinterpret_cast<volatile long*> (&value), castToLong (newValue)));
+}
+
+template <>
+inline uint32 Atomic<uint32>::exchange (const uint32 newValue) noexcept
+{
+    return castFromLong (_InterlockedExchange (reinterpret_cast<volatile long*> (&value), castToLong (newValue)));
+}
+
+template <>
+inline int32 Atomic<int32>::operator+= (const int32 amountToAdd) noexcept
+{
+    return castFromLong (_InterlockedExchangeAdd (reinterpret_cast<volatile long*> (&value), castToLong (amountToAdd)));
+}
+
+template <>
+inline uint32 Atomic<uint32>::operator+= (const uint32 amountToAdd) noexcept
+{
+    return castFromLong (_InterlockedExchangeAdd (reinterpret_cast<volatile long*> (&value), castToLong (amountToAdd)));
+}
+
+template <>
+inline int32 Atomic<int32>::operator++() noexcept
+{
+    return castFromLong (_InterlockedIncrement (reinterpret_cast<volatile long*> (&value)));
+}
+
+template <>
+inline uint32 Atomic<uint32>::operator++() noexcept
+{
+    return castFromLong (_InterlockedIncrement (reinterpret_cast<volatile long*> (&value)));
+}
+
+template <>
+inline int32 Atomic<int32>::operator--() noexcept
+{
+    return castFromLong (_InterlockedDecrement (reinterpret_cast<volatile long*> (&value)));
+}
+
+template <>
+inline uint32 Atomic<uint32>::operator--() noexcept
+{
+    return castFromLong (_InterlockedDecrement (reinterpret_cast<volatile long*> (&value)));
+}
+
+# ifdef CARLA_OS_64BIT
+template <>
+inline int64 Atomic<int64>::exchange (const int64 newValue) noexcept
+{
+    return castFrom64Bit (_InterlockedExchange64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (newValue)));
+}
+
+template <>
+inline uint64 Atomic<uint64>::exchange (const uint64 newValue) noexcept
+{
+    return castFrom64Bit (_InterlockedExchange64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (newValue)));
+}
+
+template <>
+inline int64 Atomic<int64>::operator+= (const int64 amountToAdd) noexcept
+{
+    return castFrom64Bit (_InterlockedExchangeAdd64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (amountToAdd)));
+}
+
+template <>
+inline uint64 Atomic<uint64>::operator+= (const uint64 amountToAdd) noexcept
+{
+    return castFrom64Bit (_InterlockedExchangeAdd64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (amountToAdd)));
+}
+
+template <>
+inline int64 Atomic<int64>::operator++() noexcept
+{
+    return castFrom64Bit (_InterlockedIncrement64 (reinterpret_cast<volatile int64*> (&value)));
+}
+
+template <>
+inline uint64 Atomic<uint64>::operator++() noexcept
+{
+    return castFrom64Bit (_InterlockedIncrement64 (reinterpret_cast<volatile int64*> (&value)));
+}
+
+template <>
+inline int64 Atomic<int64>::operator--() noexcept
+{
+    return castFrom64Bit (_InterlockedDecrement64 (reinterpret_cast<volatile int64*> (&value)));
+}
+
+template <>
+inline uint64 Atomic<uint64>::operator--() noexcept
+{
+    return castFrom64Bit (_InterlockedDecrement64 (reinterpret_cast<volatile int64*> (&value)));
+}
+# endif
+#else // _MSC_VER
 template <typename Type>
 inline Type Atomic<Type>::exchange (const Type newValue) noexcept
 {
-   #ifdef _MSC_VER
-    return sizeof (Type) == 4 ? castFromLong (_InterlockedExchange (reinterpret_cast<volatile long*> (&value), castToLong (newValue)))
-                              : castFrom64Bit (_InterlockedExchange64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (newValue)));
-   #else
     Type currentVal = value;
     while (! compareAndSetBool (newValue, currentVal)) { currentVal = value; }
     return currentVal;
-   #endif
 }
 
 template <typename Type>
 inline Type Atomic<Type>::operator+= (const Type amountToAdd) noexcept
 {
-   #ifdef _MSC_VER
-    return sizeof (Type) == 4 ? castFromLong (_InterlockedExchangeAdd (reinterpret_cast<volatile long*> (&value), castToLong (amountToAdd)))
-                              : castFrom64Bit (_InterlockedExchangeAdd64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (amountToAdd)));
-   #else
     return (Type) __sync_add_and_fetch (&value, amountToAdd);
-   #endif
-}
-
-template <typename Type>
-inline Type Atomic<Type>::operator-= (const Type amountToSubtract) noexcept
-{
-    return operator+= (negateValue (amountToSubtract));
 }
 
 template <typename Type>
 inline Type Atomic<Type>::operator++() noexcept
 {
-   #ifdef _MSC_VER
-    return sizeof (Type) == 4 ? castFromLong (_InterlockedIncrement (reinterpret_cast<volatile long*> (&value)))
-                              : castFrom64Bit (_InterlockedIncrement64 (reinterpret_cast<volatile int64*> (&value)));
-   #else
     return sizeof (Type) == 4 ? (Type) __sync_add_and_fetch (&value, (Type) 1)
                               : (Type) __sync_add_and_fetch ((volatile int64*) &value, 1);
-   #endif
 }
 
 template <typename Type>
 inline Type Atomic<Type>::operator--() noexcept
 {
-   #ifdef _MSC_VER
-    return sizeof (Type) == 4 ? castFromLong (_InterlockedDecrement (reinterpret_cast<volatile long*> (&value)))
-                              : castFrom64Bit (_InterlockedDecrement64 (reinterpret_cast<volatile int64*> (&value)));
-   #else
     return sizeof (Type) == 4 ? (Type) __sync_add_and_fetch (&value, (Type) -1)
                               : (Type) __sync_add_and_fetch ((volatile int64*) &value, -1);
-   #endif
+}
+#endif // _MSC_VER
+
+template <typename Type>
+inline Type Atomic<Type>::operator-= (const Type amountToSubtract) noexcept
+{
+    return operator+= (negateValue (amountToSubtract));
 }
 
 template <typename Type>
