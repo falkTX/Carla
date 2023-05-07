@@ -641,7 +641,11 @@ public:
         fView = [[NSView new]retain];
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,)
 
+       #ifdef __MAC_10_12
+        uint style = NSWindowStyleMaskClosable | NSWindowStyleMaskTitled;
+       #else
         uint style = NSClosableWindowMask | NSTitledWindowMask;
+       #endif
         /*
         if (isResizable)
             style |= NSResizableWindowMask;

@@ -105,7 +105,10 @@ struct BundleLoader::PrivateData {
         if (ref == nullptr)
             return;
 
+       #pragma clang diagnostic push
+       #pragma clang diagnostic ignored "-Wdeprecated-declarations"
         CFBundleCloseBundleResourceMap(ref, refNum);
+       #pragma clang diagnostic pop
 
         if (CFGetRetainCount(ref) == 1)
             CFBundleUnloadExecutable(ref);
@@ -130,7 +133,10 @@ struct BundleLoader::PrivateData {
             return false;
         }
 
+       #pragma clang diagnostic push
+       #pragma clang diagnostic ignored "-Wdeprecated-declarations"
         refNum = CFBundleOpenBundleResourceMap(ref);
+       #pragma clang diagnostic pop
         return true;
     }
 };

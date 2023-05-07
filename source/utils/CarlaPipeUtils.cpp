@@ -327,7 +327,14 @@ bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
     const CarlaScopedEnvVar sev1("LD_LIBRARY_PATH", nullptr);
     const CarlaScopedEnvVar sev2("LD_PRELOAD", nullptr);
 
+  #ifdef __clang__
+   #pragma clang diagnostic push
+   #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  #endif
     const pid_t ret = pidinst = vfork();
+  #ifdef __clang__
+   #pragma clang diagnostic pop
+  #endif
 
     switch (ret)
     {
