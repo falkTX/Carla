@@ -347,7 +347,7 @@ static constexpr const uint PARAMETER_IS_ENABLED = 0x010;
 static constexpr const uint PARAMETER_IS_AUTOMATABLE = 0x020;
 
 /* for backwards compatibility */
-static constexpr const uint PARAMETER_IS_AUTOMABLE = PARAMETER_IS_AUTOMATABLE;
+static constexpr const uint PARAMETER_IS_AUTOMABLE = 0x020;
 
 /*!
  * Parameter is read-only.
