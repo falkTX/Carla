@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2023 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -47,6 +47,9 @@ namespace water {
 #elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Weffc++"
+#elif defined(_MSC_VER)
+# pragma warning (push)
+# pragma warning (disable: 4311) /* truncation warning */
 #endif
 
 //==============================================================================
@@ -350,6 +353,8 @@ inline void Atomic<Type>::memoryBarrier() noexcept
 # pragma clang diagnostic pop
 #elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+# pragma warning (pop)
 #endif
 
 }
