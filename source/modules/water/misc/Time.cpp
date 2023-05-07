@@ -32,7 +32,9 @@
 # include <mach/mach_time.h>
 #elif defined(CARLA_OS_WIN)
 # include <mmsystem.h>
-#else
+#endif
+
+#ifndef _MSC_VER
 # include <sys/time.h>
 #endif
 
@@ -124,9 +126,15 @@ Time Time::getCurrentTime() noexcept
 
 int64 Time::currentTimeMillis() noexcept
 {
+   #ifdef _MSC_VER
+    struct _timeb t;
+    _ftime_s (&t);
+    return ((int64) t.time) * 1000 + t.millitm;
+   #else
     struct timeval tv;
     gettimeofday (&tv, nullptr);
     return ((int64) tv.tv_sec) * 1000 + tv.tv_usec / 1000;
+   #endif
 }
 
 //==============================================================================

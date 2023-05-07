@@ -179,12 +179,15 @@ public:
         This is exposed publicly in case you need to manipulate it directly
         for performance reasons.
     */
-   #if defined(_MSC_VER)
-    __declspec (align (8))
-   #elif defined(CARLA_OS_64BIT)
-    __attribute__ ((aligned (8)))
+   #ifdef CARLA_OS_64BIT
+    #define WATER_ALIGN_SIZE 8
    #else
-    __attribute__ ((aligned (4)))
+    #define WATER_ALIGN_SIZE 4
+   #endif
+   #ifdef _MSC_VER
+    __declspec (align (WATER_ALIGN_SIZE))
+   #else
+    __attribute__ ((aligned (WATER_ALIGN_SIZE)))
    #endif
     mutable volatile Type value;
 
