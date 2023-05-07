@@ -32,8 +32,10 @@ struct LADSPA_RDF_Descriptor;
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-} /* Fix editor indentation */
+#ifdef _MSC_VER
+# define CARLA_PLUGIN_WARN_UNUSED_RESULT
+#else
+# define CARLA_PLUGIN_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #endif
 
 // -----------------------------------------------------------------------
@@ -304,19 +306,19 @@ public:
     /*!
      * Get the plugin's label (URI for LV2 plugins).
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getLabel(char* strBuf) const noexcept;
 
     /*!
      * Get the plugin's maker.
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getMaker(char* strBuf) const noexcept;
 
     /*!
      * Get the plugin's copyright/license.
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getCopyright(char* strBuf) const noexcept;
 
     /*!
@@ -324,51 +326,51 @@ public:
      *
      * @see getName() and setName()
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getRealName(char* strBuf) const noexcept;
 
     /*!
      * Get the name of the parameter @a parameterId.
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getParameterName(uint32_t parameterId, char* strBuf) const noexcept;
 
     /*!
      * Get the symbol of the parameter @a parameterId.
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getParameterSymbol(uint32_t parameterId, char* strBuf) const noexcept;
 
     /*!
      * Get the custom text of the parameter @a parameterId.
      * @see PARAMETER_USES_CUSTOM_TEXT
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getParameterText(uint32_t parameterId, char* strBuf) noexcept;
 
     /*!
      * Get the unit of the parameter @a parameterId.
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getParameterUnit(uint32_t parameterId, char* strBuf) const noexcept;
 
     /*!
      * Get the comment (documentation) of the parameter @a parameterId.
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getParameterComment(uint32_t parameterId, char* strBuf) const noexcept;
 
     /*!
      * Get the group name of the parameter @a parameterId.
      * @note The group name is prefixed by a unique symbol and ":".
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getParameterGroupName(uint32_t parameterId, char* strBuf) const noexcept;
 
     /*!
      * Get the scalepoint @a scalePointId label of the parameter @a parameterId.
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     virtual bool getParameterScalePointLabel(uint32_t parameterId, uint32_t scalePointId, char* strBuf) const noexcept;
 
     /*!
@@ -381,7 +383,7 @@ public:
     /*!
      * Get the name of the program at @a index.
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     bool getProgramName(uint32_t index, char* strBuf) const noexcept;
 
     /*!
@@ -389,7 +391,7 @@ public:
      *
      * @see getMidiProgramInfo()
      */
-    __attribute__((warn_unused_result))
+    CARLA_PLUGIN_WARN_UNUSED_RESULT
     bool getMidiProgramName(uint32_t index, char* strBuf) const noexcept;
 
     /*!

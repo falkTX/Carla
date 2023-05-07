@@ -1,6 +1,6 @@
 /*
  * Carla Thread
- * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -37,9 +37,7 @@ protected:
      */
     CarlaThread(const char* const threadName) noexcept
         : fLock(),
-         #ifndef CARLA_OS_WASM
           fSignal(),
-         #endif
           fName(threadName),
          #ifdef PTW32_DLLPORT
           fHandle({nullptr, 0}),
@@ -71,11 +69,11 @@ public:
      */
     bool isThreadRunning() const noexcept
     {
-#ifdef PTW32_DLLPORT
-        return (fHandle.p != nullptr);
-#else
-        return (fHandle != 0);
-#endif
+       #ifdef PTW32_DLLPORT
+        return fHandle.p != nullptr;
+       #else
+        return fHandle != 0;
+       #endif
     }
 
     /*
@@ -109,19 +107,19 @@ public:
         {
             sched_param.sched_priority = 80;
 
-#if !defined(CARLA_OS_HAIKU) && !defined(CARLA_OS_WASM)
+           #ifndef CARLA_OS_HAIKU
             if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)          == 0  &&
                 pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0  &&
-# ifndef CARLA_OS_WIN
+              #ifndef CARLA_OS_WIN
                (pthread_attr_setschedpolicy(&attr, SCHED_FIFO)              == 0  ||
                 pthread_attr_setschedpolicy(&attr, SCHED_RR)                == 0) &&
-# endif
+              #endif
                 pthread_attr_setschedparam(&attr, &sched_param)             == 0)
             {
                 carla_stdout("CarlaThread setup with realtime priority successful");
             }
             else
-#endif
+           #endif
             {
                 carla_stdout("CarlaThread setup with realtime priority failed, going with normal priority instead");
                 pthread_attr_destroy(&attr);
@@ -147,20 +145,16 @@ public:
             pthread_attr_destroy(&attr);
        }
 
-#ifndef CARLA_OS_WASM
         CARLA_SAFE_ASSERT_RETURN(ok, false);
-# ifdef PTW32_DLLPORT
+       #ifdef PTW32_DLLPORT
         CARLA_SAFE_ASSERT_RETURN(handle.p != nullptr, false);
-# else
+       #else
         CARLA_SAFE_ASSERT_RETURN(handle != 0, false);
-# endif
-#endif
+       #endif
         _copyFrom(handle);
 
-       #ifndef CARLA_OS_WASM
         // wait for thread to start
         fSignal.wait();
-       #endif
         return true;
     }
 
@@ -240,7 +234,12 @@ public:
      */
     pthread_t getThreadId() const noexcept
     {
+       #ifdef PTW32_DLLPORT
+        const pthread_t handle = { fHandle.p, fHandle.x };
+        return handle;
+       #else
         return fHandle;
+       #endif
     }
 
     /*
@@ -251,18 +250,16 @@ public:
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
         carla_setProcessName(name);
-#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012 && !defined(CARLA_OS_GNU_HURD)
+       #if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012 && !defined(CARLA_OS_GNU_HURD)
         pthread_setname_np(pthread_self(), name);
-#endif
+       #endif
     }
 
     // -------------------------------------------------------------------
 
 private:
     CarlaMutex         fLock;       // Thread lock
-   #ifndef CARLA_OS_WASM
     CarlaSignal        fSignal;     // Thread start wait signal
-   #endif
     const CarlaString  fName;       // Thread name
     volatile pthread_t fHandle;     // Handle for this thread
     volatile bool      fShouldExit; // true if thread should exit
@@ -272,12 +269,12 @@ private:
      */
     void _init() noexcept
     {
-#ifdef PTW32_DLLPORT
+       #ifdef PTW32_DLLPORT
         fHandle.p = nullptr;
         fHandle.x = 0;
-#else
+       #else
         fHandle = 0;
-#endif
+       #endif
     }
 
     /*
@@ -285,12 +282,12 @@ private:
      */
     void _copyFrom(const pthread_t& handle) noexcept
     {
-#ifdef PTW32_DLLPORT
+       #ifdef PTW32_DLLPORT
         fHandle.p = handle.p;
         fHandle.x = handle.x;
-#else
+       #else
         fHandle = handle;
-#endif
+       #endif
     }
 
     /*
@@ -298,12 +295,12 @@ private:
      */
     void _copyTo(volatile pthread_t& handle) const noexcept
     {
-#ifdef PTW32_DLLPORT
+       #ifdef PTW32_DLLPORT
         handle.p = fHandle.p;
         handle.x = fHandle.x;
-#else
+       #else
         handle = fHandle;
-#endif
+       #endif
     }
 
     /*
@@ -314,10 +311,8 @@ private:
         if (fName.isNotEmpty())
             setCurrentThreadName(fName);
 
-       #ifndef CARLA_OS_WASM
         // report ready
         fSignal.signal();
-       #endif
 
         try {
             run();
