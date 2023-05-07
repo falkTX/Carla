@@ -168,7 +168,9 @@ public:
         This is exposed publicly in case you need to manipulate it directly
         for performance reasons.
     */
-   #ifdef CARLA_OS_64BIT
+   #if defined(_MSC_VER)
+    __declspec (align (8))
+   #elif defined(CARLA_OS_64BIT)
     __attribute__ ((aligned (8)))
    #else
     __attribute__ ((aligned (4)))
