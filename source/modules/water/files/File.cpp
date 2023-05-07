@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2023 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -266,7 +266,7 @@ bool File::deleteRecursively() const
         std::vector<File> subFiles;
         findChildFiles (subFiles, File::findFilesAndDirectories, false);
 
-        for (int i = subFiles.size(); --i >= 0;)
+        for (ssize_t i = subFiles.size(); --i >= 0;)
             worked = subFiles[i].deleteRecursively() && worked;
     }
 
@@ -987,7 +987,7 @@ namespace WindowsFileHelpers
         {
             CHAR apath [MAX_PATH + 256];
 
-            if (WideCharToMultiByte (CP_UTF8, 0, wpath, -1, apath, numElementsInArray (apath), nullptr, nullptr))
+            if (WideCharToMultiByte (CP_UTF8, 0, wpath, -1, apath, (int) numElementsInArray (apath), nullptr, nullptr))
                 return File (String (apath));
         }
 
@@ -1001,7 +1001,7 @@ namespace WindowsFileHelpers
         wdest[0] = 0;
         GetModuleFileNameW (moduleHandle, wdest, (DWORD) numElementsInArray (wdest));
 
-        if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
+        if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, (int) numElementsInArray (adest), nullptr, nullptr))
             return File (String (adest));
 
         return File();
@@ -1101,7 +1101,7 @@ File File::getCurrentWorkingDirectory()
     wdest[0] = 0;
     GetCurrentDirectoryW ((DWORD) numElementsInArray (wdest), wdest);
 
-    if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
+    if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, (int) numElementsInArray (adest), nullptr, nullptr))
         return File (String (adest));
 
     return File();
@@ -1134,7 +1134,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
             wdest[0] = 0;
             GetTempPathW ((DWORD) numElementsInArray (wdest), wdest);
 
-            if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
+            if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, (int) numElementsInArray (adest), nullptr, nullptr))
                 return File (String (adest));
 
             return File();
@@ -1200,7 +1200,7 @@ public:
 
         CHAR apath [MAX_PATH + 256];
 
-        if (WideCharToMultiByte (CP_UTF8, 0, findData.cFileName, -1, apath, numElementsInArray (apath), nullptr, nullptr))
+        if (WideCharToMultiByte (CP_UTF8, 0, findData.cFileName, -1, apath, (int) numElementsInArray (apath), nullptr, nullptr))
             filenameFound = apath;
 
         if (isDir != nullptr)         *isDir        = ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);

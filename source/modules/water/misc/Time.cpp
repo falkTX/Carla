@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2023 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -27,12 +27,13 @@
 #include "../memory/Atomic.h"
 
 #include <ctime>
-#include <sys/time.h>
 
 #if defined(CARLA_OS_MAC)
 # include <mach/mach_time.h>
 #elif defined(CARLA_OS_WIN)
 # include <mmsystem.h>
+#else
+# include <sys/time.h>
 #endif
 
 namespace water {
@@ -81,11 +82,11 @@ static uint32 water_millisecondsSinceStartup() noexcept
     return (uint32) timeGetTime();
 #else
     timespec t;
-# ifdef CLOCK_MONOTONIC_RAW
+   #ifdef CLOCK_MONOTONIC_RAW
     clock_gettime (CLOCK_MONOTONIC_RAW, &t);
-# else
+   #else
     clock_gettime (CLOCK_MONOTONIC, &t);
-# endif
+   #endif
 
     return (uint32) (t.tv_sec * 1000 + t.tv_nsec / 1000000);
 #endif

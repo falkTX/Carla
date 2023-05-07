@@ -50,6 +50,17 @@ namespace water {
 #elif defined(_MSC_VER)
 # pragma warning (push)
 # pragma warning (disable: 4311) /* truncation warning */
+# pragma intrinsic (_InterlockedExchange, \
+                    _InterlockedExchange64, \
+                    _InterlockedExchangeAdd, \
+                    _InterlockedExchangeAdd64, \
+                    _InterlockedIncrement, \
+                    _InterlockedIncrement64, \
+                    _InterlockedDecrement, \
+                    _InterlockedDecrement64, \
+                    _InterlockedCompareExchange, \
+                    _InterlockedCompareExchange64, \
+                    _ReadWriteBarrier)
 #endif
 
 //==============================================================================
@@ -221,7 +232,7 @@ inline int32 Atomic<int32>::get() const noexcept
 #ifdef _MSC_VER
     return castFromLong (_InterlockedExchangeAdd (reinterpret_cast<volatile long*> (&value), 0));
 #else
-    return castFrom32Bit ((int32) __sync_add_and_fetch (const_cast<volatile int32*>(&value), 0));
+    return castFrom32Bit ((int32) __sync_add_and_fetch (const_cast<volatile int32*> (&value), 0));
 #endif
 }
 
@@ -234,7 +245,7 @@ inline int64 Atomic<int64>::get() const noexcept
 #ifdef _MSC_VER
     return castFrom64Bit (_InterlockedExchangeAdd64 (reinterpret_cast<volatile int64*> (&value), 0));
 #else
-    return castFrom64Bit ((int64) __sync_add_and_fetch (const_cast<volatile int64*>(&value), 0));
+    return castFrom64Bit ((int64) __sync_add_and_fetch (const_cast<volatile int64*> (&value), 0));
 #endif
 }
 
@@ -247,7 +258,7 @@ inline uint32 Atomic<uint32>::get() const noexcept
 #ifdef _MSC_VER
     return castFromLong (_InterlockedExchangeAdd (reinterpret_cast<volatile long*> (&value), 0));
 #else
-    return castFrom32Bit ((uint32) __sync_add_and_fetch (const_cast<volatile uint32*>(&value), 0));
+    return castFrom32Bit ((uint32) __sync_add_and_fetch (const_cast<volatile uint32*> (&value), 0));
 #endif
 }
 
@@ -260,7 +271,7 @@ inline uint64 Atomic<uint64>::get() const noexcept
 #ifdef _MSC_VER
     return castFrom64Bit (_InterlockedExchangeAdd64 (reinterpret_cast<volatile int64*> (&value), 0));
 #else
-    return castFrom64Bit ((uint64) __sync_add_and_fetch (const_cast<volatile uint64*>(&value), 0));
+    return castFrom64Bit ((uint64) __sync_add_and_fetch (const_cast<volatile uint64*> (&value), 0));
 #endif
 }
 
