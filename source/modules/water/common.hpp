@@ -41,9 +41,9 @@ namespace water
 static inline
 Result getResultForLastError()
 {
-    TCHAR messageBuffer [256] = { 0 };
+    CHAR messageBuffer [256] = { 0 };
 
-    FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+    FormatMessageA (FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                     nullptr, GetLastError(), MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
                     messageBuffer, (DWORD) numElementsInArray (messageBuffer) - 1, nullptr);
 

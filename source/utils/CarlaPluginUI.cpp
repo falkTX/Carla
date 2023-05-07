@@ -904,7 +904,7 @@ public:
         fWindowClass.hCursor       = LoadCursor(hInstance, IDC_ARROW);
         fWindowClass.lpszClassName = strdup(classNameBuf);
 
-        if (!RegisterClass(&fWindowClass)) {
+        if (!RegisterClassA(&fWindowClass)) {
             free((void*)fWindowClass.lpszClassName);
             return;
         }
@@ -922,18 +922,18 @@ public:
         const HWND parent  = (HWND)parentId;
 #endif
 
-        fWindow = CreateWindowEx(winType,
-                                 classNameBuf, "Carla Plugin UI", winFlags,
-                                 CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                 parent, nullptr,
-                                 hInstance, nullptr);
+        fWindow = CreateWindowExA(winType,
+                                  classNameBuf, "Carla Plugin UI", winFlags,
+                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                  parent, nullptr,
+                                  hInstance, nullptr);
 
         if (fWindow == nullptr)
         {
             const DWORD errorCode = ::GetLastError();
             carla_stderr2("CreateWindowEx failed with error code 0x%x, class name was '%s'",
                           errorCode, fWindowClass.lpszClassName);
-            UnregisterClass(fWindowClass.lpszClassName, nullptr);
+            UnregisterClassA(fWindowClass.lpszClassName, nullptr);
             free((void*)fWindowClass.lpszClassName);
             return;
         }
@@ -964,7 +964,7 @@ public:
         }
 
         // FIXME
-        UnregisterClass(fWindowClass.lpszClassName, nullptr);
+        UnregisterClassA(fWindowClass.lpszClassName, nullptr);
         free((void*)fWindowClass.lpszClassName);
     }
 
@@ -1125,7 +1125,7 @@ private:
     HWND fWindow;
     HWND fChildWindow;
     HWND fParentWindow;
-    WNDCLASS fWindowClass;
+    WNDCLASSA fWindowClass;
 
     bool fIsVisible;
     bool fFirstShow;

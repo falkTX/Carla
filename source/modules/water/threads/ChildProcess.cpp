@@ -49,13 +49,13 @@ public:
     ActiveProcess (const String& command)
         : ok (false)
     {
-        STARTUPINFO startupInfo;
+        STARTUPINFOA startupInfo;
         carla_zeroStruct(startupInfo);
         startupInfo.cb = sizeof (startupInfo);
 
-        ok = CreateProcess (nullptr, const_cast<LPSTR>(command.toRawUTF8()),
-                            nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
-                            nullptr, nullptr, &startupInfo, &processInfo) != FALSE;
+        ok = CreateProcessA (nullptr, const_cast<LPSTR>(command.toRawUTF8()),
+                             nullptr, nullptr, TRUE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                             nullptr, nullptr, &startupInfo, &processInfo) != FALSE;
     }
 
     ~ActiveProcess()
@@ -164,7 +164,7 @@ public:
         // posix_spawnattr_setflags(&attr, POSIX_SPAWN_USEVFORK);
         CARLA_SAFE_ASSERT_RETURN(posix_spawnattr_setbinpref_np(&attr, 1, &pref, nullptr) == 0,);
         char*** const environptr = _NSGetEnviron();
-        CARLA_SAFE_ASSERT_RETURN(posix_spawn(&result, exe.toRawUTF8(), nullptr, &attr, 
+        CARLA_SAFE_ASSERT_RETURN(posix_spawn(&result, exe.toRawUTF8(), nullptr, &attr,
                                  argv.getRawDataPointer(), environptr != nullptr ? *environptr : nullptr) == 0,);
         posix_spawnattr_destroy(&attr);
 #else

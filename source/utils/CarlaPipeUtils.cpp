@@ -241,7 +241,7 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
 
     command = command.trim();
 
-    STARTUPINFO startupInfo;
+    STARTUPINFOA startupInfo;
     carla_zeroStruct(startupInfo);
     startupInfo.cb = sizeof(startupInfo);
 

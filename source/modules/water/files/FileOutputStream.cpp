@@ -139,8 +139,8 @@ bool FileOutputStream::writeRepeatedByte (uint8 byte, size_t numBytes)
 #ifdef CARLA_OS_WIN
 void FileOutputStream::openHandle()
 {
-    HANDLE h = CreateFile (file.getFullPathName().toUTF8(), GENERIC_WRITE, FILE_SHARE_READ, 0,
-                           OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    HANDLE h = CreateFileA (file.getFullPathName().toUTF8(), GENERIC_WRITE, FILE_SHARE_READ, 0,
+                            OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 
     if (h != INVALID_HANDLE_VALUE)
     {
