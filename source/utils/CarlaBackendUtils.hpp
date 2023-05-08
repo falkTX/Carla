@@ -501,6 +501,34 @@ const char* PatchbayIcon2Str(const PatchbayIcon icon) noexcept
 // -----------------------------------------------------------------------
 
 static inline
+const char* getBinaryTypeAsString(const BinaryType type) noexcept
+{
+    carla_debug("CarlaBackend::getBinaryTypeAsString(%i:%s)", type, BinaryType2Str(type));
+
+    if (type == BINARY_NATIVE)
+        return "native";
+
+    switch (type)
+    {
+    case BINARY_NONE:
+        return "none";
+    case BINARY_POSIX32:
+        return "posix32";
+    case BINARY_POSIX64:
+        return "posix64";
+    case BINARY_WIN32:
+        return "win32";
+    case BINARY_WIN64:
+        return "win64";
+    case BINARY_OTHER:
+        return "other";
+    }
+
+    carla_stderr("CarlaBackend::getBinaryTypeAsString(%i) - invalid type", type);
+    return "NONE";
+}
+
+static inline
 BinaryType getBinaryTypeFromString(const char* const ctype) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(ctype != nullptr && ctype[0] != '\0', BINARY_NONE);
@@ -525,6 +553,8 @@ BinaryType getBinaryTypeFromString(const char* const ctype) noexcept
         return BINARY_WIN32;
     if (stype == "win64")
         return BINARY_WIN64;
+    if (stype == "other")
+        return BINARY_OTHER;
 
     carla_stderr("CarlaBackend::getBinaryTypeFromString(\"%s\") - invalid string type", ctype);
     return BINARY_NONE;
