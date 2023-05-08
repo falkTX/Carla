@@ -242,7 +242,8 @@ void String::clear() noexcept
 String& String::operator= (const String& other) noexcept
 {
     StringHolder::retain (other.text);
-    StringHolder::release (text.atomicSwap (other.text));
+    std::swap(text.data, const_cast<CharPointer_UTF8&>(other.text).data);
+    StringHolder::release (other.text);
     return *this;
 }
 

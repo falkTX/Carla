@@ -33,6 +33,8 @@
 
 namespace water {
 
+class String;
+
 //==============================================================================
 /**
     Wraps a pointer to a null-terminated UTF-8 character string, and provides
@@ -537,12 +539,6 @@ public:
         return true;
     }
 
-    /** Atomically swaps this pointer for a new value, returning the previous value. */
-    CharPointer_UTF8 atomicSwap (const CharPointer_UTF8 newValue)
-    {
-        return CharPointer_UTF8 (reinterpret_cast<Atomic<CharType*>&> (data).exchange (newValue.data));
-    }
-
     /** These values are the byte-order mark (BOM) values for a UTF-8 stream. */
     enum
     {
@@ -566,6 +562,8 @@ public:
 
 private:
     CharType* data;
+
+    friend class String;
 };
 
 }

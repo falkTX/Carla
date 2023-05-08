@@ -1473,7 +1473,7 @@ public:
             fOutputAudioBuffers.extra[i].offset = aOuts;
             fOutputAudioBuffers.extra[i].isMain = portInfo.flags & CLAP_AUDIO_PORT_IS_MAIN;
             for (uint32_t j=0; j<portInfo.channel_count; ++j)
-                fOutputAudioBuffers.buffers[i].constant_mask |= (1 << j);
+                fOutputAudioBuffers.buffers[i].constant_mask |= (1ULL << j);
 
             aOuts += portInfo.channel_count;
         }
