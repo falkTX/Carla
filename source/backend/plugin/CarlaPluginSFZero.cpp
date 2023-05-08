@@ -595,7 +595,7 @@ public:
 #if 0
             if (doBalance)
             {
-                float oldBufLeft[frames];
+                float* const oldBufLeft = pData->postProc.extraBuffer;
 
                 // there was a loop here
                 {

@@ -2081,8 +2081,15 @@ void CarlaPlugin::deactivate() noexcept
     CARLA_SAFE_ASSERT(pData->active);
 }
 
-void CarlaPlugin::bufferSizeChanged(const uint32_t)
+void CarlaPlugin::bufferSizeChanged(const uint32_t newBufferSize)
 {
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    delete[] pData->postProc.extraBuffer;
+    pData->postProc.extraBuffer = new float[newBufferSize];
+   #else
+    // unused
+    (void)newBufferSize;
+   #endif
 }
 
 void CarlaPlugin::sampleRateChanged(const double)

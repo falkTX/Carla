@@ -1541,7 +1541,7 @@ public:
             const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
             const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
 
-            float oldBufLeft[doBalance ? frames : 1];
+            float* const oldBufLeft = pData->postProc.extraBuffer;
 
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
@@ -1604,15 +1604,17 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
-        if (! kUse16Outs)
-            return;
-
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        if (kUse16Outs)
         {
-            if (fAudio16Buffers[i] != nullptr)
-                delete[] fAudio16Buffers[i];
-            fAudio16Buffers[i] = new float[newBufferSize];
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            {
+                if (fAudio16Buffers[i] != nullptr)
+                    delete[] fAudio16Buffers[i];
+                fAudio16Buffers[i] = new float[newBufferSize];
+            }
         }
+
+        CarlaPlugin::bufferSizeChanged(newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate) override

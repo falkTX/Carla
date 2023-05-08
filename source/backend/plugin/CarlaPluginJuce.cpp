@@ -1417,7 +1417,8 @@ public:
             const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;
-            float bufValue, oldBufLeft[doBalance ? frames : 1];
+            float bufValue;
+            float* const oldBufLeft = pData->postProc.extraBuffer;
 
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
@@ -1518,6 +1519,8 @@ public:
             deactivate();
             activate();
         }
+
+        CarlaPlugin::bufferSizeChanged(newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate) override

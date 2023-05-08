@@ -1318,8 +1318,8 @@ public:
         const LADSPA_Handle handle(fHandles.getFirst(nullptr));
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
 
-        float tmpIn [(aIns > 0)  ? aIns  : 1][2];
-        float tmpOut[(aOuts > 0) ? aOuts : 1][2];
+        float tmpIn[64][2];
+        float tmpOut[64][2];
 
         for (uint32_t j=0; j < aIns; ++j)
         {
@@ -2069,7 +2069,8 @@ public:
             const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;
-            float bufValue, oldBufLeft[doBalance ? frames : 1];
+            float bufValue;
+            float* const oldBufLeft = pData->postProc.extraBuffer;
 
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
@@ -2224,6 +2225,8 @@ public:
         reconnectAudioPorts();
 
         carla_debug("CarlaPluginLADSPADSSI::bufferSizeChanged(%i) - end", newBufferSize);
+
+        CarlaPlugin::bufferSizeChanged(newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate) override

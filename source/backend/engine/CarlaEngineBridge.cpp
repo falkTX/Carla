@@ -93,6 +93,41 @@ private:
 
 // -------------------------------------------------------------------
 
+struct BridgeTextReader {
+    char* text;
+
+    BridgeTextReader(BridgeNonRtClientControl& nonRtClientCtrl)
+        : text(nullptr)
+    {
+        const uint32_t size = nonRtClientCtrl.readUInt();
+        CARLA_SAFE_ASSERT_RETURN(size != 0,);
+
+        text = new char[size + 1];
+        nonRtClientCtrl.readCustomData(text, size);
+        text[size] = '\0';
+    }
+
+    BridgeTextReader(BridgeNonRtClientControl& nonRtClientCtrl, const uint32_t size)
+        : text(nullptr)
+    {
+        text = new char[size + 1];
+
+        if (size != 0)
+            nonRtClientCtrl.readCustomData(text, size);
+
+        text[size] = '\0';
+    }
+
+    ~BridgeTextReader() noexcept
+    {
+        delete[] text;
+    }
+
+    CARLA_DECLARE_NON_COPYABLE(BridgeTextReader)
+};
+
+// -------------------------------------------------------------------
+
 class CarlaEngineBridge : public CarlaEngine,
                           private CarlaThread,
                           private LatencyChangedCallback
@@ -884,16 +919,10 @@ public:
 
             case kPluginBridgeNonRtClientSetCustomData: {
                 // type
-                const uint32_t typeSize = fShmNonRtClientControl.readUInt();
-                char typeStr[typeSize+1];
-                carla_zeroChars(typeStr, typeSize+1);
-                fShmNonRtClientControl.readCustomData(typeStr, typeSize);
+                const BridgeTextReader type(fShmNonRtClientControl);
 
                 // key
-                const uint32_t keySize = fShmNonRtClientControl.readUInt();
-                char keyStr[keySize+1];
-                carla_zeroChars(keyStr, keySize+1);
-                fShmNonRtClientControl.readCustomData(keyStr, keySize);
+                const BridgeTextReader key(fShmNonRtClientControl);
 
                 // value
                 const uint32_t valueSize = fShmNonRtClientControl.readUInt();
@@ -902,15 +931,12 @@ public:
                 {
                     if (valueSize > 16384)
                     {
-                        const uint32_t bigValueFilePathSize = fShmNonRtClientControl.readUInt();
-                        char bigValueFilePathTry[bigValueFilePathSize+1];
-                        carla_zeroChars(bigValueFilePathTry, bigValueFilePathSize+1);
-                        fShmNonRtClientControl.readCustomData(bigValueFilePathTry, bigValueFilePathSize);
+                        const BridgeTextReader bigValueFilePathTry(fShmNonRtClientControl, valueSize);
 
-                        CARLA_SAFE_ASSERT_BREAK(bigValueFilePathTry[0] != '\0');
+                        CARLA_SAFE_ASSERT_BREAK(bigValueFilePathTry.text[0] != '\0');
                         if (! plugin->isEnabled()) break;
 
-                        String bigValueFilePath(bigValueFilePathTry);
+                        String bigValueFilePath(bigValueFilePathTry.text);
 
 #ifdef CARLA_OS_WIN
                         // check if running under Wine
@@ -921,41 +947,37 @@ public:
                         File bigValueFile(bigValueFilePath);
                         CARLA_SAFE_ASSERT_BREAK(bigValueFile.existsAsFile());
 
-                        plugin->setCustomData(typeStr, keyStr, bigValueFile.loadFileAsString().toRawUTF8(), true);
+                        plugin->setCustomData(type.text, key.text, bigValueFile.loadFileAsString().toRawUTF8(), true);
 
                         bigValueFile.deleteFile();
                     }
                     else
                     {
-                        char valueStr[valueSize+1];
-                        carla_zeroChars(valueStr, valueSize+1);
-                        fShmNonRtClientControl.readCustomData(valueStr, valueSize);
+                        const BridgeTextReader value(fShmNonRtClientControl, valueSize);
 
                         if (plugin->isEnabled())
-                            plugin->setCustomData(typeStr, keyStr, valueStr, true);
+                            plugin->setCustomData(type.text, key.text, value.text, true);
                     }
                 }
                 else
                 {
                     if (plugin->isEnabled())
-                        plugin->setCustomData(typeStr, keyStr, "", true);
+                        plugin->setCustomData(type.text, key.text, "", true);
                 }
 
                 break;
             }
 
             case kPluginBridgeNonRtClientSetChunkDataFile: {
-                const uint32_t size(fShmNonRtClientControl.readUInt());
+                const uint32_t size = fShmNonRtClientControl.readUInt();
                 CARLA_SAFE_ASSERT_BREAK(size > 0);
 
-                char chunkFilePathTry[size+1];
-                carla_zeroChars(chunkFilePathTry, size+1);
-                fShmNonRtClientControl.readCustomData(chunkFilePathTry, size);
+                const BridgeTextReader chunkFilePathTry(fShmNonRtClientControl, size);
 
-                CARLA_SAFE_ASSERT_BREAK(chunkFilePathTry[0] != '\0');
+                CARLA_SAFE_ASSERT_BREAK(chunkFilePathTry.text[0] != '\0');
                 if (! plugin->isEnabled()) break;
 
-                String chunkFilePath(chunkFilePathTry);
+                String chunkFilePath(chunkFilePathTry.text);
 
 #ifdef CARLA_OS_WIN
                 // check if running under Wine
@@ -1006,14 +1028,9 @@ public:
             }
 
             case kPluginBridgeNonRtClientSetWindowTitle: {
-                const uint32_t size = fShmNonRtClientControl.readUInt();
-                CARLA_SAFE_ASSERT_BREAK(size > 0);
+                const BridgeTextReader title(fShmNonRtClientControl);
 
-                char title[size+1];
-                carla_zeroChars(title, size+1);
-                fShmNonRtClientControl.readCustomData(title, size);
-
-                plugin->setCustomUITitle(title);
+                plugin->setCustomUITitle(title.text);
                 break;
             }
 
@@ -1414,10 +1431,18 @@ protected:
                     CARLA_SAFE_ASSERT_BREAK(size > 0);
 
                     // FIXME variable-size stack
-                    uint8_t data[size];
+                    uint8_t data[4];
 
-                    for (uint8_t i=0; i<size; ++i)
-                        data[i] = fShmRtClientControl.readByte();
+                    {
+                        uint8_t i=0;
+                        for (; i<size && i<4; ++i)
+                            data[i] = fShmRtClientControl.readByte();
+                        for (; i<size; ++i)
+                            fShmRtClientControl.readByte();
+                    }
+
+                    if (size > 4)
+                        continue;
 
                     if (EngineEvent* const event = getNextFreeInputEvent())
                     {
@@ -1458,15 +1483,15 @@ protected:
                     {
                         const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 
-                        const uint32_t audioInCount(plugin->getAudioInCount());
-                        const uint32_t audioOutCount(plugin->getAudioOutCount());
-                        const uint32_t cvInCount(plugin->getCVInCount());
-                        const uint32_t cvOutCount(plugin->getCVOutCount());
+                        const uint32_t audioInCount = plugin->getAudioInCount();
+                        const uint32_t audioOutCount = plugin->getAudioOutCount();
+                        const uint32_t cvInCount = plugin->getCVInCount();
+                        const uint32_t cvOutCount = plugin->getCVOutCount();
 
-                        const float* audioIn[audioInCount];
-                        /* */ float* audioOut[audioOutCount];
-                        const float* cvIn[cvInCount];
-                        /* */ float* cvOut[cvOutCount];
+                        const float* audioIn[64];
+                        /* */ float* audioOut[64];
+                        const float* cvIn[32];
+                        /* */ float* cvOut[32];
 
                         float* fdata = fShmAudioPool.data;
 

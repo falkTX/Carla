@@ -709,7 +709,8 @@ CarlaPlugin::ProtectedData::PostProc::PostProc() noexcept
       volume(1.0f),
       balanceLeft(-1.0f),
       balanceRight(1.0f),
-      panning(0.0f) {}
+      panning(0.0f),
+      extraBuffer(nullptr) {}
 #endif
 
 // -----------------------------------------------------------------------
@@ -865,6 +866,13 @@ void CarlaPlugin::ProtectedData::clearBuffers() noexcept
     event.clear();
 #ifndef BUILD_BRIDGE
     latency.clearBuffers();
+#endif
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    if (postProc.extraBuffer != nullptr)
+    {
+        delete[] postProc.extraBuffer;
+        postProc.extraBuffer = nullptr;
+    }
 #endif
 }
 

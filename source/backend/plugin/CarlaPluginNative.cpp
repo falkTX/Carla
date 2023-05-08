@@ -2383,7 +2383,8 @@ public:
             const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
 
             bool isPair;
-            float bufValue, oldBufLeft[doBalance ? frames : 1];
+            float bufValue;
+            float* const oldBufLeft = pData->postProc.extraBuffer;
 
             for (; i < pData->audioOut.count; ++i)
             {
@@ -2492,18 +2493,20 @@ public:
             fAudioAndCvOutBuffers[i] = new float[newBufferSize];
         }
 
-        if (fCurBufferSize == newBufferSize)
-            return;
-
-        fCurBufferSize = newBufferSize;
-
-        if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
+        if (fCurBufferSize != newBufferSize)
         {
-            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, static_cast<intptr_t>(newBufferSize), nullptr, 0.0f);
+            fCurBufferSize = newBufferSize;
 
-            if (fHandle2 != nullptr)
-                fDescriptor->dispatcher(fHandle2, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, static_cast<intptr_t>(newBufferSize), nullptr, 0.0f);
+            if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
+            {
+                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, static_cast<intptr_t>(newBufferSize), nullptr, 0.0f);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->dispatcher(fHandle2, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, static_cast<intptr_t>(newBufferSize), nullptr, 0.0f);
+            }
         }
+
+        CarlaPlugin::bufferSizeChanged(newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate) override

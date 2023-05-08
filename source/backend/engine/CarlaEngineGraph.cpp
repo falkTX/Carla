@@ -31,6 +31,9 @@ using water::MidiBuffer;
 using water::String;
 using water::StringArray;
 
+#define MAX_GRAPH_AUDIO_IO 64U
+#define MAX_GRAPH_CV_IO 32U
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -990,6 +993,10 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     // initialize event outputs (zero)
     carla_zeroStructs(data->events.out, kMaxEngineEventInternalCount);
 
+    const float* inBuf[MAX_GRAPH_AUDIO_IO];
+    float* outBuf[MAX_GRAPH_AUDIO_IO];
+    float* cvBuf[MAX_GRAPH_CV_IO];
+
     uint32_t oldAudioInCount  = 0;
     uint32_t oldAudioOutCount = 0;
     uint32_t oldMidiOutCount  = 0;
@@ -1041,15 +1048,16 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         const uint32_t numOutBufs = std::max(oldAudioOutCount, 2U);
         const uint32_t numCvBufs  = std::max(plugin->getCVInCount(), plugin->getCVOutCount());
 
-        const float* inBuf[numInBufs];
+        CARLA_SAFE_ASSERT_RETURN(numInBufs <= MAX_GRAPH_AUDIO_IO, plugin->unlock());
+        CARLA_SAFE_ASSERT_RETURN(numOutBufs <= MAX_GRAPH_AUDIO_IO, plugin->unlock());
+        CARLA_SAFE_ASSERT_RETURN(numCvBufs <= MAX_GRAPH_CV_IO, plugin->unlock());
+
         inBuf[0] = inBuf0;
         inBuf[1] = inBuf1;
 
-        float* outBuf[numOutBufs];
         outBuf[0] = outBufReal[0];
         outBuf[1] = outBufReal[1];
 
-        float* cvBuf[numCvBufs];
         for (uint32_t j=0; j<numCvBufs; ++j)
             cvBuf[j] = dummyBuf;
 
@@ -1585,9 +1593,12 @@ public:
             if (plugin->getAudioInCount() == 0)
                 audio.clear();
 
-            float* audioBuffers[numAudioChan];
-            float* cvOutBuffers[numCVOutChan];
-            const float* cvInBuffers[numCVInChan];
+            float* audioBuffers[MAX_GRAPH_AUDIO_IO];
+            float* cvOutBuffers[MAX_GRAPH_CV_IO];
+            const float* cvInBuffers[MAX_GRAPH_CV_IO];
+            CARLA_SAFE_ASSERT_RETURN(numAudioChan <= MAX_GRAPH_AUDIO_IO, plugin->unlock());
+            CARLA_SAFE_ASSERT_RETURN(numCVOutChan <= MAX_GRAPH_CV_IO, plugin->unlock());
+            CARLA_SAFE_ASSERT_RETURN(numCVInChan <= MAX_GRAPH_CV_IO, plugin->unlock());
 
             for (uint32_t i=0; i<numAudioChan; ++i)
                 audioBuffers[i] = audio.getWritePointer(i);
@@ -1614,8 +1625,8 @@ public:
         else
         {
             // processing CV only, skip audiopeaks
-            float* cvOutBuffers[numCVOutChan];
-            const float* cvInBuffers[numCVInChan];
+            float* cvOutBuffers[MAX_GRAPH_CV_IO];
+            const float* cvInBuffers[MAX_GRAPH_CV_IO];
 
             for (uint32_t i=0; i<numCVOutChan; ++i)
                 cvOutBuffers[i] = cvOut.getWritePointer(i);
@@ -1757,10 +1768,10 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
       cvInBuffer(),
       cvOutBuffer(),
       midiBuffer(),
-      numAudioIns(carla_fixedValue(0U, 64U, audioIns)),
-      numAudioOuts(carla_fixedValue(0U, 64U, audioOuts)),
-      numCVIns(carla_fixedValue(0U, 32U, cvIns)),
-      numCVOuts(carla_fixedValue(0U, 32U, cvOuts)),
+      numAudioIns(carla_fixedValue(0U, MAX_GRAPH_AUDIO_IO, audioIns)),
+      numAudioOuts(carla_fixedValue(0U, MAX_GRAPH_AUDIO_IO, audioOuts)),
+      numCVIns(carla_fixedValue(0U, MAX_GRAPH_CV_IO, cvIns)),
+      numCVOuts(carla_fixedValue(0U, MAX_GRAPH_CV_IO, cvOuts)),
       retCon(),
       usingExternalHost(false),
       usingExternalOSC(false),

@@ -77,6 +77,9 @@
 # pragma GCC diagnostic pop
 #endif
 
+#define MAX_DISCOVERY_AUDIO_IO 64
+#define MAX_DISCOVERY_CV_IO 32
+
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
 using water::File;
@@ -286,6 +289,9 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
             }
         }
 
+        CARLA_SAFE_ASSERT_CONTINUE(audioIns <= MAX_DISCOVERY_AUDIO_IO);
+        CARLA_SAFE_ASSERT_CONTINUE(audioOuts <= MAX_DISCOVERY_AUDIO_IO);
+
         if (doInit)
         {
             // -----------------------------------------------------------------------
@@ -310,8 +316,8 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
                 continue;
             }
 
-            LADSPA_Data bufferAudio[kBufferSize][audioTotal];
-            LADSPA_Data bufferParams[parametersTotal];
+            LADSPA_Data* bufferParams = new LADSPA_Data[parametersTotal];
+            LADSPA_Data bufferAudio[kBufferSize][MAX_DISCOVERY_AUDIO_IO];
             LADSPA_Data min, max, def;
 
             for (unsigned long j=0, iA=0, iC=0; j < descriptor->PortCount; ++j)
@@ -387,6 +393,8 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
                 descriptor->deactivate(handle);
 
             descriptor->cleanup(handle);
+
+            delete[] bufferParams;
 
             // end crash-free plugin test
             // -----------------------------------------------------------------------
@@ -546,6 +554,9 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
             }
         }
 
+        CARLA_SAFE_ASSERT_CONTINUE(audioIns <= MAX_DISCOVERY_AUDIO_IO);
+        CARLA_SAFE_ASSERT_CONTINUE(audioOuts <= MAX_DISCOVERY_AUDIO_IO);
+
         if (descriptor->run_synth != nullptr)
             midiIns = 1;
 
@@ -584,8 +595,8 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
                 continue;
             }
 
-            LADSPA_Data bufferAudio[kBufferSize][audioTotal];
-            LADSPA_Data bufferParams[parametersTotal];
+            LADSPA_Data* bufferParams = new LADSPA_Data[parametersTotal];
+            LADSPA_Data bufferAudio[kBufferSize][MAX_DISCOVERY_AUDIO_IO];
             LADSPA_Data min, max, def;
 
             for (unsigned long j=0, iA=0, iC=0; j < ldescriptor->PortCount; ++j)
@@ -687,6 +698,8 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
                 ldescriptor->deactivate(handle);
 
             ldescriptor->cleanup(handle);
+
+            delete[] bufferParams;
 
             // end crash-free plugin test
             // -----------------------------------------------------------------------
@@ -1196,6 +1209,9 @@ static void do_vst2_check(lib_t& libHandle, const char* const filename, const bo
         if (vstPluginCanDo(effect, "sendVstEvents") || vstPluginCanDo(effect, "sendVstMidiEvent"))
             midiOuts = 1;
 
+        CARLA_SAFE_ASSERT_CONTINUE(audioIns <= MAX_DISCOVERY_AUDIO_IO);
+        CARLA_SAFE_ASSERT_CONTINUE(audioOuts <= MAX_DISCOVERY_AUDIO_IO);
+
         // -----------------------------------------------------------------------
         // start crash-free plugin test
 
@@ -1216,8 +1232,8 @@ static void do_vst2_check(lib_t& libHandle, const char* const filename, const bo
                 midiIns = 1;
             }
 
-            float* bufferAudioIn[std::max(1U, audioIns)];
-            float* bufferAudioOut[std::max(1U, audioOuts)];
+            float* bufferAudioIn[MAX_DISCOVERY_AUDIO_IO];
+            float* bufferAudioOut[MAX_DISCOVERY_AUDIO_IO];
 
             if (audioIns == 0)
             {
@@ -1691,6 +1707,11 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
                 ++parameterIns;
         }
 
+        CARLA_SAFE_ASSERT_CONTINUE(audioIns <= MAX_DISCOVERY_AUDIO_IO);
+        CARLA_SAFE_ASSERT_CONTINUE(audioOuts <= MAX_DISCOVERY_AUDIO_IO);
+        CARLA_SAFE_ASSERT_CONTINUE(cvIns <= MAX_DISCOVERY_CV_IO);
+        CARLA_SAFE_ASSERT_CONTINUE(cvOuts <= MAX_DISCOVERY_CV_IO);
+
         if (v3_plugin_view** const view = v3_cpp_obj(controller)->create_view(controller, "view"))
         {
             if (v3_cpp_obj(view)->is_platform_type_supported(view, V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_TRUE)
@@ -1739,8 +1760,8 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, true) == V3_OK);
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->set_processing(processor, true) == V3_OK);
 
-            float* bufferAudioIn[(uint)std::max(1, audioIns + cvIns)];
-            float* bufferAudioOut[(uint)std::max(1, audioOuts + cvOuts)];
+            float* bufferAudioIn[MAX_DISCOVERY_AUDIO_IO + MAX_DISCOVERY_CV_IO];
+            float* bufferAudioOut[MAX_DISCOVERY_AUDIO_IO + MAX_DISCOVERY_CV_IO];
 
             if (audioIns + cvIns == 0)
             {

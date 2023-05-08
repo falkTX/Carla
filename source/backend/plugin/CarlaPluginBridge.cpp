@@ -1790,12 +1790,18 @@ public:
                     break;
 
                 // store midi data advancing as needed
-                uint8_t data[size];
+                uint8_t data[4];
 
-                for (uint8_t j=0; j<size; ++j)
-                    data[j] = *midiData++;
+                {
+                    uint8_t j=0;
+                    for (; j<size && j<4; ++j)
+                        data[j] = *midiData++;
+                    for (; j<size; ++j)
+                        data[j] = *midiData++;
+                }
 
-                pData->event.portOut->writeMidiEvent(time, size, data);
+                if (size <= 4)
+                    pData->event.portOut->writeMidiEvent(time, size, data);
 
                 read += kBridgeBaseMidiOutHeaderSize + size;
             }
@@ -1915,7 +1921,8 @@ public:
             const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;
-            float bufValue, oldBufLeft[doBalance ? frames : 1];
+            float bufValue;
+            float* const oldBufLeft = pData->postProc.extraBuffer;
 
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
@@ -2033,6 +2040,8 @@ public:
         fProcWaitTime = 1000;
 
         waitForClient("buffersize", 1000);
+
+        CarlaPlugin::bufferSizeChanged(newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate) override

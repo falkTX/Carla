@@ -1738,8 +1738,8 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set audio buffers
 
-        float* bufferAudioIn[std::max(1u, pData->audioIn.count + pData->cvIn.count)];
-        float* bufferAudioOut[std::max(1u, pData->audioOut.count + pData->cvOut.count)];
+        float* bufferAudioIn[96]; // std::max(1u, pData->audioIn.count + pData->cvIn.count)
+        float* bufferAudioOut[96]; // std::max(1u, pData->audioOut.count + pData->cvOut.count)
 
         {
             uint32_t i=0;
@@ -1810,7 +1810,8 @@ public:
             const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;
-            float bufValue, oldBufLeft[doBalance ? frames : 1];
+            float bufValue;
+            float* const oldBufLeft = pData->postProc.extraBuffer;
 
             uint32_t i=0;
 
@@ -1906,6 +1907,8 @@ public:
 
         if (pData->active)
             activate();
+
+        CarlaPlugin::bufferSizeChanged(newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate) override

@@ -908,7 +908,8 @@ bool CarlaPipeCommon::writeAndFixMessage(const char* const msg) const noexcept
 
     const std::size_t size(std::strlen(msg));
 
-    char fixedMsg[size+2];
+    char* const fixedMsg = static_cast<char*>(std::malloc(size+2));
+    CARLA_SAFE_ASSERT_RETURN(fixedMsg != nullptr, false);
 
     if (size > 0)
     {
@@ -938,7 +939,9 @@ bool CarlaPipeCommon::writeAndFixMessage(const char* const msg) const noexcept
         fixedMsg[1] = '\0';
     }
 
-    return _writeMsgBuffer(fixedMsg, size+1);
+    const bool ret = _writeMsgBuffer(fixedMsg, size+1);
+    std::free(fixedMsg);
+    return ret;
 }
 
 bool CarlaPipeCommon::writeEmptyMessage() const noexcept
