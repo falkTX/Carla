@@ -1207,7 +1207,7 @@ public:
                 const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerRespEmbedUI);
-                fShmNonRtServerControl.writeULong(reinterpret_cast<uint64_t>(resp));
+                fShmNonRtServerControl.writeULong(resp);
                 fShmNonRtServerControl.commitWrite();
                 break;
             }

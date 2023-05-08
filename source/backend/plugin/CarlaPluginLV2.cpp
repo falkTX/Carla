@@ -3418,7 +3418,7 @@ public:
 
             for (uint32_t j=0; j < cvOuts; ++i, ++j)
             {
-                tmpIn[i] = new float[bufferSize];
+                tmpOut[i] = new float[bufferSize];
                 carla_zeroFloats(tmpOut[i], bufferSize);
 
                 try {
