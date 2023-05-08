@@ -1883,23 +1883,23 @@ struct carla_clap_host : clap_host_t {
         request_callback = carla_request_callback;
     }
 
-    static CLAP_ABI const void* carla_get_extension(const clap_host_t* const host, const char* const extension_id)
+    static const void* CLAP_ABI carla_get_extension(const clap_host_t* const host, const char* const extension_id)
     {
         carla_stdout("carla_get_extension %p %s", host, extension_id);
         return nullptr;
     }
 
-    static CLAP_ABI void carla_request_restart(const clap_host_t* const host)
+    static void CLAP_ABI carla_request_restart(const clap_host_t* const host)
     {
         carla_stdout("carla_request_restart %p", host);
     }
 
-    static CLAP_ABI void carla_request_process(const clap_host_t* const host)
+    static void CLAP_ABI carla_request_process(const clap_host_t* const host)
     {
         carla_stdout("carla_request_process %p", host);
     }
 
-    static CLAP_ABI void carla_request_callback(const clap_host_t* const host)
+    static void CLAP_ABI carla_request_callback(const clap_host_t* const host)
     {
         carla_stdout("carla_request_callback %p", host);
     }
