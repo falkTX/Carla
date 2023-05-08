@@ -705,7 +705,7 @@ static int64_t getTimeInMicroseconds() noexcept
 #if defined(_MSC_VER)
     struct _timeb tb;
     _ftime_s (&tb);
-    return ((int64) tb.time) * 1000 + tb.millitm;
+    return ((int64_t) tb.time) * 1000 + tb.millitm;
 #elif defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     struct timeval tv;
     gettimeofday(&tv, nullptr);

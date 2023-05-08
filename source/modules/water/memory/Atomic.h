@@ -344,7 +344,19 @@ inline uint32 Atomic<uint32>::operator--() noexcept
     return castFromLong (_InterlockedDecrement (reinterpret_cast<volatile long*> (&value)));
 }
 
-# ifdef CARLA_OS_64BIT
+# ifndef CARLA_OS_64BIT
+template <>
+inline int64 Atomic<int64>::exchange (const int64 newValue) noexcept
+{
+    return castFrom64Bit (_InterlockedCompareExchange64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (value), castTo64Bit (newValue)));
+}
+
+template <>
+inline uint64 Atomic<uint64>::exchange (const uint64 newValue) noexcept
+{
+    return castFrom64Bit (_InterlockedCompareExchange64 (reinterpret_cast<volatile int64*> (&value), castTo64Bit (value), castTo64Bit (newValue)));
+}
+# else
 template <>
 inline int64 Atomic<int64>::exchange (const int64 newValue) noexcept
 {
