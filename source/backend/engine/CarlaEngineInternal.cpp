@@ -22,7 +22,13 @@
 #include "jackbridge/JackBridge.hpp"
 
 #include <ctime>
-#include <sys/time.h>
+
+#ifdef _MSC_VER
+# include <sys/timeb.h>
+# include <sys/types.h>
+#else
+# include <sys/time.h>
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -696,19 +702,21 @@ void CarlaEngine::ProtectedData::doNextPluginAction() noexcept
 
 static int64_t getTimeInMicroseconds() noexcept
 {
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+#if defined(_MSC_VER)
+    struct _timeb tb;
+    _ftime_s (&tb);
+    return ((int64) tb.time) * 1000 + tb.millitm;
+#elif defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     struct timeval tv;
     gettimeofday(&tv, nullptr);
-
     return (tv.tv_sec * 1000000) + tv.tv_usec;
 #else
     struct timespec ts;
-# ifdef CLOCK_MONOTONIC_RAW
+   #ifdef CLOCK_MONOTONIC_RAW
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-# else
+   #else
     clock_gettime(CLOCK_MONOTONIC, &ts);
-# endif
-
+   #endif
     return (ts.tv_sec * 1000000) + (ts.tv_nsec / 1000);
 #endif
 }

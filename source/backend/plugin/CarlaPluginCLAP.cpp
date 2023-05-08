@@ -226,7 +226,7 @@ struct carla_clap_host : clap_host_t {
       #endif
     }
 
-    static CLAP_ABI const void* carla_get_extension(const clap_host_t* const host, const char* const extension_id)
+    static const void* CLAP_ABI carla_get_extension(const clap_host_t* const host, const char* const extension_id)
     {
         carla_clap_host* const self = static_cast<carla_clap_host*>(host->host_data);
 
@@ -249,80 +249,80 @@ struct carla_clap_host : clap_host_t {
         return nullptr;
     }
 
-    static CLAP_ABI void carla_request_restart(const clap_host_t* const host)
+    static void CLAP_ABI carla_request_restart(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestRestart();
     }
 
-    static CLAP_ABI void carla_request_process(const clap_host_t* const host)
+    static void CLAP_ABI carla_request_process(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestProcess();
     }
 
-    static CLAP_ABI void carla_request_callback(const clap_host_t* const host)
+    static void CLAP_ABI carla_request_callback(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRequestCallback();
     }
 
-    static CLAP_ABI void carla_latency_changed(const clap_host_t* const host)
+    static void CLAP_ABI carla_latency_changed(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapLatencyChanged();
     }
 
-    static CLAP_ABI void carla_mark_dirty(const clap_host_t* const host)
+    static void CLAP_ABI carla_mark_dirty(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapMarkDirty();
     }
 
   #ifdef CLAP_WINDOW_API_NATIVE
-    static CLAP_ABI void carla_resize_hints_changed(const clap_host_t* const host)
+    static void CLAP_ABI carla_resize_hints_changed(const clap_host_t* const host)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiResizeHintsChanged();
     }
 
-    static CLAP_ABI bool carla_request_resize(const clap_host_t* const host, const uint32_t width, const uint32_t height)
+    static bool CLAP_ABI carla_request_resize(const clap_host_t* const host, const uint32_t width, const uint32_t height)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiRequestResize(width, height);
     }
 
-    static CLAP_ABI bool carla_request_show(const clap_host_t* const host)
+    static bool CLAP_ABI carla_request_show(const clap_host_t* const host)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiRequestShow();
     }
 
-    static CLAP_ABI bool carla_request_hide(const clap_host_t* const host)
+    static bool CLAP_ABI carla_request_hide(const clap_host_t* const host)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiRequestHide();
     }
 
-    static CLAP_ABI void carla_closed(const clap_host_t* const host, bool was_destroyed)
+    static void CLAP_ABI carla_closed(const clap_host_t* const host, bool was_destroyed)
     {
         static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapGuiClosed(was_destroyed);
     }
 
    #ifdef _POSIX_VERSION
-    static CLAP_ABI bool carla_register_fd(const clap_host_t* const host, const int fd, const clap_posix_fd_flags_t flags)
+    static bool CLAP_ABI carla_register_fd(const clap_host_t* const host, const int fd, const clap_posix_fd_flags_t flags)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRegisterPosixFD(fd, flags);
     }
 
-    static CLAP_ABI bool carla_modify_fd(const clap_host_t* const host, const int fd, const clap_posix_fd_flags_t flags)
+    static bool CLAP_ABI carla_modify_fd(const clap_host_t* const host, const int fd, const clap_posix_fd_flags_t flags)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapModifyPosixFD(fd, flags);
     }
 
-    static CLAP_ABI bool carla_unregister_fd(const clap_host_t* const host, const int fd)
+    static bool CLAP_ABI carla_unregister_fd(const clap_host_t* const host, const int fd)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapUnregisterPosixFD(fd);
     }
    #endif
 
-    static CLAP_ABI bool carla_register_timer(const clap_host_t* const host, const uint32_t period_ms, clap_id* const timer_id)
+    static bool CLAP_ABI carla_register_timer(const clap_host_t* const host, const uint32_t period_ms, clap_id* const timer_id)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapRegisterTimer(period_ms, timer_id);
     }
 
-    static CLAP_ABI bool carla_unregister_timer(const clap_host_t* const host, const clap_id timer_id)
+    static bool CLAP_ABI carla_unregister_timer(const clap_host_t* const host, const clap_id timer_id)
     {
         return static_cast<const carla_clap_host*>(host->host_data)->hostCallbacks->clapUnregisterTimer(timer_id);
     }
@@ -605,12 +605,12 @@ struct carla_clap_input_events : clap_input_events_t, CarlaPluginClapEventData {
         };
     }
 
-    static CLAP_ABI uint32_t carla_size(const clap_input_events_t* const list) noexcept
+    static uint32_t CLAP_ABI carla_size(const clap_input_events_t* const list) noexcept
     {
         return static_cast<const carla_clap_input_events*>(list->ctx)->numEventsUsed;
     }
 
-    static CLAP_ABI const clap_event_header_t* carla_get(const clap_input_events_t* const list, const uint32_t index) noexcept
+    static const clap_event_header_t* CLAP_ABI carla_get(const clap_input_events_t* const list, const uint32_t index) noexcept
     {
         return &static_cast<const carla_clap_input_events*>(list->ctx)->events[index].header;
     }
@@ -693,7 +693,7 @@ struct carla_clap_output_events : clap_output_events_t, CarlaPluginClapEventData
         return true;
     }
 
-    static CLAP_ABI bool carla_try_push(const clap_output_events_t* const list, const clap_event_header_t* const event)
+    static bool CLAP_ABI carla_try_push(const clap_output_events_t* const list, const clap_event_header_t* const event)
     {
         return static_cast<carla_clap_output_events*>(list->ctx)->tryPush(event);
     }

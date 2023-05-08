@@ -167,7 +167,7 @@ struct clap_istream_impl : clap_istream_t {
         read = read_impl;
     }
 
-    static CLAP_ABI int64_t read_impl(const clap_istream_t* const stream, void* const buffer, const uint64_t size) noexcept
+    static int64_t CLAP_ABI read_impl(const clap_istream_t* const stream, void* const buffer, const uint64_t size) noexcept
     {
         clap_istream_impl* const self = static_cast<clap_istream_impl*>(stream->ctx);
 
@@ -196,7 +196,7 @@ struct clap_ostream_impl : clap_ostream_t {
         write = write_impl;
     }
 
-    static CLAP_ABI int64_t write_impl(const clap_ostream* const stream, const void* const buffer, const uint64_t size) noexcept
+    static int64_t CLAP_ABI write_impl(const clap_ostream* const stream, const void* const buffer, const uint64_t size) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(size != 0, 0);
 
