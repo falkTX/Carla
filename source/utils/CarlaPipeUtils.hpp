@@ -1,6 +1,6 @@
 /*
  * Carla Pipe utils
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -140,9 +140,14 @@ public:
 
     /*!
      * Read the next line as a string.
-     * @note: @a value must be deleted if valid.
+     * @note: @a value must be freed if valid and allocateString is true.
      */
     bool readNextLineAsString(const char*& value, bool allocateString, uint32_t size = 0) const noexcept;
+
+    /*!
+     * Read the next line as a string, returning an allocated copy that needs to be freed.
+     */
+    char* readNextLineAsString() const noexcept;
 
     // -------------------------------------------------------------------
     // write messages, must be locked before calling

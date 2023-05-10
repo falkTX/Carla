@@ -1,6 +1,6 @@
 /*
  * Carla Pipe Utilities
- * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -868,6 +868,13 @@ bool CarlaPipeCommon::readNextLineAsString(const char*& value, const bool alloca
     }
 
     return false;
+}
+
+char* CarlaPipeCommon::readNextLineAsString() const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->isReading, nullptr);
+
+    return const_cast<char*>(_readlineblock(true, 0));
 }
 
 // -------------------------------------------------------------------
