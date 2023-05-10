@@ -1,6 +1,6 @@
 /*
  * Carla Backend utils
- * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -598,6 +598,39 @@ const char* getPluginCategoryAsString(const PluginCategory category) noexcept
     carla_stderr("CarlaBackend::getPluginCategoryAsString(%i) - invalid category", category);
     return "NONE";
 }
+
+static inline
+PluginCategory getPluginCategoryFromString(const char* const category) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(category != nullptr && category[0] != '\0', PLUGIN_CATEGORY_NONE);
+    carla_debug("CarlaBackend::getPluginCategoryFromString(\"%s\")", category);
+
+    if (std::strcmp(category, "none") == 0)
+        return PLUGIN_CATEGORY_NONE;
+    if (std::strcmp(category, "synth") == 0)
+        return PLUGIN_CATEGORY_SYNTH;
+    if (std::strcmp(category, "delay") == 0)
+        return PLUGIN_CATEGORY_DELAY;
+    if (std::strcmp(category, "eq") == 0)
+        return PLUGIN_CATEGORY_EQ;
+    if (std::strcmp(category, "filter") == 0)
+        return PLUGIN_CATEGORY_FILTER;
+    if (std::strcmp(category, "distortion") == 0)
+        return PLUGIN_CATEGORY_DISTORTION;
+    if (std::strcmp(category, "dynamics") == 0)
+        return PLUGIN_CATEGORY_DYNAMICS;
+    if (std::strcmp(category, "modulator") == 0)
+        return PLUGIN_CATEGORY_MODULATOR;
+    if (std::strcmp(category, "utility") == 0)
+        return PLUGIN_CATEGORY_UTILITY;
+    if (std::strcmp(category, "other") == 0)
+        return PLUGIN_CATEGORY_OTHER;
+
+    carla_stderr("CarlaBackend::getPluginCategoryFromString(\"%s\") - invalid category", category);
+    return PLUGIN_CATEGORY_NONE;
+}
+
+// -----------------------------------------------------------------------
 
 static inline
 const char* getPluginTypeAsString(const PluginType type) noexcept
