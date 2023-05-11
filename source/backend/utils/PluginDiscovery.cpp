@@ -22,6 +22,7 @@
 #include "CarlaPipeUtils.hpp"
 
 #include "water/files/File.h"
+#include "water/misc/Time.h"
 #include "water/threads/ChildProcess.h"
 #include "water/text/StringArray.h"
 
@@ -72,11 +73,12 @@ public:
           fBinaryCount(binaries.size()),
           fBinaries(binaries),
           fDiscoveryTool(discoveryTool),
+          fLastMessageTime(0),
           nextLabel(nullptr),
           nextMaker(nullptr),
           nextName(nullptr)
     {
-        startPipeServer(discoveryTool, getPluginTypeAsString(fPluginType), fBinaries[0].getFullPathName().toRawUTF8());
+        start();
     }
 
     CarlaPluginDiscovery(const char* const discoveryTool,
@@ -88,11 +90,13 @@ public:
           fCallbackPtr(callbackPtr),
           fBinaryIndex(0),
           fBinaryCount(1),
+          fDiscoveryTool(discoveryTool),
+          fLastMessageTime(0),
           nextLabel(nullptr),
           nextMaker(nullptr),
           nextName(nullptr)
     {
-        startPipeServer(discoveryTool, getPluginTypeAsString(fPluginType), ":all");
+        start();
     }
 
     ~CarlaPluginDiscovery()
@@ -109,22 +113,29 @@ public:
         if (isPipeRunning())
         {
             idlePipe();
-            return true;
+
+            // automatically skip a plugin if 30s passes without a reply
+            const uint32_t timeNow = water::Time::getMillisecondCounter();
+
+            if (timeNow - fLastMessageTime < 30000)
+                return true;
+
+            carla_stdout("Plugin took too long to respond, skipping...");
+            stopPipeServer(1000);
         }
 
         if (++fBinaryIndex == fBinaryCount)
             return false;
 
-        startPipeServer(fDiscoveryTool,
-                        getPluginTypeAsString(fPluginType),
-                        fBinaries[fBinaryIndex].getFullPathName().toRawUTF8());
-
+        start();
         return true;
     }
 
 protected:
     bool msgReceived(const char* const msg) noexcept
     {
+        fLastMessageTime = water::Time::getMillisecondCounter();
+
         if (std::strcmp(msg, "warning") == 0 || std::strcmp(msg, "error") == 0)
         {
             const char* text = nullptr;
@@ -155,7 +166,7 @@ protected:
             if (nextInfo.metadata.name == nullptr)
                 nextInfo.metadata.name = gPluginsDiscoveryNullCharPtr;
 
-            if (fDiscoveryTool.isEmpty())
+            if (fBinaries.empty())
             {
                 char* filename = nullptr;
 
@@ -179,6 +190,7 @@ protected:
             {
                 const water::String filename(fBinaries[fBinaryIndex].getFullPathName());
                 nextInfo.filename = filename.toRawUTF8();
+                carla_stdout("Found %s from %s", nextInfo.metadata.name, nextInfo.filename);
                 fCallback(fCallbackPtr, &nextInfo);
             }
 
@@ -308,17 +320,71 @@ private:
     const std::vector<water::File> fBinaries;
     const CarlaString fDiscoveryTool;
 
+    uint32_t fLastMessageTime;
+
     CarlaPluginDiscoveryInfo nextInfo;
     char* nextLabel;
     char* nextMaker;
     char* nextName;
+
+    void start()
+    {
+        fLastMessageTime = water::Time::getMillisecondCounter();
+
+        if (fBinaries.empty())
+        {
+            startPipeServer(fDiscoveryTool,
+                            getPluginTypeAsString(fPluginType),
+                            ":all");
+        }
+        else
+        {
+            carla_stdout("Scanning %s...", fBinaries[fBinaryIndex].getFullPathName().toRawUTF8());
+            startPipeServer(fDiscoveryTool,
+                            getPluginTypeAsString(fPluginType),
+                            fBinaries[fBinaryIndex].getFullPathName().toRawUTF8());
+        }
+    }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginDiscovery)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
 
-static std::vector<water::File> findBinaries(const char* const pluginPath, const char* const wildcard)
+static std::vector<water::File> findDirectories(const char* const pluginPath, const char* const wildcard)
+{
+    CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, {});
+
+    if (pluginPath[0] == '\0')
+        return {};
+
+    using water::File;
+    using water::String;
+    using water::StringArray;
+
+    const StringArray splitPaths(StringArray::fromTokens(pluginPath, CARLA_OS_SPLIT_STR, ""));
+
+    if (splitPaths.size() == 0)
+        return {};
+
+    std::vector<water::File> ret;
+
+    for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
+    {
+        const File dir(*it);
+        std::vector<File> results;
+
+        if (dir.findChildFiles(results, File::findDirectories|File::ignoreHiddenFiles, true, wildcard) > 0)
+        {
+            ret.reserve(ret.size() + results.size());
+            ret.insert(ret.end(), results.begin(), results.end());
+        }
+    }
+
+    return ret;
+}
+
+static std::vector<water::File> findFiles(const char* const pluginPath, const char* const wildcard)
 {
     CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, {});
 
@@ -369,12 +435,20 @@ static std::vector<water::File> findVST3s(const char* const pluginPath)
 
     std::vector<water::File> ret;
 
+   #if defined(CARLA_OS_MAC)
+    static constexpr const uint flags = File::findDirectories;
+   #elif defined(CARLA_OS_WIN)
+    static constexpr const uint flags = File::findDirectories|File::findFiles;
+   #else
+    static constexpr const uint flags = File::findFiles;
+   #endif
+
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
         const File dir(*it);
         std::vector<File> results;
 
-        if (dir.findChildFiles(results, File::findDirectories|File::findFiles|File::ignoreHiddenFiles, true, "*.vst3") > 0)
+        if (dir.findChildFiles(results, flags|File::ignoreHiddenFiles, true, "*.vst3") > 0)
         {
             ret.reserve(ret.size() + results.size());
             ret.insert(ret.end(), results.begin(), results.end());
@@ -393,6 +467,7 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
     CARLA_SAFE_ASSERT_RETURN(discoveryTool != nullptr && discoveryTool[0] != '\0', nullptr);
     CARLA_SAFE_ASSERT_RETURN(callback != nullptr, nullptr);
 
+    bool directories = false;
     const char* wildcard = nullptr;
 
     switch (ptype)
@@ -416,14 +491,32 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
 
     case CB::PLUGIN_LADSPA:
     case CB::PLUGIN_DSSI:
-    case CB::PLUGIN_VST2:
+       #if defined(CARLA_OS_MAC)
+        wildcard = "*.dylib";
+       #elif defined(CARLA_OS_WIN)
+        wildcard = "*.dll";
+       #else
         wildcard = "*.so";
+       #endif
+        break;
+    case CB::PLUGIN_VST2:
+       #if defined(CARLA_OS_MAC)
+        directories = true;
+        wildcard = "*.vst";
+       #elif defined(CARLA_OS_WIN)
+        wildcard = "*.dll";
+       #else
+        wildcard = "*.so";
+       #endif
         break;
     case CB::PLUGIN_VST3:
         // handled separately
         break;
     case CB::PLUGIN_CLAP:
         wildcard = "*.clap";
+       #ifdef CARLA_OS_MAC
+        directories = true;
+       #endif
         break;
     case CB::PLUGIN_DLS:
         wildcard = "*.dls";
@@ -436,8 +529,11 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
         break;
     }
 
-    const std::vector<water::File> binaries(ptype == CB::PLUGIN_VST3 ? findVST3s(pluginPath)
-                                                                     : findBinaries(pluginPath, wildcard));
+    const std::vector<water::File> binaries(ptype == CB::PLUGIN_VST3
+                                            ? findVST3s(pluginPath)
+                                            : directories
+                                            ? findDirectories(pluginPath, wildcard)
+                                            : findFiles(pluginPath, wildcard));
 
     if (binaries.size() == 0)
         return nullptr;
