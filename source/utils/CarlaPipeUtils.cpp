@@ -1720,7 +1720,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
         pData->pipeRecv = pipeRecvClient;
         pData->pipeSend = pipeSendClient;
         pData->pipeClosed = false;
-        carla_stdout("ALL OK!");
+        carla_debug("ALL OK!");
         return true;
     }
 
