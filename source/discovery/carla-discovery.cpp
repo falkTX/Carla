@@ -180,19 +180,22 @@ static void print_cached_plugin(const CarlaCachedPluginInfo* const pinfo)
 
 static void do_cached_check(const PluginType type)
 {
-    const char* plugPath;
+    const char* plugPath = std::getenv("CARLA_DISCOVERY_PATH");
 
-    switch (type)
+    if (plugPath == nullptr)
     {
-    case PLUGIN_LV2:
-        plugPath = std::getenv("LV2_PATH");
-        break;
-    case PLUGIN_SFZ:
-        plugPath = std::getenv("SFZ_PATH");
-        break;
-    default:
-        plugPath = nullptr;
-        break;
+        switch (type)
+        {
+        case PLUGIN_LV2:
+            plugPath = std::getenv("LV2_PATH");
+            break;
+        case PLUGIN_SFZ:
+            plugPath = std::getenv("SFZ_PATH");
+            break;
+        default:
+            plugPath = nullptr;
+            break;
+        }
     }
 
 # ifdef USING_JUCE
