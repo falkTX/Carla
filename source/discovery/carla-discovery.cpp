@@ -18,6 +18,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaPipeUtils.cpp"
 #include "CarlaScopeUtils.hpp"
 
 #include "CarlaMIDI.h"
@@ -52,6 +53,7 @@
 #endif
 
 #include <iostream>
+#include <sstream>
 
 #include "water/files/File.h"
 
@@ -80,7 +82,9 @@
 #define MAX_DISCOVERY_AUDIO_IO 64
 #define MAX_DISCOVERY_CV_IO 32
 
-#define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
+#define DISCOVERY_OUT(x, y) \
+    if (gPipe != nullptr) { std::stringstream s; s << y; gPipe->writeDiscoveryMessage(x, s.str().c_str()); } \
+    else { std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl; }
 
 using water::File;
 
@@ -93,6 +97,44 @@ static constexpr const uint32_t kBufferSize  = 512;
 static constexpr const double   kSampleRate  = 44100.0;
 static constexpr const int32_t  kSampleRatei = 44100;
 static constexpr const float    kSampleRatef = 44100.0f;
+
+// ---------------------------- Dynamic discovery ---------------------------
+
+class DiscoveryPipe : public CarlaPipeClient
+{
+public:
+    DiscoveryPipe() {}
+
+    ~DiscoveryPipe()
+    {
+        writeExitingMessageAndWait();
+    }
+
+    bool writeDiscoveryMessage(const char* const key, const char* const value) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0', false);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr, false);
+
+        const CarlaMutexLocker cml(pData->writeLock);
+
+        if (! writeAndFixMessage(key))
+            return false;
+        if (! writeAndFixMessage(value))
+            return false;
+
+        flushMessages();
+        return true;
+    }
+
+protected:
+    bool msgReceived(const char* const msg) noexcept
+    {
+        carla_stdout("discovery msgReceived %s", msg);
+        return true;
+    }
+};
+
+CarlaScopedPointer<DiscoveryPipe> gPipe;
 
 // -------------------------------------------------------------------------------------------------------------------
 // Don't print ELF/EXE related errors since discovery can find multi-architecture binaries
@@ -120,7 +162,7 @@ static void print_cached_plugin(const CarlaCachedPluginInfo* const pinfo)
     if (! pinfo->valid)
         return;
 
-    DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("init", "------------");
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("hints", pinfo->hints);
     DISCOVERY_OUT("category", getPluginCategoryAsString(pinfo->category));
@@ -400,7 +442,7 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
             // -----------------------------------------------------------------------
         }
 
-        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("init", "------------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("category", getPluginCategoryAsString(getPluginCategoryFromName(descriptor->Name)));
@@ -705,7 +747,7 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
             // -----------------------------------------------------------------------
         }
 
-        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("init", "------------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("category", ((hints & PLUGIN_IS_SYNTH)
                                    ? "synth"
@@ -1323,7 +1365,7 @@ static void do_vst2_check(lib_t& libHandle, const char* const filename, const bo
         // end crash-free plugin test
         // -----------------------------------------------------------------------
 
-        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("init", "------------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("category", getPluginCategoryAsString(category));
@@ -1836,7 +1878,7 @@ static void do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         v3_cpp_obj_terminate(component);
         v3_cpp_obj_unref(component);
 
-        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("init", "------------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("category", getPluginCategoryAsString(factory2 != nullptr ? getPluginCategoryFromV3SubCategories(classInfo.v2.sub_categories)
@@ -2104,7 +2146,7 @@ static void do_clap_check(lib_t& libHandle, const char* const filename, const bo
 
             plugin->destroy(plugin);
 
-            DISCOVERY_OUT("init", "-----------");
+            DISCOVERY_OUT("init", "------------");
             DISCOVERY_OUT("build", BINARY_NATIVE);
             DISCOVERY_OUT("hints", hints);
             DISCOVERY_OUT("category", getPluginCategoryAsString(category));
@@ -2267,7 +2309,7 @@ static bool do_juce_check(const char* const filename_, const char* const stype, 
             }
         }
 
-        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("init", "------------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("category", getPluginCategoryAsString(getPluginCategoryFromName(desc->category.toRawUTF8())));
@@ -2353,7 +2395,7 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
     CarlaString label(name);
 
     // 2 channels
-    DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("init", "------------");
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("category", "synth");
@@ -2371,7 +2413,7 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
 
     name += " (16 outputs)";
 
-    DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("init", "------------");
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("category", "synth");
@@ -2438,7 +2480,7 @@ static void do_jsfx_check(const char* const filename, bool doInit)
             ++parameters;
     }
 
-    DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("init", "------------");
     DISCOVERY_OUT("build", BINARY_NATIVE);
     DISCOVERY_OUT("hints", hints);
     DISCOVERY_OUT("category", getPluginCategoryAsString(category));
@@ -2463,9 +2505,9 @@ static void do_jsfx_check(const char* const filename, bool doInit)
 
 // ------------------------------ main entry point ------------------------------
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
-    if (argc != 3)
+    if (argc != 3 && argc != 7)
     {
         carla_stdout("usage: %s <type> </path/to/plugin>", argv[0]);
         return 1;
@@ -2525,6 +2567,17 @@ int main(int argc, char* argv[])
     pthread_win32_thread_attach_np();
 # endif
 #endif
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // Initialize pipe
+
+    if (argc == 7)
+    {
+        gPipe = new DiscoveryPipe;
+
+        if (! gPipe->initPipeClient(argv))
+            return 1;
+    }
 
     // ---------------------------------------------------------------------------------------------------------------
 
@@ -2677,6 +2730,8 @@ int main(int argc, char* argv[])
 
     if (openLib && handle != nullptr)
         lib_close(handle);
+
+    gPipe = nullptr;
 
     // ---------------------------------------------------------------------------------------------------------------
 
