@@ -508,7 +508,7 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
        #endif
         break;
     case CB::PLUGIN_VST3:
-        // handled separately
+        wildcard = "*.vst3";
         break;
     case CB::PLUGIN_CLAP:
         wildcard = "*.clap";
@@ -526,6 +526,8 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
         wildcard = "*.sf2";
         break;
     }
+
+    CARLA_SAFE_ASSERT_RETURN(wildcard != nullptr, nullptr);
 
     const std::vector<water::File> binaries(ptype == CB::PLUGIN_VST3
                                             ? findVST3s(pluginPath)

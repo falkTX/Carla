@@ -1,6 +1,6 @@
 /*
  * Carla VST3 Plugin
- * Copyright (C) 2014-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -38,6 +38,19 @@
 #endif
 
 #include "water/files/File.h"
+#include "water/misc/Time.h"
+
+#ifdef _POSIX_VERSION
+# ifdef CARLA_OS_LINUX
+#  define CARLA_VST3_POSIX_EPOLL
+#  include <sys/epoll.h>
+# else
+#  include <sys/event.h>
+#  include <sys/types.h>
+# endif
+#endif
+
+#include <atomic>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -84,6 +97,88 @@ void strncpy_utf8(char* const dst, const int16_t* const src, const size_t length
 static uint32_t V3_API v3_ref_static(void*) { return 1; }
 static uint32_t V3_API v3_unref_static(void*) { return 0; }
 
+// --------------------------------------------------------------------------------------------------------------------
+
+struct carla_v3_message : v3_message_cpp {
+    std::atomic<int> refcounter;
+
+    carla_v3_message()
+        : refcounter(1)
+    {
+        query_interface = carla_query_interface;
+        ref = carla_ref;
+        unref = carla_unref;
+        msg.get_message_id = carla_get_message_id;
+        msg.set_message_id = carla_set_message_id;
+        msg.get_attributes = carla_get_attributes;
+    }
+
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
+        carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
+
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_message_iid))
+        {
+            ++msg->refcounter;
+            *iface = self;
+            return V3_OK;
+        }
+
+        *iface = nullptr;
+        carla_stdout("TODO carla_v3_message::query_interface %s", tuid2str(iid));
+        return V3_NO_INTERFACE;
+    }
+
+    static uint32_t V3_API carla_ref(void* const self)
+    {
+        carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
+        const int refcount = ++msg->refcounter;
+        carla_debug("carla_v3_message::ref => %p | refcount %i", self, refcount);
+        return refcount;
+    }
+
+    static uint32_t V3_API carla_unref(void* const self)
+    {
+        carla_v3_message** const msgptr = static_cast<carla_v3_message**>(self);
+        carla_v3_message* const msg = *msgptr;
+
+        if (const int refcount = --msg->refcounter)
+        {
+            carla_debug("carla_v3_message::unref => %p | refcount %i", self, refcount);
+            return refcount;
+        }
+
+        carla_debug("carla_v3_message::unref => %p | refcount is zero, deleting factory", self);
+
+        delete msg;
+        delete msgptr;
+        return 0;
+    }
+
+    static const char* V3_API carla_get_message_id(void*)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        return nullptr;
+    }
+
+    static void V3_API carla_set_message_id(void*, const char*)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+    }
+
+    static v3_attribute_list** V3_API carla_get_attributes(void*)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        return nullptr;
+    }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_message)
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
 struct carla_v3_host_application : v3_host_application_cpp {
     carla_v3_host_application()
     {
@@ -96,6 +191,7 @@ struct carla_v3_host_application : v3_host_application_cpp {
 
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
     {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
         if (v3_tuid_match(iid, v3_funknown_iid) ||
             v3_tuid_match(iid, v3_host_application_iid))
         {
@@ -104,12 +200,13 @@ struct carla_v3_host_application : v3_host_application_cpp {
         }
 
         *iface = nullptr;
+        carla_stdout("TODO carla_v3_host_application::query_interface %s", tuid2str(iid));
         return V3_NO_INTERFACE;
     }
 
     static v3_result V3_API carla_get_name(void*, v3_str_128 name)
     {
-        static const char hostname[] = "Carla-Discovery\0";
+        static const char hostname[] = "Carla\0";
 
         for (size_t i=0; i<sizeof(hostname); ++i)
             name[i] = hostname[i];
@@ -117,13 +214,22 @@ struct carla_v3_host_application : v3_host_application_cpp {
         return V3_OK;
     }
 
-    // TODO
-    static v3_result V3_API carla_create_instance(void*, v3_tuid, v3_tuid, void**) { return V3_NOT_IMPLEMENTED; }
+    static v3_result V3_API carla_create_instance(void*, v3_tuid cid, v3_tuid iid, void** const obj)
+    {
+        if (v3_tuid_match(cid, v3_message_iid) && (v3_tuid_match(iid, v3_message_iid) ||
+                                                   v3_tuid_match(iid, v3_funknown_iid)))
+        {
+            carla_v3_message** const messageptr = new carla_v3_message*;
+            *messageptr = new carla_v3_message();
+            *obj = static_cast<void*>(messageptr);
+            return V3_OK;
+        }
+
+        carla_stdout("TODO carla_create_instance %s", tuid2str(cid));
+        return V3_NOT_IMPLEMENTED;
+    }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_host_application)
-};
-
-struct carla_v3_plugin_frame : v3_plugin_frame_cpp {
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -153,6 +259,7 @@ struct carla_v3_input_param_value_queue : v3_param_value_queue_cpp {
 private:
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
     {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
         if (v3_tuid_match(iid, v3_funknown_iid) ||
             v3_tuid_match(iid, v3_param_value_queue_iid))
         {
@@ -161,6 +268,7 @@ private:
         }
 
         *iface = nullptr;
+        carla_stdout("TODO carla_v3_input_param_value_queue::query_interface %s", tuid2str(iid));
         return V3_NO_INTERFACE;
     }
 
@@ -176,7 +284,8 @@ private:
         return me->numUsed;
     }
 
-    static v3_result V3_API carla_get_point(void* const self, const int32_t idx, int32_t* const sample_offset, double* const value)
+    static v3_result V3_API carla_get_point(void* const self,
+                                            const int32_t idx, int32_t* const sample_offset, double* const value)
     {
         carla_v3_input_param_value_queue* const me = *static_cast<carla_v3_input_param_value_queue**>(self);
         CARLA_SAFE_ASSERT_INT2_RETURN(idx < me->numUsed, idx, me->numUsed, V3_INVALID_ARG);
@@ -269,6 +378,7 @@ struct carla_v3_input_param_changes : v3_param_changes_cpp {
 private:
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
     {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
         if (v3_tuid_match(iid, v3_funknown_iid) ||
             v3_tuid_match(iid, v3_param_changes_iid))
         {
@@ -277,6 +387,7 @@ private:
         }
 
         *iface = nullptr;
+        carla_stdout("TODO carla_v3_input_param_changes::query_interface %s", tuid2str(iid));
         return V3_NO_INTERFACE;
     }
 
@@ -294,6 +405,7 @@ private:
 
     static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*)
     {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
         // there is nothing here for input parameters, plugins are not meant to call this!
         return nullptr;
     }
@@ -316,6 +428,7 @@ struct carla_v3_output_param_changes : v3_param_changes_cpp {
 
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
     {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
         if (v3_tuid_match(iid, v3_funknown_iid) ||
             v3_tuid_match(iid, v3_param_changes_iid))
         {
@@ -324,12 +437,27 @@ struct carla_v3_output_param_changes : v3_param_changes_cpp {
         }
 
         *iface = nullptr;
+        carla_stdout("TODO carla_v3_output_param_changes::query_interface %s", tuid2str(iid));
         return V3_NO_INTERFACE;
     }
 
-    static int32_t V3_API carla_get_param_count(void*) { return 0; }
-    static v3_param_value_queue** V3_API carla_get_param_data(void*, int32_t) { return nullptr; }
-    static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*) { return nullptr; }
+    static int32_t V3_API carla_get_param_count(void*)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        return 0;
+    }
+
+    static v3_param_value_queue** V3_API carla_get_param_data(void*, int32_t)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        return nullptr;
+    }
+
+    static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        return nullptr;
+    }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_output_param_changes)
 };
@@ -354,6 +482,7 @@ struct carla_v3_input_event_list : v3_event_list_cpp {
 private:
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
     {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
         if (v3_tuid_match(iid, v3_funknown_iid) ||
             v3_tuid_match(iid, v3_event_list_iid))
         {
@@ -362,6 +491,7 @@ private:
         }
 
         *iface = nullptr;
+        carla_stdout("TODO carla_v3_input_event_list::query_interface %s", tuid2str(iid));
         return V3_NO_INTERFACE;
     }
 
@@ -373,6 +503,7 @@ private:
 
     static v3_result V3_API carla_get_event(void* const self, const int32_t index, v3_event* const event)
     {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
         const carla_v3_input_event_list* const me = *static_cast<const carla_v3_input_event_list**>(self);
         CARLA_SAFE_ASSERT_RETURN(index < static_cast<int32_t>(me->numEvents), V3_INVALID_ARG);
         std::memcpy(event, &me->events[index], sizeof(v3_event));
@@ -381,6 +512,7 @@ private:
 
     static v3_result V3_API carla_add_event(void*, v3_event*)
     {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
         // there is nothing here for input events, plugins are not meant to call this!
         return V3_NOT_IMPLEMENTED;
     }
@@ -404,6 +536,7 @@ struct carla_v3_output_event_list : v3_event_list_cpp {
 private:
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
     {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
         if (v3_tuid_match(iid, v3_funknown_iid) ||
             v3_tuid_match(iid, v3_event_list_iid))
         {
@@ -412,14 +545,290 @@ private:
         }
 
         *iface = nullptr;
+        carla_stdout("TODO carla_v3_output_event_list::query_interface %s", tuid2str(iid));
         return V3_NO_INTERFACE;
     }
 
-    static uint32_t V3_API carla_get_event_count(void*) { return 0; }
-    static v3_result V3_API carla_get_event(void*, int32_t, v3_event*) { return V3_NOT_IMPLEMENTED; }
-    static v3_result V3_API carla_add_event(void*, v3_event*) { return V3_NOT_IMPLEMENTED; }
+    static uint32_t V3_API carla_get_event_count(void*)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        return 0;
+    }
+
+    static v3_result V3_API carla_get_event(void*, int32_t, v3_event*)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        return V3_NOT_IMPLEMENTED;
+    }
+
+    static v3_result V3_API carla_add_event(void*, v3_event*)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        return V3_NOT_IMPLEMENTED;
+    }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_output_event_list)
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct HostTimer {
+    v3_timer_handler** handler;
+    uint64_t periodInMs;
+    uint64_t lastCallTimeInMs;
+};
+
+static constexpr const HostTimer kTimerFallback   = { nullptr, 0, 0 };
+static /*           */ HostTimer kTimerFallbackNC = { nullptr, 0, 0 };
+
+#ifdef _POSIX_VERSION
+struct HostPosixFileDescriptor {
+    v3_event_handler** handler;
+    int hostfd;
+    int pluginfd;
+};
+
+static constexpr const HostPosixFileDescriptor kPosixFileDescriptorFallback   = { nullptr, -1, -1 };
+static /*           */ HostPosixFileDescriptor kPosixFileDescriptorFallbackNC = { nullptr, -1, -1 };
+#endif
+
+struct carla_v3_run_loop : v3_run_loop_cpp {
+    LinkedList<HostTimer> timers;
+   #ifdef _POSIX_VERSION
+    LinkedList<HostPosixFileDescriptor> posixfds;
+   #endif
+
+    carla_v3_run_loop()
+    {
+        query_interface = carla_query_interface;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        loop.register_event_handler = carla_register_event_handler;
+        loop.unregister_event_handler = carla_unregister_event_handler;
+        loop.register_timer = carla_register_timer;
+        loop.unregister_timer = carla_unregister_timer;
+    }
+
+private:
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_run_loop_iid))
+        {
+            *iface = self;
+            return V3_OK;
+        }
+
+        *iface = nullptr;
+        carla_stdout("TODO carla_v3_run_loop::query_interface %s", tuid2str(iid));
+        return V3_NO_INTERFACE;
+    }
+
+    static v3_result V3_API carla_register_event_handler(void* const self,
+                                                         v3_event_handler** const handler, const int fd)
+    {
+      #ifdef _POSIX_VERSION
+        carla_v3_run_loop* const loop = *static_cast<carla_v3_run_loop**>(self);
+
+       #ifdef CARLA_VST3_POSIX_EPOLL
+        const int hostfd = ::epoll_create1(0);
+       #else
+        const int hostfd = ::kqueue();
+       #endif
+        CARLA_SAFE_ASSERT_RETURN(hostfd >= 0, V3_INTERNAL_ERR);
+
+       #ifdef CARLA_VST3_POSIX_EPOLL
+        struct ::epoll_event ev = {};
+        ev.events = EPOLLIN|EPOLLOUT;
+        ev.data.fd = fd;
+
+        if (::epoll_ctl(hostfd, EPOLL_CTL_ADD, fd, &ev) < 0)
+        {
+            ::close(hostfd);
+            return V3_INTERNAL_ERR;
+        }
+       #endif
+
+        const HostPosixFileDescriptor posixfd = { handler, hostfd, fd };
+        return loop->posixfds.append(posixfd) ? V3_OK : V3_NOMEM;
+      #else
+        return V3_NOT_IMPLEMENTED;
+      #endif
+    }
+
+    static v3_result V3_API carla_unregister_event_handler(void* const self, v3_event_handler** const handler)
+    {
+       #ifdef _POSIX_VERSION
+        carla_v3_run_loop* const loop = *static_cast<carla_v3_run_loop**>(self);
+
+        for (LinkedList<HostPosixFileDescriptor>::Itenerator it = loop->posixfds.begin2(); it.valid(); it.next())
+        {
+            const HostPosixFileDescriptor& posixfd(it.getValue(kPosixFileDescriptorFallback));
+
+            if (posixfd.handler == handler)
+            {
+               #ifdef CARLA_VST3_POSIX_EPOLL
+                ::epoll_ctl(posixfd.hostfd, EPOLL_CTL_DEL, posixfd.pluginfd, nullptr);
+               #endif
+                ::close(posixfd.hostfd);
+                loop->posixfds.remove(it);
+                return V3_OK;
+            }
+        }
+
+        return V3_INVALID_ARG;
+       #else
+        return V3_NOT_IMPLEMENTED;
+       #endif
+    }
+
+    static v3_result V3_API carla_register_timer(void* const self, v3_timer_handler** const handler, const uint64_t ms)
+    {
+        carla_v3_run_loop* const loop = *static_cast<carla_v3_run_loop**>(self);
+
+        const HostTimer timer = { handler, ms, 0 };
+        return loop->timers.append(timer) ? V3_OK : V3_NOMEM;
+    }
+
+    static v3_result V3_API carla_unregister_timer(void* const self, v3_timer_handler** const handler)
+    {
+        carla_v3_run_loop* const loop = *static_cast<carla_v3_run_loop**>(self);
+
+        for (LinkedList<HostTimer>::Itenerator it = loop->timers.begin2(); it.valid(); it.next())
+        {
+            const HostTimer& timer(it.getValue(kTimerFallback));
+
+            if (timer.handler == handler)
+            {
+                loop->timers.remove(it);
+                return V3_OK;
+            }
+        }
+
+        return V3_INVALID_ARG;
+    }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_run_loop)
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct carla_v3_component_handler : v3_component_handler_cpp {
+    carla_v3_component_handler()
+    {
+        query_interface = carla_query_interface;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        comp.begin_edit = carla_begin_edit;
+        comp.perform_edit = carla_perform_edit;
+        comp.end_edit = carla_end_edit;
+        comp.restart_component = carla_restart_component;
+    }
+
+private:
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_component_handler_iid))
+        {
+            *iface = self;
+            return V3_OK;
+        }
+
+        // TODO
+        if (v3_tuid_match(iid, v3_component_handler2_iid))
+        {
+            *iface = nullptr;
+            return V3_NO_INTERFACE;
+        }
+
+        *iface = nullptr;
+        carla_stdout("TODO carla_v3_component_handler::query_interface %s", tuid2str(iid));
+        return V3_NO_INTERFACE;
+    }
+
+    static v3_result V3_API carla_begin_edit(void*, v3_param_id)
+    {
+        carla_stderr2("TODO carla_begin_edit");
+        return V3_NOT_IMPLEMENTED;
+    }
+
+    static v3_result V3_API carla_perform_edit(void*, v3_param_id, double)
+    {
+        carla_stderr2("TODO carla_perform_edit");
+        return V3_NOT_IMPLEMENTED;
+    }
+
+    static v3_result V3_API carla_end_edit(void*, v3_param_id)
+    {
+        carla_stderr2("TODO carla_end_edit");
+        return V3_NOT_IMPLEMENTED;
+    }
+
+    static v3_result V3_API carla_restart_component(void*, int32_t)
+    {
+        carla_stderr2("TODO carla_restart_component");
+        return V3_NOT_IMPLEMENTED;
+    }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_component_handler)
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct carla_v3_plugin_frame : v3_plugin_frame_cpp {
+    carla_v3_run_loop loop;
+    carla_v3_run_loop* loopPtr;
+    CarlaPluginUI::Callback* uiCallback;
+
+    carla_v3_plugin_frame()
+        : loopPtr(&loop),
+          uiCallback(nullptr)
+    {
+        query_interface = carla_query_interface;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        frame.resize_view = carla_resize_view;
+    }
+
+private:
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
+        carla_v3_plugin_frame* const frame = *static_cast<carla_v3_plugin_frame**>(self);
+
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_plugin_frame_iid))
+        {
+            *iface = self;
+            return V3_OK;
+        }
+
+        if (v3_tuid_match(iid, v3_run_loop_iid))
+        {
+            *iface = &frame->loopPtr;
+            return V3_OK;
+        }
+
+        *iface = nullptr;
+        carla_stdout("TODO carla_v3_plugin_frame::query_interface %s", tuid2str(iid));
+        return V3_NO_INTERFACE;
+    }
+
+    static v3_result V3_API carla_resize_view(void* const self,
+                                              struct v3_plugin_view**,
+                                              struct v3_view_rect* const rect)
+    {
+        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        const carla_v3_plugin_frame* const me = *static_cast<const carla_v3_plugin_frame**>(self);
+        CARLA_SAFE_ASSERT_RETURN(me->uiCallback != nullptr, V3_INVALID_ARG);
+        me->uiCallback->handlePluginUIResized(rect->right - rect->left, rect->bottom - rect->top);
+        return V3_OK;
+    }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_plugin_frame)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -435,7 +844,10 @@ public:
           fLastKnownLatency(0),
           fLastTimeInfo(),
           fV3TimeContext(),
-          fV3Application(new carla_v3_host_application),
+          fV3Application(),
+          fV3ApplicationPtr(&fV3Application),
+          fComponentHandler(),
+          fComponentHandlerPtr(&fComponentHandler),
           fV3ClassInfo(),
           fV3(),
           fEvents(),
@@ -459,6 +871,8 @@ public:
             if (fUI.isAttached)
             {
                 fUI.isAttached = false;
+                fUI.frame.uiCallback = nullptr;
+                v3_cpp_obj(fV3.view)->set_frame(fV3.view, nullptr);
                 v3_cpp_obj(fV3.view)->removed(fV3.view);
             }
         }
@@ -719,10 +1133,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        // const v3_param_id v3id = pData->param.data[parameterId].rindex;
+        const v3_param_id v3id = pData->param.data[parameterId].rindex;
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
+        const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller,
+                                                                                            v3id,
+                                                                                            fixedValue);
 
-        // TODO append value to V3 changes queue list
+        // report value to component (next process call)
+        fEvents.paramInputs->setParamValue(parameterId, static_cast<float>(normalized));
 
         CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
@@ -798,22 +1216,36 @@ public:
                 // TODO inform plugin of what UI scale we use
                #endif
 
-                if (v3_cpp_obj(fV3.view)->attached(fV3.view, fUI.window->getPtr(), V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_OK)
+                fUI.frame.uiCallback = this;
+
+                v3_cpp_obj(fV3.view)->set_frame(fV3.view, (v3_plugin_frame**)&fUI.framePtr);
+
+                if (v3_cpp_obj(fV3.view)->attached(fV3.view, fUI.window->getPtr(),
+                                                   V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_OK)
                 {
                     v3_view_rect rect = {};
+
                     if (v3_cpp_obj(fV3.view)->get_size(fV3.view, &rect) == V3_OK)
                     {
                         const int32_t width = rect.right - rect.left;
                         const int32_t height = rect.bottom - rect.top;
+                        carla_stdout("view attached ok, size %i %i", width, height);
 
                         CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
 
                         if (width > 1 && height > 1)
                             fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true, true);
                     }
+                    else
+                    {
+                        carla_stdout("view attached ok, size failed");
+                    }
                 }
                 else
                 {
+                    fUI.frame.uiCallback = nullptr;
+                    v3_cpp_obj(fV3.view)->set_frame(fV3.view, nullptr);
+
                     delete fUI.window;
                     fUI.window = nullptr;
 
@@ -829,16 +1261,156 @@ public:
 
             fUI.window->show();
             fUI.isVisible = true;
-            pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
         else
         {
             fUI.isVisible = false;
-            pData->hints &= ~PLUGIN_NEEDS_UI_MAIN_THREAD;
 
             CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
             fUI.window->hide();
         }
+    }
+
+    void* embedCustomUI(void* const ptr) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI.window == nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fV3.view != nullptr, nullptr);
+
+        fUI.frame.uiCallback = this;
+
+        v3_cpp_obj(fV3.view)->set_frame(fV3.view, (v3_plugin_frame**)&fUI.framePtr);
+
+       #ifndef CARLA_OS_MAC
+        const EngineOptions& opts(pData->engine->getOptions());
+
+        if (carla_isNotZero(opts.uiScale))
+        {
+            // TODO
+        }
+       #endif
+
+        if (v3_cpp_obj(fV3.view)->attached(fV3.view, ptr, V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_OK)
+        {
+            fUI.isEmbed = true;
+            fUI.isVisible = true;
+            v3_view_rect rect = {};
+
+            if (v3_cpp_obj(fV3.view)->get_size(fV3.view, &rect) == V3_OK)
+            {
+                const int32_t width = rect.right - rect.left;
+                const int32_t height = rect.bottom - rect.top;
+                carla_stdout("view attached ok, size %i %i", width, height);
+
+                CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
+
+                if (width > 1 && height > 1)
+                    pData->engine->callback(true, true,
+                                            ENGINE_CALLBACK_EMBED_UI_RESIZED,
+                                            pData->id, width, height,
+                                            0, 0.0f, nullptr);
+            }
+            else
+            {
+                carla_stdout("view attached ok, size failed");
+            }
+        }
+        else
+        {
+            fUI.isVisible = false;
+            fUI.frame.uiCallback = nullptr;
+            v3_cpp_obj(fV3.view)->set_frame(fV3.view, nullptr);
+
+            carla_stderr2("Plugin refused to open its own UI");
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                    pData->id,
+                                    -1,
+                                    0, 0, 0.0f,
+                                    "Plugin refused to open its own UI");
+        }
+
+        return nullptr;
+    }
+
+    void idle() override
+    {
+        /*
+        if (kEngineHasIdleOnMainThread)
+            runIdleCallbacksAsNeeded(true);
+        */
+
+        CarlaPlugin::idle();
+    }
+
+    void uiIdle() override
+    {
+       #ifdef _POSIX_VERSION
+        LinkedList<HostPosixFileDescriptor>& posixfds(fUI.frame.loop.posixfds);
+
+        if (posixfds.isNotEmpty())
+        {
+            for (LinkedList<HostPosixFileDescriptor>::Itenerator it = posixfds.begin2(); it.valid(); it.next())
+            {
+                HostPosixFileDescriptor& posixfd(it.getValue(kPosixFileDescriptorFallbackNC));
+
+               #ifdef CARLA_VST3_POSIX_EPOLL
+                struct ::epoll_event event;
+               #else
+                const int16_t filter = EVFILT_WRITE;
+                struct ::kevent kev = {}, event;
+                struct ::timespec timeout = {};
+                EV_SET(&kev, posixfd.pluginfd, filter, EV_ADD|EV_ENABLE, 0, 0, nullptr);
+               #endif
+
+                for (int i=0; i<50; ++i)
+                {
+                   #ifdef CARLA_VST3_POSIX_EPOLL
+                    switch (::epoll_wait(posixfd.hostfd, &event, 1, 0))
+                   #else
+                    switch (::kevent(posixfd.hostFd, &kev, 1, &event, 1, &timeout))
+                   #endif
+                    {
+                    case 1:
+                        v3_cpp_obj(posixfd.handler)->on_fd_is_set(posixfd.handler, posixfd.pluginfd);
+                        break;
+                    case -1:
+                        // fall through
+                    case 0:
+                        i = 50;
+                        break;
+                    default:
+                        carla_safe_exception("posix fd received abnormal value", __FILE__, __LINE__);
+                        i = 50;
+                        break;
+                    }
+                }
+            }
+        }
+       #endif
+
+        LinkedList<HostTimer>& timers(fUI.frame.loop.timers);
+
+        if (timers.isNotEmpty())
+        {
+            for (LinkedList<HostTimer>::Itenerator it = timers.begin2(); it.valid(); it.next())
+            {
+                HostTimer& timer(it.getValue(kTimerFallbackNC));
+                const uint32_t currentTimeInMs = water::Time::getMillisecondCounter();
+
+                if (currentTimeInMs > timer.lastCallTimeInMs + timer.periodInMs)
+                {
+                    timer.lastCallTimeInMs = currentTimeInMs;
+                    v3_cpp_obj(timer.handler)->on_timer(timer.handler);
+                }
+            }
+        }
+
+        /*
+        if (!kEngineHasIdleOnMainThread)
+            runIdleCallbacksAsNeeded(true);
+        */
+
+        CarlaPlugin::uiIdle();
     }
 
     // -------------------------------------------------------------------
@@ -1183,6 +1755,7 @@ public:
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
             pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+            pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
@@ -1885,7 +2458,7 @@ public:
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
-        carla_debug("CarlaPluginVST2::bufferSizeChanged(%i)", newBufferSize);
+        carla_debug("CarlaPluginVST3::bufferSizeChanged(%i)", newBufferSize);
 
         if (pData->active)
             deactivate();
@@ -1955,7 +2528,7 @@ public:
 
     void clearBuffers() noexcept override
     {
-        carla_debug("CarlaPluginVST2::clearBuffers() - start");
+        carla_debug("CarlaPluginVST3::clearBuffers() - start");
 
         if (fAudioAndCvOutBuffers != nullptr)
         {
@@ -1974,7 +2547,7 @@ public:
 
         CarlaPlugin::clearBuffers();
 
-        carla_debug("CarlaPluginVST2::clearBuffers() - end");
+        carla_debug("CarlaPluginVST3::clearBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -2127,7 +2700,9 @@ public:
         fV3.exitfn = v3_exit;
         fV3.factory1 = factory;
 
-        if (! fV3.queryFactories(getHostContext()))
+        v3_funknown** const hostContext = (v3_funknown**)&fV3ApplicationPtr;
+
+        if (! fV3.queryFactories(hostContext))
         {
             pData->engine->setLastError("VST3 plugin failed to properly create factories");
             return false;
@@ -2139,7 +2714,9 @@ public:
             return false;
         }
 
-        if (! fV3.initializePlugin(fV3ClassInfo.v1.class_id, getHostContext()))
+        if (! fV3.initializePlugin(fV3ClassInfo.v1.class_id,
+                                   hostContext,
+                                   (v3_component_handler**)&fComponentHandlerPtr))
         {
             pData->engine->setLastError("VST3 plugin failed to initialize");
             return false;
@@ -2260,8 +2837,11 @@ private:
     EngineTimeInfo fLastTimeInfo;
     v3_process_context fV3TimeContext;
 
-    CarlaScopedPointer<carla_v3_host_application> fV3Application;
-    inline v3_funknown** getHostContext() noexcept { return (v3_funknown**)&fV3Application; }
+    carla_v3_host_application fV3Application;
+    carla_v3_host_application* fV3ApplicationPtr;
+
+    carla_v3_component_handler fComponentHandler;
+    carla_v3_component_handler* fComponentHandlerPtr;
 
     // v3_class_info_2 is ABI compatible with v3_class_info
     union ClassInfo {
@@ -2269,7 +2849,7 @@ private:
         v3_class_info_2 v2;
     } fV3ClassInfo;
 
-    struct Pointers {
+    struct PluginPointers {
         V3_EXITFN exitfn;
         v3_plugin_factory** factory1;
         v3_plugin_factory_2** factory2;
@@ -2277,11 +2857,13 @@ private:
         v3_component** component;
         v3_edit_controller** controller;
         v3_audio_processor** processor;
+        v3_connection_point** connComponent;
+        v3_connection_point** connController;
         v3_plugin_view** view;
         bool shouldTerminateComponent;
         bool shouldTerminateController;
 
-        Pointers()
+        PluginPointers()
             : exitfn(nullptr),
               factory1(nullptr),
               factory2(nullptr),
@@ -2289,11 +2871,13 @@ private:
               component(nullptr),
               controller(nullptr),
               processor(nullptr),
+              connComponent(nullptr),
+              connController(nullptr),
               view(nullptr),
               shouldTerminateComponent(false),
               shouldTerminateController(false) {}
 
-        ~Pointers()
+        ~PluginPointers()
         {
             // must have been cleaned up by now
             CARLA_SAFE_ASSERT(exitfn == nullptr);
@@ -2366,7 +2950,9 @@ private:
             return true;
         }
 
-        bool initializePlugin(const v3_tuid uid, v3_funknown** const hostContext)
+        bool initializePlugin(const v3_tuid uid,
+                              v3_funknown** const hostContext,
+                              v3_component_handler** const handler)
         {
             // create instance
             void* instance = nullptr;
@@ -2392,7 +2978,8 @@ private:
                 if (v3_cpp_obj(component)->get_controller_class_id(component, cuid) == V3_OK)
                 {
                     instance = nullptr;
-                    if (v3_cpp_obj(factory1)->create_instance(factory1, cuid, v3_edit_controller_iid, &instance) == V3_OK && instance != nullptr)
+                    if (v3_cpp_obj(factory1)->create_instance(factory1, cuid,
+                                                              v3_edit_controller_iid, &instance) == V3_OK)
                         controller = static_cast<v3_edit_controller**>(instance);
                 }
 
@@ -2403,13 +2990,29 @@ private:
                 shouldTerminateController = true;
             }
 
+            v3_cpp_obj(controller)->set_component_handler(controller, handler);
+
             // create processor
             CARLA_SAFE_ASSERT_RETURN(v3_cpp_obj_query_interface(component, v3_audio_processor_iid,
                                                                 &processor) == V3_OK, exit());
             CARLA_SAFE_ASSERT_RETURN(processor != nullptr, exit());
 
-            // create view, ignoring result
-            view = v3_cpp_obj(controller)->create_view(controller, "view");
+            // connect component to controller
+            if (v3_cpp_obj_query_interface(component, v3_connection_point_iid, &connComponent) != V3_OK)
+                connComponent = nullptr;
+
+            if (v3_cpp_obj_query_interface(controller, v3_connection_point_iid, &connController) != V3_OK)
+                connController = nullptr;
+
+            if (connComponent != nullptr && connController != nullptr)
+            {
+                v3_cpp_obj(connComponent)->connect(connComponent, connController);
+                v3_cpp_obj(connController)->connect(connController, connComponent);
+            }
+
+            // create view
+            view = v3_cpp_obj(controller)->create_view(controller, "editor");
+            carla_stdout("has view %p", view);
 
             return true;
         }
@@ -2418,6 +3021,24 @@ private:
         {
             // must be deleted by now
             CARLA_SAFE_ASSERT(view == nullptr);
+
+            if (connComponent != nullptr && connController != nullptr)
+            {
+                v3_cpp_obj(connComponent)->disconnect(connComponent, connController);
+                v3_cpp_obj(connController)->disconnect(connController, connComponent);
+            }
+
+            if (connComponent != nullptr)
+            {
+                v3_cpp_obj_unref(connComponent);
+                connComponent = nullptr;
+            }
+
+            if (connController != nullptr)
+            {
+                v3_cpp_obj_unref(connController);
+                connController = nullptr;
+            }
 
             if (processor != nullptr)
             {
@@ -2477,7 +3098,7 @@ private:
             return false;
         }
 
-        CARLA_DECLARE_NON_COPYABLE(Pointers)
+        CARLA_DECLARE_NON_COPYABLE(PluginPointers)
     } fV3;
 
     struct Events {
@@ -2522,12 +3143,15 @@ private:
         bool isAttached;
         bool isEmbed;
         bool isVisible;
+        carla_v3_plugin_frame frame;
+        carla_v3_plugin_frame* framePtr;
         CarlaPluginUI* window;
 
         UI() noexcept
             : isAttached(false),
               isEmbed(false),
               isVisible(false),
+              framePtr(&frame),
               window(nullptr) {}
 
         ~UI()

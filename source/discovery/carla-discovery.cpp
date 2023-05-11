@@ -1452,6 +1452,37 @@ struct carla_v3_host_application : v3_host_application_cpp {
     static v3_result V3_API carla_create_instance(void*, v3_tuid, v3_tuid, void**) { return V3_NOT_IMPLEMENTED; }
 };
 
+struct carla_v3_param_value_queue : v3_param_value_queue_cpp {
+    carla_v3_param_value_queue()
+    {
+        query_interface = carla_query_interface;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        queue.get_param_id = carla_get_param_id;
+        queue.get_point_count = carla_get_point_count;
+        queue.get_point = carla_get_point;
+        queue.add_point = carla_add_point;
+    }
+
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_param_value_queue_iid))
+        {
+            *iface = self;
+            return V3_OK;
+        }
+
+        *iface = nullptr;
+        return V3_NO_INTERFACE;
+    }
+
+    static v3_param_id V3_API carla_get_param_id(void*) { return 0; }
+    static int32_t V3_API carla_get_point_count(void*) { return 0; }
+    static v3_result V3_API carla_get_point(void*, int32_t, int32_t*, double*) { return V3_NOT_IMPLEMENTED; }
+    static v3_result V3_API carla_add_point(void*, int32_t, double, int32_t*) { return V3_NOT_IMPLEMENTED; }
+};
+
 struct carla_v3_param_changes : v3_param_changes_cpp {
     carla_v3_param_changes()
     {
@@ -1706,6 +1737,21 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             v3_cpp_obj_initialize(controller, hostContext);
         }
 
+        // connect component to controller
+        v3_connection_point** connComponent = nullptr;
+        if (v3_cpp_obj_query_interface(component, v3_connection_point_iid, &connComponent) != V3_OK)
+            connComponent = nullptr;
+
+        v3_connection_point** connController = nullptr;
+        if (v3_cpp_obj_query_interface(controller, v3_connection_point_iid, &connController) != V3_OK)
+            connController = nullptr;
+
+        if (connComponent != nullptr && connController != nullptr)
+        {
+            v3_cpp_obj(connComponent)->connect(connComponent, connController);
+            v3_cpp_obj(connController)->connect(connController, connComponent);
+        }
+
         // fill in all the details
         uint hints = 0x0;
         int audioIns = 0;
@@ -1770,7 +1816,7 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         CARLA_SAFE_ASSERT_CONTINUE(cvIns <= MAX_DISCOVERY_CV_IO);
         CARLA_SAFE_ASSERT_CONTINUE(cvOuts <= MAX_DISCOVERY_CV_IO);
 
-        if (v3_plugin_view** const view = v3_cpp_obj(controller)->create_view(controller, "view"))
+        if (v3_plugin_view** const view = v3_cpp_obj(controller)->create_view(controller, "editor"))
         {
             if (v3_cpp_obj(view)->is_platform_type_supported(view, V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_TRUE)
                 hints |= PLUGIN_HAS_CUSTOM_UI;
@@ -1800,9 +1846,9 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
                                                       ? new v3_audio_bus_buffers[numAudioInputBuses]
                                                       : nullptr;
 
-            v3_audio_bus_buffers* const  outputsBuffers = numAudioOutputBuses > 0
-                                                        ? new v3_audio_bus_buffers[numAudioOutputBuses]
-                                                        : nullptr;
+            v3_audio_bus_buffers* const outputsBuffers = numAudioOutputBuses > 0
+                                                       ? new v3_audio_bus_buffers[numAudioOutputBuses]
+                                                       : nullptr;
 
             for (int32_t b=0; b<numAudioInputBuses; ++b)
             {
@@ -1902,6 +1948,19 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
 
             v3_cpp_obj_unref(processor);
         }
+
+        // disconnect and unref connection points
+        if (connComponent != nullptr && connController != nullptr)
+        {
+            v3_cpp_obj(connComponent)->disconnect(connComponent, connController);
+            v3_cpp_obj(connController)->disconnect(connController, connComponent);
+        }
+
+        if (connComponent != nullptr)
+            v3_cpp_obj_unref(connComponent);
+
+        if (connController != nullptr)
+            v3_cpp_obj_unref(connController);
 
         if (shouldTerminateController)
             v3_cpp_obj_terminate(controller);
