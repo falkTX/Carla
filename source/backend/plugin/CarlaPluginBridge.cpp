@@ -1796,8 +1796,6 @@ public:
                     uint8_t j=0;
                     for (; j<size && j<4; ++j)
                         data[j] = *midiData++;
-                    for (; j<size; ++j)
-                        data[j] = *midiData++;
                 }
 
                 if (size <= 4)
