@@ -1,6 +1,6 @@
 /*
  * Carla SFZero Plugin
- * Copyright (C) 2018-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,8 +16,15 @@
  */
 
 #include "CarlaPluginInternal.hpp"
-#include "CarlaBackendUtils.hpp"
 #include "CarlaEngine.hpp"
+
+#ifndef STATIC_PLUGIN_TARGET
+# define HAVE_SFZ
+#endif
+
+#ifdef HAVE_SFZ
+
+#include "CarlaBackendUtils.hpp"
 
 #include "sfzero/SFZero.h"
 
@@ -765,6 +772,12 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginSFZero)
 };
 
+CARLA_BACKEND_END_NAMESPACE
+
+#endif // HAVE_SFZ
+
+CARLA_BACKEND_START_NAMESPACE
+
 // -------------------------------------------------------------------------------------------------------------------
 
 CarlaPluginPtr CarlaPlugin::newSFZero(const Initializer& init)
@@ -772,10 +785,11 @@ CarlaPluginPtr CarlaPlugin::newSFZero(const Initializer& init)
     carla_debug("CarlaPluginSFZero::newSFZero({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})",
                 init.engine, init.filename, init.name, init.label, init.uniqueId);
 
+#ifdef HAVE_SFZ
     // -------------------------------------------------------------------
     // Check if file exists
 
-    if (! File(init.filename).existsAsFile())
+    if (! water::File(init.filename).existsAsFile())
     {
         init.engine->setLastError("Requested file is not valid or does not exist");
         return nullptr;
@@ -787,6 +801,10 @@ CarlaPluginPtr CarlaPlugin::newSFZero(const Initializer& init)
         return nullptr;
 
     return plugin;
+#else
+    init.engine->setLastError("SFZ support not available");
+    return nullptr;
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------
