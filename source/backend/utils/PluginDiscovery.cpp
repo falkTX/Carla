@@ -224,7 +224,7 @@ protected:
         {
             const char* category = nullptr;
             readNextLineAsString(category, false);
-            nextInfo.metadata.category = getPluginCategoryFromString(category);
+            nextInfo.metadata.category = CB::getPluginCategoryFromString(category);
             return true;
         }
 
