@@ -1367,7 +1367,7 @@ public:
                    #ifdef CARLA_VST3_POSIX_EPOLL
                     switch (::epoll_wait(posixfd.hostfd, &event, 1, 0))
                    #else
-                    switch (::kevent(posixfd.hostFd, &kev, 1, &event, 1, &timeout))
+                    switch (::kevent(posixfd.hostfd, &kev, 1, &event, 1, &timeout))
                    #endif
                     {
                     case 1:
