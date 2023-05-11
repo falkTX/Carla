@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2023 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -665,7 +665,7 @@ public:
         hostApplicationPath,
 
         /** Windows specific paths */
-        winAppData, winProgramFiles
+        winAppData, winProgramFiles, winCommonProgramFiles
     };
 
     /** Finds the location of a special type of file or directory, such as a home folder or
