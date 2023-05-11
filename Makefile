@@ -48,7 +48,9 @@ ALL_LIBS += $(MODULEDIR)/rtmempool.a
 
 3RD_LIBS += $(MODULEDIR)/audio_decoder.a
 3RD_LIBS += $(MODULEDIR)/lilv.a
+ifneq ($(STATIC_PLUGIN_TARGET),true)
 3RD_LIBS += $(MODULEDIR)/sfzero.a
+endif
 3RD_LIBS += $(MODULEDIR)/water.a
 3RD_LIBS += $(MODULEDIR)/zita-resampler.a
 

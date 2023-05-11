@@ -177,7 +177,9 @@ NATIVE_LINK_FLAGS  += $(MAGIC_LIBS)
 
 LIBS_native        += $(MODULEDIR)/audio_decoder.a
 LIBS_native        += $(MODULEDIR)/native-plugins.a
+ifneq ($(STATIC_PLUGIN_TARGET),true)
 LIBS_native        += $(MODULEDIR)/sfzero.a
+endif
 LIBS_native        += $(MODULEDIR)/zita-resampler.a
 
 ifeq ($(HAVE_DGL),true)
