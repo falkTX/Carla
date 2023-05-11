@@ -33,7 +33,7 @@
 
 #ifdef CARLA_OS_MAC
 # include "CarlaMacUtils.cpp"
-# if defined(USING_JUCE) && defined(__aarch64__)
+# ifdef __aarch64__
 #  include <spawn.h>
 # endif
 #endif
@@ -2752,7 +2752,7 @@ int main(int argc, const char* argv[])
         posix_spawnattr_t attr;
         posix_spawnattr_init(&attr);
         CARLA_SAFE_ASSERT_RETURN(posix_spawnattr_setbinpref_np(&attr, 1, &pref, nullptr) == 0, 1);
-        CARLA_SAFE_ASSERT_RETURN(posix_spawn(&pid, argv[0], nullptr, &attr, argv, nullptr) == 0, 1);
+        CARLA_SAFE_ASSERT_RETURN(posix_spawn(&pid, argv[0], nullptr, &attr, (char* const*)argv, nullptr) == 0, 1);
         posix_spawnattr_destroy(&attr);
 
         if (pid > 0)
