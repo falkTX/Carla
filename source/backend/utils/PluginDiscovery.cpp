@@ -435,12 +435,10 @@ static std::vector<water::File> findVST3s(const char* const pluginPath)
 
     std::vector<water::File> ret;
 
-   #if defined(CARLA_OS_MAC)
-    static constexpr const uint flags = File::findDirectories;
-   #elif defined(CARLA_OS_WIN)
+   #if defined(CARLA_OS_WIN)
     static constexpr const uint flags = File::findDirectories|File::findFiles;
    #else
-    static constexpr const uint flags = File::findFiles;
+    static constexpr const uint flags = File::findDirectories;
    #endif
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
