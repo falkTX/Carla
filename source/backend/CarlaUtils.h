@@ -21,6 +21,7 @@
 #include "CarlaBackend.h"
 
 #ifdef __cplusplus
+using CARLA_BACKEND_NAMESPACE::BinaryType;
 using CARLA_BACKEND_NAMESPACE::PluginCategory;
 using CARLA_BACKEND_NAMESPACE::PluginType;
 #endif
@@ -33,16 +34,6 @@ using CARLA_BACKEND_NAMESPACE::PluginType;
  * This API allows to call advanced features from Python.
  * @{
  */
-
-/*!
- * TODO.
- */
-typedef void* CarlaPipeClientHandle;
-
-/*!
- * TODO.
- */
-typedef void (*CarlaPipeCallbackFunc)(void* ptr, const char* msg);
 
 /*!
  * Information about a cached plugin.
@@ -139,6 +130,170 @@ typedef struct _CarlaCachedPluginInfo {
 } CarlaCachedPluginInfo;
 
 /* --------------------------------------------------------------------------------------------------------------------
+ * plugin discovery */
+
+typedef void* CarlaPluginDiscoveryHandle;
+
+/*!
+ * TODO.
+ */
+typedef struct _CarlaPluginDiscoveryMetadata {
+    /*!
+     * Plugin name.
+     */
+    const char* name;
+
+    /*!
+     * Plugin author/maker.
+     */
+    const char* maker;
+
+    /*!
+     * Plugin category.
+     */
+    PluginCategory category;
+
+    /*!
+     * Plugin hints.
+     * @see PluginHints
+     */
+    uint hints;
+
+#ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
+    CARLA_API _CarlaPluginDiscoveryMetadata() noexcept;
+    CARLA_DECLARE_NON_COPYABLE(_CarlaPluginDiscoveryMetadata)
+#endif
+
+} CarlaPluginDiscoveryMetadata;
+
+/*!
+ * TODO.
+ */
+typedef struct _CarlaPluginDiscoveryIO {
+    /*!
+     * Number of audio inputs.
+     */
+    uint32_t audioIns;
+
+    /*!
+     * Number of audio outputs.
+     */
+    uint32_t audioOuts;
+
+    /*!
+     * Number of CV inputs.
+     */
+    uint32_t cvIns;
+
+    /*!
+     * Number of CV outputs.
+     */
+    uint32_t cvOuts;
+
+    /*!
+     * Number of MIDI inputs.
+     */
+    uint32_t midiIns;
+
+    /*!
+     * Number of MIDI outputs.
+     */
+    uint32_t midiOuts;
+
+    /*!
+     * Number of input parameters.
+     */
+    uint32_t parameterIns;
+
+    /*!
+     * Number of output parameters.
+     */
+    uint32_t parameterOuts;
+
+#ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
+    CARLA_API _CarlaPluginDiscoveryIO() noexcept;
+    CARLA_DECLARE_NON_COPYABLE(_CarlaPluginDiscoveryIO)
+#endif
+
+} CarlaPluginDiscoveryIO;
+
+/*!
+ * TODO.
+ */
+typedef struct _CarlaPluginDiscoveryInfo {
+    /*!
+     * Binary type.
+     */
+    BinaryType btype;
+
+    /*!
+     * Plugin type.
+     */
+    PluginType ptype;
+
+    /*!
+     * Plugin filename.
+     */
+    const char* filename;
+
+    /*!
+     * Plugin label/URI/Id.
+     */
+    const char* label;
+
+    /*!
+     * Plugin unique Id.
+     */
+    uint64_t uniqueId;
+
+    /*!
+     * Extra information, not required for load plugins.
+     */
+    CarlaPluginDiscoveryMetadata metadata;
+
+    /*!
+     * Extra information, not required for load plugins.
+     */
+    CarlaPluginDiscoveryIO io;
+
+#ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
+    CARLA_API _CarlaPluginDiscoveryInfo() noexcept;
+    CARLA_DECLARE_NON_COPYABLE(_CarlaPluginDiscoveryInfo)
+#endif
+
+} CarlaPluginDiscoveryInfo;
+
+/*!
+ * TODO.
+ */
+typedef void (*CarlaPluginDiscoveryCallback)(void* ptr, const CarlaPluginDiscoveryInfo* info);
+
+/*!
+ */
+CARLA_PLUGIN_EXPORT CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* discoveryTool,
+                                                                            PluginType ptype,
+                                                                            const char* pluginPath,
+                                                                            CarlaPluginDiscoveryCallback callback,
+                                                                            void* callbackPtr);
+
+/*!
+ */
+CARLA_PLUGIN_EXPORT bool carla_plugin_discovery_idle(CarlaPluginDiscoveryHandle handle);
+
+/*!
+ */
+CARLA_PLUGIN_EXPORT void carla_plugin_discovery_stop(CarlaPluginDiscoveryHandle handle);
+
+/* --------------------------------------------------------------------------------------------------------------------
  * cached plugins */
 
 /*!
@@ -221,6 +376,16 @@ CARLA_PLUGIN_EXPORT void carla_juce_cleanup(void);
 
 /* --------------------------------------------------------------------------------------------------------------------
  * pipes */
+
+/*!
+ * TODO.
+ */
+typedef void* CarlaPipeClientHandle;
+
+/*!
+ * TODO.
+ */
+typedef void (*CarlaPipeCallbackFunc)(void* ptr, const char* msg);
 
 /*!
  * TODO.

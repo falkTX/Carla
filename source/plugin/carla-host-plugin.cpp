@@ -28,6 +28,7 @@
 #include "utils/Information.cpp"
 #include "utils/JUCE.cpp"
 #include "utils/PipeClient.cpp"
+#include "utils/PluginDiscovery.cpp"
 #include "utils/System.cpp"
 #include "utils/Windows.cpp"
 

@@ -19,6 +19,7 @@ OBJS = \
 	$(OBJDIR)/Information.cpp.o \
 	$(OBJDIR)/JUCE.cpp.o \
 	$(OBJDIR)/PipeClient.cpp.o \
+	$(OBJDIR)/PluginDiscovery.cpp.o \
 	$(OBJDIR)/System.cpp.o \
 	$(OBJDIR)/Windows.cpp.o
 
