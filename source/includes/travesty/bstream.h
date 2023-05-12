@@ -36,3 +36,15 @@ struct v3_bstream {
 
 static constexpr const v3_tuid v3_bstream_iid =
 	V3_ID(0xC3BF6EA2, 0x30994752, 0x9B6BF990, 0x1EE33E9B);
+
+#ifdef __cplusplus
+
+/**
+ * C++ variants
+ */
+
+struct v3_bstream_cpp : v3_funknown {
+	v3_bstream stream;
+};
+
+#endif

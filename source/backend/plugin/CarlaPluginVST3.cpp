@@ -51,6 +51,7 @@
 #endif
 
 #include <atomic>
+#include <unordered_map>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -99,11 +100,273 @@ static uint32_t V3_API v3_unref_static(void*) { return 0; }
 
 // --------------------------------------------------------------------------------------------------------------------
 
+struct v3_var {
+    char type;
+    uint32_t size;
+    union {
+        int64_t i;
+        double f;
+        int16_t* s;
+        void* b;
+    } value;
+};
+
+static void v3_var_cleanup(v3_var& var)
+{
+    switch (var.type)
+    {
+    case 's':
+        std::free(var.value.s);
+        break;
+    case 'b':
+        std::free(var.value.b);
+        break;
+    }
+
+    carla_zeroStruct(var);
+}
+
+struct carla_v3_attribute_list : v3_attribute_list_cpp {
+    // std::atomic<int> refcounter;
+    std::unordered_map<std::string, v3_var> vars;
+
+    carla_v3_attribute_list()
+    //     : refcounter(1)
+    {
+        query_interface = carla_query_interface;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        attrlist.set_int = carla_set_int;
+        attrlist.get_int = carla_get_int;
+        attrlist.set_float = carla_set_float;
+        attrlist.get_float = carla_get_float;
+        attrlist.set_string = carla_set_string;
+        attrlist.get_string = carla_get_string;
+        attrlist.set_binary = carla_set_binary;
+        attrlist.get_binary = carla_get_binary;
+    }
+
+    ~carla_v3_attribute_list()
+    {
+        for (std::unordered_map<std::string, v3_var>::iterator it = vars.begin(); it != vars.end(); ++it)
+            v3_var_cleanup(it->second);
+    }
+
+    v3_result add(const char* const id, const v3_var& var)
+    {
+        const std::string sid(id);
+
+        for (std::unordered_map<std::string, v3_var>::iterator it = vars.begin(); it != vars.end(); ++it)
+        {
+            if (it->first == sid)
+            {
+                v3_var_cleanup(it->second);
+                break;
+            }
+        }
+
+        vars[sid] = var;
+        return V3_OK;
+    }
+
+    bool get(const char* const id, v3_var& var)
+    {
+        const std::string sid(id);
+
+        for (std::unordered_map<std::string, v3_var>::iterator it = vars.begin(); it != vars.end(); ++it)
+        {
+            if (it->first == sid)
+            {
+                var = it->second;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
+        // carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_attribute_list_iid))
+        {
+            // ++attrlist->refcounter;
+            *iface = self;
+            return V3_OK;
+        }
+
+        *iface = nullptr;
+        carla_stdout("TODO carla_v3_attribute_list::query_interface %s", tuid2str(iid));
+        return V3_NO_INTERFACE;
+    }
+
+    /*
+    static uint32_t V3_API carla_ref(void* const self)
+    {
+        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+        const int refcount = ++msg->refcounter;
+        carla_debug("carla_v3_attribute_list::ref => %p | refcount %i", self, refcount);
+        return refcount;
+    }
+
+    static uint32_t V3_API carla_unref(void* const self)
+    {
+        carla_v3_attribute_list** const attrlistptr = static_cast<carla_v3_attribute_list**>(self);
+        carla_v3_attribute_list* const attrlist = *attrlistptr;
+
+        if (const int refcount = --attrlist->refcounter)
+        {
+            carla_debug("carla_v3_attribute_list::unref => %p | refcount %i", self, refcount);
+            return refcount;
+        }
+
+        carla_debug("carla_v3_attribute_list::unref => %p | refcount is zero, deleting factory", self);
+
+        delete attrlist;
+        delete attrlistptr;
+        return 0;
+    }
+    */
+
+	static v3_result carla_set_int(void* const self, const char* const id, const int64_t value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
+        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+
+        v3_var var = {};
+        var.type = 'i';
+        var.value.i = value;
+        return attrlist->add(id, var);
+    }
+
+	static v3_result carla_get_int(void* const self, const char* const id, int64_t* const value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
+        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+
+        v3_var var = {};
+        if (attrlist->get(id, var))
+        {
+            *value = var.value.i;
+            return V3_OK;
+        }
+
+        return V3_INVALID_ARG;
+    }
+
+	static v3_result carla_set_float(void* const self, const char* const id, const double value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
+        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+
+        v3_var var = {};
+        var.type = 'f';
+        var.value.f = value;
+        return attrlist->add(id, var);
+    }
+
+	static v3_result carla_get_float(void* const self, const char* const id, double* const value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
+        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+
+        v3_var var = {};
+        if (attrlist->get(id, var))
+        {
+            *value = var.value.f;
+            return V3_OK;
+        }
+
+        return V3_INVALID_ARG;
+    }
+
+	static v3_result carla_set_string(void* const self, const char* const id, const int16_t* const string)
+    {
+        CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, V3_INVALID_ARG);
+        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+
+        const size_t size = sizeof(int16_t) * (strlen_utf16(string) + 1);
+        int16_t* const s = static_cast<int16_t*>(std::malloc(size));
+        CARLA_SAFE_ASSERT_RETURN(s != nullptr, V3_NOMEM);
+        std::memcpy(s, string, size);
+
+        v3_var var = {};
+        var.type = 's';
+        var.size = size;
+        var.value.s = s;
+        return attrlist->add(id, var);
+    }
+
+	static v3_result carla_get_string(void* const self, const char* const id,
+                                      int16_t* const string, const uint32_t size)
+    {
+        CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(size != 0, V3_INVALID_ARG);
+        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+
+        v3_var var = {};
+        if (attrlist->get(id, var))
+        {
+            CARLA_SAFE_ASSERT_UINT2_RETURN(var.size >= size, var.size, size, V3_INVALID_ARG);
+            std::memcpy(string, var.value.s, size);
+            return V3_OK;
+        }
+
+        return V3_INVALID_ARG;
+    }
+
+	static v3_result carla_set_binary(void* const self, const char* const id,
+                                      const void* const data, const uint32_t size)
+    {
+        CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(size != 0, V3_INVALID_ARG);
+        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+
+        void* const b = std::malloc(size);
+        CARLA_SAFE_ASSERT_RETURN(b != nullptr, V3_NOMEM);
+        std::memcpy(b, data, size);
+
+        v3_var var = {};
+        var.type = 'b';
+        var.size = size;
+        var.value.b = b;
+        return attrlist->add(id, var);
+    }
+
+	static v3_result carla_get_binary(void* const self, const char* const id,
+                                      const void** const data, uint32_t* const size)
+    {
+        CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
+        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
+
+        v3_var var = {};
+        if (attrlist->get(id, var))
+        {
+            *data = var.value.b;
+            *size = var.size;
+            return V3_OK;
+        }
+
+        return V3_INVALID_ARG;
+    }
+};
+
 struct carla_v3_message : v3_message_cpp {
     std::atomic<int> refcounter;
+    carla_v3_attribute_list attrlist;
+    carla_v3_attribute_list* attrlistptr;
+    const char* msgId;
 
     carla_v3_message()
-        : refcounter(1)
+        : refcounter(1),
+          attrlistptr(&attrlist),
+          msgId(nullptr)
     {
         query_interface = carla_query_interface;
         ref = carla_ref;
@@ -111,6 +374,11 @@ struct carla_v3_message : v3_message_cpp {
         msg.get_message_id = carla_get_message_id;
         msg.set_message_id = carla_set_message_id;
         msg.get_attributes = carla_get_attributes;
+    }
+
+    ~carla_v3_message()
+    {
+        delete[] msgId;
     }
 
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
@@ -157,24 +425,134 @@ struct carla_v3_message : v3_message_cpp {
         return 0;
     }
 
-    static const char* V3_API carla_get_message_id(void*)
+    static const char* V3_API carla_get_message_id(void* const self)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
-        return nullptr;
+        carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
+        return msg->msgId;
     }
 
-    static void V3_API carla_set_message_id(void*, const char*)
+    static void V3_API carla_set_message_id(void* const self, const char* const id)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
+        delete[] msg->msgId;
+        msg->msgId = id != nullptr ? carla_strdup(id) : nullptr;
     }
 
-    static v3_attribute_list** V3_API carla_get_attributes(void*)
+    static v3_attribute_list** V3_API carla_get_attributes(void* const self)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
-        return nullptr;
+        carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
+        return (v3_attribute_list**)&msg->attrlistptr;
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_message)
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct carla_v3_bstream : v3_bstream_cpp {
+    void* buffer;
+    int64_t size;
+    int64_t pos;
+
+    carla_v3_bstream()
+        : buffer(nullptr),
+          size(0),
+          pos(0)
+    {
+        query_interface = carla_query_interface;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        stream.read = carla_read;
+        stream.write = carla_write;
+        stream.seek = carla_seek;
+        stream.tell = carla_tell;
+    }
+
+    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+    {
+        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
+
+        if (v3_tuid_match(iid, v3_funknown_iid) ||
+            v3_tuid_match(iid, v3_bstream_iid))
+        {
+            *iface = self;
+            return V3_OK;
+        }
+
+        *iface = nullptr;
+        carla_stdout("TODO carla_v3_bstream::query_interface %s", tuid2str(iid));
+        return V3_NO_INTERFACE;
+    }
+
+	static v3_result carla_read(void* const self, void* const buffer, int32_t num_bytes, int32_t* const bytes_read)
+    {
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(bytes_read != nullptr, V3_INVALID_ARG);
+        carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
+
+        if (stream->pos + num_bytes > stream->size)
+            num_bytes = stream->size - stream->pos;
+
+        std::memcpy(buffer, static_cast<uint8_t*>(stream->buffer) + stream->pos, num_bytes);
+        stream->pos += num_bytes;
+        *bytes_read = num_bytes;
+
+        return V3_OK;
+    }
+
+	static v3_result carla_write(void* const self,
+                                 void* const buffer, const int32_t num_bytes, int32_t* const bytes_read)
+    {
+        CARLA_SAFE_ASSERT_RETURN(buffer != nullptr, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(bytes_read != nullptr, V3_INVALID_ARG);
+        carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
+
+        const int64_t size = stream->size + num_bytes;
+        void* const oldbuffer = stream->buffer;
+        stream->buffer = std::realloc(oldbuffer, size); // FIXME detect alloc failure
+        CARLA_SAFE_ASSERT_RETURN(stream->buffer != oldbuffer, V3_NOMEM);
+
+        stream->size += num_bytes;
+        *bytes_read = num_bytes;
+        return V3_OK;
+    }
+
+	static v3_result carla_seek(void* const self, const int64_t pos, const int32_t seek_mode, int64_t* const result)
+    {
+        CARLA_SAFE_ASSERT_RETURN(result != nullptr, V3_INVALID_ARG);
+        carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
+
+        switch (seek_mode)
+        {
+        case V3_SEEK_SET:
+            CARLA_SAFE_ASSERT_INT2_RETURN(pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
+            *result = stream->pos = pos;
+            return V3_OK;
+        case V3_SEEK_CUR:
+            CARLA_SAFE_ASSERT_INT2_RETURN(stream->pos + pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
+            *result = stream->pos = stream->pos + pos;
+            return V3_OK;
+        case V3_SEEK_END:
+            CARLA_SAFE_ASSERT_INT2_RETURN(pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
+            *result = stream->pos = stream->size - pos;
+            return V3_OK;
+        }
+
+        return V3_INVALID_ARG;
+    }
+
+	static v3_result carla_tell(void* const self, int64_t* const pos)
+    {
+        CARLA_SAFE_ASSERT_RETURN(pos != nullptr, V3_INVALID_ARG);
+        carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
+
+        *pos = stream->pos;
+        return V3_OK;
+    }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_bstream)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -779,13 +1157,13 @@ private:
 // --------------------------------------------------------------------------------------------------------------------
 
 struct carla_v3_plugin_frame : v3_plugin_frame_cpp {
+    CarlaPluginUI::Callback* const callback;
     carla_v3_run_loop loop;
     carla_v3_run_loop* loopPtr;
-    CarlaPluginUI::Callback* uiCallback;
 
-    carla_v3_plugin_frame()
-        : loopPtr(&loop),
-          uiCallback(nullptr)
+    carla_v3_plugin_frame(CarlaPluginUI::Callback* const cb)
+        : callback(cb),
+          loopPtr(&loop)
     {
         query_interface = carla_query_interface;
         ref = v3_ref_static;
@@ -823,8 +1201,7 @@ private:
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
         const carla_v3_plugin_frame* const me = *static_cast<const carla_v3_plugin_frame**>(self);
-        CARLA_SAFE_ASSERT_RETURN(me->uiCallback != nullptr, V3_INVALID_ARG);
-        me->uiCallback->handlePluginUIResized(rect->right - rect->left, rect->bottom - rect->top);
+        me->callback->handlePluginUIResized(rect->right - rect->left, rect->bottom - rect->top);
         return V3_OK;
     }
 
@@ -848,6 +1225,8 @@ public:
           fV3ApplicationPtr(&fV3Application),
           fComponentHandler(),
           fComponentHandlerPtr(&fComponentHandler),
+          fPluginFrame(this),
+          fPluginFramePtr(&fPluginFrame),
           fV3ClassInfo(),
           fV3(),
           fEvents(),
@@ -871,7 +1250,6 @@ public:
             if (fUI.isAttached)
             {
                 fUI.isAttached = false;
-                fUI.frame.uiCallback = nullptr;
                 v3_cpp_obj(fV3.view)->set_frame(fV3.view, nullptr);
                 v3_cpp_obj(fV3.view)->removed(fV3.view);
             }
@@ -1216,9 +1594,7 @@ public:
                 // TODO inform plugin of what UI scale we use
                #endif
 
-                fUI.frame.uiCallback = this;
-
-                v3_cpp_obj(fV3.view)->set_frame(fV3.view, (v3_plugin_frame**)&fUI.framePtr);
+                v3_cpp_obj(fV3.view)->set_frame(fV3.view, (v3_plugin_frame**)&fPluginFramePtr);
 
                 if (v3_cpp_obj(fV3.view)->attached(fV3.view, fUI.window->getPtr(),
                                                    V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_OK)
@@ -1243,7 +1619,6 @@ public:
                 }
                 else
                 {
-                    fUI.frame.uiCallback = nullptr;
                     v3_cpp_obj(fV3.view)->set_frame(fV3.view, nullptr);
 
                     delete fUI.window;
@@ -1276,9 +1651,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.window == nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(fV3.view != nullptr, nullptr);
 
-        fUI.frame.uiCallback = this;
-
-        v3_cpp_obj(fV3.view)->set_frame(fV3.view, (v3_plugin_frame**)&fUI.framePtr);
+        v3_cpp_obj(fV3.view)->set_frame(fV3.view, (v3_plugin_frame**)&fPluginFramePtr);
 
        #ifndef CARLA_OS_MAC
         const EngineOptions& opts(pData->engine->getOptions());
@@ -1317,7 +1690,6 @@ public:
         else
         {
             fUI.isVisible = false;
-            fUI.frame.uiCallback = nullptr;
             v3_cpp_obj(fV3.view)->set_frame(fV3.view, nullptr);
 
             carla_stderr2("Plugin refused to open its own UI");
@@ -1345,7 +1717,7 @@ public:
     void uiIdle() override
     {
        #ifdef _POSIX_VERSION
-        LinkedList<HostPosixFileDescriptor>& posixfds(fUI.frame.loop.posixfds);
+        LinkedList<HostPosixFileDescriptor>& posixfds(fPluginFrame.loop.posixfds);
 
         if (posixfds.isNotEmpty())
         {
@@ -1388,7 +1760,7 @@ public:
         }
        #endif
 
-        LinkedList<HostTimer>& timers(fUI.frame.loop.timers);
+        LinkedList<HostTimer>& timers(fPluginFrame.loop.timers);
 
         if (timers.isNotEmpty())
         {
@@ -2019,7 +2391,7 @@ public:
 #endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
-            uint32_t startTime  = 0;
+            uint32_t startTime = 0;
             uint32_t timeOffset = 0;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -2838,10 +3210,13 @@ private:
     v3_process_context fV3TimeContext;
 
     carla_v3_host_application fV3Application;
-    carla_v3_host_application* fV3ApplicationPtr;
+    carla_v3_host_application* const fV3ApplicationPtr;
 
     carla_v3_component_handler fComponentHandler;
-    carla_v3_component_handler* fComponentHandlerPtr;
+    carla_v3_component_handler* const fComponentHandlerPtr;
+
+    carla_v3_plugin_frame fPluginFrame;
+    carla_v3_plugin_frame* const fPluginFramePtr;
 
     // v3_class_info_2 is ABI compatible with v3_class_info
     union ClassInfo {
@@ -3143,15 +3518,12 @@ private:
         bool isAttached;
         bool isEmbed;
         bool isVisible;
-        carla_v3_plugin_frame frame;
-        carla_v3_plugin_frame* framePtr;
         CarlaPluginUI* window;
 
         UI() noexcept
             : isAttached(false),
               isEmbed(false),
               isVisible(false),
-              framePtr(&frame),
               window(nullptr) {}
 
         ~UI()
