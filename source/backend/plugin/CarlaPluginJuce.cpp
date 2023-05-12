@@ -1573,8 +1573,8 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(index >= 0,);
 
-        const uint32_t uindex(static_cast<uint32_t>(index));
-        const float fixedValue(pData->param.getFixedValue(uindex, value));
+        const uint32_t uindex = static_cast<uint32_t>(index);
+        const float fixedValue = pData->param.getFixedValue(uindex, value);
 
         CarlaPlugin::setParameterValue(static_cast<uint32_t>(index), fixedValue, false, true, true);
     }

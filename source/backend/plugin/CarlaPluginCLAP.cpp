@@ -1111,6 +1111,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fExtensions.gui != nullptr,);
 
+        if (fUI.isVisible == yesNo)
+            return;
+
         if (yesNo)
         {
             if (fUI.isVisible)
@@ -1228,7 +1231,7 @@ public:
             }
         }
 
-        runIdleCallbacksAsNeeded(false);
+        runIdleCallbacksAsNeeded(true);
     }
 
     void* embedCustomUI(void* const ptr) override
@@ -3384,10 +3387,9 @@ private:
         }
        #endif // _POSIX_VERSION
 
-        const uint32_t currentTimeInMs = water::Time::getMillisecondCounter();
-
         for (LinkedList<HostTimerDetails>::Itenerator it = fTimers.begin2(); it.valid(); it.next())
         {
+            const uint32_t currentTimeInMs = water::Time::getMillisecondCounter();
             HostTimerDetails& timer(it.getValue(kTimerFallbackNC));
 
             if (currentTimeInMs > timer.lastCallTimeInMs + timer.periodInMs)
