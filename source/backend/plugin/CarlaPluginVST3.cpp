@@ -484,7 +484,8 @@ struct carla_v3_bstream : v3_bstream_cpp {
         return V3_NO_INTERFACE;
     }
 
-    static v3_result carla_read(void* const self, void* const buffer, int32_t num_bytes, int32_t* const bytes_read)
+    static v3_result V3_API carla_read(void* const self,
+                                       void* const buffer, int32_t num_bytes, int32_t* const bytes_read)
     {
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
@@ -501,8 +502,8 @@ struct carla_v3_bstream : v3_bstream_cpp {
         return V3_OK;
     }
 
-    static v3_result carla_write(void* const self,
-                                 void* const buffer, const int32_t num_bytes, int32_t* const bytes_read)
+    static v3_result V3_API carla_write(void* const self,
+                                        void* const buffer, const int32_t num_bytes, int32_t* const bytes_read)
     {
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
@@ -519,7 +520,8 @@ struct carla_v3_bstream : v3_bstream_cpp {
         return V3_OK;
     }
 
-    static v3_result carla_seek(void* const self, const int64_t pos, const int32_t seek_mode, int64_t* const result)
+    static v3_result V3_API carla_seek(void* const self,
+                                       const int64_t pos, const int32_t seek_mode, int64_t* const result)
     {
         CARLA_SAFE_ASSERT_RETURN(result != nullptr, V3_INVALID_ARG);
         carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
@@ -543,7 +545,7 @@ struct carla_v3_bstream : v3_bstream_cpp {
         return V3_INVALID_ARG;
     }
 
-    static v3_result carla_tell(void* const self, int64_t* const pos)
+    static v3_result V3_API carla_tell(void* const self, int64_t* const pos)
     {
         CARLA_SAFE_ASSERT_RETURN(pos != nullptr, V3_INVALID_ARG);
         carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
@@ -1506,6 +1508,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fEvents.paramInputs != nullptr,);
 
         const v3_param_id v3id = pData->param.data[parameterId].rindex;
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
@@ -1526,6 +1529,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(fEvents.paramInputs != nullptr,);
 
         const v3_param_id v3id = pData->param.data[parameterId].rindex;
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
@@ -3233,12 +3237,14 @@ protected:
 
     v3_result v3PerformEdit(const v3_param_id paramId, const double value) override
     {
+        CARLA_SAFE_ASSERT_RETURN(fEvents.paramInputs != nullptr, V3_INTERNAL_ERR);
+
         for (uint32_t i=0; i < pData->param.count; ++i)
         {
             if (static_cast<v3_param_id>(pData->param.data[i].rindex) == paramId)
             {
                 // report value to component (next process call)
-                fEvents.paramInputs->setParamValue(paramId, static_cast<float>(value));
+                fEvents.paramInputs->setParamValue(i, static_cast<float>(value));
 
                 const double plain = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller,
                                                                                                paramId,
@@ -3248,6 +3254,7 @@ protected:
                 return V3_OK;
             }
         }
+
         return V3_INVALID_ARG;
     }
 
