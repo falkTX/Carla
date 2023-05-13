@@ -417,7 +417,6 @@ private:
         carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
-        CARLA_SAFE_ASSERT_RETURN(bytes_read != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(stream->canWrite, V3_INVALID_ARG);
 
         void* const newbuffer = std::realloc(stream->buffer, stream->size + num_bytes);
@@ -426,7 +425,11 @@ private:
         std::memcpy(static_cast<uint8_t*>(newbuffer) + stream->size, buffer, num_bytes);
         stream->buffer = newbuffer;
         stream->size += num_bytes;
-        *bytes_read = num_bytes;
+
+        // this is nasty, VST3s using JUCE do not care about incomplete writes!
+        if (bytes_read != nullptr)
+            *bytes_read = num_bytes;
+
         return V3_OK;
     }
 
@@ -694,11 +697,12 @@ struct carla_v3_output_param_changes : v3_param_changes_cpp {
 // --------------------------------------------------------------------------------------------------------------------
 
 struct carla_v3_input_event_list : v3_event_list_cpp {
-    v3_event events[kPluginMaxMidiEvents];
+    v3_event* const events;
     uint16_t numEvents;
 
     carla_v3_input_event_list()
-        : numEvents(0)
+        : events(new v3_event[kPluginMaxMidiEvents]),
+          numEvents(0)
     {
         query_interface = v3_query_interface_static<v3_event_list_iid>;
         ref = v3_ref_static;
@@ -706,6 +710,11 @@ struct carla_v3_input_event_list : v3_event_list_cpp {
         list.get_event_count = get_event_count;
         list.get_event = get_event;
         list.add_event = add_event;
+    }
+
+    ~carla_v3_input_event_list()
+    {
+        delete[] events;
     }
 
 private:
@@ -751,12 +760,14 @@ private:
     static uint32_t V3_API get_event_count(void*)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        // there is nothing here for output events, plugins are not meant to call this!
         return 0;
     }
 
     static v3_result V3_API get_event(void*, int32_t, v3_event*)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        // there is nothing here for output events, plugins are not meant to call this!
         return V3_NOT_IMPLEMENTED;
     }
 
@@ -1016,6 +1027,7 @@ public:
           fAudioAndCvOutBuffers(nullptr),
           fLastKnownLatency(0),
           fRestartFlags(0),
+          fLastChunk(nullptr),
           fLastTimeInfo(),
           fV3TimeContext(),
           fV3Application(),
@@ -1039,6 +1051,11 @@ public:
         carla_debug("CarlaPluginVST3::~CarlaPluginVST3()");
 
         runIdleCallbacksAsNeeded(false);
+
+        fPluginFrame.loop.timers.clear();
+       #ifdef _POSIX_VERSION
+        fPluginFrame.loop.posixfds.clear();
+       #endif
 
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
@@ -1070,6 +1087,12 @@ public:
         {
             deactivate();
             pData->active = false;
+        }
+
+        if (fLastChunk != nullptr)
+        {
+            std::free(fLastChunk);
+            fLastChunk = nullptr;
         }
 
         clearBuffers();
@@ -1115,11 +1138,31 @@ public:
     // ----------------------------------------------------------------------------------------------------------------
     // Information (current data)
 
-    /* TODO
-    std::size_t getChunkData(void** dataPtr) noexcept override
+    std::size_t getChunkData(void** const dataPtr) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
+        CARLA_SAFE_ASSERT_RETURN(fV3.component != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
+
+        std::free(fLastChunk);
+
+        carla_v3_bstream stream;
+        carla_v3_bstream* streamPtr = &stream;
+        stream.canWrite = true;
+
+        if (v3_cpp_obj(fV3.component)->get_state(fV3.component, (v3_bstream**)&streamPtr))
+        {
+            *dataPtr = fLastChunk = stream.buffer;
+            runIdleCallbacksAsNeeded(false);
+            return stream.size;
+        }
+        else
+        {
+            *dataPtr = fLastChunk = nullptr;
+            runIdleCallbacksAsNeeded(false);
+            return 0;
+        }
     }
-    */
 
     // ----------------------------------------------------------------------------------------------------------------
     // Information (per-plugin data)
@@ -1326,11 +1369,28 @@ public:
         CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
-    /*
     void setChunkData(const void* data, std::size_t dataSize) override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
+        CARLA_SAFE_ASSERT_RETURN(fV3.component != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
+
+        carla_v3_bstream stream;
+        carla_v3_bstream* streamPtr = &stream;
+        stream.buffer = const_cast<void*>(data);
+        stream.size = dataSize;
+        stream.canRead = true;
+
+        if (v3_cpp_obj(fV3.component)->set_state(fV3.component, (v3_bstream**)&streamPtr) == V3_OK)
+        {
+            v3_cpp_obj(fV3.controller)->set_state(fV3.controller, (v3_bstream**)&streamPtr);
+            pData->updateParameterValues(this, true, true, false);
+        }
+
+        runIdleCallbacksAsNeeded(false);
     }
-    */
 
     // ----------------------------------------------------------------------------------------------------------------
     // Set ui stuff
@@ -1587,7 +1647,6 @@ public:
                 }
             }
         }
-
     }
 
     void idle() override
@@ -3117,6 +3176,7 @@ private:
     float** fAudioAndCvOutBuffers;
     uint32_t fLastKnownLatency;
     int32_t fRestartFlags;
+    void* fLastChunk;
     EngineTimeInfo fLastTimeInfo;
     v3_process_context fV3TimeContext;
 

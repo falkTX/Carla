@@ -75,7 +75,9 @@ LIBS += $(MODULEDIR)/water.a
 
 LIBS += $(MODULEDIR)/audio_decoder.a
 LIBS += $(MODULEDIR)/native-plugins.a
+ifneq ($(STATIC_PLUGIN_TARGET),true)
 LIBS += $(MODULEDIR)/sfzero.a
+endif
 LIBS += $(MODULEDIR)/zita-resampler.a
 
 ifeq ($(HAVE_DGL),true)
