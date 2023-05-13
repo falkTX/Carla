@@ -1,6 +1,6 @@
 /*
  * Carla VST3 utils
- * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -154,6 +154,80 @@ const char* tuid2str(const v3_tuid iid) noexcept
                   v3_cconst(iid[12], iid[13], iid[14], iid[15]));
     return buf;
 }
+
+// --------------------------------------------------------------------------------------------------------------------
+
+template<class T>
+void* v3_create_class_ptr()
+{
+    T** const clsptr = new T*;
+    *clsptr = new T;
+    return static_cast<void*>(clsptr);
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+template<class v3_class, const v3_tuid cid>
+static inline
+v3_result V3_API v3_query_interface(void* const self, const v3_tuid iid, void** const iface)
+{
+    v3_class* const cls = *static_cast<v3_class**>(self);
+
+    if (v3_tuid_match(iid, v3_funknown_iid) || v3_tuid_match(iid, cid))
+    {
+        ++cls->refcounter;
+        *iface = self;
+        return V3_OK;
+    }
+
+    *iface = nullptr;
+    return V3_NO_INTERFACE;
+}
+
+template<class v3_class>
+static inline
+uint32_t V3_API v3_ref(void* const self)
+{
+    v3_class* const cls = *static_cast<v3_class**>(self);
+    return ++cls->refcounter;
+}
+
+template<class v3_class>
+static inline
+uint32_t V3_API v3_unref(void* const self)
+{
+    v3_class** const clsptr = static_cast<v3_class**>(self);
+    v3_class* const cls = *clsptr;
+
+    if (const int refcount = --cls->refcounter)
+        return refcount;
+
+    delete cls;
+    delete clsptr;
+    return 0;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+template<const v3_tuid cid>
+static inline
+v3_result V3_API v3_query_interface_static(void* const self, const v3_tuid iid, void** const iface)
+{
+    if (v3_tuid_match(iid, v3_funknown_iid) || v3_tuid_match(iid, cid))
+    {
+        *iface = self;
+        return V3_OK;
+    }
+
+    *iface = nullptr;
+    return V3_NO_INTERFACE;
+}
+
+static inline
+uint32_t V3_API v3_ref_static(void*) { return 1; }
+
+static inline
+uint32_t V3_API v3_unref_static(void*) { return 0; }
 
 // --------------------------------------------------------------------------------------------------------------------
 

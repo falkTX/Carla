@@ -95,8 +95,14 @@ void strncpy_utf8(char* const dst, const int16_t* const src, const size_t length
 
 // --------------------------------------------------------------------------------------------------------------------
 
-static uint32_t V3_API v3_ref_static(void*) { return 1; }
-static uint32_t V3_API v3_unref_static(void*) { return 0; }
+struct v3HostCallback {
+    virtual ~v3HostCallback() {}
+    virtual v3_result v3BeginEdit(v3_param_id) = 0;
+    virtual v3_result v3PerformEdit(v3_param_id, double) = 0;
+    virtual v3_result v3EndEdit(v3_param_id) = 0;
+    virtual v3_result v3RestartComponent(int32_t) = 0;
+    virtual v3_result v3ResizeView(struct v3_plugin_view**, struct v3_view_rect*) = 0;
+};
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -133,17 +139,17 @@ struct carla_v3_attribute_list : v3_attribute_list_cpp {
     carla_v3_attribute_list()
     //     : refcounter(1)
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_attribute_list_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        attrlist.set_int = carla_set_int;
-        attrlist.get_int = carla_get_int;
-        attrlist.set_float = carla_set_float;
-        attrlist.get_float = carla_get_float;
-        attrlist.set_string = carla_set_string;
-        attrlist.get_string = carla_get_string;
-        attrlist.set_binary = carla_set_binary;
-        attrlist.get_binary = carla_get_binary;
+        attrlist.set_int = set_int;
+        attrlist.get_int = get_int;
+        attrlist.set_float = set_float;
+        attrlist.get_float = get_float;
+        attrlist.set_string = set_string;
+        attrlist.get_string = get_string;
+        attrlist.set_binary = set_binary;
+        attrlist.get_binary = get_binary;
     }
 
     ~carla_v3_attribute_list()
@@ -185,53 +191,8 @@ struct carla_v3_attribute_list : v3_attribute_list_cpp {
         return false;
     }
 
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        // carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
-
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_attribute_list_iid))
-        {
-            // ++attrlist->refcounter;
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_attribute_list::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    /*
-    static uint32_t V3_API carla_ref(void* const self)
-    {
-        carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
-        const int refcount = ++msg->refcounter;
-        carla_debug("carla_v3_attribute_list::ref => %p | refcount %i", self, refcount);
-        return refcount;
-    }
-
-    static uint32_t V3_API carla_unref(void* const self)
-    {
-        carla_v3_attribute_list** const attrlistptr = static_cast<carla_v3_attribute_list**>(self);
-        carla_v3_attribute_list* const attrlist = *attrlistptr;
-
-        if (const int refcount = --attrlist->refcounter)
-        {
-            carla_debug("carla_v3_attribute_list::unref => %p | refcount %i", self, refcount);
-            return refcount;
-        }
-
-        carla_debug("carla_v3_attribute_list::unref => %p | refcount is zero, deleting factory", self);
-
-        delete attrlist;
-        delete attrlistptr;
-        return 0;
-    }
-    */
-
-    static v3_result V3_API carla_set_int(void* const self, const char* const id, const int64_t value)
+private:
+    static v3_result V3_API set_int(void* const self, const char* const id, const int64_t value)
     {
         CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
         carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
@@ -242,7 +203,7 @@ struct carla_v3_attribute_list : v3_attribute_list_cpp {
         return attrlist->add(id, var);
     }
 
-    static v3_result V3_API carla_get_int(void* const self, const char* const id, int64_t* const value)
+    static v3_result V3_API get_int(void* const self, const char* const id, int64_t* const value)
     {
         CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
         carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
@@ -257,7 +218,7 @@ struct carla_v3_attribute_list : v3_attribute_list_cpp {
         return V3_INVALID_ARG;
     }
 
-    static v3_result V3_API carla_set_float(void* const self, const char* const id, const double value)
+    static v3_result V3_API set_float(void* const self, const char* const id, const double value)
     {
         CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
         carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
@@ -268,7 +229,7 @@ struct carla_v3_attribute_list : v3_attribute_list_cpp {
         return attrlist->add(id, var);
     }
 
-    static v3_result V3_API carla_get_float(void* const self, const char* const id, double* const value)
+    static v3_result V3_API get_float(void* const self, const char* const id, double* const value)
     {
         CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
         carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
@@ -283,7 +244,7 @@ struct carla_v3_attribute_list : v3_attribute_list_cpp {
         return V3_INVALID_ARG;
     }
 
-    static v3_result V3_API carla_set_string(void* const self, const char* const id, const int16_t* const string)
+    static v3_result V3_API set_string(void* const self, const char* const id, const int16_t* const string)
     {
         CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(string != nullptr, V3_INVALID_ARG);
@@ -301,8 +262,8 @@ struct carla_v3_attribute_list : v3_attribute_list_cpp {
         return attrlist->add(id, var);
     }
 
-    static v3_result V3_API carla_get_string(void* const self, const char* const id,
-                                             int16_t* const string, const uint32_t size)
+    static v3_result V3_API get_string(void* const self, const char* const id,
+                                       int16_t* const string, const uint32_t size)
     {
         CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(string != nullptr, V3_INVALID_ARG);
@@ -320,8 +281,8 @@ struct carla_v3_attribute_list : v3_attribute_list_cpp {
         return V3_INVALID_ARG;
     }
 
-    static v3_result V3_API carla_set_binary(void* const self, const char* const id,
-                                             const void* const data, const uint32_t size)
+    static v3_result V3_API set_binary(void* const self, const char* const id,
+                                       const void* const data, const uint32_t size)
     {
         CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, V3_INVALID_ARG);
@@ -339,8 +300,8 @@ struct carla_v3_attribute_list : v3_attribute_list_cpp {
         return attrlist->add(id, var);
     }
 
-    static v3_result V3_API carla_get_binary(void* const self, const char* const id,
-                                             const void** const data, uint32_t* const size)
+    static v3_result V3_API get_binary(void* const self, const char* const id,
+                                       const void** const data, uint32_t* const size)
     {
         CARLA_SAFE_ASSERT_RETURN(id != nullptr, V3_INVALID_ARG);
         carla_v3_attribute_list* const attrlist = *static_cast<carla_v3_attribute_list**>(self);
@@ -368,12 +329,12 @@ struct carla_v3_message : v3_message_cpp {
           attrlistptr(&attrlist),
           msgId(nullptr)
     {
-        query_interface = carla_query_interface;
-        ref = carla_ref;
-        unref = carla_unref;
-        msg.get_message_id = carla_get_message_id;
-        msg.set_message_id = carla_set_message_id;
-        msg.get_attributes = carla_get_attributes;
+        query_interface = v3_query_interface<carla_v3_message, v3_message_iid>;
+        ref = v3_ref<carla_v3_message>;
+        unref = v3_unref<carla_v3_message>;
+        msg.get_message_id = get_message_id;
+        msg.set_message_id = set_message_id;
+        msg.get_attributes = get_attributes;
     }
 
     ~carla_v3_message()
@@ -381,64 +342,21 @@ struct carla_v3_message : v3_message_cpp {
         delete[] msgId;
     }
 
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
-
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_message_iid))
-        {
-            ++msg->refcounter;
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_message::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    static uint32_t V3_API carla_ref(void* const self)
-    {
-        carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
-        const int refcount = ++msg->refcounter;
-        carla_debug("carla_v3_message::ref => %p | refcount %i", self, refcount);
-        return refcount;
-    }
-
-    static uint32_t V3_API carla_unref(void* const self)
-    {
-        carla_v3_message** const msgptr = static_cast<carla_v3_message**>(self);
-        carla_v3_message* const msg = *msgptr;
-
-        if (const int refcount = --msg->refcounter)
-        {
-            carla_debug("carla_v3_message::unref => %p | refcount %i", self, refcount);
-            return refcount;
-        }
-
-        carla_debug("carla_v3_message::unref => %p | refcount is zero, deleting factory", self);
-
-        delete msg;
-        delete msgptr;
-        return 0;
-    }
-
-    static const char* V3_API carla_get_message_id(void* const self)
+private:
+    static const char* V3_API get_message_id(void* const self)
     {
         carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
         return msg->msgId;
     }
 
-    static void V3_API carla_set_message_id(void* const self, const char* const id)
+    static void V3_API set_message_id(void* const self, const char* const id)
     {
         carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
         delete[] msg->msgId;
         msg->msgId = id != nullptr ? carla_strdup(id) : nullptr;
     }
 
-    static v3_attribute_list** V3_API carla_get_attributes(void* const self)
+    static v3_attribute_list** V3_API get_attributes(void* const self)
     {
         carla_v3_message* const msg = *static_cast<carla_v3_message**>(self);
         return (v3_attribute_list**)&msg->attrlistptr;
@@ -450,107 +368,100 @@ struct carla_v3_message : v3_message_cpp {
 // --------------------------------------------------------------------------------------------------------------------
 
 struct carla_v3_bstream : v3_bstream_cpp {
+    // to be filled by class producer
     void* buffer;
     int64_t size;
-    int64_t pos;
+    bool canRead, canWrite;
+
+    // used by class consumer
+    int64_t readPos;
 
     carla_v3_bstream()
         : buffer(nullptr),
           size(0),
-          pos(0)
+          canRead(false),
+          canWrite(false),
+          readPos(0)
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_bstream_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        stream.read = carla_read;
-        stream.write = carla_write;
-        stream.seek = carla_seek;
-        stream.tell = carla_tell;
+        stream.read = read;
+        stream.write = write;
+        stream.seek = seek;
+        stream.tell = tell;
     }
 
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
+private:
+    static v3_result V3_API read(void* const self, void* const buffer, int32_t num_bytes, int32_t* const bytes_read)
     {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_bstream_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_bstream::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    static v3_result V3_API carla_read(void* const self,
-                                       void* const buffer, int32_t num_bytes, int32_t* const bytes_read)
-    {
+        carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(bytes_read != nullptr, V3_INVALID_ARG);
-        carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
+        CARLA_SAFE_ASSERT_RETURN(stream->canRead, V3_INVALID_ARG);
 
-        if (stream->pos + num_bytes > stream->size)
-            num_bytes = stream->size - stream->pos;
+        if (stream->readPos + num_bytes > stream->size)
+            num_bytes = stream->size - stream->readPos;
 
-        std::memcpy(buffer, static_cast<uint8_t*>(stream->buffer) + stream->pos, num_bytes);
-        stream->pos += num_bytes;
+        std::memcpy(buffer, static_cast<uint8_t*>(stream->buffer) + stream->readPos, num_bytes);
+        stream->readPos += num_bytes;
         *bytes_read = num_bytes;
 
         return V3_OK;
     }
 
-    static v3_result V3_API carla_write(void* const self,
-                                        void* const buffer, const int32_t num_bytes, int32_t* const bytes_read)
+    static v3_result V3_API write(void* const self,
+                                  void* const buffer, const int32_t num_bytes, int32_t* const bytes_read)
     {
+        carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(bytes_read != nullptr, V3_INVALID_ARG);
-        carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
+        CARLA_SAFE_ASSERT_RETURN(stream->canWrite, V3_INVALID_ARG);
 
-        const int64_t size = stream->size + num_bytes;
-        void* const oldbuffer = stream->buffer;
-        stream->buffer = std::realloc(oldbuffer, size); // FIXME detect alloc failure
-        CARLA_SAFE_ASSERT_RETURN(stream->buffer != oldbuffer, V3_NOMEM);
+        void* const newbuffer = std::realloc(stream->buffer, stream->size + num_bytes);
+        CARLA_SAFE_ASSERT_RETURN(newbuffer != nullptr, V3_NOMEM);
 
+        std::memcpy(static_cast<uint8_t*>(newbuffer) + stream->size, buffer, num_bytes);
+        stream->buffer = newbuffer;
         stream->size += num_bytes;
         *bytes_read = num_bytes;
         return V3_OK;
     }
 
-    static v3_result V3_API carla_seek(void* const self,
-                                       const int64_t pos, const int32_t seek_mode, int64_t* const result)
+    static v3_result V3_API seek(void* const self, const int64_t pos, const int32_t seek_mode, int64_t* const result)
     {
-        CARLA_SAFE_ASSERT_RETURN(result != nullptr, V3_INVALID_ARG);
         carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
+        CARLA_SAFE_ASSERT_RETURN(result != nullptr, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(stream->canRead, V3_INVALID_ARG);
 
         switch (seek_mode)
         {
         case V3_SEEK_SET:
             CARLA_SAFE_ASSERT_INT2_RETURN(pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
-            *result = stream->pos = pos;
+            *result = stream->readPos = pos;
             return V3_OK;
         case V3_SEEK_CUR:
-            CARLA_SAFE_ASSERT_INT2_RETURN(stream->pos + pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
-            *result = stream->pos = stream->pos + pos;
+            CARLA_SAFE_ASSERT_INT2_RETURN(stream->readPos + pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
+            *result = stream->readPos = stream->readPos + pos;
             return V3_OK;
         case V3_SEEK_END:
             CARLA_SAFE_ASSERT_INT2_RETURN(pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
-            *result = stream->pos = stream->size - pos;
+            *result = stream->readPos = stream->size - pos;
             return V3_OK;
         }
 
         return V3_INVALID_ARG;
     }
 
-    static v3_result V3_API carla_tell(void* const self, int64_t* const pos)
+    static v3_result V3_API tell(void* const self, int64_t* const pos)
     {
-        CARLA_SAFE_ASSERT_RETURN(pos != nullptr, V3_INVALID_ARG);
         carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
+        CARLA_SAFE_ASSERT_RETURN(pos != nullptr, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(stream->canRead, V3_INVALID_ARG);
 
-        *pos = stream->pos;
+        *pos = stream->readPos;
         return V3_OK;
     }
 
@@ -562,29 +473,15 @@ struct carla_v3_bstream : v3_bstream_cpp {
 struct carla_v3_host_application : v3_host_application_cpp {
     carla_v3_host_application()
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_host_application_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        app.get_name = carla_get_name;
-        app.create_instance = carla_create_instance;
+        app.get_name = get_name;
+        app.create_instance = create_instance;
     }
 
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_host_application_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_host_application::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    static v3_result V3_API carla_get_name(void*, v3_str_128 name)
+private:
+    static v3_result V3_API get_name(void*, v3_str_128 name)
     {
         static const char hostname[] = "Carla\0";
 
@@ -594,14 +491,12 @@ struct carla_v3_host_application : v3_host_application_cpp {
         return V3_OK;
     }
 
-    static v3_result V3_API carla_create_instance(void*, v3_tuid cid, v3_tuid iid, void** const obj)
+    static v3_result V3_API create_instance(void*, v3_tuid cid, v3_tuid iid, void** const obj)
     {
         if (v3_tuid_match(cid, v3_message_iid) && (v3_tuid_match(iid, v3_message_iid) ||
                                                    v3_tuid_match(iid, v3_funknown_iid)))
         {
-            carla_v3_message** const messageptr = new carla_v3_message*;
-            *messageptr = new carla_v3_message();
-            *obj = static_cast<void*>(messageptr);
+            *obj = v3_create_class_ptr<carla_v3_message>();
             return V3_OK;
         }
 
@@ -627,45 +522,30 @@ struct carla_v3_input_param_value_queue : v3_param_value_queue_cpp {
         : paramId(pId),
           numUsed(0)
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_param_value_queue_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        queue.get_param_id = carla_get_param_id;
-        queue.get_point_count = carla_get_point_count;
-        queue.get_point = carla_get_point;
-        queue.add_point = carla_add_point;
+        queue.get_param_id = get_param_id;
+        queue.get_point_count = get_point_count;
+        queue.get_point = get_point;
+        queue.add_point = add_point;
     }
 
 private:
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_param_value_queue_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_input_param_value_queue::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    static v3_param_id V3_API carla_get_param_id(void* self)
+    static v3_param_id V3_API get_param_id(void* self)
     {
         carla_v3_input_param_value_queue* const me = *static_cast<carla_v3_input_param_value_queue**>(self);
         return me->paramId;
     }
 
-    static int32_t V3_API carla_get_point_count(void* self)
+    static int32_t V3_API get_point_count(void* self)
     {
         carla_v3_input_param_value_queue* const me = *static_cast<carla_v3_input_param_value_queue**>(self);
         return me->numUsed;
     }
 
-    static v3_result V3_API carla_get_point(void* const self,
-                                            const int32_t idx, int32_t* const sample_offset, double* const value)
+    static v3_result V3_API get_point(void* const self,
+                                      const int32_t idx, int32_t* const sample_offset, double* const value)
     {
         carla_v3_input_param_value_queue* const me = *static_cast<carla_v3_input_param_value_queue**>(self);
         CARLA_SAFE_ASSERT_INT2_RETURN(idx < me->numUsed, idx, me->numUsed, V3_INVALID_ARG);
@@ -675,7 +555,7 @@ private:
         return V3_OK;
     }
 
-    static v3_result V3_API carla_add_point(void*, int32_t, double, int32_t*)
+    static v3_result V3_API add_point(void*, int32_t, double, int32_t*)
     {
         // there is nothing here for input parameters, plugins are not meant to call this!
         return V3_NOT_IMPLEMENTED;
@@ -705,15 +585,15 @@ struct carla_v3_input_param_changes : v3_param_changes_cpp {
           pluginExposedQueue(new v3_param_value_queue**[paramData.count]),
           pluginExposedCount(0)
     {
-        for (uint32_t i=0; i<paramData.count; ++i)
-            queue[i] = new carla_v3_input_param_value_queue(static_cast<v3_param_id>(paramData.data[i].rindex));
-
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_param_changes_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        changes.get_param_count = carla_get_param_count;
-        changes.get_param_data = carla_get_param_data;
-        changes.add_param_data = carla_add_param_data;
+        changes.get_param_count = get_param_count;
+        changes.get_param_data = get_param_data;
+        changes.add_param_data = add_param_data;
+
+        for (uint32_t i=0; i<paramData.count; ++i)
+            queue[i] = new carla_v3_input_param_value_queue(static_cast<v3_param_id>(paramData.data[i].rindex));
     }
 
     // called during start of process, gathering all parameter update requests so far
@@ -756,36 +636,20 @@ struct carla_v3_input_param_changes : v3_param_changes_cpp {
     }
 
 private:
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_param_changes_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_input_param_changes::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    static int32_t V3_API carla_get_param_count(void* const self)
+    static int32_t V3_API get_param_count(void* const self)
     {
         carla_v3_input_param_changes* const me = *static_cast<carla_v3_input_param_changes**>(self);
         return me->pluginExposedCount;
     }
 
-    static v3_param_value_queue** V3_API carla_get_param_data(void* const self, const int32_t index)
+    static v3_param_value_queue** V3_API get_param_data(void* const self, const int32_t index)
     {
         carla_v3_input_param_changes* const me = *static_cast<carla_v3_input_param_changes**>(self);
         return me->pluginExposedQueue[index];
     }
 
-    static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*)
+    static v3_param_value_queue** V3_API add_param_data(void*, v3_param_id*, int32_t*)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
         // there is nothing here for input parameters, plugins are not meant to call this!
         return nullptr;
     }
@@ -798,42 +662,27 @@ private:
 struct carla_v3_output_param_changes : v3_param_changes_cpp {
     carla_v3_output_param_changes()
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_param_changes_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        changes.get_param_count = carla_get_param_count;
-        changes.get_param_data = carla_get_param_data;
-        changes.add_param_data = carla_add_param_data;
+        changes.get_param_count = get_param_count;
+        changes.get_param_data = get_param_data;
+        changes.add_param_data = add_param_data;
     }
 
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_param_changes_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_output_param_changes::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    static int32_t V3_API carla_get_param_count(void*)
+    static int32_t V3_API get_param_count(void*)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
         return 0;
     }
 
-    static v3_param_value_queue** V3_API carla_get_param_data(void*, int32_t)
+    static v3_param_value_queue** V3_API get_param_data(void*, int32_t)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
         return nullptr;
     }
 
-    static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*)
+    static v3_param_value_queue** V3_API add_param_data(void*, v3_param_id*, int32_t*)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
         return nullptr;
@@ -851,37 +700,22 @@ struct carla_v3_input_event_list : v3_event_list_cpp {
     carla_v3_input_event_list()
         : numEvents(0)
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_event_list_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        list.get_event_count = carla_get_event_count;
-        list.get_event = carla_get_event;
-        list.add_event = carla_add_event;
+        list.get_event_count = get_event_count;
+        list.get_event = get_event;
+        list.add_event = add_event;
     }
 
 private:
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_event_list_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_input_event_list::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    static uint32_t V3_API carla_get_event_count(void* const self)
+    static uint32_t V3_API get_event_count(void* const self)
     {
         const carla_v3_input_event_list* const me = *static_cast<const carla_v3_input_event_list**>(self);
         return me->numEvents;
     }
 
-    static v3_result V3_API carla_get_event(void* const self, const int32_t index, v3_event* const event)
+    static v3_result V3_API get_event(void* const self, const int32_t index, v3_event* const event)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
         const carla_v3_input_event_list* const me = *static_cast<const carla_v3_input_event_list**>(self);
@@ -890,7 +724,7 @@ private:
         return V3_OK;
     }
 
-    static v3_result V3_API carla_add_event(void*, v3_event*)
+    static v3_result V3_API add_event(void*, v3_event*)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
         // there is nothing here for input events, plugins are not meant to call this!
@@ -905,43 +739,28 @@ private:
 struct carla_v3_output_event_list : v3_event_list_cpp {
     carla_v3_output_event_list()
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_event_list_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        list.get_event_count = carla_get_event_count;
-        list.get_event = carla_get_event;
-        list.add_event = carla_add_event;
+        list.get_event_count = get_event_count;
+        list.get_event = get_event;
+        list.add_event = add_event;
     }
 
 private:
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_event_list_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_output_event_list::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    static uint32_t V3_API carla_get_event_count(void*)
+    static uint32_t V3_API get_event_count(void*)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
         return 0;
     }
 
-    static v3_result V3_API carla_get_event(void*, int32_t, v3_event*)
+    static v3_result V3_API get_event(void*, int32_t, v3_event*)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
         return V3_NOT_IMPLEMENTED;
     }
 
-    static v3_result V3_API carla_add_event(void*, v3_event*)
+    static v3_result V3_API add_event(void*, v3_event*)
     {
         carla_debug("TODO %s", __PRETTY_FUNCTION__);
         return V3_NOT_IMPLEMENTED;
@@ -980,33 +799,17 @@ struct carla_v3_run_loop : v3_run_loop_cpp {
 
     carla_v3_run_loop()
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_run_loop_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        loop.register_event_handler = carla_register_event_handler;
-        loop.unregister_event_handler = carla_unregister_event_handler;
-        loop.register_timer = carla_register_timer;
-        loop.unregister_timer = carla_unregister_timer;
+        loop.register_event_handler = register_event_handler;
+        loop.unregister_event_handler = unregister_event_handler;
+        loop.register_timer = register_timer;
+        loop.unregister_timer = unregister_timer;
     }
 
 private:
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_run_loop_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        carla_stdout("TODO carla_v3_run_loop::query_interface %s", tuid2str(iid));
-        return V3_NO_INTERFACE;
-    }
-
-    static v3_result V3_API carla_register_event_handler(void* const self,
-                                                         v3_event_handler** const handler, const int fd)
+    static v3_result V3_API register_event_handler(void* const self, v3_event_handler** const handler, const int fd)
     {
       #ifdef _POSIX_VERSION
         carla_v3_run_loop* const loop = *static_cast<carla_v3_run_loop**>(self);
@@ -1037,7 +840,7 @@ private:
       #endif
     }
 
-    static v3_result V3_API carla_unregister_event_handler(void* const self, v3_event_handler** const handler)
+    static v3_result V3_API unregister_event_handler(void* const self, v3_event_handler** const handler)
     {
        #ifdef _POSIX_VERSION
         carla_v3_run_loop* const loop = *static_cast<carla_v3_run_loop**>(self);
@@ -1063,7 +866,7 @@ private:
        #endif
     }
 
-    static v3_result V3_API carla_register_timer(void* const self, v3_timer_handler** const handler, const uint64_t ms)
+    static v3_result V3_API register_timer(void* const self, v3_timer_handler** const handler, const uint64_t ms)
     {
         carla_v3_run_loop* const loop = *static_cast<carla_v3_run_loop**>(self);
 
@@ -1071,7 +874,7 @@ private:
         return loop->timers.append(timer) ? V3_OK : V3_NOMEM;
     }
 
-    static v3_result V3_API carla_unregister_timer(void* const self, v3_timer_handler** const handler)
+    static v3_result V3_API unregister_timer(void* const self, v3_timer_handler** const handler)
     {
         carla_v3_run_loop* const loop = *static_cast<carla_v3_run_loop**>(self);
 
@@ -1094,39 +897,26 @@ private:
 
 // --------------------------------------------------------------------------------------------------------------------
 
-struct ComponentCallback {
-    virtual ~ComponentCallback() {}
-    virtual v3_result v3BeginEdit(v3_param_id) = 0;
-    virtual v3_result v3PerformEdit(v3_param_id, double) = 0;
-    virtual v3_result v3EndEdit(v3_param_id) = 0;
-    virtual v3_result v3RestartComponent(int32_t) = 0;
-};
-
 struct carla_v3_component_handler : v3_component_handler_cpp {
-    ComponentCallback* const callback;
+    v3HostCallback* const callback;
 
-    carla_v3_component_handler(ComponentCallback* const cb)
+    carla_v3_component_handler(v3HostCallback* const cb)
         : callback(cb)
     {
         query_interface = carla_query_interface;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        comp.begin_edit = carla_begin_edit;
-        comp.perform_edit = carla_perform_edit;
-        comp.end_edit = carla_end_edit;
-        comp.restart_component = carla_restart_component;
+        comp.begin_edit = begin_edit;
+        comp.perform_edit = perform_edit;
+        comp.end_edit = end_edit;
+        comp.restart_component = restart_component;
     }
 
 private:
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
     {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_component_handler_iid))
-        {
-            *iface = self;
+        if (v3_query_interface_static<v3_component_handler_iid>(self, iid, iface) == V3_OK)
             return V3_OK;
-        }
 
         // TODO
         if (v3_tuid_match(iid, v3_component_handler2_iid))
@@ -1140,25 +930,25 @@ private:
         return V3_NO_INTERFACE;
     }
 
-    static v3_result V3_API carla_begin_edit(void* const self, const v3_param_id paramId)
+    static v3_result V3_API begin_edit(void* const self, const v3_param_id paramId)
     {
         carla_v3_component_handler* const comp = *static_cast<carla_v3_component_handler**>(self);
         return comp->callback->v3BeginEdit(paramId);
     }
 
-    static v3_result V3_API carla_perform_edit(void* const self, const v3_param_id paramId, const double value)
+    static v3_result V3_API perform_edit(void* const self, const v3_param_id paramId, const double value)
     {
         carla_v3_component_handler* const comp = *static_cast<carla_v3_component_handler**>(self);
         return comp->callback->v3PerformEdit(paramId, value);
     }
 
-    static v3_result V3_API carla_end_edit(void* const self, const v3_param_id paramId)
+    static v3_result V3_API end_edit(void* const self, const v3_param_id paramId)
     {
         carla_v3_component_handler* const comp = *static_cast<carla_v3_component_handler**>(self);
         return comp->callback->v3EndEdit(paramId);
     }
 
-    static v3_result V3_API carla_restart_component(void* const self, const int32_t flags)
+    static v3_result V3_API restart_component(void* const self, const int32_t flags)
     {
         carla_v3_component_handler* const comp = *static_cast<carla_v3_component_handler**>(self);
         return comp->callback->v3RestartComponent(flags);
@@ -1170,32 +960,27 @@ private:
 // --------------------------------------------------------------------------------------------------------------------
 
 struct carla_v3_plugin_frame : v3_plugin_frame_cpp {
-    CarlaPluginUI::Callback* const callback;
+    v3HostCallback* const callback;
     carla_v3_run_loop loop;
     carla_v3_run_loop* loopPtr;
 
-    carla_v3_plugin_frame(CarlaPluginUI::Callback* const cb)
+    carla_v3_plugin_frame(v3HostCallback* const cb)
         : callback(cb),
           loopPtr(&loop)
     {
         query_interface = carla_query_interface;
         ref = v3_ref_static;
         unref = v3_unref_static;
-        frame.resize_view = carla_resize_view;
+        frame.resize_view = resize_view;
     }
 
 private:
     static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
     {
-        carla_debug("%s %s %p", __PRETTY_FUNCTION__, tuid2str(iid), iface);
-        carla_v3_plugin_frame* const frame = *static_cast<carla_v3_plugin_frame**>(self);
-
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_plugin_frame_iid))
-        {
-            *iface = self;
+        if (v3_query_interface_static<v3_plugin_frame_iid>(self, iid, iface) == V3_OK)
             return V3_OK;
-        }
+
+        carla_v3_plugin_frame* const frame = *static_cast<carla_v3_plugin_frame**>(self);
 
         if (v3_tuid_match(iid, v3_run_loop_iid))
         {
@@ -1204,18 +989,14 @@ private:
         }
 
         *iface = nullptr;
-        carla_stdout("TODO carla_v3_plugin_frame::query_interface %s", tuid2str(iid));
         return V3_NO_INTERFACE;
     }
 
-    static v3_result V3_API carla_resize_view(void* const self,
-                                              struct v3_plugin_view**,
-                                              struct v3_view_rect* const rect)
+    static v3_result V3_API resize_view(void* const self,
+                                        struct v3_plugin_view** const view, struct v3_view_rect* const rect)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
         const carla_v3_plugin_frame* const me = *static_cast<const carla_v3_plugin_frame**>(self);
-        me->callback->handlePluginUIResized(rect->right - rect->left, rect->bottom - rect->top);
-        return V3_OK;
+        return me->callback->v3ResizeView(view, rect);
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_plugin_frame)
@@ -1225,7 +1006,7 @@ private:
 
 class CarlaPluginVST3 : public CarlaPlugin,
                         private CarlaPluginUI::Callback,
-                        private ComponentCallback
+                        private v3HostCallback
 {
 public:
     CarlaPluginVST3(CarlaEngine* const engine, const uint id)
@@ -1296,7 +1077,7 @@ public:
         fV3.exit();
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Information (base)
 
     PluginType getType() const noexcept override
@@ -1314,7 +1095,7 @@ public:
         return fLastKnownLatency;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Information (count)
 
     /* TODO
@@ -1331,7 +1112,7 @@ public:
     }
     */
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Information (current data)
 
     /* TODO
@@ -1340,7 +1121,7 @@ public:
     }
     */
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Information (per-plugin data)
 
     uint getOptionsAvailable() const noexcept override
@@ -1482,7 +1263,7 @@ public:
     }
     */
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set data (state)
 
     /* TODO
@@ -1492,7 +1273,7 @@ public:
     }
     */
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set data (internal stuff)
 
     /* TODO
@@ -1501,10 +1282,11 @@ public:
     }
     */
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    void setParameterValue(const uint32_t parameterId, const float value,
+                           const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -1525,7 +1307,8 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
+    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset,
+                             const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -1549,7 +1332,7 @@ public:
     }
     */
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set ui stuff
 
     void setCustomUITitle(const char* const title) noexcept override
@@ -1826,7 +1609,7 @@ public:
         CarlaPlugin::uiIdle();
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Plugin state
 
     void reload() override
@@ -2239,7 +2022,7 @@ public:
         carla_debug("CarlaPluginVST3::reload() - end");
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Plugin processing
 
     void activate() noexcept override
@@ -2278,7 +2061,7 @@ public:
     void process(const float* const* const audioIn, float** const audioOut,
                  const float* const* const cvIn, float** const cvOut, const uint32_t frames) override
     {
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Check if active
 
         if (! pData->active)
@@ -2293,7 +2076,7 @@ public:
 
         fEvents.init();
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Check if needs reset
 
         if (pData->needsReset)
@@ -2321,7 +2104,7 @@ public:
             pData->needsReset = false;
         }
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Set TimeInfo
 
         const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
@@ -2386,12 +2169,12 @@ public:
             fV3TimeContext.bar_position_quarters = 0.0;
         }
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
         if (pData->event.portIn != nullptr)
         {
-            // ----------------------------------------------------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
             if (fEvents.eventInputs != nullptr && pData->extNotes.mutex.tryLock())
@@ -2429,7 +2212,7 @@ public:
 
             } // End of MIDI Input (External)
 
-            // ----------------------------------------------------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Event Input (System)
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -2668,7 +2451,7 @@ public:
 
         } // End of Event Input and Processing
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Plugin processing (no events)
 
         else
@@ -2677,7 +2460,7 @@ public:
 
         } // End of Plugin processing (no events)
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // MIDI Output
 
         if (pData->event.portOut != nullptr)
@@ -2688,7 +2471,7 @@ public:
 
         fFirstActive = false;
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
     }
 
     bool processSingle(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -2705,7 +2488,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(fAudioAndCvOutBuffers != nullptr, false);
         }
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
 #ifndef STOAT_TEST_BUILD
@@ -2726,7 +2509,7 @@ public:
             return false;
         }
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Set audio buffers
 
         float* bufferAudioIn[96]; // std::max(1u, pData->audioIn.count + pData->cvIn.count)
@@ -2751,12 +2534,12 @@ public:
         for (uint32_t i=0; i < pData->audioOut.count + pData->cvOut.count; ++i)
             carla_zeroFloats(fAudioAndCvOutBuffers[i], frames);
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Set MIDI events
 
         // TODO
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Run plugin
 
         fEvents.prepare();
@@ -2792,7 +2575,7 @@ public:
         fEvents.init();
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
         {
@@ -2867,7 +2650,7 @@ public:
             carla_copyFloats(outBuffer[i] + timeOffset, fAudioAndCvOutBuffers[i] + timeOffset, frames);
 #endif
 
-        // --------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
 
         pData->singleMutex.unlock();
         return true;
@@ -2941,7 +2724,7 @@ public:
             activate();
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Plugin buffers
 
     void clearBuffers() noexcept override
@@ -2968,7 +2751,7 @@ public:
         carla_debug("CarlaPluginVST3::clearBuffers() - end");
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Post-poned UI Stuff
 
     void uiParameterChange(const uint32_t index, const float value) noexcept override
@@ -3277,6 +3060,32 @@ protected:
         return V3_OK;
     }
 
+    v3_result v3ResizeView(struct v3_plugin_view** const view, struct v3_view_rect* const rect) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fV3.view == view, V3_INVALID_ARG);
+
+        const int32_t width = rect->right - rect->left;
+        const int32_t height = rect->bottom - rect->top;
+        CARLA_SAFE_ASSERT_INT_RETURN(width > 0, width, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_INT_RETURN(height > 0, height, V3_INVALID_ARG);
+
+        if (fUI.isEmbed)
+        {
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_EMBED_UI_RESIZED,
+                                    pData->id,
+                                    width, height,
+                                    0, 0.0f, nullptr);
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, V3_NOT_INITIALIZED);
+            fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true, false);
+        }
+
+        return V3_OK;
+    }
+
     void handlePluginUIClosed() override
     {
         // CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
@@ -3292,7 +3101,7 @@ protected:
 
     void handlePluginUIResized(const uint width, const uint height) override
     {
-        // CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
         carla_debug("CarlaPluginVST3::handlePluginUIResized(%u, %u)", width, height);
 
         return; // unused

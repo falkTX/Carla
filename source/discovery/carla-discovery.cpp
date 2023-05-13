@@ -1413,32 +1413,17 @@ static bool do_vst2_check(lib_t& libHandle, const char* const filename, const bo
 #endif // ! USING_JUCE_FOR_VST2
 
 #ifndef USING_JUCE_FOR_VST3
-static uint32_t V3_API v3_ref_static(void*) { return 1; }
-static uint32_t V3_API v3_unref_static(void*) { return 0; }
-
 struct carla_v3_host_application : v3_host_application_cpp {
     carla_v3_host_application()
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_host_application_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
         app.get_name = carla_get_name;
         app.create_instance = carla_create_instance;
     }
 
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_host_application_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        return V3_NO_INTERFACE;
-    }
-
+private:
     static v3_result V3_API carla_get_name(void*, v3_str_128 name)
     {
         static const char hostname[] = "Carla-Discovery\0";
@@ -1455,7 +1440,7 @@ struct carla_v3_host_application : v3_host_application_cpp {
 struct carla_v3_param_value_queue : v3_param_value_queue_cpp {
     carla_v3_param_value_queue()
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_param_value_queue_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
         queue.get_param_id = carla_get_param_id;
@@ -1464,19 +1449,7 @@ struct carla_v3_param_value_queue : v3_param_value_queue_cpp {
         queue.add_point = carla_add_point;
     }
 
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_param_value_queue_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        return V3_NO_INTERFACE;
-    }
-
+private:
     static v3_param_id V3_API carla_get_param_id(void*) { return 0; }
     static int32_t V3_API carla_get_point_count(void*) { return 0; }
     static v3_result V3_API carla_get_point(void*, int32_t, int32_t*, double*) { return V3_NOT_IMPLEMENTED; }
@@ -1486,7 +1459,7 @@ struct carla_v3_param_value_queue : v3_param_value_queue_cpp {
 struct carla_v3_param_changes : v3_param_changes_cpp {
     carla_v3_param_changes()
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_param_changes_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
         changes.get_param_count = carla_get_param_count;
@@ -1494,19 +1467,7 @@ struct carla_v3_param_changes : v3_param_changes_cpp {
         changes.add_param_data = carla_add_param_data;
     }
 
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_param_changes_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        return V3_NO_INTERFACE;
-    }
-
+private:
     static int32_t V3_API carla_get_param_count(void*) { return 0; }
     static v3_param_value_queue** V3_API carla_get_param_data(void*, int32_t) { return nullptr; }
     static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*) { return nullptr; }
@@ -1515,7 +1476,7 @@ struct carla_v3_param_changes : v3_param_changes_cpp {
 struct carla_v3_event_list : v3_event_list_cpp {
     carla_v3_event_list()
     {
-        query_interface = carla_query_interface;
+        query_interface = v3_query_interface_static<v3_event_list_iid>;
         ref = v3_ref_static;
         unref = v3_unref_static;
         list.get_event_count = carla_get_event_count;
@@ -1523,19 +1484,7 @@ struct carla_v3_event_list : v3_event_list_cpp {
         list.add_event = carla_add_event;
     }
 
-    static v3_result V3_API carla_query_interface(void* const self, const v3_tuid iid, void** const iface)
-    {
-        if (v3_tuid_match(iid, v3_funknown_iid) ||
-            v3_tuid_match(iid, v3_event_list_iid))
-        {
-            *iface = self;
-            return V3_OK;
-        }
-
-        *iface = nullptr;
-        return V3_NO_INTERFACE;
-    }
-
+private:
     static uint32_t V3_API carla_get_event_count(void*) { return 0; }
     static v3_result V3_API carla_get_event(void*, int32_t, v3_event*) { return V3_NOT_IMPLEMENTED; }
     static v3_result V3_API carla_add_event(void*, v3_event*) { return V3_NOT_IMPLEMENTED; }
@@ -2018,6 +1967,7 @@ struct carla_clap_host : clap_host_t {
         request_callback = carla_request_callback;
     }
 
+private:
     static const void* CLAP_ABI carla_get_extension(const clap_host_t* const host, const char* const extension_id)
     {
         carla_stdout("carla_get_extension %p %s", host, extension_id);
