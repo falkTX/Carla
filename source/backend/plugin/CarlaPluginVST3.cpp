@@ -316,6 +316,9 @@ private:
 
         return V3_INVALID_ARG;
     }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_attribute_list)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 struct carla_v3_message : v3_message_cpp {
@@ -469,6 +472,7 @@ private:
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_bstream)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -508,6 +512,7 @@ private:
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_host_application)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -565,6 +570,7 @@ private:
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_input_param_value_queue)
+    // CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 struct carla_v3_input_param_changes : v3_param_changes_cpp {
@@ -595,8 +601,25 @@ struct carla_v3_input_param_changes : v3_param_changes_cpp {
         changes.get_param_data = get_param_data;
         changes.add_param_data = add_param_data;
 
-        for (uint32_t i=0; i<paramData.count; ++i)
+        CARLA_ASSERT(paramCount != 0);
+
+        carla_zeroStructs(updatedParams, paramCount);
+
+        for (uint32_t i=0; i<paramCount; ++i)
+        {
+            carla_zeroStruct(updatedParams[i]);
             queue[i] = new carla_v3_input_param_value_queue(static_cast<v3_param_id>(paramData.data[i].rindex));
+        }
+    }
+
+    ~carla_v3_input_param_changes()
+    {
+        for (uint32_t i=0; i<paramCount; ++i)
+            delete queue[i];
+
+        delete[] updatedParams;
+        delete[] pluginExposedQueue;
+        delete[] queue;
     }
 
     // called during start of process, gathering all parameter update requests so far
@@ -904,6 +927,7 @@ private:
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_run_loop)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -966,6 +990,7 @@ private:
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_component_handler)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1011,6 +1036,7 @@ private:
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_plugin_frame)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1130,7 +1156,7 @@ public:
     {
     }
 
-    uint32_t getParameterScalePointCount(uint32_t parameterId) const noexcept override
+    uint32_t getParameterScalePointCount(const uint32_t paramIndex) const noexcept override
     {
     }
     */
@@ -1147,21 +1173,21 @@ public:
         std::free(fLastChunk);
 
         carla_v3_bstream stream;
-        carla_v3_bstream* streamPtr = &stream;
+        carla_v3_bstream* const streamPtr = &stream;
+        v3_bstream** const v3stream = (v3_bstream**)&streamPtr;
+
         stream.canWrite = true;
 
-        if (v3_cpp_obj(fV3.component)->get_state(fV3.component, (v3_bstream**)&streamPtr))
+        if (v3_cpp_obj(fV3.component)->get_state(fV3.component, v3stream) == V3_OK)
         {
             *dataPtr = fLastChunk = stream.buffer;
             runIdleCallbacksAsNeeded(false);
             return stream.size;
         }
-        else
-        {
-            *dataPtr = fLastChunk = nullptr;
-            runIdleCallbacksAsNeeded(false);
-            return 0;
-        }
+
+        *dataPtr = fLastChunk = nullptr;
+        runIdleCallbacksAsNeeded(false);
+        return 0;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -1198,20 +1224,22 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId) const noexcept override
+    float getParameterValue(const uint32_t paramIndex) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr, 0.0f);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
+        CARLA_SAFE_ASSERT_RETURN(paramIndex < pData->param.count, 0.0f);
 
-        const v3_param_id v3id = pData->param.data[parameterId].rindex;
-        const double normalized = v3_cpp_obj(fV3.controller)->get_parameter_normalised(fV3.controller, v3id);
+        // FIXME use pending RT value?
+
+        const v3_param_id paramId = pData->param.data[paramIndex].rindex;
+        const double normalized = v3_cpp_obj(fV3.controller)->get_parameter_normalised(fV3.controller, paramId);
 
         return static_cast<float>(
-            v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id, normalized));
+            v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, paramId, normalized));
     }
 
     /* TODO
-    float getParameterScalePointValue(uint32_t parameterId, uint32_t scalePointId) const noexcept override
+    float getParameterScalePointValue(uint32_t paramIndex, uint32_t scalePointId) const noexcept override
     {
     }
     */
@@ -1239,37 +1267,39 @@ public:
         return true;
     }
 
-    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterName(const uint32_t paramIndex, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr, 0.0f);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(paramIndex < pData->param.count, false);
 
         v3_param_info paramInfo = {};
         CARLA_SAFE_ASSERT_RETURN(v3_cpp_obj(fV3.controller)->get_parameter_info(fV3.controller,
-                                                                                static_cast<int32_t>(parameterId),
+                                                                                static_cast<int32_t>(paramIndex),
                                                                                 &paramInfo) == V3_OK, false);
 
         strncpy_utf8(strBuf, paramInfo.title, STR_MAX);
         return true;
     }
 
-    /* TODO
-    bool getParameterSymbol(uint32_t parameterId, char* strBuf) const noexcept override
+    bool getParameterSymbol(const uint32_t paramIndex, char* strBuf) const noexcept override
     {
-    }
-    */
+        CARLA_SAFE_ASSERT_RETURN(paramIndex < pData->param.count, false);
 
-    bool getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
+        std::snprintf(strBuf, STR_MAX, "%d", pData->param.data[paramIndex].rindex);
+        return true;
+    }
+
+    bool getParameterText(const uint32_t paramIndex, char* const strBuf) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(paramIndex < pData->param.count, false);
 
-        const v3_param_id v3id = pData->param.data[parameterId].rindex;
-        const double normalized = v3_cpp_obj(fV3.controller)->get_parameter_normalised(fV3.controller, v3id);
+        const v3_param_id paramId = pData->param.data[paramIndex].rindex;
+        const double normalized = v3_cpp_obj(fV3.controller)->get_parameter_normalised(fV3.controller, paramId);
 
         v3_str_128 paramText;
         CARLA_SAFE_ASSERT_RETURN(v3_cpp_obj(fV3.controller)->get_parameter_string_for_value(fV3.controller,
-                                                                                            v3id,
+                                                                                            paramId,
                                                                                             normalized,
                                                                                             paramText) == V3_OK, false);
 
@@ -1277,19 +1307,19 @@ public:
             strncpy_utf8(strBuf, paramText, STR_MAX);
         else
             std::snprintf(strBuf, STR_MAX, "%.12g",
-                          v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id, normalized));
+                          v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, paramId, normalized));
 
         return true;
     }
 
-    bool getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
+    bool getParameterUnit(const uint32_t paramIndex, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+        CARLA_SAFE_ASSERT_RETURN(paramIndex < pData->param.count, false);
 
         v3_param_info paramInfo = {};
         CARLA_SAFE_ASSERT_RETURN(v3_cpp_obj(fV3.controller)->get_parameter_info(fV3.controller,
-                                                                                static_cast<int32_t>(parameterId),
+                                                                                static_cast<int32_t>(paramIndex),
                                                                                 &paramInfo) == V3_OK, false);
 
         strncpy_utf8(strBuf, paramInfo.units, STR_MAX);
@@ -1297,11 +1327,12 @@ public:
     }
 
     /* TODO
-    bool getParameterGroupName(uint32_t parameterId, char* strBuf) const noexcept override
+    bool getParameterGroupName(const uint32_t paramIndex, char* const strBuf) const noexcept override
     {
     }
 
-    bool getParameterScalePointLabel(uint32_t parameterId, uint32_t scalePointId, char* strBuf) const noexcept override
+    bool getParameterScalePointLabel(const uint32_t paramIndex,
+                                     const uint32_t scalePointId, char* const strBuf) const noexcept override
     {
     }
     */
@@ -1328,45 +1359,45 @@ public:
     // ----------------------------------------------------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value,
+    void setParameterValue(const uint32_t paramIndex, const float value,
                            const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(paramIndex < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fEvents.paramInputs != nullptr,);
 
-        const v3_param_id v3id = pData->param.data[parameterId].rindex;
-        const float fixedValue = pData->param.getFixedValue(parameterId, value);
+        const v3_param_id paramId = pData->param.data[paramIndex].rindex;
+        const float fixedValue = pData->param.getFixedValue(paramIndex, value);
         const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller,
-                                                                                            v3id,
+                                                                                            paramId,
                                                                                             fixedValue);
 
         // report value to component (next process call)
-        fEvents.paramInputs->setParamValue(parameterId, static_cast<float>(normalized));
+        fEvents.paramInputs->setParamValue(paramIndex, static_cast<float>(normalized));
 
         // report value to edit controller
-        v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, v3id, normalized);
+        v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, paramId, normalized);
 
-        CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setParameterValue(paramIndex, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset,
+    void setParameterValueRT(const uint32_t paramIndex, const float value, const uint32_t frameOffset,
                              const bool sendCallbackLater) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(paramIndex < pData->param.count,);
         CARLA_SAFE_ASSERT_RETURN(fEvents.paramInputs != nullptr,);
 
-        const v3_param_id v3id = pData->param.data[parameterId].rindex;
-        const float fixedValue = pData->param.getFixedValue(parameterId, value);
+        const v3_param_id paramId = pData->param.data[paramIndex].rindex;
+        const float fixedValue = pData->param.getFixedValue(paramIndex, value);
         const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller,
-                                                                                            v3id,
+                                                                                            paramId,
                                                                                             fixedValue);
 
         // report value to component (next process call)
-        fEvents.paramInputs->setParamValue(parameterId, static_cast<float>(normalized));
+        fEvents.paramInputs->setParamValue(paramIndex, static_cast<float>(normalized));
 
-        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
+        CarlaPlugin::setParameterValueRT(paramIndex, fixedValue, frameOffset, sendCallbackLater);
     }
 
     void setChunkData(const void* data, std::size_t dataSize) override
@@ -1378,14 +1409,16 @@ public:
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
         carla_v3_bstream stream;
-        carla_v3_bstream* streamPtr = &stream;
+        carla_v3_bstream* const streamPtr = &stream;
+        v3_bstream** const v3stream = (v3_bstream**)&streamPtr;
+
         stream.buffer = const_cast<void*>(data);
         stream.size = dataSize;
         stream.canRead = true;
 
-        if (v3_cpp_obj(fV3.component)->set_state(fV3.component, (v3_bstream**)&streamPtr) == V3_OK)
+        if (v3_cpp_obj(fV3.component)->set_state(fV3.component, v3stream) == V3_OK)
         {
-            v3_cpp_obj(fV3.controller)->set_state(fV3.controller, (v3_bstream**)&streamPtr);
+            v3_cpp_obj(fV3.controller)->set_state(fV3.controller, v3stream);
             pData->updateParameterValues(this, true, true, false);
         }
 
@@ -1699,43 +1732,58 @@ public:
         CARLA_SAFE_ASSERT(numEventOutputBuses >= 0);
         CARLA_SAFE_ASSERT(numParameters >= 0);
 
-        uint32_t aIns, aOuts, cvIns, cvOuts, params;
-        aIns = aOuts = cvIns = cvOuts = params = 0;
+        uint32_t aIns, aOuts, cvIns, cvOuts;
+        aIns = aOuts = cvIns = cvOuts = 0;
 
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        for (int32_t j=0; j<numAudioInputBuses; ++j)
+        fBuses.createNew(numAudioInputBuses, numAudioOutputBuses);
+
+        for (int32_t b=0; b<numAudioInputBuses; ++b)
         {
             v3_bus_info busInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component, V3_AUDIO, V3_INPUT, j, &busInfo) == V3_OK);
-            CARLA_SAFE_ASSERT_BREAK(busInfo.channel_count >= 0);
+            carla_zeroStruct(fBuses.inputs[b]);
+            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component,
+                                                                            V3_AUDIO, V3_INPUT, b, &busInfo) == V3_OK);
+
+            const int32_t numChannels = busInfo.channel_count;
+            CARLA_SAFE_ASSERT_BREAK(numChannels >= 0);
+
+            if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
+                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component,
+                                                                                V3_AUDIO, V3_INPUT, b, true) == V3_OK);
+            }
+
+            fBuses.inputs[b].num_channels = numChannels;
 
             if (busInfo.flags & V3_IS_CONTROL_VOLTAGE)
-                cvIns += static_cast<uint32_t>(busInfo.channel_count);
+                cvIns += static_cast<uint32_t>(numChannels);
             else
-                aIns += static_cast<uint32_t>(busInfo.channel_count);
+                aIns += static_cast<uint32_t>(numChannels);
         }
 
-        for (int32_t j=0; j<numAudioOutputBuses; ++j)
+        for (int32_t b=0; b<numAudioOutputBuses; ++b)
         {
             v3_bus_info busInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component, V3_AUDIO, V3_OUTPUT, j, &busInfo) == V3_OK);
-            CARLA_SAFE_ASSERT_BREAK(busInfo.channel_count >= 0);
+            carla_zeroStruct(fBuses.outputs[b]);
+            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component,
+                                                                            V3_AUDIO, V3_OUTPUT, b, &busInfo) == V3_OK);
+
+            const int32_t numChannels = busInfo.channel_count;
+            CARLA_SAFE_ASSERT_BREAK(numChannels >= 0);
+
+            if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
+                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component,
+                                                                                V3_AUDIO, V3_OUTPUT, b, true) == V3_OK);
+            }
+
+            fBuses.outputs[b].num_channels = numChannels;
 
             if (busInfo.flags & V3_IS_CONTROL_VOLTAGE)
-                cvOuts += static_cast<uint32_t>(busInfo.channel_count);
+                cvOuts += static_cast<uint32_t>(numChannels);
             else
-                aOuts += static_cast<uint32_t>(busInfo.channel_count);
-        }
-
-        for (int32_t j=0; j<numParameters; ++j)
-        {
-            v3_param_info paramInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.controller)->get_parameter_info(fV3.controller, j, &paramInfo) == V3_OK);
-
-            if ((paramInfo.flags & (V3_PARAM_IS_BYPASS|V3_PARAM_IS_HIDDEN|V3_PARAM_PROGRAM_CHANGE)) == 0x0)
-                ++params;
+                aOuts += static_cast<uint32_t>(numChannels);
         }
 
         if (aIns > 0)
@@ -1761,17 +1809,17 @@ public:
         if (numEventOutputBuses > 0)
             needsCtrlOut = true;
 
-        if (params > 0)
+        if (numParameters > 0)
         {
-            pData->param.createNew(params, false);
+            pData->param.createNew(numParameters, false);
             needsCtrlIn = true;
         }
 
-        if (aOuts + cvIns > 0)
+        if (aOuts + cvOuts > 0)
         {
-            fAudioAndCvOutBuffers = new float*[aOuts + cvIns];
+            fAudioAndCvOutBuffers = new float*[aOuts + cvOuts];
 
-            for (uint32_t i=0; i < aOuts + cvIns; ++i)
+            for (uint32_t i=0; i < aOuts + cvOuts; ++i)
                 fAudioAndCvOutBuffers[i] = nullptr;
         }
 
@@ -1800,7 +1848,8 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
+            pData->audioIn.ports[j].port = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio,
+                                                                                         portName, true, j);
             pData->audioIn.ports[j].rindex = j;
         }
 
@@ -1825,7 +1874,8 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
+            pData->audioOut.ports[j].port = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio,
+                                                                                          portName, false, j);
             pData->audioOut.ports[j].rindex = j;
         }
 
@@ -1850,7 +1900,8 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->cvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, j);
+            pData->cvIn.ports[j].port = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV,
+                                                                                   portName, true, j);
             pData->cvIn.ports[j].rindex = j;
         }
 
@@ -1875,28 +1926,37 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->cvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false, j);
+            pData->cvOut.ports[j].port = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV,
+                                                                                    portName, false, j);
             pData->cvOut.ports[j].rindex = j;
         }
 
-        for (uint32_t j=0; j < params; ++j)
+        for (int32_t j=0; j < numParameters; ++j)
         {
             v3_param_info paramInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.controller)->get_parameter_info(fV3.controller, j, &paramInfo) == V3_OK);
+            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.controller)->get_parameter_info(fV3.controller,
+                                                                                   j, &paramInfo) == V3_OK);
 
-            const v3_param_id v3id = paramInfo.param_id;
-            pData->param.data[j].index  = j;
-            pData->param.data[j].rindex = v3id;
+            char strBuf[200];
+            strncpy_utf8(strBuf, paramInfo.title, 128);
+            carla_stdout("param %d | %d '%s' %d", j, paramInfo.param_id, strBuf, paramInfo.flags);
+
+            const v3_param_id paramId = paramInfo.param_id;
+            pData->param.data[j].index  = static_cast<uint32_t>(j);
+            pData->param.data[j].rindex = paramId;
 
             if (paramInfo.flags & (V3_PARAM_IS_BYPASS|V3_PARAM_IS_HIDDEN|V3_PARAM_PROGRAM_CHANGE))
                 continue;
 
             double min, max, def, step, stepSmall, stepLarge;
 
-            min = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id, 0.0);
-            max = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id, 1.0);
-            def = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, v3id,
+            min = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, paramId, 0.0);
+            max = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, paramId, 1.0);
+            def = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, paramId,
                                                                             paramInfo.default_normalised_value);
+
+            carla_stdout("param %d | %d '%s' %d %f %f %f", j, paramInfo.param_id, strBuf, paramInfo.flags,
+                         min, max, def);
 
             if (min >= max)
                 max = min + 0.1;
@@ -1954,7 +2014,7 @@ public:
             pData->param.ranges[j].stepLarge = stepLarge;
         }
 
-        if (params > 0)
+        if (numParameters > 0)
         {
             fEvents.paramInputs = new carla_v3_input_param_changes(pData->param);
             fEvents.paramOutputs = new carla_v3_output_param_changes;
@@ -1973,7 +2033,8 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent,
+                                                                                portName, true, 0);
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
 #endif
@@ -1993,7 +2054,8 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent,
+                                                                                 portName, false, 0);
             fEvents.eventOutputs = new carla_v3_output_event_list;
         }
 
@@ -2053,20 +2115,24 @@ public:
         for (int32_t j=0; j<numAudioInputBuses; ++j)
         {
             v3_bus_info busInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component, V3_AUDIO, V3_INPUT, j, &busInfo) == V3_OK);
+            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component,
+                                                                            V3_AUDIO, V3_INPUT, j, &busInfo) == V3_OK);
 
             if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
-                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component, V3_AUDIO, V3_INPUT, j, true) == V3_OK);
+                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component,
+                                                                                V3_AUDIO, V3_INPUT, j, true) == V3_OK);
             }
         }
 
         for (int32_t j=0; j<numAudioOutputBuses; ++j)
         {
             v3_bus_info busInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component, V3_AUDIO, V3_OUTPUT, j, &busInfo) == V3_OK);
+            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component,
+                                                                            V3_AUDIO, V3_OUTPUT, j, &busInfo) == V3_OK);
 
             if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
-                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component, V3_AUDIO, V3_OUTPUT, j, true) == V3_OK);
+                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component,
+                                                                                V3_AUDIO, V3_OUTPUT, j, true) == V3_OK);
             }
         }
 
@@ -2533,7 +2599,8 @@ public:
         // ------------------------------------------------------------------------------------------------------------
     }
 
-    bool processSingle(const float* const* const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(const float* const* const inBuffer, float** const outBuffer,
+                       const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
@@ -2603,23 +2670,26 @@ public:
 
         fEvents.prepare();
 
-        v3_audio_bus_buffers processInputs = {
-            static_cast<int32_t>(pData->audioIn.count + pData->cvIn.count),
-            0, { bufferAudioIn }
-        };
-        v3_audio_bus_buffers processOutputs = {
-            static_cast<int32_t>(pData->audioOut.count + pData->cvOut.count),
-            0, { bufferAudioOut }
-        };
+        for (int32_t b = 0, j = 0; b < fBuses.numInputs; ++b)
+        {
+            fBuses.inputs[b].channel_buffers_32 = const_cast<float**>(bufferAudioIn + j);
+            j += fBuses.inputs[b].num_channels;
+        }
+
+        for (int32_t b = 0, j = 0; b < fBuses.numOutputs; ++b)
+        {
+            fBuses.outputs[b].channel_buffers_32 = bufferAudioOut + j;
+            j += fBuses.outputs[b].num_channels;
+        }
 
         v3_process_data processData = {
             pData->engine->isOffline() ? V3_OFFLINE : V3_REALTIME,
             V3_SAMPLE_32,
             static_cast<int32_t>(frames),
-            static_cast<int32_t>(pData->audioIn.count + pData->cvIn.count),
-            static_cast<int32_t>(pData->audioOut.count + pData->cvOut.count),
-            &processInputs,
-            &processOutputs,
+            fBuses.numInputs,
+            fBuses.numOutputs,
+            fBuses.inputs,
+            fBuses.outputs,
             fEvents.paramInputs != nullptr ? (v3_param_changes**)&fEvents.paramInputs : nullptr,
             fEvents.paramOutputs != nullptr ? (v3_param_changes**)&fEvents.paramOutputs : nullptr,
             fEvents.eventInputs != nullptr ? (v3_event_list**)&fEvents.eventInputs : nullptr,
@@ -2638,8 +2708,11 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
-            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0
+                                    && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0
+                                    && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f)
+                                          && carla_isEqual(pData->postProc.balanceRight, 1.0f));
             const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;
@@ -2658,7 +2731,8 @@ public:
                     for (uint32_t k=0; k < frames; ++k)
                     {
                         bufValue = inBuffer[c][k+timeOffset];
-                        fAudioAndCvOutBuffers[i][k] = (fAudioAndCvOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
+                        fAudioAndCvOutBuffers[i][k] = (fAudioAndCvOutBuffers[i][k] * pData->postProc.dryWet)
+                                                    + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
 
@@ -2681,14 +2755,14 @@ public:
                         if (isPair)
                         {
                             // left
-                            fAudioAndCvOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
+                            fAudioAndCvOutBuffers[i][k]  = oldBufLeft[k]                 * (1.0f - balRangeL);
                             fAudioAndCvOutBuffers[i][k] += fAudioAndCvOutBuffers[i+1][k] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
                             fAudioAndCvOutBuffers[i][k]  = fAudioAndCvOutBuffers[i][k] * balRangeR;
-                            fAudioAndCvOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
+                            fAudioAndCvOutBuffers[i][k] += oldBufLeft[k]               * balRangeL;
                         }
                     }
                 }
@@ -2818,10 +2892,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fV3.controller != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
-        const v3_param_id v3id = pData->param.data[index].rindex;
+        const v3_param_id paramId = pData->param.data[index].rindex;
         const double normalized = v3_cpp_obj(fV3.controller)->plain_parameter_to_normalised(fV3.controller,
-                                                                                            v3id, value);
-        v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, v3id, normalized);
+                                                                                            paramId, value);
+        v3_cpp_obj(fV3.controller)->set_parameter_normalised(fV3.controller, paramId, normalized);
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -3446,6 +3520,39 @@ private:
 
         CARLA_DECLARE_NON_COPYABLE(PluginPointers)
     } fV3;
+
+    struct Buses {
+        int32_t numInputs;
+        int32_t numOutputs;
+        v3_audio_bus_buffers* inputs;
+        v3_audio_bus_buffers* outputs;
+
+        Buses()
+            : numInputs(0),
+              numOutputs(0),
+              inputs(nullptr),
+              outputs(nullptr) {}
+
+        ~Buses()
+        {
+            delete[] inputs;
+            delete[] outputs;
+        }
+
+        void createNew(const int32_t numAudioInputBuses, const int32_t numAudioOutputBuses)
+        {
+            delete[] inputs;
+            delete[] outputs;
+
+            numInputs = numAudioInputBuses;
+            numOutputs = numAudioOutputBuses;
+
+            inputs = numAudioInputBuses > 0 ? new v3_audio_bus_buffers[numAudioInputBuses] : nullptr;
+            outputs = numAudioOutputBuses > 0 ? new v3_audio_bus_buffers[numAudioOutputBuses] : nullptr;
+        }
+
+        CARLA_DECLARE_NON_COPYABLE(Buses)
+    } fBuses;
 
     struct Events {
         carla_v3_input_param_changes* paramInputs;

@@ -158,11 +158,11 @@ const char* tuid2str(const v3_tuid iid) noexcept
 // --------------------------------------------------------------------------------------------------------------------
 
 template<class T>
-void* v3_create_class_ptr()
+T** v3_create_class_ptr()
 {
     T** const clsptr = new T*;
     *clsptr = new T;
-    return static_cast<void*>(clsptr);
+    return clsptr;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

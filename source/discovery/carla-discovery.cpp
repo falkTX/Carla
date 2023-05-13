@@ -1435,6 +1435,9 @@ private:
     }
 
     static v3_result V3_API carla_create_instance(void*, v3_tuid, v3_tuid, void**) { return V3_NOT_IMPLEMENTED; }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_host_application)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 struct carla_v3_param_value_queue : v3_param_value_queue_cpp {
@@ -1454,6 +1457,9 @@ private:
     static int32_t V3_API carla_get_point_count(void*) { return 0; }
     static v3_result V3_API carla_get_point(void*, int32_t, int32_t*, double*) { return V3_NOT_IMPLEMENTED; }
     static v3_result V3_API carla_add_point(void*, int32_t, double, int32_t*) { return V3_NOT_IMPLEMENTED; }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_param_value_queue)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 struct carla_v3_param_changes : v3_param_changes_cpp {
@@ -1471,6 +1477,9 @@ private:
     static int32_t V3_API carla_get_param_count(void*) { return 0; }
     static v3_param_value_queue** V3_API carla_get_param_data(void*, int32_t) { return nullptr; }
     static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*) { return nullptr; }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_param_changes)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 struct carla_v3_event_list : v3_event_list_cpp {
@@ -1488,6 +1497,9 @@ private:
     static uint32_t V3_API carla_get_event_count(void*) { return 0; }
     static v3_result V3_API carla_get_event(void*, int32_t, v3_event*) { return V3_NOT_IMPLEMENTED; }
     static v3_result V3_API carla_add_event(void*, v3_event*) { return V3_NOT_IMPLEMENTED; }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_event_list)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 static bool v3_exit_false(const V3_EXITFN v3_exit)
@@ -1585,7 +1597,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
 
     // get factory info
     v3_factory_info factoryInfo = {};
-    CARLA_SAFE_ASSERT_RETURN(v3_cpp_obj(factory1)->get_factory_info(factory1, &factoryInfo) == V3_OK, v3_exit_false(v3_exit));
+    CARLA_SAFE_ASSERT_RETURN(v3_cpp_obj(factory1)->get_factory_info(factory1, &factoryInfo) == V3_OK,
+                             v3_exit_false(v3_exit));
 
     // get num classes
     const int32_t numClasses = v3_cpp_obj(factory1)->num_classes(factory1);
@@ -1806,12 +1819,12 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
                 CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
                                                                             V3_AUDIO, V3_INPUT, b, &busInfo) == V3_OK);
 
-                inputsBuffers[b].num_channels = busInfo.channel_count;
-
                 if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
                     CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->activate_bus(component,
                                                                                 V3_AUDIO, V3_INPUT, b, true) == V3_OK);
                 }
+
+                inputsBuffers[b].num_channels = busInfo.channel_count;
             }
 
             for (int32_t b=0; b<numAudioOutputBuses; ++b)
@@ -1821,12 +1834,12 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
                 CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
                                                                             V3_AUDIO, V3_OUTPUT, b, &busInfo) == V3_OK);
 
-                outputsBuffers[b].num_channels = busInfo.channel_count;
-
                 if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
                     CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->activate_bus(component,
                                                                                 V3_AUDIO, V3_OUTPUT, b, true) == V3_OK);
                 }
+
+                outputsBuffers[b].num_channels = busInfo.channel_count;
             }
 
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, true) == V3_OK);
