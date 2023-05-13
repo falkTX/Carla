@@ -232,31 +232,6 @@ HAVE_JACK    = true
 HAVE_JACKLIB = false
 endif
 
-ifeq ($(LINUX),true)
-# juce only supports the most common architectures
-ifneq (,$(findstring arm,$(TARGET_MACHINE)))
-HAVE_JUCE_SUPPORTED_ARCH = true
-endif
-ifneq (,$(findstring aarch64,$(TARGET_MACHINE)))
-HAVE_JUCE_SUPPORTED_ARCH = true
-endif
-ifneq (,$(findstring i486,$(TARGET_MACHINE)))
-HAVE_JUCE_SUPPORTED_ARCH = true
-endif
-ifneq (,$(findstring i586,$(TARGET_MACHINE)))
-HAVE_JUCE_SUPPORTED_ARCH = true
-endif
-ifneq (,$(findstring i686,$(TARGET_MACHINE)))
-HAVE_JUCE_SUPPORTED_ARCH = true
-endif
-ifneq (,$(findstring x86_64,$(TARGET_MACHINE)))
-HAVE_JUCE_SUPPORTED_ARCH = true
-endif
-ifeq ($(HAVE_JUCE_SUPPORTED_ARCH),true)
-HAVE_JUCE_LINUX_DEPS = $(shell $(PKG_CONFIG) --exists x11 xcursor xext freetype2 && echo true)
-endif
-endif
-
 ifeq ($(WASM),true)
 HAVE_SDL1 = false
 HAVE_SDL2 = true
@@ -357,8 +332,6 @@ PYUIC ?= $(PYUIC5)
 ifeq ($(MACOS_OR_WINDOWS),true)
 USING_JUCE = true
 USING_JUCE_AUDIO_DEVICES = true
-else ifeq ($(HAVE_JUCE_LINUX_DEPS),true)
-USING_JUCE = true
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -520,17 +493,7 @@ endif
 
 ifeq ($(USING_JUCE),true)
 
-ifeq ($(LINUX),true)
-JUCE_AUDIO_BASICS_LIBS     =
-JUCE_AUDIO_DEVICES_LIBS    = $(shell $(PKG_CONFIG) --libs alsa)
-JUCE_AUDIO_FORMATS_LIBS    =
-JUCE_AUDIO_PROCESSORS_LIBS =
-JUCE_CORE_LIBS             = -ldl -pthread -lrt
-JUCE_EVENTS_LIBS           =
-JUCE_GRAPHICS_LIBS         = $(shell $(PKG_CONFIG) --libs freetype2)
-JUCE_GUI_BASICS_LIBS       =
-JUCE_GUI_EXTRA_LIBS        =
-else ifeq ($(MACOS),true)
+ifeq ($(MACOS),true)
 JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
 JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
 JUCE_AUDIO_FORMATS_LIBS    = -framework AudioToolbox -framework CoreFoundation
