@@ -796,6 +796,11 @@ public:
         [NSApp activateIgnoringOtherApps:YES];
     }
 
+    void setMinimumSize(uint, uint) override
+    {
+        // TODO
+    }
+
     void setSize(const uint width, const uint height, const bool forceUpdate, const bool resizeChild) override
     {
         carla_debug("CocoaPluginUI::setSize(%u, %u, %s)", width, height, bool2str(forceUpdate));
@@ -1105,6 +1110,11 @@ public:
         SetForegroundWindow(fWindow);
         SetActiveWindow(fWindow);
         SetFocus(fWindow);
+    }
+
+    void setMinimumSize(uint, uint) override
+    {
+        // TODO
     }
 
     void setSize(const uint width, const uint height, const bool forceUpdate, bool) override
