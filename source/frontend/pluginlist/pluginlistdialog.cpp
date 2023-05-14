@@ -49,6 +49,12 @@
 
 #include <cstdlib>
 
+#ifdef BUILDING_CARLA_OBS
+extern "C" {
+const char *get_carla_bin_path(void);
+}
+#endif
+
 CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1004,7 +1010,17 @@ struct PluginListDialog::Self {
         paths.init();
         paths.loadFromEnv();
 
-        CarlaPluginDiscoveryHandle handle = carla_plugin_discovery_start("/usr/lib/carla/carla-discovery-native",
+#ifdef BUILDING_CARLA_OBS
+        QCarlaString binPath(get_carla_bin_path());
+        binPath += CARLA_OS_SEP_STR "carla-discovery-native";
+#ifdef CARLA_OS_WIN
+        binPath += ".exe";
+#endif
+#else
+        QCarlaString binPath("/usr/lib/carla/carla-discovery-native");
+#endif
+
+        CarlaPluginDiscoveryHandle handle = carla_plugin_discovery_start(binPath.toUtf8().constData(),
                                                                          PLUGIN_VST3,
                                                                          paths.vst3.toUtf8().constData(),
                                                                          _discoveryCallback,
