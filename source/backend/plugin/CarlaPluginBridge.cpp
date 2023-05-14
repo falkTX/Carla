@@ -2216,24 +2216,25 @@ public:
                 // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
 
                 // realName
-                const BridgeTextReader realName(fShmNonRtServerControl);
+                BridgeTextReader realName(fShmNonRtServerControl);
 
                 // label
-                const BridgeTextReader label(fShmNonRtServerControl);
+                BridgeTextReader label(fShmNonRtServerControl);
 
                 // maker
-                const BridgeTextReader maker(fShmNonRtServerControl);
+                BridgeTextReader maker(fShmNonRtServerControl);
 
                 // copyright
-                const BridgeTextReader copyright(fShmNonRtServerControl);
+                BridgeTextReader copyright(fShmNonRtServerControl);
 
                 fInfo.name  = realName.text;
                 fInfo.label = label.text;
                 fInfo.maker = maker.text;
                 fInfo.copyright = copyright.text;
+                realName.text = label.text = maker.text = copyright.text = nullptr;
 
                 if (pData->name == nullptr)
-                    pData->name = pData->engine->getUniquePluginName(realName.text);
+                    pData->name = pData->engine->getUniquePluginName(fInfo.name);
             }   break;
 
             case kPluginBridgeNonRtServerAudioCount: {
@@ -2324,7 +2325,7 @@ public:
                 const uint32_t index    = fShmNonRtServerControl.readUInt();
 
                 // name
-                const BridgeTextReader name(fShmNonRtServerControl);
+                BridgeTextReader name(fShmNonRtServerControl);
 
                 CARLA_SAFE_ASSERT_BREAK(portType > kPluginBridgePortNull && portType < kPluginBridgePortTypeCount);
 
@@ -2333,10 +2334,12 @@ public:
                 case kPluginBridgePortAudioInput:
                     CARLA_SAFE_ASSERT_BREAK(index < fInfo.aIns);
                     fInfo.aInNames[index] = name.text;
+                    name.text = nullptr;
                     break;
                 case kPluginBridgePortAudioOutput:
                     CARLA_SAFE_ASSERT_BREAK(index < fInfo.aOuts);
                     fInfo.aOutNames[index] = name.text;
+                    name.text = nullptr;
                     break;
                 }
 
@@ -2365,19 +2368,20 @@ public:
                 const uint32_t index = fShmNonRtServerControl.readUInt();
 
                 // name
-                const BridgeTextReader name(fShmNonRtServerControl);
+                BridgeTextReader name(fShmNonRtServerControl);
 
                 // symbol
-                const BridgeTextReader symbol(fShmNonRtServerControl);
+                BridgeTextReader symbol(fShmNonRtServerControl);
 
                 // unit
-                const BridgeTextReader unit(fShmNonRtServerControl);
+                BridgeTextReader unit(fShmNonRtServerControl);
 
                 CARLA_SAFE_ASSERT_UINT2_BREAK(index < pData->param.count, index, pData->param.count);
 
                 fParams[index].name   = name.text;
                 fParams[index].symbol = symbol.text;
                 fParams[index].unit   = unit.text;
+                name.text = symbol.text = unit.text = nullptr;
             }   break;
 
             case kPluginBridgeNonRtServerParameterRanges: {
