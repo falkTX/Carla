@@ -1330,6 +1330,7 @@ bool carla_save_plugin_state(CarlaHostHandle handle, uint pluginId, const char* 
     return false;
 }
 
+#ifndef CARLA_PLUGIN_ONLY_BRIDGE
 bool carla_export_plugin_lv2(CarlaHostHandle handle, uint pluginId, const char* lv2path)
 {
     CARLA_SAFE_ASSERT_RETURN(lv2path != nullptr && lv2path[0] != '\0', false);
@@ -1340,6 +1341,7 @@ bool carla_export_plugin_lv2(CarlaHostHandle handle, uint pluginId, const char* 
 
     return false;
 }
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -2024,13 +2026,15 @@ float carla_get_output_peak_value(CarlaHostHandle handle, uint pluginId, bool is
 
 CARLA_BACKEND_START_NAMESPACE
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+#if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
 // defined in CarlaPluginInternal.cpp
 const void* carla_render_inline_display_internal(const CarlaPluginPtr& plugin, uint32_t width, uint32_t height);
 #endif
 
+#ifndef CARLA_PLUGIN_ONLY_BRIDGE
 // defined in CarlaPluginLV2.cpp
 const void* carla_render_inline_display_lv2(const CarlaPluginPtr& plugin, uint32_t width, uint32_t height);
+#endif
 
 CARLA_BACKEND_END_NAMESPACE
 
@@ -2047,18 +2051,24 @@ const CarlaInlineDisplayImageSurface* carla_render_inline_display(CarlaHostHandl
     {
         switch (plugin->getType())
         {
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+#if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
         case CB::PLUGIN_INTERNAL:
             return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_internal(plugin, width, height);
 #endif
+#ifndef CARLA_PLUGIN_ONLY_BRIDGE
         case CB::PLUGIN_LV2:
             return (const CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_lv2(plugin, width, height);
+#endif
         default:
             return nullptr;
         }
     }
 
     return nullptr;
+
+    // maybe unused
+    (void)width;
+    (void)height;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
