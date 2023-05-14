@@ -3089,7 +3089,9 @@ CARLA_BACKEND_START_NAMESPACE
 
 namespace EngineInit {
 
+#ifndef HAVE_JACK
 CarlaEngine* newJack() { return nullptr; }
+#endif
 
 #ifdef USING_JUCE_AUDIO_DEVICES
 CarlaEngine*       newJuce(const AudioApi)           { return nullptr; }
