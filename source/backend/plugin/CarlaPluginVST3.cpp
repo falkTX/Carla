@@ -439,26 +439,30 @@ private:
     static v3_result V3_API seek(void* const self, const int64_t pos, const int32_t seek_mode, int64_t* const result)
     {
         carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
-        CARLA_SAFE_ASSERT_RETURN(result != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(stream->canRead, V3_INVALID_ARG);
 
         switch (seek_mode)
         {
         case V3_SEEK_SET:
             CARLA_SAFE_ASSERT_INT2_RETURN(pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
-            *result = stream->readPos = pos;
-            return V3_OK;
+            stream->readPos = pos;
+            break;
         case V3_SEEK_CUR:
             CARLA_SAFE_ASSERT_INT2_RETURN(stream->readPos + pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
-            *result = stream->readPos = stream->readPos + pos;
-            return V3_OK;
+            stream->readPos = stream->readPos + pos;
+            break;
         case V3_SEEK_END:
             CARLA_SAFE_ASSERT_INT2_RETURN(pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
-            *result = stream->readPos = stream->size - pos;
-            return V3_OK;
+            stream->readPos = stream->size - pos;
+            break;
+        default:
+            return V3_INVALID_ARG;
         }
 
-        return V3_INVALID_ARG;
+        if (result != nullptr)
+            *result = stream->readPos;
+
+        return V3_OK;
     }
 
     static v3_result V3_API tell(void* const self, int64_t* const pos)
@@ -1682,6 +1686,8 @@ public:
 
                             if (width > 1 && height > 1)
                                 fUI.window->setMinimumSize(static_cast<uint>(width), static_cast<uint>(height));
+                            else if (fUI.width > 1 && fUI.height > 1)
+                                fUI.window->setMinimumSize(fUI.width, fUI.height);
                         }
                         else
                         {
@@ -1970,7 +1976,7 @@ public:
         for (int32_t b=0; b<numAudioOutputBuses; ++b)
         {
             carla_zeroStruct(fBuses.outputs[b]);
-            carla_zeroStruct(fBuses.inputInfo[b]);
+            carla_zeroStruct(fBuses.outputInfo[b]);
             fBuses.outputInfo[b].offset = aOuts + cvOuts;
 
             v3_bus_info busInfo = {};
@@ -3782,7 +3788,7 @@ private:
                 }
 
                 v3_cpp_obj_unref(controller);
-                component = nullptr;
+                controller = nullptr;
             }
 
             if (component != nullptr)
