@@ -1,6 +1,6 @@
 /*
  * Carla CLAP Plugin
- * Copyright (C) 2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2022-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1562,7 +1562,8 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
+            pData->audioIn.ports[j].port = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio,
+                                                                                         portName, true, j);
             pData->audioIn.ports[j].rindex = j;
         }
 
@@ -1587,7 +1588,8 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
+            pData->audioOut.ports[j].port = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio,
+                                                                                          portName, false, j);
             pData->audioOut.ports[j].rindex = j;
         }
 
@@ -1617,7 +1619,8 @@ public:
 
                 portName += portInfo.name;
                 portName.truncate(portNameSize);
-                fInputEvents.portData[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, j);
+                fInputEvents.portData[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent,
+                                                                                              portName, true, j);
             }
             else
             {
@@ -1654,7 +1657,8 @@ public:
 
                 portName += portInfo.name;
                 portName.truncate(portNameSize);
-                fOutputEvents.portData[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, j);
+                fOutputEvents.portData[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent,
+                                                                                               portName, false, j);
             }
             else
             {
@@ -1764,7 +1768,8 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent,
+                                                                                portName, true, 0);
            #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
            #endif
@@ -1786,7 +1791,8 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent,
+                                                                                 portName, false, 0);
 
             if (mOuts == 1)
                 fOutputEvents.portData[0].port = pData->event.portOut;

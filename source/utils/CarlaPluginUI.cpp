@@ -45,9 +45,11 @@
 // X11
 
 #ifdef HAVE_X11
+static constexpr const uint X11Key_Escape = 9;
+
 typedef void (*EventProcPtr)(XEvent* ev);
 
-static const uint X11Key_Escape = 9;
+// FIXME put all this inside a scoped class
 static bool gErrorTriggered = false;
 # if defined(__GNUC__) && (__GNUC__ >= 5) && ! defined(__clang__)
 #  pragma GCC diagnostic push
@@ -78,6 +80,8 @@ public:
           fIsVisible(false),
           fFirstShow(true),
           fSetSizeCalledAtLeastOnce(false),
+          fMinimumWidth(0),
+          fMinimumHeight(0),
           fEventProc(nullptr)
      {
         fDisplay = XOpenDisplay(nullptr);
@@ -165,8 +169,7 @@ public:
                     int width = 0;
                     int height = 0;
 
-                    XWindowAttributes attrs;
-                    carla_zeroStruct(attrs);
+                    XWindowAttributes attrs = {};
 
                     pthread_mutex_lock(&gErrorMutex);
                     const XErrorHandler oldErrorHandler = XSetErrorHandler(temporaryErrorHandler);
@@ -183,8 +186,7 @@ public:
 
                     if (width == 0 && height == 0)
                     {
-                        XSizeHints sizeHints;
-                        carla_zeroStruct(sizeHints);
+                        XSizeHints sizeHints = {};
 
                         if (XGetNormalHints(fDisplay, childWindow, &sizeHints))
                         {
@@ -252,8 +254,11 @@ public:
         // prevent recursion
         if (fIsIdling) return;
 
-        int nextWidth = 0;
-        int nextHeight = 0;
+        uint nextChildWidth = 0;
+        uint nextChildHeight = 0;
+
+        uint nextHostWidth = 0;
+        uint nextHostHeight = 0;
 
         fIsIdling = true;
 
@@ -273,47 +278,15 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.width > 0);
                     CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.height > 0);
 
-                    if (event.xconfigure.window == fHostWindow)
+                    if (event.xconfigure.window == fHostWindow && fHostWindow != 0)
                     {
-                        const uint width  = static_cast<uint>(event.xconfigure.width);
-                        const uint height = static_cast<uint>(event.xconfigure.height);
-
-                        if (fChildWindow != 0)
-                        {
-                            if (! fChildWindowConfigured)
-                            {
-                                pthread_mutex_lock(&gErrorMutex);
-                                const XErrorHandler oldErrorHandler = XSetErrorHandler(temporaryErrorHandler);
-                                gErrorTriggered = false;
-
-                                XSizeHints sizeHints;
-                                carla_zeroStruct(sizeHints);
-
-                                if (XGetNormalHints(fDisplay, fChildWindow, &sizeHints) && !gErrorTriggered)
-                                {
-                                    XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
-                                }
-                                else
-                                {
-                                    carla_stdout("Caught errors while accessing child window");
-                                    fChildWindow = 0;
-                                }
-
-                                fChildWindowConfigured = true;
-                                XSetErrorHandler(oldErrorHandler);
-                                pthread_mutex_unlock(&gErrorMutex);
-                            }
-
-                            if (fChildWindow != 0)
-                                XResizeWindow(fDisplay, fChildWindow, width, height);
-                        }
-
-                        fCallback->handlePluginUIResized(width, height);
+                        nextHostWidth = static_cast<uint>(event.xconfigure.width);
+                        nextHostHeight = static_cast<uint>(event.xconfigure.height);
                     }
-                    else if (fChildWindowMonitoring && event.xconfigure.window == fChildWindow && fChildWindow != 0)
+                    else if (event.xconfigure.window == fChildWindow && fChildWindow != 0)
                     {
-                        nextWidth = event.xconfigure.width;
-                        nextHeight = event.xconfigure.height;
+                        nextChildWidth = static_cast<uint>(event.xconfigure.width);
+                        nextChildHeight = static_cast<uint>(event.xconfigure.height);
                     }
                     break;
 
@@ -341,6 +314,7 @@ public:
             case FocusIn:
                 if (fChildWindow == 0)
                     fChildWindow = getChildWindow();
+
                 if (fChildWindow != 0)
                 {
                     XWindowAttributes wa;
@@ -358,16 +332,24 @@ public:
                 fEventProc(&event);
         }
 
-        if (nextWidth != 0 && nextHeight != 0 && fChildWindow != 0)
+        if (nextChildWidth != 0 && nextChildHeight != 0 && fChildWindow != 0)
         {
-            XSizeHints sizeHints;
-            carla_zeroStruct(sizeHints);
+            applyHintsFromChildWindow();
+            XResizeWindow(fDisplay, fHostWindow, nextChildWidth, nextChildHeight);
+            // XFlush(fDisplay);
+        }
+        else if (nextHostWidth != 0 && nextHostHeight != 0)
+        {
+            if (fChildWindow != 0 && ! fChildWindowConfigured)
+            {
+                applyHintsFromChildWindow();
+                fChildWindowConfigured = true;
+            }
 
-            if (XGetNormalHints(fDisplay, fChildWindow, &sizeHints))
-                XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
+            if (fChildWindow != 0)
+                XResizeWindow(fDisplay, fChildWindow, nextHostWidth, nextHostHeight);
 
-            XResizeWindow(fDisplay, fHostWindow, static_cast<uint>(nextWidth), static_cast<uint>(nextHeight));
-            XFlush(fDisplay);
+            fCallback->handlePluginUIResized(nextHostWidth, nextHostHeight);
         }
 
         fIsIdling = false;
@@ -391,6 +373,24 @@ public:
         }
     }
 
+    void setMinimumSize(const uint width, const uint height) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
+
+        fMinimumWidth = width;
+        fMinimumHeight = height;
+
+        XSizeHints sizeHints = {};
+        if (XGetNormalHints(fDisplay, fHostWindow, &sizeHints))
+        {
+            sizeHints.flags     |= PMinSize;
+            sizeHints.min_width  = static_cast<int>(width);
+            sizeHints.min_height = static_cast<int>(height);
+            XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
+        }
+    }
+
     void setSize(const uint width, const uint height, const bool forceUpdate, const bool resizeChild) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
@@ -404,9 +404,7 @@ public:
 
         if (! fIsResizable)
         {
-            XSizeHints sizeHints;
-            carla_zeroStruct(sizeHints);
-
+            XSizeHints sizeHints = {};
             sizeHints.flags      = PSize|PMinSize|PMaxSize;
             sizeHints.width      = static_cast<int>(width);
             sizeHints.height     = static_cast<int>(height);
@@ -464,6 +462,35 @@ public:
     }
 
 protected:
+    void applyHintsFromChildWindow()
+    {
+        pthread_mutex_lock(&gErrorMutex);
+        const XErrorHandler oldErrorHandler = XSetErrorHandler(temporaryErrorHandler);
+        gErrorTriggered = false;
+
+        XSizeHints sizeHints = {};
+        if (XGetNormalHints(fDisplay, fChildWindow, &sizeHints) && !gErrorTriggered)
+        {
+            if (fMinimumWidth != 0 && fMinimumHeight != 0)
+            {
+                sizeHints.flags |= PMinSize;
+                sizeHints.min_width = fMinimumWidth;
+                sizeHints.min_height = fMinimumHeight;
+            }
+
+            XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
+        }
+
+        if (gErrorTriggered)
+        {
+            carla_stdout("Caught errors while accessing child window");
+            fChildWindow = 0;
+        }
+
+        XSetErrorHandler(oldErrorHandler);
+        pthread_mutex_unlock(&gErrorMutex);
+    }
+
     Window getChildWindow() const
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr, 0);
@@ -493,6 +520,8 @@ private:
     bool     fIsVisible;
     bool     fFirstShow;
     bool     fSetSizeCalledAtLeastOnce;
+    uint     fMinimumWidth;
+    uint     fMinimumHeight;
     EventProcPtr fEventProc;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(X11PluginUI)

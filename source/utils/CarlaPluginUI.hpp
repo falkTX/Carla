@@ -37,6 +37,7 @@ public:
     virtual void hide() = 0;
     virtual void focus() = 0;
     virtual void idle() = 0;
+    virtual void setMinimumSize(uint with, uint height) = 0;
     virtual void setSize(uint with, uint height, bool forceUpdate, bool resizeChild) = 0;
     virtual void setTitle(const char* title) = 0;
     virtual void setChildWindow(void* ptr) = 0;

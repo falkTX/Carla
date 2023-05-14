@@ -1279,6 +1279,40 @@ public:
     // ----------------------------------------------------------------------------------------------------------------
     // Information (current data)
 
+    uint getAudioPortHints(const bool isOutput, const uint32_t portIndex) const noexcept override
+    {
+        uint hints = 0x0;
+
+        if (isOutput)
+        {
+            const uint32_t numOutputs = static_cast<uint32_t>(fBuses.numOutputs);
+
+            for (uint32_t b=0, i=0; b < numOutputs; ++b, i += fBuses.outputs[b].num_channels)
+            {
+                if (i != portIndex)
+                    continue;
+
+                if (fBuses.outputInfo[i].bus_type == V3_AUX)
+                    hints |= AUDIO_PORT_IS_SIDECHAIN;
+            }
+        }
+        else
+        {
+            const uint32_t numInputs = static_cast<uint32_t>(fBuses.numInputs);
+
+            for (uint32_t b=0, i=0; b < numInputs; ++b, i += fBuses.inputs[b].num_channels)
+            {
+                if (i != portIndex)
+                    continue;
+
+                if (fBuses.inputInfo[i].bus_type == V3_AUX)
+                    hints |= AUDIO_PORT_IS_SIDECHAIN;
+            }
+        }
+
+        return hints;
+    }
+
     std::size_t getChunkData(void** const dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
@@ -1578,31 +1612,34 @@ public:
 
             if (fUI.window == nullptr)
             {
-                const char* msg = nullptr;
                 const EngineOptions& opts(pData->engine->getOptions());
 
-#if defined(CARLA_OS_MAC)
-                fUI.window = CarlaPluginUI::newCocoa(this, opts.frontendWinId, opts.pluginsAreStandalone, false);
-#elif defined(CARLA_OS_WIN)
-                fUI.window = CarlaPluginUI::newWindows(this, opts.frontendWinId, opts.pluginsAreStandalone, false);
-#elif defined(HAVE_X11)
-                fUI.window = CarlaPluginUI::newX11(this, opts.frontendWinId, opts.pluginsAreStandalone, false, false);
-#else
-                msg = "Unsupported UI type";
-#endif
+                const bool isStandalone = opts.pluginsAreStandalone;
+                const bool isResizable = v3_cpp_obj(fV3.view)->can_resize(fV3.view) == V3_TRUE;
 
-                if (fUI.window == nullptr)
-                    return pData->engine->callback(true, true,
-                                                   ENGINE_CALLBACK_UI_STATE_CHANGED,
-                                                   pData->id,
-                                                   -1,
-                                                   0, 0, 0.0f,
-                                                   msg);
+               #if defined(CARLA_OS_MAC)
+                fUI.window = CarlaPluginUI::newCocoa(this, opts.frontendWinId, isStandalone, isResizable);
+               #elif defined(CARLA_OS_WIN)
+                fUI.window = CarlaPluginUI::newWindows(this, opts.frontendWinId, isStandalone, isResizable);
+               #elif defined(HAVE_X11)
+                fUI.window = CarlaPluginUI::newX11(this, opts.frontendWinId, isStandalone, isResizable, false);
+               #else
+                pData->engine->callback(true, true,
+                                        ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                        pData->id,
+                                        -1,
+                                        0, 0, 0.0f,
+                                        "Unsupported UI type");
+                return;
+               #endif
 
                 fUI.window->setTitle(uiTitle.buffer());
 
                #ifndef CARLA_OS_MAC
-                // TODO inform plugin of what UI scale we use
+                if (carla_isNotZero(opts.uiScale))
+                {
+                    // TODO inform plugin of what UI scale we use
+                }
                #endif
 
                 v3_cpp_obj(fV3.view)->set_frame(fV3.view, (v3_plugin_frame**)&fPluginFramePtr);
@@ -1611,7 +1648,6 @@ public:
                                                    V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_OK)
                 {
                     v3_view_rect rect = {};
-
                     if (v3_cpp_obj(fV3.view)->get_size(fV3.view, &rect) == V3_OK)
                     {
                         const int32_t width = rect.right - rect.left;
@@ -1621,11 +1657,36 @@ public:
                         CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
 
                         if (width > 1 && height > 1)
+                        {
+                            fUI.isResizingFromInit = true;
+                            fUI.width = width;
+                            fUI.height = height;
                             fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true, true);
+                        }
                     }
                     else
                     {
                         carla_stdout("view attached ok, size failed");
+                    }
+
+                    if (isResizable)
+                    {
+                        carla_zeroStruct(rect);
+                        if (v3_cpp_obj(fV3.view)->check_size_constraint(fV3.view, &rect) == V3_OK)
+                        {
+                            const int32_t width = rect.right - rect.left;
+                            const int32_t height = rect.bottom - rect.top;
+                            carla_stdout("size constraint ok %i %i", width, height);
+
+                            CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
+
+                            if (width > 1 && height > 1)
+                                fUI.window->setMinimumSize(static_cast<uint>(width), static_cast<uint>(height));
+                        }
+                        else
+                        {
+                            carla_stdout("view attached ok, size constraint failed");
+                        }
                     }
                 }
                 else
@@ -1698,10 +1759,15 @@ public:
                 CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
 
                 if (width > 1 && height > 1)
+                {
+                    fUI.isResizingFromInit = true;
+                    fUI.width = width;
+                    fUI.height = height;
                     pData->engine->callback(true, true,
                                             ENGINE_CALLBACK_EMBED_UI_RESIZED,
                                             pData->id, width, height,
                                             0, 0.0f, nullptr);
+                }
             }
             else
             {
@@ -1807,11 +1873,29 @@ public:
 
     void uiIdle() override
     {
+        if (!kEngineHasIdleOnMainThread)
+            runIdleCallbacksAsNeeded(true);
+
         if (fUI.window != nullptr)
             fUI.window->idle();
 
-        if (!kEngineHasIdleOnMainThread)
-            runIdleCallbacksAsNeeded(true);
+        if (fUI.isResizingFromHost)
+        {
+            fUI.isResizingFromHost = false;
+
+//             if (!fUI.isResizingFromPlugin && !fUI.isResizingFromInit)
+            {
+                carla_stdout("Host resize stopped");
+//                 v3_view_rect rect = { 0, 0, static_cast<int32_t>(fUI.width), static_cast<int32_t>(fUI.height) };
+//                 v3_cpp_obj(fV3.view)->on_size(fV3.view, &rect);
+            }
+        }
+
+        if (fUI.isResizingFromPlugin)
+        {
+            fUI.isResizingFromPlugin = false;
+            carla_stdout("Plugin resize stopped");
+        }
 
         CarlaPlugin::uiIdle();
     }
@@ -1857,8 +1941,11 @@ public:
 
         for (int32_t b=0; b<numAudioInputBuses; ++b)
         {
-            v3_bus_info busInfo = {};
             carla_zeroStruct(fBuses.inputs[b]);
+            carla_zeroStruct(fBuses.inputInfo[b]);
+            fBuses.inputInfo[b].offset = aIns + cvIns;
+
+            v3_bus_info busInfo = {};
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component,
                                                                             V3_AUDIO, V3_INPUT, b, &busInfo) == V3_OK);
 
@@ -1871,6 +1958,8 @@ public:
             }
 
             fBuses.inputs[b].num_channels = numChannels;
+            fBuses.inputInfo[b].bus_type = busInfo.bus_type;
+            fBuses.inputInfo[b].flags = busInfo.flags;
 
             if (busInfo.flags & V3_IS_CONTROL_VOLTAGE)
                 cvIns += static_cast<uint32_t>(numChannels);
@@ -1880,8 +1969,11 @@ public:
 
         for (int32_t b=0; b<numAudioOutputBuses; ++b)
         {
-            v3_bus_info busInfo = {};
             carla_zeroStruct(fBuses.outputs[b]);
+            carla_zeroStruct(fBuses.inputInfo[b]);
+            fBuses.outputInfo[b].offset = aOuts + cvOuts;
+
+            v3_bus_info busInfo = {};
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->get_bus_info(fV3.component,
                                                                             V3_AUDIO, V3_OUTPUT, b, &busInfo) == V3_OK);
 
@@ -1894,6 +1986,8 @@ public:
             }
 
             fBuses.outputs[b].num_channels = numChannels;
+            fBuses.outputInfo[b].bus_type = busInfo.bus_type;
+            fBuses.outputInfo[b].flags = busInfo.flags;
 
             if (busInfo.flags & V3_IS_CONTROL_VOLTAGE)
                 cvOuts += static_cast<uint32_t>(numChannels);
@@ -3349,12 +3443,19 @@ protected:
 
     v3_result v3ResizeView(struct v3_plugin_view** const view, struct v3_view_rect* const rect) override
     {
+        CARLA_SAFE_ASSERT_RETURN(fV3.view != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(fV3.view == view, V3_INVALID_ARG);
 
         const int32_t width = rect->right - rect->left;
         const int32_t height = rect->bottom - rect->top;
         CARLA_SAFE_ASSERT_INT_RETURN(width > 0, width, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_INT_RETURN(height > 0, height, V3_INVALID_ARG);
+
+        carla_stdout("v3ResizeView %d %d", width, height);
+
+        fUI.isResizingFromPlugin = true;
+        fUI.width = width;
+        fUI.height = height;
 
         if (fUI.isEmbed)
         {
@@ -3378,6 +3479,9 @@ protected:
         // CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
         carla_debug("CarlaPluginVST3::handlePluginUIClosed()");
 
+        fUI.isResizingFromHost = fUI.isResizingFromInit = false;
+        fUI.isResizingFromPlugin = false;
+
         showCustomUI(false);
         pData->engine->callback(true, true,
                                 ENGINE_CALLBACK_UI_STATE_CHANGED,
@@ -3388,11 +3492,60 @@ protected:
 
     void handlePluginUIResized(const uint width, const uint height) override
     {
+        CARLA_SAFE_ASSERT_RETURN(fV3.view != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
-        carla_debug("CarlaPluginVST3::handlePluginUIResized(%u, %u)", width, height);
+        carla_stdout("CarlaPluginVST3::handlePluginUIResized(%u, %u | vs %u %u) %s %s %s",
+                     width, height,
+                     fUI.width, fUI.height,
+                     bool2str(fUI.isResizingFromPlugin),
+                     bool2str(fUI.isResizingFromInit),
+                     bool2str(fUI.isResizingFromHost));
 
-        return; // unused
-        (void)width; (void)height;
+        if (fUI.isResizingFromInit)
+        {
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.width == width, fUI.width, width,);
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.height == height, fUI.height, height,);
+            fUI.isResizingFromInit = false;
+            return;
+        }
+
+        if (fUI.isResizingFromPlugin)
+        {
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.width == width, fUI.width, width,);
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.height == height, fUI.height, height,);
+            fUI.isResizingFromPlugin = false;
+            return;
+        }
+
+        if (fUI.isResizingFromHost)
+        {
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.width == width, fUI.width, width,);
+            CARLA_SAFE_ASSERT_UINT2_RETURN(fUI.height == height, fUI.height, height,);
+            fUI.isResizingFromHost = false;
+            return;
+        }
+
+        if (fUI.width != width || fUI.height != height)
+        {
+            v3_view_rect rect = { 0, 0, static_cast<int32_t>(width), static_cast<int32_t>(height) };
+            if (v3_cpp_obj(fV3.view)->check_size_constraint(fV3.view, &rect) == V3_OK)
+            {
+                const uint width2 = rect.right - rect.left;
+                const uint height2 = rect.bottom - rect.top;
+
+                if (width2 != width || height2 != height)
+                {
+                    fUI.isResizingFromHost = true;
+                    fUI.width = width2;
+                    fUI.height = height2;
+                    fUI.window->setSize(width2, height2, true, false);
+                }
+                else
+                {
+                    v3_cpp_obj(fV3.view)->on_size(fV3.view, &rect);
+                }
+            }
+        }
     }
 
 private:
@@ -3680,29 +3833,56 @@ private:
         int32_t numOutputs;
         v3_audio_bus_buffers* inputs;
         v3_audio_bus_buffers* outputs;
+        v3_bus_mini_info* inputInfo;
+        v3_bus_mini_info* outputInfo;
 
         Buses()
             : numInputs(0),
               numOutputs(0),
               inputs(nullptr),
-              outputs(nullptr) {}
+              outputs(nullptr),
+              inputInfo(nullptr),
+              outputInfo(nullptr) {}
 
         ~Buses()
         {
             delete[] inputs;
             delete[] outputs;
+            delete[] inputInfo;
+            delete[] outputInfo;
         }
 
         void createNew(const int32_t numAudioInputBuses, const int32_t numAudioOutputBuses)
         {
             delete[] inputs;
             delete[] outputs;
+            delete[] inputInfo;
+            delete[] outputInfo;
 
             numInputs = numAudioInputBuses;
             numOutputs = numAudioOutputBuses;
 
-            inputs = numAudioInputBuses > 0 ? new v3_audio_bus_buffers[numAudioInputBuses] : nullptr;
-            outputs = numAudioOutputBuses > 0 ? new v3_audio_bus_buffers[numAudioOutputBuses] : nullptr;
+            if (numAudioInputBuses > 0)
+            {
+                inputs = new v3_audio_bus_buffers[numAudioInputBuses];
+                inputInfo = new v3_bus_mini_info[numAudioInputBuses];
+            }
+            else
+            {
+                inputs =  nullptr;
+                inputInfo = nullptr;
+            }
+
+            if (numAudioOutputBuses > 0)
+            {
+                outputs = new v3_audio_bus_buffers[numAudioOutputBuses];
+                outputInfo = new v3_bus_mini_info[numAudioOutputBuses];
+            }
+            else
+            {
+                outputs = nullptr;
+                outputInfo = nullptr;
+            }
         }
 
         CARLA_DECLARE_NON_COPYABLE(Buses)
@@ -3752,13 +3932,22 @@ private:
     struct UI {
         bool isAttached;
         bool isEmbed;
+        bool isResizingFromHost;
+        bool isResizingFromInit;
+        bool isResizingFromPlugin;
         bool isVisible;
+        uint32_t width, height;
         CarlaPluginUI* window;
 
         UI() noexcept
             : isAttached(false),
               isEmbed(false),
+              isResizingFromHost(false),
+              isResizingFromInit(false),
+              isResizingFromPlugin(false),
               isVisible(false),
+              width(0),
+              height(0),
               window(nullptr) {}
 
         ~UI()
