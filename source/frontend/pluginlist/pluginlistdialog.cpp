@@ -490,7 +490,7 @@ template <class T> inline T static_cast_void(const void* ptr)
 struct PluginInfoBytes {
     uint API;
     uint build;
-    CARLA_BACKEND_NAMESPACE::PluginType type;
+    uint type;
     uint hints;
     uint64_t uniqueId;
     uint audioIns;
@@ -507,8 +507,8 @@ QVariant asVariant(const PluginInfo& plugin)
 {
     const PluginInfoBytes data = {
         plugin.API,
-        plugin.build,
-        plugin.type,
+        static_cast<uint>(plugin.build),
+        static_cast<uint>(plugin.type),
         plugin.hints,
         plugin.uniqueId,
         plugin.audioIns,
