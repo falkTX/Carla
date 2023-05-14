@@ -47,7 +47,7 @@ struct HostSettings {
 
 struct PluginInfo {
     uint API;
-    uint build;
+    CARLA_BACKEND_NAMESPACE::BinaryType build;
     CARLA_BACKEND_NAMESPACE::PluginType type;
     uint hints;
     QString category;

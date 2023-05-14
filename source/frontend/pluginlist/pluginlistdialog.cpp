@@ -565,7 +565,7 @@ PluginInfo asPluginInfo(const QVariant& var)
     const PluginInfoBytes* const data = static_cast_void<const PluginInfoBytes*>(qdata.constData());
     PluginInfo plugin = {
         data->API,
-        data->build,
+        static_cast<BinaryType>(data->build),
         static_cast<PluginType>(data->type),
         data->hints,
         {}, {}, {}, {}, {},
