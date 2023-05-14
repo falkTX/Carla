@@ -208,7 +208,7 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
         if (char* const bundle = lilv_file_uri_parse(lilvPlugin.get_bundle_uri().as_uri(), nullptr))
         {
-           #ifdef BUILDING_CARLA_OBS
+           #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
             const QFileInfo fbundle(QString::fromUtf8(bundle));
             suri = (fbundle.fileName() + CARLA_OS_SEP).toUtf8().constData() + suri;
            #else

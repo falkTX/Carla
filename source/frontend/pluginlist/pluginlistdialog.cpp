@@ -806,6 +806,66 @@ struct PluginListDialog::Self {
         }
     }
 
+#ifdef CARLA_FRONTEND_NO_CACHED_PLUGIN_API
+    void addPluginToTable(const CarlaPluginDiscoveryInfo* const info)
+    {
+        carla_stdout("addPluginToTable %p %s", info, info->filename);
+
+        ui.tableWidget->setRowCount(fLastTableIndex + 1);
+
+        const PluginInfo pinfo = {
+            PLUGIN_QUERY_API_VERSION,
+            info->btype,
+            info->ptype,
+            info->metadata.hints,
+            getPluginCategoryAsString(info->metadata.category),
+            QString::fromUtf8(info->filename),
+            QString::fromUtf8(info->metadata.name),
+            QString::fromUtf8(info->label),
+            QString::fromUtf8(info->metadata.maker),
+            info->uniqueId,
+            info->io.audioIns,
+            info->io.audioOuts,
+            info->io.cvIns,
+            info->io.cvOuts,
+            info->io.midiIns,
+            info->io.midiOuts,
+            info->io.parameterIns,
+            info->io.parameterOuts,
+        };
+
+        const int index = fLastTableIndex;
+        const bool isFav = false;
+        QTableWidgetItem* const itemFav = new QTableWidgetItem;
+        itemFav->setCheckState(isFav ? Qt::Checked : Qt::Unchecked);
+        itemFav->setText(isFav ? " " : "  ");
+
+        const QString searchablePluginText = (
+            QString::fromUtf8(info->label) +
+            QString::fromUtf8(info->filename) +
+            QString::fromUtf8(info->metadata.name) +
+            QString::fromUtf8(info->metadata.maker)).toLower();
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_FAVORITE, itemFav);
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_NAME, new QTableWidgetItem(pinfo.name));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_LABEL,  new QTableWidgetItem(pinfo.label));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_MAKER,  new QTableWidgetItem(pinfo.maker));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_BINARY,
+                                new QTableWidgetItem(QFileInfo(pinfo.filename).fileName()));
+
+        QTableWidgetItem* const itemName = ui.tableWidget->item(index, TABLEWIDGET_ITEM_NAME);
+        itemName->setData(Qt::UserRole+1, asVariant(pinfo));
+        itemName->setData(Qt::UserRole+2, searchablePluginText);
+
+        fLastTableIndex += 1;
+        carla_stdout("addPluginToTable %p %s END", info, info->filename);
+    }
+
+    static void _discoveryCallback(void* const ptr, const CarlaPluginDiscoveryInfo* const info)
+    {
+        carla_stdout("_discoveryCallback %p %s", info, info->filename);
+        static_cast<PluginListDialog::Self*>(ptr)->addPluginToTable(info);
+    }
+#else
     void addPluginToTable(const PluginInfo& plugin, const PluginType ptype)
     {
         if (plugin.API != PLUGIN_QUERY_API_VERSION)
@@ -931,9 +991,39 @@ struct PluginListDialog::Self {
 
         return pluginCount;
     }
+#endif
 
     void reAddPlugins()
     {
+#ifdef CARLA_FRONTEND_NO_CACHED_PLUGIN_API
+        fLastTableIndex = 0;
+        ui.tableWidget->setSortingEnabled(false);
+        ui.tableWidget->clearContents();
+
+        DefaultPaths paths;
+        paths.init();
+        paths.loadFromEnv();
+
+        CarlaPluginDiscoveryHandle handle = carla_plugin_discovery_start("/usr/lib/carla/carla-discovery-native",
+                                                                         PLUGIN_VST3,
+                                                                         paths.vst3.toUtf8().constData(),
+                                                                         _discoveryCallback,
+                                                                         this);
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+
+        while (carla_plugin_discovery_idle(handle))
+            QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 50);
+
+        carla_plugin_discovery_stop(handle);
+
+        ui.tableWidget->setRowCount(fLastTableIndex);
+
+        constexpr const char* const txt = "Have %1 plugins";
+
+        ui.label->setText(fRealParent->tr(txt)
+            .arg(QString::number(fLastTableIndex))
+        );
+#else
         QSafePluginListSettings settingsDB("falkTX", "CarlaPlugins5");
 
         fLastTableIndex = 0;
@@ -1131,6 +1221,7 @@ struct PluginListDialog::Self {
 
         for (const PluginInfo& sfz : sfzs)
             addPluginToTable(sfz, PLUGIN_SFZ);
+#endif
 
         // ------------------------------------------------------------------------------------------------------------
 

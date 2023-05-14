@@ -182,6 +182,7 @@ protected:
                     } while (false);
                 }
 
+                nextInfo.ptype = fPluginType;
                 fCallback(fCallbackPtr, &nextInfo);
 
                 std::free(filename);
@@ -190,6 +191,7 @@ protected:
             {
                 const water::String filename(fBinaries[fBinaryIndex].getFullPathName());
                 nextInfo.filename = filename.toRawUTF8();
+                nextInfo.ptype = fPluginType;
                 carla_stdout("Found %s from %s", nextInfo.metadata.name, nextInfo.filename);
                 fCallback(fCallbackPtr, &nextInfo);
             }
