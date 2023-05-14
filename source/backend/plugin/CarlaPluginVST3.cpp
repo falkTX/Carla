@@ -570,7 +570,6 @@ private:
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_input_param_value_queue)
-    // CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 struct carla_v3_input_param_changes : v3_param_changes_cpp {
@@ -606,10 +605,7 @@ struct carla_v3_input_param_changes : v3_param_changes_cpp {
         carla_zeroStructs(updatedParams, paramCount);
 
         for (uint32_t i=0; i<paramCount; ++i)
-        {
-            carla_zeroStruct(updatedParams[i]);
             queue[i] = new carla_v3_input_param_value_queue(static_cast<v3_param_id>(paramData.data[i].rindex));
-        }
     }
 
     ~carla_v3_input_param_changes()
@@ -674,7 +670,7 @@ private:
         return me->pluginExposedQueue[index];
     }
 
-    static v3_param_value_queue** V3_API add_param_data(void*, v3_param_id*, int32_t*)
+    static v3_param_value_queue** V3_API add_param_data(void*, const v3_param_id*, int32_t*)
     {
         // there is nothing here for input parameters, plugins are not meant to call this!
         return nullptr;
@@ -685,8 +681,88 @@ private:
 
 // --------------------------------------------------------------------------------------------------------------------
 
+struct carla_v3_output_param_value_queue : v3_param_value_queue_cpp {
+    const v3_param_id paramId;
+    bool used;
+    int32_t offset;
+    double value;
+
+    carla_v3_output_param_value_queue(const v3_param_id pId)
+        : paramId(pId),
+          used(false),
+          offset(0),
+          value(0.0)
+    {
+        query_interface = v3_query_interface_static<v3_param_value_queue_iid>;
+        ref = v3_ref_static;
+        unref = v3_unref_static;
+        queue.get_param_id = get_param_id;
+        queue.get_point_count = get_point_count;
+        queue.get_point = get_point;
+        queue.add_point = add_point;
+    }
+
+    void init()
+    {
+        used = false;
+        offset = 0;
+        value = 0.0;
+    }
+
+private:
+    static v3_param_id V3_API get_param_id(void* self)
+    {
+        carla_v3_output_param_value_queue* const me = *static_cast<carla_v3_output_param_value_queue**>(self);
+        return me->paramId;
+    }
+
+    static int32_t V3_API get_point_count(void* self)
+    {
+        carla_v3_output_param_value_queue* const me = *static_cast<carla_v3_output_param_value_queue**>(self);
+        return me->used ? 1 : 0;
+    }
+
+    static v3_result V3_API get_point(void* const self,
+                                      const int32_t index, int32_t* const sample_offset, double* const value)
+    {
+        carla_v3_output_param_value_queue* const me = *static_cast<carla_v3_output_param_value_queue**>(self);
+        CARLA_SAFE_ASSERT_RETURN(me->used, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_INT_RETURN(index == 0, index, V3_INVALID_ARG);
+
+        *sample_offset = me->offset;
+        *value = me->value;
+        return V3_OK;
+    }
+
+    static v3_result V3_API add_point(void* const self,
+                                      const int32_t sample_offset, const double value, int32_t* const index)
+    {
+        carla_v3_output_param_value_queue* const me = *static_cast<carla_v3_output_param_value_queue**>(self);
+        CARLA_SAFE_ASSERT_INT_RETURN(sample_offset >= 0, sample_offset, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(value >= 0 && value <= 1, V3_INVALID_ARG);
+        CARLA_SAFE_ASSERT_RETURN(index != nullptr, V3_INVALID_ARG);
+
+        me->offset = sample_offset;
+        me->value = value;
+        *index = 0;
+        return V3_OK;
+    }
+
+    CARLA_DECLARE_NON_COPYABLE(carla_v3_output_param_value_queue)
+};
+
 struct carla_v3_output_param_changes : v3_param_changes_cpp {
-    carla_v3_output_param_changes()
+    const uint32_t numParameters;
+    int32_t numParametersUsed;
+    bool* const parametersUsed;
+    carla_v3_output_param_value_queue** const queue;
+    std::unordered_map<v3_param_id, int32_t> paramIds;
+
+    carla_v3_output_param_changes(const PluginParameterData& paramData)
+        : numParameters(paramData.count),
+          numParametersUsed(0),
+          parametersUsed(new bool[paramData.count]),
+          queue(new carla_v3_output_param_value_queue*[paramData.count])
     {
         query_interface = v3_query_interface_static<v3_param_changes_iid>;
         ref = v3_ref_static;
@@ -694,24 +770,63 @@ struct carla_v3_output_param_changes : v3_param_changes_cpp {
         changes.get_param_count = get_param_count;
         changes.get_param_data = get_param_data;
         changes.add_param_data = add_param_data;
+
+        carla_zeroStructs(parametersUsed, numParameters);
+
+        for (uint32_t i=0; i<numParameters; ++i)
+        {
+            const v3_param_id paramId = paramData.data[i].rindex;
+            queue[i] = new carla_v3_output_param_value_queue(paramId);
+            paramIds[paramId] = i;
+        }
     }
 
+    ~carla_v3_output_param_changes()
+    {
+        for (uint32_t i=0; i<numParameters; ++i)
+            delete queue[i];
+        delete[] queue;
+    }
+
+    void prepare()
+    {
+        numParametersUsed = 0;
+        carla_zeroStructs(parametersUsed, numParameters);
+    }
+
+private:
     static int32_t V3_API get_param_count(void*)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        // there is nothing here for output parameters, plugins are not meant to call this!
         return 0;
     }
 
     static v3_param_value_queue** V3_API get_param_data(void*, int32_t)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
+        // there is nothing here for output parameters, plugins are not meant to call this!
         return nullptr;
     }
 
-    static v3_param_value_queue** V3_API add_param_data(void*, v3_param_id*, int32_t*)
+    static v3_param_value_queue** V3_API add_param_data(void* const self,
+                                                        const v3_param_id* const paramIdPtr,
+                                                        int32_t* const index)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
-        return nullptr;
+        carla_v3_output_param_changes* const me = *static_cast<carla_v3_output_param_changes**>(self);
+        CARLA_SAFE_ASSERT_RETURN(paramIdPtr != nullptr, nullptr);
+
+        const v3_param_id paramId = *paramIdPtr;
+
+        if (me->paramIds.find(paramId) == me->paramIds.end())
+            return nullptr;
+
+        const int32_t paramIndex = me->paramIds[paramId];
+        CARLA_SAFE_ASSERT_RETURN(!me->parametersUsed[paramIndex], nullptr);
+
+        *index = me->numParametersUsed++;
+        me->parametersUsed[paramIndex] = true;
+        me->queue[paramIndex]->init();
+
+        return (v3_param_value_queue**)&me->queue[paramIndex];
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_output_param_changes)
@@ -2017,7 +2132,7 @@ public:
         if (numParameters > 0)
         {
             fEvents.paramInputs = new carla_v3_input_param_changes(pData->param);
-            fEvents.paramOutputs = new carla_v3_output_param_changes;
+            fEvents.paramOutputs = new carla_v3_output_param_changes(pData->param);
         }
 
         if (needsCtrlIn)
@@ -2700,6 +2815,45 @@ public:
         try {
             v3_cpp_obj(fV3.processor)->process(fV3.processor, &processData);
         } CARLA_SAFE_EXCEPTION("process");
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Handle parameter outputs
+
+        if (fEvents.paramOutputs != nullptr && fEvents.paramOutputs->numParametersUsed != 0)
+        {
+            uint8_t channel;
+            uint16_t param;
+
+            for (uint32_t i=0; i < pData->param.count; ++i)
+            {
+                if (fEvents.paramOutputs->parametersUsed[i])
+                {
+                    carla_v3_output_param_value_queue* const queue = fEvents.paramOutputs->queue[i];
+                    const v3_param_id paramId = pData->param.data[i].rindex;
+
+                    const float value = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller,
+                                                                                                  paramId,
+                                                                                                  queue->value);
+
+                    pData->postponeParameterChangeRtEvent(true, static_cast<int32_t>(i), value);
+
+                    if (pData->param.data[i].type == PARAMETER_OUTPUT && pData->param.data[i].mappedControlIndex > 0)
+                    {
+                        channel = pData->param.data[i].midiChannel;
+                        param = static_cast<uint16_t>(pData->param.data[i].mappedControlIndex);
+
+                        pData->event.portOut->writeControlEvent(queue->offset,
+                                                                channel,
+                                                                kEngineControlEventTypeParameter,
+                                                                param,
+                                                                -1,
+                                                                queue->value);
+                    }
+                }
+            }
+        }
+
+        pData->postRtEvents.trySplice();
 
         fEvents.init();
 
@@ -3587,6 +3741,9 @@ private:
         {
             if (paramInputs != nullptr)
                 paramInputs->prepare();
+
+            if (paramOutputs != nullptr)
+                paramOutputs->prepare();
         }
 
         CARLA_DECLARE_NON_COPYABLE(Events)

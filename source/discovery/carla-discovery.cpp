@@ -1476,7 +1476,7 @@ struct carla_v3_param_changes : v3_param_changes_cpp {
 private:
     static int32_t V3_API carla_get_param_count(void*) { return 0; }
     static v3_param_value_queue** V3_API carla_get_param_data(void*, int32_t) { return nullptr; }
-    static v3_param_value_queue** V3_API carla_add_param_data(void*, v3_param_id*, int32_t*) { return nullptr; }
+    static v3_param_value_queue** V3_API carla_add_param_data(void*, const v3_param_id*, int32_t*) { return nullptr; }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_param_changes)
     CARLA_PREVENT_HEAP_ALLOCATION

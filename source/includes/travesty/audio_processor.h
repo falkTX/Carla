@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2023 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -108,7 +108,7 @@ struct v3_param_changes {
 #endif
 	int32_t (V3_API* get_param_count)(void* self);
 	struct v3_param_value_queue** (V3_API* get_param_data)(void* self, int32_t idx);
-	struct v3_param_value_queue** (V3_API* add_param_data)(void* self, v3_param_id* id, int32_t* index);
+	struct v3_param_value_queue** (V3_API* add_param_data)(void* self, const v3_param_id* id, int32_t* idx);
 };
 
 static constexpr const v3_tuid v3_param_changes_iid =
