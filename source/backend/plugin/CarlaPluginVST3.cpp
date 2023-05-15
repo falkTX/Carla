@@ -1721,15 +1721,16 @@ public:
         {
             fUI.isVisible = false;
 
-            if (fUI.isEmbed && fUI.isAttached)
+            if (fUI.window != nullptr)
+                fUI.window->hide();
+
+            if (fUI.isEmbed)
             {
                 fUI.isAttached = false;
+                fUI.isEmbed = false;
                 v3_cpp_obj(fV3.view)->set_frame(fV3.view, nullptr);
                 v3_cpp_obj(fV3.view)->removed(fV3.view);
             }
-
-            if (fUI.window != nullptr)
-                fUI.window->hide();
         }
 
         runIdleCallbacksAsNeeded(true);

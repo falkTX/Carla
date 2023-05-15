@@ -116,8 +116,7 @@ public:
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
         {
-            if (! fUI.isEmbed)
-                showCustomUI(false);
+            showCustomUI(false);
 
             if (fUI.isOpen)
             {
@@ -614,8 +613,15 @@ public:
         {
             fUI.isVisible = false;
 
-            CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
-            fUI.window->hide();
+            if (fUI.window != nullptr)
+                fUI.window->hide();
+
+            if (fUI.isEmbed)
+            {
+                fUI.isEmbed = false;
+                fUI.isOpen = false;
+                dispatcher(effEditClose);
+            }
         }
     }
 
@@ -627,14 +633,14 @@ public:
         fUI.isOpen = true;
         fUI.isVisible = true;
 
-#ifndef CARLA_OS_MAC
+       #ifndef CARLA_OS_MAC
         // inform plugin of what UI scale we use
         dispatcher(effVendorSpecific,
                    CCONST('P', 'r', 'e', 'S'),
                    CCONST('A', 'e', 'C', 's'),
                    nullptr,
                    pData->engine->getOptions().uiScale);
-#endif
+       #endif
 
         dispatcher(effEditOpen, 0, 0, ptr);
 
@@ -671,17 +677,11 @@ public:
 
     void uiIdle() override
     {
-        if (fUI.window != nullptr)
-        {
-            fUI.window->idle();
-
-            if (fUI.isVisible)
-                dispatcher(effEditIdle);
-        }
-        else if (fUI.isEmbed)
-        {
+        if (fUI.isVisible)
             dispatcher(effEditIdle);
-        }
+
+        if (fUI.window != nullptr)
+            fUI.window->idle();
 
         CarlaPlugin::uiIdle();
     }
