@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ -f "$(dirname ${0})/carla-utils.pc" ]; then
     cd "$(dirname ${0})/.."
