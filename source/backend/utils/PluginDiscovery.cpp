@@ -70,7 +70,7 @@ public:
           fCallback(callback),
           fCallbackPtr(callbackPtr),
           fBinaryIndex(0),
-          fBinaryCount(binaries.size()),
+          fBinaryCount(static_cast<uint>(binaries.size())),
           fBinaries(binaries),
           fDiscoveryTool(discoveryTool),
           fLastMessageTime(0),
@@ -353,12 +353,12 @@ private:
 
 // --------------------------------------------------------------------------------------------------------------------
 
-static std::vector<water::File> findDirectories(const char* const pluginPath, const char* const wildcard)
+static bool findDirectories(std::vector<water::File>& files, const char* const pluginPath, const char* const wildcard)
 {
-    CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, {});
+    CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, true);
 
     if (pluginPath[0] == '\0')
-        return {};
+        return true;
 
     using water::File;
     using water::String;
@@ -367,9 +367,7 @@ static std::vector<water::File> findDirectories(const char* const pluginPath, co
     const StringArray splitPaths(StringArray::fromTokens(pluginPath, CARLA_OS_SPLIT_STR, ""));
 
     if (splitPaths.size() == 0)
-        return {};
-
-    std::vector<water::File> ret;
+        return true;
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
@@ -378,20 +376,20 @@ static std::vector<water::File> findDirectories(const char* const pluginPath, co
 
         if (dir.findChildFiles(results, File::findDirectories|File::ignoreHiddenFiles, true, wildcard) > 0)
         {
-            ret.reserve(ret.size() + results.size());
-            ret.insert(ret.end(), results.begin(), results.end());
+            files.reserve(files.size() + results.size());
+            files.insert(files.end(), results.begin(), results.end());
         }
     }
 
-    return ret;
+    return files.empty();
 }
 
-static std::vector<water::File> findFiles(const char* const pluginPath, const char* const wildcard)
+static bool findFiles(std::vector<water::File>& files, const char* const pluginPath, const char* const wildcard)
 {
-    CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, {});
+    CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, true);
 
     if (pluginPath[0] == '\0')
-        return {};
+        return true;
 
     using water::File;
     using water::String;
@@ -400,9 +398,7 @@ static std::vector<water::File> findFiles(const char* const pluginPath, const ch
     const StringArray splitPaths(StringArray::fromTokens(pluginPath, CARLA_OS_SPLIT_STR, ""));
 
     if (splitPaths.size() == 0)
-        return {};
-
-    std::vector<water::File> ret;
+        return true;
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
@@ -411,20 +407,20 @@ static std::vector<water::File> findFiles(const char* const pluginPath, const ch
 
         if (dir.findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard) > 0)
         {
-            ret.reserve(ret.size() + results.size());
-            ret.insert(ret.end(), results.begin(), results.end());
+            files.reserve(files.size() + results.size());
+            files.insert(files.end(), results.begin(), results.end());
         }
     }
 
-    return ret;
+    return files.empty();
 }
 
-static std::vector<water::File> findVST3s(const char* const pluginPath)
+static bool findVST3s(std::vector<water::File>& files, const char* const pluginPath)
 {
-    CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, {});
+    CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, true);
 
     if (pluginPath[0] == '\0')
-        return {};
+        return true;
 
     using water::File;
     using water::String;
@@ -433,9 +429,7 @@ static std::vector<water::File> findVST3s(const char* const pluginPath)
     const StringArray splitPaths(StringArray::fromTokens(pluginPath, CARLA_OS_SPLIT_STR, ""));
 
     if (splitPaths.size() == 0)
-        return {};
-
-    std::vector<water::File> ret;
+        return true;
 
    #if defined(CARLA_OS_WIN)
     static constexpr const uint flags = File::findDirectories|File::findFiles;
@@ -450,12 +444,12 @@ static std::vector<water::File> findVST3s(const char* const pluginPath)
 
         if (dir.findChildFiles(results, flags|File::ignoreHiddenFiles, true, "*.vst3") > 0)
         {
-            ret.reserve(ret.size() + results.size());
-            ret.insert(ret.end(), results.begin(), results.end());
+            files.reserve(files.size() + results.size());
+            files.insert(files.end(), results.begin(), results.end());
         }
     }
 
-    return ret;
+    return files.empty();
 }
 
 CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discoveryTool,
@@ -510,6 +504,7 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
        #endif
         break;
     case CB::PLUGIN_VST3:
+        directories = true;
         wildcard = "*.vst3";
         break;
     case CB::PLUGIN_CLAP:
@@ -531,16 +526,25 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
 
     CARLA_SAFE_ASSERT_RETURN(wildcard != nullptr, nullptr);
 
-    const std::vector<water::File> binaries(ptype == CB::PLUGIN_VST3
-                                            ? findVST3s(pluginPath)
-                                            : directories
-                                            ? findDirectories(pluginPath, wildcard)
-                                            : findFiles(pluginPath, wildcard));
+    std::vector<water::File> files;
 
-    if (binaries.size() == 0)
-        return nullptr;
+    if (ptype == CB::PLUGIN_VST3)
+    {
+        if (findVST3s(files, pluginPath))
+            return nullptr;
+    }
+    else if (directories)
+    {
+        if (findDirectories(files, pluginPath, wildcard))
+            return nullptr;
+    }
+    else
+    {
+        if (findFiles(files, pluginPath, wildcard))
+            return nullptr;
+    }
 
-    return new CarlaPluginDiscovery(discoveryTool, ptype, std::move(binaries), callback, callbackPtr);
+    return new CarlaPluginDiscovery(discoveryTool, ptype, std::move(files), callback, callbackPtr);
 }
 
 bool carla_plugin_discovery_idle(CarlaPluginDiscoveryHandle handle)
