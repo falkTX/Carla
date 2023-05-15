@@ -683,7 +683,9 @@ struct PluginListDialog::Self {
         const bool hideBridged = !ui.ch_bridged->isChecked();
         const bool hideBridgedWine = !ui.ch_bridged_wine->isChecked();
 
+#if 0
         const bool hideNonFavs   = ui.ch_favorites->isChecked();
+#endif
         const bool hideNonRtSafe = ui.ch_rtsafe->isChecked();
         const bool hideNonCV     = ui.ch_cv->isChecked();
         const bool hideNonGui    = ui.ch_gui->isChecked();
