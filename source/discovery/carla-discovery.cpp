@@ -2774,8 +2774,6 @@ int main(int argc, const char* argv[])
     if (openLib && handle != nullptr)
         lib_close(handle);
 
-    gPipe = nullptr;
-
     if (retryAsX64lugin)
     {
        #if defined(CARLA_OS_MAC) && defined(__aarch64__)
@@ -2797,6 +2795,8 @@ int main(int argc, const char* argv[])
         }
        #endif
     }
+
+    gPipe = nullptr;
 
     // ----------------------------------------------------------------------------------------------------------------
 
