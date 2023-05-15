@@ -1,5 +1,5 @@
 /*
- * Carla VST Plugin
+ * Carla VST2 Plugin
  * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
