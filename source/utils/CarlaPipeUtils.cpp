@@ -118,7 +118,7 @@ bool waitForAsyncObject(const HANDLE object, const HANDLE process = INVALID_HAND
 }
 
 static inline
-ssize_t ReadFileWin32(const HANDLE pipeh, const HANDLE event, void* const buf, const std::size_t numBytes)
+ssize_t ReadFileWin32(const HANDLE pipeh, const HANDLE event, void* const buf, const DWORD numBytes)
 {
     DWORD dw, dsize = numBytes;
     DWORD available = 0;
@@ -165,7 +165,7 @@ ssize_t ReadFileWin32(const HANDLE pipeh, const HANDLE event, void* const buf, c
 }
 
 static inline
-ssize_t WriteFileWin32(const HANDLE pipeh, const HANDLE event, const void* const buf, const std::size_t numBytes)
+ssize_t WriteFileWin32(const HANDLE pipeh, const HANDLE event, const void* const buf, const DWORD numBytes)
 {
     DWORD dw, dsize = numBytes;
 
@@ -1434,20 +1434,20 @@ bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t s
     ssize_t ret;
 
     try {
-#ifdef CARLA_OS_WIN
-        ret = WriteFileWin32(pData->pipeSend, pData->ovSend, msg, size);
-#else
+       #ifdef CARLA_OS_WIN
+        ret = WriteFileWin32(pData->pipeSend, pData->ovSend, msg, static_cast<DWORD>(size));
+       #else
         ret = ::write(pData->pipeSend, msg, size);
-#endif
+       #endif
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
 
-#ifdef CARLA_OS_WIN
+   #ifdef CARLA_OS_WIN
     if (ret == -2)
     {
         pData->pipeClosed = true;
         return false;
     }
-#endif
+   #endif
 
     if (ret == static_cast<ssize_t>(size))
     {
