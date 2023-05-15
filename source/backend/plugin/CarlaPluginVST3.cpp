@@ -401,7 +401,6 @@ private:
         carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
-        CARLA_SAFE_ASSERT_RETURN(bytes_read != nullptr, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(stream->canRead, V3_INVALID_ARG);
 
         if (stream->readPos + num_bytes > stream->size)
@@ -409,7 +408,10 @@ private:
 
         std::memcpy(buffer, static_cast<uint8_t*>(stream->buffer) + stream->readPos, num_bytes);
         stream->readPos += num_bytes;
-        *bytes_read = num_bytes;
+
+        // this is nasty, some plugins do not care about incomplete reads!
+        if (bytes_read != nullptr)
+            *bytes_read = num_bytes;
 
         return V3_OK;
     }
@@ -429,7 +431,7 @@ private:
         stream->buffer = newbuffer;
         stream->size += num_bytes;
 
-        // this is nasty, VST3s using JUCE do not care about incomplete writes!
+        // this is nasty, some plugins do not care about incomplete writes!
         if (bytes_read != nullptr)
             *bytes_read = num_bytes;
 
