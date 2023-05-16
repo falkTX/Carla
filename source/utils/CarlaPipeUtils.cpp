@@ -18,6 +18,7 @@
 #include "CarlaPipeUtils.hpp"
 #include "CarlaProcessUtils.hpp"
 #include "CarlaString.hpp"
+#include "CarlaTimeUtils.hpp"
 #include "CarlaMIDI.h"
 
 // needed for atom-util
@@ -34,7 +35,6 @@
 
 #include <fcntl.h>
 
-#include "water/misc/Time.h"
 #include "water/text/String.h"
 
 #ifdef CARLA_OS_WIN
@@ -266,7 +266,7 @@ bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const HANDLE pr
     carla_zeroStruct(ov);
     ov.hEvent = event;
 
-    const uint32_t timeoutEnd(water::Time::getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd = carla_gettime_ms() + timeOutMilliseconds;
 
     for (;;)
     {
@@ -304,7 +304,7 @@ bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const HANDLE pr
             return true;
 
         case ERROR_PIPE_LISTENING:
-            if (water::Time::getMillisecondCounter() < timeoutEnd)
+            if (carla_gettime_ms() < timeoutEnd)
             {
                 carla_msleep(5);
                 continue;
@@ -369,7 +369,7 @@ bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, void* const pr
 
     char c;
     ssize_t ret;
-    const uint32_t timeoutEnd(water::Time::getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd = carla_gettime_ms() + timeOutMilliseconds;
 
 #ifdef CARLA_OS_WIN
     if (! waitForClientConnect(pipe, (HANDLE)ovRecv, (HANDLE)process, timeOutMilliseconds))
@@ -402,7 +402,7 @@ bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, void* const pr
             if (errno == EAGAIN)
 #endif
             {
-                if (water::Time::getMillisecondCounter() < timeoutEnd)
+                if (carla_gettime_ms() < timeoutEnd)
                 {
                     carla_msleep(5);
                     continue;
@@ -440,7 +440,7 @@ bool waitForProcessToStop(const HANDLE process, const uint32_t timeOutMillisecon
     CARLA_SAFE_ASSERT_RETURN(process != INVALID_HANDLE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
-    const uint32_t timeoutEnd(water::Time::getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd = carla_gettime_ms() + timeOutMilliseconds;
 
     for (;;)
     {
@@ -457,7 +457,7 @@ bool waitForProcessToStop(const HANDLE process, const uint32_t timeOutMillisecon
             ::TerminateProcess(process, 15);
         }
 
-        if (water::Time::getMillisecondCounter() >= timeoutEnd)
+        if (carla_gettime_ms() >= timeoutEnd)
             break;
 
         carla_msleep(5);
@@ -491,7 +491,7 @@ bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds, boo
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
     pid_t ret;
-    const uint32_t timeoutEnd(water::Time::getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd = carla_gettime_ms() + timeOutMilliseconds;
 
     for (;;)
     {
@@ -521,7 +521,7 @@ bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds, boo
                 sendTerminate = false;
                 ::kill(pid, SIGTERM);
             }
-            if (water::Time::getMillisecondCounter() < timeoutEnd)
+            if (carla_gettime_ms() < timeoutEnd)
             {
                 carla_msleep(5);
                 continue;
@@ -1378,7 +1378,7 @@ const char* CarlaPipeCommon::_readlineblock(const bool allocReturn,
                                             const uint16_t size,
                                             const uint32_t timeOutMilliseconds) const noexcept
 {
-    const uint32_t timeoutEnd = water::Time::getMillisecondCounter() + timeOutMilliseconds;
+    const uint32_t timeoutEnd = carla_gettime_ms() + timeOutMilliseconds;
     bool readSucess;
 
     for (;;)
@@ -1389,7 +1389,7 @@ const char* CarlaPipeCommon::_readlineblock(const bool allocReturn,
         if (readSucess)
             return msg;
 
-        if (water::Time::getMillisecondCounter() >= timeoutEnd)
+        if (carla_gettime_ms() >= timeoutEnd)
             break;
 
         carla_msleep(5);
@@ -1399,7 +1399,7 @@ const char* CarlaPipeCommon::_readlineblock(const bool allocReturn,
 
     if (testingForValgrind)
     {
-        const uint32_t timeoutEnd2 = water::Time::getMillisecondCounter() + 1000;
+        const uint32_t timeoutEnd2 = carla_gettime_ms() + 1000;
 
         for (;;)
         {
@@ -1409,7 +1409,7 @@ const char* CarlaPipeCommon::_readlineblock(const bool allocReturn,
             if (readSucess)
                 return msg;
 
-            if (water::Time::getMillisecondCounter() >= timeoutEnd2)
+            if (carla_gettime_ms() >= timeoutEnd2)
                 break;
 
             carla_msleep(100);
