@@ -21,6 +21,7 @@
 #include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 #include "CarlaProcessUtils.hpp"
+#include "CarlaTimeUtils.hpp"
 
 #ifdef CARLA_OS_WASM
 # error Threads do not work under wasm!

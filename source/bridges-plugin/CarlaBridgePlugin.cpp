@@ -26,6 +26,8 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaMainLoop.hpp"
+#include "CarlaTimeUtils.hpp"
+
 #include "CarlaMIDI.h"
 
 #ifdef CARLA_OS_MAC

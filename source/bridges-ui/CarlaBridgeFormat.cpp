@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,7 @@
 
 #include "CarlaBase64Utils.hpp"
 #include "CarlaProcessUtils.hpp"
+#include "CarlaTimeUtils.hpp"
 
 #include "CarlaMIDI.h"
 

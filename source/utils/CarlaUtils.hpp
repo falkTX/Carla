@@ -291,43 +291,6 @@ void carla_safe_exception(const char* const exception, const char* const file, c
 }
 
 // --------------------------------------------------------------------------------------------------------------------
-// carla_*sleep
-
-/*
- * Sleep for 'secs' seconds.
- */
-static inline
-void carla_sleep(const uint secs) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(secs > 0,);
-
-    try {
-#ifdef CARLA_OS_WIN
-        ::Sleep(secs * 1000);
-#else
-        ::sleep(secs);
-#endif
-    } CARLA_SAFE_EXCEPTION("carla_sleep");
-}
-
-/*
- * Sleep for 'msecs' milliseconds.
- */
-static inline
-void carla_msleep(const uint msecs) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(msecs > 0,);
-
-    try {
-#ifdef CARLA_OS_WIN
-        ::Sleep(msecs);
-#else
-        ::usleep(msecs * 1000);
-#endif
-    } CARLA_SAFE_EXCEPTION("carla_msleep");
-}
-
-// --------------------------------------------------------------------------------------------------------------------
 // carla_setenv
 
 /*
