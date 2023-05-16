@@ -7741,21 +7741,29 @@ private:
         std::free(path);
     }
 
-    static char* carla_lv2_state_make_path_real(LV2_State_Make_Path_Handle handle, const char* const path)
+    static char* carla_lv2_state_make_path_real(LV2_State_Make_Path_Handle handle, const char* path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(path != nullptr, nullptr);
         carla_debug("carla_lv2_state_make_path_real(%p, \"%s\")", handle, path);
+
+        // allow empty paths to mean "current dir"
+        if (path[0] == '\0')
+            path = ".";
 
         const File file(((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, false, false, path));
         return file.isNotNull() ? strdup(file.getFullPathName().toRawUTF8()) : nullptr;
     }
 
-    static char* carla_lv2_state_make_path_tmp(LV2_State_Make_Path_Handle handle, const char* const path)
+    static char* carla_lv2_state_make_path_tmp(LV2_State_Make_Path_Handle handle, const char* path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(path != nullptr && path[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(path != nullptr, nullptr);
         carla_debug("carla_lv2_state_make_path_tmp(%p, \"%s\")", handle, path);
+
+        // allow empty paths to mean "current dir"
+        if (path[0] == '\0')
+            path = ".";
 
         const File file(((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, false, true, path));
         return file.isNotNull() ? strdup(file.getFullPathName().toRawUTF8()) : nullptr;
@@ -7764,8 +7772,12 @@ private:
     static char* carla_lv2_state_map_to_abstract_path_real(LV2_State_Map_Path_Handle handle, const char* const absolute_path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr, nullptr);
         carla_debug("carla_lv2_state_map_to_abstract_path_real(%p, \"%s\")", handle, absolute_path);
+
+        // handle invalid empty paths the same way as lilv
+        if (absolute_path[0] != '\0')
+            return strdup("");
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(false, absolute_path);
     }
@@ -7773,27 +7785,39 @@ private:
     static char* carla_lv2_state_map_to_abstract_path_tmp(LV2_State_Map_Path_Handle handle, const char* const absolute_path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr, nullptr);
         carla_debug("carla_lv2_state_map_to_abstract_path_tmp(%p, \"%s\")", handle, absolute_path);
+
+        // handle invalid empty paths the same way as lilv
+        if (absolute_path[0] != '\0')
+            return strdup("");
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(true, absolute_path);
     }
 
-    static char* carla_lv2_state_map_to_absolute_path_real(LV2_State_Map_Path_Handle handle, const char* const abstract_path)
+    static char* carla_lv2_state_map_to_absolute_path_real(LV2_State_Map_Path_Handle handle, const char* abstract_path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr, nullptr);
         carla_debug("carla_lv2_state_map_to_absolute_path_real(%p, \"%s\")", handle, abstract_path);
+
+        // allow empty paths to mean "current dir"
+        if (abstract_path[0] == '\0')
+            abstract_path = ".";
 
         const File file(((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, true, false, abstract_path));
         return file.isNotNull() ? strdup(file.getFullPathName().toRawUTF8()) : nullptr;
     }
 
-    static char* carla_lv2_state_map_to_absolute_path_tmp(LV2_State_Map_Path_Handle handle, const char* const abstract_path)
+    static char* carla_lv2_state_map_to_absolute_path_tmp(LV2_State_Map_Path_Handle handle, const char* abstract_path)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr, nullptr);
         carla_debug("carla_lv2_state_map_to_absolute_path_tmp(%p, \"%s\")", handle, abstract_path);
+
+        // allow empty paths to mean "current dir"
+        if (abstract_path[0] == '\0')
+            abstract_path = ".";
 
         const File file(((CarlaPluginLV2*)handle)->handleStateMapToAbsolutePath(true, true, true, abstract_path));
         return file.isNotNull() ? strdup(file.getFullPathName().toRawUTF8()) : nullptr;
