@@ -203,6 +203,27 @@ enum EnginePostAction {
 #endif
 };
 
+static inline
+const char* EnginePostAction2Str(const EnginePostAction action)
+{
+    switch (action)
+    {
+    case kEnginePostActionNull:
+        return "kEnginePostActionNull";
+    case kEnginePostActionZeroCount:
+        return "kEnginePostActionZeroCount";
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    case kEnginePostActionRemovePlugin:
+        return "kEnginePostActionRemovePlugin";
+    case kEnginePostActionSwitchPlugins:
+        return "kEnginePostActionSwitchPlugins";
+#endif
+    }
+
+    carla_stderr("CarlaBackend::EnginePostAction2Str(%i) - invalid action", action);
+    return nullptr;
+}
+
 struct EngineNextAction {
     EnginePostAction opcode;
     uint pluginId;
