@@ -24,7 +24,7 @@
 #define CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM 6
 
 // current API version, bumped when something is added
-#define CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT 9
+#define CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT 10
 
 // -------------------------------------------------------------------------------------------------------------------
 
