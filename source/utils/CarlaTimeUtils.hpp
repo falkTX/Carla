@@ -70,20 +70,20 @@ void carla_msleep(const uint msecs) noexcept
  * Get a monotonically-increasing time in milliseconds.
  */
 static inline
-time_t carla_gettime_ms() noexcept
+uint32_t carla_gettime_ms() noexcept
 {
    #if defined(CARLA_OS_MAC)
     static const time_t s = clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1000000;
     return (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1000000) - s;
    #elif defined(CARLA_OS_WIN)
-    return static_cast<time_t>(timeGetTime());
+    return static_cast<uint32_t>(timeGetTime());
    #else
     static struct {
         timespec ts;
         int r;
-        time_t ms;
-    } s = { {}, clock_gettime(CLOCK_MONOTONIC, &s.ts), s.ts.tv_sec * 1000 + s.ts.tv_nsec / 1000000 };
-
+        uint32_t ms;
+    } s = { {}, clock_gettime(CLOCK_MONOTONIC, &s.ts), static_cast<uint32_t>(s.ts.tv_sec * 1000 +
+                                                                             s.ts.tv_nsec / 1000000) };
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000) - s.ms;
@@ -116,7 +116,6 @@ uint64_t carla_gettime_us() noexcept
         uint64_t us;
     } s = { {}, clock_gettime(CLOCK_MONOTONIC, &s.ts), static_cast<uint64_t>(s.ts.tv_sec * 1000000 +
                                                                              s.ts.tv_nsec / 1000) };
-
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000000 + ts.tv_nsec / 1000) - s.us;
@@ -149,7 +148,6 @@ uint64_t carla_gettime_ns() noexcept
         uint64_t ns;
     } s = { {}, clock_gettime(CLOCK_MONOTONIC, &s.ts), static_cast<uint64_t>(s.ts.tv_sec * 1000000000ULL +
                                                                              s.ts.tv_nsec) };
-
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000000000ULL + ts.tv_nsec) - s.ns;
