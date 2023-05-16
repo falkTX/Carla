@@ -114,7 +114,8 @@ uint64_t carla_gettime_us() noexcept
         timespec ts;
         int r;
         uint64_t us;
-    } s = { {}, clock_gettime(CLOCK_MONOTONIC, &s.ts), s.ts.tv_sec * 1000000 + s.ts.tv_nsec / 1000 };
+    } s = { {}, clock_gettime(CLOCK_MONOTONIC, &s.ts), static_cast<uint64_t>(s.ts.tv_sec * 1000000 +
+                                                                             s.ts.tv_nsec / 1000) };
 
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -146,7 +147,8 @@ uint64_t carla_gettime_ns() noexcept
         timespec ts;
         int r;
         uint64_t ns;
-    } s = { {}, clock_gettime(CLOCK_MONOTONIC, &s.ts), s.ts.tv_sec * 1000000000ULL + s.ts.tv_nsec };
+    } s = { {}, clock_gettime(CLOCK_MONOTONIC, &s.ts), static_cast<uint64_t>(s.ts.tv_sec * 1000000000ULL +
+                                                                             s.ts.tv_nsec) };
 
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
