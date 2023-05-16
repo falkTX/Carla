@@ -817,6 +817,19 @@ struct PluginListDialog::Self {
 #ifdef CARLA_FRONTEND_NO_CACHED_PLUGIN_API
     void addPluginToTable(const CarlaPluginDiscoveryInfo* const info)
     {
+#ifdef BUILDING_CARLA_OBS
+        if (info->io.cvIns != 0 || info->io.cvOuts != 0)
+        {
+            carla_stdout("addPluginToTable %p %s - ignored, has CV", info, info->filename);
+            return;
+        }
+        if (info->io.audioIns > 8 || info->io.audioOuts > 8)
+        {
+            carla_stdout("addPluginToTable %p %s - ignored, has > 8 audio IO", info, info->filename);
+            return;
+        }
+#endif
+
         carla_stdout("addPluginToTable %p %s", info, info->filename);
 
         ui.tableWidget->setRowCount(fLastTableIndex + 1);
