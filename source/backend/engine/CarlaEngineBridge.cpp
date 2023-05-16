@@ -377,7 +377,7 @@ public:
             return;
         }
 
-        const bool wasFirstIdle(fFirstIdle);
+        const bool wasFirstIdle = fFirstIdle;
 
         if (wasFirstIdle)
         {
@@ -1266,6 +1266,10 @@ public:
                 fClosingDown = true;
                 signalThreadShouldExit();
                 callback(true, true, ENGINE_CALLBACK_QUIT, 0, 0, 0, 0, 0.0f, nullptr);
+                break;
+
+            case kPluginBridgeNonRtClientReload:
+                fFirstIdle = true;
                 break;
             }
         }

@@ -89,6 +89,8 @@ enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientSetWindowTitle,                 // uint/size, str[]
     // stuff added in API 9
     kPluginBridgeNonRtClientEmbedUI,                        // ulong
+    // stuff added in API 10
+    kPluginBridgeNonRtClientReload,
 };
 
 // Client sends these to server during non-RT
