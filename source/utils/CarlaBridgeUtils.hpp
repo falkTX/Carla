@@ -129,6 +129,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientSetWindowTitle";
     case kPluginBridgeNonRtClientEmbedUI:
         return "kPluginBridgeNonRtClientEmbedUI";
+    case kPluginBridgeNonRtClientReload:
+        return "kPluginBridgeNonRtClientReload";
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtClientOpcode2str(%i) - invalid opcode", opcode);
