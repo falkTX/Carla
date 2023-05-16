@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Bridge
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -930,17 +930,17 @@ public:
             return;
         }
 
+        const uint32_t maxLocalValueLen = fBridgeVersion >= 10 ? 4096 : 16384;
+
         const uint32_t typeLen  = static_cast<uint32_t>(std::strlen(type));
         const uint32_t keyLen   = static_cast<uint32_t>(std::strlen(key));
         const uint32_t valueLen = static_cast<uint32_t>(std::strlen(value));
 
-        /*
-        if (valueLen > 16384)
-            fShmNonRtClientControl.waitIfDataIsReachingLimit();
-        */
-
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            if (valueLen > maxLocalValueLen)
+                fShmNonRtClientControl.waitIfDataIsReachingLimit();
 
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetCustomData);
 
@@ -954,7 +954,7 @@ public:
 
             if (valueLen > 0)
             {
-                if (valueLen > 16384)
+                if (valueLen > maxLocalValueLen)
                 {
                     String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
@@ -2508,6 +2508,7 @@ public:
 
             case kPluginBridgeNonRtServerSetCustomData: {
                 // uint/size, str[], uint/size, str[], uint/size, str[]
+                const uint32_t maxLocalValueLen = fBridgeVersion >= 10 ? 4096 : 16384;
 
                 // type
                 const uint32_t typeSize = fShmNonRtServerControl.readUInt();
@@ -2525,7 +2526,7 @@ public:
                 const uint32_t valueSize = fShmNonRtServerControl.readUInt();
 
                 // special case for big values
-                if (valueSize > 16384)
+                if (valueSize > maxLocalValueLen)
                 {
                     const uint32_t bigValueFilePathSize = fShmNonRtServerControl.readUInt();
                     char bigValueFilePath[bigValueFilePathSize+1];

@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -112,6 +112,7 @@ public:
           fClosingDown(false),
           fIsOffline(false),
           fFirstIdle(true),
+          fBridgeVersion(0),
           fLastPingTime(-1)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
@@ -395,6 +396,8 @@ public:
 
                 fShmNonRtServerControl.commitWrite();
             }
+
+            fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
             // kPluginBridgeNonRtServerAudioCount
             {
@@ -790,9 +793,9 @@ public:
                 break;
 
             case kPluginBridgeNonRtClientVersion: {
-                const uint apiVersion = fShmNonRtServerControl.readUInt();
-                CARLA_SAFE_ASSERT_UINT2(apiVersion >= CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM,
-                                        apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM);
+                fBridgeVersion = fShmNonRtServerControl.readUInt();
+                CARLA_SAFE_ASSERT_UINT2(fBridgeVersion >= CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM,
+                                        fBridgeVersion, CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM);
             }   break;
 
             case kPluginBridgeNonRtClientPing: {
@@ -878,6 +881,8 @@ public:
             }
 
             case kPluginBridgeNonRtClientSetCustomData: {
+                const uint32_t maxLocalValueLen = fBridgeVersion >= 10 ? 4096 : 16384;
+
                 // type
                 const uint32_t typeSize = fShmNonRtClientControl.readUInt();
                 char typeStr[typeSize+1];
@@ -895,7 +900,7 @@ public:
 
                 if (valueSize > 0)
                 {
-                    if (valueSize > 16384)
+                    if (valueSize > maxLocalValueLen)
                     {
                         const uint32_t bigValueFilePathSize = fShmNonRtClientControl.readUInt();
                         char bigValueFilePathTry[bigValueFilePathSize+1];
@@ -1059,6 +1064,8 @@ public:
 
                 plugin->prepareForSave(false);
 
+                const uint32_t maxLocalValueLen = fBridgeVersion >= 10 ? 4096 : 16384;
+
                 for (uint32_t i=0, count=plugin->getCustomDataCount(); i<count; ++i)
                 {
                     const CustomData& cdata(plugin->getCustomData(i));
@@ -1070,11 +1077,11 @@ public:
                     const uint32_t keyLen   = static_cast<uint32_t>(std::strlen(cdata.key));
                     const uint32_t valueLen = static_cast<uint32_t>(std::strlen(cdata.value));
 
-                    if (valueLen > 16384)
-                        fShmNonRtServerControl.waitIfDataIsReachingLimit();
-
                     {
                         const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+                        if (valueLen > maxLocalValueLen)
+                            fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
                         fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSetCustomData);
 
@@ -1088,7 +1095,7 @@ public:
 
                         if (valueLen > 0)
                         {
-                            if (valueLen > 16384)
+                            if (valueLen > maxLocalValueLen)
                             {
                                 String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
@@ -1114,9 +1121,8 @@ public:
                         }
 
                         fShmNonRtServerControl.commitWrite();
+                        fShmNonRtServerControl.waitIfDataIsReachingLimit();
                     }
-
-                    fShmNonRtServerControl.waitIfDataIsReachingLimit();
                 }
 
                 if (plugin->getOptionsEnabled() & PLUGIN_OPTION_USE_CHUNKS)
@@ -1648,6 +1654,7 @@ private:
     bool fClosingDown;
     bool fIsOffline;
     bool fFirstIdle;
+    uint32_t fBridgeVersion;
     int64_t fLastPingTime;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineBridge)
