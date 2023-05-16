@@ -72,13 +72,14 @@ using water::String;
 // -------------------------------------------------------------------------
 
 static bool gIsInitiated = false;
-static volatile bool gCloseNow = false;
+static volatile bool gCloseBridge = false;
+static volatile bool gCloseSignal = false;
 static volatile bool gSaveNow  = false;
 
 #if defined(CARLA_OS_UNIX)
 static void closeSignalHandler(int) noexcept
 {
-    gCloseNow = true;
+    gCloseSignal = true;
 }
 static void saveSignalHandler(int) noexcept
 {
@@ -89,7 +90,7 @@ static BOOL WINAPI winSignalHandler(DWORD dwCtrlType) noexcept
 {
     if (dwCtrlType == CTRL_C_EVENT)
     {
-        gCloseNow = true;
+        gCloseSignal = true;
         return TRUE;
     }
     return FALSE;
@@ -229,7 +230,7 @@ public:
         gIsInitiated = true;
 
 #if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-        CarlaJUCE::setupAndUseMainApplication(gIdle, &gCloseNow);
+        CarlaJUCE::setupAndUseMainApplication(gIdle, &gCloseSignal);
 #else
         int64_t timeToEnd = 0;
 
@@ -239,7 +240,7 @@ public:
             fEngine->transportPlay();
         }
 
-        for (; runMainLoopOnce() && ! gCloseNow;)
+        for (; runMainLoopOnce() && ! gCloseBridge;)
         {
             gIdle();
 # if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
@@ -249,6 +250,8 @@ public:
             carla_msleep(5);
 # endif
             if (testing && timeToEnd - water::Time::currentTimeMillis() < 0)
+                break;
+            if (gCloseSignal && ! fUsingBridge)
                 break;
         }
 #endif
@@ -270,12 +273,12 @@ protected:
         case ENGINE_CALLBACK_ENGINE_STOPPED:
         case ENGINE_CALLBACK_PLUGIN_REMOVED:
         case ENGINE_CALLBACK_QUIT:
-            gCloseNow = true;
+            gCloseBridge = gCloseSignal = true;
             break;
 
         case ENGINE_CALLBACK_UI_STATE_CHANGED:
             if (gIsInitiated && value1 != 1 && ! fUsingBridge)
-                gCloseNow = true;
+                gCloseBridge = gCloseSignal = true;
             break;
 
         default:
