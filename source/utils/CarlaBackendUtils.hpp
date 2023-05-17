@@ -51,7 +51,7 @@ const char* PluginOption2Str(const uint option) noexcept
     }
 
     carla_stderr("CarlaBackend::PluginOption2Str(%i) - invalid option", option);
-    return nullptr;
+    return "";
 }
 
 // -----------------------------------------------------------------------
@@ -76,7 +76,7 @@ const char* BinaryType2Str(const BinaryType type) noexcept
     }
 
     carla_stderr("CarlaBackend::BinaryType2Str(%i) - invalid type", type);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -93,7 +93,7 @@ const char* FileType2Str(const FileType type) noexcept
     }
 
     carla_stderr("CarlaBackend::FileType2Str(%i) - invalid type", type);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -132,7 +132,7 @@ const char* PluginType2Str(const PluginType type) noexcept
     }
 
     carla_stderr("CarlaBackend::PluginType2Str(%i) - invalid type", type);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -163,7 +163,7 @@ const char* PluginCategory2Str(const PluginCategory category) noexcept
     }
 
     carla_stderr("CarlaBackend::PluginCategory2Str(%i) - invalid category", category);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -180,7 +180,7 @@ const char* ParameterType2Str(const ParameterType type) noexcept
     }
 
     carla_stderr("CarlaBackend::ParameterType2Str(%i) - invalid type", type);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -211,7 +211,7 @@ const char* InternalParameterIndex2Str(const InternalParameterIndex index) noexc
     }
 
     carla_stderr("CarlaBackend::InternalParameterIndex2Str(%i) - invalid index", index);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -324,7 +324,7 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
     }
 
     carla_stderr("CarlaBackend::EngineCallbackOpcode2Str(%i) - invalid opcode", opcode);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -413,7 +413,7 @@ const char* EngineOption2Str(const EngineOption option) noexcept
     }
 
     carla_stderr("CarlaBackend::EngineOption2Str(%i) - invalid option", option);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -434,7 +434,7 @@ const char* EngineProcessMode2Str(const EngineProcessMode mode) noexcept
     }
 
     carla_stderr("CarlaBackend::EngineProcessMode2Str(%i) - invalid mode", mode);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -455,7 +455,7 @@ const char* EngineTransportMode2Str(const EngineTransportMode mode) noexcept
     }
 
     carla_stderr("CarlaBackend::EngineTransportMode2Str(%i) - invalid mode", mode);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -472,7 +472,7 @@ const char* FileCallbackOpcode2Str(const FileCallbackOpcode opcode) noexcept
     }
 
     carla_stderr("CarlaBackend::FileCallbackOpcode2Str(%i) - invalid opcode", opcode);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -495,7 +495,7 @@ const char* PatchbayIcon2Str(const PatchbayIcon icon) noexcept
     }
 
     carla_stderr("CarlaBackend::PatchbayIcon2Str(%i) - invalid icon", icon);
-    return nullptr;
+    return "";
 }
 
 // -----------------------------------------------------------------------
