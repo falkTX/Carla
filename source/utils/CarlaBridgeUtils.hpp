@@ -59,7 +59,7 @@ const char* PluginBridgeRtClientOpcode2str(const PluginBridgeRtClientOpcode opco
     }
 
     carla_stderr("CarlaBackend::PluginBridgeRtClientOpcode2str(%i) - invalid opcode", opcode);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -134,7 +134,7 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtClientOpcode2str(%i) - invalid opcode", opcode);
-    return nullptr;
+    return "";
 }
 
 static inline
@@ -211,7 +211,7 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
     }
 
     carla_stderr("CarlaBackend::PluginBridgeNonRtServerOpcode2str%i) - invalid opcode", opcode);
-    return nullptr;
+    return "";
 }
 
 // -------------------------------------------------------------------------------------------------------------------
