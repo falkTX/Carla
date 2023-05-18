@@ -1778,6 +1778,7 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         CARLA_SAFE_ASSERT_CONTINUE(cvIns <= MAX_DISCOVERY_CV_IO);
         CARLA_SAFE_ASSERT_CONTINUE(cvOuts <= MAX_DISCOVERY_CV_IO);
 
+       #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
         if (v3_plugin_view** const view = v3_cpp_obj(controller)->create_view(controller, "editor"))
         {
             if (v3_cpp_obj(view)->is_platform_type_supported(view, V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_TRUE)
@@ -1785,6 +1786,7 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
 
             v3_cpp_obj_unref(view);
         }
+       #endif
 
         if (factory2 != nullptr && std::strstr(classInfo.v2.sub_categories, "Instrument") != nullptr)
             hints |= PLUGIN_IS_SYNTH;

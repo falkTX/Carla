@@ -1,6 +1,6 @@
 /*
  * travesty, pure C VST3-compatible interface
- * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2023 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -37,7 +37,7 @@ struct v3_view_rect {
 # define V3_VIEW_PLATFORM_TYPE_NATIVE V3_VIEW_PLATFORM_TYPE_NSVIEW
 #elif defined(_WIN32)
 # define V3_VIEW_PLATFORM_TYPE_NATIVE V3_VIEW_PLATFORM_TYPE_HWND
-#else
+#elif !defined(__EMSCRIPTEN__)
 # define V3_VIEW_PLATFORM_TYPE_NATIVE V3_VIEW_PLATFORM_TYPE_X11
 #endif
 

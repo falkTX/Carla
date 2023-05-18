@@ -181,14 +181,9 @@ win64:   $(BINDIR)/$(MODULENAME)-win64.exe
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/$(MODULENAME)-native: $(OBJS_native) $(LIBS_native)
+$(BINDIR)/$(MODULENAME)-native$(APP_EXT): $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-native"
-	$(SILENT)$(CXX) $(OBJS_native) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
-
-$(BINDIR)/$(MODULENAME)-native.exe: $(OBJS_native) $(LIBS_native)
-	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-native.exe"
+	@echo "Linking $(MODULENAME)-native$(APP_EXT)"
 	$(SILENT)$(CXX) $(OBJS_native) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-arm32: $(OBJS_arm32) $(LIBS_arm32)

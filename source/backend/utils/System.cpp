@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,26 +19,31 @@
 
 #ifndef CARLA_OS_WASM
 # include "CarlaThread.hpp"
+#else
+# include "CarlaUtils.hpp"
 #endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_fflush(bool err)
+void carla_fflush(const bool err)
 {
     std::fflush(err ? stderr : stdout);
 }
 
-void carla_fputs(bool err, const char* string)
+void carla_fputs(const bool err, const char* const string)
 {
     std::fputs(string, err ? stderr : stdout);
 }
 
-void carla_set_process_name(const char* name)
+void carla_set_process_name(const char* const name)
 {
     carla_debug("carla_set_process_name(\"%s\")", name);
 
 #ifndef CARLA_OS_WASM
     CarlaThread::setCurrentThreadName(name);
+#else
+    // unused
+    (void)name;
 #endif
 }
 

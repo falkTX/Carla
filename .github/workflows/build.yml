@@ -51,3 +51,36 @@ jobs:
         run: make -j $(nproc)
       - name: make posix32
         run: make posix32 -j $(nproc)
+
+  wasm:
+    runs-on: ubuntu-22.04
+    env:
+      EMSCRIPTEN_VERSION: 3.1.27
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Set up cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/emsdk
+          key: emsdk-v1
+      - name: Set up dependencies
+        run: |
+          [ -d ~/emsdk ] || git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
+          cd ~/emsdk && ./emsdk install ${{ env.EMSCRIPTEN_VERSION }} && ./emsdk activate ${{ env.EMSCRIPTEN_VERSION }}
+      - name: make
+        env:
+          AR: emar
+          CC: emcc
+          CXX: em++
+          NM: emnm
+          RANLIB: emranlib
+          STRIP: emstrip
+          PKG_CONFIG: false
+        run: |
+          source ~/emsdk/emsdk_env.sh
+          make features
+          make -j $(nproc)

@@ -1163,7 +1163,13 @@ public:
            #elif defined(HAVE_X11)
             fUI.window = CarlaPluginUI::newX11(this, opts.frontendWinId, opts.pluginsAreStandalone, resizable, false);
            #else
-            #error why is CLAP_WINDOW_API_NATIVE defined??
+            pData->engine->callback(true, true,
+                                    ENGINE_CALLBACK_UI_STATE_CHANGED,
+                                    pData->id,
+                                    -1,
+                                    0, 0, 0.0f,
+                                    "Unsupported UI type");
+            return;
            #endif
 
            #ifndef CARLA_OS_MAC

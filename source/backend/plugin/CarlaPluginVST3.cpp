@@ -40,7 +40,7 @@
 #include "water/files/File.h"
 #include "water/misc/Time.h"
 
-#ifdef _POSIX_VERSION
+#if defined(V3_VIEW_PLATFORM_TYPE_NATIVE) && defined(_POSIX_VERSION)
 # ifdef CARLA_OS_LINUX
 #  define CARLA_VST3_POSIX_EPOLL
 #  include <sys/epoll.h>
@@ -97,11 +97,15 @@ void strncpy_utf8(char* const dst, const int16_t* const src, const size_t length
 
 struct v3HostCallback {
     virtual ~v3HostCallback() {}
+    // v3_component_handler
     virtual v3_result v3BeginEdit(v3_param_id) = 0;
     virtual v3_result v3PerformEdit(v3_param_id, double) = 0;
     virtual v3_result v3EndEdit(v3_param_id) = 0;
     virtual v3_result v3RestartComponent(int32_t) = 0;
+   #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
+    // v3_plugin_frame
     virtual v3_result v3ResizeView(struct v3_plugin_view**, struct v3_view_rect*) = 0;
+   #endif
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -926,6 +930,7 @@ private:
 
 // --------------------------------------------------------------------------------------------------------------------
 
+#ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
 struct HostTimer {
     v3_timer_handler** handler;
     uint64_t periodInMs;
@@ -1050,6 +1055,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE(carla_v3_run_loop)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
+#endif // V3_VIEW_PLATFORM_TYPE_NATIVE
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -1116,6 +1122,7 @@ private:
 
 // --------------------------------------------------------------------------------------------------------------------
 
+#ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
 struct carla_v3_plugin_frame : v3_plugin_frame_cpp {
     v3HostCallback* const callback;
     carla_v3_run_loop loop;
@@ -1159,11 +1166,14 @@ private:
     CARLA_DECLARE_NON_COPYABLE(carla_v3_plugin_frame)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginVST3 : public CarlaPlugin,
+                       #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
                         private CarlaPluginUI::Callback,
+                       #endif
                         private v3HostCallback
 {
 public:
@@ -1181,12 +1191,13 @@ public:
           fV3ApplicationPtr(&fV3Application),
           fComponentHandler(this),
           fComponentHandlerPtr(&fComponentHandler),
+         #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
           fPluginFrame(this),
           fPluginFramePtr(&fPluginFrame),
+         #endif
           fV3ClassInfo(),
           fV3(),
-          fEvents(),
-          fUI()
+          fEvents()
     {
         carla_debug("CarlaPluginVST3::CarlaPluginVST3(%p, %i)", engine, id);
 
@@ -1199,6 +1210,7 @@ public:
 
         runIdleCallbacksAsNeeded(false);
 
+      #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
         fPluginFrame.loop.timers.clear();
        #ifdef _POSIX_VERSION
         fPluginFrame.loop.posixfds.clear();
@@ -1223,6 +1235,7 @@ public:
             v3_cpp_obj_unref(fV3.view);
             fV3.view = nullptr;
         }
+      #endif
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -1583,6 +1596,7 @@ public:
     // ----------------------------------------------------------------------------------------------------------------
     // Set ui stuff
 
+   #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
     void setCustomUITitle(const char* const title) noexcept override
     {
         if (fUI.window != nullptr)
@@ -1799,6 +1813,7 @@ public:
 
         return nullptr;
     }
+   #endif // V3_VIEW_PLATFORM_TYPE_NATIVE
 
     void runIdleCallbacksAsNeeded(const bool isIdleCallback)
     {
@@ -1810,6 +1825,7 @@ public:
 
         fRestartFlags = flags;
 
+      #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
        #ifdef _POSIX_VERSION
         LinkedList<HostPosixFileDescriptor>& posixfds(fPluginFrame.loop.posixfds);
 
@@ -1852,7 +1868,7 @@ public:
                 }
             }
         }
-       #endif
+       #endif // _POSIX_VERSION
 
         LinkedList<HostTimer>& timers(fPluginFrame.loop.timers);
 
@@ -1870,6 +1886,7 @@ public:
                 }
             }
         }
+      #endif // V3_VIEW_PLATFORM_TYPE_NATIVE
     }
 
     void idle() override
@@ -1885,6 +1902,7 @@ public:
         if (!kEngineHasIdleOnMainThread)
             runIdleCallbacksAsNeeded(true);
 
+       #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
         if (fUI.window != nullptr)
             fUI.window->idle();
 
@@ -1905,6 +1923,7 @@ public:
             fUI.isResizingFromPlugin = false;
             carla_stdout("Plugin resize stopped");
         }
+       #endif
 
         CarlaPlugin::uiIdle();
     }
@@ -2285,6 +2304,7 @@ public:
         if (v3category == PLUGIN_CATEGORY_SYNTH)
             pData->hints |= PLUGIN_IS_SYNTH;
 
+       #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
         if (fV3.view != nullptr &&
             v3_cpp_obj(fV3.view)->is_platform_type_supported(fV3.view, V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_TRUE)
         {
@@ -2292,6 +2312,7 @@ public:
             pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
+       #endif
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             pData->hints |= PLUGIN_CAN_DRYWET;
@@ -3450,6 +3471,7 @@ protected:
         return V3_OK;
     }
 
+   #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
     v3_result v3ResizeView(struct v3_plugin_view** const view, struct v3_view_rect* const rect) override
     {
         CARLA_SAFE_ASSERT_RETURN(fV3.view != nullptr, V3_INVALID_ARG);
@@ -3556,6 +3578,7 @@ protected:
             }
         }
     }
+   #endif // V3_VIEW_PLATFORM_TYPE_NATIVE
 
 private:
    #ifdef CARLA_OS_MAC
@@ -3576,8 +3599,10 @@ private:
     carla_v3_component_handler fComponentHandler;
     carla_v3_component_handler* const fComponentHandlerPtr;
 
+   #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
     carla_v3_plugin_frame fPluginFrame;
     carla_v3_plugin_frame* const fPluginFramePtr;
+   #endif
 
     // v3_class_info_2 is ABI compatible with v3_class_info
     union ClassInfo {
@@ -3595,7 +3620,9 @@ private:
         v3_audio_processor** processor;
         v3_connection_point** connComponent;
         v3_connection_point** connController;
+       #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
         v3_plugin_view** view;
+       #endif
         bool shouldTerminateComponent;
         bool shouldTerminateController;
 
@@ -3609,7 +3636,9 @@ private:
               processor(nullptr),
               connComponent(nullptr),
               connController(nullptr),
+             #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
               view(nullptr),
+             #endif
               shouldTerminateComponent(false),
               shouldTerminateController(false) {}
 
@@ -3746,17 +3775,21 @@ private:
                 v3_cpp_obj(connController)->connect(connController, connComponent);
             }
 
+           #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
             // create view
             view = v3_cpp_obj(controller)->create_view(controller, "editor");
             carla_stdout("has view %p", view);
+           #endif
 
             return true;
         }
 
         bool exit()
         {
+           #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
             // must be deleted by now
             CARLA_SAFE_ASSERT(view == nullptr);
+           #endif
 
             if (connComponent != nullptr && connController != nullptr)
             {
@@ -3938,6 +3971,7 @@ private:
         CARLA_DECLARE_NON_COPYABLE(Events)
     } fEvents;
 
+   #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
     struct UI {
         bool isAttached;
         bool isEmbed;
@@ -3972,6 +4006,7 @@ private:
 
         CARLA_DECLARE_NON_COPYABLE(UI)
     } fUI;
+   #endif
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginVST3)
 };
