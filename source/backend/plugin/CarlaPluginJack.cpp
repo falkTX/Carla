@@ -52,7 +52,6 @@ using water::ChildProcess;
 using water::File;
 using water::String;
 using water::StringArray;
-using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 

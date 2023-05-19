@@ -32,6 +32,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 #include "CarlaBridgeUtils.hpp"
+#include "CarlaTimeUtils.hpp"
 #include "CarlaMIDI.h"
 
 #ifdef __SSE2_MATH__
@@ -47,7 +48,6 @@
 using water::File;
 using water::MemoryBlock;
 using water::String;
-using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -382,7 +382,7 @@ public:
         if (wasFirstIdle)
         {
             fFirstIdle = false;
-            fLastPingTime = Time::currentTimeMillis();
+            fLastPingTime = carla_gettime_ms();
             CARLA_SAFE_ASSERT(fLastPingTime > 0);
 
             char bufStr[STR_MAX+1];
@@ -658,7 +658,7 @@ public:
             fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
             carla_stdout("Carla Bridge Ready!");
-            fLastPingTime = Time::currentTimeMillis();
+            fLastPingTime = carla_gettime_ms();
         }
 
         // send parameter outputs
@@ -687,7 +687,7 @@ public:
             handleNonRtData();
         } CARLA_SAFE_EXCEPTION("handleNonRtData");
 
-        if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 30000 && ! wasFirstIdle)
+        if (fLastPingTime > 0 && carla_gettime_ms() > fLastPingTime + 30000 && ! wasFirstIdle)
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
             signalThreadShouldExit();
@@ -825,7 +825,7 @@ public:
 #endif
 
             if (opcode != kPluginBridgeNonRtClientNull && opcode != kPluginBridgeNonRtClientPingOnOff && fLastPingTime > 0)
-                fLastPingTime = Time::currentTimeMillis();
+                fLastPingTime = carla_gettime_ms();
 
             switch (opcode)
             {
@@ -848,7 +848,7 @@ public:
             case kPluginBridgeNonRtClientPingOnOff: {
                 const uint32_t onOff(fShmNonRtClientControl.readBool());
 
-                fLastPingTime = onOff ? Time::currentTimeMillis() : -1;
+                fLastPingTime = onOff ? carla_gettime_ms() : -1;
             }   break;
 
             case kPluginBridgeNonRtClientActivate:

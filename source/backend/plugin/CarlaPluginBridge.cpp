@@ -25,6 +25,7 @@
 #include "CarlaPipeUtils.hpp"
 #include "CarlaScopeUtils.hpp"
 #include "CarlaShmUtils.hpp"
+#include "CarlaTimeUtils.hpp"
 #include "CarlaThread.hpp"
 
 #include "jackbridge/JackBridge.hpp"
@@ -41,7 +42,6 @@ using water::ChildProcess;
 using water::File;
 using water::String;
 using water::StringArray;
-using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -688,10 +688,10 @@ public:
         if (fReceivingParamText.wasDataReceived(&success))
             return success;
 
-        const uint32_t timeoutEnd = Time::getMillisecondCounter() + 500; // 500 ms
+        const uint32_t timeoutEnd = carla_gettime_ms() + 500; // 500 ms
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
-        for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
+        for (; carla_gettime_ms() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             if (fReceivingParamText.wasDataReceived(&success))
                 return success;
@@ -718,10 +718,10 @@ public:
             return;
 
         // TODO: only wait 1 minute for NI plugins
-        const uint32_t timeoutEnd = Time::getMillisecondCounter() + 60*1000; // 60 secs, 1 minute
+        const uint32_t timeoutEnd = carla_gettime_ms() + 60*1000; // 60 secs, 1 minute
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
-        for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
+        for (; carla_gettime_ms() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
@@ -1114,10 +1114,10 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        const uint32_t timeoutEnd = Time::getMillisecondCounter() + 15*1000; // 15 secs
+        const uint32_t timeoutEnd = carla_gettime_ms() + 15*1000; // 15 secs
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
-        for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
+        for (; carla_gettime_ms() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
