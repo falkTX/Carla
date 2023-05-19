@@ -1,6 +1,5 @@
 /*
  * Carla sha1 utils
- * Based on libcrypt placed in the public domain by Wei Dai and other contributors
  * Copyright (C) 2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -36,6 +35,12 @@
 # endif
 #endif
 
+/*!
+ * Simple, single-use SHA1 class.
+ * Must be discarded after use.
+ *
+ * Based on libcrypt by Wei Dai and other contributors (originally in the public domain)
+ */
 class CarlaSha1 {
     static constexpr const size_t BLOCK_LENGTH = 64;
 
@@ -51,7 +56,10 @@ class CarlaSha1 {
     static_assert(sizeof(buffer.u8) == sizeof(buffer.u32), "valid size");
 
 public:
-    CarlaSha1()
+    /*
+     * Constructor.
+     */
+    CarlaSha1() noexcept
         : byteCount(0),
           bufferOffset(0)
     {
@@ -62,20 +70,31 @@ public:
         state[4] = 0xc3d2e1f0;
     }
 
-    void writeByte(const uint8_t data)
+    /*
+     * Write a single byte of data.
+     */
+    void writeByte(const uint8_t data) noexcept
     {
         ++byteCount;
         _addUncounted(data);
     }
 
-    void write(const uint8_t* data, size_t len)
+    /*
+     * Write a custom blob of data.
+     */
+    void write(const void* const data, size_t len) noexcept
     {
+        const uint8_t* u8data = static_cast<const uint8_t*>(data);
+
         while (len--)
-            writeByte(*data++);
+            writeByte(*u8data++);
     }
 
-    // Return hash array (20 characters)
-    const uint8_t* resultAsHash()
+    /*
+     * Return hash result as byte array (20 characters).
+     * @note must be called only once!
+     */
+    const uint8_t* resultAsHash() noexcept
     {
         // Pad to complete the last block
         _pad();
@@ -94,7 +113,11 @@ public:
         return static_cast<uint8_t*>(static_cast<void*>(state));
     }
 
-    const char* resultAsString()
+    /*
+     * Return hash result as null-terminated string.
+     * @note must be called only once!
+     */
+    const char* resultAsString() noexcept
     {
         const uint8_t* const hash = resultAsHash();
 
@@ -107,7 +130,7 @@ public:
     }
 
 private:
-    void _addUncounted(const uint8_t data)
+    void _addUncounted(const uint8_t data) noexcept
     {
        #ifdef CARLA_SHA1_BIG_ENDIAN
         buffer.u8[bufferOffset] = data;
@@ -121,7 +144,7 @@ private:
         }
     }
 
-    void _hashBlock()
+    void _hashBlock() noexcept
     {
         uint32_t a = state[0];
         uint32_t b = state[1];
@@ -172,7 +195,7 @@ private:
     }
 
     // Implement SHA-1 padding (fips180-2 §5.1.1)
-    void _pad()
+    void _pad() noexcept
     {
         // Pad with 0x80 followed by 0x00 until the end of the block
         _addUncounted(0x80);
@@ -189,7 +212,7 @@ private:
         _addUncounted(byteCount << 3);
     }
 
-    static uint32_t _rol32(const uint32_t number, const uint8_t bits)
+    static uint32_t _rol32(const uint32_t number, const uint8_t bits) noexcept
     {
         return (number << bits) | (number >> (32 - bits));
     }
