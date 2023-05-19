@@ -347,22 +347,6 @@ public:
     */
     bool isHidden() const;
 
-    /** Returns a unique identifier for the file, if one is available.
-
-        Depending on the OS and file-system, this may be a unix inode number or
-        a win32 file identifier, or 0 if it fails to find one. The number will
-        be unique on the filesystem, but not globally.
-    */
-    uint64 getFileIdentifier() const;
-
-    /** If possible, this will try to create a version string for the given file.
-
-        The OS may be able to look at the file and give a version for it - e.g. with
-        executables, bundles, dlls, etc. If no version is available, this will
-        return an empty string.
-    */
-    String getVersion() const;
-
     //==============================================================================
     /** Creates an empty file if it doesn't already exist.
 
@@ -665,7 +649,7 @@ public:
         hostApplicationPath,
 
         /** Windows specific paths */
-        winAppData, winProgramFiles, winCommonProgramFiles
+        winAppData, winProgramFiles, winCommonProgramFiles, winMyDocuments
     };
 
     /** Finds the location of a special type of file or directory, such as a home folder or
@@ -786,8 +770,6 @@ private:
     bool copyInternal (const File&) const;
     bool moveInternal (const File&) const;
     bool replaceInternal (const File&) const;
-    bool setFileTimesInternal (int64 m, int64 a, int64 c) const;
-    void getFileTimesInternal (int64& m, int64& a, int64& c) const;
     bool setFileReadOnlyInternal (bool) const;
     bool setFileExecutableInternal (bool) const;
 };

@@ -990,7 +990,7 @@ public:
         To find out how many bytes you need to store this string as UTF-8, you can call
         CharPointer_UTF8::getBytesRequiredFor (myString.getCharPointer())
 
-        @see toRawUTF8, getCharPointer, toUTF16, toUTF32
+        @see toRawUTF8, getCharPointer, toUTF16
     */
     CharPointer_UTF8 toUTF8() const;
 
@@ -1008,7 +1008,7 @@ public:
         To find out how many bytes you need to store this string as UTF-8, you can call
         CharPointer_UTF8::getBytesRequiredFor (myString.getCharPointer())
 
-        @see getCharPointer, toUTF8, toUTF16, toUTF32
+        @see getCharPointer, toUTF8, toUTF16
     */
     const char* toRawUTF8() const;
 

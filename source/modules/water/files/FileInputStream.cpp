@@ -106,7 +106,10 @@ size_t FileInputStream::readInternal (void* buffer, size_t numBytes)
     {
         DWORD actualNum = 0;
         if (! ReadFile ((HANDLE) fileHandle, buffer, (DWORD) numBytes, &actualNum, 0))
+        {
             status = getResultForLastError();
+            actualNum = 0;
+        }
 
         return (size_t) actualNum;
     }

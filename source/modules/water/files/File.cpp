@@ -1158,6 +1158,10 @@ File File::getSpecialLocation (const SpecialLocationType type)
             csidlType = CSIDL_PROGRAM_FILES_COMMON;
             break;
 
+        case winMyDocuments:
+            csidlType = CSIDL_MYDOCUMENTS;
+            break;
+
         default:
             wassertfalse; // unknown type?
             return File();
