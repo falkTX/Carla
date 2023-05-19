@@ -78,7 +78,6 @@ class Result;
 class String;
 class StringArray;
 class StringRef;
-class Time;
 class XmlElement;
 class var;
 

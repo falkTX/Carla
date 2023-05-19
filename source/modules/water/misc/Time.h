@@ -29,88 +29,33 @@
 #include "../water.h"
 
 namespace water {
+namespace Time {
 
 //==============================================================================
-/**
-    Holds an absolute date and time.
+// Static methods for getting system timers directly..
 
-    Internally, the time is stored at millisecond precision.
+/** Returns the current system time.
 
-    @see RelativeTime
+    Returns the number of milliseconds since midnight Jan 1st 1970 UTC.
+
+    Should be accurate to within a few millisecs, depending on platform,
+    hardware, etc.
 */
-class Time
-{
-public:
-    //==============================================================================
-    /** Creates a Time object.
+int64 currentTimeMillis() noexcept;
 
-        This default constructor creates a time of midnight Jan 1st 1970 UTC, (which is
-        represented internally as 0ms).
+/** Returns the number of millisecs since a fixed event (usually system startup).
 
-        To create a time object representing the current time, use getCurrentTime().
+    This returns a monotonically increasing value which it unaffected by changes to the
+    system clock. It should be accurate to within a few millisecs, depending on platform,
+    hardware, etc.
 
-        @see getCurrentTime
-    */
-    Time() noexcept;
+    Being a 32-bit return value, it will of course wrap back to 0 after 2^32 seconds of
+    uptime, so be careful to take that into account. If you need a 64-bit time, you can
+    use currentTimeMillis() instead.
+*/
+uint32 getMillisecondCounter() noexcept;
 
-    /** Creates a time based on a number of milliseconds.
-
-        To create a time object set to the current time, use getCurrentTime().
-
-        @param millisecondsSinceEpoch   the number of milliseconds since the unix
-                                        'epoch' (midnight Jan 1st 1970 UTC).
-        @see getCurrentTime, currentTimeMillis
-    */
-    explicit Time (int64 millisecondsSinceEpoch) noexcept;
-
-    /** Creates a copy of another Time object. */
-    Time (const Time& other) noexcept;
-
-    /** Destructor. */
-    ~Time() noexcept;
-
-    /** Copies this time from another one. */
-    Time& operator= (const Time& other) noexcept;
-
-    //==============================================================================
-    /** Returns a Time object that is set to the current system time.
-
-        This may not be monotonic, as the system time can change at any moment.
-        You should therefore not use this method for measuring time intervals.
-
-        @see currentTimeMillis
-    */
-    static Time getCurrentTime() noexcept;
-
-    //==============================================================================
-    // Static methods for getting system timers directly..
-
-    /** Returns the current system time.
-
-        Returns the number of milliseconds since midnight Jan 1st 1970 UTC.
-
-        Should be accurate to within a few millisecs, depending on platform,
-        hardware, etc.
-    */
-    static int64 currentTimeMillis() noexcept;
-
-    /** Returns the number of millisecs since a fixed event (usually system startup).
-
-        This returns a monotonically increasing value which it unaffected by changes to the
-        system clock. It should be accurate to within a few millisecs, depending on platform,
-        hardware, etc.
-
-        Being a 32-bit return value, it will of course wrap back to 0 after 2^32 seconds of
-        uptime, so be careful to take that into account. If you need a 64-bit time, you can
-        use currentTimeMillis() instead.
-    */
-    static uint32 getMillisecondCounter() noexcept;
-
-private:
-    //==============================================================================
-    int64 millisSinceEpoch;
-};
-
+}
 }
 
 #endif // WATER_TIME_H_INCLUDED

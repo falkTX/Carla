@@ -323,29 +323,32 @@ public:
     */
     bool hasWriteAccess() const;
 
-    /** Changes the write-permission of a file or directory.
-
-        @param shouldBeReadOnly     whether to add or remove write-permission
-        @param applyRecursively     if the file is a directory and this is true, it will
-                                    recurse through all the subfolders changing the permissions
-                                    of all files
-        @returns    true if it manages to change the file's permissions.
-        @see hasWriteAccess
-    */
-    bool setReadOnly (bool shouldBeReadOnly,
-                      bool applyRecursively = false) const;
-
-    /** Changes the execute-permissions of a file.
-
-        @param shouldBeExecutable   whether to add or remove execute-permission
-        @returns    true if it manages to change the file's permissions.
-    */
-    bool setExecutePermission (bool shouldBeExecutable) const;
-
     /** Returns true if this file is a hidden or system file.
         The criteria for deciding whether a file is hidden are platform-dependent.
     */
     bool isHidden() const;
+
+    //==============================================================================
+    /** Returns the last modification time of this file.
+
+        @returns    the time, or an invalid time if the file doesn't exist.
+        @see getLastAccessTime, getCreationTime
+    */
+    int64 getLastModificationTime() const;
+
+    /** Returns the last time this file was accessed.
+
+        @returns    the time, or an invalid time if the file doesn't exist.
+        @see getLastModificationTime, getCreationTime
+    */
+    int64 getLastAccessTime() const;
+
+    /** Returns the time that this file was created.
+
+        @returns    the time, or an invalid time if the file doesn't exist.
+        @see getLastModificationTime, getLastAccessTime
+    */
+    int64 getCreationTime() const;
 
     //==============================================================================
     /** Creates an empty file if it doesn't already exist.
@@ -770,6 +773,7 @@ private:
     bool copyInternal (const File&) const;
     bool moveInternal (const File&) const;
     bool replaceInternal (const File&) const;
+    void getFileTimesInternal (int64& m, int64& a, int64& c) const;
     bool setFileReadOnlyInternal (bool) const;
     bool setFileExecutableInternal (bool) const;
 };

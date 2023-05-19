@@ -531,6 +531,28 @@ Result File::createDirectory() const
 }
 
 //==============================================================================
+int64 File::getLastModificationTime() const
+{
+    int64 m, _;
+    getFileTimesInternal (m, _, _);
+    return m;
+}
+
+int64 File::getLastAccessTime() const
+{
+    int64 a, _;
+    getFileTimesInternal (_, a, _);
+    return a;
+}
+
+int64 File::getCreationTime() const
+{
+    int64 c, _;
+    getFileTimesInternal (_, _, c);
+    return c;
+}
+
+//==============================================================================
 bool File::loadFileAsData (MemoryBlock& destBlock) const
 {
     if (! existsAsFile())
@@ -1054,6 +1076,23 @@ int64 File::getSize() const
     return 0;
 }
 
+void File::getFileTimesInternal (int64& modificationTime, int64& accessTime, int64& creationTime) const
+{
+    using namespace WindowsFileHelpers;
+    WIN32_FILE_ATTRIBUTE_DATA attributes;
+
+    if (GetFileAttributesExW (fullPath.toUTF16().c_str(), GetFileExInfoStandard, &attributes))
+    {
+        modificationTime = fileTimeToTime (&attributes.ftLastWriteTime);
+        creationTime     = fileTimeToTime (&attributes.ftCreationTime);
+        accessTime       = fileTimeToTime (&attributes.ftLastAccessTime);
+    }
+    else
+    {
+        creationTime = accessTime = modificationTime = 0;
+    }
+}
+
 bool File::deleteFile() const
 {
     if (! exists())
@@ -1186,9 +1225,7 @@ public:
             FindClose (handle);
     }
 
-    bool next (String& filenameFound,
-               bool* const isDir, int64* const fileSize,
-               Time* const modTime, Time* const creationTime, bool* const isReadOnly)
+    bool next (String& filenameFound, bool* const isDir, int64* const fileSize, bool* const isReadOnly)
     {
         using namespace WindowsFileHelpers;
         WIN32_FIND_DATAW findData;
@@ -1214,8 +1251,6 @@ public:
         if (isDir != nullptr)         *isDir        = ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
         if (isReadOnly != nullptr)    *isReadOnly   = ((findData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0);
         if (fileSize != nullptr)      *fileSize     = findData.nFileSizeLow + (((int64) findData.nFileSizeHigh) << 32);
-        if (modTime != nullptr)       *modTime      = Time (fileTimeToTime (&findData.ftLastWriteTime));
-        if (creationTime != nullptr)  *creationTime = Time (fileTimeToTime (&findData.ftCreationTime));
 
         return true;
     }
@@ -1244,24 +1279,15 @@ namespace
                  && WATER_STAT (fileName.toUTF8(), &info) == 0;
     }
 
-   #if 0 //def CARLA_OS_MAC
-    static int64 getCreationTime (const water_statStruct& s) noexcept     { return (int64) s.st_birthtime; }
-   #else
-    static int64 getCreationTime (const water_statStruct& s) noexcept     { return (int64) s.st_ctime; }
-   #endif
-
-    void updateStatInfoForFile (const String& path, bool* const isDir, int64* const fileSize,
-                                Time* const modTime, Time* const creationTime, bool* const isReadOnly)
+    void updateStatInfoForFile (const String& path, bool* const isDir, int64* const fileSize, bool* const isReadOnly)
     {
-        if (isDir != nullptr || fileSize != nullptr || modTime != nullptr || creationTime != nullptr)
+        if (isDir != nullptr || fileSize != nullptr)
         {
             water_statStruct info;
             const bool statOk = water_stat (path, info);
 
             if (isDir != nullptr)         *isDir        = statOk && ((info.st_mode & S_IFDIR) != 0);
             if (fileSize != nullptr)      *fileSize     = statOk ? (int64) info.st_size : 0;
-            if (modTime != nullptr)       *modTime      = Time (statOk ? (int64) info.st_mtime  * 1000 : 0);
-            if (creationTime != nullptr)  *creationTime = Time (statOk ? getCreationTime (info) * 1000 : 0);
         }
 
         if (isReadOnly != nullptr)
@@ -1305,6 +1331,22 @@ bool File::hasWriteAccess() const
         return getParentDirectory().hasWriteAccess();
 
     return false;
+}
+
+void File::getFileTimesInternal (int64& modificationTime, int64& accessTime, int64& creationTime) const
+{
+    water_statStruct info;
+
+    if (water_stat (fullPath, info))
+    {
+        modificationTime = (int64) info.st_mtime * 1000;
+        accessTime       = (int64) info.st_atime * 1000;
+        creationTime     = (int64) info.st_ctime * 1000;
+    }
+    else
+    {
+        modificationTime = accessTime = creationTime = 0;
+    }
 }
 
 int64 File::getSize() const
@@ -1516,9 +1558,7 @@ public:
         [enumerator release];
     }
 
-    bool next (String& filenameFound,
-               bool* const isDir, int64* const fileSize,
-               Time* const modTime, Time* const creationTime, bool* const isReadOnly)
+    bool next (String& filenameFound, bool* const isDir, int64* const fileSize,bool* const isReadOnly)
     {
         const AutoNSAutoreleasePool arpool;
 
@@ -1540,7 +1580,7 @@ public:
                 continue;
 
             const String fullPath (parentDir + filenameFound);
-            updateStatInfoForFile (fullPath, isDir, fileSize, modTime, creationTime, isReadOnly);
+            updateStatInfoForFile (fullPath, isDir, fileSize, isReadOnly);
 
             return true;
         }
@@ -1661,9 +1701,7 @@ public:
             closedir (dir);
     }
 
-    bool next (String& filenameFound,
-               bool* const isDir, int64* const fileSize,
-               Time* const modTime, Time* const creationTime, bool* const isReadOnly)
+    bool next (String& filenameFound, bool* const isDir, int64* const fileSize,bool* const isReadOnly)
     {
         if (dir != nullptr)
         {
@@ -1683,7 +1721,7 @@ public:
                 {
                     filenameFound = CharPointer_UTF8 (de->d_name);
 
-                    updateStatInfoForFile (parentDir + filenameFound, isDir, fileSize, modTime, creationTime, isReadOnly);
+                    updateStatInfoForFile (parentDir + filenameFound, isDir, fileSize, isReadOnly);
 
                     return true;
                 }
@@ -1709,11 +1747,9 @@ DirectoryIterator::NativeIterator::NativeIterator (const File& directory, const 
 
 DirectoryIterator::NativeIterator::~NativeIterator() {}
 
-bool DirectoryIterator::NativeIterator::next (String& filenameFound,
-                                              bool* isDir, int64* fileSize,
-                                              Time* modTime, Time* creationTime, bool* isReadOnly)
+bool DirectoryIterator::NativeIterator::next (String& filenameFound, bool* isDir, int64* fileSize,bool* isReadOnly)
 {
-    return pimpl->next (filenameFound, isDir, fileSize, modTime, creationTime, isReadOnly);
+    return pimpl->next (filenameFound, isDir, fileSize, isReadOnly);
 }
 
 }

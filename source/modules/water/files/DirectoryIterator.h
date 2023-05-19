@@ -101,8 +101,6 @@ public:
     */
     bool next (bool* isDirectory,
                int64* fileSize,
-               Time* modTime,
-               Time* creationTime,
                bool* isReadOnly);
 
     /** Returns the file that the iterator is currently pointing at.
@@ -127,8 +125,7 @@ private:
         ~NativeIterator();
 
         bool next (String& filenameFound,
-                   bool* isDirectory, int64* fileSize,
-                   Time* modTime, Time* creationTime, bool* isReadOnly);
+                   bool* isDirectory, int64* fileSize, bool* isReadOnly);
 
         class Pimpl;
 

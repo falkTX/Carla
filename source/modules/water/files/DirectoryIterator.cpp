@@ -69,11 +69,10 @@ bool DirectoryIterator::fileMatches (const StringArray& wildCards, const String&
 
 bool DirectoryIterator::next()
 {
-    return next (nullptr, nullptr, nullptr, nullptr, nullptr);
+    return next (nullptr, nullptr, nullptr);
 }
 
-bool DirectoryIterator::next (bool* const isDirResult, int64* const fileSize,
-                              Time* const modTime, Time* const creationTime, bool* const isReadOnly)
+bool DirectoryIterator::next (bool* const isDirResult, int64* const fileSize, bool* const isReadOnly)
 {
     for (;;)
     {
@@ -81,7 +80,7 @@ bool DirectoryIterator::next (bool* const isDirResult, int64* const fileSize,
 
         if (subIterator != nullptr)
         {
-            if (subIterator->next (isDirResult, fileSize, modTime, creationTime, isReadOnly))
+            if (subIterator->next (isDirResult, fileSize, isReadOnly))
                 return true;
 
             subIterator = nullptr;
@@ -90,8 +89,7 @@ bool DirectoryIterator::next (bool* const isDirResult, int64* const fileSize,
         String filename;
         bool isDirectory, shouldContinue = false;
 
-        while (fileFinder.next (filename, &isDirectory,
-                                fileSize, modTime, creationTime, isReadOnly))
+        while (fileFinder.next (filename, &isDirectory, fileSize, isReadOnly))
         {
             ++index;
 

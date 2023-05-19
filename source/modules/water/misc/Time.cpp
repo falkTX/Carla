@@ -98,34 +98,6 @@ static uint32 water_millisecondsSinceStartup() noexcept
 }
 
 //==============================================================================
-Time::Time() noexcept  : millisSinceEpoch (0)
-{
-}
-
-Time::Time (const Time& other) noexcept  : millisSinceEpoch (other.millisSinceEpoch)
-{
-}
-
-Time::Time (const int64 ms) noexcept  : millisSinceEpoch (ms)
-{
-}
-
-Time::~Time() noexcept
-{
-}
-
-Time& Time::operator= (const Time& other) noexcept
-{
-    millisSinceEpoch = other.millisSinceEpoch;
-    return *this;
-}
-
-//==============================================================================
-
-Time Time::getCurrentTime() noexcept
-{
-    return Time (currentTimeMillis());
-}
 
 int64 Time::currentTimeMillis() noexcept
 {
