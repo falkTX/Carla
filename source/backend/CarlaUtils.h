@@ -135,7 +135,8 @@ typedef struct _CarlaCachedPluginInfo {
 typedef void* CarlaPluginDiscoveryHandle;
 
 /*!
- * TODO.
+ * Plugin discovery meta-data.
+ * These are extra fields not required for loading plugins but still useful for showing to the user.
  */
 typedef struct _CarlaPluginDiscoveryMetadata {
     /*!
@@ -170,7 +171,8 @@ typedef struct _CarlaPluginDiscoveryMetadata {
 } CarlaPluginDiscoveryMetadata;
 
 /*!
- * TODO.
+ * Plugin discovery input/output information.
+ * These are extra fields not required for loading plugins but still useful for extra filtering.
  */
 typedef struct _CarlaPluginDiscoveryIO {
     /*!
@@ -224,7 +226,7 @@ typedef struct _CarlaPluginDiscoveryIO {
 } CarlaPluginDiscoveryIO;
 
 /*!
- * TODO.
+ * Plugin discovery information.
  */
 typedef struct _CarlaPluginDiscoveryInfo {
     /*!
@@ -273,23 +275,50 @@ typedef struct _CarlaPluginDiscoveryInfo {
 } CarlaPluginDiscoveryInfo;
 
 /*!
- * TODO.
+ * Callback triggered when either a plugin has been found, or a scanned binary contains no plugins.
+ *
+ * For the case of plugins found while discovering @p info will be valid.
+ * On formats where discovery is expensive, @p sha1 will contain a string hash related to the binary being scanned.
+ *
+ * When a plugin binary contains no actual plugins, @p info will be null but @p sha1 is valid.
+ * This allows to mark a plugin binary as scanned, even without plugins, so we dont bother to check again next time.
+ *
+ * @note This callback might be triggered multiple times for a single binary, and thus for a single hash too.
  */
-typedef void (*CarlaPluginDiscoveryCallback)(void* ptr, const CarlaPluginDiscoveryInfo* info);
+typedef void (*CarlaPluginDiscoveryCallback)(void* ptr, const CarlaPluginDiscoveryInfo* info, const char* sha1);
 
 /*!
+ * Optional callback triggered before starting to scan a plugin binary.
+ * This allows to load plugin information from cache and skip scanning for that binary.
+ * Return true to skip loading the binary specified by @p filename.
+ */
+typedef bool (*CarlaPluginCheckCacheCallback)(void* ptr, const char* filename, const char* sha1);
+
+/*!
+ * Start plugin discovery with the selected tool (must be absolute filename to executable file).
+ * Different plugin types/formats must be scanned independently.
+ * The path specified by @pluginPath can contain path separators (so ";" on Windows, ":" everywhere else).
+ * The @p discoveryCb is required, while @p checkCacheCb is optional.
+ * 
+ * Returns a non-null handle if there are plugins to be scanned.
+ * @a carla_plugin_discovery_idle must be called at regular intervals afterwards.
  */
 CARLA_PLUGIN_EXPORT CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* discoveryTool,
                                                                             PluginType ptype,
                                                                             const char* pluginPath,
-                                                                            CarlaPluginDiscoveryCallback callback,
+                                                                            CarlaPluginDiscoveryCallback discoveryCb,
+                                                                            CarlaPluginCheckCacheCallback checkCacheCb,
                                                                             void* callbackPtr);
 
 /*!
+ * Continue discovering plugins, triggering callbacks along the way.
+ * Returns true when there is nothing else to scan, then you MUST call @a carla_plugin_discovery_stop.
  */
 CARLA_PLUGIN_EXPORT bool carla_plugin_discovery_idle(CarlaPluginDiscoveryHandle handle);
 
 /*!
+ * Stop plugin discovery.
+ * Can be called early while the scanning is still active.
  */
 CARLA_PLUGIN_EXPORT void carla_plugin_discovery_stop(CarlaPluginDiscoveryHandle handle);
 

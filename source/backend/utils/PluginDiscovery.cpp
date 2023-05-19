@@ -20,9 +20,11 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaPipeUtils.hpp"
+#include "CarlaSha1Utils.hpp"
+#include "CarlaTimeUtils.hpp"
 
 #include "water/files/File.h"
-#include "water/misc/Time.h"
+#include "water/files/FileInputStream.h"
 #include "water/threads/ChildProcess.h"
 #include "water/text/StringArray.h"
 
@@ -64,49 +66,54 @@ public:
     CarlaPluginDiscovery(const char* const discoveryTool,
                          const PluginType ptype,
                          const std::vector<water::File>&& binaries,
-                         const CarlaPluginDiscoveryCallback callback,
+                         const CarlaPluginDiscoveryCallback discoveryCb,
+                         const CarlaPluginCheckCacheCallback checkCacheCb,
                          void* const callbackPtr)
         : fPluginType(ptype),
-          fCallback(callback),
+          fDiscoveryCallback(discoveryCb),
+          fCheckCacheCallback(checkCacheCb),
           fCallbackPtr(callbackPtr),
+          fPluginsFoundInBinary(false),
           fBinaryIndex(0),
           fBinaryCount(static_cast<uint>(binaries.size())),
           fBinaries(binaries),
           fDiscoveryTool(discoveryTool),
           fLastMessageTime(0),
-          nextLabel(nullptr),
-          nextMaker(nullptr),
-          nextName(nullptr)
+          fNextLabel(nullptr),
+          fNextMaker(nullptr),
+          fNextName(nullptr)
     {
         start();
     }
 
     CarlaPluginDiscovery(const char* const discoveryTool,
                          const PluginType ptype,
-                         const CarlaPluginDiscoveryCallback callback,
+                         const CarlaPluginDiscoveryCallback discoveryCb,
+                         const CarlaPluginCheckCacheCallback checkCacheCb,
                          void* const callbackPtr)
         : fPluginType(ptype),
-          fCallback(callback),
+          fDiscoveryCallback(discoveryCb),
+          fCheckCacheCallback(checkCacheCb),
           fCallbackPtr(callbackPtr),
+          fPluginsFoundInBinary(false),
           fBinaryIndex(0),
           fBinaryCount(1),
           fDiscoveryTool(discoveryTool),
           fLastMessageTime(0),
-          nextLabel(nullptr),
-          nextMaker(nullptr),
-          nextName(nullptr)
+          fNextLabel(nullptr),
+          fNextMaker(nullptr),
+          fNextName(nullptr)
     {
         start();
     }
 
     ~CarlaPluginDiscovery()
     {
-        std::free(nextLabel);
-        std::free(nextMaker);
-        std::free(nextName);
+        stopPipeServer(5000);
+        std::free(fNextLabel);
+        std::free(fNextMaker);
+        std::free(fNextName);
     }
-
-    // closePipeServer()
 
     bool idle()
     {
@@ -115,13 +122,25 @@ public:
             idlePipe();
 
             // automatically skip a plugin if 30s passes without a reply
-            const uint32_t timeNow = water::Time::getMillisecondCounter();
+            const uint32_t timeNow = carla_gettime_ms();
 
             if (timeNow - fLastMessageTime < 30000)
                 return true;
 
             carla_stdout("Plugin took too long to respond, skipping...");
             stopPipeServer(1000);
+        }
+
+        // report binary as having no plugins
+        if (fCheckCacheCallback != nullptr && !fPluginsFoundInBinary && !fBinaries.empty())
+        {
+            const water::File file(fBinaries[fBinaryIndex]);
+            const water::String filename(file.getFullPathName());
+
+            makeHash(file, filename);
+
+            if (! fCheckCacheCallback(fCallbackPtr, filename.toRawUTF8(), fNextSha1Sum))
+                fDiscoveryCallback(fCallbackPtr, nullptr, fNextSha1Sum);
         }
 
         if (++fBinaryIndex == fBinaryCount)
@@ -134,7 +153,7 @@ public:
 protected:
     bool msgReceived(const char* const msg) noexcept
     {
-        fLastMessageTime = water::Time::getMillisecondCounter();
+        fLastMessageTime = carla_gettime_ms();
 
         if (std::strcmp(msg, "warning") == 0 || std::strcmp(msg, "error") == 0)
         {
@@ -148,7 +167,7 @@ protected:
         {
             const char* _;
             readNextLineAsString(_, false);
-            new (&nextInfo) _CarlaPluginDiscoveryInfo();
+            new (&fNextInfo) _CarlaPluginDiscoveryInfo();
             return true;
         }
 
@@ -157,14 +176,14 @@ protected:
             const char* _;
             readNextLineAsString(_, false);
 
-            if (nextInfo.label == nullptr)
-                nextInfo.label = gPluginsDiscoveryNullCharPtr;
+            if (fNextInfo.label == nullptr)
+                fNextInfo.label = gPluginsDiscoveryNullCharPtr;
 
-            if (nextInfo.metadata.maker == nullptr)
-                nextInfo.metadata.maker = gPluginsDiscoveryNullCharPtr;
+            if (fNextInfo.metadata.maker == nullptr)
+                fNextInfo.metadata.maker = gPluginsDiscoveryNullCharPtr;
 
-            if (nextInfo.metadata.name == nullptr)
-                nextInfo.metadata.name = gPluginsDiscoveryNullCharPtr;
+            if (fNextInfo.metadata.name == nullptr)
+                fNextInfo.metadata.name = gPluginsDiscoveryNullCharPtr;
 
             if (fBinaries.empty())
             {
@@ -173,37 +192,39 @@ protected:
                 if (fPluginType == CB::PLUGIN_LV2)
                 {
                     do {
-                        const char* const slash = std::strchr(nextLabel, CARLA_OS_SEP);
+                        const char* const slash = std::strchr(fNextLabel, CARLA_OS_SEP);
                         CARLA_SAFE_ASSERT_BREAK(slash != nullptr);
-                        filename = strdup(nextLabel);
-                        filename[slash - nextLabel] = '\0';
-                        nextInfo.filename = filename;
-                        nextInfo.label = slash + 1;
+                        filename = strdup(fNextLabel);
+                        filename[slash - fNextLabel] = '\0';
+                        fNextInfo.filename = filename;
+                        fNextInfo.label = slash + 1;
                     } while (false);
                 }
 
-                nextInfo.ptype = fPluginType;
-                fCallback(fCallbackPtr, &nextInfo);
+                fNextInfo.ptype = fPluginType;
+                fDiscoveryCallback(fCallbackPtr, &fNextInfo, nullptr);
 
                 std::free(filename);
             }
             else
             {
+                CARLA_SAFE_ASSERT(fNextSha1Sum.isNotEmpty());
                 const water::String filename(fBinaries[fBinaryIndex].getFullPathName());
-                nextInfo.filename = filename.toRawUTF8();
-                nextInfo.ptype = fPluginType;
-                carla_stdout("Found %s from %s", nextInfo.metadata.name, nextInfo.filename);
-                fCallback(fCallbackPtr, &nextInfo);
+                fNextInfo.filename = filename.toRawUTF8();
+                fNextInfo.ptype = fPluginType;
+                fPluginsFoundInBinary = true;
+                carla_stdout("Found %s from %s", fNextInfo.metadata.name, fNextInfo.filename);
+                fDiscoveryCallback(fCallbackPtr, &fNextInfo, fNextSha1Sum);
             }
 
-            std::free(nextLabel);
-            nextLabel = nullptr;
+            std::free(fNextLabel);
+            fNextLabel = nullptr;
 
-            std::free(nextMaker);
-            nextMaker = nullptr;
+            std::free(fNextMaker);
+            fNextMaker = nullptr;
 
-            std::free(nextName);
-            nextName = nullptr;
+            std::free(fNextName);
+            fNextName = nullptr;
 
             return true;
         }
@@ -212,13 +233,13 @@ protected:
         {
             uint8_t btype = 0;
             readNextLineAsByte(btype);
-            nextInfo.btype = static_cast<BinaryType>(btype);
+            fNextInfo.btype = static_cast<BinaryType>(btype);
             return true;
         }
 
         if (std::strcmp(msg, "hints") == 0)
         {
-            readNextLineAsUInt(nextInfo.metadata.hints);
+            readNextLineAsUInt(fNextInfo.metadata.hints);
             return true;
         }
 
@@ -226,79 +247,79 @@ protected:
         {
             const char* category = nullptr;
             readNextLineAsString(category, false);
-            nextInfo.metadata.category = CB::getPluginCategoryFromString(category);
+            fNextInfo.metadata.category = CB::getPluginCategoryFromString(category);
             return true;
         }
 
         if (std::strcmp(msg, "name") == 0)
         {
-            nextInfo.metadata.name = nextName = readNextLineAsString();
+            fNextInfo.metadata.name = fNextName = readNextLineAsString();
             return true;
         }
 
         if (std::strcmp(msg, "label") == 0)
         {
-            nextInfo.label = nextLabel = readNextLineAsString();
+            fNextInfo.label = fNextLabel = readNextLineAsString();
             return true;
         }
 
         if (std::strcmp(msg, "maker") == 0)
         {
-            nextInfo.metadata.maker = nextMaker = readNextLineAsString();
+            fNextInfo.metadata.maker = fNextMaker = readNextLineAsString();
             return true;
         }
 
         if (std::strcmp(msg, "uniqueId") == 0)
         {
-            readNextLineAsULong(nextInfo.uniqueId);
+            readNextLineAsULong(fNextInfo.uniqueId);
             return true;
         }
 
         if (std::strcmp(msg, "audio.ins") == 0)
         {
-            readNextLineAsUInt(nextInfo.io.audioIns);
+            readNextLineAsUInt(fNextInfo.io.audioIns);
             return true;
         }
 
         if (std::strcmp(msg, "audio.outs") == 0)
         {
-            readNextLineAsUInt(nextInfo.io.audioOuts);
+            readNextLineAsUInt(fNextInfo.io.audioOuts);
             return true;
         }
 
         if (std::strcmp(msg, "cv.ins") == 0)
         {
-            readNextLineAsUInt(nextInfo.io.cvIns);
+            readNextLineAsUInt(fNextInfo.io.cvIns);
             return true;
         }
 
         if (std::strcmp(msg, "cv.outs") == 0)
         {
-            readNextLineAsUInt(nextInfo.io.cvOuts);
+            readNextLineAsUInt(fNextInfo.io.cvOuts);
             return true;
         }
 
         if (std::strcmp(msg, "midi.ins") == 0)
         {
-            readNextLineAsUInt(nextInfo.io.midiIns);
+            readNextLineAsUInt(fNextInfo.io.midiIns);
             return true;
         }
 
         if (std::strcmp(msg, "midi.outs") == 0)
         {
-            readNextLineAsUInt(nextInfo.io.midiOuts);
+            readNextLineAsUInt(fNextInfo.io.midiOuts);
             return true;
         }
 
         if (std::strcmp(msg, "parameters.ins") == 0)
         {
-            readNextLineAsUInt(nextInfo.io.parameterIns);
+            readNextLineAsUInt(fNextInfo.io.parameterIns);
             return true;
         }
 
         if (std::strcmp(msg, "parameters.outs") == 0)
         {
-            readNextLineAsUInt(nextInfo.io.parameterOuts);
+            readNextLineAsUInt(fNextInfo.io.parameterOuts);
             return true;
         }
 
@@ -314,9 +335,11 @@ protected:
 
 private:
     const PluginType fPluginType;
-    const CarlaPluginDiscoveryCallback fCallback;
+    const CarlaPluginDiscoveryCallback fDiscoveryCallback;
+    const CarlaPluginCheckCacheCallback fCheckCacheCallback;
     void* const fCallbackPtr;
 
+    bool fPluginsFoundInBinary;
     uint fBinaryIndex;
     const uint fBinaryCount;
     const std::vector<water::File> fBinaries;
@@ -324,14 +347,17 @@ private:
 
     uint32_t fLastMessageTime;
 
-    CarlaPluginDiscoveryInfo nextInfo;
-    char* nextLabel;
-    char* nextMaker;
-    char* nextName;
+    CarlaPluginDiscoveryInfo fNextInfo;
+    CarlaString fNextSha1Sum;
+    char* fNextLabel;
+    char* fNextMaker;
+    char* fNextName;
 
     void start()
     {
-        fLastMessageTime = water::Time::getMillisecondCounter();
+        fLastMessageTime = carla_gettime_ms();
+        fPluginsFoundInBinary = false;
+        fNextSha1Sum.clear();
 
         if (fBinaries.empty())
         {
@@ -341,11 +367,48 @@ private:
         }
         else
         {
-            carla_stdout("Scanning %s...", fBinaries[fBinaryIndex].getFullPathName().toRawUTF8());
-            startPipeServer(fDiscoveryTool,
-                            getPluginTypeAsString(fPluginType),
-                            fBinaries[fBinaryIndex].getFullPathName().toRawUTF8());
+            const water::File file(fBinaries[fBinaryIndex]);
+            const water::String filename(file.getFullPathName());
+
+            if (fCheckCacheCallback != nullptr)
+            {
+                makeHash(file, filename);
+
+                if (fCheckCacheCallback(fCallbackPtr, filename.toRawUTF8(), fNextSha1Sum))
+                {
+                    fPluginsFoundInBinary = true;
+                    carla_stdout("Skipping \"%s\", using cache", filename.toRawUTF8());
+                    return;
+                }
+            }
+
+            carla_stdout("Scanning \"%s\"...", filename.toRawUTF8());
+            startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
         }
+    }
+
+    void makeHash(const water::File& file, const water::String& filename)
+    {
+        CarlaSha1 sha1;
+
+        if (file.existsAsFile() && file.getSize() < 20*1024*1024) // dont bother hashing > 20Mb files
+        {
+            water::FileInputStream stream(file);
+
+            if (stream.openedOk())
+            {
+                uint8_t block[8192];
+                for (int r; r = stream.read(block, sizeof(block)), r > 0;)
+                    sha1.write(block, r);
+            }
+        }
+
+        sha1.write(filename.toRawUTF8(), filename.length());
+
+        const int64_t mtime = file.getLastModificationTime();
+        sha1.write(&mtime, sizeof(mtime));
+
+        fNextSha1Sum = sha1.resultAsString();
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginDiscovery)
@@ -455,11 +518,12 @@ static bool findVST3s(std::vector<water::File>& files, const char* const pluginP
 CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discoveryTool,
                                                         const PluginType ptype,
                                                         const char* const pluginPath,
-                                                        const CarlaPluginDiscoveryCallback callback,
+                                                        const CarlaPluginDiscoveryCallback discoveryCb,
+                                                        const CarlaPluginCheckCacheCallback checkCacheCb,
                                                         void* const callbackPtr)
 {
     CARLA_SAFE_ASSERT_RETURN(discoveryTool != nullptr && discoveryTool[0] != '\0', nullptr);
-    CARLA_SAFE_ASSERT_RETURN(callback != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(discoveryCb != nullptr, nullptr);
 
     bool directories = false;
     const char* wildcard = nullptr;
@@ -475,13 +539,13 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
     case CB::PLUGIN_JSFX:
     {
         const CarlaScopedEnvVar csev("CARLA_DISCOVERY_PATH", pluginPath);
-        return new CarlaPluginDiscovery(discoveryTool, ptype, callback, callbackPtr);
+        return new CarlaPluginDiscovery(discoveryTool, ptype, discoveryCb, checkCacheCb, callbackPtr);
     }
 
     case CB::PLUGIN_INTERNAL:
     case CB::PLUGIN_LV2:
     case CB::PLUGIN_AU:
-        return new CarlaPluginDiscovery(discoveryTool, ptype, callback, callbackPtr);
+        return new CarlaPluginDiscovery(discoveryTool, ptype, discoveryCb, checkCacheCb, callbackPtr);
 
     case CB::PLUGIN_LADSPA:
     case CB::PLUGIN_DSSI:
@@ -544,7 +608,7 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
             return nullptr;
     }
 
-    return new CarlaPluginDiscovery(discoveryTool, ptype, std::move(files), callback, callbackPtr);
+    return new CarlaPluginDiscovery(discoveryTool, ptype, std::move(files), discoveryCb, checkCacheCb, callbackPtr);
 }
 
 bool carla_plugin_discovery_idle(CarlaPluginDiscoveryHandle handle)
