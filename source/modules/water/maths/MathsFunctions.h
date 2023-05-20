@@ -348,10 +348,10 @@ int roundToInt (const FloatType value) noexcept
     union { int asInt[2]; double asDouble; } n;
     n.asDouble = ((double) value) + 6755399441055744.0;
 
-   #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    return n.asInt [0];
-   #else
+   #if defined(__BIG_ENDIAN__) || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ ==  __ORDER_BIG_ENDIAN__))
     return n.asInt [1];
+   #else
+    return n.asInt [0];
    #endif
 }
 

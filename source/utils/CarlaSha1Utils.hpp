@@ -20,19 +20,8 @@
 
 #include "CarlaUtils.hpp"
 
-#ifdef __BIG_ENDIAN__
+#if defined(__BIG_ENDIAN__) || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ ==  __ORDER_BIG_ENDIAN__))
 # define CARLA_SHA1_BIG_ENDIAN
-#elif defined __LITTLE_ENDIAN__
-/* override */
-#elif defined __BYTE_ORDER
-# if __BYTE_ORDER__ ==  __ORDER_BIG_ENDIAN__
-# define CARLA_SHA1_BIG_ENDIAN
-# endif
-#else // ! defined __LITTLE_ENDIAN__
-# include <endian.h> // machine/endian.h
-# if __BYTE_ORDER__ ==  __ORDER_BIG_ENDIAN__
-#  define CARLA_SHA1_BIG_ENDIAN
-# endif
 #endif
 
 /*!
