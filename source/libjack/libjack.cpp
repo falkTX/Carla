@@ -1282,6 +1282,9 @@ bool CarlaJackAppClient::handleNonRtData()
         case kPluginBridgeNonRtClientQuit:
             ret = true;
             break;
+
+        case kPluginBridgeNonRtClientReload:
+            break;
         }
 
 #ifdef DEBUG
