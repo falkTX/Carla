@@ -224,8 +224,8 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index,
             devInfo.sampleRates = nullptr;
             return &devInfo;
         }
+        --index2;
     }
-    --index2;
 #endif
 
 #ifdef USING_JUCE_AUDIO_DEVICES
@@ -260,7 +260,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index,
     --index2;
 #endif
 
-    carla_stderr("CarlaEngine::getDriverDeviceInfo(%u, \"%s\") - invalid index %u", index, index2, deviceName);
+    carla_stderr("CarlaEngine::getDriverDeviceInfo(%u, \"%s\") - invalid index %u", index, deviceName, index2);
     return nullptr;
 }
 
@@ -304,7 +304,7 @@ bool CarlaEngine::showDriverDeviceControlPanel(const uint index, const char* con
     --index2;
 #endif
 
-    carla_stderr("CarlaEngine::showDriverDeviceControlPanel(%u, \"%s\") - invalid index %u", index, index2, deviceName);
+    carla_stderr("CarlaEngine::showDriverDeviceControlPanel(%u, \"%s\") - invalid index %u", index, deviceName, index2);
     return false;
 }
 
