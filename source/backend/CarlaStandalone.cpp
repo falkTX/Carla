@@ -169,9 +169,9 @@ const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, co
 
     if (const EngineDriverDeviceInfo* const devInfo = CarlaEngine::getDriverDeviceInfo(index, name))
     {
-        retDevInfo.hints       =  devInfo->hints;
-        retDevInfo.bufferSizes = (devInfo->bufferSizes != nullptr) ? devInfo->bufferSizes : nullBufferSizes;
-        retDevInfo.sampleRates = (devInfo->sampleRates != nullptr) ? devInfo->sampleRates : nullSampleRates;
+        retDevInfo.hints       = devInfo->hints;
+        retDevInfo.bufferSizes = devInfo->bufferSizes != nullptr ? devInfo->bufferSizes : nullBufferSizes;
+        retDevInfo.sampleRates = devInfo->sampleRates != nullptr ? devInfo->sampleRates : nullSampleRates;
     }
     else
     {

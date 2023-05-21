@@ -1007,8 +1007,7 @@ const char* getJuceApiName(const uint uindex)
 {
     initJuceDevicesIfNeeded();
 
-    const int index(static_cast<int>(uindex));
-
+    const int index = static_cast<int>(uindex);
     CARLA_SAFE_ASSERT_RETURN(index < gDeviceTypes.size(), nullptr);
 
     juce::AudioIODeviceType* const deviceType(gDeviceTypes[index]);
@@ -1021,8 +1020,7 @@ const char* const* getJuceApiDeviceNames(const uint uindex)
 {
     initJuceDevicesIfNeeded();
 
-    const int index(static_cast<int>(uindex));
-
+    const int index = static_cast<int>(uindex);
     CARLA_SAFE_ASSERT_RETURN(index < gDeviceTypes.size(), nullptr);
 
     juce::AudioIODeviceType* const deviceType(gDeviceTypes[index]);
@@ -1050,8 +1048,7 @@ const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint uindex, const char* c
 {
     initJuceDevicesIfNeeded();
 
-    const int index(static_cast<int>(uindex));
-
+    const int index = static_cast<int>(uindex);
     CARLA_SAFE_ASSERT_RETURN(index < gDeviceTypes.size(), nullptr);
 
     juce::AudioIODeviceType* const deviceType(gDeviceTypes[index]);
@@ -1088,7 +1085,7 @@ const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint uindex, const char* c
         devInfo.hints |= ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL;
 
     juce::Array<int> juceBufferSizes = device->getAvailableBufferSizes();
-    if (int bufferSizesCount = juceBufferSizes.size())
+    if (const int bufferSizesCount = juceBufferSizes.size())
     {
         uint32_t* const bufferSizes(new uint32_t[bufferSizesCount+1]);
 
@@ -1104,7 +1101,7 @@ const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint uindex, const char* c
     }
 
     juce::Array<double> juceSampleRates = device->getAvailableSampleRates();
-    if (int sampleRatesCount = juceSampleRates.size())
+    if (const int sampleRatesCount = juceSampleRates.size())
     {
         double* const sampleRates(new double[sampleRatesCount+1]);
 
@@ -1124,8 +1121,7 @@ const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint uindex, const char* c
 
 bool showJuceDeviceControlPanel(const uint uindex, const char* const deviceName)
 {
-    const int index(static_cast<int>(uindex));
-
+    const int index = static_cast<int>(uindex);
     CARLA_SAFE_ASSERT_RETURN(index < gDeviceTypes.size(), false);
 
     juce::AudioIODeviceType* const deviceType(gDeviceTypes[index]);
