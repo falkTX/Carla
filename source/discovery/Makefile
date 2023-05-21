@@ -39,6 +39,13 @@ ifeq ($(WINDOWS),true)
 LINK_FLAGS += -lole32 -lws2_32 -mwindows
 endif
 
+ifeq ($(HAIKU),true)
+LINK_FLAGS += -lpthread
+else
+BUILD_CXX_FLAGS += -pthread
+LINK_FLAGS += -pthread
+endif
+
 ifeq ($(USING_JUCE),true)
 BUILD_CXX_FLAGS += -std=gnu++14
 endif
