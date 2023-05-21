@@ -29,10 +29,10 @@ VERSION   := 2.6.0-alpha1
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-TARGETS = backend discovery bridges-ui frontend theme
+TARGETS = backend frontend theme
 
 ifneq ($(WASM),true)
-TARGETS += bridges-plugin interposer libjack plugin
+TARGETS += bridges-plugin bridges-ui discovery interposer libjack plugin
 endif
 
 all: $(TARGETS)
