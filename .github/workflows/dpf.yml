@@ -1,0 +1,61 @@
+name: dpf
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  linux:
+    strategy:
+      matrix:
+        target: [linux-x86_64]
+        # linux-arm64, linux-armhf, linux-i686, linux-riscv64
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: distrho/dpf-makefile-action@v1
+        with:
+          target: ${{ matrix.target }}
+          pawpaw: true
+          release: false
+
+  macos:
+    strategy:
+      matrix:
+        target: [macos-intel, macos-universal]
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: fake dpf script
+        run: |
+          mkdir -p dpf/utils
+          ln -s $(which ls) dpf/utils/package-osx-bundles.sh
+          touch carla-macOS.pkg
+      - uses: distrho/dpf-makefile-action@v1
+        with:
+          target: ${{ matrix.target }}
+          pawpaw: true
+          release: false
+
+  windows:
+    strategy:
+      matrix:
+        target: [win32, win64]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: distrho/dpf-makefile-action@v1
+        with:
+          target: ${{ matrix.target }}
+          pawpaw: true
+          release: false

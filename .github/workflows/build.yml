@@ -13,8 +13,8 @@ env:
   WITH_LTO: false
 
 jobs:
-  macos-10_15:
-    runs-on: macos-10.15
+  macos-11:
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v3
       - name: Set up dependencies
@@ -25,60 +25,6 @@ jobs:
       - name: make
         run: make -j $(sysctl -n hw.logicalcpu)
 
-  #msys2-i686:
-    #runs-on: windows-latest
-    #defaults:
-      #run:
-        #shell: msys2 {0}
-    #steps:
-      #- uses: actions/checkout@v3
-      #- uses: msys2/setup-msys2@v3
-        #with:
-          #msystem: mingw32
-          #install: base-devel make mingw-w64-i686-toolchain mingw-w64-i686-fluidsynth mingw-w64-i686-liblo mingw-w64-i686-libsndfile mingw-w64-i686-pkg-config mingw-w64-i686-python-pyqt5
-      #- name: make features
-        #run: make features
-      #- name: make
-        #run: make -j $(nproc)
-
-  #msys2-x86_64:
-    #runs-on: windows-latest
-    #defaults:
-      #run:
-        #shell: msys2 {0}
-    #steps:
-      #- uses: actions/checkout@v3
-      #- uses: msys2/setup-msys2@v3
-        #with:
-          #msystem: mingw64
-          #install: base-devel make mingw-w64-x86_64-toolchain mingw-w64-x86_64-fluidsynth mingw-w64-x86_64-liblo mingw-w64-x86_64-libsndfile mingw-w64-x86_64-pkg-config mingw-w64-x86_64-python-pyqt5
-      #- name: make features
-        #run: make features
-      #- name: make
-        #run: make -j $(nproc)
-
-  ubuntu-18_04:
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up dependencies
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -yq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libqt4-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
-          sudo apt-get install -yq g++-multilib libfreetype6:i386 libfontconfig1:i386 libx11-6:i386 libxext6:i386
-          # Fix 32bit bridge build
-          sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
-          sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
-          sudo ln -s /usr/lib/i386-linux-gnu/libfreetype.so.6 /usr/lib/i386-linux-gnu/libfreetype.so
-          sudo ln -s /usr/lib/i386-linux-gnu/libfontconfig.so.1 /usr/lib/i386-linux-gnu/libfontconfig.so
-      - name: make features
-        run: make features
-      - name: make
-        run: make -j $(nproc)
-      - name: make posix32
-        run: make posix32 -j $(nproc)
-
   ubuntu-20_04:
     runs-on: ubuntu-20.04
     steps:
@@ -86,14 +32,13 @@ jobs:
       - name: Fix GitHub's mess
         run: |
           sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo dpkg --add-architecture i386
           sudo apt-get update -qq
           sudo apt-get install -yqq --allow-downgrades libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
       - name: Set up dependencies
         run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -yq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
-          sudo apt-get install -yq g++-multilib libfreetype6:i386 libfontconfig1:i386 libx11-6:i386 libxext6:i386
+          sudo apt-get install -yqq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libsdl2-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
+          sudo apt-get install -yqq g++-multilib libfreetype6:i386 libfontconfig1:i386 libx11-6:i386 libxext6:i386
           # Fix 32bit bridge build
           sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
           sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
@@ -106,51 +51,28 @@ jobs:
       - name: make posix32
         run: make posix32 -j $(nproc)
 
-  ubuntu-mingw-win32:
-    runs-on: ubuntu-20.04
-    env:
-      CC: i686-w64-mingw32-gcc
-      CXX: i686-w64-mingw32-g++
-      CROSS_COMPILING: "true"
-      PKG_CONFIG: "false"
+  ubuntu-22_04:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Fix GitHub's mess
         run: |
           sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          sudo apt-get update -qq
-          sudo apt-get install -yqq --allow-downgrades libgd3/focal libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
-          sudo apt-get purge -yqq libmono* moby* mono* php* libgdiplus libpcre2-posix3 libzip4
-      - name: Set up dependencies
-        run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update -qq
-          sudo apt-get install -yq binutils-mingw-w64-i686 g++-mingw-w64-i686 mingw-w64
-      - name: make features
-        run: make features
-      - name: make
-        run: make -j $(nproc)
-
-  ubuntu-mingw-win64:
-    runs-on: ubuntu-20.04
-    env:
-      CC: x86_64-w64-mingw32-gcc
-      CXX: x86_64-w64-mingw32-g++
-      CROSS_COMPILING: "true"
-      PKG_CONFIG: "false"
-    steps:
-      - uses: actions/checkout@v3
-      - name: Fix GitHub's mess
-        run: |
-          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          sudo apt-get update -qq
-          sudo apt-get install -yqq --allow-downgrades libgd3/focal libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
-          sudo apt-get purge -yqq libmono* moby* mono* php* libgdiplus libpcre2-posix3 libzip4
+          sudo apt-get install -yqq --allow-downgrades libc6:i386 libgcc-s1:i386 libstdc++6:i386
       - name: Set up dependencies
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -yq binutils-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64
+          sudo apt-get install -yqq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libsdl2-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
+          sudo apt-get install -yqq g++-multilib libfreetype6:i386 libfontconfig1:i386 libx11-6:i386 libxext6:i386
+          # Fix 32bit bridge build
+          sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libfreetype.so.6 /usr/lib/i386-linux-gnu/libfreetype.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libfontconfig.so.1 /usr/lib/i386-linux-gnu/libfontconfig.so
       - name: make features
         run: make features
       - name: make
         run: make -j $(nproc)
+      - name: make posix32
+        run: make posix32 -j $(nproc)
