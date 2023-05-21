@@ -36,7 +36,7 @@ BUILD_CXX_FLAGS += -ObjC++
 endif
 
 ifeq ($(WINDOWS),true)
-LINK_FLAGS += -lole32 -lssp -mwindows
+LINK_FLAGS += -lole32 lws2_32 -mwindows
 endif
 
 ifeq ($(USING_JUCE),true)
