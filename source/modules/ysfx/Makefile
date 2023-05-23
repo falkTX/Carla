@@ -23,6 +23,7 @@ YSFX_FLAGS += -DYSFX_NO_STANDARD_MUTEX
 
 # FIXME so many warnings..
 # YSFX_FLAGS += -Wno-missing-field-initializers
+YSFX_FLAGS += -Wno-ignored-attributes
 YSFX_FLAGS += -Wno-sign-compare
 YSFX_FLAGS += -Wno-unused-function
 YSFX_FLAGS += -Wno-unused-parameter
