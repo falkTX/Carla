@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(carla)
 
+set(CMAKE_POLICY_DEFAULT_CMP0025 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0063 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 
@@ -248,6 +249,7 @@ target_compile_options(carla-lilv_lilv
   PRIVATE
     $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
     $<$<C_COMPILER_ID:GNU>:-Wno-deprecated-declarations -Wno-discarded-qualifiers>
+    $<$<C_COMPILER_ID:AppleClang>:-Wno-incompatible-pointer-types-discards-qualifiers>
 )
 
 target_include_directories(carla-lilv_lilv
@@ -584,6 +586,7 @@ target_link_libraries(carla-bridge-native
     PkgConfig::FLUIDSYNTH
     PkgConfig::LIBMAGIC
     PkgConfig::X11
+    ${CMAKE_THREAD_LIBS_INIT}
 )
 
 target_sources(carla-bridge-native
