@@ -30,7 +30,7 @@
 #ifdef BUILDING_CARLA
 # include "lv2/atom-util.h"
 #else
-# include "lv2/lv2plug.in/ns/ext/atom/util.h"
+# include "lv2/atom/util.h"
 #endif
 
 #include <fcntl.h>
