@@ -16,7 +16,6 @@ set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 #######################################################################################################################
 # required dependencies
 
-find_package(PkgConfig)
 find_package(Threads REQUIRED)
 
 if(NOT (APPLE OR HAIKU OR WIN32))
@@ -29,6 +28,8 @@ endif()
 
 #######################################################################################################################
 # optional dependencies
+
+find_package(PkgConfig)
 
 if(PKGCONFIG_FOUND)
   pkg_check_modules(FLUIDSYNTH IMPORTED_TARGET fluidsynth)
@@ -621,7 +622,7 @@ if (APPLE)
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginVST2.cpp
     ../source/backend/plugin/CarlaPluginVST3.cpp
-      PROPERTIES COMPILE_FLAGS -ObjC++)
+    PROPERTIES COMPILE_FLAGS -ObjC++)
 endif()
 
 #######################################################################################################################
