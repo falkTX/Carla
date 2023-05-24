@@ -1527,7 +1527,12 @@ void PluginListDialog::loadSettings()
     self.fFavoritePlugins = settings.valueStringList("PluginDatabase/Favorites");
     self.fFavoritePluginsChanged = false;
 
-    restoreGeometry(settings.valueByteArray("PluginDatabase/Geometry"));
+   #if QT_VERSION >= 0x60000
+    #define PLG_SUFFIX "_2qt6"
+   #else
+    #define PLG_SUFFIX "_2"
+   #endif
+    restoreGeometry(settings.valueByteArray("PluginDatabase/Geometry" PLG_SUFFIX));
     self.ui.ch_effects->setChecked(settings.valueBool("PluginDatabase/ShowEffects", true));
     self.ui.ch_instruments->setChecked(settings.valueBool("PluginDatabase/ShowInstruments", true));
     self.ui.ch_midi->setChecked(settings.valueBool("PluginDatabase/ShowMIDI", true));
@@ -1583,7 +1588,12 @@ void PluginListDialog::loadSettings()
         self.ui.ch_cat_other->setChecked(categories.contains(":other:"));
     }
 
-    const QByteArray tableGeometry = settings.valueByteArray("PluginDatabase/TableGeometry_6");
+   #if QT_VERSION >= 0x60000
+    #define TG_SUFFIX "_7qt6"
+   #else
+    #define TG_SUFFIX "_7"
+   #endif
+    const QByteArray tableGeometry = settings.valueByteArray("PluginDatabase/TableGeometry" TG_SUFFIX);
     QHeaderView* const horizontalHeader = self.ui.tableWidget->horizontalHeader();
     if (! tableGeometry.isNull())
     {
