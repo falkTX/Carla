@@ -668,7 +668,7 @@ target_sources(carla-discovery-native
 # carla standalone
 
 add_library(carla-standalone SHARED)
-add_library(carla::utils ALIAS carla-standalone)
+add_library(carla::standalone ALIAS carla-standalone)
 
 set_common_target_properties(carla-standalone)
 
