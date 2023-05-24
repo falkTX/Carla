@@ -90,6 +90,7 @@ public:
 
 protected:
     void showEvent(QShowEvent*) override;
+    void timerEvent(QTimerEvent*) override;
 
     // ----------------------------------------------------------------------------------------------------------------
     // private methods

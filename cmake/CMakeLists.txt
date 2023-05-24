@@ -81,6 +81,7 @@ function(set_common_target_properties TARGET)
   target_compile_definitions(${TARGET}
     PRIVATE
       BUILDING_CARLA
+      HAVE_JACK
       HAVE_YSFX
       $<$<BOOL:${FLUIDSYNTH_FOUND}>:HAVE_FLUIDSYNTH>
       $<$<BOOL:${LIBLO_FOUND}>:HAVE_LIBLO>
@@ -601,6 +602,7 @@ target_link_libraries(carla-bridge-native
     carla-ysfx
     carla-zita-resampler
     PkgConfig::FLUIDSYNTH
+    PkgConfig::LIBLO
     PkgConfig::LIBMAGIC
     PkgConfig::X11
     ${CMAKE_THREAD_LIBS_INIT}
@@ -617,6 +619,7 @@ target_sources(carla-bridge-native
     ../source/backend/engine/CarlaEngineData.cpp
     ../source/backend/engine/CarlaEngineGraph.cpp
     ../source/backend/engine/CarlaEngineInternal.cpp
+    ../source/backend/engine/CarlaEngineJack.cpp
     ../source/backend/engine/CarlaEnginePorts.cpp
     ../source/backend/engine/CarlaEngineRunner.cpp
     ../source/backend/plugin/CarlaPlugin.cpp
@@ -625,6 +628,7 @@ target_sources(carla-bridge-native
     ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginFluidSynth.cpp
+    ../source/backend/plugin/CarlaPluginJack.cpp
     ../source/backend/plugin/CarlaPluginJuce.cpp
     ../source/backend/plugin/CarlaPluginJSFX.cpp
     ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
@@ -740,6 +744,7 @@ target_sources(carla-standalone
     ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginFluidSynth.cpp
+    ../source/backend/plugin/CarlaPluginJack.cpp
     ../source/backend/plugin/CarlaPluginJuce.cpp
     ../source/backend/plugin/CarlaPluginJSFX.cpp
     ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp

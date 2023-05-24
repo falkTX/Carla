@@ -618,7 +618,53 @@ struct PluginListDialog::Self {
     Ui_PluginListDialog ui;
     HostSettings hostSettings = {};
 
-    int fLastTableIndex = 0;
+    struct Discovery {
+        CarlaPluginDiscoveryHandle handle = nullptr;
+        PluginType ptype = PLUGIN_NONE;
+        DefaultPaths paths;
+        QString tool;
+
+        Discovery()
+        {
+            paths.init();
+            paths.loadFromEnv();
+
+#ifdef BUILDING_CARLA_OBS
+            tool = QString::fromUtf8(get_carla_bin_path());
+            tool += CARLA_OS_SEP_STR "carla-discovery-native";
+#ifdef CARLA_OS_WIN
+            tool += ".exe";
+#endif
+#else
+            tool = "/usr/lib/carla/carla-discovery-native";
+#endif
+        }
+
+        ~Discovery()
+        {
+            if (handle != nullptr)
+                carla_plugin_discovery_stop(handle);
+        }
+
+    } fDiscovery;
+
+    int fLastTableWidgetIndex = 0;
+    std::vector<PluginInfo> fPluginsInternal;
+    std::vector<PluginInfo> fPluginsLADSPA;
+    std::vector<PluginInfo> fPluginsDSSI;
+    std::vector<PluginInfo> fPluginsLV2;
+    std::vector<PluginInfo> fPluginsVST2;
+    std::vector<PluginInfo> fPluginsVST3;
+    std::vector<PluginInfo> fPluginsCLAP;
+   #ifdef CARLA_OS_MAC
+    std::vector<PluginInfo> fPluginsAU;
+   #endif
+    std::vector<PluginInfo> fPluginsJSFX;
+    std::vector<PluginInfo> fPluginsSF2;
+    std::vector<PluginInfo> fPluginsSFZ;
+
+    int fTimerId = 0;
+
     PluginInfo fRetPlugin;
     QWidget* const fRealParent;
     QStringList fFavoritePlugins;
@@ -704,9 +750,7 @@ struct PluginListDialog::Self {
             wineBins   = []
 #endif
 
-        ui.tableWidget->setRowCount(fLastTableIndex);
-
-        for (int i=0; i<fLastTableIndex; ++i)
+        for (int i=0, c=ui.tableWidget->rowCount(); i<c; ++i)
         {
             const PluginInfo plugin = asPluginInfo(ui.tableWidget->item(i, TABLEWIDGET_ITEM_NAME)->data(Qt::UserRole+1));
 
@@ -814,25 +858,51 @@ struct PluginListDialog::Self {
         }
     }
 
-#ifdef CARLA_FRONTEND_NO_CACHED_PLUGIN_API
-    void addPluginToTable(const CarlaPluginDiscoveryInfo* const info)
+    bool addPlugin(const PluginInfo& pinfo)
     {
-#ifdef BUILDING_CARLA_OBS
+        switch (pinfo.type)
+        {
+        case PLUGIN_INTERNAL: fPluginsInternal.push_back(pinfo); return true;
+        case PLUGIN_LADSPA:   fPluginsLADSPA.push_back(pinfo);   return true;
+        case PLUGIN_DSSI:     fPluginsDSSI.push_back(pinfo);     return true;
+        case PLUGIN_LV2:      fPluginsLV2.push_back(pinfo);      return true;
+        case PLUGIN_VST2:     fPluginsVST2.push_back(pinfo);     return true;
+        case PLUGIN_VST3:     fPluginsVST3.push_back(pinfo);     return true;
+        case PLUGIN_CLAP:     fPluginsCLAP.push_back(pinfo);     return true;
+       #ifdef CARLA_OS_MAC
+        case PLUGIN_AU:       fPluginsAU.push_back(pinfo);       return true;
+       #endif
+        case PLUGIN_JSFX:     fPluginsJSFX.push_back(pinfo);     return true;
+        case PLUGIN_SF2:      fPluginsSF2.push_back(pinfo);      return true;
+        case PLUGIN_SFZ:      fPluginsSFZ.push_back(pinfo);      return true;
+        default: return false;
+        }
+    }
+
+    void discoveryCallback(const CarlaPluginDiscoveryInfo* const info, const char* const sha1sum)
+    {
+        if (info == nullptr)
+        {
+            if (sha1sum != nullptr)
+            {
+                QSafeSettings settings("falkTX", "CarlaDatabase2");
+                settings.setValue(QString("PluginCache/%1").arg(sha1sum), QByteArray());
+            }
+            return;
+        }
+
+       #ifdef BUILDING_CARLA_OBS
         if (info->io.cvIns != 0 || info->io.cvOuts != 0)
         {
-            carla_stdout("addPluginToTable %p %s - ignored, has CV", info, info->filename);
+            carla_stdout("discoveryCallback %p %s - ignored, has CV", info, info->filename);
             return;
         }
         if (info->io.audioIns > 8 || info->io.audioOuts > 8)
         {
-            carla_stdout("addPluginToTable %p %s - ignored, has > 8 audio IO", info, info->filename);
+            carla_stdout("discoveryCallback %p %s - ignored, has > 8 audio IO", info, info->filename);
             return;
         }
-#endif
-
-        carla_stdout("addPluginToTable %p %s", info, info->filename);
-
-        ui.tableWidget->setRowCount(fLastTableIndex + 1);
+       #endif
 
         const PluginInfo pinfo = {
             PLUGIN_QUERY_API_VERSION,
@@ -855,58 +925,60 @@ struct PluginListDialog::Self {
             info->io.parameterOuts,
         };
 
-        const int index = fLastTableIndex;
-        const bool isFav = false;
-        QTableWidgetItem* const itemFav = new QTableWidgetItem;
-        itemFav->setCheckState(isFav ? Qt::Checked : Qt::Unchecked);
-        itemFav->setText(isFav ? " " : "  ");
-
-        const QString searchablePluginText = (
-            QString::fromUtf8(info->label) +
-            QString::fromUtf8(info->filename) +
-            QString::fromUtf8(info->metadata.name) +
-            QString::fromUtf8(info->metadata.maker)).toLower();
-        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_FAVORITE, itemFav);
-        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_NAME, new QTableWidgetItem(pinfo.name));
-        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_LABEL,  new QTableWidgetItem(pinfo.label));
-        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_MAKER,  new QTableWidgetItem(pinfo.maker));
-        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_BINARY,
-                                new QTableWidgetItem(QFileInfo(pinfo.filename).fileName()));
-
-        QTableWidgetItem* const itemName = ui.tableWidget->item(index, TABLEWIDGET_ITEM_NAME);
-        itemName->setData(Qt::UserRole+1, asVariant(pinfo));
-        itemName->setData(Qt::UserRole+2, searchablePluginText);
-
-        fLastTableIndex += 1;
-        carla_stdout("addPluginToTable %p %s END", info, info->filename);
-    }
-
-    static void _discoveryCallback(void* const ptr, const CarlaPluginDiscoveryInfo* const info)
-    {
-        carla_stdout("_discoveryCallback %p %s", info, info->filename);
-        static_cast<PluginListDialog::Self*>(ptr)->addPluginToTable(info);
-    }
-#else
-    void addPluginToTable(const PluginInfo& plugin, const PluginType ptype)
-    {
-        if (plugin.API != PLUGIN_QUERY_API_VERSION)
-            return;
-
-        PluginInfo plugincopy = plugin;
-        switch (ptype)
+        if (sha1sum != nullptr)
         {
-        case PLUGIN_INTERNAL:
-        case PLUGIN_LV2:
-        case PLUGIN_SF2:
-        case PLUGIN_SFZ:
-        case PLUGIN_JSFX:
-            plugincopy.build = BINARY_NATIVE;
-            break;
-        default:
-            break;
+            QSafeSettings settings("falkTX", "CarlaDatabase2");
+            settings.setValue(QString("PluginCache/%1").arg(sha1sum), asVariant(pinfo));
         }
 
-        const int index = fLastTableIndex;
+        addPlugin(pinfo);
+    }
+
+    static void _discoveryCallback(void* const ptr, const CarlaPluginDiscoveryInfo* const info, const char* const sha1sum)
+    {
+        static_cast<PluginListDialog::Self*>(ptr)->discoveryCallback(info, sha1sum);
+    }
+
+    bool checkCacheCallback(const char* const filename, const char* const sha1sum)
+    {
+        if (sha1sum == nullptr)
+            return false;
+
+        const QString key = QString("PluginCache/%1").arg(sha1sum);
+        const QSafeSettings settings("falkTX", "CarlaDatabase2");
+
+        if (! settings.contains(key))
+            return false;
+
+        const QByteArray data(settings.valueByteArray(key));
+        if (data.isEmpty())
+            return true;
+
+        return addPlugin(asPluginInfo(data));
+    }
+
+    static bool _checkCacheCallback(void* const ptr, const char* const filename, const char* const sha1sum)
+    {
+        return static_cast<PluginListDialog::Self*>(ptr)->checkCacheCallback(filename, sha1sum);
+    }
+
+    void addPluginToTable(const PluginInfo& pinfo)
+    {
+//         PluginInfo plugincopy = plugin;
+//         switch (ptype)
+//         {
+//         case PLUGIN_INTERNAL:
+//         case PLUGIN_LV2:
+//         case PLUGIN_SF2:
+//         case PLUGIN_SFZ:
+//         case PLUGIN_JSFX:
+//             plugincopy.build = BINARY_NATIVE;
+//             break;
+//         default:
+//             break;
+//         }
+
+        const int index = fLastTableWidgetIndex++;
 #if 0
         const bool isFav = bool(self._createFavoritePluginDict(plugin) in self.fFavoritePlugins)
 #else
@@ -916,282 +988,140 @@ struct PluginListDialog::Self {
         itemFav->setCheckState(isFav ? Qt::Checked : Qt::Unchecked);
         itemFav->setText(isFav ? " " : "  ");
 
-        const QString pluginText = (plugin.name + plugin.label + plugin.maker + plugin.filename).toLower();
+        const QString pluginText = (pinfo.name + pinfo.label + pinfo.maker + pinfo.filename).toLower();
         ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_FAVORITE, itemFav);
-        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_NAME, new QTableWidgetItem(plugin.name));
-        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_LABEL, new QTableWidgetItem(plugin.label));
-        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_MAKER, new QTableWidgetItem(plugin.maker));
-        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_BINARY, new QTableWidgetItem(QFileInfo(plugin.filename).fileName()));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_NAME, new QTableWidgetItem(pinfo.name));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_LABEL, new QTableWidgetItem(pinfo.label));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_MAKER, new QTableWidgetItem(pinfo.maker));
+        ui.tableWidget->setItem(index, TABLEWIDGET_ITEM_BINARY, new QTableWidgetItem(QFileInfo(pinfo.filename).fileName()));
 
         QTableWidgetItem* const itemName = ui.tableWidget->item(index, TABLEWIDGET_ITEM_NAME);
-        itemName->setData(Qt::UserRole+1, asVariant(plugincopy));
+        itemName->setData(Qt::UserRole+1, asVariant(pinfo));
         itemName->setData(Qt::UserRole+2, pluginText);
-
-        fLastTableIndex += 1;
     }
 
-    uint reAddInternalHelper(QSafePluginListSettings& settingsDB, const PluginType ptype, const char* const path)
+    bool idle()
     {
-        QString ptypeStr, ptypeStrTr;
-
-        switch (ptype)
+        // discovery in progress, keep it going
+        if (fDiscovery.handle != nullptr)
         {
-        case PLUGIN_INTERNAL:
-            ptypeStr   = "Internal";
-            ptypeStrTr = tr("Internal");
-            break;
-        case PLUGIN_LV2:
-            ptypeStr   = "LV2";
-            ptypeStrTr = ptypeStr;
-            break;
-        case PLUGIN_AU:
-            ptypeStr   = "AU";
-            ptypeStrTr = ptypeStr;
-            break;
-        case PLUGIN_SFZ:
-            ptypeStr   = "SFZ";
-            ptypeStrTr = ptypeStr;
-            break;
-        // TODO(jsfx) what to do here?
-        default:
-            return 0;
-        }
-
-        QPluginInfoList plugins = settingsDB.valuePluginInfoList("Plugins/" + ptypeStr);
-        uint pluginCount = settingsDB.valueUInt("PluginCount/" + ptypeStr, 0);
-
-        if (ptype == PLUGIN_AU)
-            carla_juce_init();
-
-        const uint pluginCountNew = carla_get_cached_plugin_count(ptype, path);
-
-#if 0
-        if (pluginCountNew != pluginCount || plugins.size() != pluginCount ||
-            (plugins.size() > 0 && plugins[0].API != PLUGIN_QUERY_API_VERSION))
-#endif
-        {
-            plugins.clear();
-            pluginCount = pluginCountNew;
-
-            QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents, 50);
-
-            if (ptype == PLUGIN_AU)
-                carla_juce_idle();
-
-            for (uint i=0; i<pluginCountNew; ++i)
+            if (! carla_plugin_discovery_idle(fDiscovery.handle))
             {
-                const CarlaCachedPluginInfo* const descInfo = carla_get_cached_plugin_info(ptype, i);
-
-                if (descInfo == nullptr)
-                    continue;
-
-                const PluginInfo info = checkPluginCached(descInfo, ptype);
-                plugins.append(info);
-
-                if ((i % 50) == 0)
-                {
-                    QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents, 50);
-
-                    if (ptype == PLUGIN_AU)
-                        carla_juce_idle();
-                }
+                carla_plugin_discovery_stop(fDiscovery.handle);
+                fDiscovery.handle = nullptr;
             }
 
-            settingsDB.setValue("Plugins/" + ptypeStr, plugins);
-            settingsDB.setValue("PluginCount/" + ptypeStr, pluginCount);
+            return false;
         }
 
-        if (ptype == PLUGIN_AU)
-            carla_juce_cleanup();
+        // TESTING
+        reAddPlugins();
 
-        // prepare rows in advance
-        ui.tableWidget->setRowCount(fLastTableIndex + plugins.size());
+        // start next discovery
+        QString path;
+        switch (fDiscovery.ptype)
+        {
+        case PLUGIN_NONE:
+            ui.label->setText(tr("Discovering internal plugins..."));
+            fDiscovery.ptype = PLUGIN_INTERNAL;
+            break;
+        case PLUGIN_INTERNAL:
+            ui.label->setText(tr("Discovering LADSPA plugins..."));
+            path = fDiscovery.paths.ladspa;
+            fDiscovery.ptype = PLUGIN_LADSPA;
+            break;
+        case PLUGIN_LADSPA:
+            ui.label->setText(tr("Discovering DSSI plugins..."));
+            path = fDiscovery.paths.dssi;
+            fDiscovery.ptype = PLUGIN_DSSI;
+            break;
+        case PLUGIN_DSSI:
+            ui.label->setText(tr("Discovering LV2 plugins..."));
+            path = fDiscovery.paths.lv2;
+            fDiscovery.ptype = PLUGIN_LV2;
+            break;
+        case PLUGIN_LV2:
+            ui.label->setText(tr("Discovering VST2 plugins..."));
+            path = fDiscovery.paths.vst2;
+            fDiscovery.ptype = PLUGIN_VST2;
+            break;
+        case PLUGIN_VST2:
+            ui.label->setText(tr("Discovering VST3 plugins..."));
+            path = fDiscovery.paths.vst3;
+            fDiscovery.ptype = PLUGIN_VST3;
+            break;
+        case PLUGIN_VST3:
+            ui.label->setText(tr("Discovering CLAP plugins..."));
+            path = fDiscovery.paths.clap;
+            fDiscovery.ptype = PLUGIN_CLAP;
+            break;
+        case PLUGIN_CLAP:
+       #ifdef CARLA_OS_MAC
+            ui.label->setText(tr("Discovering AU plugins..."));
+            fDiscovery.ptype = PLUGIN_AU;
+            break;
+        case PLUGIN_AU:
+       #endif
+            if (fDiscovery.paths.jsfx.isNotEmpty())
+            {
+                ui.label->setText(tr("Discovering JSFX plugins..."));
+                path = fDiscovery.paths.jsfx;
+                fDiscovery.ptype = PLUGIN_JSFX;
+                break;
+            }
+            // fall-through
+        case PLUGIN_JSFX:
+            ui.label->setText(tr("Discovering SF2 kits..."));
+            path = fDiscovery.paths.sf2;
+            fDiscovery.ptype = PLUGIN_SF2;
+            break;
+        case PLUGIN_SF2:
+            if (fDiscovery.paths.sfz.isNotEmpty())
+            {
+                ui.label->setText(tr("Discovering SFZ kits..."));
+                path = fDiscovery.paths.sfz;
+                fDiscovery.ptype = PLUGIN_SFZ;
+                break;
+            }
+            // fall-through
+        case PLUGIN_SFZ:
+            // the end
+            reAddPlugins();
+            return true;
+        }
 
-        for (const PluginInfo& plugin : plugins)
-            addPluginToTable(plugin, ptype);
+        fDiscovery.handle = carla_plugin_discovery_start(fDiscovery.tool.toUtf8().constData(),
+                                                         fDiscovery.ptype,
+                                                         path.toUtf8().constData(),
+                                                         _discoveryCallback,
+                                                         _checkCacheCallback,
+                                                        this);
+        CARLA_SAFE_ASSERT_RETURN(fDiscovery.handle != nullptr, false);
 
-        return pluginCount;
+        return false;
     }
-#endif
 
     void reAddPlugins()
     {
-#ifdef CARLA_FRONTEND_NO_CACHED_PLUGIN_API
-        fLastTableIndex = 0;
-        ui.tableWidget->setSortingEnabled(false);
-        ui.tableWidget->clearContents();
-
-        DefaultPaths paths;
-        paths.init();
-        paths.loadFromEnv();
-
-#ifdef BUILDING_CARLA_OBS
-        QCarlaString binPath(get_carla_bin_path());
-        binPath += CARLA_OS_SEP_STR "carla-discovery-native";
-#ifdef CARLA_OS_WIN
-        binPath += ".exe";
-#endif
-#else
-        QCarlaString binPath("/usr/lib/carla/carla-discovery-native");
-#endif
-
-        CarlaPluginDiscoveryHandle handle = carla_plugin_discovery_start(binPath.toUtf8().constData(),
-                                                                         PLUGIN_VST3,
-                                                                         paths.vst3.toUtf8().constData(),
-                                                                         _discoveryCallback,
-                                                                         this);
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
-
-        while (carla_plugin_discovery_idle(handle))
-            QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 50);
-
-        carla_plugin_discovery_stop(handle);
-
-        ui.tableWidget->setRowCount(fLastTableIndex);
-
-        constexpr const char* const txt = "Have %1 plugins";
-
-        ui.label->setText(fRealParent->tr(txt)
-            .arg(QString::number(fLastTableIndex))
-        );
-#else
-        QSafePluginListSettings settingsDB("falkTX", "CarlaPlugins5");
-
-        fLastTableIndex = 0;
-        ui.tableWidget->setSortingEnabled(false);
-        ui.tableWidget->clearContents();
-
-        DefaultPaths paths;
-        paths.init();
-        paths.loadFromEnv();
-
-        QCarlaString LV2_PATH;
-        {
-            const QSafeSettings settings("falkTX", "Carla2");
-            LV2_PATH = settings.valueString(CARLA_KEY_PATHS_LV2, paths.lv2);
-        }
-
-        // ------------------------------------------------------------------------------------------------------------
-        // plugins handled through backend
-
-        const uint internalCount = reAddInternalHelper(settingsDB, PLUGIN_INTERNAL, "");
-        const uint lv2Count = reAddInternalHelper(settingsDB, PLUGIN_LV2, LV2_PATH.toUtf8());
-       #ifdef CARLA_OS_MAC
-        const uint auCount = reAddInternalHelper(settingsDB, PLUGIN_AU, "");
-       #else
-        const uint auCount = 0;
-       #endif
-
-        // ------------------------------------------------------------------------------------------------------------
-        // LADSPA
-
-        QList<QPluginInfoList> ladspaPlugins;
-        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_native");
-        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_posix32");
-        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_posix64");
-        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_win32");
-        ladspaPlugins += settingsDB.valuePluginInfoList("Plugins/LADSPA_win64");
-
-        // ------------------------------------------------------------------------------------------------------------
-        // DSSI
-
-        QList<QPluginInfoList> dssiPlugins;
-        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_native");
-        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_posix32");
-        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_posix64");
-        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_win32");
-        dssiPlugins += settingsDB.valuePluginInfoList("Plugins/DSSI_win64");
-
-        // ------------------------------------------------------------------------------------------------------------
-        // VST2
-
-        QList<QPluginInfoList> vst2Plugins;
-        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_native");
-        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_posix32");
-        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_posix64");
-        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_win32");
-        vst2Plugins += settingsDB.valuePluginInfoList("Plugins/VST2_win64");
-
-        // ------------------------------------------------------------------------------------------------------------
-        // VST3
-
-        QList<QPluginInfoList> vst3Plugins;
-        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_native");
-        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_posix32");
-        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_posix64");
-        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_win32");
-        vst3Plugins += settingsDB.valuePluginInfoList("Plugins/VST3_win64");
-
-        // ------------------------------------------------------------------------------------------------------------
-        // CLAP
-
-        QList<QPluginInfoList> clapPlugins;
-        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_native");
-        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_posix32");
-        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_posix64");
-        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_win32");
-        clapPlugins += settingsDB.valuePluginInfoList("Plugins/CLAP_win64");
-
-       #ifdef CARLA_OS_MAC
-        // ------------------------------------------------------------------------------------------------------------
-        // AU (extra non-cached)
-
-        QList<QPluginInfoList> auPlugins32;
-        auPlugins32 += settingsDB.valuePluginInfoList("Plugins/AU_posix32");
-       #endif
-
-        // ------------------------------------------------------------------------------------------------------------
-        // JSFX
-
-        QPluginInfoList jsfxPlugins = settingsDB.valuePluginInfoList("Plugins/JSFX");
-
-        // ------------------------------------------------------------------------------------------------------------
-        // Kits
-
-        QList<QPluginInfoList> sf2s;
-        sf2s += settingsDB.valuePluginInfoList("Plugins/SF2");
-
-        QPluginInfoList sfzs = settingsDB.valuePluginInfoList("Plugins/SFZ");
-
         // ------------------------------------------------------------------------------------------------------------
         // count plugins first, so we can create rows in advance
 
-        int ladspaCount = 0;
-        int dssiCount   = 0;
-        int vstCount    = 0;
-        int vst3Count   = 0;
-        int clapCount   = 0;
-        int au32Count   = 0;
-        int jsfxCount   = jsfxPlugins.size();
-        int sf2Count    = 0;
-        int sfzCount    = sfzs.size();
+        ui.tableWidget->setSortingEnabled(false);
+        ui.tableWidget->clearContents();
 
-        for (const QPluginInfoList& plugins : ladspaPlugins)
-            ladspaCount += plugins.size();
-
-        for (const QPluginInfoList& plugins : dssiPlugins)
-            dssiCount += plugins.size();
-
-        for (const QPluginInfoList& plugins : vst2Plugins)
-            vstCount += plugins.size();
-
-        for (const QPluginInfoList& plugins : vst3Plugins)
-            vst3Count += plugins.size();
-
-        for (const QPluginInfoList& plugins : clapPlugins)
-            clapCount += plugins.size();
-
-       #ifdef CARLA_OS_MAC
-        for (const QPluginInfoList& plugins : auPlugins32)
-            au32Count += plugins.size();
-       #endif
-
-        for (const QPluginInfoList& plugins : sf2s)
-            sf2Count += plugins.size();
-
-        ui.tableWidget->setRowCount(fLastTableIndex +
-                                    ladspaCount + dssiCount + vstCount + vst3Count + clapCount +
-                                    auCount + au32Count + jsfxCount + sf2Count + sfzCount);
+        ui.tableWidget->setRowCount(fPluginsInternal.size() +
+                                    fPluginsLADSPA.size() +
+                                    fPluginsDSSI.size() +
+                                    fPluginsLV2.size() +
+                                    fPluginsVST2.size() +
+                                    fPluginsVST3.size() +
+                                    fPluginsCLAP.size() +
+                                   #ifdef CARLA_OS_MAC
+                                    fPluginsAU.size() +
+                                   #endif
+                                    fPluginsJSFX.size() +
+                                    fPluginsSF2.size() +
+                                    fPluginsSFZ.size());
 
         constexpr const char* const txt = "Have %1 Internal, %2 LADSPA, %3 DSSI, %4 LV2, %5 VST2, %6 VST3, %7 CLAP"
                                          #ifdef CARLA_OS_MAC
@@ -1200,59 +1130,62 @@ struct PluginListDialog::Self {
                                           " and %8 JSFX plugins, plus %9 Sound Kits";
 
         ui.label->setText(fRealParent->tr(txt)
-            .arg(QString::number(internalCount))
-            .arg(QString::number(ladspaCount))
-            .arg(QString::number(dssiCount))
-            .arg(QString::number(lv2Count))
-            .arg(QString::number(vstCount))
-            .arg(QString::number(vst3Count))
-            .arg(QString::number(clapCount))
+            .arg(QString::number(fPluginsInternal.size()))
+            .arg(QString::number(fPluginsLADSPA.size()))
+            .arg(QString::number(fPluginsDSSI.size()))
+            .arg(QString::number(fPluginsLV2.size()))
+            .arg(QString::number(fPluginsVST2.size()))
+            .arg(QString::number(fPluginsVST3.size()))
+            .arg(QString::number(fPluginsCLAP.size()))
            #ifdef CARLA_OS_MAC
-            .arg(QString::number(auCount+au32Count))
+            .arg(QString::number(fPluginsAU.size()))
            #endif
-            .arg(QString::number(jsfxCount))
-            .arg(QString::number(sf2Count+sfzCount))
+            .arg(QString::number(fPluginsJSFX.size()))
+            .arg(QString::number(fPluginsSF2.size() + fPluginsSFZ.size()))
         );
 
         // ------------------------------------------------------------------------------------------------------------
         // now add all plugins to the table
 
-        for (const QPluginInfoList& plugins : ladspaPlugins)
-            for (const PluginInfo& plugin : plugins)
-                addPluginToTable(plugin, PLUGIN_LADSPA);
+        fLastTableWidgetIndex = 0;
 
-        for (const QPluginInfoList& plugins : dssiPlugins)
-            for (const PluginInfo& plugin : plugins)
-                addPluginToTable(plugin, PLUGIN_DSSI);
+        for (const PluginInfo& plugin : fPluginsInternal)
+            addPluginToTable(plugin);
 
-        for (const QPluginInfoList& plugins : vst2Plugins)
-            for (const PluginInfo& plugin : plugins)
-                addPluginToTable(plugin, PLUGIN_VST2);
+        for (const PluginInfo& plugin : fPluginsLADSPA)
+            addPluginToTable(plugin);
 
-        for (const QPluginInfoList& plugins : vst3Plugins)
-            for (const PluginInfo& plugin : plugins)
-                addPluginToTable(plugin, PLUGIN_VST3);
+        for (const PluginInfo& plugin : fPluginsDSSI)
+            addPluginToTable(plugin);
 
-        for (const QPluginInfoList& plugins : clapPlugins)
-            for (const PluginInfo& plugin : plugins)
-                addPluginToTable(plugin, PLUGIN_CLAP);
+        for (const PluginInfo& plugin : fPluginsLV2)
+            addPluginToTable(plugin);
+
+        for (const PluginInfo& plugin : fPluginsVST2)
+            addPluginToTable(plugin);
+
+        for (const PluginInfo& plugin : fPluginsVST3)
+            addPluginToTable(plugin);
+
+        for (const PluginInfo& plugin : fPluginsCLAP)
+            addPluginToTable(plugin);
 
        #ifdef CARLA_OS_MAC
-        for (const QPluginInfoList& plugins : auPlugins32)
-            for (const PluginInfo& plugin : plugins)
-                addPluginToTable(plugin, PLUGIN_AU);
+        for (const PluginInfo& plugin : fPluginsAU)
+            addPluginToTable(plugin);
        #endif
 
-        for (const PluginInfo& plugin : jsfxPlugins)
-            addPluginToTable(plugin, PLUGIN_JSFX);
+        for (const PluginInfo& plugin : fPluginsJSFX)
+            addPluginToTable(plugin);
 
-        for (const QPluginInfoList& sf2 : sf2s)
-            for (const PluginInfo& sf2_i : sf2)
-                addPluginToTable(sf2_i, PLUGIN_SF2);
+        for (const PluginInfo& plugin : fPluginsSF2)
+            addPluginToTable(plugin);
 
-        for (const PluginInfo& sfz : sfzs)
-            addPluginToTable(sfz, PLUGIN_SFZ);
-#endif
+        for (const PluginInfo& plugin : fPluginsSFZ)
+            addPluginToTable(plugin);
+
+        CARLA_SAFE_ASSERT_INT2(fLastTableWidgetIndex == ui.tableWidget->rowCount(),
+                               fLastTableWidgetIndex, ui.tableWidget->rowCount());
 
         // ------------------------------------------------------------------------------------------------------------
 
@@ -1344,6 +1277,16 @@ struct PluginListDialog::Self {
         }
     }
 };
+
+// --------------------------------------------------------------------------------------------------------------------
+
+#if QT_VERSION >= 0x60000
+ #define PLG_SUFFIX "_2qt6"
+ #define TG_SUFFIX "_7qt6"
+#else
+ #define PLG_SUFFIX "_2"
+ #define TG_SUFFIX "_7"
+#endif
 
 PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& hostSettings)
     : QDialog(parent),
@@ -1492,12 +1435,18 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
     // ----------------------------------------------------------------------------------------------------------------
     // Post-connect setup
 
-    self.reAddPlugins();
+    self.checkPlugin(-1);
+    self.idle();
     slot_focusSearchFieldAndSelectAll();
+
+    self.fTimerId = startTimer(0);
 }
 
 PluginListDialog::~PluginListDialog()
 {
+    if (self.fTimerId != 0)
+        killTimer(self.fTimerId);
+
     delete &self;
 }
 
@@ -1518,6 +1467,20 @@ void PluginListDialog::showEvent(QShowEvent* const event)
     QDialog::showEvent(event);
 }
 
+void PluginListDialog::timerEvent(QTimerEvent* const event)
+{
+    if (event->timerId() == self.fTimerId)
+    {
+        if (self.idle())
+        {
+            killTimer(self.fTimerId);
+            self.fTimerId = 0;
+        }
+    }
+
+    QDialog::timerEvent(event);
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 // private methods
 
@@ -1527,11 +1490,6 @@ void PluginListDialog::loadSettings()
     self.fFavoritePlugins = settings.valueStringList("PluginDatabase/Favorites");
     self.fFavoritePluginsChanged = false;
 
-   #if QT_VERSION >= 0x60000
-    #define PLG_SUFFIX "_2qt6"
-   #else
-    #define PLG_SUFFIX "_2"
-   #endif
     restoreGeometry(settings.valueByteArray("PluginDatabase/Geometry" PLG_SUFFIX));
     self.ui.ch_effects->setChecked(settings.valueBool("PluginDatabase/ShowEffects", true));
     self.ui.ch_instruments->setChecked(settings.valueBool("PluginDatabase/ShowInstruments", true));
@@ -1588,11 +1546,6 @@ void PluginListDialog::loadSettings()
         self.ui.ch_cat_other->setChecked(categories.contains(":other:"));
     }
 
-   #if QT_VERSION >= 0x60000
-    #define TG_SUFFIX "_7qt6"
-   #else
-    #define TG_SUFFIX "_7"
-   #endif
     const QByteArray tableGeometry = settings.valueByteArray("PluginDatabase/TableGeometry" TG_SUFFIX);
     QHeaderView* const horizontalHeader = self.ui.tableWidget->horizontalHeader();
     if (! tableGeometry.isNull())
@@ -1784,8 +1737,8 @@ void PluginListDialog::slot_clearFilters()
 void PluginListDialog::slot_saveSettings()
 {
     QSafeSettings settings("falkTX", "CarlaDatabase2");
-    settings.setValue("PluginDatabase/Geometry", saveGeometry());
-    settings.setValue("PluginDatabase/TableGeometry_6", self.ui.tableWidget->horizontalHeader()->saveState());
+    settings.setValue("PluginDatabase/Geometry" PLG_SUFFIX, saveGeometry());
+    settings.setValue("PluginDatabase/TableGeometry" TG_SUFFIX, self.ui.tableWidget->horizontalHeader()->saveState());
     settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects->isChecked());
     settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments->isChecked());
     settings.setValue("PluginDatabase/ShowMIDI", self.ui.ch_midi->isChecked());
