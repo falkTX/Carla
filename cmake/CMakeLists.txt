@@ -103,9 +103,12 @@ function(set_common_target_properties TARGET)
 
   set_target_properties(${TARGET}
     PROPERTIES
-      OSX_ARCHITECTURES "x86_64;arm64"
       POSITION_INDEPENDENT_CODE ON
   )
+
+  if(APPLE AND NOT $ENV{HOMEBREW_NO_AUTO_UPDATE})
+    set_property(${TARGET} PROPERTY APPEND OSX_ARCHITECTURES arm64)
+  endif()
 endfunction()
 
 #######################################################################################################################
@@ -722,7 +725,7 @@ target_sources(carla-standalone
     ../source/backend/engine/CarlaEngineClient.cpp
     ../source/backend/engine/CarlaEngineDummy.cpp
     ../source/backend/engine/CarlaEngineData.cpp
-    ../source/backend/engine/CarlaEngineJACK.cpp
+    ../source/backend/engine/CarlaEngineJack.cpp
     ../source/backend/engine/CarlaEngineGraph.cpp
     ../source/backend/engine/CarlaEngineInternal.cpp
     ../source/backend/engine/CarlaEngineNative.cpp
