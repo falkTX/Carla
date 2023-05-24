@@ -87,7 +87,7 @@ function(set_common_target_properties TARGET)
       $<$<BOOL:${MSVC}>:/wd4244 /wd4267 /wd4273>
   )
 
-  if("${C_COMPILER_ID}" MATCHES "GNU")
+  if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     target_link_options(${TARGET}
       PRIVATE
         -Wl,--no-undefined
@@ -403,7 +403,7 @@ target_include_directories(carla-water
 
 target_link_libraries(carla-water
   PRIVATE
-    $<$<BOOL:${APPLE}>:${APPKIT}>
+    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>>
     $<$<BOOL:${WIN32}>:comdlg32>
     $<$<BOOL:${WIN32}>:ole32>
     $<$<BOOL:${WIN32}>:winmm>
@@ -441,7 +441,7 @@ target_include_directories(carla-water-files
 
 target_link_libraries(carla-water-files
   PRIVATE
-    $<$<BOOL:${APPLE}>:${APPKIT}>
+    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>>
     $<$<BOOL:${WIN32}>:ole32>
     $<$<BOOL:${WIN32}>:winmm>
     ${CARLA_LIBDL}
@@ -664,6 +664,7 @@ target_link_libraries(carla-discovery-native
     carla-water-files
     carla-ysfx
     PkgConfig::FLUIDSYNTH
+    ${CMAKE_THREAD_LIBS_INIT}
 )
 
 target_sources(carla-discovery-native
@@ -694,11 +695,13 @@ target_include_directories(carla-utils
 
 target_link_libraries(carla-utils
   PRIVATE
+    carla-jackbridge
     carla-lilv
     carla-water-files
     carla-ysfx
     PkgConfig::FLUIDSYNTH
     PkgConfig::X11
+    ${CMAKE_THREAD_LIBS_INIT}
 )
 
 target_sources(carla-utils
