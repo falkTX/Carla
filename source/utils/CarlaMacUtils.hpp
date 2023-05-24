@@ -1,6 +1,6 @@
 /*
  * Carla macOS utils
- * Copyright (C) 2018-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,26 +31,28 @@ typedef const struct __CFString* CFStringRef;
 void* CFBundleGetFunctionPointerForName(CFBundleRef, CFStringRef);
 }
 
+// --------------------------------------------------------------------------------------------------------------------
+// a few public functions
+
+/*
+ * ...
+ */
+CARLA_PLUGIN_EXPORT void initStandaloneApplication();
+
+/*
+ * ...
+ */
+CARLA_PLUGIN_EXPORT const char* findBinaryInBundle(const char* const bundleDir);
+
+/*
+ * ...
+ */
+CARLA_PLUGIN_EXPORT bool removeFileFromQuarantine(const char* const filename);
+
+// --------------------------------------------------------------------------------------------------------------------
+// and now then private stuff
+
 CARLA_BACKEND_START_NAMESPACE
-
-// --------------------------------------------------------------------------------------------------------------------
-
-/*
- * ...
- */
-void initStandaloneApplication();
-
-/*
- * ...
- */
-const char* findBinaryInBundle(const char* const bundleDir);
-
-/*
- * ...
- */
-bool removeFileFromQuarantine(const char* const filename);
-
-// --------------------------------------------------------------------------------------------------------------------
 
 /*
  * ...

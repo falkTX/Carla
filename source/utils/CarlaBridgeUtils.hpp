@@ -240,7 +240,7 @@ struct BridgeNonRtServerData {
 
 // -------------------------------------------------------------------------------------------------------------------
 
-struct BridgeAudioPool {
+struct CARLA_API BridgeAudioPool {
     float* data;
     std::size_t dataSize;
     CarlaString filename;
@@ -263,7 +263,7 @@ struct BridgeAudioPool {
 
 // -------------------------------------------------------------------------------------------------------------------
 
-struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
+struct CARLA_API BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
     BridgeRtClientData* data;
     CarlaString filename;
     bool needsSemDestroy; // client only
@@ -303,7 +303,7 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
 
 // -------------------------------------------------------------------------------------------------------------------
 
-struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> {
+struct CARLA_API BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> {
     BridgeNonRtClientData* data;
     CarlaString filename;
     CarlaMutex mutex;
@@ -332,7 +332,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
 
 // -------------------------------------------------------------------------------------------------------------------
 
-struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer> {
+struct CARLA_API BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer> {
     BridgeNonRtServerData* data;
     CarlaString filename;
     CarlaMutex mutex;
