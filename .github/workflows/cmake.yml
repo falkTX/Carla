@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set up dependencies
         run: |
+          sudo apt-get update -qq
           sudo apt-get install -yqq cmake libfluidsynth-dev liblo-dev libmagic-dev libsndfile1-dev libx11-dev pkg-config
       - name: configure
         run: cmake -S cmake -B cmake
@@ -43,6 +44,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set up dependencies
         run: |
+          sudo apt-get update -qq
           sudo apt-get install -yqq cmake libfluidsynth-dev liblo-dev libmagic-dev libsndfile1-dev libx11-dev pkg-config
       - name: configure
         run: cmake -S cmake -B cmake
