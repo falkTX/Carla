@@ -15,7 +15,11 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeUtils.cpp"
+#include "CarlaUtils.hpp"
+
+#ifndef CARLA_OS_WASM
+# include "CarlaBridgeUtils.cpp"
+#endif
 
 #ifdef CARLA_OS_MAC
 # include "CarlaMacUtils.cpp"
