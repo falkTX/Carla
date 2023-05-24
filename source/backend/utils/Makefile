@@ -16,6 +16,7 @@ BUILD_CXX_FLAGS += $(YSFX_FLAGS)
 
 OBJS = \
 	$(OBJDIR)/CachedPlugins.cpp.o \
+	$(OBJDIR)/CarlaUtils.cpp.o \
 	$(OBJDIR)/Information.cpp.o \
 	$(OBJDIR)/JUCE.cpp.o \
 	$(OBJDIR)/PipeClient.cpp.o \
@@ -26,7 +27,8 @@ TARGETS = $(BINDIR)/libcarla_utils$(LIB_EXT)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-LIBS  = $(MODULEDIR)/lilv.a
+LIBS  = $(MODULEDIR)/jackbridge.a
+LIBS += $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/water.files.a
 LIBS += $(MODULEDIR)/ysfx.a
 
@@ -42,6 +44,7 @@ LIBS += $(MODULEDIR)/juce_gui_basics.a
 LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 
+LINK_FLAGS += $(JACKBRIDGE_LIBS)
 LINK_FLAGS += $(LILV_LIBS)
 LINK_FLAGS += $(WATER_LIBS)
 LINK_FLAGS += $(YSFX_GRAPHICS_LIBS)
@@ -90,16 +93,9 @@ $(BINDIR)/libcarla_utils$(LIB_EXT): $(OBJS) $(LIBS)
 
 ifeq ($(MACOS),true)
 ifeq ($(USING_JUCE),true)
-$(OBJDIR)/CachedPlugins.cpp.o: CachedPlugins.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
+$(OBJDIR)/CachedPlugins.cpp.o: BUILD_CXX_FLAGS += -std=gnu++14
 endif
-
-$(OBJDIR)/Windows.cpp.o: Windows.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+$(OBJDIR)/Windows.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp
