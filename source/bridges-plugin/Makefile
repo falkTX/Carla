@@ -350,14 +350,20 @@ $(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaPluginJSFX.cpp.o BUILD_CXX_FLAGS += $(YSFX_FLAGS)
+
 $(OBJDIR)/CarlaPluginJuce.cpp.o: BUILD_CXX_FLAGS += -std=gnu++14
 
 ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginCLAP.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+
 $(OBJDIR)/CarlaPluginJuce.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+
 $(OBJDIR)/CarlaPluginVST2.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+
 $(OBJDIR)/CarlaPluginVST3.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+
 $(OBJDIR)/CarlaStandalone.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+
 $(OBJDIR)/CarlaBridgePlugin.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 endif
 
