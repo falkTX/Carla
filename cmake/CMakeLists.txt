@@ -25,8 +25,6 @@ if(NOT (APPLE OR HAIKU OR WIN32))
   set(CARLA_LIBRT rt)
 endif()
 
-# set(carla_pthread_libs ${CMAKE_THREAD_LIBS_INIT})
-
 #######################################################################################################################
 # optional dependencies
 
@@ -169,6 +167,8 @@ set_common_target_properties(carla-lilv_serd)
 target_compile_options(carla-lilv_serd
   PRIVATE
     $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
+    $<$<C_COMPILER_ID:GNU>:-Wno-format-overflow>
+    $<$<C_COMPILER_ID:GNU>:-Wno-implicit-fallthrough>
 )
 
 target_include_directories(carla-lilv_serd
@@ -191,6 +191,7 @@ set_common_target_properties(carla-lilv_sord)
 target_compile_options(carla-lilv_sord
   PRIVATE
     $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
+    $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
     # workaround compiler bug, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109585
     $<$<C_COMPILER_ID:GNU>:-fno-strict-aliasing>
 )
@@ -248,7 +249,10 @@ set_common_target_properties(carla-lilv_lilv)
 target_compile_options(carla-lilv_lilv
   PRIVATE
     $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
-    $<$<C_COMPILER_ID:GNU>:-Wno-deprecated-declarations -Wno-discarded-qualifiers>
+    $<$<C_COMPILER_ID:GNU>:-Wno-deprecated-declarations>
+    $<$<C_COMPILER_ID:GNU>:-Wno-discarded-qualifiers>
+    $<$<C_COMPILER_ID:GNU>:-Wno-format-overflow>
+    $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
     $<$<C_COMPILER_ID:AppleClang>:-Wno-incompatible-pointer-types-discards-qualifiers>
 )
 
@@ -480,10 +484,12 @@ target_compile_definitions(carla-ysfx
 target_compile_options(carla-ysfx
   PRIVATE
     $<$<C_COMPILER_ID:GNU>:-fsigned-char>
+    $<$<C_COMPILER_ID:GNU>:-Wno-extra>
     $<$<C_COMPILER_ID:GNU>:-Wno-ignored-attributes>
     $<$<C_COMPILER_ID:GNU>:-Wno-sign-compare>
     $<$<C_COMPILER_ID:GNU>:-Wno-unused-function>
     $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated-copy>
 )
 
 target_include_directories(carla-ysfx
@@ -559,6 +565,15 @@ target_compile_definitions(carla-bridge-native
   PRIVATE
     BUILD_BRIDGE
     CARLA_LIB_EXT="${CMAKE_SHARED_LIBRARY_SUFFIX}"
+)
+
+# FIXME
+target_compile_options(carla-bridge-native
+  PRIVATE
+    $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
+    $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
+    $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
+    $<$<C_COMPILER_ID:GNU>:-Wno-vla>
 )
 
 target_include_directories(carla-bridge-native
@@ -670,6 +685,7 @@ set_common_target_properties(carla-utils)
 
 target_include_directories(carla-utils
   PRIVATE
+    ../source
     ../source/backend
     ../source/includes
     ../source/modules
@@ -688,6 +704,7 @@ target_link_libraries(carla-utils
 target_sources(carla-utils
   PRIVATE
     ../source/backend/utils/CachedPlugins.cpp
+    ../source/backend/utils/CarlaUtils.cpp
     ../source/backend/utils/Information.cpp
     ../source/backend/utils/JUCE.cpp
     ../source/backend/utils/PipeClient.cpp
@@ -697,7 +714,10 @@ target_sources(carla-utils
 )
 
 if(APPLE)
-  set_source_files_properties(../source/backend/utils/Windows.cpp PROPERTIES COMPILE_FLAGS -ObjC++)
+  set_source_files_properties(
+    ../source/backend/utils/CarlaUtils.cpp
+    ../source/backend/utils/Windows.cpp
+    PROPERTIES COMPILE_FLAGS -ObjC++)
 endif()
 
 #######################################################################################################################
