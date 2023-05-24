@@ -44,9 +44,7 @@
 # pragma GCC diagnostic pop
 #endif
 
-#if !(defined(USE_QT) || defined(BUILDING_CARLA_OBS))
-# include "water/files/File.h"
-#endif
+#include "water/files/File.h"
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -245,7 +243,6 @@ const char* const* carla_get_supported_features()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#if !(defined(USE_QT) || defined(BUILDING_CARLA_OBS))
 const char* carla_get_library_filename()
 {
     carla_debug("carla_get_library_filename()");
@@ -275,6 +272,5 @@ const char* carla_get_library_folder()
 
     return ret;
 }
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------

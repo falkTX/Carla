@@ -36,11 +36,7 @@
 # include "CarlaJsfxUtils.hpp"
 #endif
 
-#if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
-# include <QtCore/QFileInfo>
-#else
-# include "water/files/File.h"
-#endif
+#include "water/files/File.h"
 
 namespace CB = CARLA_BACKEND_NAMESPACE;
 
@@ -208,13 +204,8 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
         if (char* const bundle = lilv_file_uri_parse(lilvPlugin.get_bundle_uri().as_uri(), nullptr))
         {
-           #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
-            const QFileInfo fbundle(QString::fromUtf8(bundle));
-            suri = (fbundle.fileName() + CARLA_OS_SEP).toUtf8().constData() + suri;
-           #else
             const water::File fbundle(bundle);
             suri = (fbundle.getFileName() + CARLA_OS_SEP).toRawUTF8() + suri;
-           #endif
             lilv_free(bundle);
         }
         else

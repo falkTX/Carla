@@ -1,6 +1,6 @@
 /*
  * Carla LV2 utils
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -83,7 +83,7 @@
 
 #include "lv2_rdf.hpp"
 
-#if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+#if defined(CARLA_UTILS_USE_QT)
 # include <QtCore/QStringList>
 #else
 # include "water/text/StringArray.h"
@@ -1822,7 +1822,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
             if (replaceNode.is_uri())
             {
-               #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+               #if defined(CARLA_UTILS_USE_QT)
                 const QString replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
@@ -2752,7 +2752,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         if (presetNodes.size() > 0)
         {
             // create a list of preset URIs (for sorting and unique-ness)
-           #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+           #if defined(CARLA_UTILS_USE_QT)
             QStringList presetListURIs;
 
             LILV_FOREACH(nodes, it, presetNodes)
@@ -2813,7 +2813,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                 if (presetLabelNodes.size() > 0)
                 {
-                   #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+                   #if defined(CARLA_UTILS_USE_QT)
                     const int index = presetListURIs.indexOf(QString(presetURI));
                    #else
                     const int index = presetListURIs.indexOf(water::String(presetURI));

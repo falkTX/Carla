@@ -21,7 +21,7 @@
 #include "CarlaBackend.h"
 #include "CarlaScopeUtils.hpp"
 
-#if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+#if defined(CARLA_UTILS_USE_QT)
 # include <QtCore/QFile>
 # include <QtCore/QString>
 #else
@@ -132,7 +132,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     }
    #endif
 
-   #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+   #if defined(CARLA_UTILS_USE_QT)
     QFile file(QString::fromUtf8(filename));
     CARLA_SAFE_ASSERT_RETURN(file.open(QIODevice::ReadOnly), BINARY_NATIVE);
    #else
@@ -148,7 +148,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     // See https://github.com/Ardour/ardour/blob/master/libs/ardour/plugin_manager.cc#L867,L925
     // Copyright (C) 2000-2006 Paul Davis
 
-   #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+   #if defined(CARLA_UTILS_USE_QT)
     char buf[68];
     if (file.read(buf, 68) != 68)
    #else
@@ -163,14 +163,14 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     const int32_t* const pe_hdr_off_ptr = (int32_t*)&buf[60];
     const int32_t pe_hdr_off = *pe_hdr_off_ptr;
 
-   #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+   #if defined(CARLA_UTILS_USE_QT)
     if (! file.seek(pe_hdr_off))
    #else
     if (! stream->setPosition(pe_hdr_off))
    #endif
         return BINARY_NATIVE;
 
-   #if defined(USE_QT) || defined(BUILDING_CARLA_OBS)
+   #if defined(CARLA_UTILS_USE_QT)
     if (file.read(buf, 6) != 6)
    #else
     if (stream->read(buf, 6) != 6)
