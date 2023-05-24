@@ -32,9 +32,11 @@ find_package(PkgConfig)
 
 if(PKGCONFIG_FOUND)
   pkg_check_modules(FLUIDSYNTH IMPORTED_TARGET fluidsynth)
+  pkg_check_modules(LIBLO IMPORTED_TARGET liblo)
   pkg_check_modules(SNDFILE IMPORTED_TARGET sndfile)
 else()
   set(FLUIDSYNTH_FOUND FALSE)
+  set(LIBLO_FOUND FALSE)
   set(SNDFILE_FOUND FALSE)
 endif()
 
@@ -54,6 +56,10 @@ add_library(carla-none INTERFACE)
 
 if(NOT FLUIDSYNTH_FOUND)
   add_library(PkgConfig::FLUIDSYNTH ALIAS carla-none)
+endif()
+
+if(NOT LIBLO_FOUND)
+  add_library(PkgConfig::LIBLO ALIAS carla-none)
 endif()
 
 if(NOT LIBMAGIC_FOUND)
@@ -77,6 +83,7 @@ function(set_common_target_properties TARGET)
       BUILDING_CARLA
       HAVE_YSFX
       $<$<BOOL:${FLUIDSYNTH_FOUND}>:HAVE_FLUIDSYNTH>
+      $<$<BOOL:${LIBLO_FOUND}>:HAVE_LIBLO>
       $<$<BOOL:${LIBMAGIC_FOUND}>:HAVE_LIBMAGIC>
       $<$<BOOL:${SNDFILE_FOUND}>:HAVE_SNDFILE>
       $<$<BOOL:${X11_FOUND}>:HAVE_X11>
@@ -416,10 +423,6 @@ target_sources(carla-water
     ../source/modules/water/water.cpp
 )
 
-if (APPLE)
-  set_source_files_properties(../source/modules/water/water.cpp PROPERTIES COMPILE_FLAGS -ObjC++)
-endif()
-
 #######################################################################################################################
 # water-files
 
@@ -451,10 +454,6 @@ target_sources(carla-water-files
   PRIVATE
     ../source/modules/water/water.files.cpp
 )
-
-if (APPLE)
-  set_source_files_properties(../source/modules/water/water.files.cpp PROPERTIES COMPILE_FLAGS -ObjC++)
-endif()
 
 #######################################################################################################################
 # ysfx
@@ -633,16 +632,6 @@ target_sources(carla-bridge-native
     ../source/backend/plugin/CarlaPluginVST3.cpp
 )
 
-if (APPLE)
-  set_source_files_properties(
-    ../source/bridges-plugin/CarlaBridgePlugin.cpp
-    ../source/backend/CarlaStandalone.cpp
-    ../source/backend/plugin/CarlaPluginCLAP.cpp
-    ../source/backend/plugin/CarlaPluginVST2.cpp
-    ../source/backend/plugin/CarlaPluginVST3.cpp
-    PROPERTIES COMPILE_FLAGS -ObjC++)
-endif()
-
 #######################################################################################################################
 # carla discovery
 
@@ -672,9 +661,91 @@ target_sources(carla-discovery-native
     ../source/discovery/carla-discovery.cpp
 )
 
-if (APPLE)
-  set_source_files_properties(../source/discovery/carla-discovery.cpp PROPERTIES COMPILE_FLAGS -ObjC++)
-endif()
+#######################################################################################################################
+# carla standalone
+
+add_library(carla-standalone SHARED)
+add_library(carla::utils ALIAS carla-standalone)
+
+set_common_target_properties(carla-standalone)
+
+set_target_properties(carla-standalone
+  PROPERTIES
+    OUTPUT_NAME carla_standalone2
+)
+
+target_compile_definitions(carla-standalone
+  PRIVATE
+    CARLA_LIB_EXT="${CMAKE_SHARED_LIBRARY_SUFFIX}"
+)
+
+# FIXME
+target_compile_options(carla-standalone
+  PRIVATE
+    $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
+    $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
+    $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
+    $<$<C_COMPILER_ID:GNU>:-Wno-vla>
+)
+
+target_include_directories(carla-standalone
+  PRIVATE
+    ../source
+    ../source/backend
+    ../source/includes
+    ../source/modules
+    ../source/utils
+)
+
+target_link_libraries(carla-standalone
+  PRIVATE
+    carla-jackbridge
+    carla-lilv
+    carla-native-plugins
+    carla-rtmempool
+    carla-sfzero
+    carla-water
+    carla-ysfx
+    carla-zita-resampler
+    PkgConfig::FLUIDSYNTH
+    PkgConfig::LIBLO
+    PkgConfig::LIBMAGIC
+    PkgConfig::X11
+    ${CMAKE_THREAD_LIBS_INIT}
+)
+
+target_sources(carla-standalone
+  PRIVATE
+    ../source/backend/CarlaStandalone.cpp
+    ../source/backend/CarlaStandaloneNSM.cpp
+    ../source/backend/engine/CarlaEngine.cpp
+    ../source/backend/engine/CarlaEngineClient.cpp
+    ../source/backend/engine/CarlaEngineDummy.cpp
+    ../source/backend/engine/CarlaEngineData.cpp
+    ../source/backend/engine/CarlaEngineJACK.cpp
+    ../source/backend/engine/CarlaEngineGraph.cpp
+    ../source/backend/engine/CarlaEngineInternal.cpp
+    ../source/backend/engine/CarlaEngineNative.cpp
+    ../source/backend/engine/CarlaEngineOsc.cpp
+    ../source/backend/engine/CarlaEngineOscHandlers.cpp
+    ../source/backend/engine/CarlaEngineOscSend.cpp
+    ../source/backend/engine/CarlaEnginePorts.cpp
+    ../source/backend/engine/CarlaEngineRunner.cpp
+    ../source/backend/plugin/CarlaPlugin.cpp
+    ../source/backend/plugin/CarlaPluginBridge.cpp
+    ../source/backend/plugin/CarlaPluginInternal.cpp
+    ../source/backend/plugin/CarlaPluginAU.cpp
+    ../source/backend/plugin/CarlaPluginCLAP.cpp
+    ../source/backend/plugin/CarlaPluginFluidSynth.cpp
+    ../source/backend/plugin/CarlaPluginJuce.cpp
+    ../source/backend/plugin/CarlaPluginJSFX.cpp
+    ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
+    ../source/backend/plugin/CarlaPluginLV2.cpp
+    ../source/backend/plugin/CarlaPluginNative.cpp
+    ../source/backend/plugin/CarlaPluginSFZero.cpp
+    ../source/backend/plugin/CarlaPluginVST2.cpp
+    ../source/backend/plugin/CarlaPluginVST3.cpp
+)
 
 #######################################################################################################################
 # carla utils
@@ -683,6 +754,11 @@ add_library(carla-utils SHARED)
 add_library(carla::utils ALIAS carla-utils)
 
 set_common_target_properties(carla-utils)
+
+set_target_properties(carla-standalone
+  PROPERTIES
+    OUTPUT_NAME carla_utils
+)
 
 target_include_directories(carla-utils
   PRIVATE
@@ -716,10 +792,20 @@ target_sources(carla-utils
     ../source/backend/utils/Windows.cpp
 )
 
-if(APPLE)
+#######################################################################################################################
+
+if (APPLE)
   set_source_files_properties(
+    ../source/backend/CarlaStandalone.cpp
+    ../source/backend/plugin/CarlaPluginCLAP.cpp
+    ../source/backend/plugin/CarlaPluginVST2.cpp
+    ../source/backend/plugin/CarlaPluginVST3.cpp
     ../source/backend/utils/CarlaUtils.cpp
     ../source/backend/utils/Windows.cpp
+    ../source/bridges-plugin/CarlaBridgePlugin.cpp
+    ../source/discovery/carla-discovery.cpp
+    ../source/modules/water/water.cpp
+    ../source/modules/water/water.files.cpp
     PROPERTIES COMPILE_FLAGS -ObjC++)
 endif()
 
