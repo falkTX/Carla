@@ -324,65 +324,19 @@ $(BINDIR)/$(MODULENAME)-win64.exe: $(OBJS_win64) $(LIBS_win64)
 # ---------------------------------------------------------------------------------------------------------------------
 # native
 
-$(OBJDIR)/CarlaPluginJSFX.cpp.o: $(CWD)/backend/plugin/CarlaPluginJSFX.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJSFX.cpp (bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) $(YSFX_FLAGS) -c -o $@
-
-ifeq ($(MACOS),true)
-$(OBJDIR)/CarlaPluginVST2.cpp.o: $(CWD)/backend/plugin/CarlaPluginVST2.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginVST2.cpp (bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
-
-$(OBJDIR)/CarlaPluginVST3.cpp.o: $(CWD)/backend/plugin/CarlaPluginVST3.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginVST3.cpp (bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
-
-$(OBJDIR)/CarlaPluginCLAP.cpp.o: $(CWD)/backend/plugin/CarlaPluginCLAP.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginCLAP.cpp (bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
-
-$(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaStandalone.cpp (bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
-
-$(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
-else
-$(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaStandalone.cpp (bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
-
 $(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
-endif
-
-ifeq ($(USING_JUCE),true)
-ifeq ($(MACOS),true)
-$(OBJDIR)/CarlaPluginJuce.cpp.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
-else
-$(OBJDIR)/CarlaPluginJuce.cpp.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -std=gnu++14 -c -o $@
-endif
-endif
 
 $(OBJDIR)/CarlaBridgeSingleLV2.cpp.o: CarlaBridgeSingleLV2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaStandalone.cpp (bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaPlug%.cpp.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
@@ -394,6 +348,18 @@ $(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (bridge)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaPluginJSFX.cpp.o BUILD_CXX_FLAGS += $(YSFX_FLAGS)
+$(OBJDIR)/CarlaPluginJuce.cpp.o: BUILD_CXX_FLAGS += -std=gnu++14
+
+ifeq ($(MACOS),true)
+$(OBJDIR)/CarlaPluginCLAP.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/CarlaPluginJuce.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/CarlaPluginVST2.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/CarlaPluginVST3.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/CarlaStandalone.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/CarlaBridgePlugin.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # arm32

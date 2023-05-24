@@ -102,6 +102,7 @@ ifeq ($(MACOS),true)
 ifeq ($(USING_JUCE),true)
 $(OBJDIR)/CachedPlugins.cpp.o: BUILD_CXX_FLAGS += -std=gnu++14
 endif
+$(OBJDIR)/CarlaUtils.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 $(OBJDIR)/Windows.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 endif
 
