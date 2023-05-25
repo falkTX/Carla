@@ -27,7 +27,7 @@ class CarlaSignal;
 // -----------------------------------------------------------------------
 // CarlaMutex class
 
-class CarlaMutex
+class CARLA_API CarlaMutex
 {
 public:
     /*
