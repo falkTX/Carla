@@ -15,6 +15,18 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 #######################################################################################################################
+# fix compat with cmake < 3.26
+
+if(CMAKE_VERSION VERSION_LESS 3.26)
+  if(MSVC)
+    set(CMAKE_C_COMPILER_FRONTEND_VARIANT "MSVC")
+  else()
+    set(CMAKE_C_COMPILER_FRONTEND_VARIANT "GNU")
+  endif()
+  mark_as_advanced(CMAKE_C_COMPILER_FRONTEND_VARIANT)
+endif()
+
+#######################################################################################################################
 # build options
 
 set(CARLA_USE_JACK TRUE CACHE BOOL "Enable JACK")
@@ -218,6 +230,7 @@ set_common_target_properties(carla-lilv_sord)
 target_compile_options(carla-lilv_sord
   PRIVATE
     $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
+    $<$<C_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
     $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
     # workaround compiler bug, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109585
     $<$<C_COMPILER_ID:GNU>:-fno-strict-aliasing>
