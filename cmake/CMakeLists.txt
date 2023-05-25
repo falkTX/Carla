@@ -51,7 +51,7 @@ find_package(PkgConfig)
 # homebrew does not support universal binaries, disable external deps if it is in use
 if(APPLE)
   find_program(HOMEBREW brew)
-  if (HOMEBREW)
+  if(HOMEBREW)
     set(PKGCONFIG_FOUND FALSE)
     mark_as_advanced(PKGCONFIG_FOUND)
   endif()
@@ -205,7 +205,9 @@ set_common_target_properties(carla-lilv_serd)
 
 target_compile_options(carla-lilv_serd
   PRIVATE
-    $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
+    $<$<BOOL:${MSVC}>:/wd4005>
+    $<$<BOOL:${MSVC}>:/wd4090>
+    $<$<BOOL:${MSVC}>:/wd4133>
     $<$<C_COMPILER_ID:GNU>:-Wno-format-overflow>
     $<$<C_COMPILER_ID:GNU>:-Wno-implicit-fallthrough>
 )
@@ -229,7 +231,9 @@ set_common_target_properties(carla-lilv_sord)
 
 target_compile_options(carla-lilv_sord
   PRIVATE
-    $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
+    $<$<BOOL:${MSVC}>:/wd4005>
+    $<$<BOOL:${MSVC}>:/wd4090>
+    $<$<BOOL:${MSVC}>:/wd4133>
     $<$<C_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
     $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
     # workaround compiler bug, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109585
@@ -261,7 +265,9 @@ set_common_target_properties(carla-lilv_sratom)
 
 target_compile_options(carla-lilv_sratom
   PRIVATE
-    $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
+    $<$<BOOL:${MSVC}>:/wd4005>
+    $<$<BOOL:${MSVC}>:/wd4090>
+    $<$<BOOL:${MSVC}>:/wd4133>
 )
 
 target_include_directories(carla-lilv_sratom
@@ -288,7 +294,9 @@ set_common_target_properties(carla-lilv_lilv)
 
 target_compile_options(carla-lilv_lilv
   PRIVATE
-    $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
+    $<$<BOOL:${MSVC}>:/wd4005>
+    $<$<BOOL:${MSVC}>:/wd4090>
+    $<$<BOOL:${MSVC}>:/wd4133>
     $<$<C_COMPILER_ID:AppleClang>:-Wno-incompatible-pointer-types-discards-qualifiers>
     $<$<C_COMPILER_ID:GNU>:-Wno-deprecated-declarations>
     $<$<C_COMPILER_ID:GNU>:-Wno-discarded-qualifiers>
@@ -541,10 +549,6 @@ target_include_directories(carla-ysfx
     ../source/modules/ysfx/thirdparty/dr_libs
     ../source/modules/ysfx/thirdparty/stb
     ../source/modules/ysfx/thirdparty/WDL/source
-)
-
-target_link_libraries(carla-ysfx
-  PRIVATE
 )
 
 target_sources(carla-ysfx
@@ -843,7 +847,7 @@ target_sources(carla-utils
 
 #######################################################################################################################
 
-if (APPLE)
+if(APPLE)
   set_source_files_properties(
     ../source/backend/CarlaStandalone.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
