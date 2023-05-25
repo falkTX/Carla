@@ -115,18 +115,16 @@ function(set_common_target_properties TARGET)
       $<$<BOOL:${MSVC}>:/wd4244 /wd4267 /wd4273>
   )
 
-  if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    target_link_options(${TARGET}
-      PRIVATE
-        -Wl,--no-undefined
-    )
-  endif()
+  target_link_options(${TARGET}
+    PRIVATE
+      $<$<C_COMPILER_ID:GNU>:-Wl,--no-undefined>
+  )
 
   set_property(TARGET ${TARGET} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
   if(APPLE)
-    set_property(TARGET ${TARGET} PROPERTY APPEND OSX_ARCHITECTURES arm64)
-    set_property(TARGET ${TARGET} PROPERTY APPEND OSX_ARCHITECTURES x86_64)
+    set_property(TARGET ${TARGET} APPEND PROPERTY OSX_ARCHITECTURES arm64)
+    set_property(TARGET ${TARGET} APPEND PROPERTY OSX_ARCHITECTURES x86_64)
   endif()
 endfunction()
 
