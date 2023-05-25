@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,9 +18,7 @@
 #include "CarlaEngineGraph.hpp"
 #include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
-
-#include <ctime>
-#include <sys/time.h>
+#include "CarlaTimeUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -192,25 +190,6 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    static int64_t getTimeInMicroseconds() noexcept
-    {
-    #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        struct timeval tv;
-        gettimeofday(&tv, nullptr);
-
-        return (tv.tv_sec * 1000000) + tv.tv_usec;
-    #else
-        struct timespec ts;
-    # ifdef CLOCK_MONOTONIC_RAW
-        clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    # else
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-    # endif
-
-        return (ts.tv_sec * 1000000) + (ts.tv_nsec / 1000);
-    #endif
-    }
-
     void run() override
     {
         const uint32_t bufferSize = pData->bufferSize;
@@ -250,7 +229,7 @@ protected:
             if (delay > 0)
                 carla_sleep(static_cast<uint>(delay));
 
-            oldTime = getTimeInMicroseconds();
+            oldTime = carla_gettime_us();
 
             const PendingRtEventsRunner prt(this, bufferSize, true);
 
@@ -260,7 +239,7 @@ protected:
 
             pData->graph.process(pData, audioIns, audioOuts, bufferSize);
 
-            newTime = getTimeInMicroseconds();
+            newTime = carla_gettime_us();
             CARLA_SAFE_ASSERT_CONTINUE(newTime >= oldTime);
 
             const int64_t remainingTime = cycleTime - (newTime - oldTime);

@@ -29,8 +29,16 @@ endif()
 #######################################################################################################################
 # build options
 
-set(CARLA_USE_JACK TRUE CACHE BOOL "Enable JACK")
-set(CARLA_USE_OSC TRUE CACHE BOOL "Enable OSC")
+if(MSVC)
+  set(CARLA_USE_JACK_DEFAULT FALSE)
+  set(CARLA_USE_OSC_DEFAULT FALSE)
+else()
+  set(CARLA_USE_JACK_DEFAULT TRUE)
+  set(CARLA_USE_OSC_DEFAULT TRUE)
+endif()
+
+set(CARLA_USE_JACK TRUE CACHE ${CARLA_USE_JACK_DEFAULT} "Enable JACK")
+set(CARLA_USE_OSC TRUE CACHE ${CARLA_USE_OSC_DEFAULT} "Enable OSC")
 
 #######################################################################################################################
 # required dependencies
