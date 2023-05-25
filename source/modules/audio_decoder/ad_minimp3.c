@@ -1,5 +1,6 @@
 /**
    Copyright (C) 2011-2013 Robin Gareus <robin@gareus.org>
+   Copyright (C) 2014-2023 Filipe Coelho <falktx@falktx.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU Lesser Public License as published by
@@ -35,6 +36,10 @@
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
 #include "minimp3_ex.h"
+
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#endif
 
 /* internal abstraction */
 

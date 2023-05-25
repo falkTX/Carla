@@ -632,6 +632,11 @@ add_library(carla::zita-resampler ALIAS carla-zita-resampler)
 
 set_common_target_properties(carla-zita-resampler)
 
+target_compile_definitions(carla-native-plugins
+  PRIVATE
+    $<$<BOOL:${MSVC}>:_USE_MATH_DEFINES>
+)
+
 target_include_directories(carla-zita-resampler
   PRIVATE
     ../source/includes

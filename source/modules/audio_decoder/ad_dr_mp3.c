@@ -1,5 +1,6 @@
 /**
    Copyright (C) 2011-2013 Robin Gareus <robin@gareus.org>
+   Copyright (C) 2014-2023 Filipe Coelho <falktx@falktx.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU Lesser Public License as published by
@@ -32,6 +33,10 @@
 /* internal abstraction */
 
 #define DR_MP3_MAX_SEEK_POINTS 500
+
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#endif
 
 typedef struct {
 	drmp3 mp3;

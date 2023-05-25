@@ -109,7 +109,7 @@ static uint32_t audiogain_get_parameter_count(NativePluginHandle handle)
 
 static const NativeParameter* audiogain_get_parameter_info(NativePluginHandle handle, uint32_t index)
 {
-    if (index > (handlePtr->isMono ? PARAM_COUNT_MONO : PARAM_COUNT_STEREO))
+    if (index > (uint32_t)(handlePtr->isMono ? PARAM_COUNT_MONO : PARAM_COUNT_STEREO))
         return NULL;
 
     static NativeParameter param;
