@@ -122,14 +122,11 @@ function(set_common_target_properties TARGET)
     )
   endif()
 
-  set_target_properties(${TARGET}
-    PROPERTIES
-      POSITION_INDEPENDENT_CODE ON
-  )
+  set_property(TARGET ${TARGET} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
   if(APPLE)
-    set_property(${TARGET} PROPERTY APPEND OSX_ARCHITECTURES arm64)
-    set_property(${TARGET} PROPERTY APPEND OSX_ARCHITECTURES x86_64)
+    set_property(TARGET ${TARGET} PROPERTY APPEND OSX_ARCHITECTURES arm64)
+    set_property(TARGET ${TARGET} PROPERTY APPEND OSX_ARCHITECTURES x86_64)
   endif()
 endfunction()
 
