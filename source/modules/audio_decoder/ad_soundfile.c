@@ -16,11 +16,10 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
-#include <unistd.h>
 #include <math.h>
 
 #include "ad_plugin.h"
@@ -85,7 +84,7 @@ static void *ad_open_sndfile(const char *fn, struct adinfo *nfo) {
 static int ad_close_sndfile(void *sf) {
 	sndfile_audio_decoder *priv = (sndfile_audio_decoder*) sf;
 	if (!priv) return -1;
-	if(!sf || sf_close(priv->sffile)) { 
+	if(!sf || sf_close(priv->sffile)) {
 		dbg(0, "fatal: bad file close.\n");
 		return -1;
 	}
@@ -111,7 +110,7 @@ static int ad_get_bitrate_sndfile(void *sf) {
 	return parse_bit_depth(priv->sfinfo.format) * priv->sfinfo.channels * priv->sfinfo.samplerate;
 }
 
-static int ad_eval_sndfile(const char *f) { 
+static int ad_eval_sndfile(const char *f) {
 	char *ext = strrchr(f, '.');
 	if (strstr (f, "://")) return 0;
 	if (!ext) return 5;

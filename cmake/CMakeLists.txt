@@ -384,6 +384,11 @@ add_library(carla::native-plugins ALIAS carla-native-plugins)
 
 set_common_target_properties(carla-native-plugins)
 
+target_compile_definitions(carla-native-plugins
+  PRIVATE
+    $<$<BOOL:${MSVC}>:_USE_MATH_DEFINES>
+)
+
 target_include_directories(carla-native-plugins
   PRIVATE
     ../source/includes
@@ -435,6 +440,7 @@ target_link_libraries(carla-rtmempool
   PRIVATE
     ${CARLA_LIBDL}
     ${CARLA_LIBRT}
+    ${CARLA_PTHREADS}
 )
 
 target_sources(carla-rtmempool
@@ -494,6 +500,7 @@ target_link_libraries(carla-water
     $<$<BOOL:${WIN32}>:winmm>
     ${CARLA_LIBDL}
     ${CARLA_LIBRT}
+    ${CARLA_PTHREADS}
 )
 
 target_sources(carla-water
@@ -628,6 +635,11 @@ set_common_target_properties(carla-zita-resampler)
 target_include_directories(carla-zita-resampler
   PRIVATE
     ../source/includes
+)
+
+target_link_libraries(carla-zita-resampler
+  PRIVATE
+    ${CARLA_PTHREADS}
 )
 
 target_sources(carla-zita-resampler
