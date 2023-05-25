@@ -24,6 +24,13 @@
 
 #include <fcntl.h>
 
+#ifdef CARLA_OS_WIN
+# include <io.h>
+# define close _close
+# define dup _dup
+# define dup2 _dup2
+#endif
+
 using CARLA_BACKEND_NAMESPACE::EngineCallbackFunc;
 
 // -----------------------------------------------------------------------
@@ -82,7 +89,7 @@ public:
        #endif
 
         fStdOut = dup(stdout_fileno);
-        fStdErr = dup(STDERR_FILENO);
+        fStdErr = dup(stderr_fileno);
 
         dup2(pipe1, stdout_fileno);
         dup2(pipe1, stderr_fileno);
@@ -114,8 +121,8 @@ public:
         const int stderr_fileno = STDERR_FILENO;
        #endif
 
-        dup2(fStdOut, STDOUT_FILENO);
-        dup2(fStdErr, STDERR_FILENO);
+        dup2(fStdOut, stdout_fileno);
+        dup2(fStdErr, stderr_fileno);
         close(fStdOut);
         close(fStdErr);
         fStdOut = -1;
@@ -224,6 +231,7 @@ private:
 
 #ifdef CARLA_OS_WIN
 # undef close
+# undef dup
 # undef dup2
 #endif
 

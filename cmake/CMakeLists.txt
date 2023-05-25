@@ -37,8 +37,8 @@ else()
   set(CARLA_USE_OSC_DEFAULT TRUE)
 endif()
 
-set(CARLA_USE_JACK TRUE CACHE ${CARLA_USE_JACK_DEFAULT} "Enable JACK")
-set(CARLA_USE_OSC TRUE CACHE ${CARLA_USE_OSC_DEFAULT} "Enable OSC")
+set(CARLA_USE_JACK ${CARLA_USE_JACK_DEFAULT} CACHE BOOL "Enable JACK")
+set(CARLA_USE_OSC ${CARLA_USE_OSC_DEFAULT} CACHE BOOL "Enable OSC")
 
 #######################################################################################################################
 # required dependencies
