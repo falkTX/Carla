@@ -792,9 +792,10 @@ public:
                 case kEngineEventTypeMidi: {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    const uint8_t* const midiData(midiEvent.size > EngineMidiEvent::kDataSize ? midiEvent.dataExt : midiEvent.data);
+                    if (midiEvent.size > EngineMidiEvent::kDataSize)
+                        continue;
 
-                    uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiData));
+                    uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
 
                     if ((status == MIDI_STATUS_NOTE_OFF || status == MIDI_STATUS_NOTE_ON) && (pData->options & PLUGIN_OPTION_SKIP_SENDING_NOTES))
                         continue;
@@ -808,28 +809,28 @@ public:
                         continue;
 
                     // Fix bad note-off
-                    if (status == MIDI_STATUS_NOTE_ON && midiData[2] == 0)
+                    if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
                         status = MIDI_STATUS_NOTE_OFF;
 
                     // put back channel in data
-                    uint8_t midiData2[midiEvent.size];
+                    uint8_t midiData2[EngineMidiEvent::kDataSize];
                     midiData2[0] = uint8_t(status | (event.channel & MIDI_CHANNEL_BIT));
-                    std::memcpy(midiData2+1, midiData+1, static_cast<std::size_t>(midiEvent.size-1));
+                    std::memcpy(midiData2 + 1, midiEvent.data + 1, static_cast<std::size_t>(midiEvent.size - 1));
 
                     ysfx_midi_event_t yevent;
                     yevent.bus = midiEvent.port;
                     yevent.offset = event.time;
                     yevent.size = midiEvent.size;
-                    yevent.data = midiData;
+                    yevent.data = midiData2;
                     ysfx_send_midi(fEffect, &yevent);
 
                     if (status == MIDI_STATUS_NOTE_ON)
                     {
-                        pData->postponeNoteOnRtEvent(true, event.channel, midiData[1], midiData[2]);
+                        pData->postponeNoteOnRtEvent(true, event.channel, midiEvent.data[1], midiEvent.data[2]);
                     }
                     else if (status == MIDI_STATUS_NOTE_OFF)
                     {
-                        pData->postponeNoteOffRtEvent(true, event.channel, midiData[1]);
+                        pData->postponeNoteOffRtEvent(true, event.channel, midiEvent.data[1]);
                     }
                 } break;
                 } // switch (event.type)
