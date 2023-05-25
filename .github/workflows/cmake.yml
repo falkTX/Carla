@@ -21,9 +21,9 @@ jobs:
         run: |
           brew install cmake fluid-synth liblo libmagic libsndfile pkg-config
       - name: configure
-        run: cmake -S cmake -B cmake
+        run: cmake -S cmake -B build
       - name: build
-        run: make -C cmake -j $(sysctl -n hw.logicalcpu)
+        run: cmake --build build -j $(sysctl -n hw.logicalcpu)
 
   ubuntu-20_04:
     runs-on: ubuntu-20.04
@@ -34,9 +34,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -yqq cmake libfluidsynth-dev liblo-dev libmagic-dev libsndfile1-dev libx11-dev pkg-config
       - name: configure
-        run: cmake -S cmake -B cmake
+        run: cmake -S cmake -B build
       - name: build
-        run: make -C cmake -j $(nproc)
+        run: cmake --build build -j $(nproc)
 
   ubuntu-22_04:
     runs-on: ubuntu-22.04
@@ -47,6 +47,15 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -yqq cmake libfluidsynth-dev liblo-dev libmagic-dev libsndfile1-dev libx11-dev pkg-config
       - name: configure
-        run: cmake -S cmake -B cmake
+        run: cmake -S cmake -B build
       - name: build
-        run: make -C cmake -j $(nproc)
+        run: cmake --build build -j $(nproc)
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: configure
+        run: cmake -S cmake -B build
+      - name: build
+        run: cmake --build build

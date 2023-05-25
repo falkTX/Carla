@@ -124,7 +124,9 @@ function(set_common_target_properties TARGET)
 
   target_compile_options(${TARGET}
     PRIVATE
-      $<$<BOOL:${MSVC}>:/wd4244 /wd4267 /wd4273>
+      $<$<BOOL:${MSVC}>:/wd4244>
+      $<$<BOOL:${MSVC}>:/wd4267>
+      $<$<BOOL:${MSVC}>:/wd4273>
   )
 
   target_link_options(${TARGET}
