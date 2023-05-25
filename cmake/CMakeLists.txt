@@ -46,7 +46,7 @@ endif()
 #######################################################################################################################
 # optional dependencies
 
-find_package(PkgConfig)
+find_package(PkgConfig QUIET)
 
 # homebrew does not support universal binaries, disable external deps if it is in use
 if(APPLE)
@@ -396,6 +396,11 @@ target_include_directories(carla-native-plugins
     ../source/utils
 )
 
+target_link_libraries(carla-native-plugins
+  PRIVATE
+    ${CARLA_PTHREADS}
+)
+
 target_sources(carla-native-plugins
   PRIVATE
     ../source/native-plugins/_all.c
@@ -466,6 +471,7 @@ target_include_directories(carla-sfzero
 target_link_libraries(carla-sfzero
   PRIVATE
     carla-audio-decoder
+    ${CARLA_PTHREADS}
 )
 
 target_sources(carla-sfzero
@@ -632,7 +638,7 @@ add_library(carla::zita-resampler ALIAS carla-zita-resampler)
 
 set_common_target_properties(carla-zita-resampler)
 
-target_compile_definitions(carla-native-plugins
+target_compile_definitions(carla-zita-resampler
   PRIVATE
     $<$<BOOL:${MSVC}>:_USE_MATH_DEFINES>
 )

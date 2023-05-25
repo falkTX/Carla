@@ -25,6 +25,56 @@ jobs:
       - name: build
         run: cmake --build build -j $(sysctl -n hw.logicalcpu)
 
+  mingw32-cross:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up dependencies
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades cmake libc6:i386 libgcc-s1:i386 libstdc++6:i386 binutils-mingw-w64-i686 g++-mingw-w64-i686 mingw-w64 wine-stable:i386
+      - name: configure
+        env:
+          PKG_CONFIG: false
+        run: cmake -S cmake -B build \
+               -DCMAKE_CROSSCOMPILING=ON \
+               -DCMAKE_CROSSCOMPILING_EMULATOR=wine \
+               -DCMAKE_SYSTEM_NAME=Windows \
+               -DCMAKE_SYSTEM_PROCESSOR=i686 \
+               -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
+               -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
+               -DCMAKE_AR=$(which i686-w64-mingw32-ar) \
+               -DCMAKE_RANLIB=$(which i686-w64-mingw32-ranlib)
+      - name: build
+        run: cmake --build build -j $(nproc)
+
+  mingw64-cross:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up dependencies
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades cmake libc6:i386 libgcc-s1:i386 libstdc++6:i386 binutils-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64 wine-stable
+      - name: configure
+        env:
+          PKG_CONFIG: false
+        run: cmake -S cmake -B build \
+               -DCMAKE_CROSSCOMPILING=ON \
+               -DCMAKE_CROSSCOMPILING_EMULATOR=wine \
+               -DCMAKE_SYSTEM_NAME=Windows \
+               -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+               -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+               -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+               -DCMAKE_AR=$(which x86_64-w64-mingw32-ar) \
+               -DCMAKE_RANLIB=$(which x86_64-w64-mingw32-ranlib)
+      - name: build
+        run: cmake --build build -j $(nproc)
+
   ubuntu-20_04:
     runs-on: ubuntu-20.04
     steps:
