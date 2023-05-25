@@ -39,7 +39,7 @@ public:
     {
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
-       #ifdef __GNUC__
+       #ifndef PTW32_DLLPORT
         pthread_mutexattr_setprotocol(&attr, inheritPriority ? PTHREAD_PRIO_INHERIT : PTHREAD_PRIO_NONE);
        #else
         // unsupported?
@@ -215,7 +215,7 @@ public:
 
         pthread_mutexattr_t mattr;
         pthread_mutexattr_init(&mattr);
-       #ifdef __GNUC__
+       #ifndef PTW32_DLLPORT
         pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
        #endif
         pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_NORMAL);

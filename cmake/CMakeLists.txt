@@ -141,6 +141,41 @@ function(set_common_target_properties TARGET)
 endfunction()
 
 #######################################################################################################################
+# setup pthreads for msvc
+
+if(MSVC)
+  include(FetchContent)
+  FetchContent_Declare(pthreads4w
+    GIT_REPOSITORY https://git.code.sf.net/p/pthreads4w/code
+    GIT_TAG f12b445b336ee0117b43fca1d4b9f22c9af82c36
+  )
+  FetchContent_MakeAvailable(pthreads4w)
+
+  add_library(pthreads4w STATIC)
+  add_library(carla::pthreads4w ALIAS pthreads4w)
+
+  target_sources(pthreads4w PRIVATE ${pthreads4w_SOURCE_DIR}/pthread.c)
+  target_compile_definitions(pthreads4w
+    PRIVATE
+      HAVE_CONFIG_H
+      HAVE_STDINT_H=1
+      _POSIX_C_SOURCE=200112L
+    PUBLIC
+      INCLUDE_NP
+      PTW32_DLLPORT
+      __PTW32_STATIC_LIB
+  )
+
+  target_include_directories(pthreads4w
+    PUBLIC
+      ${pthreads4w_SOURCE_DIR}
+  )
+  set(CARLA_PTHREADS carla::pthreads4w)
+else()
+  set(CARLA_PTHREADS ${CMAKE_THREAD_LIBS_INIT})
+endif()
+
+#######################################################################################################################
 # audio_decoder
 
 add_library(carla-audio-decoder STATIC)
@@ -531,7 +566,6 @@ target_compile_options(carla-ysfx
     $<$<BOOL:${MINGW}>:-U_UNICODE>
     $<$<BOOL:${MSVC}>:/wd4018>
     $<$<BOOL:${MSVC}>:/wd4297>
-    $<$<BOOL:${MSVC}>:/wd9025>
     $<$<BOOL:${MSVC}>:/UUNICODE>
     $<$<BOOL:${MSVC}>:/U_UNICODE>
     $<$<C_COMPILER_ID:GNU>:-Wno-extra>
@@ -651,7 +685,7 @@ target_link_libraries(carla-bridge-native
     PkgConfig::LIBLO
     PkgConfig::LIBMAGIC
     PkgConfig::X11
-    ${CMAKE_THREAD_LIBS_INIT}
+    ${CARLA_PTHREADS}
 )
 
 target_sources(carla-bridge-native
@@ -706,7 +740,7 @@ target_link_libraries(carla-discovery-native
     carla-water-files
     carla-ysfx
     PkgConfig::FLUIDSYNTH
-    ${CMAKE_THREAD_LIBS_INIT}
+    ${CARLA_PTHREADS}
 )
 
 target_sources(carla-discovery-native
@@ -765,7 +799,7 @@ target_link_libraries(carla-standalone
     PkgConfig::LIBLO
     PkgConfig::LIBMAGIC
     PkgConfig::X11
-    ${CMAKE_THREAD_LIBS_INIT}
+    ${CARLA_PTHREADS}
 )
 
 target_sources(carla-standalone
@@ -832,7 +866,7 @@ target_link_libraries(carla-utils
     carla-ysfx
     PkgConfig::FLUIDSYNTH
     PkgConfig::X11
-    ${CMAKE_THREAD_LIBS_INIT}
+    ${CARLA_PTHREADS}
 )
 
 target_sources(carla-utils
