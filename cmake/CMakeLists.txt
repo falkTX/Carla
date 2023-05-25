@@ -202,7 +202,7 @@ set_common_target_properties(carla-lilv_sord)
 target_compile_options(carla-lilv_sord
   PRIVATE
     $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
-    $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
+    $<$<CMAKE_C_COMPILER_FRONTEND_VARIANT:GNU>:-Wno-unused-parameter>
     # workaround compiler bug, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109585
     $<$<C_COMPILER_ID:GNU>:-fno-strict-aliasing>
 )
@@ -486,7 +486,8 @@ target_compile_definitions(carla-ysfx
 
 target_compile_options(carla-ysfx
   PRIVATE
-    $<$<C_COMPILER_ID:GNU>:-fsigned-char>
+    $<$<BOOL:${MSVC}>:/wd4297>
+    $<$<CMAKE_C_COMPILER_FRONTEND_VARIANT:GNU>:-fsigned-char>
     $<$<C_COMPILER_ID:GNU>:-Wno-extra>
     $<$<C_COMPILER_ID:GNU>:-Wno-ignored-attributes>
     $<$<C_COMPILER_ID:GNU>:-Wno-sign-compare>
@@ -693,6 +694,7 @@ target_compile_options(carla-standalone
     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
     $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
     $<$<C_COMPILER_ID:GNU>:-Wno-vla>
+    $<$<C_COMPILER_ID:GNU>:-Wno-error=cpp>
 )
 
 target_include_directories(carla-standalone
