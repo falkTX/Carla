@@ -529,7 +529,9 @@ target_compile_options(carla-ysfx
   PRIVATE
     $<$<BOOL:${MINGW}>:-UUNICODE>
     $<$<BOOL:${MINGW}>:-U_UNICODE>
+    $<$<BOOL:${MSVC}>:/wd4018>
     $<$<BOOL:${MSVC}>:/wd4297>
+    $<$<BOOL:${MSVC}>:/wd9025>
     $<$<BOOL:${MSVC}>:/UUNICODE>
     $<$<BOOL:${MSVC}>:/U_UNICODE>
     $<$<C_COMPILER_ID:GNU>:-Wno-extra>
