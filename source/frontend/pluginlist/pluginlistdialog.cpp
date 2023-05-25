@@ -939,10 +939,12 @@ struct PluginListDialog::Self {
         static_cast<PluginListDialog::Self*>(ptr)->discoveryCallback(info, sha1sum);
     }
 
-    bool checkCacheCallback(const char* const filename, const char* const sha1sum)
+    bool checkCacheCallback(const char*, const char* const sha1sum)
     {
         if (sha1sum == nullptr)
             return false;
+
+        // TODO check filename
 
         const QString key = QString("PluginCache/%1").arg(sha1sum);
         const QSafeSettings settings("falkTX", "CarlaDatabase2");
@@ -1085,6 +1087,7 @@ struct PluginListDialog::Self {
             }
             // fall-through
         case PLUGIN_SFZ:
+        default:
             // the end
             reAddPlugins();
             return true;

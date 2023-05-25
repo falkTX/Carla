@@ -36,6 +36,15 @@ endif()
 
 find_package(PkgConfig)
 
+# homebrew does not support universal binaries, disable external deps if it is in use
+if(APPLE)
+  find_program(HOMEBREW brew)
+  if (HOMEBREW)
+    set(PKGCONFIG_FOUND FALSE)
+    mark_as_advanced(PKGCONFIG_FOUND)
+  endif()
+endif()
+
 if(PKGCONFIG_FOUND)
   pkg_check_modules(FLUIDSYNTH IMPORTED_TARGET fluidsynth)
   pkg_check_modules(SNDFILE IMPORTED_TARGET sndfile)
@@ -118,8 +127,9 @@ function(set_common_target_properties TARGET)
       POSITION_INDEPENDENT_CODE ON
   )
 
-  if(APPLE AND NOT $ENV{HOMEBREW_NO_AUTO_UPDATE})
+  if(APPLE)
     set_property(${TARGET} PROPERTY APPEND OSX_ARCHITECTURES arm64)
+    set_property(${TARGET} PROPERTY APPEND OSX_ARCHITECTURES x86_64)
   endif()
 endfunction()
 
@@ -488,6 +498,7 @@ target_compile_definitions(carla-ysfx
     NSEEL_ATOF=ysfx_wdl_atof
     WDL_FFT_REALSIZE=8
     WDL_LINEPARSE_ATOF=ysfx_wdl_atof
+    WDL_WIN32_UTF8_NO_UI_IMPL
     YSFX_API=
     YSFX_NO_GFX
     YSFX_NO_STANDARD_MUTEX
@@ -495,9 +506,16 @@ target_compile_definitions(carla-ysfx
     $<$<NOT:$<BOOL:${MINGW}>>:_FILE_OFFSET_BITS=64>
 )
 
+# NOTE ugly -U /U due to cmake not supporting `target_remove_definitions`
+# see https://gitlab.kitware.com/cmake/cmake/-/issues/19796
+
 target_compile_options(carla-ysfx
   PRIVATE
+    $<$<BOOL:${MINGW}>:-UUNICODE>
+    $<$<BOOL:${MINGW}>:-U_UNICODE>
     $<$<BOOL:${MSVC}>:/wd4297>
+    $<$<BOOL:${MSVC}>:/UUNICODE>
+    $<$<BOOL:${MSVC}>:/U_UNICODE>
     $<$<C_COMPILER_ID:GNU>:-Wno-extra>
     $<$<C_COMPILER_ID:GNU>:-Wno-ignored-attributes>
     $<$<C_COMPILER_ID:GNU>:-Wno-unused-function>
