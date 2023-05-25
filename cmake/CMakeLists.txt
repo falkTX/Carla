@@ -15,6 +15,12 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 #######################################################################################################################
+# build options
+
+set(CARLA_USE_JACK TRUE CACHE BOOL "Enable JACK")
+set(CARLA_USE_OSC TRUE CACHE BOOL "Enable OSC")
+
+#######################################################################################################################
 # required dependencies
 
 find_package(Threads REQUIRED)
@@ -32,12 +38,17 @@ find_package(PkgConfig)
 
 if(PKGCONFIG_FOUND)
   pkg_check_modules(FLUIDSYNTH IMPORTED_TARGET fluidsynth)
-  pkg_check_modules(LIBLO IMPORTED_TARGET liblo)
   pkg_check_modules(SNDFILE IMPORTED_TARGET sndfile)
 else()
   set(FLUIDSYNTH_FOUND FALSE)
   set(LIBLO_FOUND FALSE)
   set(SNDFILE_FOUND FALSE)
+endif()
+
+if(PKGCONFIG_FOUND AND CARLA_USE_OSC)
+  pkg_check_modules(LIBLO IMPORTED_TARGET liblo)
+else()
+  set(LIBLO_FOUND FALSE)
 endif()
 
 if(PKGCONFIG_FOUND AND NOT WIN32)
@@ -81,8 +92,8 @@ function(set_common_target_properties TARGET)
   target_compile_definitions(${TARGET}
     PRIVATE
       BUILDING_CARLA
-      HAVE_JACK
       HAVE_YSFX
+      $<$<BOOL:${CARLA_USE_JACK}>:HAVE_JACK>
       $<$<BOOL:${FLUIDSYNTH_FOUND}>:HAVE_FLUIDSYNTH>
       $<$<BOOL:${LIBLO_FOUND}>:HAVE_LIBLO>
       $<$<BOOL:${LIBMAGIC_FOUND}>:HAVE_LIBMAGIC>
@@ -202,7 +213,7 @@ set_common_target_properties(carla-lilv_sord)
 target_compile_options(carla-lilv_sord
   PRIVATE
     $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
-    $<$<CMAKE_C_COMPILER_FRONTEND_VARIANT:GNU>:-Wno-unused-parameter>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
     # workaround compiler bug, see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109585
     $<$<C_COMPILER_ID:GNU>:-fno-strict-aliasing>
 )
@@ -260,11 +271,11 @@ set_common_target_properties(carla-lilv_lilv)
 target_compile_options(carla-lilv_lilv
   PRIVATE
     $<$<BOOL:${MSVC}>:/wd4005 /wd4090 /wd4133>
+    $<$<C_COMPILER_ID:AppleClang>:-Wno-incompatible-pointer-types-discards-qualifiers>
     $<$<C_COMPILER_ID:GNU>:-Wno-deprecated-declarations>
     $<$<C_COMPILER_ID:GNU>:-Wno-discarded-qualifiers>
     $<$<C_COMPILER_ID:GNU>:-Wno-format-overflow>
-    $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
-    $<$<C_COMPILER_ID:AppleClang>:-Wno-incompatible-pointer-types-discards-qualifiers>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
 )
 
 target_include_directories(carla-lilv_lilv
@@ -403,7 +414,7 @@ set_common_target_properties(carla-water)
 
 target_compile_options(carla-water
   PRIVATE
-    $<$<C_COMPILER_ID:GNU>:-Wno-deprecated-copy>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-deprecated-copy>
 )
 
 target_include_directories(carla-water
@@ -437,7 +448,7 @@ set_common_target_properties(carla-water-files)
 
 target_compile_options(carla-water-files
   PRIVATE
-    $<$<C_COMPILER_ID:GNU>:-Wno-deprecated-copy>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-deprecated-copy>
 )
 
 target_include_directories(carla-water-files
@@ -487,13 +498,14 @@ target_compile_definitions(carla-ysfx
 target_compile_options(carla-ysfx
   PRIVATE
     $<$<BOOL:${MSVC}>:/wd4297>
-    $<$<CMAKE_C_COMPILER_FRONTEND_VARIANT:GNU>:-fsigned-char>
     $<$<C_COMPILER_ID:GNU>:-Wno-extra>
     $<$<C_COMPILER_ID:GNU>:-Wno-ignored-attributes>
-    $<$<C_COMPILER_ID:GNU>:-Wno-sign-compare>
     $<$<C_COMPILER_ID:GNU>:-Wno-unused-function>
-    $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
-    $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated-copy>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-fsigned-char>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-sign-compare>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
+    $<$<AND:$<COMPILE_LANGUAGE:C>,$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>>:-Wno-missing-field-initializers>
+    $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-Wno-deprecated-copy>
 )
 
 target_include_directories(carla-ysfx
@@ -574,10 +586,11 @@ target_compile_definitions(carla-bridge-native
 # FIXME
 target_compile_options(carla-bridge-native
   PRIVATE
+    $<$<C_COMPILER_ID:AppleClang>:-Wno-unused-but-set-variable>
     $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
     $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
-    $<$<C_COMPILER_ID:GNU>:-Wno-vla>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
 )
 
 target_include_directories(carla-bridge-native
@@ -620,7 +633,6 @@ target_sources(carla-bridge-native
     ../source/backend/engine/CarlaEngineData.cpp
     ../source/backend/engine/CarlaEngineGraph.cpp
     ../source/backend/engine/CarlaEngineInternal.cpp
-    ../source/backend/engine/CarlaEngineJack.cpp
     ../source/backend/engine/CarlaEnginePorts.cpp
     ../source/backend/engine/CarlaEngineRunner.cpp
     ../source/backend/plugin/CarlaPlugin.cpp
@@ -629,7 +641,6 @@ target_sources(carla-bridge-native
     ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginFluidSynth.cpp
-    ../source/backend/plugin/CarlaPluginJack.cpp
     ../source/backend/plugin/CarlaPluginJuce.cpp
     ../source/backend/plugin/CarlaPluginJSFX.cpp
     ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
@@ -638,6 +649,8 @@ target_sources(carla-bridge-native
     ../source/backend/plugin/CarlaPluginSFZero.cpp
     ../source/backend/plugin/CarlaPluginVST2.cpp
     ../source/backend/plugin/CarlaPluginVST3.cpp
+    $<$<BOOL:${CARLA_USE_JACK}>:../source/backend/engine/CarlaEngineJack.cpp>
+    $<$<BOOL:${CARLA_USE_JACK}>:../source/backend/plugin/CarlaPluginJack.cpp>
 )
 
 #######################################################################################################################
@@ -690,11 +703,11 @@ target_compile_definitions(carla-standalone
 # FIXME
 target_compile_options(carla-standalone
   PRIVATE
+    $<$<C_COMPILER_ID:AppleClang>:-Wno-unused-but-set-variable>
     $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
-    $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
-    $<$<C_COMPILER_ID:GNU>:-Wno-vla>
     $<$<C_COMPILER_ID:GNU>:-Wno-error=cpp>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
 )
 
 target_include_directories(carla-standalone
@@ -731,7 +744,6 @@ target_sources(carla-standalone
     ../source/backend/engine/CarlaEngineClient.cpp
     ../source/backend/engine/CarlaEngineDummy.cpp
     ../source/backend/engine/CarlaEngineData.cpp
-    ../source/backend/engine/CarlaEngineJack.cpp
     ../source/backend/engine/CarlaEngineGraph.cpp
     ../source/backend/engine/CarlaEngineInternal.cpp
     ../source/backend/engine/CarlaEngineNative.cpp
@@ -746,7 +758,6 @@ target_sources(carla-standalone
     ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginFluidSynth.cpp
-    ../source/backend/plugin/CarlaPluginJack.cpp
     ../source/backend/plugin/CarlaPluginJuce.cpp
     ../source/backend/plugin/CarlaPluginJSFX.cpp
     ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
@@ -755,6 +766,8 @@ target_sources(carla-standalone
     ../source/backend/plugin/CarlaPluginSFZero.cpp
     ../source/backend/plugin/CarlaPluginVST2.cpp
     ../source/backend/plugin/CarlaPluginVST3.cpp
+    $<$<BOOL:${CARLA_USE_JACK}>:../source/backend/engine/CarlaEngineJack.cpp>
+    $<$<BOOL:${CARLA_USE_JACK}>:../source/backend/plugin/CarlaPluginJack.cpp>
 )
 
 #######################################################################################################################
