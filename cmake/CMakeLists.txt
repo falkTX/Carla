@@ -881,6 +881,8 @@ target_link_libraries(carla-utils
     PkgConfig::FLUIDSYNTH
     PkgConfig::X11
     ${CARLA_PTHREADS}
+  PUBLIC
+    $<$<BOOL:${WIN32}>:winmm>
 )
 
 target_sources(carla-utils

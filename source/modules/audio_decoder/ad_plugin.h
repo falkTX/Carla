@@ -16,9 +16,10 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
+
 #ifndef __AD_PLUGIN_H__
 #define __AD_PLUGIN_H__
-#include <stdint.h>
+
 #include "ad.h"
 
 #define dbg(A, B, ...) ad_debug_printf(__func__, A, B, ##__VA_ARGS__)
