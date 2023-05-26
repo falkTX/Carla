@@ -20,18 +20,11 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-ifeq ($(MACOS),true)
-OBJS         = $(OBJDIR)/$(MODULENAME).mm.o
-OBJS_files   = $(OBJDIR)/$(MODULENAME).mm.files.o
-OBJS_posix32 = $(OBJDIR)/$(MODULENAME).mm.posix32.o
-OBJS_posix64 = $(OBJDIR)/$(MODULENAME).mm.posix64.o
-else
 OBJS         = $(OBJDIR)/$(MODULENAME).cpp.o
 OBJS_files   = $(OBJDIR)/$(MODULENAME).cpp.files.o
 OBJS_arm32   = $(OBJDIR)/$(MODULENAME).cpp.arm32.o
 OBJS_posix32 = $(OBJDIR)/$(MODULENAME).cpp.posix32.o
 OBJS_posix64 = $(OBJDIR)/$(MODULENAME).cpp.posix64.o
-endif
 OBJS_win32   = $(OBJDIR)/$(MODULENAME).cpp.win32.o
 OBJS_win64   = $(OBJDIR)/$(MODULENAME).cpp.win64.o
 
@@ -124,27 +117,12 @@ $(OBJDIR)/$(MODULENAME).cpp.arm32.o: $(MODULENAME).cpp
 	@echo "Compiling $< (ARM32)"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -c -o $@
 
-# ---------------------------------------------------------------------------------------------------------------------
-
-$(OBJDIR)/$(MODULENAME).mm.o: $(MODULENAME).mm $(MODULENAME).cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
-
-$(OBJDIR)/$(MODULENAME).mm.files.o: $(MODULENAME).files.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
-
-$(OBJDIR)/$(MODULENAME).mm.%32.o: $(MODULENAME).cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (32bit)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
-
-$(OBJDIR)/$(MODULENAME).mm.%64.o: $(MODULENAME).cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (64bit)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
+ifeq ($(MACOS),true)
+$(OBJDIR)/$(MODULENAME).cpp.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/$(MODULENAME).cpp.files.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/$(MODULENAME).cpp.%32.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/$(MODULENAME).cpp.%64.o: BUILD_CXX_FLAGS += -ObjC++
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
