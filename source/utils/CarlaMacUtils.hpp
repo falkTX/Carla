@@ -27,28 +27,26 @@
 // don't include Foundation.h here
 typedef struct __CFBundle* CFBundleRef;
 
-// --------------------------------------------------------------------------------------------------------------------
-// a few public functions
-
-/*
- * ...
- */
-CARLA_PLUGIN_EXPORT void initStandaloneApplication();
-
-/*
- * ...
- */
-CARLA_PLUGIN_EXPORT const char* findBinaryInBundle(const char* const bundleDir);
-
-/*
- * ...
- */
-CARLA_PLUGIN_EXPORT bool removeFileFromQuarantine(const char* const filename);
-
-// --------------------------------------------------------------------------------------------------------------------
-// and now then private stuff
-
 CARLA_BACKEND_START_NAMESPACE
+
+// --------------------------------------------------------------------------------------------------------------------
+
+/*
+ * ...
+ */
+CARLA_API void initStandaloneApplication();
+
+/*
+ * ...
+ */
+CARLA_API const char* findBinaryInBundle(const char* const bundleDir);
+
+/*
+ * ...
+ */
+CARLA_API bool removeFileFromQuarantine(const char* const filename);
+
+// --------------------------------------------------------------------------------------------------------------------
 
 /*
  * ...

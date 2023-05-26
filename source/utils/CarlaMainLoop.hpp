@@ -40,7 +40,11 @@ bool runMainLoopOnce()
     for (;;)
     {
         event = [NSApp
+                #ifdef __MAC_10_12
+                 nextEventMatchingMask:NSEventMaskAny
+                #else
                  nextEventMatchingMask:NSAnyEventMask
+                #endif
                              untilDate:date
                                 inMode:NSDefaultRunLoopMode
                                dequeue:YES];
