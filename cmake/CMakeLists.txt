@@ -591,6 +591,7 @@ target_compile_options(carla-ysfx
     $<$<BOOL:${MSVC}>:/wd4297>
     $<$<BOOL:${MSVC}>:/UUNICODE>
     $<$<BOOL:${MSVC}>:/U_UNICODE>
+    $<$<C_COMPILER_ID:AppleClang>:-Wno-newline-eof>
     $<$<C_COMPILER_ID:GNU>:-Wno-extra>
     $<$<C_COMPILER_ID:GNU>:-Wno-ignored-attributes>
     $<$<C_COMPILER_ID:GNU>:-Wno-unused-function>
