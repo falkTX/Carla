@@ -811,8 +811,8 @@ install(TARGETS carla-standalone
 set_target_properties(carla-standalone
   PROPERTIES
     OUTPUT_NAME carla_standalone2
+    IMPORT_PREFIX lib
     PREFIX lib
-    SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
 target_compile_definitions(carla-standalone
@@ -907,8 +907,8 @@ install(TARGETS carla-utils
 set_target_properties(carla-utils
   PROPERTIES
     OUTPUT_NAME carla_utils
+    IMPORT_PREFIX lib
     PREFIX lib
-    SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
 target_include_directories(carla-utils

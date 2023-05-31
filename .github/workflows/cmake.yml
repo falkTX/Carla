@@ -42,7 +42,6 @@ jobs:
         run: cmake -S cmake -B build \
                -DCMAKE_CROSSCOMPILING=ON \
                -DCMAKE_CROSSCOMPILING_EMULATOR=wine \
-               -DCMAKE_SHARED_LIBRARY_SUFFIX=".dll" \
                -DCMAKE_SYSTEM_NAME=Windows \
                -DCMAKE_SYSTEM_PROCESSOR=i686 \
                -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
@@ -70,7 +69,6 @@ jobs:
         run: cmake -S cmake -B build \
                -DCMAKE_CROSSCOMPILING=ON \
                -DCMAKE_CROSSCOMPILING_EMULATOR=wine \
-               -DCMAKE_SHARED_LIBRARY_SUFFIX=".dll" \
                -DCMAKE_SYSTEM_NAME=Windows \
                -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
                -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
