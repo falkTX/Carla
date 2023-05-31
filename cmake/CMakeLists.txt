@@ -953,10 +953,6 @@ add_library(carla-headers-backend INTERFACE)
 add_library(carla-headers-includes INTERFACE)
 add_library(carla-headers-utils INTERFACE)
 
-install(TARGETS carla-headers-backend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/carla)
-install(TARGETS carla-headers-includes PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/carla/includes)
-install(TARGETS carla-headers-utils PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/carla/utils)
-
 set_property(TARGET carla-headers-backend
   PROPERTY PUBLIC_HEADER
     ../source/backend/CarlaBackend.h
@@ -997,6 +993,10 @@ set_property(TARGET carla-headers-utils
     ../source/utils/CarlaTimeUtils.hpp
     ../source/utils/CarlaUtils.hpp
 )
+
+install(TARGETS carla-headers-backend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/carla)
+install(TARGETS carla-headers-includes PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/carla/includes)
+install(TARGETS carla-headers-utils PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/carla/utils)
 
 #######################################################################################################################
 # pkg-config stuff
