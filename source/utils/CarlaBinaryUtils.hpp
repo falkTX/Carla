@@ -1,6 +1,6 @@
 /*
  * Carla binary utils
- * Copyright (C) 2014-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,7 +21,12 @@
 #include "CarlaBackend.h"
 #include "CarlaScopeUtils.hpp"
 
-#include "water/files/FileInputStream.h"
+#if defined(BUILDING_CARLA)
+# include "water/files/FileInputStream.h"
+#elif defined(CARLA_UTILS_USE_QT)
+# include <QtCore/QFile>
+# include <QtCore/QString>
+#endif
 
 #if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
 # include <magic.h>
@@ -80,7 +85,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     if (filename == nullptr || filename[0] == '\0')
         return BINARY_NATIVE;
 
-#if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
+   #if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     static const CarlaMagic magic;
 
     const char* const output(magic.getFileDescription(filename));
@@ -101,7 +106,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
                    ? BINARY_POSIX64
                    : BINARY_POSIX32;
 
-# ifdef CARLA_OS_MAC
+       #ifdef CARLA_OS_MAC
         if (std::strcmp(output, "directory") == 0)
             if (const char* const binary = findBinaryInBundle(filename))
                 return getBinaryTypeFromFile(binary);
@@ -121,26 +126,36 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
         }
 
         carla_debug("getBinaryTypeFromFile(\"%s\") - have output:\n%s", filename, output);
-# endif
+       #endif
 
         return BINARY_NATIVE;
     }
-#endif
+   #endif
 
+  #if defined(BUILDING_CARLA) || defined(CARLA_UTILS_USE_QT)
+   #if defined(CARLA_UTILS_USE_QT)
+    QFile file(QString::fromUtf8(filename));
+    CARLA_SAFE_ASSERT_RETURN(file.open(QIODevice::ReadOnly), BINARY_NATIVE);
+   #else
     using water::File;
     using water::FileInputStream;
 
     CarlaScopedPointer<FileInputStream> stream(File(filename).createInputStream());
     CARLA_SAFE_ASSERT_RETURN(stream != nullptr && ! stream->failedToOpen(), BINARY_NATIVE);
+   #endif
 
     // ----------------------------------------------------------------------------------------------------------------
     // binary type code based on Ardour's dll_info function
     // See https://github.com/Ardour/ardour/blob/master/libs/ardour/plugin_manager.cc#L867,L925
     // Copyright (C) 2000-2006 Paul Davis
 
+   #if defined(CARLA_UTILS_USE_QT)
+    char buf[68];
+    if (file.read(buf, 68) != 68)
+   #else
     uint8_t buf[68];
-
     if (stream->read(buf, 68) != 68)
+   #endif
         return BINARY_NATIVE;
 
     if (buf[0] != 'M' && buf[1] != 'Z')
@@ -149,10 +164,18 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     const int32_t* const pe_hdr_off_ptr = (int32_t*)&buf[60];
     const int32_t pe_hdr_off = *pe_hdr_off_ptr;
 
+   #if defined(CARLA_UTILS_USE_QT)
+    if (! file.seek(pe_hdr_off))
+   #else
     if (! stream->setPosition(pe_hdr_off))
+   #endif
         return BINARY_NATIVE;
 
+   #if defined(CARLA_UTILS_USE_QT)
+    if (file.read(buf, 6) != 6)
+   #else
     if (stream->read(buf, 6) != 6)
+   #endif
         return BINARY_NATIVE;
 
     if (buf[0] != 'P' && buf[1] != 'E')
@@ -170,6 +193,9 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     default:
         return BINARY_NATIVE;
     }
+  #else
+    return BINARY_NATIVE;
+  #endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------
