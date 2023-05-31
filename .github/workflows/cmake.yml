@@ -8,10 +8,6 @@ on:
     branches:
       - '*'
 
-env:
-  DEBIAN_FRONTEND: noninteractive
-  HOMEBREW_NO_AUTO_UPDATE: 1
-
 jobs:
   macos-11:
     runs-on: macos-11
@@ -24,6 +20,10 @@ jobs:
         run: cmake -S cmake -B build
       - name: build
         run: cmake --build build -j $(sysctl -n hw.logicalcpu)
+      - name: install
+        env:
+          DESTDIR: ${{ env.GITHUB_WORKSPACE }}/build/tmp
+        run: cmake --install build --verbose
 
   mingw32-cross:
     runs-on: ubuntu-22.04
@@ -49,6 +49,10 @@ jobs:
                -DCMAKE_RANLIB=$(which i686-w64-mingw32-ranlib)
       - name: build
         run: cmake --build build -j $(nproc)
+      - name: install
+        env:
+          DESTDIR: ${{ env.GITHUB_WORKSPACE }}/build/tmp
+        run: cmake --install build --verbose
 
   mingw64-cross:
     runs-on: ubuntu-22.04
@@ -74,6 +78,10 @@ jobs:
                -DCMAKE_RANLIB=$(which x86_64-w64-mingw32-ranlib)
       - name: build
         run: cmake --build build -j $(nproc)
+      - name: install
+        env:
+          DESTDIR: ${{ env.GITHUB_WORKSPACE }}/build/tmp
+        run: cmake --install build --verbose
 
   ubuntu-20_04:
     runs-on: ubuntu-20.04
@@ -87,6 +95,10 @@ jobs:
         run: cmake -S cmake -B build
       - name: build
         run: cmake --build build -j $(nproc)
+      - name: install
+        env:
+          DESTDIR: ${{ env.GITHUB_WORKSPACE }}/build/tmp
+        run: cmake --install build --verbose
 
   ubuntu-22_04:
     runs-on: ubuntu-22.04
@@ -100,6 +112,10 @@ jobs:
         run: cmake -S cmake -B build
       - name: build
         run: cmake --build build -j $(nproc)
+      - name: install
+        env:
+          DESTDIR: ${{ env.GITHUB_WORKSPACE }}/build/tmp
+        run: cmake --install build --verbose
 
   windows:
     runs-on: windows-latest
@@ -109,3 +125,7 @@ jobs:
         run: cmake -S cmake -B build
       - name: build
         run: cmake --build build
+      - name: install
+        env:
+          DESTDIR: ${{ env.GITHUB_WORKSPACE }}/build/tmp
+        run: cmake --install build --verbose
