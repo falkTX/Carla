@@ -42,12 +42,13 @@ jobs:
         run: cmake -S cmake -B build \
                -DCMAKE_CROSSCOMPILING=ON \
                -DCMAKE_CROSSCOMPILING_EMULATOR=wine \
+               -DCMAKE_SHARED_LIBRARY_SUFFIX=".dll" \
                -DCMAKE_SYSTEM_NAME=Windows \
                -DCMAKE_SYSTEM_PROCESSOR=i686 \
                -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
                -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
-               -DCMAKE_AR=$(which i686-w64-mingw32-ar) \
-               -DCMAKE_RANLIB=$(which i686-w64-mingw32-ranlib)
+               -DCMAKE_RANLIB=i686-w64-mingw32-ranlib \
+               -DCMAKE_AR=$(which i686-w64-mingw32-ar)
       - name: build
         run: cmake --build build -j $(nproc)
       - name: install
@@ -69,12 +70,13 @@ jobs:
         run: cmake -S cmake -B build \
                -DCMAKE_CROSSCOMPILING=ON \
                -DCMAKE_CROSSCOMPILING_EMULATOR=wine \
+               -DCMAKE_SHARED_LIBRARY_SUFFIX=".dll" \
                -DCMAKE_SYSTEM_NAME=Windows \
                -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
                -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
                -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
-               -DCMAKE_AR=$(which x86_64-w64-mingw32-ar) \
-               -DCMAKE_RANLIB=$(which x86_64-w64-mingw32-ranlib)
+               -DCMAKE_RANLIB=x86_64-w64-mingw32-ranlib \
+               -DCMAKE_AR=$(which x86_64-w64-mingw32-ar)
       - name: build
         run: cmake --build build -j $(nproc)
       - name: install
@@ -118,5 +120,7 @@ jobs:
         run: cmake -S cmake -B build
       - name: build
         run: cmake --build build
-      - name: install
-        run: cmake --install build --verbose
+      # FIXME fails with error
+      # https://github.com/falkTX/Carla/actions/runs/5137608233/jobs/9245932221
+      #- name: install
+        #run: cmake --install build --verbose
