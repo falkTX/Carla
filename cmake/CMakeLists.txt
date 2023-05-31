@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(carla)
 
+set(PROJECT_VERSION 2.6.0-alpha1)
+
 set(CMAKE_POLICY_DEFAULT_CMP0025 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0063 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
@@ -42,6 +44,8 @@ set(CARLA_USE_OSC ${CARLA_USE_OSC_DEFAULT} CACHE BOOL "Enable OSC")
 
 #######################################################################################################################
 # required dependencies
+
+include(GNUInstallDirs)
 
 find_package(Threads REQUIRED)
 
@@ -677,6 +681,8 @@ add_executable(carla-bridge-native)
 
 set_common_target_properties(carla-bridge-native)
 
+install(TARGETS carla-bridge-native RUNTIME)
+
 target_compile_definitions(carla-bridge-native
   PRIVATE
     BUILD_BRIDGE
@@ -760,6 +766,8 @@ add_executable(carla-discovery-native)
 
 set_common_target_properties(carla-discovery-native)
 
+install(TARGETS carla-discovery-native RUNTIME)
+
 target_include_directories(carla-discovery-native
   PRIVATE
     ../source/backend
@@ -789,6 +797,8 @@ add_library(carla-standalone SHARED)
 add_library(carla::standalone ALIAS carla-standalone)
 
 set_common_target_properties(carla-standalone)
+
+install(TARGETS carla-standalone LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla)
 
 set_target_properties(carla-standalone
   PROPERTIES
@@ -878,7 +888,9 @@ add_library(carla::utils ALIAS carla-utils)
 
 set_common_target_properties(carla-utils)
 
-set_target_properties(carla-standalone
+install(TARGETS carla-utils LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla)
+
+set_target_properties(carla-utils
   PROPERTIES
     OUTPUT_NAME carla_utils
 )
@@ -933,5 +945,68 @@ if(APPLE)
     ../source/modules/water/water.files.cpp
     PROPERTIES COMPILE_FLAGS -ObjC++)
 endif()
+
+#######################################################################################################################
+# install code headers
+
+add_library(carla-headers-backend INTERFACE)
+add_library(carla-headers-includes INTERFACE)
+add_library(carla-headers-utils INTERFACE)
+
+install(TARGETS carla-headers-backend PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/carla)
+install(TARGETS carla-headers-includes PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/carla/includes)
+install(TARGETS carla-headers-utils PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/carla/utils)
+
+set_property(TARGET carla-headers-backend
+  PROPERTY PUBLIC_HEADER
+    ../source/backend/CarlaBackend.h
+    ../source/backend/CarlaHost.h
+    ../source/backend/CarlaUtils.h
+    ../source/backend/CarlaEngine.hpp
+    ../source/backend/CarlaPlugin.hpp
+    ../source/backend/CarlaPluginPtr.hpp
+)
+
+set_property(TARGET carla-headers-includes
+  PROPERTY PUBLIC_HEADER
+    ../source/includes/CarlaDefines.h
+    ../source/includes/CarlaMIDI.h
+    ../source/includes/CarlaNative.h
+    ../source/includes/CarlaNativePlugin.h
+)
+
+set_property(TARGET carla-headers-utils
+  PROPERTY PUBLIC_HEADER
+    ../source/utils/CarlaBackendUtils.hpp
+    ../source/utils/CarlaBase64Utils.hpp
+    ../source/utils/CarlaBinaryUtils.hpp
+    ../source/utils/CarlaBridgeDefines.hpp
+    ../source/utils/CarlaBridgeUtils.hpp
+    ../source/utils/CarlaMacUtils.hpp
+    ../source/utils/CarlaMathUtils.hpp
+    ../source/utils/CarlaMutex.hpp
+    ../source/utils/CarlaRingBuffer.hpp
+    ../source/utils/CarlaProcessUtils.hpp
+    ../source/utils/CarlaRunner.hpp
+    ../source/utils/CarlaScopeUtils.hpp
+    ../source/utils/CarlaSemUtils.hpp
+    ../source/utils/CarlaSha1Utils.hpp
+    ../source/utils/CarlaShmUtils.hpp
+    ../source/utils/CarlaString.hpp
+    ../source/utils/CarlaThread.hpp
+    ../source/utils/CarlaTimeUtils.hpp
+    ../source/utils/CarlaUtils.hpp
+)
+
+#######################################################################################################################
+# pkg-config stuff
+
+configure_file(carla-utils.pc.in carla-utils.pc @ONLY)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/carla-utils.pc
+  DESTINATION
+    ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
 
 #######################################################################################################################

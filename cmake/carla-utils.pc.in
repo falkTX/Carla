@@ -1,0 +1,9 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_LIBDIR@
+includedir=@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: carla-utils
+Version: @PROJECT_VERSION@
+Description: Carla Host Utilities
+Libs: -L${libdir}/carla -lcarla_utils
+Cflags: -I${includedir}/carla -I${includedir}/carla/includes -I${includedir}/carla/utils
