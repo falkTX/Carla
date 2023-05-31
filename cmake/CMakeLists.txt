@@ -681,7 +681,9 @@ add_executable(carla-bridge-native)
 
 set_common_target_properties(carla-bridge-native)
 
-install(TARGETS carla-bridge-native RUNTIME)
+install(TARGETS carla-bridge-native
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 target_compile_definitions(carla-bridge-native
   PRIVATE
@@ -766,7 +768,9 @@ add_executable(carla-discovery-native)
 
 set_common_target_properties(carla-discovery-native)
 
-install(TARGETS carla-discovery-native RUNTIME)
+install(TARGETS carla-discovery-native
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 target_include_directories(carla-discovery-native
   PRIVATE
@@ -798,7 +802,11 @@ add_library(carla::standalone ALIAS carla-standalone)
 
 set_common_target_properties(carla-standalone)
 
-install(TARGETS carla-standalone LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla)
+install(TARGETS carla-standalone
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 set_target_properties(carla-standalone
   PROPERTIES
@@ -888,7 +896,11 @@ add_library(carla::utils ALIAS carla-utils)
 
 set_common_target_properties(carla-utils)
 
-install(TARGETS carla-utils LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla)
+install(TARGETS carla-utils
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 set_target_properties(carla-utils
   PROPERTIES
