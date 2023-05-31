@@ -812,6 +812,7 @@ set_target_properties(carla-standalone
   PROPERTIES
     OUTPUT_NAME carla_standalone2
     PREFIX lib
+    SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
 target_compile_definitions(carla-standalone
@@ -907,6 +908,7 @@ set_target_properties(carla-utils
   PROPERTIES
     OUTPUT_NAME carla_utils
     PREFIX lib
+    SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
 target_include_directories(carla-utils
