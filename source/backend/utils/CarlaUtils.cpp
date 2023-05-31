@@ -17,6 +17,8 @@
 
 #include "CarlaUtils.hpp"
 
+#include "CarlaProcessUtils.cpp"
+
 #ifndef CARLA_OS_WASM
 # include "CarlaBridgeUtils.cpp"
 #endif

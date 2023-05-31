@@ -21,11 +21,11 @@
 #include "CarlaBackend.h"
 #include "CarlaScopeUtils.hpp"
 
-#if defined(CARLA_UTILS_USE_QT)
+#if defined(BUILDING_CARLA)
+# include "water/files/FileInputStream.h"
+#elif defined(CARLA_UTILS_USE_QT)
 # include <QtCore/QFile>
 # include <QtCore/QString>
-#else
-# include "water/files/FileInputStream.h"
 #endif
 
 #if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
@@ -132,6 +132,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     }
    #endif
 
+  #if defined(BUILDING_CARLA) || defined(CARLA_UTILS_USE_QT)
    #if defined(CARLA_UTILS_USE_QT)
     QFile file(QString::fromUtf8(filename));
     CARLA_SAFE_ASSERT_RETURN(file.open(QIODevice::ReadOnly), BINARY_NATIVE);
@@ -192,6 +193,9 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     default:
         return BINARY_NATIVE;
     }
+  #else
+    return BINARY_NATIVE;
+  #endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------
