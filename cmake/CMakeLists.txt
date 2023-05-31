@@ -811,6 +811,7 @@ install(TARGETS carla-standalone
 set_target_properties(carla-standalone
   PROPERTIES
     OUTPUT_NAME carla_standalone2
+    PREFIX lib
 )
 
 target_compile_definitions(carla-standalone
@@ -905,6 +906,7 @@ install(TARGETS carla-utils
 set_target_properties(carla-utils
   PROPERTIES
     OUTPUT_NAME carla_utils
+    PREFIX lib
 )
 
 target_include_directories(carla-utils
