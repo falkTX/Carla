@@ -446,6 +446,7 @@ else
 endif
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
+	install -d $(DESTDIR)$(INCLUDEDIR)/carla/utils
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_JACK),true)
 ifeq ($(JACKBRIDGE_DIRECT),true)
@@ -550,8 +551,6 @@ endif
 		source/backend/CarlaEngine.hpp \
 		source/backend/CarlaPlugin.hpp \
 		source/backend/CarlaPluginPtr.hpp \
-		source/includes/CarlaNative.h \
-		source/includes/CarlaNativePlugin.h \
 		$(DESTDIR)$(INCLUDEDIR)/carla
 
 	install -m 644 \
@@ -560,6 +559,26 @@ endif
 		source/includes/CarlaNative.h \
 		source/includes/CarlaNativePlugin.h \
 		$(DESTDIR)$(INCLUDEDIR)/carla/includes
+
+	install -m 644 \
+		source/utils/CarlaBackendUtils.hpp \
+		source/utils/CarlaBase64Utils.hpp \
+		source/utils/CarlaBinaryUtils.hpp \
+		source/utils/CarlaBridgeDefines.hpp \
+		source/utils/CarlaBridgeUtils.hpp \
+		source/utils/CarlaMacUtils.hpp \
+		source/utils/CarlaMathUtils.hpp \
+		source/utils/CarlaMutex.hpp \
+		source/utils/CarlaRingBuffer.hpp \
+		source/utils/CarlaProcessUtils.hpp \
+		source/utils/CarlaRunner.hpp \
+		source/utils/CarlaScopeUtils.hpp \
+		source/utils/CarlaSemUtils.hpp \
+		source/utils/CarlaShmUtils.hpp \
+		source/utils/CarlaString.hpp \
+		source/utils/CarlaThread.hpp \
+		source/utils/CarlaUtils.hpp \
+		$(DESTDIR)$(INCLUDEDIR)/carla/utils
 
 	# -------------------------------------------------------------------------------------------------------------
 
