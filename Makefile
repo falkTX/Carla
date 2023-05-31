@@ -456,6 +456,7 @@ else
 endif
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
+	install -d $(DESTDIR)$(INCLUDEDIR)/carla/utils
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_JACK),true)
 ifeq ($(JACKBRIDGE_DIRECT),true)
