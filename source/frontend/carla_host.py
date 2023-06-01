@@ -165,6 +165,7 @@ class HostWindow(QMainWindow):
         self.fPluginDatabaseDialog = None
         self.fFavoritePlugins = []
 
+        self.fLADISH           = False
         self.fProjectFilename  = ""
         self.fIsProjectLoading = False
         self.fCurrentlyRemovingAllPlugins = False
@@ -205,6 +206,7 @@ class HostWindow(QMainWindow):
         elif LADISH_APP_NAME:
             self.fClientName         = LADISH_APP_NAME
             self.fSessionManagerName = "LADISH"
+            self.fLADISH             = True
         elif NSM_URL and host.nsmOK:
             self.fClientName         = "Carla.tmp"
             self.fSessionManagerName = "Non Session Manager TMP"
@@ -272,7 +274,7 @@ class HostWindow(QMainWindow):
             self.ui.act_file_refresh.setEnabled(False)
             self.ui.act_file_refresh.setVisible(False)
 
-        if self.fSessionManagerName and not self.host.isPlugin:
+        if self.fSessionManagerName and not self.fLADISH and not self.host.isPlugin:
             self.ui.act_file_new.setEnabled(False)
 
         self.ui.act_file_open.setEnabled(False)
@@ -1092,7 +1094,7 @@ class HostWindow(QMainWindow):
         if not self.host.isPlugin:
             self.enableTransport(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
 
-        if self.host.isPlugin or not self.fSessionManagerName:
+        if self.host.isPlugin or not self.fSessionManagerName or self.fLADISH:
             self.ui.act_file_open.setEnabled(True)
             self.ui.act_file_save_as.setEnabled(True)
 
@@ -1135,7 +1137,7 @@ class HostWindow(QMainWindow):
             self.ui.act_engine_start.setEnabled(True)
             self.ui.act_engine_stop.setEnabled(False)
 
-        if self.host.isPlugin or not self.fSessionManagerName:
+        if self.host.isPlugin or not self.fSessionManagerName or self.fLADISH:
             self.ui.act_file_open.setEnabled(False)
             self.ui.act_file_save_as.setEnabled(False)
 
