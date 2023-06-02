@@ -784,6 +784,10 @@ endif
 	$(foreach l,$(I18N_LANGUAGES),install -m 644 \
 		source/frontend/translations/carla_$(l).qm \
 		$(DESTDIR)$(DATADIR)/carla/resources/translations/;)
+
+	# Link resources for internal plugin
+	rm -rf $(DESTDIR)$(LIBDIR)/carla/resources
+	$(LINK) ../../share/carla/resources $(DESTDIR)$(LIBDIR)/carla/resources
 endif # HAVE_FRONTEND
 
 	# -------------------------------------------------------------------------------------------------------------
