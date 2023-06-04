@@ -50,7 +50,7 @@ public:
         : QString(fromUtf8(str)) {}
 
 #if QT_VERSION < 0x60000
-    explicit inline QCarlaString(const QChar* const str, const qsizetype size)
+    explicit inline QCarlaString(const QChar* const str, const size_t size)
         : QString(str, size) {}
 #endif
 
@@ -73,7 +73,7 @@ public:
     }
 
 #if QT_VERSION < 0x60000
-    inline QCarlaString sliced(const qsizetype pos) const
+    inline QCarlaString sliced(const size_t pos) const
     {
         return QCarlaString(data() + pos, size() - pos);
     }
@@ -89,14 +89,14 @@ public:
     explicit inline QCarlaByteArray()
         : QByteArray() {}
 
-    explicit inline QCarlaByteArray(const char* const data, const qsizetype size)
+    explicit inline QCarlaByteArray(const char* const data, const size_t size)
         : QByteArray(data, size) {}
 
     inline QCarlaByteArray(const QByteArray& b)
         : QByteArray(b) {}
 
 #if QT_VERSION < 0x60000
-    inline QCarlaByteArray sliced(const qsizetype pos) const
+    inline QCarlaByteArray sliced(const size_t pos) const
     {
         return QCarlaByteArray(data() + pos, size() - pos);
     }
