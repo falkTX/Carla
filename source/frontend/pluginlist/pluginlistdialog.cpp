@@ -1107,7 +1107,7 @@ void PluginListDialog::addPluginsToTable()
         int(p->plugins.internal.size() + p->plugins.ladspa.size() + p->plugins.dssi.size() +
             p->plugins.lv2.size() + p->plugins.vst2.size() + p->plugins.vst3.size() + p->plugins.clap.size() +
            #ifdef CARLA_OS_MAC
-            p->plugins.au.size()) +
+            p->plugins.au.size() +
            #endif
             p->plugins.jsfx.size() + p->plugins.kits.size()));
 

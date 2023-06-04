@@ -312,7 +312,7 @@ CARLA_PLUGIN_EXPORT CarlaPluginDiscoveryHandle carla_plugin_discovery_start(cons
 
 /*!
  * Continue discovering plugins, triggering callbacks along the way.
- * Returns true when there is nothing else to scan, then you MUST call @a carla_plugin_discovery_stop.
+ * Returns false when there is nothing else to scan, then you MUST call @a carla_plugin_discovery_stop.
  */
 CARLA_PLUGIN_EXPORT bool carla_plugin_discovery_idle(CarlaPluginDiscoveryHandle handle);
 
