@@ -327,13 +327,6 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # arm32
 
-ifeq ($(USING_JUCE),true)
-$(OBJDIR)/CarlaPluginJuce.arm32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (arm32 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(ARM32_FLAGS) -std=gnu++14 -c -o $@
-endif
-
 $(OBJDIR)/CarlaBridgePlugin.cpp.arm32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (arm32 bridge)"
@@ -394,20 +387,6 @@ $(OBJDIR)/CarlaStandalone.cpp.posix32.o: $(CWD)/backend/CarlaStandalone.cpp
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 endif
 
-ifeq ($(USING_JUCE),true)
-ifeq ($(MACOS),true)
-$(OBJDIR)/CarlaPluginJuce.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (posix32 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
-else
-$(OBJDIR)/CarlaPluginJuce.cpp.posix32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (posix32 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -std=gnu++14 -c -o $@
-endif
-endif
-
 $(OBJDIR)/CarlaEng%.cpp.posix32.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (posix32 bridge)"
@@ -458,21 +437,6 @@ $(OBJDIR)/CarlaStandalone.cpp.posix64.o: $(CWD)/backend/CarlaStandalone.cpp
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 endif
 
-ifeq ($(USING_JUCE),true)
-ifeq ($(MACOS),true)
-$(OBJDIR)/CarlaPluginJuce.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (posix64 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
-
-else
-$(OBJDIR)/CarlaPluginJuce.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (posix64 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -std=gnu++14 -c -o $@
-endif
-endif
-
 $(OBJDIR)/CarlaEng%.cpp.posix64.o: $(CWD)/backend/engine/CarlaEng%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEng$*.cpp (posix64 bridge)"
@@ -485,13 +449,6 @@ $(OBJDIR)/CarlaPlug%.cpp.posix64.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 
 # ---------------------------------------------------------------------------------------------------------------------
 # win32
-
-ifeq ($(USING_JUCE),true)
-$(OBJDIR)/CarlaPluginJuce.cpp.win32.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (win32 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -std=gnu++14 -c -o $@
-endif
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.win32.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
@@ -515,13 +472,6 @@ $(OBJDIR)/CarlaPlug%.cpp.win32.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
 
 # ---------------------------------------------------------------------------------------------------------------------
 # win64
-
-ifeq ($(USING_JUCE),true)
-$(OBJDIR)/CarlaPluginJuce.cpp.win64.o: $(CWD)/backend/plugin/CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPluginJuce.cpp (win64 bridge)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -std=gnu++14 -c -o $@
-endif
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.win64.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)

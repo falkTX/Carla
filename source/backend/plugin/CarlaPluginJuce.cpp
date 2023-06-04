@@ -18,7 +18,7 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
@@ -1888,7 +1888,7 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // USING_JUCE
+#endif // USING_JUCE && !BUILD_BRIDGE
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1899,7 +1899,7 @@ CarlaPluginPtr CarlaPlugin::newJuce(const Initializer& init, const char* const f
     carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)",
                 init.engine, init.filename, init.name, init.label, init.uniqueId, format);
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
     std::shared_ptr<CarlaPluginJuce> plugin(new CarlaPluginJuce(init.engine, init.id));
 
     if (! plugin->init(plugin, init.filename, init.name, init.label, init.uniqueId, init.options, format))

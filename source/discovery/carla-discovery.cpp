@@ -46,6 +46,7 @@
 #ifdef BUILD_BRIDGE
 # undef HAVE_FLUIDSYNTH
 # undef HAVE_YSFX
+# undef USING_JUCE
 #endif
 
 #ifdef HAVE_FLUIDSYNTH

@@ -31,7 +31,7 @@
 # pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
 # include "carla_juce/carla_juce.h"
 #endif
 
@@ -128,7 +128,7 @@ const char* carla_get_juce_version()
 
     static CarlaString retVersion;
 
-   #ifdef USING_JUCE
+   #if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
     if (retVersion.isEmpty())
     {
         if (const char* const version = CarlaJUCE::getVersion())

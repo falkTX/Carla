@@ -30,7 +30,7 @@
 
 #include "water/files/File.h"
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
 # include "carla_juce/carla_juce.h"
 #endif
 
@@ -404,7 +404,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
 #endif
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
     CarlaJUCE::initialiseJuce_GUI();
 #endif
 
@@ -454,7 +454,7 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
         shandle.lastError = engine->getLastError();
         shandle.engine = nullptr;
         delete engine;
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
         CarlaJUCE::shutdownJuce_GUI();
 #endif
         return false;
@@ -534,7 +534,7 @@ bool carla_engine_close(CarlaHostHandle handle)
     shandle.engine = nullptr;
     delete engine;
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
     CarlaJUCE::shutdownJuce_GUI();
 #endif
     return closed;
@@ -546,7 +546,7 @@ void carla_engine_idle(CarlaHostHandle handle)
 
     handle->engine->idle();
 
-#ifdef USING_JUCE
+#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
     if (handle->isStandalone)
         CarlaJUCE::idleJuce_GUI();
 #endif

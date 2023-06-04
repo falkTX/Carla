@@ -52,10 +52,6 @@
 # include <X11/Xlib.h>
 #endif
 
-#ifdef USING_JUCE
-# include "carla_juce/carla_juce.h"
-#endif
-
 #include "water/files/File.h"
 #include "water/misc/Time.h"
 
@@ -149,9 +145,6 @@ public:
     CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioPoolBaseName,
                       const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
         : fEngine(nullptr),
-#ifdef USING_JUCE
-          fJuceInitialiser(),
-#endif
           fUsingBridge(false),
           fUsingExec(false)
     {
@@ -231,9 +224,6 @@ public:
 
         gIsInitiated = true;
 
-#if defined(USING_JUCE) && (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-        CarlaJUCE::setupAndUseMainApplication(gIdle, &gCloseSignal);
-#else
         int64_t timeToEnd = 0;
 
         if (testing)
@@ -245,18 +235,17 @@ public:
         for (; runMainLoopOnce() && ! gCloseBridge;)
         {
             gIdle();
-# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
             // MacOS and Win32 have event-loops to run, so minimize sleep time
             carla_msleep(1);
-# else
+           #else
             carla_msleep(5);
-# endif
+           #endif
             if (testing && timeToEnd - water::Time::currentTimeMillis() < 0)
                 break;
             if (gCloseSignal && ! fUsingBridge)
                 break;
         }
-#endif
 
         carla_engine_close(gHostHandle);
     }
@@ -290,10 +279,6 @@ protected:
 
 private:
     CarlaEngine* fEngine;
-
-#ifdef USING_JUCE
-    const CarlaJUCE::ScopedJuceInitialiser_GUI fJuceInitialiser;
-#endif
 
     bool fUsingBridge;
     bool fUsingExec;
