@@ -45,6 +45,10 @@
 #include "water/xml/XmlDocument.h"
 #include "water/xml/XmlElement.h"
 
+#ifdef CARLA_OS_WIN
+# include <direct.h>
+#endif
+
 #ifdef USING_JUCE
 # include "carla_juce/carla_juce.h"
 #endif
@@ -1269,6 +1273,12 @@ protected:
 
             fUiServer.setData(path, pData->sampleRate, pHost->uiName);
 
+#ifdef CARLA_OS_WIN
+            // Fix conflict with other tools using Carla
+            char* const oldcwd = _getcwd(nullptr, 0);
+            chdir(pHost->resourceDir);
+#endif
+
             if (! fUiServer.startPipeServer(false))
             {
                 pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
@@ -1298,6 +1308,11 @@ protected:
 
             if (kIsPatchbay)
                 patchbayRefresh(true, false, false);
+
+#ifdef CARLA_OS_WIN
+            chdir(oldcwd);
+            std::free(oldcwd);
+#endif
         }
         else
         {
