@@ -49,7 +49,7 @@ jobs:
           make dist ${MAKE_ARGS} -j 1
       - uses: actions/upload-artifact@v3
         with:
-          name: macOS universal package
+          name: macOS dmg
           path: Carla/*.dmg
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -102,7 +102,7 @@ jobs:
       - name: Build win32 cross-compiled
         shell: bash
         run: |
-          source PawPaw/local.env macos-universal
+          source PawPaw/local.env win32
           make features
           make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS}
           make dist ${MAKE_ARGS} TESTING=true -j 1
@@ -112,7 +112,7 @@ jobs:
           make dist ${MAKE_ARGS} -j 1
       - uses: actions/upload-artifact@v3
         with:
-          name: win32 installer
+          name: win32 zip
           path: Carla/*.zip
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -165,7 +165,7 @@ jobs:
       - name: Build win64 cross-compiled
         shell: bash
         run: |
-          source PawPaw/local.env macos-universal
+          source PawPaw/local.env win64
           make features
           make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS}
           make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS} win32r
@@ -176,7 +176,7 @@ jobs:
           make dist ${MAKE_ARGS} -j 1
       - uses: actions/upload-artifact@v3
         with:
-          name: win64 installer
+          name: win64 zip
           path: Carla/*.zip
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
