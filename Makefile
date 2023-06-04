@@ -482,7 +482,6 @@ ifeq ($(HAVE_FRONTEND),true)
 	install -d $(DESTDIR)$(DATADIR)/carla/dialogs
 	install -d $(DESTDIR)$(DATADIR)/carla/modgui
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
-	install -d $(DESTDIR)$(DATADIR)/carla/pluginlist
 	install -d $(DESTDIR)$(DATADIR)/carla/utils
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
 endif
@@ -670,10 +669,6 @@ endif
 		$(DESTDIR)$(DATADIR)/carla/patchcanvas/
 
 	install -m 644 \
-		source/frontend/pluginlist/*.py \
-		$(DESTDIR)$(DATADIR)/carla/pluginlist/
-
-	install -m 644 \
 		source/frontend/utils/*.py \
 		$(DESTDIR)$(DATADIR)/carla/utils/
 
@@ -749,7 +744,6 @@ endif
 	$(LINK) ../dialogs                     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../modgui                      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../patchcanvas                 $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../pluginlist                  $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../utils                       $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../widgets                     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
