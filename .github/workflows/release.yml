@@ -1,0 +1,166 @@
+name: release
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+env:
+  CACHE_VERSION: 11
+  PAWPAW_VERSION: cd7b760d6a32ecad263b112c12be8a306ed1e89c
+
+jobs:
+  # macOS native universal build
+  macos_universal:
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Set up cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/PawPawBuilds
+          key: macos-universal-v${{ env.CACHE_VERSION }}
+      - name: Set up dependencies
+        run: |
+          brew install cmake jq meson
+      - name: Bootstrap macOS universal
+        shell: bash
+        run: |
+          git clone https://github.com/DISTRHO/PawPaw.git
+          git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
+          ./PawPaw/bootstrap-carla.sh macos-universal && ./PawPaw/.cleanup.sh macos-universal
+      - name: Build macOS universal
+        shell: bash
+        run: |
+          ./build.sh macos-universal
+      - uses: actions/upload-artifact@v3
+        with:
+          name: macOS universal package
+          path: Carla/*.dmg
+      - uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            path: Carla/*.dmg
+
+  # linux with win32 cross-compilation
+  win32:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Set up cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/PawPawBuilds
+          key: win32-v${{ env.CACHE_VERSION }}
+      - name: Restore debian packages cache
+        run: |
+          if [ -d ~/PawPawBuilds/debs ] && [ "$(ls ~/PawPawBuilds/debs | wc -l)" -ne 0 ]; then \
+            sudo cp ~/PawPawBuilds/debs/*.deb /var/cache/apt/archives/; \
+          fi
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libc6:i386 libgcc-s1:i386 libstdc++6:i386
+      - name: Set up dependencies
+        run: |
+          sudo apt-get install -y build-essential curl cmake jq meson mingw-w64 gperf qttools5-dev qttools5-dev-tools xvfb \
+            binutils-mingw-w64-i686 g++-mingw-w64-i686 mingw-w64 wine-stable
+      - name: Cache debian packages
+        run: |
+          mkdir -p ~/PawPawBuilds/debs
+          sudo mv /var/cache/apt/archives/*.deb ~/PawPawBuilds/debs/
+      - name: Bootstrap win32 cross-compiled
+        shell: bash
+        run: |
+          git clone https://github.com/DISTRHO/PawPaw.git
+          git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
+          ./PawPaw/bootstrap-carla.sh win32 && ./PawPaw/.cleanup.sh win32
+      - name: Build win32 cross-compiled
+        shell: bash
+        run: |
+          ./build.sh win32
+      - uses: actions/upload-artifact@v3
+        with:
+          name: win32 installer
+          path: Carla/*.zip
+      - uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            path: Carla/*.zip
+
+  # linux with win64 cross-compilation
+  win64:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Set up cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/PawPawBuilds
+          key: win64-v${{ env.CACHE_VERSION }}
+      - name: Restore debian packages cache
+        run: |
+          if [ -d ~/PawPawBuilds/debs ] && [ "$(ls ~/PawPawBuilds/debs | wc -l)" -ne 0 ]; then \
+            sudo cp ~/PawPawBuilds/debs/*.deb /var/cache/apt/archives/; \
+          fi
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libc6:i386 libgcc-s1:i386 libstdc++6:i386
+      - name: Set up dependencies
+        run: |
+          sudo apt-get install -y build-essential curl cmake jq meson mingw-w64 gperf qttools5-dev qttools5-dev-tools xvfb \
+            binutils-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64 wine-stable
+      - name: Cache debian packages
+        run: |
+          mkdir -p ~/PawPawBuilds/debs
+          sudo mv /var/cache/apt/archives/*.deb ~/PawPawBuilds/debs/
+      - name: Bootstrap win64 cross-compiled
+        shell: bash
+        run: |
+          git clone https://github.com/DISTRHO/PawPaw.git
+          git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
+          ./PawPaw/bootstrap-carla.sh win64 && ./PawPaw/.cleanup.sh win64
+      - name: Build win64 cross-compiled
+        shell: bash
+        run: |
+          ./build.sh win64
+      - uses: actions/upload-artifact@v3
+        with:
+          name: win64 installer
+          path: Carla/*.zip
+      - uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            path: Carla/*.zip
