@@ -23,7 +23,7 @@
 # Imports (ctypes)
 
 from ctypes import (
-    c_bool, c_char, c_char_p, c_int, c_void_p, cast,
+    c_bool, c_char, c_char_p, c_uint, c_uint64, c_void_p, cast,
     cdll, Structure,
     POINTER
 )
@@ -55,15 +55,23 @@ class JackApplicationDialogResults(Structure):
 
 class PluginListDialogResults(Structure):
     _fields_ = [
-        ("btype", c_int),
-        ("ptype", c_int),
-        ("binary", c_char_p),
-        ("label", c_char_p)
-    ]
-
-class PluginListRefreshDialogResults(Structure):
-    _fields_ = [
-        ("todo", c_char)
+        ("build", c_uint),
+        ("type", c_uint),
+        ("hints", c_uint),
+        ("category", c_char_p),
+        ("filename", c_char_p),
+        ("name", c_char_p),
+        ("label", c_char_p),
+        ("maker", c_char_p),
+        ("uniqueId", c_uint64),
+        ("audioIns", c_uint),
+        ("audioOuts", c_uint),
+        ("cvIns", c_uint),
+        ("cvOuts", c_uint),
+        ("midiIns", c_uint),
+        ("midiOuts", c_uint),
+        ("parametersIns", c_uint),
+        ("parametersOuts", c_uint),
     ]
 
 # ------------------------------------------------------------------------------------------------------------
@@ -82,9 +90,6 @@ class CarlaFrontendLib():
         self.lib.carla_frontend_createAndExecPluginListDialog.argtypes = (c_void_p,) # , c_bool)
         self.lib.carla_frontend_createAndExecPluginListDialog.restype = POINTER(PluginListDialogResults)
 
-        self.lib.carla_frontend_createAndExecPluginListRefreshDialog.argtypes = (c_void_p, c_bool)
-        self.lib.carla_frontend_createAndExecPluginListRefreshDialog.restype = POINTER(PluginListRefreshDialogResults)
-
     # --------------------------------------------------------------------------------------------------------
 
     def createAndExecAboutJuceDialog(self, parent):
@@ -96,9 +101,5 @@ class CarlaFrontendLib():
 
     def createAndExecPluginListDialog(self, parent, useSystemIcons):
         return structToDictOrNull(self.lib.carla_frontend_createAndExecPluginListDialog(unwrapinstance(parent)))
-
-    def createAndExecPluginListRefreshDialog(self, parent, useSystemIcons):
-        return structToDictOrNull(self.lib.carla_frontend_createAndExecPluginListRefreshDialog(unwrapinstance(parent),
-                                                                                               useSystemIcons))
 
 # ------------------------------------------------------------------------------------------------------------

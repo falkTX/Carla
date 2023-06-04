@@ -49,6 +49,11 @@ public:
     explicit inline QCarlaString(const char* const str)
         : QString(fromUtf8(str)) {}
 
+#if QT_VERSION < 0x60000
+    explicit inline QCarlaString(const QChar* const str, const qsizetype size)
+        : QString(str, size) {}
+#endif
+
     inline QCarlaString(const QString& s)
         : QString(s) {}
 
@@ -66,6 +71,36 @@ public:
     {
         return simplified().remove(' ');
     }
+
+#if QT_VERSION < 0x60000
+    inline QCarlaString sliced(const qsizetype pos) const
+    {
+        return QCarlaString(data() + pos, size() - pos);
+    }
+#endif
+};
+
+//---------------------------------------------------------------------------------------------------------------------
+// Custom QByteArray class with a few extra methods
+
+class QCarlaByteArray : public QByteArray
+{
+public:
+    explicit inline QCarlaByteArray()
+        : QByteArray() {}
+
+    explicit inline QCarlaByteArray(const char* const data, const qsizetype size)
+        : QByteArray(data, size) {}
+
+    inline QCarlaByteArray(const QByteArray& b)
+        : QByteArray(b) {}
+
+#if QT_VERSION < 0x60000
+    inline QCarlaByteArray sliced(const qsizetype pos) const
+    {
+        return QCarlaByteArray(data() + pos, size() - pos);
+    }
+#endif
 };
 
 //---------------------------------------------------------------------------------------------------------------------

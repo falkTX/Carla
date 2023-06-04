@@ -35,7 +35,7 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="tabBarAutoHide" stdset="0">
+     <property name="tabBarAutoHide">
       <bool>true</bool>
      </property>
      <widget class="QWidget" name="tw_reqs">
@@ -133,7 +133,7 @@
         <string>&amp;Add Plugin</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset resource="../../../resources/resources.qrc">
          <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
        </property>
       </widget>
@@ -144,7 +144,7 @@
         <string>Cancel</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset resource="../../../resources/resources.qrc">
          <normaloff>:/16x16/dialog-cancel.svgz</normaloff>:/16x16/dialog-cancel.svgz</iconset>
        </property>
       </widget>
@@ -155,7 +155,7 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="lineEdit">
-       <property name="clearButtonEnabled" stdset="0">
+       <property name="clearButtonEnabled">
         <bool>true</bool>
        </property>
       </widget>
@@ -166,7 +166,7 @@
         <string>Refresh</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset resource="../../../resources/resources.qrc">
          <normaloff>:/16x16/view-refresh.svgz</normaloff>:/16x16/view-refresh.svgz</iconset>
        </property>
       </widget>
@@ -177,7 +177,7 @@
         <string>Reset filters</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset resource="../../../resources/resources.qrc">
          <normaloff>:/16x16/edit-clear.svgz</normaloff>:/16x16/edit-clear.svgz</iconset>
        </property>
       </widget>
@@ -186,7 +186,7 @@
    </item>
    <item row="1" column="2" rowspan="3">
     <widget class="QTabWidget" name="tab_info">
-     <property name="tabBarAutoHide" stdset="0">
+     <property name="tabBarAutoHide">
       <bool>true</bool>
      </property>
      <widget class="QWidget" name="tw_info">
@@ -582,11 +582,11 @@
      <attribute name="verticalHeaderVisible">
       <bool>false</bool>
      </attribute>
-     <attribute name="verticalHeaderDefaultSectionSize">
-      <number>22</number>
-     </attribute>
      <attribute name="verticalHeaderMinimumSectionSize">
       <number>12</number>
+     </attribute>
+     <attribute name="verticalHeaderDefaultSectionSize">
+      <number>22</number>
      </attribute>
      <column>
       <property name="text">
@@ -599,7 +599,7 @@
        <string notr="true"/>
       </property>
       <property name="icon">
-       <iconset resource="../resources.qrc">
+       <iconset resource="../../../resources/resources.qrc">
         <normaloff>:/16x16/bookmarks.svgz</normaloff>:/16x16/bookmarks.svgz</iconset>
       </property>
      </column>
@@ -635,8 +635,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>158</width>
-        <height>237</height>
+        <width>135</width>
+        <height>282</height>
        </rect>
       </property>
       <attribute name="label">
@@ -733,8 +733,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>158</width>
-        <height>156</height>
+        <width>113</width>
+        <height>120</height>
        </rect>
       </property>
       <attribute name="label">
@@ -785,6 +785,14 @@
       </layout>
      </widget>
      <widget class="QWidget" name="p_category">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>100</width>
+        <height>282</height>
+       </rect>
+      </property>
       <attribute name="label">
        <string>Category</string>
       </attribute>
@@ -879,8 +887,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>158</width>
-        <height>130</height>
+        <width>124</width>
+        <height>93</height>
        </rect>
       </property>
       <attribute name="label">
@@ -967,8 +975,7 @@
   <tabstop>tab_info</tabstop>
  </tabstops>
  <resources>
-  <include location="../resources.qrc"/>
+  <include location="../../../resources/resources.qrc"/>
  </resources>
- <connections>
- </connections>
+ <connections/>
 </ui>

@@ -73,8 +73,7 @@ CPP_FILES = \
 	carla_frontend.cpp \
 	dialogs/aboutjucedialog.cpp \
 	dialogs/jackappdialog.cpp \
-	pluginlist/pluginlistdialog.cpp \
-	pluginlist/pluginlistrefreshdialog.cpp
+	pluginlist/pluginlistdialog.cpp
 
 OBJS = $(CPP_FILES:%=$(OBJDIR)/%.o)
 
@@ -139,7 +138,6 @@ UIs  = $(DIALOG_UI_FILES:dialogs/%.ui=dialogs/ui_%.h)
 UIs += $(PLUGINLIST_UI_FILES:pluginlist/%.ui=pluginlist/ui_%.h)
 
 UIs += $(DIALOG_UI_FILES:%.ui=%_ui.py)
-UIs += $(PLUGINLIST_UI_FILES:%.ui=%_ui.py)
 
 # old stuff, not yet converted
 UIs += \

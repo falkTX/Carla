@@ -32,7 +32,6 @@ typedef struct {
 } JackAppDialogResults;
 
 typedef struct {
-    uint API;
     uint build;
     uint type;
     uint hints;
@@ -48,13 +47,9 @@ typedef struct {
     uint cvOuts;
     uint midiIns;
     uint midiOuts;
-    uint parametersIns;
-    uint parametersOuts;
+    uint parameterIns;
+    uint parameterOuts;
 } PluginListDialogResults;
-
-typedef struct {
-    char todo;
-} PluginListRefreshDialogResults;
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -66,9 +61,6 @@ carla_frontend_createAndExecJackAppDialog(void* parent, const char* projectFilen
 
 CARLA_API const PluginListDialogResults*
 carla_frontend_createAndExecPluginListDialog(void* parent/*, const HostSettings& hostSettings*/);
-
-CARLA_API const PluginListRefreshDialogResults*
-carla_frontend_createAndExecPluginListRefreshDialog(void* parent, bool useSystemIcons);
 
 // --------------------------------------------------------------------------------------------------------------------
 

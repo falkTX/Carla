@@ -62,7 +62,6 @@ from carla_utils import *
 from carla_widgets import *
 
 from patchcanvas import patchcanvas
-from pluginlist import PluginListDialog
 from widgets.digitalpeakmeter import DigitalPeakMeter
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
@@ -1208,25 +1207,14 @@ class HostWindow(QMainWindow):
     # Plugins (menu actions)
 
     def showAddPluginDialog(self):
-        #ret = gCarla.felib.createAndExecPluginListDialog(self.fParentOrSelf,
-                                                         #self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
-        #print(ret)
-        #return
-        #ret = gCarla.felib.createAndExecPluginListRefreshDialog(self.fParentOrSelf,
-                                                                #self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
-        #print(ret)
-        #return
+        # TODO self.fHasLoadedLv2Plugins
+        ret = gCarla.felib.createAndExecPluginListDialog(self.fParentOrSelf,
+                                                         self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
+        print(ret)
 
-        if self.fPluginDatabaseDialog is None:
-            self.fPluginDatabaseDialog = PluginListDialog(self.fParentOrSelf, self.host,
-                                                          self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
-        dialog = self.fPluginDatabaseDialog
-        dialog.hasLoadedLv2Plugins = self.fHasLoadedLv2Plugins
-
-        ret = dialog.exec_()
-
-        if dialog.fFavoritePluginsChanged:
-            self.fFavoritePlugins = dialog.fFavoritePlugins
+        # TODO
+        #if dialog.fFavoritePluginsChanged:
+            #self.fFavoritePlugins = dialog.fFavoritePlugins
 
         if not ret:
             return
@@ -1235,12 +1223,12 @@ class HostWindow(QMainWindow):
             QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
             return
 
-        btype    = dialog.fRetPlugin['build']
-        ptype    = dialog.fRetPlugin['type']
-        filename = dialog.fRetPlugin['filename']
-        label    = dialog.fRetPlugin['label']
-        uniqueId = dialog.fRetPlugin['uniqueId']
-        extraPtr = self.getExtraPtr(dialog.fRetPlugin)
+        btype    = ret['build']
+        ptype    = ret['type']
+        filename = ret['filename']
+        label    = ret['label']
+        uniqueId = ret['uniqueId']
+        extraPtr = None
 
         return (btype, ptype, filename, label, uniqueId, extraPtr)
 

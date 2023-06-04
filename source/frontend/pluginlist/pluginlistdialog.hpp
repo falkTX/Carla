@@ -1,18 +1,7 @@
 /*
  * Carla plugin host
  * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #pragma once
@@ -35,9 +24,7 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "CarlaBackend.h"
-
-static constexpr const uint PLUGIN_QUERY_API_VERSION = 12;
+#include "ui_pluginlistdialog.h"
 
 struct HostSettings {
     bool showPluginBridges;
@@ -45,73 +32,76 @@ struct HostSettings {
     bool useSystemIcons;
 };
 
-struct PluginInfo {
-    uint API;
-    CARLA_BACKEND_NAMESPACE::BinaryType build;
-    CARLA_BACKEND_NAMESPACE::PluginType type;
-    uint hints;
-    QString category;
-    QString filename;
-    QString name;
-    QString label;
-    QString maker;
-    uint64_t uniqueId;
-    uint audioIns;
-    uint audioOuts;
-    uint cvIns;
-    uint cvOuts;
-    uint midiIns;
-    uint midiOuts;
-    uint parametersIns;
-    uint parametersOuts;
-};
+class QSafeSettings;
+typedef struct _CarlaPluginDiscoveryInfo CarlaPluginDiscoveryInfo;
+struct PluginInfo;
 
 // --------------------------------------------------------------------------------------------------------------------
 // Plugin List Dialog
 
 class PluginListDialog : public QDialog
 {
-    struct Self;
-    Self& self;
+    enum TableIndex {
+        TW_FAVORITE,
+        TW_NAME,
+        TW_LABEL,
+        TW_MAKER,
+        TW_BINARY,
+    };
+
+    enum UserRoles {
+        UR_PLUGIN_INFO = 1,
+        UR_SEARCH_TEXT,
+    };
+
+    struct PrivateData;
+    PrivateData *const p;
+
+    Ui_PluginListDialog ui;
 
     // ----------------------------------------------------------------------------------------------------------------
+    // public methods
 
 public:
     explicit PluginListDialog(QWidget* parent, const HostSettings& hostSettings);
     ~PluginListDialog() override;
 
-    // ----------------------------------------------------------------------------------------------------------------
-    // public methods
-
     const PluginInfo& getSelectedPluginInfo() const;
+    void addPluginInfo(const CarlaPluginDiscoveryInfo* info, const char* sha1sum);
+    bool checkPluginCache(const char* filename, const char* sha1sum);
 
     // ----------------------------------------------------------------------------------------------------------------
     // protected methods
 
 protected:
+    void done(int) override;
     void showEvent(QShowEvent*) override;
     void timerEvent(QTimerEvent*) override;
 
     // ----------------------------------------------------------------------------------------------------------------
     // private methods
 
+private:
+    void addPluginsToTable();
     void loadSettings();
 
     // ----------------------------------------------------------------------------------------------------------------
     // private slots
 
 private Q_SLOTS:
-    void slot_cellClicked(int row, int column);
-    void slot_cellDoubleClicked(int row, int column);
-    void slot_focusSearchFieldAndSelectAll();
-    void slot_addPlugin();
-    void slot_checkPlugin(int row);
-    void slot_checkFilters();
-    void slot_checkFiltersCategoryAll(bool clicked);
-    void slot_checkFiltersCategorySpecific(bool clicked);
-    void slot_refreshPlugins();
-    void slot_clearFilters();
-    void slot_saveSettings();
+    void cellClicked(int row, int column);
+    void cellDoubleClicked(int row, int column);
+    void focusSearchFieldAndSelectAll();
+    void checkFilters();
+    void checkFiltersCategoryAll(bool clicked);
+    void checkFiltersCategorySpecific(bool clicked);
+    void clearFilters();
+    void checkPlugin(int row);
+    void refreshPlugins();
+    void refreshPluginsStart();
+    void refreshPluginsStop();
+    void refreshPluginsSkip();
+    void saveSettings();
 };
 
 // --------------------------------------------------------------------------------------------------------------------
