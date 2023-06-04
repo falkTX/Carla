@@ -69,8 +69,13 @@ class CarlaApplication():
                 path = "H:\\PawPawBuilds\\targets\\win32\\lib\\qt5\\plugins"
             QApplication.addLibraryPath(path)
 
+        # Try resource dir as library path first
+        if os.path.exists(os.path.join(pathResources, "styles", "carlastyle.json")):
+            QApplication.addLibraryPath(pathResources)
+            stylesDir = pathResources
+
         # Use binary dir as library path
-        if os.path.exists(pathBinaries):
+        elif os.path.exists(pathBinaries):
             QApplication.addLibraryPath(pathBinaries)
             stylesDir = pathBinaries
 
