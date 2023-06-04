@@ -2369,6 +2369,7 @@ int main(int argc, const char* argv[])
     if (std::strcmp(filename, ":all") == 0)
     {
         do_cached_check(type);
+        gPipe = nullptr;
         return 0;
     }
 #endif
