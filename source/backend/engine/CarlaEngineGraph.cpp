@@ -1749,7 +1749,8 @@ private:
 
 PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
                              const uint32_t audioIns, const uint32_t audioOuts,
-                             const uint32_t cvIns, const uint32_t cvOuts)
+                             const uint32_t cvIns, const uint32_t cvOuts,
+                             const bool withMidiIn, const bool withMidiOut)
     : CarlaRunner("PatchbayReorderRunner"),
       connections(),
       graph(),
@@ -1858,6 +1859,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
         node->properties.isOSC = false;
     }
 
+    if (withMidiIn)
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::midiInputNode));
@@ -1870,6 +1872,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
         node->properties.isOSC = false;
     }
 
+    if (withMidiOut)
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::midiOutputNode));
@@ -2663,7 +2666,8 @@ EngineInternalGraph::~EngineInternalGraph() noexcept
 }
 
 void EngineInternalGraph::create(const uint32_t audioIns, const uint32_t audioOuts,
-                                 const uint32_t cvIns, const uint32_t cvOuts)
+                                 const uint32_t cvIns, const uint32_t cvOuts,
+                                 const bool withMidiIn, const bool withMidiOut)
 {
     fIsRack = (kEngine->getOptions().processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
 
@@ -2675,7 +2679,7 @@ void EngineInternalGraph::create(const uint32_t audioIns, const uint32_t audioOu
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay == nullptr,);
-        fPatchbay = new PatchbayGraph(kEngine, audioIns, audioOuts, cvIns, cvOuts);
+        fPatchbay = new PatchbayGraph(kEngine, audioIns, audioOuts, cvIns, cvOuts, withMidiIn, withMidiOut);
     }
 
     fNumAudioOuts = audioOuts;

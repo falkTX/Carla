@@ -80,7 +80,9 @@ public:
     EngineInternalGraph(CarlaEngine* engine) noexcept;
     ~EngineInternalGraph() noexcept;
 
-    void create(uint32_t audioIns, uint32_t audioOuts, uint32_t cvIns, uint32_t cvOuts);
+    void create(uint32_t audioIns, uint32_t audioOuts,
+                uint32_t cvIns, uint32_t cvOuts,
+                bool withMidiIn = true, bool withMidiOut = true);
     void destroy() noexcept;
 
     void setBufferSize(uint32_t bufferSize);

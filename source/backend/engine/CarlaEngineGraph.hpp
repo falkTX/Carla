@@ -184,7 +184,8 @@ public:
 
     PatchbayGraph(CarlaEngine* engine,
                   uint32_t audioIns, uint32_t audioOuts,
-                  uint32_t cvIns, uint32_t cvOuts);
+                  uint32_t cvIns, uint32_t cvOuts,
+                  bool withMidiIn, bool withMidiOut);
     ~PatchbayGraph();
 
     void setBufferSize(uint32_t bufferSize);

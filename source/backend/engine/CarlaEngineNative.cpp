@@ -101,7 +101,8 @@ private:
 class CarlaEngineNative : public CarlaEngine
 {
 public:
-    CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay, const bool withMidiOut,
+    CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay,
+                      const bool withMidiIn, const bool withMidiOut,
                       const uint32_t inChan = 2, uint32_t outChan = 2,
                       const uint32_t cvIns = 0, const uint32_t cvOuts = 0)
         : CarlaEngine(),
@@ -114,6 +115,7 @@ public:
           fJuceMsgMutex(),
 #endif
           kIsPatchbay(isPatchbay),
+          kHasMidiIn(withMidiIn),
           kHasMidiOut(withMidiOut),
           fIsActive(false),
           fIsRunning(false),
@@ -158,7 +160,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Patchbay");
-            pData->graph.create(inChan, outChan, cvIns, cvOuts);
+            pData->graph.create(inChan, outChan, cvIns, cvOuts, withMidiIn, withMidiOut);
         }
         else
         {
@@ -1154,6 +1156,7 @@ protected:
         // ---------------------------------------------------------------
         // events input (before processing)
 
+        if (kHasMidiIn)
         {
             uint32_t engineEventIndex = 0;
 
@@ -1545,57 +1548,57 @@ public:
 
     static NativePluginHandle _instantiateRack(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, false, true);
+        return new CarlaEngineNative(host, false, true, true);
     }
 
     static NativePluginHandle _instantiateRackNoMidiOut(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, false, false);
+        return new CarlaEngineNative(host, false, true, false);
     }
 
     static NativePluginHandle _instantiatePatchbay(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true);
+        return new CarlaEngineNative(host, true, true, true);
     }
 
     static NativePluginHandle _instantiatePatchbay3s(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 3, 2);
+        return new CarlaEngineNative(host, true, true, true, 3, 2);
     }
 
     static NativePluginHandle _instantiatePatchbay16(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 16, 16);
+        return new CarlaEngineNative(host, true, true, true, 16, 16);
     }
 
     static NativePluginHandle _instantiatePatchbay32(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 32, 32);
+        return new CarlaEngineNative(host, true, true, true, 32, 32);
     }
 
     static NativePluginHandle _instantiatePatchbay64(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 64, 64);
+        return new CarlaEngineNative(host, true, true, true, 64, 64);
     }
 
     static NativePluginHandle _instantiatePatchbayCV(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 2, 2, 5, 5);
+        return new CarlaEngineNative(host, true, true, true, 2, 2, 5, 5);
     }
 
     static NativePluginHandle _instantiatePatchbayCV8(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 2, 2, 8, 8);
+        return new CarlaEngineNative(host, true, true, true, 2, 2, 8, 8);
     }
 
     static NativePluginHandle _instantiatePatchbayCV32(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 64, 64, 32, 32);
+        return new CarlaEngineNative(host, true, true, true, 64, 64, 32, 32);
     }
 
     static NativePluginHandle _instantiatePatchbayOBS(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 8, 8);
+        return new CarlaEngineNative(host, true, false, false, 8, 8);
     }
 
     static void _cleanup(NativePluginHandle handle)
@@ -1752,6 +1755,7 @@ private:
 #endif
 
     const bool kIsPatchbay; // rack if false
+    const bool kHasMidiIn;
     const bool kHasMidiOut;
     bool fIsActive, fIsRunning, fUsesEmbed;
 #ifndef CARLA_ENGINE_WITHOUT_UI
