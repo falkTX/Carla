@@ -391,6 +391,7 @@ private:
     {
         CarlaSha1 sha1;
 
+        /* do we want this? it is not exactly needed and makes discovery slow..
         if (file.existsAsFile() && file.getSize() < 20*1024*1024) // dont bother hashing > 20Mb files
         {
             water::FileInputStream stream(file);
@@ -402,6 +403,7 @@ private:
                     sha1.write(block, r);
             }
         }
+        */
 
         sha1.write(filename.toRawUTF8(), filename.length());
 
