@@ -9,7 +9,8 @@ on:
       - '*'
 
 env:
-  CACHE_VERSION: 11
+  CACHE_VERSION: 1
+  PAWPAW_SKIP_LTO: 1
   PAWPAW_VERSION: cd7b760d6a32ecad263b112c12be8a306ed1e89c
 
 jobs:
@@ -38,11 +39,18 @@ jobs:
       - name: Build macOS universal
         shell: bash
         run: |
-          ./build.sh macos-universal
+          source PawPaw/local.env macos-universal
+          make features
+          make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS}
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} -j 1
       - uses: actions/upload-artifact@v3
         with:
-          name: macOS universal package
-          path: Carla/*.dmg
+          name: macOS dmg
+          path: ./*.dmg
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
@@ -51,7 +59,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            path: Carla/*.dmg
+            path: ./*.dmg
 
   # linux with win32 cross-compilation
   win32:
@@ -94,11 +102,18 @@ jobs:
       - name: Build win32 cross-compiled
         shell: bash
         run: |
-          ./build.sh win32
+          source PawPaw/local.env win32
+          make features
+          make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS}
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} -j 1
       - uses: actions/upload-artifact@v3
         with:
-          name: win32 installer
-          path: Carla/*.zip
+          name: win32 zip
+          path: ./*.zip
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
@@ -107,7 +122,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            path: Carla/*.zip
+            path: ./*.zip
 
   # linux with win64 cross-compilation
   win64:
@@ -150,11 +165,19 @@ jobs:
       - name: Build win64 cross-compiled
         shell: bash
         run: |
-          ./build.sh win64
+          source PawPaw/local.env win64
+          make features
+          make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS}
+          make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS} win32r
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} TESTING=true -j 1
+          make dist ${MAKE_ARGS} -j 1
       - uses: actions/upload-artifact@v3
         with:
-          name: win64 installer
-          path: Carla/*.zip
+          name: win64 zip
+          path: ./*.zip
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
@@ -163,4 +186,4 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            path: Carla/*.zip
+            path: ./*.zip
