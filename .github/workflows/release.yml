@@ -50,7 +50,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: macOS dmg
-          path: Carla/*.dmg
+          path: *.dmg
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
@@ -59,7 +59,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            path: Carla/*.dmg
+            path: *.dmg
 
   # linux with win32 cross-compilation
   win32:
@@ -113,7 +113,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: win32 zip
-          path: Carla/*.zip
+          path: *.zip
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
@@ -122,7 +122,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            path: Carla/*.zip
+            path: *.zip
 
   # linux with win64 cross-compilation
   win64:
@@ -177,7 +177,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: win64 zip
-          path: Carla/*.zip
+          path: *.zip
       - uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
@@ -186,4 +186,4 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            path: Carla/*.zip
+            path: *.zip
