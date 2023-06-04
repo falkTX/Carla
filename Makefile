@@ -319,18 +319,6 @@ LIBS_WIN32 += $(MODULEDIR)/lilv.win32.a
 LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
 LIBS_WIN32 += $(MODULEDIR)/water.win32.a
 
-ifeq ($(USING_JUCE),true)
-LIBS_WIN32 += $(MODULEDIR)/carla_juce.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_audio_basics.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_audio_processors.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_data_structures.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_events.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_graphics.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_gui_basics.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_gui_extra.win32.a
-endif
-
 LIBS_WINE32 = $(LIBS_WIN32) $(MODULEDIR)/jackbridge.win32e.a
 LIBS_RWIN32 = $(LIBS_WIN32) $(MODULEDIR)/jackbridge.win32.a
 
@@ -359,18 +347,6 @@ win32r-i686: $(LIBS_RWIN32)
 LIBS_WIN64 += $(MODULEDIR)/lilv.win64.a
 LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
 LIBS_WIN64 += $(MODULEDIR)/water.win64.a
-
-ifeq ($(USING_JUCE),true)
-LIBS_WIN64 += $(MODULEDIR)/carla_juce.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_audio_basics.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_audio_processors.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_data_structures.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_events.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_graphics.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_gui_basics.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_gui_extra.win64.a
-endif
 
 LIBS_WINE64 = $(LIBS_WIN64) $(MODULEDIR)/jackbridge.win64e.a
 LIBS_RWIN64 = $(LIBS_WIN64) $(MODULEDIR)/jackbridge.win64.a

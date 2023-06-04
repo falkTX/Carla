@@ -330,10 +330,8 @@ PYUIC ?= $(PYUIC5)
 # Set USING_JUCE
 
 ifeq ($(MACOS_OR_WINDOWS),true)
-ifneq ($(BUILDING_FOR_WINE),true)
 USING_JUCE = true
 USING_JUCE_AUDIO_DEVICES = true
-endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
