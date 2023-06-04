@@ -9,7 +9,8 @@ on:
       - '*'
 
 env:
-  CACHE_VERSION: 11
+  CACHE_VERSION: 1
+  PAWPAW_SKIP_LTO: 1
   PAWPAW_VERSION: cd7b760d6a32ecad263b112c12be8a306ed1e89c
 
 jobs:
