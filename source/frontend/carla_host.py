@@ -201,7 +201,7 @@ class HostWindow(QMainWindow):
             self.fSessionManagerName = "Plugin"
         elif LADISH_APP_NAME:
             self.fClientName         = LADISH_APP_NAME
-            self.fSessionManagerName = "LADISH"
+            self.fSessionManagerName = ""
         elif NSM_URL and host.nsmOK:
             self.fClientName         = "Carla.tmp"
             self.fSessionManagerName = "Non Session Manager TMP"
