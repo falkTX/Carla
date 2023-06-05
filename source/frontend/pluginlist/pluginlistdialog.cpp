@@ -772,6 +772,7 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
     ui.ch_kits->hide();
     ui.ch_gui->hide();
     ui.ch_inline_display->hide();
+    ui.toolBox->setItemEnabled(3, false);
    #endif
 
     // do not resize info frame so much
@@ -1375,6 +1376,14 @@ void PluginListDialog::loadSettings()
         else
             p->plugins.cache.insert(key.sliced(12), asPluginInfoList(data));
     }
+
+   #ifdef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+    // these are not visible, force their value
+    ui.ch_native->setChecked(true);
+    ui.ch_bridged->setChecked(false);
+    ui.ch_bridged_wine->setChecked(false);
+    ui.ch_inline_display->setChecked(false);
+   #endif
 }
 
 // -----------------------------------------------------------------------------------------------------------------

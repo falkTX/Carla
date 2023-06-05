@@ -414,11 +414,11 @@ CARLA_API_EXPORT bool carla_engine_init(CarlaHostHandle handle, const char* driv
  * Initialize the engine in bridged mode.
  */
 CARLA_API_EXPORT bool carla_engine_init_bridge(CarlaHostHandle handle,
-                                           const char audioBaseName[6+1],
-                                           const char rtClientBaseName[6+1],
-                                           const char nonRtClientBaseName[6+1],
-                                           const char nonRtServerBaseName[6+1],
-                                           const char* clientName);
+                                               const char audioBaseName[6+1],
+                                               const char rtClientBaseName[6+1],
+                                               const char nonRtClientBaseName[6+1],
+                                               const char nonRtServerBaseName[6+1],
+                                               const char* clientName);
 #endif
 
 /*!
@@ -455,7 +455,8 @@ CARLA_API_EXPORT const CarlaRuntimeEngineDriverDeviceInfo* carla_get_runtime_eng
  * @see ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE
  * @see ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE
  */
-CARLA_API_EXPORT bool carla_set_engine_buffer_size_and_sample_rate(CarlaHostHandle handle, uint bufferSize, double sampleRate);
+CARLA_API_EXPORT bool carla_set_engine_buffer_size_and_sample_rate(CarlaHostHandle handle,
+                                                                   uint bufferSize, double sampleRate);
 
 /*!
  * Show the custom control panel for the current engine device.
@@ -495,7 +496,8 @@ CARLA_API_EXPORT void carla_set_engine_callback(CarlaHostHandle handle, EngineCa
  * @param value    Value as number
  * @param valueStr Value as string
  */
-CARLA_API_EXPORT void carla_set_engine_option(CarlaHostHandle handle, EngineOption option, int value, const char* valueStr);
+CARLA_API_EXPORT void carla_set_engine_option(CarlaHostHandle handle,
+                                              EngineOption option, int value, const char* valueStr);
 
 /*!
  * Set the file callback function.
@@ -532,7 +534,7 @@ CARLA_API_EXPORT const char* carla_get_current_project_folder(CarlaHostHandle ha
 
 /*!
  * Get the currently set project filename.
- * @note Valid only for both standalone version.
+ * @note Valid only for standalone version.
  */
 CARLA_API_EXPORT const char* carla_get_current_project_filename(CarlaHostHandle handle);
 
@@ -551,7 +553,8 @@ CARLA_API_EXPORT void carla_clear_project_filename(CarlaHostHandle handle);
  * for ENGINE_CALLBACK_PATCHBAY_PORT_ADDED.
  * @see ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED
  */
-CARLA_API_EXPORT bool carla_patchbay_connect(CarlaHostHandle handle, bool external, uint groupIdA, uint portIdA, uint groupIdB, uint portIdB);
+CARLA_API_EXPORT bool carla_patchbay_connect(CarlaHostHandle handle,
+                                             bool external, uint groupIdA, uint portIdA, uint groupIdB, uint portIdB);
 
 /*!
  * Disconnect two patchbay ports.
@@ -566,8 +569,8 @@ CARLA_API_EXPORT bool carla_patchbay_disconnect(CarlaHostHandle handle, bool ext
  * When loading a project, callbacks are used to inform of the previously saved positions.
  * @see ENGINE_CALLBACK_PATCHBAY_CLIENT_POSITION_CHANGED
  */
-CARLA_API_EXPORT bool carla_patchbay_set_group_pos(CarlaHostHandle handle, bool external,
-                                               uint groupId, int x1, int y1, int x2, int y2);
+CARLA_API_EXPORT bool carla_patchbay_set_group_pos(CarlaHostHandle handle,
+                                                   bool external, uint groupId, int x1, int y1, int x2, int y2);
 
 /*!
  * Force the engine to resend all patchbay clients, ports and connections again.
@@ -631,9 +634,9 @@ CARLA_API_EXPORT uint32_t carla_get_max_plugin_number(CarlaHostHandle handle);
  * @param options  Initial plugin options
  */
 CARLA_API_EXPORT bool carla_add_plugin(CarlaHostHandle handle,
-                                   BinaryType btype, PluginType ptype,
-                                   const char* filename, const char* name, const char* label, int64_t uniqueId,
-                                   const void* extraPtr, uint options);
+                                       BinaryType btype, PluginType ptype,
+                                       const char* filename, const char* name, const char* label, int64_t uniqueId,
+                                       const void* extraPtr, uint options);
 
 /*!
  * Remove one plugin.
@@ -739,8 +742,8 @@ CARLA_API_EXPORT uint carla_get_audio_port_hints(CarlaHostHandle handle, uint pl
  * @see carla_get_parameter_count()
  */
 CARLA_API_EXPORT const CarlaParameterInfo* carla_get_parameter_info(CarlaHostHandle handle,
-                                                                uint pluginId,
-                                                                uint32_t parameterId);
+                                                                    uint pluginId,
+                                                                    uint32_t parameterId);
 
 /*!
  * Get parameter scale point information from a plugin.
@@ -750,9 +753,9 @@ CARLA_API_EXPORT const CarlaParameterInfo* carla_get_parameter_info(CarlaHostHan
  * @see CarlaParameterInfo::scalePointCount
  */
 CARLA_API_EXPORT const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(CarlaHostHandle handle,
-                                                                            uint pluginId,
-                                                                            uint32_t parameterId,
-                                                                            uint32_t scalePointId);
+                                                                                uint pluginId,
+                                                                                uint32_t parameterId,
+                                                                                uint32_t scalePointId);
 
 /*!
  * Get a plugin's parameter data.
@@ -761,8 +764,7 @@ CARLA_API_EXPORT const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(
  * @see carla_get_parameter_count()
  */
 CARLA_API_EXPORT const ParameterData* carla_get_parameter_data(CarlaHostHandle handle,
-                                                           uint pluginId,
-                                                           uint32_t parameterId);
+                                                               uint pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's parameter ranges.
@@ -771,8 +773,7 @@ CARLA_API_EXPORT const ParameterData* carla_get_parameter_data(CarlaHostHandle h
  * @see carla_get_parameter_count()
  */
 CARLA_API_EXPORT const ParameterRanges* carla_get_parameter_ranges(CarlaHostHandle handle,
-                                                               uint pluginId,
-                                                               uint32_t parameterId);
+                                                                   uint pluginId, uint32_t parameterId);
 
 /*!
  * Get a plugin's MIDI program data.
@@ -781,8 +782,7 @@ CARLA_API_EXPORT const ParameterRanges* carla_get_parameter_ranges(CarlaHostHand
  * @see carla_get_midi_program_count()
  */
 CARLA_API_EXPORT const MidiProgramData* carla_get_midi_program_data(CarlaHostHandle handle,
-                                                                uint pluginId,
-                                                                uint32_t midiProgramId);
+                                                                    uint pluginId, uint32_t midiProgramId);
 
 /*!
  * Get a plugin's custom data, using index.
@@ -800,9 +800,7 @@ CARLA_API_EXPORT const CustomData* carla_get_custom_data(CarlaHostHandle handle,
  * @see carla_get_custom_data_count()
  */
 CARLA_API_EXPORT const char* carla_get_custom_data_value(CarlaHostHandle handle,
-                                                     uint pluginId,
-                                                     const char* type,
-                                                     const char* key);
+                                                         uint pluginId, const char* type, const char* key);
 
 /*!
  * Get a plugin's chunk data.
@@ -935,9 +933,9 @@ CARLA_API_EXPORT float carla_get_output_peak_value(CarlaHostHandle handle, uint 
  * @param pluginId Plugin
  */
 CARLA_API_EXPORT const CarlaInlineDisplayImageSurface* carla_render_inline_display(CarlaHostHandle handle,
-                                                                               uint pluginId,
-                                                                               uint32_t width,
-                                                                               uint32_t height);
+                                                                                   uint pluginId,
+                                                                                   uint32_t width,
+                                                                                   uint32_t height);
 
 /*!
  * Enable or disable a plugin.
@@ -1014,9 +1012,7 @@ CARLA_API_EXPORT void carla_set_parameter_value(CarlaHostHandle handle, uint plu
  * @param channel     New MIDI channel
  */
 CARLA_API_EXPORT void carla_set_parameter_midi_channel(CarlaHostHandle handle,
-                                                   uint pluginId,
-                                                   uint32_t parameterId,
-                                                   uint8_t channel);
+                                                       uint pluginId, uint32_t parameterId, uint8_t channel);
 
 /*!
  * Change a plugin's parameter mapped control index.
@@ -1025,9 +1021,7 @@ CARLA_API_EXPORT void carla_set_parameter_midi_channel(CarlaHostHandle handle,
  * @param cc          New control index
  */
 CARLA_API_EXPORT void carla_set_parameter_mapped_control_index(CarlaHostHandle handle,
-                                                           uint pluginId,
-                                                           uint32_t parameterId,
-                                                           int16_t index);
+                                                               uint pluginId, uint32_t parameterId, int16_t index);
 
 /*!
  * Change a plugin's parameter mapped range.
@@ -1037,9 +1031,7 @@ CARLA_API_EXPORT void carla_set_parameter_mapped_control_index(CarlaHostHandle h
  * @param maximum     New mapped maximum
  */
 CARLA_API_EXPORT void carla_set_parameter_mapped_range(CarlaHostHandle handle,
-                                                   uint pluginId,
-                                                   uint32_t parameterId,
-                                                   float minimum, float maximum);
+                                                       uint pluginId, uint32_t parameterId, float minimum, float maximum);
 
 /*!
  * Change a plugin's parameter in drag/touch mode state.
@@ -1049,9 +1041,7 @@ CARLA_API_EXPORT void carla_set_parameter_mapped_range(CarlaHostHandle handle,
  * @param touch       New state
  */
 CARLA_API_EXPORT void carla_set_parameter_touch(CarlaHostHandle handle,
-                                            uint pluginId,
-                                            uint32_t parameterId,
-                                            bool touch);
+                                                uint pluginId, uint32_t parameterId, bool touch);
 #endif
 
 /*!
@@ -1077,8 +1067,7 @@ CARLA_API_EXPORT void carla_set_midi_program(CarlaHostHandle handle, uint plugin
  * @see CustomDataTypes and CustomDataKeys
  */
 CARLA_API_EXPORT void carla_set_custom_data(CarlaHostHandle handle,
-                                        uint pluginId,
-                                        const char* type, const char* key, const char* value);
+                                            uint pluginId, const char* type, const char* key, const char* value);
 
 /*!
  * Set a plugin's chunk data.
@@ -1117,8 +1106,7 @@ CARLA_API_EXPORT void carla_randomize_parameters(CarlaHostHandle handle, uint pl
  * @param velocity Note velocity
  */
 CARLA_API_EXPORT void carla_send_midi_note(CarlaHostHandle handle,
-                                       uint pluginId,
-                                       uint8_t channel, uint8_t note, uint8_t velocity);
+                                           uint pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
 #endif
 
 /*!
