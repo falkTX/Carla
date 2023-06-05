@@ -68,6 +68,7 @@ _CARLA_HOST_FILES = \
 	carla-bridge-lv2-gtk3$(APP_EXT) \
 	carla-bridge-native$(APP_EXT) \
 	carla-discovery-native$(APP_EXT) \
+	libcarla_frontend$(LIB_EXT) \
 	libcarla_utils$(LIB_EXT) \
 	$(_PLUGIN_UIS:%=resources/%$(APP_EXT))
 
@@ -96,7 +97,6 @@ _CARLA_APP_FILES = \
 	$(_QT5_DLLS) \
 	$(_QT5_PLUGINS) \
 	$(_THEME_FILES) \
-	libcarla_frontend$(LIB_EXT) \
 	resources/lib
 
 ifneq ($(EMBED_TARGET),true)
