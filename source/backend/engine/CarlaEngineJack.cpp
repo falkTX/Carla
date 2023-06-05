@@ -1430,8 +1430,13 @@ public:
     bool init(const char* const clientName) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr || (clientName != nullptr && clientName[0] != '\0'), false);
-        CARLA_SAFE_ASSERT_RETURN(jackbridge_is_ok(), false);
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
+
+        if (!jackbridge_is_ok())
+        {
+            setLastError("JACK is not available or installed");
+            return false;
+        }
 
         fFreewheel = false;
         fExternalPatchbayHost = true;
