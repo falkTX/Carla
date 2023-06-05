@@ -264,7 +264,29 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
         Lilv::UIs lilvUIs(lilvPlugin.get_uis());
 
         if (lilvUIs.size() > 0)
+        {
             info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+
+            LILV_FOREACH(uis, it, lilvUIs)
+            {
+                Lilv::UI lilvUI(lilvUIs.get(it));
+                lv2World.load_resource(lilvUI.get_uri());
+
+               #if defined(CARLA_OS_MAC)
+                if (lilvUI.is_a(lv2World.ui_cocoa))
+               #elif defined(CARLA_OS_WIN)
+                if (lilvUI.is_a(lv2World.ui_windows))
+               #elif defined(HAVE_X11)
+                if (lilvUI.is_a(lv2World.ui_x11))
+               #else
+                if (false)
+               #endif
+                {
+                    info.hints |= CB::PLUGIN_HAS_CUSTOM_EMBED_UI;
+                    break;
+                }
+            }
+        }
 #ifdef CARLA_OS_LINUX
         else if (lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr)
             info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;

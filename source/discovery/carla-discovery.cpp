@@ -1241,7 +1241,12 @@ static bool do_vst2_check(lib_t& libHandle, const char* const filename, const bo
         uint parameters = static_cast<uint>(std::max(0, effect->numParams));
 
         if (effect->flags & effFlagsHasEditor)
+        {
             hints |= PLUGIN_HAS_CUSTOM_UI;
+           #ifndef BUILD_BRIDGE
+            hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+           #endif
+        }
 
         if (effect->flags & effFlagsIsSynth)
         {
@@ -1783,7 +1788,12 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         if (v3_plugin_view** const view = v3_cpp_obj(controller)->create_view(controller, "editor"))
         {
             if (v3_cpp_obj(view)->is_platform_type_supported(view, V3_VIEW_PLATFORM_TYPE_NATIVE) == V3_TRUE)
+            {
                 hints |= PLUGIN_HAS_CUSTOM_UI;
+               #ifndef BUILD_BRIDGE
+                hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+               #endif
+            }
 
             v3_cpp_obj_unref(view);
         }
@@ -2187,7 +2197,13 @@ static bool do_clap_check(lib_t& libHandle, const char* const filename, const bo
 
            #ifdef CLAP_WINDOW_API_NATIVE
             if (gui != nullptr)
+            {
                 hints |= PLUGIN_HAS_CUSTOM_UI;
+               #ifndef BUILD_BRIDGE
+                if (gui->is_api_supported(plugin, CLAP_WINDOW_API_NATIVE, false))
+                    hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+               #endif
+            }
            #endif
 
             if (doInit)
