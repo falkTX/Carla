@@ -317,6 +317,13 @@ CARLA_PLUGIN_EXPORT CarlaPluginDiscoveryHandle carla_plugin_discovery_start(cons
 CARLA_PLUGIN_EXPORT bool carla_plugin_discovery_idle(CarlaPluginDiscoveryHandle handle);
 
 /*!
+ * Skip the current plugin being discovered.
+ * Carla automatically skips a plugin if 30s have passed without a reply from the discovery side,
+ * this function allows to manually abort earlier than that.
+ */
+CARLA_PLUGIN_EXPORT void carla_plugin_discovery_skip(CarlaPluginDiscoveryHandle handle);
+
+/*!
  * Stop plugin discovery.
  * Can be called early while the scanning is still active.
  */

@@ -150,6 +150,12 @@ public:
         return true;
     }
 
+    void skip()
+    {
+        if (isPipeRunning())
+            stopPipeServer(1000);
+    }
+
 protected:
     bool msgReceived(const char* const msg) noexcept
     {
@@ -377,7 +383,7 @@ private:
                 if (fCheckCacheCallback(fCallbackPtr, filename.toRawUTF8(), fNextSha1Sum))
                 {
                     fPluginsFoundInBinary = true;
-                    carla_stdout("Skipping \"%s\", using cache", filename.toRawUTF8());
+                    carla_debug("Skipping \"%s\", using cache", filename.toRawUTF8());
                     return;
                 }
             }
@@ -613,12 +619,17 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
     return new CarlaPluginDiscovery(discoveryTool, ptype, std::move(files), discoveryCb, checkCacheCb, callbackPtr);
 }
 
-bool carla_plugin_discovery_idle(CarlaPluginDiscoveryHandle handle)
+bool carla_plugin_discovery_idle(const CarlaPluginDiscoveryHandle handle)
 {
     return static_cast<CarlaPluginDiscovery*>(handle)->idle();
 }
 
-void carla_plugin_discovery_stop(CarlaPluginDiscoveryHandle handle)
+void carla_plugin_discovery_skip(const CarlaPluginDiscoveryHandle handle)
+{
+    static_cast<CarlaPluginDiscovery*>(handle)->skip();
+}
+
+void carla_plugin_discovery_stop(const CarlaPluginDiscoveryHandle handle)
 {
     delete static_cast<CarlaPluginDiscovery*>(handle);
 }
