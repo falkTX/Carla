@@ -17,7 +17,6 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include <QtCore/QDebug>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QList>
@@ -74,22 +73,26 @@ const char* getEnvWithFallback(const char* const env, const char* const fallback
 // Plugin paths (from env vars first, then default locations)
 
 struct PluginPaths {
+   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     QCarlaString ladspa;
     QCarlaString dssi;
+   #endif
     QCarlaString lv2;
     QCarlaString vst2;
     QCarlaString vst3;
     QCarlaString clap;
+   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     QCarlaString jsfx;
     QCarlaString sf2;
     QCarlaString sfz;
+   #endif
 
     PluginPaths()
     {
         // get common env vars
         const QString HOME = QDir::toNativeSeparators(QDir::homePath());
 
-#if defined(CARLA_OS_WIN)
+       #if defined(CARLA_OS_WIN)
         const char *const envAPPDATA = std::getenv("APPDATA");
         const char *const envLOCALAPPDATA = getEnvWithFallback("LOCALAPPDATA", envAPPDATA);
         const char *const envPROGRAMFILES = std::getenv("PROGRAMFILES");
@@ -120,10 +123,11 @@ struct PluginPaths {
         const QCarlaString LOCALAPPDATA(envLOCALAPPDATA);
         const QCarlaString PROGRAMFILES(envPROGRAMFILES);
         const QCarlaString COMMONPROGRAMFILES(envCOMMONPROGRAMFILES);
-#elif !defined(CARLA_OS_MAC)
+       #elif !defined(CARLA_OS_MAC)
         const QCarlaString CONFIG_HOME(getEnvWithFallback("XDG_CONFIG_HOME", (HOME + "/.config").toUtf8()));
-#endif
+       #endif
 
+       #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
         // now set paths, listing format path spec if available
         if (const char *const envLADSPA = std::getenv("LADSPA_PATH"))
         {
@@ -132,21 +136,21 @@ struct PluginPaths {
         else
         {
             // no official spec, use common paths
-#if defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_WIN)
             ladspa  = APPDATA + "\\LADSPA";
             ladspa += ";" + PROGRAMFILES + "\\LADSPA";
-#elif defined(CARLA_OS_HAIKU)
+           #elif defined(CARLA_OS_HAIKU)
             ladspa  = HOME + "/.ladspa";
             ladspa += ":/system/add-ons/media/ladspaplugins";
             ladspa += ":/system/lib/ladspa";
-#elif defined(CARLA_OS_MAC)
+           #elif defined(CARLA_OS_MAC)
             ladspa  = HOME + "/Library/Audio/Plug-Ins/LADSPA";
             ladspa += ":/Library/Audio/Plug-Ins/LADSPA";
-#else
+           #else
             ladspa  = HOME + "/.ladspa";
             ladspa += ":/usr/local/lib/ladspa";
             ladspa += ":/usr/lib/ladspa";
-#endif
+           #endif
         }
 
         if (const char *const envDSSI = std::getenv("DSSI_PATH"))
@@ -156,22 +160,23 @@ struct PluginPaths {
         else
         {
             // no official spec, use common paths
-#if defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_WIN)
             dssi  = APPDATA + "\\DSSI";
             dssi += ";" + PROGRAMFILES + "\\DSSI";
-#elif defined(CARLA_OS_HAIKU)
+           #elif defined(CARLA_OS_HAIKU)
             dssi  = HOME + "/.dssi";
             dssi += ":/system/add-ons/media/dssiplugins";
             dssi += ":/system/lib/dssi";
-#elif defined(CARLA_OS_MAC)
+           #elif defined(CARLA_OS_MAC)
             dssi  = HOME + "/Library/Audio/Plug-Ins/DSSI";
             dssi += ":/Library/Audio/Plug-Ins/DSSI";
-#else
+           #else
             dssi  = HOME + "/.dssi";
             dssi += ":/usr/local/lib/dssi";
             dssi += ":/usr/lib/dssi";
-#endif
+           #endif
         }
+       #endif // !CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
 
         if (const char *const envLV2 = std::getenv("LV2_PATH"))
         {
@@ -180,20 +185,20 @@ struct PluginPaths {
         else
         {
             // https://lv2plug.in/pages/filesystem-hierarchy-standard.html
-#if defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_WIN)
             lv2 = APPDATA + "\\LV2";
             lv2 += ";" + COMMONPROGRAMFILES + "\\LV2";
-#elif defined(CARLA_OS_HAIKU)
+           #elif defined(CARLA_OS_HAIKU)
             lv2  = HOME + "/.lv2";
             lv2 += ":/system/add-ons/media/lv2plugins";
-#elif defined(CARLA_OS_MAC)
+           #elif defined(CARLA_OS_MAC)
             lv2 = HOME + "/Library/Audio/Plug-Ins/LV2";
             lv2 += ":/Library/Audio/Plug-Ins/LV2";
-#else
+           #else
             lv2 = HOME + "/.lv2";
             lv2 += ":/usr/local/lib/lv2";
             lv2 += ":/usr/lib/lv2";
-#endif
+           #endif
         }
 
         if (const char *const envVST2 = std::getenv("VST_PATH"))
@@ -202,20 +207,20 @@ struct PluginPaths {
         }
         else
         {
-#if defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_WIN)
             // https://helpcenter.steinberg.de/hc/en-us/articles/115000177084
             vst2 = PROGRAMFILES + "\\VSTPlugins";
             vst2 += ";" + PROGRAMFILES + "\\Steinberg\\VSTPlugins";
             vst2 += ";" + COMMONPROGRAMFILES + "\\VST2";
             vst2 += ";" + COMMONPROGRAMFILES + "\\Steinberg\\VST2";
-#elif defined(CARLA_OS_HAIKU)
+           #elif defined(CARLA_OS_HAIKU)
             vst2  = HOME + "/.vst";
             vst2 += ":/system/add-ons/media/vstplugins";
-#elif defined(CARLA_OS_MAC)
+           #elif defined(CARLA_OS_MAC)
             // https://helpcenter.steinberg.de/hc/en-us/articles/115000171310
             vst2 = HOME + "/Library/Audio/Plug-Ins/VST";
             vst2 += ":/Library/Audio/Plug-Ins/VST";
-#else
+           #else
             // no official spec, use common paths
             vst2 = HOME + "/.vst";
             vst2 += ":" + HOME + "/.lxvst";
@@ -223,7 +228,7 @@ struct PluginPaths {
             vst2 += ":/usr/local/lib/lxvst";
             vst2 += ":/usr/lib/vst";
             vst2 += ":/usr/lib/lxvst";
-#endif
+           #endif
         }
 
         if (const char *const envVST3 = std::getenv("VST3_PATH"))
@@ -233,20 +238,20 @@ struct PluginPaths {
         else
         {
             // https://steinbergmedia.github.io/vst3_dev_portal/pages/Technical+Documentation/Locations+Format/Plugin+Locations.html
-#if defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_WIN)
             vst3 = LOCALAPPDATA + "\\Programs\\Common\\VST3";
             vst3 += ";" + COMMONPROGRAMFILES + "\\VST3";
-#elif defined(CARLA_OS_HAIKU)
+           #elif defined(CARLA_OS_HAIKU)
             vst3  = HOME + "/.vst3";
             vst3 += ":/system/add-ons/media/vst3plugins";
-#elif defined(CARLA_OS_MAC)
+           #elif defined(CARLA_OS_MAC)
             vst3 = HOME + "/Library/Audio/Plug-Ins/VST3";
             vst3 += ":/Library/Audio/Plug-Ins/VST3";
-#else
+           #else
             vst3 = HOME + "/.vst3";
             vst3 += ":/usr/local/lib/vst3";
             vst3 += ":/usr/lib/vst3";
-#endif
+           #endif
         }
 
         if (const char *const envCLAP = std::getenv("CLAP_PATH"))
@@ -256,22 +261,23 @@ struct PluginPaths {
         else
         {
             // https://github.com/free-audio/clap/blob/main/include/clap/entry.h
-#if defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_WIN)
             clap = LOCALAPPDATA + "\\Programs\\Common\\CLAP";
             clap += ";" + COMMONPROGRAMFILES + "\\CLAP";
-#elif defined(CARLA_OS_HAIKU)
+           #elif defined(CARLA_OS_HAIKU)
             clap  = HOME + "/.clap";
             clap += ":/system/add-ons/media/clapplugins";
-#elif defined(CARLA_OS_MAC)
+           #elif defined(CARLA_OS_MAC)
             clap = HOME + "/Library/Audio/Plug-Ins/CLAP";
             clap += ":/Library/Audio/Plug-Ins/CLAP";
-#else
+           #else
             clap = HOME + "/.clap";
             clap += ":/usr/local/lib/clap";
             clap += ":/usr/lib/clap";
-#endif
+           #endif
         }
 
+       #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
         if (const char *const envJSFX = std::getenv("JSFX_PATH"))
         {
             jsfx = envJSFX;
@@ -279,13 +285,13 @@ struct PluginPaths {
         else
         {
             // REAPER user data directory
-#if defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_WIN)
             jsfx = APPDATA + "\\REAPER\\Effects";
-#elif defined(CARLA_OS_MAC)
+           #elif defined(CARLA_OS_MAC)
             jsfx = HOME + "/Library/Application Support/REAPER/Effects";
-#else
+           #else
             jsfx = CONFIG_HOME + "/REAPER/Effects";
-#endif
+           #endif
         }
 
         if (const char *const envSF2 = std::getenv("SF2_PATH"))
@@ -294,15 +300,15 @@ struct PluginPaths {
         }
         else
         {
-#if defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_WIN)
             sf2  = APPDATA + "\\SF2";
-#else
+           #else
             sf2  = HOME + "/.sounds/sf2";
             sf2 += ":" + HOME + "/.sounds/sf3";
             sf2 += ":/usr/share/sounds/sf2";
             sf2 += ":/usr/share/sounds/sf3";
             sf2 += ":/usr/share/soundfonts";
-#endif
+           #endif
         }
 
         if (const char *const envSFZ = std::getenv("SFZ_PATH"))
@@ -311,20 +317,23 @@ struct PluginPaths {
         }
         else
         {
-#if defined(CARLA_OS_WIN)
+           #if defined(CARLA_OS_WIN)
             sfz  = APPDATA + "\\SFZ";
-#else
+           #else
             sfz  = HOME + "/.sounds/sfz";
             sfz += ":/usr/share/sounds/sfz";
-#endif
+           #endif
         }
+       #endif // !CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
 
-#ifdef CARLA_OS_WIN
+       #ifdef CARLA_OS_WIN
         if (envPROGRAMFILESx86 != nullptr)
         {
             const QCarlaString PROGRAMFILESx86(envPROGRAMFILESx86);
+           #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
             ladspa += ";" + PROGRAMFILESx86 + "\\LADSPA";
             dssi   += ";" + PROGRAMFILESx86 + "\\DSSI";
+           #endif
             vst2   += ";" + PROGRAMFILESx86 + "\\VSTPlugins";
             vst2   += ";" + PROGRAMFILESx86 + "\\Steinberg\\VSTPlugins";
         }
@@ -335,7 +344,7 @@ struct PluginPaths {
             vst3   += COMMONPROGRAMFILESx86 + "\\VST3";
             clap   += COMMONPROGRAMFILESx86 + "\\CLAP";
         }
-#else
+       #elif !defined(CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS)
         QCarlaString winePrefix;
 
         if (const char* const envWINEPREFIX = std::getenv("WINEPREFIX"))
@@ -361,7 +370,7 @@ struct PluginPaths {
             }
            #endif
         }
-#endif
+       #endif
     }
 };
 
@@ -674,9 +683,9 @@ struct PluginListDialog::PrivateData {
         {
             tool = carla_get_library_folder();
             tool += CARLA_OS_SEP_STR "carla-discovery-native";
-#ifdef CARLA_OS_WIN
+           #ifdef CARLA_OS_WIN
             tool += ".exe";
-#endif
+           #endif
         }
 
         ~Discovery()
@@ -689,18 +698,22 @@ struct PluginListDialog::PrivateData {
     PluginPaths paths;
 
     struct {
+       #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
         std::vector<PluginInfo> internal;
         std::vector<PluginInfo> ladspa;
         std::vector<PluginInfo> dssi;
+       #endif
         std::vector<PluginInfo> lv2;
         std::vector<PluginInfo> vst2;
         std::vector<PluginInfo> vst3;
         std::vector<PluginInfo> clap;
+      #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
        #ifdef CARLA_OS_MAC
         std::vector<PluginInfo> au;
        #endif
         std::vector<PluginInfo> jsfx;
         std::vector<PluginInfo> kits;
+      #endif
         QMap<QString, QList<PluginInfo>> cache;
         QList<PluginFavorite> favorites;
 
@@ -708,19 +721,23 @@ struct PluginListDialog::PrivateData {
         {
             switch (pinfo.type)
             {
+           #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
             case PLUGIN_INTERNAL: internal.push_back(pinfo); return true;
             case PLUGIN_LADSPA:   ladspa.push_back(pinfo);   return true;
             case PLUGIN_DSSI:     dssi.push_back(pinfo);     return true;
+           #endif
             case PLUGIN_LV2:      lv2.push_back(pinfo);      return true;
             case PLUGIN_VST2:     vst2.push_back(pinfo);     return true;
             case PLUGIN_VST3:     vst3.push_back(pinfo);     return true;
             case PLUGIN_CLAP:     clap.push_back(pinfo);     return true;
+          #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
            #ifdef CARLA_OS_MAC
             case PLUGIN_AU:       au.push_back(pinfo);       return true;
            #endif
             case PLUGIN_JSFX:     jsfx.push_back(pinfo);     return true;
             case PLUGIN_SF2:
             case PLUGIN_SFZ:      kits.push_back(pinfo);     return true;
+          #endif
             default: return false;
             }
         }
@@ -745,6 +762,17 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
 
     ui.tab_info->tabBar()->hide();
     ui.tab_reqs->tabBar()->hide();
+
+   #ifdef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+    ui.ch_internal->hide();
+    ui.ch_ladspa->hide();
+    ui.ch_dssi->hide();
+    ui.ch_au->hide();
+    ui.ch_jsfx->hide();
+    ui.ch_kits->hide();
+    ui.ch_gui->hide();
+    ui.ch_inline_display->hide();
+   #endif
 
     // do not resize info frame so much
     const QLayout *const infoLayout = ui.tw_info->layout();
@@ -939,6 +967,11 @@ void PluginListDialog::addPluginInfo(const CarlaPluginDiscoveryInfo* const info,
         p->plugins.cache[qsha1sum].append(pinfo);
     }
 
+   #ifdef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+    if ((pinfo.hints & PLUGIN_HAS_CUSTOM_EMBED_UI) == 0x0)
+        return;
+   #endif
+
     p->plugins.add(pinfo);
 }
 
@@ -966,7 +999,13 @@ bool PluginListDialog::checkPluginCache(const char* const filename, const char* 
     }
 
     for (const PluginInfo& info : plist)
+    {
+       #ifdef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+        if ((info.hints & PLUGIN_HAS_CUSTOM_EMBED_UI) == 0x0)
+            continue;
+       #endif
         p->plugins.add(info);
+    }
 
     return true;
 }
@@ -1019,7 +1058,6 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
 {
     if (event->timerId() == p->timerId)
     {
-        // TODO all formats
         do {
             // discovery in progress, keep it going
             if (p->discovery.handle != nullptr)
@@ -1037,29 +1075,27 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
             switch (p->discovery.ptype)
             {
             case PLUGIN_NONE:
+           #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
                 ui.label->setText(tr("Discovering internal plugins..."));
                 p->discovery.ptype = PLUGIN_INTERNAL;
                 break;
             case PLUGIN_INTERNAL:
-                ui.label->setText(tr("Discovering LV2 plugins..."));
-                path = p->paths.lv2;
-                p->discovery.ptype = PLUGIN_LV2;
-                break;
-            case PLUGIN_LV2:
-                if (p->paths.jsfx.isNotEmpty())
-                {
-                    ui.label->setText(tr("Discovering JSFX plugins..."));
-                    path = p->paths.jsfx;
-                    p->discovery.ptype = PLUGIN_JSFX;
-                    break;
-                }
-                [[fallthrough]];
-            case PLUGIN_JSFX:
                 ui.label->setText(tr("Discovering LADSPA plugins..."));
                 path = p->paths.ladspa;
                 p->discovery.ptype = PLUGIN_LADSPA;
                 break;
             case PLUGIN_LADSPA:
+                ui.label->setText(tr("Discovering DSSI plugins..."));
+                path = p->paths.dssi;
+                p->discovery.ptype = PLUGIN_DSSI;
+                break;
+            case PLUGIN_DSSI:
+           #endif
+                ui.label->setText(tr("Discovering LV2 plugins..."));
+                path = p->paths.lv2;
+                p->discovery.ptype = PLUGIN_LV2;
+                break;
+            case PLUGIN_LV2:
                 ui.label->setText(tr("Discovering VST2 plugins..."));
                 path = p->paths.vst2;
                 p->discovery.ptype = PLUGIN_VST2;
@@ -1074,6 +1110,34 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
                 path = p->paths.clap;
                 p->discovery.ptype = PLUGIN_CLAP;
                 break;
+            case PLUGIN_CLAP:
+          #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+           #ifdef CARLA_OS_MAC
+                ui.label->setText(tr("Discovering AU plugins..."));
+                p->discovery.ptype = PLUGIN_AU;
+                break;
+            case PLUGIN_AU:
+           #endif
+                if (p->paths.jsfx.isNotEmpty())
+                {
+                    ui.label->setText(tr("Discovering JSFX plugins..."));
+                    path = p->paths.jsfx;
+                    p->discovery.ptype = PLUGIN_JSFX;
+                    break;
+                }
+                [[fallthrough]];
+            case PLUGIN_JSFX:
+                ui.label->setText(tr("Discovering SF2 kits..."));
+                path = p->paths.sf2;
+                p->discovery.ptype = PLUGIN_SF2;
+                break;
+            case PLUGIN_SF2:
+                ui.label->setText(tr("Discovering SFZ kits..."));
+                path = p->paths.sfz;
+                p->discovery.ptype = PLUGIN_SFZ;
+                break;
+            case PLUGIN_SFZ:
+          #endif
             default:
                 // discovery complete
                 refreshPluginsStop();
@@ -1103,6 +1167,18 @@ void PluginListDialog::addPluginsToTable()
     ui.tableWidget->setSortingEnabled(false);
     ui.tableWidget->clearContents();
 
+   #ifdef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+    ui.tableWidget->setRowCount(
+        int(p->plugins.lv2.size() + p->plugins.vst2.size() + p->plugins.vst3.size() + p->plugins.clap.size()));
+
+    constexpr const char* const txt = "Have %1 LV2, %2 VST2, %3 VST3 and %4 CLAP plugins";
+
+    ui.label->setText(tr(txt)
+        .arg(QString::number(p->plugins.lv2.size()))
+        .arg(QString::number(p->plugins.vst2.size()))
+        .arg(QString::number(p->plugins.vst3.size()))
+        .arg(QString::number(p->plugins.clap.size())));
+   #else
     ui.tableWidget->setRowCount(
         int(p->plugins.internal.size() + p->plugins.ladspa.size() + p->plugins.dssi.size() +
             p->plugins.lv2.size() + p->plugins.vst2.size() + p->plugins.vst3.size() + p->plugins.clap.size() +
@@ -1117,7 +1193,6 @@ void PluginListDialog::addPluginsToTable()
                                      #endif
                                       " and %8 JSFX plugins, plus %9 Sound Kits";
 
-	// TODO all formats
     ui.label->setText(tr(txt)
         .arg(QString::number(p->plugins.internal.size()))
         .arg(QString::number(p->plugins.ladspa.size()))
@@ -1131,6 +1206,7 @@ void PluginListDialog::addPluginsToTable()
        #endif
         .arg(QString::number(p->plugins.jsfx.size()))
         .arg(QString::number(p->plugins.kits.size())));
+   #endif
 
     // ----------------------------------------------------------------------------------------------------------------
     // now add all plugins to the table
@@ -1157,6 +1233,7 @@ void PluginListDialog::addPluginsToTable()
 
     p->lastTableWidgetIndex = 0;
 
+   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     for (const PluginInfo &plugin : p->plugins.internal)
         addPluginToTable(plugin);
 
@@ -1165,6 +1242,7 @@ void PluginListDialog::addPluginsToTable()
 
     for (const PluginInfo &plugin : p->plugins.dssi)
         addPluginToTable(plugin);
+   #endif
 
     for (const PluginInfo &plugin : p->plugins.lv2)
         addPluginToTable(plugin);
@@ -1178,6 +1256,7 @@ void PluginListDialog::addPluginsToTable()
     for (const PluginInfo& plugin : p->plugins.clap)
         addPluginToTable(plugin);
 
+  #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
    #ifdef CARLA_OS_MAC
     for (const PluginInfo& plugin : p->plugins.au)
         addPluginToTable(plugin);
@@ -1188,6 +1267,7 @@ void PluginListDialog::addPluginsToTable()
 
     for (const PluginInfo& plugin : p->plugins.kits)
         addPluginToTable(plugin);
+  #endif
 
     CARLA_SAFE_ASSERT_INT2(p->lastTableWidgetIndex == ui.tableWidget->rowCount(),
                            p->lastTableWidgetIndex, ui.tableWidget->rowCount());
@@ -1287,8 +1367,6 @@ void PluginListDialog::loadSettings()
     {
         if (!key.startsWith("PluginCache/"))
             continue;
-
-        qWarning() << key << " | " << key.sliced(12);
 
         const QByteArray data(settings.valueByteArray(key));
 
@@ -1678,18 +1756,22 @@ void PluginListDialog::refreshPlugins()
 void PluginListDialog::refreshPluginsStart()
 {
     // remove old plugins
+   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     p->plugins.internal.clear();
     p->plugins.ladspa.clear();
     p->plugins.dssi.clear();
+   #endif
     p->plugins.lv2.clear();
     p->plugins.vst2.clear();
     p->plugins.vst3.clear();
     p->plugins.clap.clear();
+  #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
    #ifdef CARLA_OS_MAC
     p->plugins.au.clear();
    #endif
     p->plugins.jsfx.clear();
     p->plugins.kits.clear();
+  #endif
     p->discovery.dialog->b_start->setEnabled(false);
     p->discovery.dialog->b_skip->setEnabled(true);
     p->discovery.ignoreCache = p->discovery.dialog->ch_all->isChecked();
@@ -1730,7 +1812,8 @@ void PluginListDialog::refreshPluginsStop()
 
 void PluginListDialog::refreshPluginsSkip()
 {
-    // TODO
+    if (p->discovery.handle != nullptr)
+        carla_plugin_discovery_skip(p->discovery.handle);
 }
 
 // --------------------------------------------------------------------------------------------------------------------
