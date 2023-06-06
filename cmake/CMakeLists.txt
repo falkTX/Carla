@@ -39,6 +39,8 @@ else()
   set(CARLA_USE_OSC_DEFAULT TRUE)
 endif()
 
+set(CARLA_BUILD_FRAMEWORKS FALSE CACHE BOOL "Build libraries as macOS frameworks")
+set(CARLA_ENABLE_JSFX TRUE CACHE BOOL "Enable JSFX")
 set(CARLA_USE_JACK ${CARLA_USE_JACK_DEFAULT} CACHE BOOL "Enable JACK")
 set(CARLA_USE_OSC ${CARLA_USE_OSC_DEFAULT} CACHE BOOL "Enable OSC")
 
@@ -125,7 +127,7 @@ function(set_common_target_properties TARGET)
   target_compile_definitions(${TARGET}
     PRIVATE
       BUILDING_CARLA
-      HAVE_YSFX
+      $<$<BOOL:${CARLA_ENABLE_JSFX}>:HAVE_YSFX>
       $<$<BOOL:${CARLA_USE_JACK}>:HAVE_JACK>
       $<$<BOOL:${FLUIDSYNTH_FOUND}>:HAVE_FLUIDSYNTH>
       $<$<BOOL:${LIBLO_FOUND}>:HAVE_LIBLO>
@@ -561,6 +563,8 @@ target_sources(carla-water-files
 #######################################################################################################################
 # ysfx
 
+if(${CARLA_ENABLE_JSFX})
+
 add_library(carla-ysfx STATIC)
 add_library(carla::ysfx ALIAS carla-ysfx)
 
@@ -643,6 +647,8 @@ target_sources(carla-ysfx
     $<$<BOOL:${WIN32}>:../source/modules/ysfx/thirdparty/WDL/source/WDL/win32_utf8.c>
 )
 
+endif(${CARLA_ENABLE_JSFX})
+
 #######################################################################################################################
 # zita-resampler
 
@@ -721,7 +727,7 @@ target_link_libraries(carla-bridge-native
     carla-rtmempool
     carla-sfzero
     carla-water
-    carla-ysfx
+    $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
     carla-zita-resampler
     PkgConfig::FLUIDSYNTH
     PkgConfig::LIBLO
@@ -784,7 +790,7 @@ target_link_libraries(carla-discovery-native
   PRIVATE
     carla-lilv
     carla-water-files
-    carla-ysfx
+    $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
     PkgConfig::FLUIDSYNTH
     ${CARLA_PTHREADS}
 )
@@ -802,18 +808,31 @@ add_library(carla::standalone ALIAS carla-standalone)
 
 set_common_target_properties(carla-standalone)
 
-install(TARGETS carla-standalone
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+if(APPLE AND ${CARLA_BUILD_FRAMEWORKS})
+  set(carla-standalone-public-headers
+    ../source/backend/CarlaBackend.h
+    ../source/backend/CarlaHost.h
+    ../source/backend/CarlaEngine.hpp
+    ../source/backend/CarlaPlugin.hpp
+    ../source/backend/CarlaPluginPtr.hpp
+    ../source/includes/CarlaDefines.h
+    ../source/utils/CarlaUtils.hpp
+  )
 
-set_target_properties(carla-standalone
-  PROPERTIES
-    OUTPUT_NAME carla_standalone2
-    IMPORT_PREFIX lib
-    PREFIX lib
-)
+  set_target_properties(carla-standalone
+    PROPERTIES
+      FRAMEWORK TRUE
+      OUTPUT_NAME carla-standalone
+      PUBLIC_HEADER "${carla-standalone-public-headers}"
+  )
+else()
+  set_target_properties(carla-standalone
+    PROPERTIES
+      OUTPUT_NAME carla_standalone2
+      IMPORT_PREFIX lib
+      PREFIX lib
+  )
+endif()
 
 target_compile_definitions(carla-standalone
   PRIVATE
@@ -847,7 +866,7 @@ target_link_libraries(carla-standalone
     carla-rtmempool
     carla-sfzero
     carla-water
-    carla-ysfx
+    $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
     carla-zita-resampler
     PkgConfig::FLUIDSYNTH
     PkgConfig::LIBLO
@@ -888,7 +907,23 @@ target_sources(carla-standalone
     ../source/backend/plugin/CarlaPluginVST3.cpp
     $<$<BOOL:${CARLA_USE_JACK}>:../source/backend/engine/CarlaEngineJack.cpp>
     $<$<BOOL:${CARLA_USE_JACK}>:../source/backend/plugin/CarlaPluginJack.cpp>
+  PUBLIC
+    ${carla-standalone-public-headers}
 )
+
+install(TARGETS carla-standalone
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+if(APPLE AND ${CARLA_BUILD_FRAMEWORKS})
+  install(TARGETS
+    carla-bridge-native
+    carla-discovery-native
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework)
+endif()
 
 #######################################################################################################################
 # carla utils
@@ -898,18 +933,47 @@ add_library(carla::utils ALIAS carla-utils)
 
 set_common_target_properties(carla-utils)
 
-install(TARGETS carla-utils
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+if(APPLE AND ${CARLA_BUILD_FRAMEWORKS})
+  set(carla-utils-public-headers
+    ../source/backend/CarlaBackend.h
+    ../source/backend/CarlaUtils.h
+    ../source/includes/CarlaDefines.h
+    ../source/includes/CarlaMIDI.h
+    ../source/utils/CarlaBackendUtils.hpp
+    ../source/utils/CarlaBase64Utils.hpp
+    ../source/utils/CarlaBinaryUtils.hpp
+    ../source/utils/CarlaBridgeDefines.hpp
+    ../source/utils/CarlaBridgeUtils.hpp
+    ../source/utils/CarlaMacUtils.hpp
+    ../source/utils/CarlaMathUtils.hpp
+    ../source/utils/CarlaMutex.hpp
+    ../source/utils/CarlaRingBuffer.hpp
+    ../source/utils/CarlaProcessUtils.hpp
+    ../source/utils/CarlaRunner.hpp
+    ../source/utils/CarlaScopeUtils.hpp
+    ../source/utils/CarlaSemUtils.hpp
+    ../source/utils/CarlaSha1Utils.hpp
+    ../source/utils/CarlaShmUtils.hpp
+    ../source/utils/CarlaString.hpp
+    ../source/utils/CarlaThread.hpp
+    ../source/utils/CarlaTimeUtils.hpp
+    ../source/utils/CarlaUtils.hpp
+  )
 
-set_target_properties(carla-utils
-  PROPERTIES
-    OUTPUT_NAME carla_utils
-    IMPORT_PREFIX lib
-    PREFIX lib
-)
+  set_target_properties(carla-utils
+    PROPERTIES
+      FRAMEWORK TRUE
+      OUTPUT_NAME carla-utils
+      PUBLIC_HEADER "${carla-utils-public-headers}"
+  )
+else()
+  set_target_properties(carla-utils
+    PROPERTIES
+      OUTPUT_NAME carla_utils
+      IMPORT_PREFIX lib
+      PREFIX lib
+  )
+endif()
 
 target_include_directories(carla-utils
   PRIVATE
@@ -925,7 +989,8 @@ target_link_libraries(carla-utils
     carla-jackbridge
     carla-lilv
     carla-water-files
-    carla-ysfx
+    $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
+    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
     PkgConfig::FLUIDSYNTH
     PkgConfig::X11
     ${CARLA_PTHREADS}
@@ -943,7 +1008,23 @@ target_sources(carla-utils
     ../source/backend/utils/PluginDiscovery.cpp
     ../source/backend/utils/System.cpp
     ../source/backend/utils/Windows.cpp
+  PUBLIC
+    ${carla-utils-public-headers}
 )
+
+install(TARGETS carla-utils
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+if(APPLE AND ${CARLA_BUILD_FRAMEWORKS})
+  install(TARGETS
+    carla-bridge-native
+    carla-discovery-native
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework)
+endif()
 
 #######################################################################################################################
 
