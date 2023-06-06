@@ -76,7 +76,6 @@ if(PKGCONFIG_FOUND)
   pkg_check_modules(SNDFILE IMPORTED_TARGET sndfile)
 else()
   set(FLUIDSYNTH_FOUND FALSE)
-  set(LIBLO_FOUND FALSE)
   set(SNDFILE_FOUND FALSE)
 endif()
 
