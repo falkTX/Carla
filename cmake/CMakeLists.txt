@@ -732,6 +732,7 @@ target_link_libraries(carla-bridge-native
     PkgConfig::LIBLO
     PkgConfig::LIBMAGIC
     PkgConfig::X11
+    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
     ${CARLA_PTHREADS}
 )
 
@@ -871,6 +872,7 @@ target_link_libraries(carla-standalone
     PkgConfig::LIBLO
     PkgConfig::LIBMAGIC
     PkgConfig::X11
+    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
     ${CARLA_PTHREADS}
 )
 
@@ -989,9 +991,9 @@ target_link_libraries(carla-utils
     carla-lilv
     carla-water-files
     $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
-    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
     PkgConfig::FLUIDSYNTH
     PkgConfig::X11
+    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
     ${CARLA_PTHREADS}
   PUBLIC
     $<$<BOOL:${WIN32}>:winmm>
