@@ -148,7 +148,7 @@ public:
           fIsOffline(false),
           fFirstIdle(true),
           fBridgeVersion(0),
-          fLastPingTime(-1)
+          fLastPingTime(UINT32_MAX)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
     }
@@ -296,7 +296,7 @@ public:
     bool close() override
     {
         carla_debug("CarlaEngineBridge::close()");
-        fLastPingTime = -1;
+        fLastPingTime = UINT32_MAX;
 
         CarlaEngine::close();
 
@@ -383,7 +383,6 @@ public:
         {
             fFirstIdle = false;
             fLastPingTime = carla_gettime_ms();
-            CARLA_SAFE_ASSERT(fLastPingTime > 0);
 
             char bufStr[STR_MAX+1];
             carla_zeroChars(bufStr, STR_MAX+1);
@@ -687,7 +686,7 @@ public:
             handleNonRtData();
         } CARLA_SAFE_EXCEPTION("handleNonRtData");
 
-        if (fLastPingTime > 0 && carla_gettime_ms() > fLastPingTime + 30000 && ! wasFirstIdle)
+        if (fLastPingTime != UINT32_MAX && carla_gettime_ms() > fLastPingTime + 30000 && ! wasFirstIdle)
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
             signalThreadShouldExit();
@@ -824,7 +823,8 @@ public:
             }
 #endif
 
-            if (opcode != kPluginBridgeNonRtClientNull && opcode != kPluginBridgeNonRtClientPingOnOff && fLastPingTime > 0)
+            if (opcode != kPluginBridgeNonRtClientNull &&
+                opcode != kPluginBridgeNonRtClientPingOnOff && fLastPingTime != UINT32_MAX)
                 fLastPingTime = carla_gettime_ms();
 
             switch (opcode)
@@ -845,11 +845,9 @@ public:
                 fShmNonRtServerControl.commitWrite();
             }   break;
 
-            case kPluginBridgeNonRtClientPingOnOff: {
-                const uint32_t onOff(fShmNonRtClientControl.readBool());
-
-                fLastPingTime = onOff ? carla_gettime_ms() : -1;
-            }   break;
+            case kPluginBridgeNonRtClientPingOnOff:
+                fLastPingTime = fShmNonRtClientControl.readBool() ? carla_gettime_ms() : UINT32_MAX;
+                break;
 
             case kPluginBridgeNonRtClientActivate:
                 if (plugin->isEnabled())
@@ -1689,7 +1687,7 @@ private:
     bool fIsOffline;
     bool fFirstIdle;
     uint32_t fBridgeVersion;
-    int64_t fLastPingTime;
+    uint32_t fLastPingTime;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineBridge)
 };
