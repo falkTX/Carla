@@ -218,7 +218,7 @@
 
     @see VSTPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_AU
 */
-#if defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
+#if (defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)) && !defined(BUILD_BRIDGE)
 # define JUCE_PLUGINHOST_VST 1
 #else
 # define JUCE_PLUGINHOST_VST 0
@@ -230,7 +230,7 @@
 
     @see VSTPluginFormat, VST3PluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST, JUCE_PLUGINHOST_AU
 */
-#if defined(APPCONFIG_OS_LINUX) || defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
+#if (defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)) && !defined(BUILD_BRIDGE)
 # define JUCE_PLUGINHOST_VST3 1
 #else
 # define JUCE_PLUGINHOST_VST3 0

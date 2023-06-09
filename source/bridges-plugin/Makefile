@@ -206,7 +206,6 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaPluginVST2.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginVST3.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginAU.cpp.arch.o \
-	$(OBJDIR)/CarlaPluginJuce.cpp.arch.o \
 	$(OBJDIR)/CarlaStandalone.cpp.arch.o
 
 OBJS_arm32   = $(OBJS_arch:%.arch.o=%.arm32.o)
