@@ -20,6 +20,7 @@
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QList>
+#include <QtCore/QTimer>
 
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -1020,7 +1021,9 @@ void PluginListDialog::done(const int r)
     {
         QTableWidgetItem* const widget = ui.tableWidget->item(ui.tableWidget->currentRow(), TW_NAME);
         p->retPlugin = asPluginInfo(widget->data(Qt::UserRole + UR_PLUGIN_INFO));
-    } else {
+    }
+    else
+    {
         p->retPlugin = {};
     }
 
@@ -1044,7 +1047,6 @@ void PluginListDialog::showEvent(QShowEvent* const event)
         p->discovery.dialog->ch_invalid->setChecked(false);
         p->discovery.dialog->group->setEnabled(false);
         p->discovery.dialog->progressBar->setFormat("Starting initial discovery...");
-        p->discovery.dialog->show();
 
         QObject::connect(p->discovery.dialog->b_skip, &QPushButton::clicked,
                          this, &PluginListDialog::refreshPluginsSkip);
@@ -1052,6 +1054,8 @@ void PluginListDialog::showEvent(QShowEvent* const event)
                          this, &PluginListDialog::refreshPluginsStop);
 
         p->timerId = startTimer(0);
+
+        QTimer::singleShot(0, p->discovery.dialog, &QDialog::exec);
     }
 }
 
@@ -1146,6 +1150,9 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
 
             if (p->timerId == 0)
                 break;
+
+            if (p->discovery.dialog)
+                p->discovery.dialog->progressBar->setFormat(ui.label->text());
 
             p->discovery.handle = carla_plugin_discovery_start(p->discovery.tool.toUtf8().constData(),
                                                                p->discovery.ptype,
@@ -1752,7 +1759,6 @@ void PluginListDialog::refreshPlugins()
     refreshPluginsStop();
 
     p->discovery.dialog = new PluginRefreshDialog(this);
-    p->discovery.dialog->show();
 
     QObject::connect(p->discovery.dialog->b_start, &QPushButton::clicked,
                      this, &PluginListDialog::refreshPluginsStart);
@@ -1760,6 +1766,8 @@ void PluginListDialog::refreshPlugins()
                      this, &PluginListDialog::refreshPluginsSkip);
     QObject::connect(p->discovery.dialog, &QDialog::finished,
                      this, &PluginListDialog::refreshPluginsStop);
+
+    p->discovery.dialog->exec();
 }
 
 void PluginListDialog::refreshPluginsStart()
