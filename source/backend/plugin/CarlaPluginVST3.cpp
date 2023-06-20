@@ -795,6 +795,7 @@ struct carla_v3_output_param_changes : v3_param_changes_cpp {
     {
         for (uint32_t i=0; i<numParameters; ++i)
             delete queue[i];
+        delete[] parametersUsed;
         delete[] queue;
     }
 
@@ -2176,7 +2177,6 @@ public:
 
             char strBuf[200];
             strncpy_utf8(strBuf, paramInfo.title, 128);
-            carla_stdout("param %d | %d '%s' %d", j, paramInfo.param_id, strBuf, paramInfo.flags);
 
             const v3_param_id paramId = paramInfo.param_id;
             pData->param.data[j].index  = static_cast<uint32_t>(j);
@@ -2191,9 +2191,6 @@ public:
             max = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, paramId, 1.0);
             def = v3_cpp_obj(fV3.controller)->normalised_parameter_to_plain(fV3.controller, paramId,
                                                                             paramInfo.default_normalised_value);
-
-            carla_stdout("param %d | %d '%s' %d %f %f %f", j, paramInfo.param_id, strBuf, paramInfo.flags,
-                         min, max, def);
 
             if (min >= max)
                 max = min + 0.1;
@@ -3778,7 +3775,6 @@ private:
            #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
             // create view
             view = v3_cpp_obj(controller)->create_view(controller, "editor");
-            carla_stdout("has view %p", view);
            #endif
 
             return true;
