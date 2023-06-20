@@ -1901,13 +1901,17 @@ void PluginListDialog::saveSettings()
 
 // --------------------------------------------------------------------------------------------------------------------
 
-const PluginListDialogResults*
-carla_frontend_createAndExecPluginListDialog(void* const parent/*, const HostSettings& hostSettings*/)
+PluginListDialog*
+carla_frontend_createPluginListDialog(void* const parent)
 {
     const HostSettings hostSettings = {};
-    PluginListDialog gui(reinterpret_cast<QWidget*>(parent), hostSettings);
+    return new PluginListDialog(reinterpret_cast<QWidget*>(parent), hostSettings);
+}
 
-    if (gui.exec())
+const PluginListDialogResults*
+carla_frontend_execPluginListDialog(PluginListDialog* const dialog)
+{
+    if (dialog->exec())
     {
         static PluginListDialogResults ret;
         static CarlaString category;
@@ -1916,7 +1920,7 @@ carla_frontend_createAndExecPluginListDialog(void* const parent/*, const HostSet
         static CarlaString label;
         static CarlaString maker;
 
-        const PluginInfo& plugin(gui.getSelectedPluginInfo());
+        const PluginInfo& plugin(dialog->getSelectedPluginInfo());
 
         category = plugin.category.toUtf8();
         filename = plugin.filename.toUtf8();
@@ -1946,6 +1950,17 @@ carla_frontend_createAndExecPluginListDialog(void* const parent/*, const HostSet
     }
 
     return nullptr;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+const PluginListDialogResults*
+carla_frontend_createAndExecPluginListDialog(void* const parent/*, const HostSettings& hostSettings*/)
+{
+    const HostSettings hostSettings = {};
+    PluginListDialog gui(reinterpret_cast<QWidget*>(parent), hostSettings);
+
+    return carla_frontend_execPluginListDialog(&gui);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -161,7 +161,7 @@ class HostWindow(QMainWindow):
         self.fPluginCount = 0
         self.fPluginList  = []
 
-        self.fPluginDatabaseDialog = None
+        self.fPluginListDialog = None
         self.fFavoritePlugins = []
 
         self.fProjectFilename  = ""
@@ -1208,8 +1208,10 @@ class HostWindow(QMainWindow):
 
     def showAddPluginDialog(self):
         # TODO self.fHasLoadedLv2Plugins
-        ret = gCarla.felib.createAndExecPluginListDialog(self.fParentOrSelf,
-                                                         self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
+        if self.fPluginListDialog is None:
+            self.fPluginListDialog = gCarla.felib.createPluginListDialog(self.fParentOrSelf,
+                                                                         self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS])
+        ret = gCarla.felib.execPluginListDialog(self.fPluginListDialog)
         print(ret)
 
         # TODO

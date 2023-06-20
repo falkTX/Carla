@@ -87,7 +87,13 @@ class CarlaFrontendLib():
         self.lib.carla_frontend_createAndExecJackAppDialog.argtypes = (c_void_p, c_char_p)
         self.lib.carla_frontend_createAndExecJackAppDialog.restype = POINTER(JackApplicationDialogResults)
 
-        self.lib.carla_frontend_createAndExecPluginListDialog.argtypes = (c_void_p,) # , c_bool)
+        self.lib.carla_frontend_createPluginListDialog.argtypes = (c_void_p,)
+        self.lib.carla_frontend_createPluginListDialog.restype = c_void_p
+
+        self.lib.carla_frontend_execPluginListDialog.argtypes = (c_void_p,)
+        self.lib.carla_frontend_execPluginListDialog.restype = POINTER(PluginListDialogResults)
+
+        self.lib.carla_frontend_createAndExecPluginListDialog.argtypes = (c_void_p,)
         self.lib.carla_frontend_createAndExecPluginListDialog.restype = POINTER(PluginListDialogResults)
 
     # --------------------------------------------------------------------------------------------------------
@@ -98,6 +104,12 @@ class CarlaFrontendLib():
     def createAndExecJackAppDialog(self, parent, projectFilename):
         return structToDictOrNull(self.lib.carla_frontend_createAndExecJackAppDialog(unwrapinstance(parent),
                                                                                      projectFilename.encode("utf-8")))
+
+    def createPluginListDialog(self, parent, useSystemIcons):
+        return self.lib.carla_frontend_createPluginListDialog(unwrapinstance(parent))
+
+    def execPluginListDialog(self, dialog):
+        return structToDictOrNull(self.lib.carla_frontend_execPluginListDialog(dialog))
 
     def createAndExecPluginListDialog(self, parent, useSystemIcons):
         return structToDictOrNull(self.lib.carla_frontend_createAndExecPluginListDialog(unwrapinstance(parent)))

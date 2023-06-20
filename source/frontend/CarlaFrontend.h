@@ -51,6 +51,8 @@ typedef struct {
     uint parameterOuts;
 } PluginListDialogResults;
 
+struct PluginListDialog;
+
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_API void
@@ -58,6 +60,12 @@ carla_frontend_createAndExecAboutJuceDialog(void* parent);
 
 CARLA_API const JackAppDialogResults*
 carla_frontend_createAndExecJackAppDialog(void* parent, const char* projectFilename);
+
+CARLA_API PluginListDialog*
+carla_frontend_createPluginListDialog(void* parent);
+
+CARLA_API const PluginListDialogResults*
+carla_frontend_execPluginListDialog(PluginListDialog* dialog);
 
 CARLA_API const PluginListDialogResults*
 carla_frontend_createAndExecPluginListDialog(void* parent/*, const HostSettings& hostSettings*/);
