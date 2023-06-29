@@ -2486,7 +2486,7 @@ public:
 
             for (uint32_t i=0; i < count; ++i)
             {
-                const uint32_t& type(evIns.getAt(i, 0x0));
+                const uint32_t type = evIns.getAt(i, 0x0);
 
                 if (type == CARLA_EVENT_DATA_ATOM)
                 {
@@ -2518,7 +2518,7 @@ public:
 
             for (uint32_t i=0; i < count; ++i)
             {
-                const uint32_t& type(evOuts.getAt(i, 0x0));
+                const uint32_t type = evOuts.getAt(i, 0x0);
 
                 if (type == CARLA_EVENT_DATA_ATOM)
                 {
