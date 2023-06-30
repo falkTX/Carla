@@ -972,9 +972,6 @@ public:
             handleParameterValueChanged(i, curValue);
         }
 
-        if (frames == 0)
-            return false;
-
         // init event out data
         if (fPorts.numMidiOuts > 0 || fPorts.hasUI)
         {
@@ -994,6 +991,9 @@ public:
                 seq->body.pad  = 0;
             }
         }
+
+        if (frames == 0)
+            return false;
 
         return true;
     }
