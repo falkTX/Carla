@@ -3051,8 +3051,9 @@ public:
 
         } // End of Post-processing
 #else // BUILD_BRIDGE_ALTERNATIVE_ARCH
-        for (uint32_t i=0; i < pData->audioOut.count; ++i, ++j)
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
             carla_copyFloats(outBuffer[i] + timeOffset, fAudioAndCvOutBuffers[i] + timeOffset, frames);
+
         for (uint32_t i=0, j=pData->audioOut.count; i < pData->cvOut.count; ++i, ++j)
             carla_copyFloats(cvOut[i] + timeOffset, fAudioAndCvOutBuffers[j] + timeOffset, frames);
 #endif
