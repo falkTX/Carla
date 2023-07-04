@@ -2605,7 +2605,7 @@ public:
 
                 if (isSampleAccurate && eventTime > timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, eventTime - timeOffset, timeOffset))
+                    if (processSingle(audioIn, audioOut, cvIn, cvOut, eventTime - timeOffset, timeOffset))
                     {
                         startTime  = 0;
                         timeOffset = eventTime;
@@ -2808,7 +2808,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(audioIn, audioOut, frames - timeOffset, timeOffset);
+                processSingle(audioIn, audioOut, cvIn, cvOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
@@ -2817,7 +2817,7 @@ public:
 
         else
         {
-            processSingle(audioIn, audioOut, frames, 0);
+            processSingle(audioIn, audioOut, cvIn, cvOut, frames, 0);
 
         } // End of Plugin processing (no events)
 
@@ -2836,6 +2836,7 @@ public:
     }
 
     bool processSingle(const float* const* const inBuffer, float** const outBuffer,
+                       const float* const* const cvIn, float** const cvOut,
                        const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
@@ -2867,6 +2868,11 @@ public:
                 for (uint32_t k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
+            for (uint32_t i=0; i < pData->cvOut.count; ++i)
+            {
+                for (uint32_t k=0; k < frames; ++k)
+                    cvOut[i][k+timeOffset] = 0.0f;
+            }
 
             return false;
         }
@@ -2877,24 +2883,17 @@ public:
         float* bufferAudioIn[96]; // std::max(1u, pData->audioIn.count + pData->cvIn.count)
         float* bufferAudioOut[96]; // std::max(1u, pData->audioOut.count + pData->cvOut.count)
 
-        {
-            uint32_t i=0;
-            for (; i < pData->audioIn.count; ++i)
-                bufferAudioIn[i] = const_cast<float*>(inBuffer[i]+timeOffset);
-            for (; i < pData->cvIn.count; ++i)
-                bufferAudioIn[i] = const_cast<float*>(inBuffer[i]+timeOffset);
-        }
+        for (uint32_t i=0; i < pData->audioIn.count; ++i)
+            bufferAudioIn[i] = const_cast<float*>(inBuffer[i]+timeOffset);
 
-        {
-            uint32_t i=0;
-            for (; i < pData->audioOut.count; ++i)
-                bufferAudioOut[i] = fAudioAndCvOutBuffers[i]+timeOffset;
-            for (; i < pData->cvOut.count; ++i)
-                bufferAudioOut[i] = fAudioAndCvOutBuffers[i]+timeOffset;
-        }
+        for (uint32_t i=0, j=pData->audioIn.count; i < pData->cvIn.count; ++i, ++j)
+            bufferAudioIn[j] = const_cast<float*>(cvIn[i]+timeOffset);
 
         for (uint32_t i=0; i < pData->audioOut.count + pData->cvOut.count; ++i)
-            carla_zeroFloats(fAudioAndCvOutBuffers[i], frames);
+        {
+            bufferAudioOut[i] = fAudioAndCvOutBuffers[i]+timeOffset;
+            carla_zeroFloats(bufferAudioOut[i], frames);
+        }
 
         // ------------------------------------------------------------------------------------------------------------
         // Set MIDI events
@@ -2994,9 +2993,7 @@ public:
             float bufValue;
             float* const oldBufLeft = pData->postProc.extraBuffer;
 
-            uint32_t i=0;
-
-            for (; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
@@ -3049,13 +3046,15 @@ public:
                 }
             }
 
-            for (; i < pData->cvOut.count; ++i)
-                carla_copyFloats(outBuffer[i] + timeOffset, fAudioAndCvOutBuffers[i] + timeOffset, frames);
+            for (uint32_t i=0, j=pData->audioOut.count; i < pData->cvOut.count; ++i, ++j)
+                carla_copyFloats(cvOut[i] + timeOffset, fAudioAndCvOutBuffers[j] + timeOffset, frames);
 
         } // End of Post-processing
 #else // BUILD_BRIDGE_ALTERNATIVE_ARCH
-        for (uint32_t i=0; i < pData->audioOut.count + pData->cvOut.count; ++i)
+        for (uint32_t i=0; i < pData->audioOut.count; ++i, ++j)
             carla_copyFloats(outBuffer[i] + timeOffset, fAudioAndCvOutBuffers[i] + timeOffset, frames);
+        for (uint32_t i=0, j=pData->audioOut.count; i < pData->cvOut.count; ++i, ++j)
+            carla_copyFloats(cvOut[i] + timeOffset, fAudioAndCvOutBuffers[j] + timeOffset, frames);
 #endif
 
         // ------------------------------------------------------------------------------------------------------------
