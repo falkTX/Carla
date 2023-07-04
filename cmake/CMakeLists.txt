@@ -921,18 +921,18 @@ target_sources(carla-standalone
     ${carla-standalone-public-headers}
 )
 
+install(TARGETS carla-standalone
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
 if(${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS
     carla-bridge-native
     carla-discovery-native
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework)
-else()
-  install(TARGETS carla-standalone
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-    FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  )
 endif()
 
 #######################################################################################################################
@@ -1022,18 +1022,18 @@ target_sources(carla-utils
     ${carla-utils-public-headers}
 )
 
+install(TARGETS carla-utils
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
 if(${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS
     carla-bridge-native
     carla-discovery-native
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework)
-else()
-  install(TARGETS carla-utils
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
 endif()
 
 #######################################################################################################################
