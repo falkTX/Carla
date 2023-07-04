@@ -44,6 +44,11 @@ set(CARLA_ENABLE_JSFX TRUE CACHE BOOL "Enable JSFX")
 set(CARLA_USE_JACK ${CARLA_USE_JACK_DEFAULT} CACHE BOOL "Enable JACK")
 set(CARLA_USE_OSC ${CARLA_USE_OSC_DEFAULT} CACHE BOOL "Enable OSC")
 
+if(${CARLA_BUILD_FRAMEWORKS} AND NOT APPLE)
+  set(CARLA_BUILD_FRAMEWORKS FALSE)
+  mark_as_advanced(CARLA_BUILD_FRAMEWORKS)
+endif()
+
 #######################################################################################################################
 # required dependencies
 
@@ -686,7 +691,7 @@ add_executable(carla-bridge-native)
 
 set_common_target_properties(carla-bridge-native)
 
-if(NOT (APPLE AND ${CARLA_BUILD_FRAMEWORKS}))
+if(NOT ${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS carla-bridge-native
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
@@ -776,7 +781,7 @@ add_executable(carla-discovery-native)
 
 set_common_target_properties(carla-discovery-native)
 
-if(NOT (APPLE AND ${CARLA_BUILD_FRAMEWORKS}))
+if(NOT ${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS carla-discovery-native
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
@@ -812,7 +817,7 @@ add_library(carla::standalone ALIAS carla-standalone)
 
 set_common_target_properties(carla-standalone)
 
-if(APPLE AND ${CARLA_BUILD_FRAMEWORKS})
+if(${CARLA_BUILD_FRAMEWORKS})
   set(carla-standalone-public-headers
     ../source/backend/CarlaBackend.h
     ../source/backend/CarlaHost.h
@@ -916,7 +921,7 @@ target_sources(carla-standalone
     ${carla-standalone-public-headers}
 )
 
-if(APPLE AND ${CARLA_BUILD_FRAMEWORKS})
+if(${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS
     carla-bridge-native
     carla-discovery-native
@@ -938,7 +943,7 @@ add_library(carla::utils ALIAS carla-utils)
 
 set_common_target_properties(carla-utils)
 
-if(APPLE AND ${CARLA_BUILD_FRAMEWORKS})
+if(${CARLA_BUILD_FRAMEWORKS})
   set(carla-utils-public-headers
     ../source/backend/CarlaBackend.h
     ../source/backend/CarlaUtils.h
@@ -1017,7 +1022,7 @@ target_sources(carla-utils
     ${carla-utils-public-headers}
 )
 
-if(APPLE AND ${CARLA_BUILD_FRAMEWORKS})
+if(${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS
     carla-bridge-native
     carla-discovery-native
@@ -1103,12 +1108,14 @@ install(TARGETS carla-headers-utils PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_IN
 #######################################################################################################################
 # pkg-config stuff
 
-configure_file(carla-utils.pc.in carla-utils.pc @ONLY)
+if(NOT ${CARLA_BUILD_FRAMEWORKS})
+  configure_file(carla-utils.pc.in carla-utils.pc @ONLY)
 
-install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/carla-utils.pc
-  DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/carla-utils.pc
+    DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+  )
+endif()
 
 #######################################################################################################################
