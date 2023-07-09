@@ -717,10 +717,10 @@ target_compile_definitions(carla-bridge-native
 # FIXME
 target_compile_options(carla-bridge-native
   PRIVATE
-    $<$<C_COMPILER_ID:AppleClang>:-Wno-unused-but-set-variable>
     $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
     $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-but-set-variable>
     $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
 )
 
@@ -905,6 +905,11 @@ elseif(EMSCRIPTEN)
       -sSIDE_MODULE=2
       -sEXPORTED_FUNCTIONS="['carla_get_native_rack_plugin','carla_get_native_patchbay_plugin','carla_get_native_patchbay16_plugin','carla_get_native_patchbay32_plugin','carla_get_native_patchbay64_plugin','carla_get_native_patchbay_cv_plugin','carla_get_native_patchbay_cv8_plugin','carla_get_native_patchbay_cv32_plugin','carla_get_native_patchbay_obs_plugin','carla_create_native_plugin_host_handle','carla_host_handle_free','carla_get_native_plugin_engine','carla_get_complete_license_text','carla_get_juce_version','carla_get_supported_file_extensions','carla_get_supported_features','carla_get_library_filename','carla_get_library_folder']"
   )
+elseif(MSVC)
+  target_link_options(carla-native-plugin
+    PRIVATE
+      /DEF:../source/plugin/symbols/carla-native-plugin.def
+  )
 elseif(WIN32)
   target_link_options(carla-native-plugin
     PRIVATE
@@ -1024,10 +1029,10 @@ target_compile_definitions(carla-standalone
 # FIXME
 target_compile_options(carla-standalone
   PRIVATE
-    $<$<C_COMPILER_ID:AppleClang>:-Wno-unused-but-set-variable>
     $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
     $<$<C_COMPILER_ID:GNU>:-Wno-error=cpp>
+    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-but-set-variable>
     $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
 )
 
@@ -1214,6 +1219,7 @@ endif()
 if(APPLE)
   set_source_files_properties(
     ../source/backend/CarlaStandalone.cpp
+    ../source/backend/engine/CarlaEngineNative.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginVST2.cpp
     ../source/backend/plugin/CarlaPluginVST3.cpp
