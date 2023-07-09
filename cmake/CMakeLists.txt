@@ -840,7 +840,7 @@ if(${CARLA_BUILD_FRAMEWORKS})
   set_target_properties(carla-native-plugin
     PROPERTIES
       FRAMEWORK TRUE
-      OUTPUT_NAME carla_native-plugin
+      OUTPUT_NAME carla-native-plugin
       PUBLIC_HEADER "${carla-native-plugin-public-headers}"
   )
 else()
