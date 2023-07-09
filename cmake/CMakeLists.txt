@@ -127,6 +127,13 @@ endif()
 #######################################################################################################################
 # utilities
 
+if(WIN32)
+  set(CARLA_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
+else()
+  set(CARLA_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/carla)
+endif()
+mark_as_advanced(CARLA_INSTALL_LIBDIR)
+
 function(set_common_target_properties TARGET)
   target_compile_definitions(${TARGET}
     PRIVATE
@@ -922,8 +929,8 @@ target_sources(carla-standalone
 )
 
 install(TARGETS carla-standalone
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  ARCHIVE DESTINATION ${CARLA_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CARLA_INSTALL_LIBDIR}
   FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
@@ -1023,8 +1030,8 @@ target_sources(carla-utils
 )
 
 install(TARGETS carla-utils
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla
+  ARCHIVE DESTINATION ${CARLA_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CARLA_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
