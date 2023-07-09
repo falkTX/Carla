@@ -26,7 +26,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 // Expose info functions as needed
 
-#ifndef CARLA_PLUGIN_BUILD
+#ifndef CARLA_HOST_PLUGIN_BUILD
 # include "utils/Information.cpp"
 #endif
 

@@ -719,8 +719,7 @@ target_compile_options(carla-bridge-native
   PRIVATE
     $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
-    $<$<C_COMPILER_ID:GNU>:-Wno-unused-parameter>
-    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-but-set-variable>
+    $<$<C_COMPILER_ID:GNU>:-Wno-unused-but-set-variable>
     $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
 )
 
@@ -862,10 +861,6 @@ target_compile_definitions(carla-native-plugin
 # FIXME
 # target_compile_options(carla-native-plugin
 #   PRIVATE
-#     $<$<C_COMPILER_ID:AppleClang>:-Wno-unused-but-set-variable>
-#     $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
-#     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
-#     $<$<C_COMPILER_ID:GNU>:-Wno-error=cpp>
 #     $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
 # )
 
@@ -1029,10 +1024,10 @@ target_compile_definitions(carla-standalone
 # FIXME
 target_compile_options(carla-standalone
   PRIVATE
+    $<$<C_COMPILER_ID:GNU>:-Wno-error=cpp>
     $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
-    $<$<C_COMPILER_ID:GNU>:-Wno-error=cpp>
-    $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-but-set-variable>
+    $<$<C_COMPILER_ID:GNU>:-Wno-unused-but-set-variable>
     $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
 )
 
