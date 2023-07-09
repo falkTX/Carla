@@ -3108,7 +3108,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 namespace EngineInit {
 
-#ifndef HAVE_JACK
+#ifdef HAVE_JACK
 CarlaEngine* newJack() { return nullptr; }
 #endif
 

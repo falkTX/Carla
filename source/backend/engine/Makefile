@@ -117,12 +117,12 @@ ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEngineNative.cpp (plugin)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_BUILD -UHAVE_JACK -ObjC++ -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_BUILD -ObjC++ -c -o $@
 else
 $(OBJDIR)/CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEngineNative.cpp (plugin)"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_BUILD -UHAVE_JACK -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_BUILD -c -o $@
 endif
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
