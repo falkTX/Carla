@@ -124,6 +124,9 @@ if(NOT X11_FOUND)
   add_library(PkgConfig::X11 ALIAS carla-none)
 endif()
 
+# TODO
+set(PYQT_FOUND FALSE)
+
 #######################################################################################################################
 # utilities
 
@@ -143,6 +146,7 @@ function(set_common_target_properties TARGET)
       $<$<BOOL:${FLUIDSYNTH_FOUND}>:HAVE_FLUIDSYNTH>
       $<$<BOOL:${LIBLO_FOUND}>:HAVE_LIBLO>
       $<$<BOOL:${LIBMAGIC_FOUND}>:HAVE_LIBMAGIC>
+      $<$<BOOL:${PYQT_FOUND}>:HAVE_PYQT>
       $<$<BOOL:${SNDFILE_FOUND}>:HAVE_SNDFILE>
       $<$<BOOL:${X11_FOUND}>:HAVE_X11>
   )
@@ -445,11 +449,11 @@ target_sources(carla-native-plugins
     ../source/native-plugins/midi-transpose.c
     ../source/native-plugins/audio-file.cpp
     ../source/native-plugins/midi-file.cpp
-    # these rely on PyQt, skip them
-    # ../source/native-plugins/bigmeter.cpp
-    # ../source/native-plugins/midi-pattern.cpp
-    # ../source/native-plugins/notes.cpp
-    # ../source/native-plugins/xycontroller.cpp
+    # these rely on PyQt
+    $<$<BOOL:${PYQT_FOUND}>:../source/native-plugins/bigmeter.cpp>
+    $<$<BOOL:${PYQT_FOUND}>:../source/native-plugins/midi-pattern.cpp>
+    $<$<BOOL:${PYQT_FOUND}>:../source/native-plugins/notes.cpp>
+    $<$<BOOL:${PYQT_FOUND}>:../source/native-plugins/xycontroller.cpp>
 )
 
 #######################################################################################################################
@@ -815,6 +819,168 @@ target_sources(carla-discovery-native
   PRIVATE
     ../source/discovery/carla-discovery.cpp
 )
+
+#######################################################################################################################
+# carla native-plugin
+
+add_library(carla-native-plugin SHARED)
+add_library(carla::standalone ALIAS carla-native-plugin)
+
+set_common_target_properties(carla-native-plugin)
+
+if(${CARLA_BUILD_FRAMEWORKS})
+  set(carla-native-plugin-public-headers
+    ../source/backend/CarlaBackend.h
+    ../source/backend/CarlaHost.h
+    ../source/backend/CarlaUtils.h
+    ../source/includes/CarlaDefines.h
+    ../source/includes/CarlaNative.h
+    ../source/includes/CarlaNativePlugin.h
+  )
+
+  set_target_properties(carla-native-plugin
+    PROPERTIES
+      FRAMEWORK TRUE
+      OUTPUT_NAME carla_native-plugin
+      PUBLIC_HEADER "${carla-native-plugin-public-headers}"
+  )
+else()
+  set_target_properties(carla-native-plugin
+    PROPERTIES
+      OUTPUT_NAME carla_native-plugin
+      IMPORT_PREFIX lib
+      PREFIX lib
+  )
+endif()
+
+target_compile_definitions(carla-native-plugin
+  PRIVATE
+    CARLA_PLUGIN_BUILD
+    CARLA_LIB_EXT="${CMAKE_SHARED_LIBRARY_SUFFIX}"
+)
+
+# FIXME
+# target_compile_options(carla-native-plugin
+#   PRIVATE
+#     $<$<C_COMPILER_ID:AppleClang>:-Wno-unused-but-set-variable>
+#     $<$<C_COMPILER_ID:GNU>:-Wno-format-truncation>
+#     $<$<C_COMPILER_ID:GNU>:-Wno-stringop-overflow>
+#     $<$<C_COMPILER_ID:GNU>:-Wno-error=cpp>
+#     $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
+# )
+
+target_include_directories(carla-native-plugin
+  PRIVATE
+    ../source
+    ../source/backend
+    ../source/includes
+    ../source/modules
+    ../source/utils
+)
+
+if(APPLE)
+  target_link_options(carla-native-plugin
+    PRIVATE
+      -Wl,-exported_symbol,_carla_get_native_patchbay_plugin
+      -Wl,-exported_symbol,_carla_get_native_patchbay16_plugin
+      -Wl,-exported_symbol,_carla_get_native_patchbay32_plugin
+      -Wl,-exported_symbol,_carla_get_native_patchbay64_plugin
+      -Wl,-exported_symbol,_carla_get_native_patchbay_cv_plugin
+      -Wl,-exported_symbol,_carla_get_native_patchbay_cv8_plugin
+      -Wl,-exported_symbol,_carla_get_native_patchbay_cv32_plugin
+      -Wl,-exported_symbol,_carla_get_native_patchbay_obs_plugin
+      -Wl,-exported_symbol,_carla_create_native_plugin_host_handle
+      -Wl,-exported_symbol,_carla_host_handle_free
+      -Wl,-exported_symbol,_carla_get_native_plugin_engine
+      -Wl,-exported_symbol,_carla_get_complete_license_text
+      -Wl,-exported_symbol,_carla_get_juce_version
+      -Wl,-exported_symbol,_carla_get_supported_file_extensions
+      -Wl,-exported_symbol,_carla_get_supported_features
+      -Wl,-exported_symbol,_carla_get_library_filename
+      -Wl,-exported_symbol,_carla_get_library_folder
+  )
+elseif(EMSCRIPTEN)
+  target_link_options(carla-native-plugin
+    PRIVATE
+      -sSIDE_MODULE=2
+      -sEXPORTED_FUNCTIONS="['carla_get_native_rack_plugin','carla_get_native_patchbay_plugin','carla_get_native_patchbay16_plugin','carla_get_native_patchbay32_plugin','carla_get_native_patchbay64_plugin','carla_get_native_patchbay_cv_plugin','carla_get_native_patchbay_cv8_plugin','carla_get_native_patchbay_cv32_plugin','carla_get_native_patchbay_obs_plugin','carla_create_native_plugin_host_handle','carla_host_handle_free','carla_get_native_plugin_engine','carla_get_complete_license_text','carla_get_juce_version','carla_get_supported_file_extensions','carla_get_supported_features','carla_get_library_filename','carla_get_library_folder']"
+  )
+elseif(WIN32)
+  target_link_options(carla-native-plugin
+    PRIVATE
+      ../source/plugin/symbols/carla-native-plugin.def
+  )
+else()
+  target_link_options(carla-native-plugin
+    PRIVATE
+      -Wl,--version-script=../source/plugin/symbols/carla-native-plugin.version
+  )
+endif()
+
+target_link_libraries(carla-native-plugin
+  PRIVATE
+    carla-jackbridge
+    carla-lilv
+    carla-native-plugins
+    carla-rtmempool
+    carla-sfzero
+    carla-water
+    $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
+    carla-zita-resampler
+    PkgConfig::FLUIDSYNTH
+    PkgConfig::LIBLO
+    PkgConfig::LIBMAGIC
+    PkgConfig::X11
+    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
+    ${CARLA_PTHREADS}
+)
+
+target_sources(carla-native-plugin
+  PRIVATE
+    ../source/backend/engine/CarlaEngine.cpp
+    ../source/backend/engine/CarlaEngineClient.cpp
+    ../source/backend/engine/CarlaEngineData.cpp
+    ../source/backend/engine/CarlaEngineGraph.cpp
+    ../source/backend/engine/CarlaEngineInternal.cpp
+    ../source/backend/engine/CarlaEngineNative.cpp
+    ../source/backend/engine/CarlaEngineOsc.cpp
+    ../source/backend/engine/CarlaEngineOscHandlers.cpp
+    ../source/backend/engine/CarlaEngineOscSend.cpp
+    ../source/backend/engine/CarlaEnginePorts.cpp
+    ../source/backend/engine/CarlaEngineRunner.cpp
+    ../source/backend/plugin/CarlaPlugin.cpp
+    ../source/backend/plugin/CarlaPluginBridge.cpp
+    ../source/backend/plugin/CarlaPluginInternal.cpp
+    ../source/backend/plugin/CarlaPluginAU.cpp
+    ../source/backend/plugin/CarlaPluginCLAP.cpp
+    ../source/backend/plugin/CarlaPluginFluidSynth.cpp
+    ../source/backend/plugin/CarlaPluginJuce.cpp
+    ../source/backend/plugin/CarlaPluginJSFX.cpp
+    ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
+    ../source/backend/plugin/CarlaPluginLV2.cpp
+    ../source/backend/plugin/CarlaPluginNative.cpp
+    ../source/backend/plugin/CarlaPluginSFZero.cpp
+    ../source/backend/plugin/CarlaPluginVST2.cpp
+    ../source/backend/plugin/CarlaPluginVST3.cpp
+    ../source/plugin/carla-native-plugin.cpp
+    $<$<BOOL:${CARLA_USE_JACK}>:../source/backend/plugin/CarlaPluginJack.cpp>
+  PUBLIC
+    ${carla-native-plugin-public-headers}
+)
+
+install(TARGETS carla-native-plugin
+  ARCHIVE DESTINATION ${CARLA_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CARLA_INSTALL_LIBDIR}
+  FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# if(${CARLA_BUILD_FRAMEWORKS})
+#   install(TARGETS
+#     carla-bridge-native
+#     carla-discovery-native
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-native-plugin.framework)
+# endif()
 
 #######################################################################################################################
 # carla standalone
