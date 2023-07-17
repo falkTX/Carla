@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(carla)
 
 set(PROJECT_VERSION 2.6.0-alpha1)
+set(PROJECT_SHORT_VERSION 2.6)
 
 set(CMAKE_POLICY_DEFAULT_CMP0025 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0063 NEW)
@@ -840,8 +841,12 @@ if(${CARLA_BUILD_FRAMEWORKS})
   set_target_properties(carla-native-plugin
     PROPERTIES
       FRAMEWORK TRUE
+      FRAMEWORK_VERSION A
       OUTPUT_NAME carla-native-plugin
       PUBLIC_HEADER "${carla-native-plugin-public-headers}"
+      MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.native-plugin"
+      MACOSX_FRAMEWORK_BUNDLE_VERSION "${PROJECT_VERSION}"
+      MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${PROJECT_SHORT_VERSION}"
   )
 else()
   set_target_properties(carla-native-plugin
@@ -1004,8 +1009,12 @@ if(${CARLA_BUILD_FRAMEWORKS})
   set_target_properties(carla-standalone
     PROPERTIES
       FRAMEWORK TRUE
+      FRAMEWORK_VERSION A
       OUTPUT_NAME carla-standalone
       PUBLIC_HEADER "${carla-standalone-public-headers}"
+      MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.standalone"
+      MACOSX_FRAMEWORK_BUNDLE_VERSION "${PROJECT_VERSION}"
+      MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${PROJECT_SHORT_VERSION}"
   )
 else()
   set_target_properties(carla-standalone
@@ -1146,8 +1155,12 @@ if(${CARLA_BUILD_FRAMEWORKS})
   set_target_properties(carla-utils
     PROPERTIES
       FRAMEWORK TRUE
+      FRAMEWORK_VERSION A
       OUTPUT_NAME carla-utils
       PUBLIC_HEADER "${carla-utils-public-headers}"
+      MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.utils"
+      MACOSX_FRAMEWORK_BUNDLE_VERSION "${PROJECT_VERSION}"
+      MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${PROJECT_SHORT_VERSION}"
   )
 else()
   set_target_properties(carla-utils
