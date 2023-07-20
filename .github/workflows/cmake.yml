@@ -12,15 +12,29 @@ env:
   DESTDIR: ${{ github.workspace }}/build/tmp
 
 jobs:
-  macos-11:
-    runs-on: macos-11
+  macos-libs:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up dependencies
         run: |
           brew install cmake fluid-synth liblo libmagic libsndfile pkg-config
       - name: configure
-        run: cmake -S cmake -B build
+        run: cmake -S cmake -B build -DCARLA_BUILD_FRAMEWORKS=OFF
+      - name: build
+        run: cmake --build build -j $(sysctl -n hw.logicalcpu)
+      - name: install
+        run: cmake --install build --verbose
+
+  macos-frameworks:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up dependencies
+        run: |
+          brew install cmake fluid-synth liblo libmagic libsndfile pkg-config
+      - name: configure
+        run: cmake -S cmake -B build -DCARLA_BUILD_FRAMEWORKS=ON
       - name: build
         run: cmake --build build -j $(sysctl -n hw.logicalcpu)
       - name: install

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(carla)
 
 set(PROJECT_VERSION 2.6.0-alpha1)
-set(PROJECT_SHORT_VERSION 2.6)
+set(PROJECT_SHORT_VERSION 2.5.91)
 
 set(CMAKE_POLICY_DEFAULT_CMP0025 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0063 NEW)
@@ -48,6 +48,10 @@ set(CARLA_USE_OSC ${CARLA_USE_OSC_DEFAULT} CACHE BOOL "Enable OSC")
 if(${CARLA_BUILD_FRAMEWORKS} AND NOT APPLE)
   set(CARLA_BUILD_FRAMEWORKS FALSE)
   mark_as_advanced(CARLA_BUILD_FRAMEWORKS)
+endif()
+
+if(${CARLA_BUILD_FRAMEWORKS})
+  execute_process(COMMAND "date -u +%y%m%d%H%M%S" OUTPUT_VARIABLE CARLA_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
 
 #######################################################################################################################
@@ -150,6 +154,7 @@ function(set_common_target_properties TARGET)
       $<$<BOOL:${PYQT_FOUND}>:HAVE_PYQT>
       $<$<BOOL:${SNDFILE_FOUND}>:HAVE_SNDFILE>
       $<$<BOOL:${X11_FOUND}>:HAVE_X11>
+      $<$<BOOL:${MSVC}>:_USE_MATH_DEFINES>
   )
 
   target_compile_options(${TARGET}
@@ -414,11 +419,6 @@ add_library(carla::native-plugins ALIAS carla-native-plugins)
 
 set_common_target_properties(carla-native-plugins)
 
-target_compile_definitions(carla-native-plugins
-  PRIVATE
-    $<$<BOOL:${MSVC}>:_USE_MATH_DEFINES>
-)
-
 target_include_directories(carla-native-plugins
   PRIVATE
     ../source/includes
@@ -673,11 +673,6 @@ add_library(carla::zita-resampler ALIAS carla-zita-resampler)
 
 set_common_target_properties(carla-zita-resampler)
 
-target_compile_definitions(carla-zita-resampler
-  PRIVATE
-    $<$<BOOL:${MSVC}>:_USE_MATH_DEFINES>
-)
-
 target_include_directories(carla-zita-resampler
   PRIVATE
     ../source/includes
@@ -844,8 +839,11 @@ if(${CARLA_BUILD_FRAMEWORKS})
       FRAMEWORK_VERSION A
       OUTPUT_NAME carla-native-plugin
       PUBLIC_HEADER "${carla-native-plugin-public-headers}"
+      MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info-framework.plist.in"
       MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.native-plugin"
-      MACOSX_FRAMEWORK_BUNDLE_VERSION "${PROJECT_VERSION}"
+      MACOSX_FRAMEWORK_BUNDLE_NAME "carla-native-plugin"
+      MACOSX_FRAMEWORK_BUNDLE_DISPLAY_NAME "Carla Native Plugin"
+      MACOSX_FRAMEWORK_BUNDLE_VERSION "${CARLA_DATE}"
       MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${PROJECT_SHORT_VERSION}"
   )
 else()
@@ -1012,8 +1010,11 @@ if(${CARLA_BUILD_FRAMEWORKS})
       FRAMEWORK_VERSION A
       OUTPUT_NAME carla-standalone
       PUBLIC_HEADER "${carla-standalone-public-headers}"
+      MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info-framework.plist.in"
       MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.standalone"
-      MACOSX_FRAMEWORK_BUNDLE_VERSION "${PROJECT_VERSION}"
+      MACOSX_FRAMEWORK_BUNDLE_NAME "carla-standalone"
+      MACOSX_FRAMEWORK_BUNDLE_DISPLAY_NAME "Carla Standalone"
+      MACOSX_FRAMEWORK_BUNDLE_VERSION "${CARLA_DATE}"
       MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${PROJECT_SHORT_VERSION}"
   )
 else()
@@ -1158,8 +1159,11 @@ if(${CARLA_BUILD_FRAMEWORKS})
       FRAMEWORK_VERSION A
       OUTPUT_NAME carla-utils
       PUBLIC_HEADER "${carla-utils-public-headers}"
+      MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info-framework.plist.in"
       MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.utils"
-      MACOSX_FRAMEWORK_BUNDLE_VERSION "${PROJECT_VERSION}"
+      MACOSX_FRAMEWORK_BUNDLE_NAME "carla-utils"
+      MACOSX_FRAMEWORK_BUNDLE_DISPLAY_NAME "Carla Utils"
+      MACOSX_FRAMEWORK_BUNDLE_VERSION "${CARLA_DATE}"
       MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${PROJECT_SHORT_VERSION}"
   )
 else()
