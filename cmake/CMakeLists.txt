@@ -22,6 +22,10 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 
 set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
+if(APPLE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
+
 #######################################################################################################################
 # fix compat with cmake < 3.26
 
@@ -164,7 +168,6 @@ function(set_common_target_properties TARGET)
 
   target_compile_options(${TARGET}
     PRIVATE
-      $<$<BOOL:${APPLE}>:-stdlib=libc++>
       $<$<BOOL:${MSVC}>:/wd4244>
       $<$<BOOL:${MSVC}>:/wd4267>
       $<$<BOOL:${MSVC}>:/wd4273>
@@ -172,7 +175,6 @@ function(set_common_target_properties TARGET)
 
   target_link_options(${TARGET}
     PRIVATE
-      $<$<BOOL:${APPLE}>:-stdlib=libc++>
       $<$<C_COMPILER_ID:GNU>:-Wl,--no-undefined>
   )
 
