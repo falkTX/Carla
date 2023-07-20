@@ -29,7 +29,7 @@
 	<key>CSResourcesFileMapped</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
-	<string>@CMAKE_MACOSX_DEPLOYMENT_TARGET@</string>
+	<string>@CARLA_OSX_DEPLOYMENT_TARGET@</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>(C) 2011-2023 Filipe Coelho.
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or any later version</string>

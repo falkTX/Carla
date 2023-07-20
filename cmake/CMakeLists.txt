@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
+
+# last compatible macOS version
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.8" CACHE STRING "Minimum macOS deployment version")
+set(CARLA_OSX_DEPLOYMENT_TARGET ${CMAKE_OSX_DEPLOYMENT_TARGET})
+
 project(carla)
 
 set(PROJECT_VERSION 2.6.0-alpha1)
@@ -159,6 +164,7 @@ function(set_common_target_properties TARGET)
 
   target_compile_options(${TARGET}
     PRIVATE
+      $<$<BOOL:${APPLE}>:-stdlib=libc++>
       $<$<BOOL:${MSVC}>:/wd4244>
       $<$<BOOL:${MSVC}>:/wd4267>
       $<$<BOOL:${MSVC}>:/wd4273>
@@ -166,6 +172,7 @@ function(set_common_target_properties TARGET)
 
   target_link_options(${TARGET}
     PRIVATE
+      $<$<BOOL:${APPLE}>:-stdlib=libc++>
       $<$<C_COMPILER_ID:GNU>:-Wl,--no-undefined>
   )
 
@@ -839,6 +846,7 @@ if(${CARLA_BUILD_FRAMEWORKS})
       FRAMEWORK_VERSION A
       OUTPUT_NAME carla-native-plugin
       PUBLIC_HEADER "${carla-native-plugin-public-headers}"
+      CARLA_OSX_DEPLOYMENT_TARGET "${CARLA_OSX_DEPLOYMENT_TARGET}"
       MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info-framework.plist.in"
       MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.native-plugin"
       MACOSX_FRAMEWORK_BUNDLE_NAME "carla-native-plugin"
@@ -1010,6 +1018,7 @@ if(${CARLA_BUILD_FRAMEWORKS})
       FRAMEWORK_VERSION A
       OUTPUT_NAME carla-standalone
       PUBLIC_HEADER "${carla-standalone-public-headers}"
+      CARLA_OSX_DEPLOYMENT_TARGET "${CARLA_OSX_DEPLOYMENT_TARGET}"
       MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info-framework.plist.in"
       MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.standalone"
       MACOSX_FRAMEWORK_BUNDLE_NAME "carla-standalone"
@@ -1159,6 +1168,7 @@ if(${CARLA_BUILD_FRAMEWORKS})
       FRAMEWORK_VERSION A
       OUTPUT_NAME carla-utils
       PUBLIC_HEADER "${carla-utils-public-headers}"
+      CARLA_OSX_DEPLOYMENT_TARGET "${CARLA_OSX_DEPLOYMENT_TARGET}"
       MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info-framework.plist.in"
       MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.utils"
       MACOSX_FRAMEWORK_BUNDLE_NAME "carla-utils"
