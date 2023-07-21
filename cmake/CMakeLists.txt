@@ -49,8 +49,15 @@ else()
   set(CARLA_USE_OSC_DEFAULT TRUE)
 endif()
 
+if(WIN32)
+  set(CARLA_SKIP_LIBDIR_SUFFIX_DEFAULT TRUE)
+else()
+  set(CARLA_SKIP_LIBDIR_SUFFIX_DEFAULT FALSE)
+endif()
+
 set(CARLA_BUILD_FRAMEWORKS FALSE CACHE BOOL "Build libraries as macOS frameworks")
 set(CARLA_ENABLE_JSFX TRUE CACHE BOOL "Enable JSFX")
+set(CARLA_SKIP_LIBDIR_SUFFIX ${CARLA_SKIP_LIBDIR_SUFFIX_DEFAULT} CACHE BOOL "Skip $LIBDIR/carla suffix")
 set(CARLA_USE_JACK ${CARLA_USE_JACK_DEFAULT} CACHE BOOL "Enable JACK")
 set(CARLA_USE_OSC ${CARLA_USE_OSC_DEFAULT} CACHE BOOL "Enable OSC")
 
@@ -144,7 +151,7 @@ set(PYQT_FOUND FALSE)
 #######################################################################################################################
 # utilities
 
-if(WIN32)
+if(${CARLA_SKIP_LIBDIR_SUFFIX})
   set(CARLA_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
 else()
   set(CARLA_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/carla)
