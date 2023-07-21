@@ -913,17 +913,17 @@ elseif(EMSCRIPTEN)
 elseif(MSVC)
   target_link_options(carla-native-plugin
     PRIVATE
-      /DEF:../source/plugin/symbols/carla-native-plugin.def
+      /DEF:${CMAKE_CURRENT_SOURCE_DIR}/../source/plugin/symbols/carla-native-plugin.def
   )
 elseif(WIN32)
   target_link_options(carla-native-plugin
     PRIVATE
-      ../source/plugin/symbols/carla-native-plugin.def
+      ${CMAKE_CURRENT_SOURCE_DIR}/../source/plugin/symbols/carla-native-plugin.def
   )
 else()
   target_link_options(carla-native-plugin
     PRIVATE
-      -Wl,--version-script=../source/plugin/symbols/carla-native-plugin.version
+      -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../source/plugin/symbols/carla-native-plugin.version
   )
 endif()
 
