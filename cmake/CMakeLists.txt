@@ -1334,6 +1334,7 @@ if(APPLE)
     ../source/backend/utils/CarlaUtils.cpp
     ../source/backend/utils/Windows.cpp
     ../source/bridges-plugin/CarlaBridgePlugin.cpp
+    ../source/bridges-ui/CarlaBridgeFormatLV2.cpp
     ../source/discovery/carla-discovery.cpp
     ../source/modules/water/water.cpp
     ../source/modules/water/water.files.cpp
