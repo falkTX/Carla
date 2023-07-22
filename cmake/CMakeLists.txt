@@ -708,7 +708,7 @@ target_sources(carla-zita-resampler
 )
 
 #######################################################################################################################
-# carla bridge
+# carla bridge-native
 
 add_executable(carla-bridge-native)
 
@@ -797,7 +797,93 @@ target_sources(carla-bridge-native
 )
 
 #######################################################################################################################
-# carla discovery
+# carla bridge-lv2-gtk2
+
+add_executable(carla-bridge-lv2-gtk2)
+
+set_common_target_properties(carla-bridge-lv2-gtk2)
+
+if(NOT ${CARLA_BUILD_FRAMEWORKS})
+  install(TARGETS carla-bridge-lv2-gtk2
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  )
+endif()
+
+target_compile_definitions(carla-bridge-lv2-gtk2
+  PRIVATE
+    BUILD_BRIDGE
+    BUILD_BRIDGE_UI
+    BRIDGE_GTK2
+)
+
+target_include_directories(carla-bridge-lv2-gtk2
+  PRIVATE
+    ../source/backend
+    ../source/includes
+    ../source/modules
+    ../source/utils
+)
+
+target_link_libraries(carla-bridge-lv2-gtk2
+  PRIVATE
+    carla-lilv
+    carla-water-files
+    PkgConfig::X11
+    ${CARLA_PTHREADS}
+)
+
+target_sources(carla-bridge-lv2-gtk2
+  PRIVATE
+    ../source/bridges-ui/CarlaBridgeFormat.cpp
+    ../source/bridges-ui/CarlaBridgeFormatLV2.cpp
+    ../source/bridges-ui/CarlaBridgeToolkitGtk.cpp
+)
+
+#######################################################################################################################
+# carla bridge-lv2-gtk2
+
+add_executable(carla-bridge-lv2-gtk3)
+
+set_common_target_properties(carla-bridge-lv2-gtk3)
+
+if(NOT ${CARLA_BUILD_FRAMEWORKS})
+  install(TARGETS carla-bridge-lv2-gtk3
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  )
+endif()
+
+target_compile_definitions(carla-bridge-lv2-gtk3
+  PRIVATE
+    BUILD_BRIDGE
+    BUILD_BRIDGE_UI
+    BRIDGE_GTK3
+)
+
+target_include_directories(carla-bridge-lv2-gtk3
+  PRIVATE
+    ../source/backend
+    ../source/includes
+    ../source/modules
+    ../source/utils
+)
+
+target_link_libraries(carla-bridge-lv2-gtk3
+  PRIVATE
+    carla-lilv
+    carla-water-files
+    PkgConfig::X11
+    ${CARLA_PTHREADS}
+)
+
+target_sources(carla-bridge-lv2-gtk3
+  PRIVATE
+    ../source/bridges-ui/CarlaBridgeFormat.cpp
+    ../source/bridges-ui/CarlaBridgeFormatLV2.cpp
+    ../source/bridges-ui/CarlaBridgeToolkitGtk.cpp
+)
+
+#######################################################################################################################
+# carla discovery-native
 
 add_executable(carla-discovery-native)
 
