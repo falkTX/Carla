@@ -239,12 +239,12 @@ def runCarlaDiscovery(itype, stype, filename, tool, wineSettings=None):
         else:
             break
 
-        if line == "carla-discovery::init::-----------":
+        if line.startswith("carla-discovery::init::"):
             pinfo = deepcopy(PyPluginInfo)
             pinfo['type']     = itype
             pinfo['filename'] = filename if filename != ":all" else ""
 
-        elif line == "carla-discovery::end::------------":
+        elif line.startswith("carla-discovery::end::"):
             if pinfo is not None:
                 plugins.append(pinfo)
                 del pinfo
