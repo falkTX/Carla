@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin UI launcher
- * Copyright (C) 2018-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2018-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -90,6 +90,12 @@ public:
         handle(h),
         pluginWindow(parent)
     {
+        const uint width = ui_launcher_res::carla_uiWidth;
+        const uint height = ui_launcher_res::carla_uiHeight;
+
+        Widget::setSize(width, height);
+        setGeometryConstraints(width, height, true, true, true);
+
         startButton.setCallback(this);
 
         pluginWindow.leaveContextAfterCreation();
@@ -146,6 +152,12 @@ CarlaUILauncher* createUILauncher(const uintptr_t winId,
                                   const NativePluginHandle h)
 {
     return new CarlaUILauncher(winId, d, h);
+}
+
+void getUILauncherSize(CarlaUILauncher* const ui, VstRect* const rect)
+{
+    rect->right = ui->window.getWidth();
+    rect->bottom = ui->window.getHeight();
 }
 
 void idleUILauncher(CarlaUILauncher* const ui)
