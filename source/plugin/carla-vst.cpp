@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -398,7 +398,7 @@ public:
             break;
 
         case effEditGetRect:
-            *(ERect**)ptr = &fVstRect;
+            *(VstRect**)ptr = &fVstRect;
             ret = 1;
             break;
 
@@ -409,6 +409,7 @@ public:
                 {
                     destoryUILauncher(fUiLauncher);
                     fUiLauncher = createUILauncher((uintptr_t)ptr, fDescriptor, fHandle);
+                    getUILauncherSize(fUiLauncher, &fVstRect);
                 }
                 else
                 {
@@ -833,7 +834,7 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
     char            fProgramName[32+1];
     NativeTimeInfo  fTimeInfo;
-    ERect           fVstRect;
+    VstRect         fVstRect;
 
     // UI button
     CarlaUILauncher* fUiLauncher;
