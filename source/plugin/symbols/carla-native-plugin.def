@@ -16,3 +16,6 @@ EXPORTS
     carla_get_supported_features @13
     carla_get_library_filename @14
     carla_get_library_folder @15
+    carla_get_native_patchbay_cv8_plugin @16
+    carla_get_native_patchbay_cv32_plugin @17
+    carla_get_native_patchbay_obs_plugin @18

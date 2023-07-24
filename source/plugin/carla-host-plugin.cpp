@@ -18,6 +18,7 @@
 #include "CarlaNativePlugin.h"
 
 #define CARLA_PLUGIN_BUILD
+#define CARLA_HOST_PLUGIN_BUILD
 
 #include "carla-native-plugin.cpp"
 

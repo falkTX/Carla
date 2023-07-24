@@ -5,6 +5,9 @@
             carla_get_native_patchbay32_plugin;
             carla_get_native_patchbay64_plugin;
             carla_get_native_patchbay_cv_plugin;
+            carla_get_native_patchbay_cv8_plugin;
+            carla_get_native_patchbay_cv32_plugin;
+            carla_get_native_patchbay_obs_plugin;
             carla_create_native_plugin_host_handle;
             carla_host_handle_free;
             carla_get_native_plugin_engine;
