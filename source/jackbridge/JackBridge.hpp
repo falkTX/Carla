@@ -84,6 +84,11 @@
 # endif
 #endif
 
+#if (defined(__arm__) || defined(__aarch64__) || defined(__mips__) || defined(__ppc__) || defined(__powerpc__)) && !defined(__APPLE__)
+# undef POST_PACKED_STRUCTURE
+# define POST_PACKED_STRUCTURE
+#endif
+
 #define JACK_DEFAULT_AUDIO_TYPE "32 bit float mono audio"
 #define JACK_DEFAULT_MIDI_TYPE  "8 bit raw midi"
 
