@@ -158,6 +158,11 @@ void getUILauncherSize(CarlaUILauncher* const ui, VstRect* const rect)
 {
     rect->right = ui->window.getWidth();
     rect->bottom = ui->window.getHeight();
+   #ifdef DISTRHO_OS_MAC
+    const double scaleFactor = ui->window.getScaleFactor();
+    rect->right /= scaleFactor;
+    rect->bottom /= scaleFactor;
+   #endif
 }
 
 void idleUILauncher(CarlaUILauncher* const ui)
