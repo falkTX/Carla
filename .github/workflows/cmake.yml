@@ -25,6 +25,10 @@ jobs:
         run: cmake --build build -j $(sysctl -n hw.logicalcpu)
       - name: install
         run: cmake --install build --verbose
+      - uses: actions/upload-artifact@v3
+        with:
+          name: macos-libs
+          path: ${{ env.DESTDIR }}
 
   macos-frameworks:
     runs-on: macos-latest
@@ -39,6 +43,10 @@ jobs:
         run: cmake --build build -j $(sysctl -n hw.logicalcpu)
       - name: install
         run: cmake --install build --verbose
+      - uses: actions/upload-artifact@v3
+        with:
+          name: macos-frameworks
+          path: ${{ env.DESTDIR }}
 
   mingw32-cross:
     runs-on: ubuntu-22.04
@@ -66,6 +74,10 @@ jobs:
         run: cmake --build build -j $(nproc)
       - name: install
         run: cmake --install build --verbose
+      - uses: actions/upload-artifact@v3
+        with:
+          name: mingw32
+          path: ${{ env.DESTDIR }}
 
   mingw64-cross:
     runs-on: ubuntu-22.04
@@ -93,6 +105,10 @@ jobs:
         run: cmake --build build -j $(nproc)
       - name: install
         run: cmake --install build --verbose
+      - uses: actions/upload-artifact@v3
+        with:
+          name: mingw64
+          path: ${{ env.DESTDIR }}
 
   ubuntu-20_04:
     runs-on: ubuntu-20.04
@@ -108,6 +124,10 @@ jobs:
         run: cmake --build build -j $(nproc)
       - name: install
         run: cmake --install build --verbose
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ubuntu-20.04
+          path: ${{ env.DESTDIR }}
 
   ubuntu-22_04:
     runs-on: ubuntu-22.04
@@ -123,6 +143,10 @@ jobs:
         run: cmake --build build -j $(nproc)
       - name: install
         run: cmake --install build --verbose
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ubuntu-22.04
+          path: ${{ env.DESTDIR }}
 
   windows:
     runs-on: windows-latest
