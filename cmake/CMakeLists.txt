@@ -49,15 +49,9 @@ else()
   set(CARLA_USE_OSC_DEFAULT TRUE)
 endif()
 
-if(WIN32)
-  set(CARLA_SKIP_LIBDIR_SUFFIX_DEFAULT TRUE)
-else()
-  set(CARLA_SKIP_LIBDIR_SUFFIX_DEFAULT FALSE)
-endif()
 
 set(CARLA_BUILD_FRAMEWORKS FALSE CACHE BOOL "Build libraries as macOS frameworks")
 set(CARLA_ENABLE_JSFX TRUE CACHE BOOL "Enable JSFX")
-set(CARLA_SKIP_LIBDIR_SUFFIX ${CARLA_SKIP_LIBDIR_SUFFIX_DEFAULT} CACHE BOOL "Skip $LIBDIR/carla suffix")
 set(CARLA_USE_JACK ${CARLA_USE_JACK_DEFAULT} CACHE BOOL "Enable JACK")
 set(CARLA_USE_OSC ${CARLA_USE_OSC_DEFAULT} CACHE BOOL "Enable OSC")
 
@@ -151,9 +145,11 @@ set(PYQT_FOUND FALSE)
 #######################################################################################################################
 # utilities
 
-if(${CARLA_SKIP_LIBDIR_SUFFIX})
+if(WIN32)
+  set(CARLA_INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR})
   set(CARLA_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
 else()
+  set(CARLA_INSTALL_BINDIR ${CMAKE_INSTALL_LIBDIR}/carla)
   set(CARLA_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/carla)
 endif()
 mark_as_advanced(CARLA_INSTALL_LIBDIR)
@@ -716,7 +712,7 @@ set_common_target_properties(carla-bridge-native)
 
 if(NOT ${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS carla-bridge-native
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    RUNTIME DESTINATION ${CARLA_INSTALL_BINDIR}
   )
 endif()
 
@@ -805,7 +801,7 @@ set_common_target_properties(carla-bridge-lv2-gtk2)
 
 if(NOT ${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS carla-bridge-lv2-gtk2
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    RUNTIME DESTINATION ${CARLA_INSTALL_BINDIR}
   )
 endif()
 
@@ -848,7 +844,7 @@ set_common_target_properties(carla-bridge-lv2-gtk3)
 
 if(NOT ${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS carla-bridge-lv2-gtk3
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    RUNTIME DESTINATION ${CARLA_INSTALL_BINDIR}
   )
 endif()
 
@@ -891,7 +887,7 @@ set_common_target_properties(carla-discovery-native)
 
 if(NOT ${CARLA_BUILD_FRAMEWORKS})
   install(TARGETS carla-discovery-native
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    RUNTIME DESTINATION ${CARLA_INSTALL_BINDIR}
   )
 endif()
 
@@ -1075,7 +1071,7 @@ install(TARGETS carla-native-plugin
   ARCHIVE DESTINATION ${CARLA_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CARLA_INSTALL_LIBDIR}
   FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  RUNTIME DESTINATION ${CARLA_INSTALL_BINDIR}
 )
 
 #######################################################################################################################
@@ -1199,7 +1195,7 @@ install(TARGETS carla-standalone
   ARCHIVE DESTINATION ${CARLA_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CARLA_INSTALL_LIBDIR}
   FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  RUNTIME DESTINATION ${CARLA_INSTALL_BINDIR}
 )
 
 if(${CARLA_BUILD_FRAMEWORKS})
@@ -1323,7 +1319,7 @@ target_sources(carla-utils
 install(TARGETS carla-utils
   ARCHIVE DESTINATION ${CARLA_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CARLA_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  RUNTIME DESTINATION ${CARLA_INSTALL_BINDIR}
   FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
