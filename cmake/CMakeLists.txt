@@ -1213,17 +1213,19 @@ if(${CARLA_BUILD_FRAMEWORKS})
   install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
       Versions/A/carla-bridge-lv2-gtk2
-      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-standalone.framework/carla-bridge-lv2-gtk2)"
+      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-standalone.framework/carla-bridge-lv2-gtk2)")
+  install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
       Versions/A/carla-bridge-lv2-gtk3
-      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-standalone.framework/carla-bridge-lv2-gtk3)"
+      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-standalone.framework/carla-bridge-lv2-gtk3)")
+  install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
       Versions/A/carla-bridge-native
-      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-standalone.framework/carla-bridge-native)"
+      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-standalone.framework/carla-bridge-native)")
+  install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
       Versions/A/carla-discovery-native
-      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-standalone.framework/carla-discovery-native)"
-  )
+      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-standalone.framework/carla-discovery-native)")
 endif()
 
 #######################################################################################################################
@@ -1336,17 +1338,19 @@ if(${CARLA_BUILD_FRAMEWORKS})
   install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
       Versions/A/carla-bridge-lv2-gtk2
-      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-utils.framework/carla-bridge-lv2-gtk2)"
+      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-utils.framework/carla-bridge-lv2-gtk2)")
+  install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
       Versions/A/carla-bridge-lv2-gtk3
-      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-utils.framework/carla-bridge-lv2-gtk3)"
+      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-utils.framework/carla-bridge-lv2-gtk3)")
+  install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
       Versions/A/carla-bridge-native
-      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-utils.framework/carla-bridge-native)"
+      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-utils.framework/carla-bridge-native)")
+  install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
       Versions/A/carla-discovery-native
-      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-utils.framework/carla-discovery-native)"
-  )
+      $ENV{DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/carla-utils.framework/carla-discovery-native)")
 endif()
 
 #######################################################################################################################
