@@ -1423,7 +1423,7 @@ install(TARGETS carla-headers-utils PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_IN
 #######################################################################################################################
 # pkg-config stuff
 
-if(NOT ${CARLA_BUILD_FRAMEWORKS})
+if(NOT ${CARLA_BUILD_FRAMEWORKS} AND NOT MSVC)
   configure_file(carla-utils.pc.in carla-utils.pc @ONLY)
 
   install(FILES
