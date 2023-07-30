@@ -297,9 +297,12 @@ private:                                        \
 #endif
 
 /* Define CARLA_*_EXPORT */
-#ifdef BUILD_BRIDGE
+#if defined(BUILD_BRIDGE)
 # define CARLA_API_EXPORT CARLA_EXTERN_C
 # define CARLA_PLUGIN_EXPORT CARLA_EXTERN_C
+#elif defined(CARLA_OS_WASM)
+# define CARLA_API_EXPORT CARLA_EXTERN_C CARLA_API
+# define CARLA_PLUGIN_EXPORT CARLA_EXTERN_C __attribute__ ((used))
 #else
 # define CARLA_API_EXPORT CARLA_EXTERN_C CARLA_API
 # define CARLA_PLUGIN_EXPORT CARLA_EXTERN_C CARLA_VISIBLE_SYMBOL

@@ -279,7 +279,7 @@ endif
 ifeq ($(MACOS),true)
 LIB_EXT = .dylib
 else ifeq ($(WASM),true)
-LIB_EXT = .wasm
+LIB_EXT = .js
 else ifeq ($(WINDOWS),true)
 LIB_EXT = .dll
 else
@@ -315,7 +315,7 @@ endif
 ifeq ($(MACOS),true)
 SHARED = -dynamiclib
 else ifeq ($(WASM),true)
-SHARED = -sSIDE_MODULE=1
+SHARED = -sMAIN_MODULE=2
 else
 SHARED = -shared
 endif

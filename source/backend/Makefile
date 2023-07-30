@@ -118,6 +118,27 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+ifeq ($(WASM),true)
+STANDALONE_SHARED  = -sMAIN_MODULE=1 -O3
+STANDALONE_SHARED += -sALLOW_MEMORY_GROWTH
+STANDALONE_SHARED += -sINITIAL_MEMORY=32Mb
+STANDALONE_SHARED += -sSTACK_SIZE=2MB
+STANDALONE_SHARED += -lidbfs.js
+STANDALONE_SHARED += -sEXPORTED_RUNTIME_METHODS=IDBFS,FS,cwrap
+STANDALONE_SHARED += -sMODULARIZE=1 -sEXPORT_NAME=CarlaStandalone
+STANDALONE_SHARED += -sENVIRONMENT=web
+STANDALONE_SHARED += -sEXPORTED_FUNCTIONS="['_malloc','_free']"
+STANDALONE_SHARED += -sEXPORTED_RUNTIME_METHODS="['lengthBytesUTF8','stringToUTF8','UTF8ToString']"
+# TESTING
+# STANDALONE_SHARED += --use-preload-cache
+# STANDALONE_SHARED += --use-preload-plugins
+# STANDALONE_SHARED += --preload-file=../frontend/web/resources@/resources
+else
+STANDALONE_SHARED = $(SHARED)
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
+
 all: $(TARGETS)
 	$(MAKE) -C utils
 
@@ -142,7 +163,7 @@ doxygen: CarlaBackend.doxygen
 $(BINDIR)/libcarla_standalone2$(LIB_EXT): $(OBJS_standalone) $(STANDALONE_LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_standalone2$(LIB_EXT)"
-	$(SILENT)$(CXX) $(OBJS_standalone) $(BUILD_CXX_FLAGS) $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_LINK_FLAGS) $(SHARED) -o $@
+	$(SILENT)$(CXX) $(OBJS_standalone) $(BUILD_CXX_FLAGS) $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_LINK_FLAGS) $(STANDALONE_SHARED) -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
