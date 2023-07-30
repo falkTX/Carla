@@ -17,7 +17,9 @@
 
 #include "CarlaHostImpl.hpp"
 
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && !defined(CARLA_OS_WASM)
+
+#define CARLA_ENABLE_STANDALONE_NSM
 
 #define NSM_API_VERSION_MAJOR 1
 #define NSM_API_VERSION_MINOR 2
@@ -638,7 +640,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE(CarlaNSM)
 };
 
-#endif // HAVE_LIBLO
+#endif // CARLA_ENABLE_STANDALONE_NSM
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -646,26 +648,26 @@ bool carla_nsm_init(CarlaHostHandle handle, uint64_t pid, const char* executable
 {
     CARLA_SAFE_ASSERT_RETURN(handle->isStandalone, false);
 
-#ifdef HAVE_LIBLO
+   #ifdef CARLA_ENABLE_STANDALONE_NSM
     return CarlaNSM::getInstance(*(CarlaHostStandalone*)handle).announce(pid, executableName);
-#else
+   #else
     return false;
 
     // unused
     (void)pid; (void)executableName;
-#endif
+   #endif
 }
 
 void carla_nsm_ready(CarlaHostHandle handle, NsmCallbackOpcode action)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->isStandalone,);
 
-#ifdef HAVE_LIBLO
+   #ifdef CARLA_ENABLE_STANDALONE_NSM
     CarlaNSM::getInstance(*(CarlaHostStandalone*)handle).ready(action);
-#else
+   #else
     // unused
     return; (void)action;
-#endif
+   #endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------

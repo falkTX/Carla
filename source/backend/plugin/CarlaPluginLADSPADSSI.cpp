@@ -1,6 +1,6 @@
 /*
  * Carla Plugin, LADSPA/DSSI implementation
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,7 +23,8 @@
 #include "CarlaDssiUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE) && !defined(CARLA_OS_WASM)
+# define CARLA_ENABLE_DSSI_PLUGIN_GUI
 # include "CarlaOscUtils.hpp"
 # include "CarlaScopeUtils.hpp"
 # include "CarlaThread.hpp"
@@ -62,7 +63,7 @@ using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+#ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
 // -------------------------------------------------------------------
 // Fallback data
 
@@ -307,11 +308,11 @@ public:
           fForcedStereoOut(false),
           fNeedsFixedBuffers(false),
           fUsesCustomData(false)
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+       #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
         , fOscData(),
           fThreadUI(engine, this, fOscData),
           fUiFilename(nullptr)
-#endif
+       #endif
     {
         carla_debug("CarlaPluginLADSPADSSI::CarlaPluginLADSPADSSI(%p, %i)", engine, id);
 
@@ -322,7 +323,7 @@ public:
     {
         carla_debug("CarlaPluginLADSPADSSI::~CarlaPluginLADSPADSSI()");
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+       #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
         // close UI
         if (fUiFilename != nullptr)
         {
@@ -331,7 +332,7 @@ public:
             delete[] fUiFilename;
             fUiFilename = nullptr;
         }
-#endif
+       #endif
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -771,10 +772,10 @@ public:
             }
         }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+       #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
         if (sendGui && fOscData.target != nullptr)
             osc_send_configure(fOscData, key, value);
-#endif
+       #endif
 
         if (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0)
         {
@@ -856,7 +857,7 @@ public:
         }
     }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+   #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
     // -------------------------------------------------------------------
     // Set ui stuff
 
@@ -875,9 +876,9 @@ public:
         }
         else
         {
-#ifndef BUILD_BRIDGE
+           #ifndef BUILD_BRIDGE
             pData->transientTryCounter = 0;
-#endif
+           #endif
 
             if (fOscData.target != nullptr)
             {
@@ -889,7 +890,7 @@ public:
             fThreadUI.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
     }
-#endif
+   #endif
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -1240,9 +1241,9 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+           #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
-#endif
+           #endif
         }
 
         if (needsCtrlOut)
@@ -1272,12 +1273,12 @@ public:
         if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
             pData->hints |= PLUGIN_IS_RTSAFE;
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+       #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
         if (fUiFilename != nullptr)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
-#endif
+       #endif
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             pData->hints |= PLUGIN_CAN_DRYWET;
 
@@ -1286,7 +1287,7 @@ public:
 
         if (aOuts >= 2 && aOuts % 2 == 0)
             pData->hints |= PLUGIN_CAN_BALANCE;
-#endif
+       #endif
 
         // extra plugin hints
         pData->extraHints = 0x0;
@@ -2394,7 +2395,7 @@ public:
         carla_debug("CarlaPluginLADSPADSSI::clearBuffers() - end");
     }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+   #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
     // -------------------------------------------------------------------
     // OSC stuff
 
@@ -2573,10 +2574,10 @@ public:
         for (uint32_t i=0; i < pData->param.count; ++i)
             osc_send_control(fOscData, pData->param.data[i].rindex, getParameterValue(i));
 
-#ifndef BUILD_BRIDGE
+       #ifndef BUILD_BRIDGE
         if (pData->engine->getOptions().frontendWinId != 0)
             pData->transientTryCounter = 1;
-#endif
+       #endif
 
         carla_stdout("CarlaPluginLADSPADSSI::updateOscData() - done");
     }
@@ -2628,7 +2629,7 @@ public:
         if (fOscData.target == nullptr)
             return;
 
-#if 0
+       #if 0
         uint8_t midiData[4];
         midiData[0] = 0;
         midiData[1] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & MIDI_CHANNEL_BIT));
@@ -2636,7 +2637,7 @@ public:
         midiData[3] = velo;
 
         osc_send_midi(fOscData, midiData);
-#endif
+       #endif
     }
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept override
@@ -2647,7 +2648,7 @@ public:
         if (fOscData.target == nullptr)
             return;
 
-#if 0
+       #if 0
         uint8_t midiData[4];
         midiData[0] = 0;
         midiData[1] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & MIDI_CHANNEL_BIT));
@@ -2655,9 +2656,9 @@ public:
         midiData[3] = 0;
 
         osc_send_midi(fOscData, midiData);
-#endif
+       #endif
     }
-#endif // HAVE_LIBLO && !BUILD_BRIDGE
+   #endif // CARLA_ENABLE_DSSI_PLUGIN_GUI
 
     // -------------------------------------------------------------------
 
@@ -2672,21 +2673,21 @@ public:
     {
         if (fDssiDescriptor != nullptr)
         {
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+           #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
             return fUiFilename;
-#else
+           #else
             return nullptr;
-#endif
+           #endif
         }
         return fRdfDescriptor;
     }
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+   #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
     uintptr_t getUiBridgeProcessId() const noexcept override
     {
         return fThreadUI.getProcessId();
     }
-#endif
+   #endif
 
     // -------------------------------------------------------------------
 
@@ -2981,7 +2982,7 @@ public:
 
         const EngineOptions& opts(pData->engine->getOptions());
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+       #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
         // ---------------------------------------------------------------
         // check for gui
 
@@ -3006,7 +3007,7 @@ public:
                 fThreadUI.setData(guiFilename, fDescriptor->Label, uiTitle);
             }
         }
-#endif
+       #endif
 
         // ---------------------------------------------------------------
         // set options
@@ -3074,11 +3075,11 @@ private:
     bool    fNeedsFixedBuffers;
     bool    fUsesCustomData;
 
-#if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
+   #ifdef CARLA_ENABLE_DSSI_PLUGIN_GUI
     CarlaOscData      fOscData;
     CarlaThreadDSSIUI fThreadUI;
     const char*       fUiFilename;
-#endif
+   #endif
 
     // -------------------------------------------------------------------
 
