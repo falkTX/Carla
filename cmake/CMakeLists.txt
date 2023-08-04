@@ -926,9 +926,6 @@ if(${CARLA_BUILD_FRAMEWORKS})
     ../source/backend/CarlaBackend.h
     ../source/backend/CarlaHost.h
     ../source/backend/CarlaUtils.h
-    ../source/includes/CarlaDefines.h
-    ../source/includes/CarlaNative.h
-    ../source/includes/CarlaNativePlugin.h
   )
 
   set_target_properties(carla-native-plugin
@@ -1074,6 +1071,14 @@ install(TARGETS carla-native-plugin
   RUNTIME DESTINATION ${CARLA_INSTALL_BINDIR}
 )
 
+if(${CARLA_BUILD_FRAMEWORKS})
+  install(FILES
+    ../source/includes/CarlaDefines.h
+    ../source/includes/CarlaNative.h
+    ../source/includes/CarlaNativePlugin.h
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/Current/Headers/includes)
+endif()
+
 #######################################################################################################################
 # carla standalone
 
@@ -1089,8 +1094,6 @@ if(${CARLA_BUILD_FRAMEWORKS})
     ../source/backend/CarlaEngine.hpp
     ../source/backend/CarlaPlugin.hpp
     ../source/backend/CarlaPluginPtr.hpp
-    ../source/includes/CarlaDefines.h
-    ../source/utils/CarlaUtils.hpp
   )
 
   set_target_properties(carla-standalone
@@ -1206,6 +1209,14 @@ if(${CARLA_BUILD_FRAMEWORKS})
     carla-discovery-native
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/Current)
 
+  install(FILES
+    ../source/includes/CarlaDefines.h
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/Current/Headers/includes)
+
+  install(FILES
+    ../source/utils/CarlaUtils.hpp
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/Current/Headers/utils)
+
   install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
       Versions/Current/carla-bridge-lv2-gtk2
@@ -1236,27 +1247,6 @@ if(${CARLA_BUILD_FRAMEWORKS})
   set(carla-utils-public-headers
     ../source/backend/CarlaBackend.h
     ../source/backend/CarlaUtils.h
-    ../source/includes/CarlaDefines.h
-    ../source/includes/CarlaMIDI.h
-    ../source/utils/CarlaBackendUtils.hpp
-    ../source/utils/CarlaBase64Utils.hpp
-    ../source/utils/CarlaBinaryUtils.hpp
-    ../source/utils/CarlaBridgeDefines.hpp
-    ../source/utils/CarlaBridgeUtils.hpp
-    ../source/utils/CarlaMacUtils.hpp
-    ../source/utils/CarlaMathUtils.hpp
-    ../source/utils/CarlaMutex.hpp
-    ../source/utils/CarlaRingBuffer.hpp
-    ../source/utils/CarlaProcessUtils.hpp
-    ../source/utils/CarlaRunner.hpp
-    ../source/utils/CarlaScopeUtils.hpp
-    ../source/utils/CarlaSemUtils.hpp
-    ../source/utils/CarlaSha1Utils.hpp
-    ../source/utils/CarlaShmUtils.hpp
-    ../source/utils/CarlaString.hpp
-    ../source/utils/CarlaThread.hpp
-    ../source/utils/CarlaTimeUtils.hpp
-    ../source/utils/CarlaUtils.hpp
   )
 
   set_target_properties(carla-utils
@@ -1330,6 +1320,33 @@ if(${CARLA_BUILD_FRAMEWORKS})
     carla-bridge-native
     carla-discovery-native
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/Current)
+
+  install(FILES
+    ../source/includes/CarlaDefines.h
+    ../source/includes/CarlaMIDI.h
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/Current/Headers/includes)
+
+  install(FILES
+    ../source/utils/CarlaBackendUtils.hpp
+    ../source/utils/CarlaBase64Utils.hpp
+    ../source/utils/CarlaBinaryUtils.hpp
+    ../source/utils/CarlaBridgeDefines.hpp
+    ../source/utils/CarlaBridgeUtils.hpp
+    ../source/utils/CarlaMacUtils.hpp
+    ../source/utils/CarlaMathUtils.hpp
+    ../source/utils/CarlaMutex.hpp
+    ../source/utils/CarlaRingBuffer.hpp
+    ../source/utils/CarlaProcessUtils.hpp
+    ../source/utils/CarlaRunner.hpp
+    ../source/utils/CarlaScopeUtils.hpp
+    ../source/utils/CarlaSemUtils.hpp
+    ../source/utils/CarlaSha1Utils.hpp
+    ../source/utils/CarlaShmUtils.hpp
+    ../source/utils/CarlaString.hpp
+    ../source/utils/CarlaThread.hpp
+    ../source/utils/CarlaTimeUtils.hpp
+    ../source/utils/CarlaUtils.hpp
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/Current/Headers/utils)
 
   install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
