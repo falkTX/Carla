@@ -1076,7 +1076,7 @@ if(${CARLA_BUILD_FRAMEWORKS})
     ../source/includes/CarlaDefines.h
     ../source/includes/CarlaNative.h
     ../source/includes/CarlaNativePlugin.h
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/Current/Headers/includes)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/A/Headers/includes)
 endif()
 
 #######################################################################################################################
@@ -1207,15 +1207,15 @@ if(${CARLA_BUILD_FRAMEWORKS})
     carla-bridge-lv2-gtk3
     carla-bridge-native
     carla-discovery-native
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/Current)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/A)
 
   install(FILES
     ../source/includes/CarlaDefines.h
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/Current/Headers/includes)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/A/Headers/includes)
 
   install(FILES
     ../source/utils/CarlaUtils.hpp
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/Current/Headers/utils)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/A/Headers/utils)
 
   install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
@@ -1319,12 +1319,12 @@ if(${CARLA_BUILD_FRAMEWORKS})
     carla-bridge-lv2-gtk3
     carla-bridge-native
     carla-discovery-native
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/Current)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/A)
 
   install(FILES
     ../source/includes/CarlaDefines.h
     ../source/includes/CarlaMIDI.h
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/Current/Headers/includes)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/A/Headers/includes)
 
   install(FILES
     ../source/utils/CarlaBackendUtils.hpp
@@ -1346,7 +1346,7 @@ if(${CARLA_BUILD_FRAMEWORKS})
     ../source/utils/CarlaThread.hpp
     ../source/utils/CarlaTimeUtils.hpp
     ../source/utils/CarlaUtils.hpp
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/Current/Headers/utils)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/A/Headers/utils)
 
   install(CODE
     "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
