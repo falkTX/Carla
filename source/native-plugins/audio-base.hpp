@@ -353,7 +353,7 @@ public:
         {
             // valid
             const uint32_t fileNumFrames = static_cast<uint32_t>(fFileNfo.frames);
-            const uint32_t maxPoolNumFrames = sampleRate * 30;
+            const uint32_t maxPoolNumFrames = sampleRate * 600;
             const bool needsResample = fFileNfo.sample_rate != sampleRate;
             uint32_t maxFrame;
 
