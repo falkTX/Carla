@@ -1,6 +1,6 @@
 /*
  * LV2 Atom Ring Buffer
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2023 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,26 +23,23 @@
 
 #include "lv2/atom.h"
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 class Lv2AtomRingBuffer : public CarlaRingBufferControl<HeapBuffer>
 {
 public:
     Lv2AtomRingBuffer() noexcept
         : fMutex(),
-          fHeapBuffer(HeapBuffer_INIT),
+          fHeapBuffer{0, 0, 0, 0, false, nullptr},
           fNeedsDataDelete(true)
     {
-        carla_zeroStruct(fHeapBuffer);
     }
 
     Lv2AtomRingBuffer(Lv2AtomRingBuffer& ringBuf, uint8_t buf[]) noexcept
         : fMutex(),
-          fHeapBuffer(HeapBuffer_INIT),
+          fHeapBuffer{0, 0, 0, 0, false, nullptr},
           fNeedsDataDelete(false)
     {
-        carla_zeroStruct(fHeapBuffer);
-
         fHeapBuffer.buf  = buf;
         fHeapBuffer.size = ringBuf.fHeapBuffer.size;
 
@@ -64,15 +61,15 @@ public:
         fHeapBuffer.buf = nullptr;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
-    void createBuffer(const uint32_t size) noexcept
+    void createBuffer(const uint32_t size, const bool mlock) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fHeapBuffer.buf == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fNeedsDataDelete,);
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
-        const uint32_t p2size(carla_nextPowerOf2(size));
+        const uint32_t p2size = carla_nextPowerOf2(size);
 
         try {
             fHeapBuffer.buf = new uint8_t[p2size];
@@ -80,6 +77,12 @@ public:
 
         fHeapBuffer.size = p2size;
         setRingBuffer(&fHeapBuffer, true);
+
+        if (mlock)
+        {
+            carla_mlock(&fHeapBuffer, sizeof(fHeapBuffer));
+            carla_mlock(fHeapBuffer.buf, p2size);
+        }
     }
 
     void deleteBuffer() noexcept
@@ -99,7 +102,7 @@ public:
         return fHeapBuffer.size;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     bool tryLock() const noexcept
     {
@@ -111,7 +114,7 @@ public:
         fMutex.unlock();
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     // NOTE: must have been locked before
     bool get(uint32_t& portIndex, LV2_Atom* const retAtom) noexcept
@@ -145,7 +148,7 @@ public:
     }
 
 protected:
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     bool readAtom(uint32_t& portIndex, LV2_Atom* const retAtom) noexcept
     {
@@ -175,7 +178,7 @@ protected:
         return true;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     bool writeAtom(const LV2_Atom* const atom, const int32_t portIndex) noexcept
     {
@@ -191,7 +194,7 @@ protected:
         return commitWrite();
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
 private:
     CarlaMutex fMutex;
@@ -204,6 +207,6 @@ private:
     CARLA_DECLARE_NON_COPYABLE(Lv2AtomRingBuffer)
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #endif // LV2_ATOM_RING_BUFFER_HPP_INCLUDED

@@ -78,7 +78,7 @@ public:
 //           fNeedsFileRead(false),
 //           fEntireFileLoaded(false),
 //           fMaxFrame(0),
-//           fLastPoolFill(0.0f),
+//           fReadableBufferFill(0.0f),
 //           fPool(),
 //           fReader(),
 //           fFilename(),
@@ -253,8 +253,8 @@ protected:
             return fVolume * 100.f;
         case kParameterInfoPosition:
             return fLastPosition;
-//         case kParameterInfoPoolFill:
-//             return fLastPoolFill;
+        case kParameterInfoPoolFill:
+            return fReadableBufferFill;
         case kParameterInfoBitRate:
             return static_cast<float>(fReader.getCurrentBitRate());
         }
@@ -290,10 +290,7 @@ protected:
         {
         case kParameterLooping:
             if (fLoopMode != b)
-            {
                 fLoopMode = b;
-                // fReader.setLoopingMode(b);
-            }
             break;
         case kParameterHostSync:
             if (fHostSync != b)
@@ -350,19 +347,17 @@ protected:
         float* const out2 = outBuffer[1];
         float* const playCV = outBuffer[2];
 
-//         const water::GenericScopedLock<water::SpinLock> gsl(fPool.mutex);
-
         if (! fDoProcess)
         {
             // carla_stderr("P: no process");
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
             carla_zeroFloats(playCV, frames);
-            fLastPosition = 0.0f;
+            fLastPosition = 0.f;
+            fReadableBufferFill = 0.f;
             return;
         }
 
-//         const bool loopMode = fLoopMode;
         bool needsIdleRequest = false;
         bool playing;
         uint64_t framePos;
@@ -385,152 +380,20 @@ protected:
         // not playing
         if (! playing)
         {
-//             // carla_stderr("P: not playing");
-//             if (framePos == 0 && fWasPlayingBefore)
-//                 fReader.setNeedsRead(framePos);
-
             carla_zeroFloats(out1, frames);
             carla_zeroFloats(out2, frames);
             carla_zeroFloats(playCV, frames);
-//             fWasPlayingBefore = false;
             return;
         }
-//         else
-//         {
-//             fWasPlayingBefore = true;
-//         }
 
-        fLastPosition = fReader.tickFrames(outBuffer, 0, frames, framePos, fLoopMode, isOffline()) * 100.f;
+        if (fReader.tickFrames(outBuffer, 0, frames, framePos, fLoopMode, isOffline()) && ! fPendingFileRead)
+        {
+            fPendingFileRead = true;
+            needsIdleRequest = true;
+        }
 
-//         // out of reach
-//         if ((frame < fPool.startFrame || frame >= fMaxFrame) && !loopMode)
-//         {
-//             if (frame < fPool.startFrame)
-//             {
-//                 needsIdleRequest = true;
-//                 fNeedsFileRead = true;
-//                 fReader.setNeedsRead(frame);
-//             }
-//
-//             carla_zeroFloats(out1, frames);
-//             carla_zeroFloats(out2, frames);
-//             carla_zeroFloats(playCV, frames);
-//
-//            #ifndef __MOD_DEVICES__
-//             if (fInlineDisplay.writtenValues < 32)
-//             {
-//                 fInlineDisplay.lastValuesL[fInlineDisplay.writtenValues] = 0.0f;
-//                 fInlineDisplay.lastValuesR[fInlineDisplay.writtenValues] = 0.0f;
-//                 ++fInlineDisplay.writtenValues;
-//             }
-//             if (fInlineDisplay.pending == InlineDisplayNotPending)
-//             {
-//                 needsIdleRequest = true;
-//                 fInlineDisplay.pending = InlineDisplayNeedRequest;
-//             }
-//            #endif
-
-//             if (needsIdleRequest)
-//                 hostRequestIdle();
-//
-//             if (frame == 0)
-//                 fLastPosition = 0.0f;
-//             else if (frame >= fMaxFrame)
-//                 fLastPosition = 100.0f;
-//             else
-//                 fLastPosition = static_cast<float>(frame) / static_cast<float>(fMaxFrame) * 100.0f;
-//             return;
-//         }
-
-//         if (fEntireFileLoaded)
-//         {
-//             // NOTE: frame is always < fMaxFrame (or looping)
-//             uint32_t targetStartFrame = static_cast<uint32_t>(loopMode ? frame % fMaxFrame : frame);
-//
-//             for (uint32_t framesDone=0, framesToDo=frames, remainingFrames; framesDone < frames;)
-//             {
-//                 if (targetStartFrame + framesToDo <= fMaxFrame)
-//                 {
-//                     // everything fits together
-//                     carla_copyFloats(out1+framesDone, fPool.buffer[0]+targetStartFrame, framesToDo);
-//                     carla_copyFloats(out2+framesDone, fPool.buffer[1]+targetStartFrame, framesToDo);
-//                     carla_fillFloatsWithSingleValue(playCV+framesDone, 10.f, framesToDo);
-//                     break;
-//                 }
-//
-//                 remainingFrames = std::min(fMaxFrame - targetStartFrame, framesToDo);
-//                 carla_copyFloats(out1+framesDone, fPool.buffer[0]+targetStartFrame, remainingFrames);
-//                 carla_copyFloats(out2+framesDone, fPool.buffer[1]+targetStartFrame, remainingFrames);
-//                 carla_fillFloatsWithSingleValue(playCV+framesDone, 10.f, remainingFrames);
-//                 framesDone += remainingFrames;
-//                 framesToDo -= remainingFrames;
-//
-//                 if (! loopMode)
-//                 {
-//                     // not looping, stop here
-//                     if (framesToDo != 0)
-//                     {
-//                         carla_zeroFloats(out1+framesDone, framesToDo);
-//                         carla_zeroFloats(out2+framesDone, framesToDo);
-//                         carla_zeroFloats(playCV+framesDone, framesToDo);
-//                     }
-//                     break;
-//                 }
-//
-//                 // reset for next loop
-//                 targetStartFrame = 0;
-//             }
-
-//             fLastPosition = static_cast<float>(targetStartFrame) / static_cast<float>(fMaxFrame) * 100.0f;
-//         }
-//         else
-//         {
-//             const bool offline = isOffline();
-
-//             if (fReader.tryPutData(fPool, out1, out2, frame, frames, loopMode, offline, needsIdleRequest))
-//             {
-//                 carla_fillFloatsWithSingleValue(playCV, 10.f, frames);
-//             }
-//             else
-//             {
-//                 carla_zeroFloats(out1, frames);
-//                 carla_zeroFloats(out2, frames);
-//                 carla_zeroFloats(playCV, frames);
-//             }
-//
-//             if (needsIdleRequest)
-//             {
-//                 fNeedsFileRead = true;
-//
-//                 if (isOffline())
-//                 {
-//                     needsIdleRequest = false;
-//                     fReader.readPoll();
-//
-//                     if (fReader.tryPutData(fPool, out1, out2, frame, frames, loopMode, offline, needsIdleRequest))
-//                     {
-//                         carla_fillFloatsWithSingleValue(playCV, 10.f, frames);
-//                     }
-//                     else
-//                     {
-//                         carla_zeroFloats(out1, frames);
-//                         carla_zeroFloats(out2, frames);
-//                         carla_zeroFloats(playCV, frames);
-//                     }
-//
-//                     if (needsIdleRequest)
-//                         fNeedsFileRead = true;
-//                 }
-//             }
-//
-//             const uint32_t modframe = static_cast<uint32_t>(frame % fMaxFrame);
-//             fLastPosition = static_cast<float>(modframe) / static_cast<float>(fMaxFrame) * 100.0f;
-//
-//             if (modframe > fPool.startFrame)
-//                 fLastPoolFill = static_cast<float>(modframe - fPool.startFrame) / static_cast<float>(fPool.numFrames) * 100.0f;
-//             else
-//                 fLastPoolFill = 100.0f;
-//         }
+        fLastPosition = fReader.getLastPlayPosition() * 100.f;
+        fReadableBufferFill = fReader.getReadableBufferFill() * 100.f;
 
         const float volume = fVolume;
         if (carla_isNotEqual(volume, 1.0f))
@@ -586,11 +449,11 @@ protected:
         }
        #endif
 
-//         if (fNeedsFileRead)
-//         {
-//             fReader.readPoll();
-//             fNeedsFileRead = false;
-//         }
+        if (fPendingFileRead)
+        {
+            fPendingFileRead = false;
+            fReader.readPoll();
+        }
     }
 
     void sampleRateChanged(double) override
@@ -725,17 +588,13 @@ private:
    #endif
     bool fEnabled = true;
     bool fDoProcess = false;
-//     bool fWasPlayingBefore;
-//     volatile bool fNeedsFileRead;
-//
-//     bool fEntireFileLoaded;
-//     uint32_t fMaxFrame;
+    bool fPendingFileRead = false;
+
     uint32_t fInternalTransportFrame = 0;
     float fLastPosition = 0.f;
-//     float fLastPoolFill;
+    float fReadableBufferFill = 0.f;
     float fVolume = 1.f;
 
-//     AudioFilePool   fPool;
     AudioFileReader fReader;
     CarlaString     fFilename;
 
@@ -773,44 +632,20 @@ private:
         carla_stdout("AudioFilePlugin::loadFilename(\"%s\")", filename);
 
         fDoProcess = false;
-//         fLastPoolFill = 0.0f;
-//         fPool.destroy();
         fReader.destroy();
         fFilename.clear();
 
         if (filename == nullptr || *filename == '\0')
-        {
-//             fMaxFrame = 0;
             return;
-        }
 
         constexpr uint32_t kPreviewDataLen = sizeof(fPreviewData)/sizeof(float);
 
         if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate()), kPreviewDataLen, fPreviewData))
         {
-//             fEntireFileLoaded = fReader.isEntireFileLoaded();
-//             fMaxFrame = fReader.getMaxFrame();
-//
-//             if (fEntireFileLoaded)
-//             {
-//                 fReader.putAndSwapAllData(fPool);
-//                 fLastPoolFill = 100.0f;
-//             }
-//             else
-//             {
-//                 fReader.createSwapablePool(fPool);
-//                 fReader.readPoll();
-//             }
-
             fInternalTransportFrame = 0;
             fDoProcess = true;
             fFilename = filename;
             hostSendPreviewBufferData('f', kPreviewDataLen, fPreviewData);
-        }
-        else
-        {
-//             fEntireFileLoaded = false;
-//             fMaxFrame = 0;
         }
     }
 
@@ -818,10 +653,20 @@ private:
 
     static const char* _get_buffer_port_name(NativePluginHandle, const uint32_t index, const bool isOutput)
     {
-        if (!isOutput || index != 2)
+        if (!isOutput)
             return nullptr;
 
-        return "Play status";
+        switch (index)
+        {
+        case 0:
+            return "output_1";
+        case 1:
+            return "output_2";
+        case 2:
+            return "Play status";
+        }
+
+        return nullptr;
     }
 
     static const NativePortRange* _get_buffer_port_range(NativePluginHandle, const uint32_t index, const bool isOutput)

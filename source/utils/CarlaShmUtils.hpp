@@ -208,6 +208,8 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
             return nullptr;
         }
 
+        ::VirtualLock(ptr, size);
+
         shm.map = map;
         return ptr;
       #else

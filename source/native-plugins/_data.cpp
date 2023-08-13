@@ -284,6 +284,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
                                                   |NATIVE_PLUGIN_REQUESTS_IDLE
+                                                  |NATIVE_PLUGIN_USES_CONTROL_VOLTAGE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,
@@ -296,7 +297,13 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* label     */ "audiofile",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
-    DESCFUNCS_WITHOUTCV
+    DESCFUNCS_WITHCV,
+    /* cvIns      */ 0,
+    /* cvOuts     */ 1,
+    /* bufnamefn  */ nullptr,
+    /* bufrangefn */ nullptr,
+    /* ui_width   */ 0,
+    /* ui_height  */ 0
 },
 
 // --------------------------------------------------------------------------------------------------------------------

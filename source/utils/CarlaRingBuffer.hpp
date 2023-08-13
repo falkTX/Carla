@@ -19,6 +19,7 @@
 #define CARLA_RING_BUFFER_HPP_INCLUDED
 
 #include "CarlaMathUtils.hpp"
+#include "CarlaMemUtils.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 // Buffer structs
@@ -102,12 +103,22 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
-        fBuffer->head = 0;
-        fBuffer->tail = 0;
-        fBuffer->wrtn = 0;
+        fBuffer->head = fBuffer->tail = fBuffer->wrtn = 0;
         fBuffer->invalidateCommit = false;
 
         carla_zeroBytes(fBuffer->buf, fBuffer->size);
+
+        fErrorReading = fErrorWriting = false;
+    }
+
+    void flush() noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+
+        fBuffer->head = fBuffer->tail = fBuffer->wrtn = 0;
+        fBuffer->invalidateCommit = false;
+
+        fErrorWriting = false;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -141,6 +152,11 @@ public:
         return fBuffer->buf == nullptr || fBuffer->head == fBuffer->tail;
     }
 
+    uint32_t getSize() const noexcept
+    {
+        return fBuffer != nullptr ? fBuffer->size : 0;
+    }
+
     uint32_t getReadableDataSize() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
@@ -154,7 +170,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
 
-        const uint32_t wrap = (fBuffer->tail >= fBuffer->wrtn) ? 0 : fBuffer->size;
+        const uint32_t wrap = fBuffer->tail > fBuffer->wrtn ? 0 : fBuffer->size;
 
         return wrap + fBuffer->tail - fBuffer->wrtn;
     }
@@ -502,10 +518,7 @@ class CarlaHeapRingBuffer : public CarlaRingBufferControl<HeapBuffer>
 {
 public:
     CarlaHeapRingBuffer() noexcept
-        : fHeapBuffer{0, 0, 0, 0, false, nullptr}
-    {
-        carla_zeroStruct(fHeapBuffer);
-    }
+        : fHeapBuffer{0, 0, 0, 0, false, nullptr} {}
 
     ~CarlaHeapRingBuffer() noexcept override
     {
@@ -516,7 +529,7 @@ public:
         fHeapBuffer.buf = nullptr;
     }
 
-    void createBuffer(const uint32_t size) noexcept
+    void createBuffer(const uint32_t size, const bool mlock) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fHeapBuffer.buf == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
@@ -529,11 +542,18 @@ public:
 
         fHeapBuffer.size = p2size;
         setRingBuffer(&fHeapBuffer, true);
+
+        if (mlock)
+        {
+            carla_mlock(&fHeapBuffer, sizeof(fHeapBuffer));
+            carla_mlock(fHeapBuffer.buf, p2size);
+        }
     }
 
     void deleteBuffer() noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fHeapBuffer.buf != nullptr,);
+        if (fHeapBuffer.buf == nullptr)
+            return;
 
         setRingBuffer(nullptr, false);
 

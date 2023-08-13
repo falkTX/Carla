@@ -3255,29 +3255,31 @@ public:
 
         if (fExt.worker != nullptr && fEventsIn.ctrl != nullptr)
         {
-            fAtomBufferWorkerIn.createBuffer(eventBufferSize);
-            fAtomBufferWorkerResp.createBuffer(eventBufferSize);
+            fAtomBufferWorkerIn.createBuffer(eventBufferSize, true);
+            fAtomBufferWorkerResp.createBuffer(eventBufferSize, true);
             fAtomBufferRealtimeSize = fAtomBufferWorkerIn.getSize(); // actual buffer size will be next power of 2
             fAtomBufferRealtime = static_cast<LV2_Atom*>(std::malloc(fAtomBufferRealtimeSize));
             fAtomBufferWorkerInTmpData = new uint8_t[fAtomBufferRealtimeSize];
+            carla_mlock(fAtomBufferRealtime, fAtomBufferRealtimeSize);
         }
 
         if (fRdfDescriptor->ParameterCount > 0 ||
             (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
         {
-            fAtomBufferEvIn.createBuffer(eventBufferSize);
+            fAtomBufferEvIn.createBuffer(eventBufferSize, true);
 
             if (fAtomBufferRealtimeSize == 0)
             {
                 fAtomBufferRealtimeSize = fAtomBufferEvIn.getSize(); // actual buffer size will be next power of 2
                 fAtomBufferRealtime = static_cast<LV2_Atom*>(std::malloc(fAtomBufferRealtimeSize));
+                carla_mlock(fAtomBufferRealtime, fAtomBufferRealtimeSize);
             }
         }
 
         if (hasPatchParameterOutputs ||
             (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
         {
-            fAtomBufferUiOut.createBuffer(std::min(eventBufferSize*32, 1638400U));
+            fAtomBufferUiOut.createBuffer(std::min(eventBufferSize*32, 1638400U), true);
             fAtomBufferUiOutTmpData = new uint8_t[fAtomBufferUiOut.getSize()];
         }
 
