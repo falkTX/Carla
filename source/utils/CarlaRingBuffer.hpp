@@ -20,7 +20,7 @@
 
 #include "CarlaMathUtils.hpp"
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Buffer structs
 
 /*
@@ -82,15 +82,7 @@ struct HugeStackBuffer {
     uint8_t  buf[size];
 };
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-# define HeapBuffer_INIT  {0, 0, 0, 0, false, nullptr}
-# define StackBuffer_INIT {0, 0, 0, false, {0}}
-#else
-# define HeapBuffer_INIT
-# define StackBuffer_INIT
-#endif
-
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // CarlaRingBufferControl templated class
 
 template <class BufferStruct>
@@ -104,7 +96,7 @@ public:
 
     virtual ~CarlaRingBufferControl() noexcept {}
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     void clearData() noexcept
     {
@@ -118,7 +110,7 @@ public:
         carla_zeroBytes(fBuffer->buf, fBuffer->size);
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     bool commitWrite() noexcept
     {
@@ -146,19 +138,28 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
 
-        return (fBuffer->buf == nullptr || fBuffer->head == fBuffer->tail);
+        return fBuffer->buf == nullptr || fBuffer->head == fBuffer->tail;
     }
 
-    uint32_t getAvailableDataSize() const noexcept
+    uint32_t getReadableDataSize() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
 
-        const uint32_t wrap((fBuffer->tail > fBuffer->wrtn) ? 0 : fBuffer->size);
+        const uint32_t wrap = fBuffer->head >= fBuffer->tail ? 0 : fBuffer->size;
+
+        return wrap + fBuffer->head - fBuffer->tail;
+    }
+
+    uint32_t getWritableDataSize() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
+
+        const uint32_t wrap = (fBuffer->tail >= fBuffer->wrtn) ? 0 : fBuffer->size;
 
         return wrap + fBuffer->tail - fBuffer->wrtn;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     bool readBool() noexcept
     {
@@ -236,7 +237,7 @@ public:
             std::memset(&type, 0, sizeof(T));
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     void skipRead(const uint32_t size) noexcept
     {
@@ -272,7 +273,7 @@ public:
         return;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     bool writeBool(const bool value) noexcept
     {
@@ -338,7 +339,7 @@ public:
         return tryWrite(&type, sizeof(T));
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
 protected:
     void setRingBuffer(BufferStruct* const ringBuf, const bool resetBuffer) noexcept
@@ -351,7 +352,7 @@ protected:
             clearData();
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     bool tryRead(void* const buf, const uint32_t size) noexcept
     {
@@ -494,14 +495,14 @@ inline bool CarlaRingBufferControl<HeapBuffer>::isDataAvailableForReading() cons
 	return (fBuffer != nullptr && fBuffer->buf != nullptr && fBuffer->head != fBuffer->tail);
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // CarlaRingBuffer using heap space
 
 class CarlaHeapRingBuffer : public CarlaRingBufferControl<HeapBuffer>
 {
 public:
     CarlaHeapRingBuffer() noexcept
-        : fHeapBuffer(HeapBuffer_INIT)
+        : fHeapBuffer{0, 0, 0, 0, false, nullptr}
     {
         carla_zeroStruct(fHeapBuffer);
     }
@@ -548,14 +549,14 @@ private:
     CARLA_DECLARE_NON_COPYABLE(CarlaHeapRingBuffer)
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // CarlaRingBuffer using small stack space
 
 class CarlaSmallStackRingBuffer : public CarlaRingBufferControl<SmallStackBuffer>
 {
 public:
     CarlaSmallStackRingBuffer() noexcept
-        : fStackBuffer(StackBuffer_INIT)
+        : fStackBuffer{0, 0, 0, false, {}}
     {
         setRingBuffer(&fStackBuffer, true);
     }
@@ -567,6 +568,6 @@ private:
     CARLA_DECLARE_NON_COPYABLE(CarlaSmallStackRingBuffer)
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #endif // CARLA_RING_BUFFER_HPP_INCLUDED

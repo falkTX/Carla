@@ -425,12 +425,12 @@ void BridgeNonRtClientControl::waitIfDataIsReachingLimit() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(isServer,);
 
-    if (getAvailableDataSize() < BigStackBuffer::size/4)
+    if (getWritableDataSize() < BigStackBuffer::size/4)
         return;
 
     for (int i=50; --i >= 0;)
     {
-        if (getAvailableDataSize() >= BigStackBuffer::size*3/4)
+        if (getWritableDataSize() >= BigStackBuffer::size*3/4)
         {
             writeOpcode(kPluginBridgeNonRtClientPing);
             commitWrite();
@@ -570,12 +570,12 @@ void BridgeNonRtServerControl::waitIfDataIsReachingLimit() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(! isServer,);
 
-    if (getAvailableDataSize() < HugeStackBuffer::size/4)
+    if (getWritableDataSize() < HugeStackBuffer::size/4)
         return;
 
     for (int i=50; --i >= 0;)
     {
-        if (getAvailableDataSize() >= HugeStackBuffer::size*3/4)
+        if (getWritableDataSize() >= HugeStackBuffer::size*3/4)
         {
             writeOpcode(kPluginBridgeNonRtServerPong);
             commitWrite();
