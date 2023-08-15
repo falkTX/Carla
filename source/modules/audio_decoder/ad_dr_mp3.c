@@ -52,7 +52,7 @@ static int ad_info_dr_mp3(void *sf, struct adinfo *nfo) {
 		nfo->sample_rate = priv->mp3.sampleRate;
 		nfo->length = nfo->sample_rate ? (nfo->frames * 1000) / nfo->sample_rate : 0;
 		nfo->bit_depth = 16;
-		nfo->bit_rate = priv->mp3.frameInfo.bitrate_kbps;
+		nfo->bit_rate = priv->mp3.frameInfo.bitrate_kbps * 1000;
 		nfo->meta_data = NULL;
 		nfo->can_seek = 1;
 	}
@@ -103,7 +103,7 @@ static ssize_t ad_read_dr_mp3(void *sf, float* d, size_t len)
 static int ad_get_bitrate_dr_mp3(void *sf) {
 	drmp3_audio_decoder *priv = (drmp3_audio_decoder*) sf;
 	if (!priv) return -1;
-	return priv->mp3.frameInfo.bitrate_kbps;
+	return priv->mp3.frameInfo.bitrate_kbps * 1000;
 }
 
 static int ad_eval_dr_mp3(const char *f)

@@ -45,6 +45,18 @@ extern "C" {
 typedef struct adinfo ADInfo;
 
 // --------------------------------------------------------------------------------------------------------------------
+// tuning
+
+// disk streaming buffer size
+static constexpr const uint16_t kFileReaderBufferSize = 1024;
+
+// if reading a file smaller than this, load it all in memory
+static constexpr const uint16_t kMinLengthSeconds = 30;
+
+// size of the audio file ring buffer
+static constexpr const uint16_t kRingBufferLengthSeconds = 6;
+
+// --------------------------------------------------------------------------------------------------------------------
 
 struct AudioMemoryPool {
     float* buffer[2] = {};
@@ -195,23 +207,25 @@ public:
 
             fResampleRatio = static_cast<double>(sampleRate) / static_cast<double>(fFileNfo.sample_rate);
             numResampledFrames = static_cast<uint64_t>(static_cast<double>(numFileFrames) * fResampleRatio + 0.5);
+
+            if (fPreviousResampledBuffer.buffer == nullptr)
+                fPreviousResampledBuffer.buffer = new float[kFileReaderBufferSize];
         }
         else
         {
-            fResampler.clear();
-            fResampleRatio = 1.0;
             numResampledFrames = numFileFrames;
         }
 
-        if (fFileNfo.can_seek == 0 || numResampledFrames <= sampleRate * 30)
+        if (fFileNfo.can_seek == 0 || numResampledFrames <= sampleRate * kMinLengthSeconds)
         {
-            // read the first 30s of the file if seekable
+            // read and cache the first few seconds of the file if seekable
             const uint64_t initialFrames = fFileNfo.can_seek == 0
                                          ? numFileFrames
-                                         : std::min<uint64_t>(numFileFrames, fFileNfo.sample_rate * 30);
+                                         : std::min<uint64_t>(numFileFrames, fFileNfo.sample_rate * kMinLengthSeconds);
             const uint64_t initialResampledFrames = fFileNfo.can_seek == 0
                                                   ? numResampledFrames
-                                                  : std::min<uint64_t>(numResampledFrames, sampleRate * 30);
+                                                  : std::min<uint64_t>(numResampledFrames,
+                                                                       sampleRate * kMinLengthSeconds);
 
             fInitialMemoryPool.create(initialResampledFrames);
             readIntoInitialMemoryPool(initialFrames, initialResampledFrames);
@@ -236,12 +250,14 @@ public:
         {
             readFilePreview(previewDataSize, previewData);
 
-            // read only the first 4s, let disk streaming handle the rest
-            const uint64_t initialFrames = std::min<uint64_t>(numFileFrames, fFileNfo.sample_rate * 4);
-            const uint64_t initialResampledFrames = std::min<uint64_t>(numResampledFrames, sampleRate * 4);
+            // cache only the first few initial seconds, let disk streaming handle the rest
+            const uint64_t initialFrames = std::min<uint64_t>(numFileFrames,
+                                                              fFileNfo.sample_rate * kRingBufferLengthSeconds / 2);
+            const uint64_t initialResampledFrames = std::min<uint64_t>(numResampledFrames,
+                                                                       sampleRate * kRingBufferLengthSeconds / 2);
 
-            fRingBufferL.createBuffer(sampleRate * 6 * sizeof(float), true);
-            fRingBufferR.createBuffer(sampleRate * 6 * sizeof(float), true);
+            fRingBufferL.createBuffer(sampleRate * kRingBufferLengthSeconds * sizeof(float), true);
+            fRingBufferR.createBuffer(sampleRate * kRingBufferLengthSeconds * sizeof(float), true);
 
             fInitialMemoryPool.create(initialResampledFrames);
             readIntoInitialMemoryPool(initialFrames, initialResampledFrames);
@@ -292,7 +308,6 @@ public:
                 carla_zeroFloats(outL, frames);
                 carla_zeroFloats(outR, frames);
                 carla_zeroFloats(playCV, frames);
-            carla_stdout("tickFrames not loaded");
                 return false;
             }
 
@@ -371,6 +386,7 @@ public:
             fRingBufferR.skipRead(diffFrames * sizeof(float));
             totalFramesAvailable -= diffFrames;
             fRingBufferFramePos = framePos;
+            carla_stdout("tickFrames adjusted frame unaligned position");
         }
 
         usableFrames = std::min<uint32_t>(frames, totalFramesAvailable);
@@ -454,6 +470,7 @@ public:
 
         fCurrentBitRate = ad_get_bitrate(fFilePtr);
 
+        const bool needsResample = carla_isNotEqual(fResampleRatio, 1.0);
         const int64_t nextFileReadPos = fNextFileReadPos;
 
         if (nextFileReadPos != -1)
@@ -463,26 +480,35 @@ public:
             fRingBufferL.flush();
             fRingBufferR.flush();
 
+            fPreviousResampledBuffer.frames = 0;
             fRingBufferFramePos = nextFileReadPos;
             ad_seek(fFilePtr, nextFileReadPos / fResampleRatio);
+
+            if (needsResample)
+                fResampler.reset();
         }
 
-        bool written = false;
-        uint test = 0;
-
-        if (carla_isNotEqual(fResampleRatio, 1.0))
+        if (needsResample)
         {
-            float buffer[8192];
-            float rbuffer[8192];
+            float buffer[kFileReaderBufferSize];
+            float rbuffer[kFileReaderBufferSize];
             ssize_t r;
             uint prev_inp_count = 0;
 
             while (fRingBufferR.getWritableDataSize() >= sizeof(rbuffer))
             {
-                if (prev_inp_count != 0)
+                if (const uint32_t oldframes = fPreviousResampledBuffer.frames)
+                {
+                    prev_inp_count = oldframes;
+                    fPreviousResampledBuffer.frames = 0;
+                    std::memcpy(buffer, fPreviousResampledBuffer.buffer, sizeof(float) * oldframes * channels);
+                }
+                else if (prev_inp_count != 0)
+                {
                     std::memmove(buffer,
                                  buffer + (sizeof(buffer) / sizeof(float) - prev_inp_count * channels),
                                  sizeof(float) * prev_inp_count * channels);
+                }
 
                 r = ad_read(fFilePtr,
                             buffer + (prev_inp_count * channels),
@@ -510,7 +536,6 @@ public:
                     if (fResampler.out_count == 0)
                     {
                         CARLA_SAFE_ASSERT_UINT(fResampler.inp_count != 0, fResampler.inp_count);
-                        prev_inp_count = fResampler.inp_count;
                     }
                     else
                     {
@@ -522,31 +547,40 @@ public:
                     CARLA_SAFE_ASSERT(fResampler.inp_count == 0);
                 }
 
+                prev_inp_count = fResampler.inp_count;
+
                 if (r == 0)
                     break;
 
-                test += r;
-
                 if (channels == 1)
                 {
-                    written = true;
                     fRingBufferL.writeCustomData(rbuffer, r * sizeof(float));
                     fRingBufferR.writeCustomData(rbuffer, r * sizeof(float));
                 }
                 else
                 {
-                    written = true;
                     for (ssize_t i=0; i < r;)
                     {
                         fRingBufferL.writeCustomData(&rbuffer[i++], sizeof(float));
                         fRingBufferR.writeCustomData(&rbuffer[i++], sizeof(float));
                     }
                 }
+
+                fRingBufferL.commitWrite();
+                fRingBufferR.commitWrite();
+            }
+
+            if (prev_inp_count != 0)
+            {
+                fPreviousResampledBuffer.frames = prev_inp_count;
+                std::memcpy(fPreviousResampledBuffer.buffer,
+                            buffer + (sizeof(buffer) / sizeof(float) - prev_inp_count * channels),
+                            sizeof(float) * prev_inp_count * channels);
             }
         }
         else
         {
-            float buffer[1024];
+            float buffer[kFileReaderBufferSize];
             ssize_t r;
 
             while (fRingBufferR.getWritableDataSize() >= sizeof(buffer))
@@ -562,31 +596,23 @@ public:
                 if (r == 0)
                     break;
 
-                test += r;
-
                 if (channels == 1)
                 {
-                    written = true;
                     fRingBufferL.writeCustomData(buffer, r * sizeof(float));
                     fRingBufferR.writeCustomData(buffer, r * sizeof(float));
                 }
                 else
                 {
-                    written = true;
                     for (ssize_t i=0; i < r;)
                     {
                         fRingBufferL.writeCustomData(&buffer[i++], sizeof(float));
                         fRingBufferR.writeCustomData(&buffer[i++], sizeof(float));
                     }
                 }
-            }
-        }
 
-            carla_stdout("readPoll written %d", test);
-        if (written)
-        {
-            fRingBufferL.commitWrite();
-            fRingBufferR.commitWrite();
+                fRingBufferL.commitWrite();
+                fRingBufferR.commitWrite();
+            }
         }
 
         if (nextFileReadPos != -1)
@@ -610,6 +636,11 @@ private:
     Resampler     fResampler;
     CarlaMutex    fReaderMutex;
 
+    struct PreviousResampledBuffer {
+        float* buffer = nullptr;
+        uint32_t frames = 0;
+    } fPreviousResampledBuffer;
+
     CarlaHeapRingBuffer fRingBufferL, fRingBufferR;
     uint64_t fRingBufferFramePos = 0;
 
@@ -623,6 +654,9 @@ private:
         fTotalResampledFrames = 0;
         fSampleRate = 0;
         fRingBufferFramePos = 0;
+        fResampleRatio = 1.0;
+
+        fResampler.clear();
         fInitialMemoryPool.destroy();
         fRingBufferL.deleteBuffer();
         fRingBufferR.deleteBuffer();
@@ -632,6 +666,10 @@ private:
             ad_close(fFilePtr);
             fFilePtr = nullptr;
         }
+
+        delete[] fPreviousResampledBuffer.buffer;
+        fPreviousResampledBuffer.buffer = nullptr;
+        fPreviousResampledBuffer.frames = 0;
     }
 
     void readIntoInitialMemoryPool(const uint numFrames, const uint numResampledFrames)

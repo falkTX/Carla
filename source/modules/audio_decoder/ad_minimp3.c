@@ -80,7 +80,7 @@ static int ad_info_minimp3(void *sf, struct adinfo *nfo) {
 		nfo->sample_rate = priv->dec_ex.info.hz;
 		nfo->length = nfo->sample_rate ? (nfo->frames * 1000) / nfo->sample_rate : 0;
 		nfo->bit_depth = 16;
-		nfo->bit_rate = priv->dec_ex.info.bitrate_kbps;
+		nfo->bit_rate = priv->dec_ex.info.bitrate_kbps * 1000;
 		nfo->meta_data = NULL;
 		nfo->can_seek = 0;
 	}
@@ -132,7 +132,7 @@ static ssize_t ad_read_minimp3(void *sf, float* d, size_t len)
 static int ad_get_bitrate_minimp3(void *sf) {
 	minimp3_audio_decoder *priv = (minimp3_audio_decoder*) sf;
 	if (!priv) return -1;
-	return priv->dec_ex.info.bitrate_kbps;
+	return priv->dec_ex.info.bitrate_kbps * 1000;
 }
 
 static int ad_eval_minimp3(const char *f)

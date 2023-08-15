@@ -20,7 +20,56 @@
 
 #include "audio-base.hpp"
 
+#include <cmath>
+
 // --------------------------------------------------------------------------------------------------------------------
+
+// static constexpr const float M_PIf = static_cast<float>(M_PI);
+
+class VolumeFilter
+{
+    float a0, b1, z1;
+
+public:
+    VolumeFilter(const float sampleRate) noexcept
+    {
+        setSampleRate(sampleRate);
+    }
+
+    void reset() noexcept
+    {
+        a0 = 1.f - b1;
+        z1 = 0.f;
+    }
+
+    void setSampleRate(const float sampleRate) noexcept
+    {
+        const float frequency = 30.0f / sampleRate;
+
+        b1 = std::exp(-2.f * M_PIf * frequency);
+        a0 = 1.f - b1;
+        z1 = 0.f;
+    }
+
+    void processStereo(const float gain, float* buffers[2], const uint32_t frames) noexcept
+    {
+        const float _a0 = a0;
+        const float _b1 = b1;
+        float _z1 = z1;
+
+        for (uint32_t i=0; i < frames; ++i)
+        {
+            _z1 = gain * _a0 + _z1 * _b1;
+            buffers[0][i] *= _z1;
+            buffers[1][i] *= _z1;
+        }
+
+        z1 = _z1;
+    }
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
 
 #ifndef __MOD_DEVICES__
 class AudioFilePlugin : public NativePluginWithMidiPrograms<FileAudio>
@@ -70,30 +119,11 @@ public:
     AudioFilePlugin(const NativeHostDescriptor* const host)
        #ifndef __MOD_DEVICES__
         : NativePluginWithMidiPrograms<FileAudio>(host, fPrograms, 3),
-          fPrograms(hostGetFilePath("audio"), audiofilesWildcard)
+          fPrograms(hostGetFilePath("audio"), audiofilesWildcard),
        #else
-        : NativePluginClass(host)
+        : NativePluginClass(host),
        #endif
-//           fWasPlayingBefore(false),
-//           fNeedsFileRead(false),
-//           fEntireFileLoaded(false),
-//           fMaxFrame(0),
-//           fReadableBufferFill(0.0f),
-//           fPool(),
-//           fReader(),
-//           fFilename(),
-//           fPreviewData()
-//        #ifndef __MOD_DEVICES__
-//         , fInlineDisplay()
-//        #endif
-    {
-    }
-
-    ~AudioFilePlugin() override
-    {
-//         fReader.destroy();
-//         fPool.destroy();
-    }
+          fVolumeFilter(getSampleRate()) {}
 
 protected:
     // ----------------------------------------------------------------------------------------------------------------
@@ -358,7 +388,6 @@ protected:
             return;
         }
 
-        bool needsIdleRequest = false;
         bool playing;
         uint64_t framePos;
 
@@ -386,6 +415,8 @@ protected:
             return;
         }
 
+        bool needsIdleRequest = false;
+
         if (fReader.tickFrames(outBuffer, 0, frames, framePos, fLoopMode, isOffline()) && ! fPendingFileRead)
         {
             fPendingFileRead = true;
@@ -395,12 +426,7 @@ protected:
         fLastPosition = fReader.getLastPlayPosition() * 100.f;
         fReadableBufferFill = fReader.getReadableBufferFill() * 100.f;
 
-        const float volume = fVolume;
-        if (carla_isNotEqual(volume, 1.0f))
-        {
-            carla_multiply(out1, volume, frames);
-            carla_multiply(out2, volume, frames);
-        }
+        fVolumeFilter.processStereo(fVolume, outBuffer, frames);
 
        #ifndef __MOD_DEVICES__
         if (fInlineDisplay.writtenValues < 32)
@@ -625,6 +651,8 @@ private:
         CARLA_PREVENT_HEAP_ALLOCATION
     } fInlineDisplay;
    #endif
+
+    VolumeFilter fVolumeFilter;
 
     void loadFilename(const char* const filename)
     {
