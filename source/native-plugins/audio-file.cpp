@@ -106,6 +106,7 @@ public:
         kParameterHostSync,
         kParameterVolume,
         kParameterEnabled,
+        kParameterQuadChannels,
         kParameterInfoChannels,
         kParameterInfoBitRate,
         kParameterInfoBitDepth,
@@ -191,6 +192,24 @@ protected:
             param.ranges.min = 0.0f;
             param.ranges.max = 1.0f;
             param.designation = NATIVE_PARAMETER_DESIGNATION_ENABLED;
+            break;
+        case kParameterQuadChannels:
+            param.name  = "Quad Channels";
+            param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_AUTOMATABLE|
+                                                            NATIVE_PARAMETER_IS_ENABLED|
+                                                            NATIVE_PARAMETER_IS_INTEGER|
+                                                            NATIVE_PARAMETER_USES_SCALEPOINTS);
+            param.ranges.def = 0.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 1.0f;
+            {
+                static const NativeParameterScalePoint scalePoints[2] = {
+                    { "Channels 1 + 2", 0 },
+                    { "Channels 3 + 4", 1 }
+                };
+                param.scalePointCount  = 2;
+                param.scalePoints      = scalePoints;
+            }
             break;
         case kParameterInfoChannels:
             param.name  = "Num Channels";
@@ -279,6 +298,8 @@ protected:
             return fHostSync ? 1.f : 0.f;
         case kParameterEnabled:
             return fEnabled ? 1.f : 0.f;
+        case kParameterQuadChannels:
+            return fQuad2ndChannels ? 1.f : 0.f;
         case kParameterVolume:
             return fVolume * 100.f;
         case kParameterInfoPosition:
@@ -336,6 +357,13 @@ protected:
                 fEnabled = b;
             }
             break;
+        case kParameterQuadChannels:
+            if (fQuad2ndChannels != b)
+            {
+                fQuad2ndChannels = b;
+                fPendingFileReload = true;
+                hostRequestIdle();
+            }
         default:
             break;
         }
@@ -475,15 +503,27 @@ protected:
         }
        #endif
 
-        if (fPendingFileRead)
+        if (fPendingFileReload)
+        {
+            fPendingFileReload = fPendingFileRead = false;
+
+            if (char* const filename = fFilename.releaseBufferPointer())
+            {
+                loadFilename(filename);
+                std::free(filename);
+            }
+        }
+        else if (fPendingFileRead)
         {
             fPendingFileRead = false;
             fReader.readPoll();
         }
     }
 
-    void sampleRateChanged(double) override
+    void sampleRateChanged(const double sampleRate) override
     {
+        fVolumeFilter.setSampleRate(sampleRate);
+
         if (char* const filename = fFilename.releaseBufferPointer())
         {
             loadFilename(filename);
@@ -615,6 +655,8 @@ private:
     bool fEnabled = true;
     bool fDoProcess = false;
     bool fPendingFileRead = false;
+    bool fPendingFileReload = false;
+    bool fQuad2ndChannels = false;
 
     uint32_t fInternalTransportFrame = 0;
     float fLastPosition = 0.f;
@@ -668,7 +710,8 @@ private:
 
         constexpr uint32_t kPreviewDataLen = sizeof(fPreviewData)/sizeof(float);
 
-        if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate()), kPreviewDataLen, fPreviewData))
+        if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate()), fQuad2ndChannels,
+                                 kPreviewDataLen, fPreviewData))
         {
             fInternalTransportFrame = 0;
             fDoProcess = true;

@@ -157,7 +157,7 @@ public:
         return fFileNfo;
     }
 
-    bool loadFilename(const char* const filename, const uint32_t sampleRate,
+    bool loadFilename(const char* const filename, const uint32_t sampleRate, const bool quad2ndChannels,
                       const uint32_t previewDataSize, float* previewData)
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && *filename != '\0', false);
@@ -176,10 +176,10 @@ public:
         ad_dump_nfo(99, &fFileNfo);
 
         // invalid
-        if ((fFileNfo.channels != 1 && fFileNfo.channels != 2) || fFileNfo.frames <= 0)
+        if ((fFileNfo.channels != 1 && fFileNfo.channels != 2 && fFileNfo.channels != 4) || fFileNfo.frames <= 0)
         {
-            if (fFileNfo.channels != 1 && fFileNfo.channels != 2)
-                carla_stderr("loadFilename(\"%s\", ...) has not 1 or 2 channels", filename);
+            if (fFileNfo.channels != 1 && fFileNfo.channels != 2 && fFileNfo.channels != 4)
+                carla_stderr("loadFilename(\"%s\", ...) has not 1, 2 or 4 channels", filename);
 
             if (fFileNfo.frames <= 0)
                 carla_stderr("loadFilename(\"%s\", ...) has 0 frames", filename);
@@ -215,6 +215,8 @@ public:
         {
             numResampledFrames = numFileFrames;
         }
+
+        fQuad2ndChannels = quad2ndChannels;
 
         if (fFileNfo.can_seek == 0 || numResampledFrames <= sampleRate * kMinLengthSeconds)
         {
@@ -439,10 +441,12 @@ public:
         const float previewDataSizeF = static_cast<float>(previewDataSize);
         const uint samplesPerRun = fFileNfo.channels;
         const uint maxSampleToRead = fileNumFrames - samplesPerRun;
-        CARLA_SAFE_ASSERT_INT_RETURN(samplesPerRun == 1 || samplesPerRun == 2, samplesPerRun,);
-        float tmp[2] = { 0.0f, 0.0f };
+        CARLA_SAFE_ASSERT_INT_RETURN(samplesPerRun == 1 || samplesPerRun == 2 || samplesPerRun == 4, samplesPerRun,);
+        float tmp[4];
 
-        if (samplesPerRun == 2)
+        if (samplesPerRun == 4)
+            previewDataSize -= 3;
+        else if (samplesPerRun == 2)
             previewDataSize -= 1;
 
         for (uint i=0; i<previewDataSize; ++i)
@@ -552,18 +556,26 @@ public:
                 if (r == 0)
                     break;
 
-                if (channels == 1)
+                switch (channels)
                 {
+                case 1:
                     fRingBufferL.writeCustomData(rbuffer, r * sizeof(float));
                     fRingBufferR.writeCustomData(rbuffer, r * sizeof(float));
-                }
-                else
-                {
+                    break;
+                case 2:
                     for (ssize_t i=0; i < r;)
                     {
                         fRingBufferL.writeCustomData(&rbuffer[i++], sizeof(float));
                         fRingBufferR.writeCustomData(&rbuffer[i++], sizeof(float));
                     }
+                    break;
+                case 4:
+                    for (ssize_t i=fQuad2ndChannels?2:0; i < r; i += 4)
+                    {
+                        fRingBufferL.writeCustomData(&rbuffer[i], sizeof(float));
+                        fRingBufferR.writeCustomData(&rbuffer[i+1], sizeof(float));
+                    }
+                    break;
                 }
 
                 fRingBufferL.commitWrite();
@@ -596,18 +608,26 @@ public:
                 if (r == 0)
                     break;
 
-                if (channels == 1)
+                switch (channels)
                 {
+                case 1:
                     fRingBufferL.writeCustomData(buffer, r * sizeof(float));
                     fRingBufferR.writeCustomData(buffer, r * sizeof(float));
-                }
-                else
-                {
+                    break;
+                case 2:
                     for (ssize_t i=0; i < r;)
                     {
                         fRingBufferL.writeCustomData(&buffer[i++], sizeof(float));
                         fRingBufferR.writeCustomData(&buffer[i++], sizeof(float));
                     }
+                    break;
+                case 4:
+                    for (ssize_t i=fQuad2ndChannels?2:0; i < r; i += 4)
+                    {
+                        fRingBufferL.writeCustomData(&buffer[i], sizeof(float));
+                        fRingBufferR.writeCustomData(&buffer[i+1], sizeof(float));
+                    }
+                    break;
                 }
 
                 fRingBufferL.commitWrite();
@@ -621,6 +641,7 @@ public:
 
 private:
     bool fEntireFileLoaded = false;
+    bool fQuad2ndChannels = false;
     int fCurrentBitRate = 0;
     float fLastPlayPosition = 0.f;
     int64_t fNextFileReadPos = -1;
@@ -713,18 +734,27 @@ private:
             // lock, and put data asap
             const CarlaMutexLocker cml(fInitialMemoryPool.mutex);
 
-            if (channels == 1)
+            switch (channels)
             {
+            case 1:
                 for (ssize_t i=0; i < rv; ++i)
                     fInitialMemoryPool.buffer[0][i] = fInitialMemoryPool.buffer[1][i] = resampledBuffer[i];
-            }
-            else
-            {
+                break;
+            case 2:
                 for (ssize_t i=0, j=0; i < rv; ++j)
                 {
                     fInitialMemoryPool.buffer[0][j] = resampledBuffer[i++];
                     fInitialMemoryPool.buffer[1][j] = resampledBuffer[i++];
                 }
+                break;
+            case 4:
+                for (ssize_t i=fQuad2ndChannels?2:0, j=0; i < rv; ++j)
+                {
+                    fInitialMemoryPool.buffer[0][j] = resampledBuffer[i];
+                    fInitialMemoryPool.buffer[1][j] = resampledBuffer[i+1];
+                    i += 4;
+                }
+                break;
             }
         }
 
