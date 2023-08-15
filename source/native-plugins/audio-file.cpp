@@ -24,10 +24,10 @@
 
 // --------------------------------------------------------------------------------------------------------------------
 
-// static constexpr const float M_PIf = static_cast<float>(M_PI);
-
 class VolumeFilter
 {
+    static constexpr const float kPIf = static_cast<float>(M_PI);
+
     float a0, b1, z1;
 
 public:
@@ -46,7 +46,7 @@ public:
     {
         const float frequency = 30.0f / sampleRate;
 
-        b1 = std::exp(-2.f * M_PIf * frequency);
+        b1 = std::exp(-2.f * kPIf * frequency);
         a0 = 1.f - b1;
         z1 = 0.f;
     }
