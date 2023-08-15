@@ -56,6 +56,15 @@ static constexpr const uint16_t kMinLengthSeconds = 30;
 // size of the audio file ring buffer
 static constexpr const uint16_t kRingBufferLengthSeconds = 6;
 
+static inline
+constexpr float max4f(const float a, const float b, const float c, const float d) noexcept
+{
+    return a > b && a > c && a > d ? a :
+           b > a && b > c && b > d ? b :
+           c > a && c > b && c > d ? c :
+           d;
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 
 struct AudioMemoryPool {
@@ -439,15 +448,11 @@ public:
         const uint fileNumFrames = static_cast<uint>(fFileNfo.frames);
         const float fileNumFramesF = static_cast<float>(fileNumFrames);
         const float previewDataSizeF = static_cast<float>(previewDataSize);
-        const uint samplesPerRun = fFileNfo.channels;
+        const uint channels = fFileNfo.channels;
+        const uint samplesPerRun = channels * 4;
         const uint maxSampleToRead = fileNumFrames - samplesPerRun;
-        CARLA_SAFE_ASSERT_INT_RETURN(samplesPerRun == 1 || samplesPerRun == 2 || samplesPerRun == 4, samplesPerRun,);
-        float tmp[4];
-
-        if (samplesPerRun == 4)
-            previewDataSize -= 3;
-        else if (samplesPerRun == 2)
-            previewDataSize -= 1;
+        const uint8_t quadoffs = fQuad2ndChannels ? 2 : 0;
+        float tmp[16] = {};
 
         for (uint i=0; i<previewDataSize; ++i)
         {
@@ -456,7 +461,36 @@ public:
 
             ad_seek(fFilePtr, pos);
             ad_read(fFilePtr, tmp, samplesPerRun);
-            previewData[i] = std::max(std::fabs(tmp[0]), std::fabs(tmp[1]));
+
+            switch (channels)
+            {
+            case 1:
+                previewData[i] = max4f(std::fabs(tmp[0]),
+                                       std::fabs(tmp[1]),
+                                       std::fabs(tmp[2]),
+                                       std::fabs(tmp[3]));
+                break;
+            case 2:
+                previewData[i] = max4f(std::fabs(tmp[0]),
+                                       std::fabs(tmp[2]),
+                                       std::fabs(tmp[4]),
+                                       std::fabs(tmp[6]));
+                previewData[i] = std::max(previewData[i], max4f(std::fabs(tmp[1]),
+                                                                std::fabs(tmp[3]),
+                                                                std::fabs(tmp[5]),
+                                                                std::fabs(tmp[7])));
+                break;
+            case 4:
+                previewData[i] = max4f(std::fabs(tmp[quadoffs+0]),
+                                       std::fabs(tmp[quadoffs+4]),
+                                       std::fabs(tmp[quadoffs+8]),
+                                       std::fabs(tmp[quadoffs+12]));
+                previewData[i] = std::max(previewData[i], max4f(std::fabs(tmp[quadoffs+1]),
+                                                                std::fabs(tmp[quadoffs+5]),
+                                                                std::fabs(tmp[quadoffs+9]),
+                                                                std::fabs(tmp[quadoffs+13])));
+                break;
+            }
         }
     }
 
