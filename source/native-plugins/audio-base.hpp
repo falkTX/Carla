@@ -26,9 +26,6 @@ extern "C" {
 #include "audio_decoder/ad.h"
 }
 
-// #include "water/threads/ScopedLock.h"
-// #include "water/threads/SpinLock.h"
-
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Weffc++"
@@ -39,8 +36,6 @@ extern "C" {
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic pop
 #endif
-
-#define DEBUG_FILE_OPS
 
 typedef struct adinfo ADInfo;
 
@@ -357,7 +352,6 @@ public:
             if (fRingBufferFramePos > numPoolFrames)
             {
                 fNextFileReadPos = 0;
-            carla_stdout("tickFrames read from start");
                 return true;
             }
 
@@ -367,7 +361,6 @@ public:
                 fRingBufferL.skipRead(numPoolFrames * sizeof(float));
                 fRingBufferR.skipRead(numPoolFrames * sizeof(float));
                 fRingBufferFramePos = numPoolFrames;
-            carla_stdout("tickFrames adjusted frame pos from start");
             }
 
             return true;
@@ -397,14 +390,12 @@ public:
             fRingBufferR.skipRead(diffFrames * sizeof(float));
             totalFramesAvailable -= diffFrames;
             fRingBufferFramePos = framePos;
-            carla_stdout("tickFrames adjusted frame unaligned position");
         }
 
         usableFrames = std::min<uint32_t>(frames, totalFramesAvailable);
 
         if (usableFrames == 0)
         {
-            carla_stdout("tickFrames no more usable frames %lu %lu %u", framePos, fRingBufferFramePos, totalFramesAvailable);
             carla_zeroFloats(outL, frames);
             carla_zeroFloats(outR, frames);
             carla_zeroFloats(playCV, frames);
@@ -425,11 +416,9 @@ public:
                 bufferOffset += usableFrames;
                 framePos += usableFrames;
                 frames -= usableFrames;
-            carla_stdout("tickFrames looping return");
                 return tickFrames(buffers, bufferOffset, frames, framePos, loopingMode, isOffline);
             }
 
-            carla_stdout("tickFrames partial usable frames");
             carla_zeroFloats(outL + usableFrames, frames - usableFrames);
             carla_zeroFloats(outR + usableFrames, frames - usableFrames);
             carla_zeroFloats(playCV + usableFrames, frames - usableFrames);
@@ -513,8 +502,6 @@ public:
 
         if (nextFileReadPos != -1)
         {
-            carla_stdout("readPoll new pos %lu", nextFileReadPos);
-
             fRingBufferL.flush();
             fRingBufferR.flush();
 
