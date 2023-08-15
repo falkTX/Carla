@@ -117,6 +117,12 @@ struct AudioMemoryPool {
 class AudioFileReader
 {
 public:
+    enum QuadMode {
+        kQuad1and2,
+        kQuad3and4,
+        kQuadAll
+    };
+
     AudioFileReader()
     {
         ad_clear_nfo(&fFileNfo);
@@ -161,7 +167,7 @@ public:
         return fFileNfo;
     }
 
-    bool loadFilename(const char* const filename, const uint32_t sampleRate, const bool quad2ndChannels,
+    bool loadFilename(const char* const filename, const uint32_t sampleRate, const QuadMode quadMode,
                       const uint32_t previewDataSize, float* previewData)
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && *filename != '\0', false);
@@ -220,7 +226,7 @@ public:
             numResampledFrames = numFileFrames;
         }
 
-        fQuad2ndChannels = quad2ndChannels;
+        fQuadMode = quadMode;
 
         if (fFileNfo.can_seek == 0 || numResampledFrames <= sampleRate * kMinLengthSeconds)
         {
@@ -440,7 +446,7 @@ public:
         const uint channels = fFileNfo.channels;
         const uint samplesPerRun = channels * 4;
         const uint maxSampleToRead = fileNumFrames - samplesPerRun;
-        const uint8_t quadoffs = fQuad2ndChannels ? 2 : 0;
+        const uint8_t quadoffs = fQuadMode == kQuad3and4 ? 2 : 0;
         float tmp[16] = {};
 
         for (uint i=0; i<previewDataSize; ++i)
@@ -470,14 +476,28 @@ public:
                                                                 std::fabs(tmp[7])));
                 break;
             case 4:
-                previewData[i] = max4f(std::fabs(tmp[quadoffs+0]),
-                                       std::fabs(tmp[quadoffs+4]),
-                                       std::fabs(tmp[quadoffs+8]),
-                                       std::fabs(tmp[quadoffs+12]));
-                previewData[i] = std::max(previewData[i], max4f(std::fabs(tmp[quadoffs+1]),
-                                                                std::fabs(tmp[quadoffs+5]),
-                                                                std::fabs(tmp[quadoffs+9]),
-                                                                std::fabs(tmp[quadoffs+13])));
+                if (fQuadMode == kQuadAll)
+                {
+                    previewData[i] = max4f(std::fabs(tmp[0]) + std::fabs(tmp[4])
+                                           + std::fabs(tmp[8]) + std::fabs(tmp[12]),
+                                           std::fabs(tmp[1]) + std::fabs(tmp[5])
+                                           + std::fabs(tmp[9]) + std::fabs(tmp[13]),
+                                           std::fabs(tmp[2]) + std::fabs(tmp[6])
+                                           + std::fabs(tmp[10]) + std::fabs(tmp[14]),
+                                           std::fabs(tmp[3]) + std::fabs(tmp[7])
+                                           + std::fabs(tmp[11]) + std::fabs(tmp[15]));
+                }
+                else
+                {
+                    previewData[i] = max4f(std::fabs(tmp[quadoffs+0]),
+                                           std::fabs(tmp[quadoffs+4]),
+                                           std::fabs(tmp[quadoffs+8]),
+                                           std::fabs(tmp[quadoffs+12]));
+                    previewData[i] = std::max(previewData[i], max4f(std::fabs(tmp[quadoffs+1]),
+                                                                    std::fabs(tmp[quadoffs+5]),
+                                                                    std::fabs(tmp[quadoffs+9]),
+                                                                    std::fabs(tmp[quadoffs+13])));
+                }
                 break;
             }
         }
@@ -498,6 +518,7 @@ public:
         fCurrentBitRate = ad_get_bitrate(fFilePtr);
 
         const bool needsResample = carla_isNotEqual(fResampleRatio, 1.0);
+        const uint8_t quadoffs = fQuadMode == kQuad3and4 ? 2 : 0;
         const int64_t nextFileReadPos = fNextFileReadPos;
 
         if (nextFileReadPos != -1)
@@ -591,10 +612,23 @@ public:
                     }
                     break;
                 case 4:
-                    for (ssize_t i=fQuad2ndChannels?2:0; i < r; i += 4)
+                    if (fQuadMode == kQuadAll)
                     {
-                        fRingBufferL.writeCustomData(&rbuffer[i], sizeof(float));
-                        fRingBufferR.writeCustomData(&rbuffer[i+1], sizeof(float));
+                        float v;
+                        for (ssize_t i=0; i < r; i += 4)
+                        {
+                            v = rbuffer[i] + rbuffer[i+1] + rbuffer[i+2] + rbuffer[i+3];
+                            fRingBufferL.writeCustomData(&v, sizeof(float));
+                            fRingBufferR.writeCustomData(&v, sizeof(float));
+                        }
+                    }
+                    else
+                    {
+                        for (ssize_t i=quadoffs; i < r; i += 4)
+                        {
+                            fRingBufferL.writeCustomData(&rbuffer[i], sizeof(float));
+                            fRingBufferR.writeCustomData(&rbuffer[i+1], sizeof(float));
+                        }
                     }
                     break;
                 }
@@ -643,10 +677,23 @@ public:
                     }
                     break;
                 case 4:
-                    for (ssize_t i=fQuad2ndChannels?2:0; i < r; i += 4)
+                    if (fQuadMode == kQuadAll)
                     {
-                        fRingBufferL.writeCustomData(&buffer[i], sizeof(float));
-                        fRingBufferR.writeCustomData(&buffer[i+1], sizeof(float));
+                        float v;
+                        for (ssize_t i=0; i < r; i += 4)
+                        {
+                            v = buffer[i] + buffer[i+1] + buffer[i+2] + buffer[i+3];
+                            fRingBufferL.writeCustomData(&v, sizeof(float));
+                            fRingBufferR.writeCustomData(&v, sizeof(float));
+                        }
+                    }
+                    else
+                    {
+                        for (ssize_t i=quadoffs; i < r; i += 4)
+                        {
+                            fRingBufferL.writeCustomData(&buffer[i], sizeof(float));
+                            fRingBufferR.writeCustomData(&buffer[i+1], sizeof(float));
+                        }
                     }
                     break;
                 }
@@ -662,7 +709,7 @@ public:
 
 private:
     bool fEntireFileLoaded = false;
-    bool fQuad2ndChannels = false;
+    QuadMode fQuadMode = kQuad1and2;
     int fCurrentBitRate = 0;
     float fLastPlayPosition = 0.f;
     int64_t fNextFileReadPos = -1;
@@ -769,11 +816,23 @@ private:
                 }
                 break;
             case 4:
-                for (ssize_t i=fQuad2ndChannels?2:0, j=0; i < rv; ++j)
+                if (fQuadMode == kQuadAll)
                 {
-                    fInitialMemoryPool.buffer[0][j] = resampledBuffer[i];
-                    fInitialMemoryPool.buffer[1][j] = resampledBuffer[i+1];
-                    i += 4;
+                    for (ssize_t i=0, j=0; i < rv; ++j)
+                    {
+                        fInitialMemoryPool.buffer[0][j] = fInitialMemoryPool.buffer[1][j]
+                            = resampledBuffer[i] + resampledBuffer[i+1] + resampledBuffer[i+2] + resampledBuffer[i+3];
+                        i += 4;
+                    }
+                }
+                else
+                {
+                    for (ssize_t i = fQuadMode == kQuad3and4 ? 2 : 0, j = 0; i < rv; ++j)
+                    {
+                        fInitialMemoryPool.buffer[0][j] = resampledBuffer[i];
+                        fInitialMemoryPool.buffer[1][j] = resampledBuffer[i+1];
+                        i += 4;
+                    }
                 }
                 break;
             }

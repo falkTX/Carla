@@ -201,13 +201,14 @@ protected:
                                                             NATIVE_PARAMETER_USES_SCALEPOINTS);
             param.ranges.def = 0.0f;
             param.ranges.min = 0.0f;
-            param.ranges.max = 1.0f;
+            param.ranges.max = 2.0f;
             {
-                static const NativeParameterScalePoint scalePoints[2] = {
+                static const NativeParameterScalePoint scalePoints[3] = {
                     { "Channels 1 + 2", 0 },
-                    { "Channels 3 + 4", 1 }
+                    { "Channels 3 + 4", 1 },
+                    { "Channels 1&2 + 3&4", 2 }
                 };
-                param.scalePointCount  = 2;
+                param.scalePointCount  = 3;
                 param.scalePoints      = scalePoints;
             }
             break;
@@ -299,7 +300,7 @@ protected:
         case kParameterEnabled:
             return fEnabled ? 1.f : 0.f;
         case kParameterQuadChannels:
-            return fQuad2ndChannels ? 1.f : 0.f;
+            return fQuadMode;
         case kParameterVolume:
             return fVolume * 100.f;
         case kParameterInfoPosition:
@@ -335,6 +336,18 @@ protected:
             return;
         }
 
+        if (index == kParameterQuadChannels)
+        {
+            const int ivalue = static_cast<int>(value + 0.5f);
+            CARLA_SAFE_ASSERT_INT_RETURN(value >= AudioFileReader::kQuad1and2 && value <= AudioFileReader::kQuadAll,
+                                         value,);
+
+            fQuadMode = static_cast<AudioFileReader::QuadMode>(ivalue);
+            fPendingFileReload = true;
+            hostRequestIdle();
+            return;
+        }
+
         const bool b = value > 0.5f;
 
         switch (index)
@@ -357,13 +370,6 @@ protected:
                 fEnabled = b;
             }
             break;
-        case kParameterQuadChannels:
-            if (fQuad2ndChannels != b)
-            {
-                fQuad2ndChannels = b;
-                fPendingFileReload = true;
-                hostRequestIdle();
-            }
         default:
             break;
         }
@@ -656,7 +662,7 @@ private:
     bool fDoProcess = false;
     bool fPendingFileRead = false;
     bool fPendingFileReload = false;
-    bool fQuad2ndChannels = false;
+    AudioFileReader::QuadMode fQuadMode = AudioFileReader::kQuad1and2;
 
     uint32_t fInternalTransportFrame = 0;
     float fLastPosition = 0.f;
@@ -710,7 +716,7 @@ private:
 
         constexpr uint32_t kPreviewDataLen = sizeof(fPreviewData)/sizeof(float);
 
-        if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate()), fQuad2ndChannels,
+        if (fReader.loadFilename(filename, static_cast<uint32_t>(getSampleRate()), fQuadMode,
                                  kPreviewDataLen, fPreviewData))
         {
             fInternalTransportFrame = 0;
