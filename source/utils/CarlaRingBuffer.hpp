@@ -448,7 +448,7 @@ protected:
         const uint32_t wrtn = fBuffer->wrtn;
         const uint32_t wrap = tail > wrtn ? 0 : fBuffer->size;
 
-        if (size >= wrap + tail - wrtn)
+        if (size > wrap + tail - wrtn)
         {
             if (! fErrorWriting)
             {
