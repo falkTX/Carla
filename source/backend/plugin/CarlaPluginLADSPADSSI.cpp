@@ -1569,6 +1569,7 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);
+                    carla_zeroStruct(seqEvent);
 
                     seqEvent.type               = (note.velo > 0) ? SND_SEQ_EVENT_NOTEON : SND_SEQ_EVENT_NOTEOFF;
                     seqEvent.data.note.channel  = static_cast<uchar>(note.channel);
@@ -1727,6 +1728,7 @@ public:
                                 continue;
 
                             snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);
+                            carla_zeroStruct(seqEvent);
 
                             seqEvent.time.tick = isSampleAccurate ? startTime : eventTime;
 
@@ -1771,6 +1773,7 @@ public:
                                 continue;
 
                             snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);
+                            carla_zeroStruct(seqEvent);
 
                             seqEvent.time.tick = isSampleAccurate ? startTime : eventTime;
 
@@ -1795,6 +1798,7 @@ public:
                                 continue;
 
                             snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);
+                            carla_zeroStruct(seqEvent);
 
                             seqEvent.time.tick = isSampleAccurate ? startTime : eventTime;
 
@@ -1823,6 +1827,7 @@ public:
                         status = MIDI_STATUS_NOTE_OFF;
 
                     snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);
+                    carla_zeroStruct(seqEvent);
 
                     seqEvent.time.tick = isSampleAccurate ? startTime : eventTime;
 
