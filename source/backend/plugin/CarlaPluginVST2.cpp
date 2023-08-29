@@ -2435,14 +2435,18 @@ protected:
 
     bool hasMidiInput() const noexcept
     {
-        return (fEffect->flags & effFlagsIsSynth) != 0 ||
-               (pData->hints & PLUGIN_WANTS_MIDI_INPUT) != 0 ||
-               canDo("receiveVstEvents") || canDo("receiveVstMidiEvent");
+        return pData->extraHints & PLUGIN_EXTRA_HINT_HAS_MIDI_IN ||
+               pData->hints & PLUGIN_WANTS_MIDI_INPUT ||
+               fEffect->flags & effFlagsIsSynth ||
+               canDo("receiveVstEvents") ||
+               canDo("receiveVstMidiEvent");
     }
 
     bool hasMidiOutput() const noexcept
     {
-        return canDo("sendVstEvents") || canDo("sendVstMidiEvent");
+        return pData->extraHints & PLUGIN_EXTRA_HINT_HAS_MIDI_OUT ||
+               canDo("sendVstEvents") ||
+               canDo("sendVstMidiEvent");
     }
 
     // -------------------------------------------------------------------
