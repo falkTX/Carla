@@ -667,6 +667,27 @@ struct carla_v3_input_param_changes : v3_param_changes_cpp {
         updatedParams[index].updated = true;
     }
 
+    // called as response to MIDI CC
+    void setParamValueRT(const uint32_t index, const int32_t offset, const float value) noexcept
+    {
+        static constexpr const int8_t kQueuePointSize = sizeof(queue[0]->points)/sizeof(queue[0]->points[0]);
+
+        if (queue[index]->numUsed < kQueuePointSize)
+        {
+            // still has space, add in queue
+            carla_v3_input_param_value_queue::Point& point(queue[index]->points[queue[index]->numUsed++]);
+            point.offset = offset;
+            point.value = value;
+        }
+        else
+        {
+            // points are full, replace last one
+            carla_v3_input_param_value_queue::Point& point(queue[index]->points[queue[index]->numUsed - 1]);
+            point.offset = offset;
+            point.value = value;
+        }
+    }
+
 private:
     static int32_t V3_API get_param_count(void* const self)
     {
@@ -875,7 +896,6 @@ private:
 
     static v3_result V3_API get_event(void* const self, const int32_t index, v3_event* const event)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
         const carla_v3_input_event_list* const me = *static_cast<const carla_v3_input_event_list**>(self);
         CARLA_SAFE_ASSERT_RETURN(index < static_cast<int32_t>(me->numEvents), V3_INVALID_ARG);
         std::memcpy(event, &me->events[index], sizeof(v3_event));
@@ -884,7 +904,6 @@ private:
 
     static v3_result V3_API add_event(void*, v3_event*)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
         // there is nothing here for input events, plugins are not meant to call this!
         return V3_NOT_IMPLEMENTED;
     }
@@ -1377,18 +1396,17 @@ public:
 
         options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        /* TODO
         if (hasMidiInput())
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            /* TODO
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+            */
             options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
         }
-        */
 
         return options;
     }
@@ -1564,7 +1582,7 @@ public:
                                                                                             fixedValue);
 
         // report value to component (next process call)
-        fEvents.paramInputs->setParamValue(paramIndex, static_cast<float>(normalized));
+        fEvents.paramInputs->setParamValueRT(paramIndex, frameOffset, static_cast<float>(normalized));
 
         CarlaPlugin::setParameterValueRT(paramIndex, fixedValue, frameOffset, sendCallbackLater);
     }
@@ -2442,12 +2460,6 @@ public:
 
         if (pData->needsReset)
         {
-            /*
-            if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-            {
-            }
-            else
-            */
             if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS && fEvents.eventInputs != nullptr)
             {
                 fEvents.eventInputs->numEvents = MAX_MIDI_NOTE;
@@ -2533,12 +2545,12 @@ public:
         // ------------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (pData->event.portIn != nullptr)
+        if (pData->event.portIn != nullptr && fEvents.eventInputs != nullptr)
         {
             // --------------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
-            if (fEvents.eventInputs != nullptr && pData->extNotes.mutex.tryLock())
+            if (pData->extNotes.mutex.tryLock())
             {
                 ExternalMidiNote note = { 0, 0, 0 };
                 uint16_t numEvents = fEvents.eventInputs->numEvents;
@@ -2576,9 +2588,6 @@ public:
             // --------------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-            bool allNotesOffSent = false;
-#endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t startTime = 0;
@@ -2709,7 +2718,28 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
                         {
-                            // TODO
+                            v3_param_id paramId = 0;
+                            if (v3_cpp_obj(fV3.midiMapping)->get_midi_controller_assignment(fV3.midiMapping,
+                                                                                            0,
+                                                                                            event.channel,
+                                                                                            ctrlEvent.param,
+                                                                                            &paramId) == V3_OK)
+                            {
+                                uint32_t index = UINT32_MAX;
+                                for (uint32_t i=0; i < pData->param.count; ++i)
+                                {
+                                    if (static_cast<v3_param_id>(pData->param.data[i].rindex) == paramId)
+                                    {
+                                        index = i;
+                                        break;
+                                    }
+                                }
+
+                                if (index == UINT32_MAX)
+                                    break;
+
+                                fEvents.paramInputs->setParamValueRT(index, event.time, ctrlEvent.normalizedValue);
+                            }
                         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -2720,10 +2750,6 @@ public:
                     } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
-                        if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
-                        {
-                            // TODO
-                        }
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
@@ -2735,31 +2761,11 @@ public:
                                 break;
                             }
                         }
-                        else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
-                        {
-                            // TODO
-                        }
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                        {
-                            // TODO
-                        }
-                        break;
-
                     case kEngineControlEventTypeAllNotesOff:
-                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                        {
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-                            if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
-                            {
-                                allNotesOffSent = true;
-                                postponeRtAllNotesOff();
-                            }
-#endif
-                            // TODO
-                        }
+                        // TODO map to CC
                         break;
                     } // switch (ctrlEvent.type)
                     break;
@@ -2778,29 +2784,167 @@ public:
 
                     if ((status == MIDI_STATUS_NOTE_OFF || status == MIDI_STATUS_NOTE_ON) && (pData->options & PLUGIN_OPTION_SKIP_SENDING_NOTES))
                         continue;
-                    if (status == MIDI_STATUS_CHANNEL_PRESSURE && (pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
-                        continue;
-                    if (status == MIDI_STATUS_CONTROL_CHANGE && (pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
-                        continue;
                     if (status == MIDI_STATUS_POLYPHONIC_AFTERTOUCH && (pData->options & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
                         continue;
-                    if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && (pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                    if (status == MIDI_STATUS_CONTROL_CHANGE && ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0 || fEvents.paramInputs == nullptr || fV3.midiMapping == nullptr))
+                        continue;
+                    if (status == MIDI_STATUS_CHANNEL_PRESSURE && ((pData->options & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0 || fEvents.paramInputs == nullptr || fV3.midiMapping == nullptr))
+                        continue;
+                    if (status == MIDI_STATUS_PITCH_WHEEL_CONTROL && ((pData->options & PLUGIN_OPTION_SEND_PITCHBEND) == 0 || fEvents.paramInputs == nullptr || fV3.midiMapping == nullptr))
                         continue;
 
                     // Fix bad note-off
                     if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
                         status = MIDI_STATUS_NOTE_OFF;
 
-                    // TODO
+                    switch (status)
+                    {
+                    case MIDI_STATUS_NOTE_OFF:
+                        if (fEvents.eventInputs->numEvents < kPluginMaxMidiEvents)
+                        {
+                            const uint8_t note = midiEvent.data[1];
 
-                    if (status == MIDI_STATUS_NOTE_ON)
-                    {
-                        pData->postponeNoteOnRtEvent(true, event.channel, midiEvent.data[1], midiEvent.data[2]);
-                    }
-                    else if (status == MIDI_STATUS_NOTE_OFF)
-                    {
-                        pData->postponeNoteOffRtEvent(true, event.channel, midiEvent.data[1]);
-                    }
+                            v3_event& v3event(fEvents.eventInputs->events[fEvents.eventInputs->numEvents++]);
+                            carla_zeroStruct(v3event);
+
+                            v3event.type = V3_EVENT_NOTE_OFF;
+                            v3event.note_off.channel = event.channel & MIDI_CHANNEL_BIT;
+                            v3event.note_off.pitch   = note;
+
+                            pData->postponeNoteOffRtEvent(true, event.channel, note);
+                        }
+                        break;
+
+                    case MIDI_STATUS_NOTE_ON:
+                        if (fEvents.eventInputs->numEvents < kPluginMaxMidiEvents)
+                        {
+                            const uint8_t note = midiEvent.data[1];
+                            const uint8_t velo = midiEvent.data[2];
+
+                            v3_event& v3event(fEvents.eventInputs->events[fEvents.eventInputs->numEvents++]);
+                            carla_zeroStruct(v3event);
+
+                            v3event.type = V3_EVENT_NOTE_ON;
+                            v3event.note_on.channel  = event.channel & MIDI_CHANNEL_BIT;
+                            v3event.note_on.pitch    = note;
+                            v3event.note_on.velocity = static_cast<float>(velo) / 127.f;
+
+                            pData->postponeNoteOnRtEvent(true, event.channel, note, velo);
+                        }
+                        break;
+
+                    case MIDI_STATUS_POLYPHONIC_AFTERTOUCH:
+                        if (fEvents.eventInputs->numEvents < kPluginMaxMidiEvents)
+                        {
+                            const uint8_t note     = midiEvent.data[1];
+                            const uint8_t pressure = midiEvent.data[2];
+
+                            v3_event& v3event(fEvents.eventInputs->events[fEvents.eventInputs->numEvents++]);
+                            carla_zeroStruct(v3event);
+
+                            v3event.type = V3_EVENT_POLY_PRESSURE;
+                            v3event.poly_pressure.channel  = event.channel;
+                            v3event.poly_pressure.pitch    = note;
+                            v3event.poly_pressure.pressure = static_cast<float>(pressure) / 127.f;
+                        }
+                        break;
+
+                    case MIDI_STATUS_CONTROL_CHANGE:
+                        {
+                            const uint8_t control = midiEvent.data[1];
+                            const uint8_t value   = midiEvent.data[2];
+
+                            v3_param_id paramId = 0;
+                            if (v3_cpp_obj(fV3.midiMapping)->get_midi_controller_assignment(fV3.midiMapping,
+                                                                                            midiEvent.port,
+                                                                                            event.channel,
+                                                                                            control,
+                                                                                            &paramId) == V3_OK)
+                            {
+                                uint32_t index = UINT32_MAX;
+                                for (uint32_t i=0; i < pData->param.count; ++i)
+                                {
+                                    if (static_cast<v3_param_id>(pData->param.data[i].rindex) == paramId)
+                                    {
+                                        index = i;
+                                        break;
+                                    }
+                                }
+
+                                if (index == UINT32_MAX)
+                                    break;
+
+                                fEvents.paramInputs->setParamValueRT(index,
+                                                                     event.time,
+                                                                     static_cast<float>(value) / 127.f);
+                            }
+                        }
+                        break;
+
+                    case MIDI_STATUS_CHANNEL_PRESSURE:
+                        {
+                            const uint8_t pressure = midiEvent.data[1];
+
+                            v3_param_id paramId = 0;
+                            if (v3_cpp_obj(fV3.midiMapping)->get_midi_controller_assignment(fV3.midiMapping,
+                                                                                            midiEvent.port,
+                                                                                            event.channel,
+                                                                                            128,
+                                                                                            &paramId) == V3_OK)
+                            {
+                                uint32_t index = UINT32_MAX;
+                                for (uint32_t i=0; i < pData->param.count; ++i)
+                                {
+                                    if (static_cast<v3_param_id>(pData->param.data[i].rindex) == paramId)
+                                    {
+                                        index = i;
+                                        break;
+                                    }
+                                }
+
+                                if (index == UINT32_MAX)
+                                    break;
+
+                                fEvents.paramInputs->setParamValueRT(index,
+                                                                     event.time,
+                                                                     static_cast<float>(pressure) / 127.f);
+                            }
+                        }
+                        break;
+
+                    case MIDI_STATUS_PITCH_WHEEL_CONTROL:
+                        {
+                            const uint16_t pitchbend = (midiEvent.data[2] << 7) | midiEvent.data[1];
+
+                            v3_param_id paramId = 0;
+                            if (v3_cpp_obj(fV3.midiMapping)->get_midi_controller_assignment(fV3.midiMapping,
+                                                                                            midiEvent.port,
+                                                                                            event.channel,
+                                                                                            129,
+                                                                                            &paramId) == V3_OK)
+                            {
+                                uint32_t index = UINT32_MAX;
+                                for (uint32_t i=0; i < pData->param.count; ++i)
+                                {
+                                    if (static_cast<v3_param_id>(pData->param.data[i].rindex) == paramId)
+                                    {
+                                        index = i;
+                                        break;
+                                    }
+                                }
+
+                                if (index == UINT32_MAX)
+                                    break;
+
+                                fEvents.paramInputs->setParamValueRT(index,
+                                                                     event.time,
+                                                                     static_cast<float>(pitchbend) / 16384.f);
+                            }
+                        }
+                        break;
+
+                    } // switch (status)
+
                 } break;
                 } // switch (event.type)
             }
@@ -3175,6 +3319,15 @@ public:
 
     // ----------------------------------------------------------------------------------------------------------------
 
+    bool hasMidiInput() const noexcept
+    {
+        return pData->extraHints & PLUGIN_EXTRA_HINT_HAS_MIDI_IN ||
+               std::strstr(fV3ClassInfo.v2.sub_categories, "Instrument") != nullptr ||
+               v3_cpp_obj(fV3.component)->get_bus_count(fV3.component, V3_EVENT, V3_INPUT) > 0;
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+
     const void* getNativeDescriptor() const noexcept override
     {
         return fV3.component;
@@ -3381,7 +3534,6 @@ public:
         if (isPluginOptionEnabled(options, PLUGIN_OPTION_USE_CHUNKS))
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        /*
         if (hasMidiInput())
         {
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_CONTROL_CHANGES))
@@ -3392,18 +3544,16 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
                 pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            /* TODO
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PROGRAM_CHANGES))
-                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+            */
             if (isPluginOptionInverseEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
                 pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
         }
-        */
 
         /*
-        if (numPrograms > 1 && (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0)
-            if (isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
+        if (numPrograms > 1 && isPluginOptionEnabled(options, PLUGIN_OPTION_MAP_PROGRAM_CHANGES))
                 pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         */
 
@@ -3617,6 +3767,7 @@ private:
         v3_audio_processor** processor;
         v3_connection_point** connComponent;
         v3_connection_point** connController;
+        v3_midi_mapping** midiMapping;
        #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
         v3_plugin_view** view;
        #endif
@@ -3633,6 +3784,7 @@ private:
               processor(nullptr),
               connComponent(nullptr),
               connController(nullptr),
+              midiMapping(nullptr),
              #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
               view(nullptr),
              #endif
@@ -3772,6 +3924,14 @@ private:
                 v3_cpp_obj(connController)->connect(connController, connComponent);
             }
 
+            // get midi mapping interface
+            if (v3_cpp_obj_query_interface(component, v3_midi_mapping_iid, &midiMapping) != V3_OK)
+            {
+                midiMapping = nullptr;
+                if (v3_cpp_obj_query_interface(controller, v3_midi_mapping_iid, &midiMapping) != V3_OK)
+                    midiMapping = nullptr;
+            }
+
            #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
             // create view
             view = v3_cpp_obj(controller)->create_view(controller, "editor");
@@ -3786,6 +3946,12 @@ private:
             // must be deleted by now
             CARLA_SAFE_ASSERT(view == nullptr);
            #endif
+
+            if (midiMapping != nullptr)
+            {
+                v3_cpp_obj_unref(midiMapping);
+                midiMapping = nullptr;
+            }
 
             if (connComponent != nullptr && connController != nullptr)
             {
