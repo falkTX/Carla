@@ -2058,11 +2058,12 @@ public:
             CARLA_SAFE_ASSERT_INT(timeInfo.bbt.bar > 0, timeInfo.bbt.bar);
             CARLA_SAFE_ASSERT_INT(timeInfo.bbt.beat > 0, timeInfo.bbt.beat);
 
+            const double barStart = static_cast<double>(timeInfo.bbt.beatsPerBar) * (timeInfo.bbt.bar - 1);
             const double positionBeats = static_cast<double>(timeInfo.frame)
                                        / (sampleRate * 60 / timeInfo.bbt.beatsPerMinute);
 
             // Bar/Beats
-            clapTransport.bar_start = static_cast<double>(timeInfo.bbt.beatsPerBar) * (timeInfo.bbt.bar - 1);
+            clapTransport.bar_start = std::round(CLAP_BEATTIME_FACTOR * barStart);
             clapTransport.bar_number = timeInfo.bbt.bar - 1;
             clapTransport.song_pos_beats = std::round(CLAP_BEATTIME_FACTOR * positionBeats);
             clapTransport.flags |= CLAP_TRANSPORT_HAS_BEATS_TIMELINE;
