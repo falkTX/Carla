@@ -116,70 +116,70 @@ int CResampler::process (void)
 
     while (out_count)
     {
-	if (nr)
-	{
-	    if (inp_count == 0) break;
+        if (nr)
+        {
+            if (inp_count == 0) break;
             n = (4 - nr) * _nchan;
-  	    if (inp_data)
-	    {
+            if (inp_data)
+            {
                 for (c = 0; c < _nchan; c++) pb [n + c] = inp_data [c];
-		inp_data += _nchan;
-		nz = 0;
-	    }
-	    else
-	    {
+                inp_data += _nchan;
+                nz = 0;
+            }
+            else
+            {
                 for (c = 0; c < _nchan; c++) pb [n + c] = 0;
-		if (nz < 4) nz++;
-	    }
-	    nr--;
-	    inp_count--;
-	}
-	else
-	{
-	    n = _nchan;
-	    if (out_data)
-	    {
-		if (nz < 4)
-		{
-		    a = ph;
-		    b = 1 - a;
-		    d = a * b / 2;
-		    m0 = -d * b;
-		    m1 = b + (3 * b - 1) * d;
-		    m2 = a + (3 * a - 1) * d;
-		    m3 = -d * a;
-		    for (c = 0; c < n; c++)
-		    {
-			*out_data++ = m0 * pb [0] 
+                if (nz < 4) nz++;
+            }
+            nr--;
+            inp_count--;
+        }
+        else
+        {
+            n = _nchan;
+            if (out_data)
+            {
+                if (nz < 4)
+                {
+                    a = ph;
+                    b = 1 - a;
+                    d = a * b / 2;
+                    m0 = -d * b;
+                    m1 = b + (3 * b - 1) * d;
+                    m2 = a + (3 * a - 1) * d;
+                    m3 = -d * a;
+                    for (c = 0; c < n; c++)
+                    {
+                        *out_data++ = m0 * pb [0]
                                     + m1 * pb [n]
                                     + m2 * pb [2 * n]
-			            + m3 * pb [3 * n];
-			pb++;
-		    }
-		    pb -= n;
-		}
-		else
-		{
-		    for (c = 0; c < n; c++) *out_data++ = 0;
-		}
-	    }
-	    out_count--;
+                                    + m3 * pb [3 * n];
+                        pb++;
+                    }
+                    pb -= n;
+                }
+                else
+                {
+                    for (c = 0; c < n; c++) *out_data++ = 0;
+                }
+            }
+            out_count--;
 
-	    ph += _pstep;
-	    if (ph >= 1.0)
-	    {
-		nr = (unsigned int) floor (ph);
-		ph -= nr;
-		in += nr;
-		pb += nr * _nchan;
-		if (in >= _inmax)
-		{
-		    memcpy (_buff, pb, (4 - nr) * _nchan * sizeof (float));
-		    in = 0;
-		    pb = _buff;
-		}
-	    }
-	}
+            ph += _pstep;
+            if (ph >= 1.0)
+            {
+                nr = (unsigned int) floor (ph);
+                ph -= nr;
+                in += nr;
+                pb += nr * _nchan;
+                if (in >= _inmax)
+                {
+                    memcpy (_buff, pb, (4 - nr) * _nchan * sizeof (float));
+                    in = 0;
+                    pb = _buff;
+                }
+            }
+        }
     }
 
     _index = in;

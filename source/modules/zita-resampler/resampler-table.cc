@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 //
-//  Copyright (C) 2006-2012 Fons Adriaensen <fons@linuxaudio.org>
-//    
+//  Copyright (C) 2006-2023 Fons Adriaensen <fons@linuxaudio.org>
+//
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 3 of the License, or
@@ -24,6 +24,13 @@
 #include <math.h>
 #include "resampler-table.h"
 
+
+#undef ENABLE_VEC4
+#if defined(__SSE2_MATH__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+# define ENABLE_VEC4
+#endif
+
+
 static double sinc (double x)
 {
     x = fabs (x);
@@ -42,7 +49,6 @@ static double wind (double x)
 }
 
 
-
 Resampler_table  *Resampler_table::_list = 0;
 Resampler_mutex   Resampler_table::_mutex;
 
@@ -54,11 +60,16 @@ Resampler_table::Resampler_table (double fr, unsigned int hl, unsigned int np) :
     _hl (hl),
     _np (np)
 {
-    unsigned int  i, j;
+    unsigned int  i, j, n;
     double        t;
     float         *p;
 
-    _ctab = new float [hl * (np + 1)];
+    n = hl * (np + 1);
+#ifdef ENABLE_VEC4
+    posix_memalign ((void **) &_ctab, 16, n * sizeof (float));
+#else
+    _ctab = new float [n];
+#endif
     p = _ctab;
     for (j = 0; j <= np; j++)
     {
@@ -75,7 +86,11 @@ Resampler_table::Resampler_table (double fr, unsigned int hl, unsigned int np) :
 
 Resampler_table::~Resampler_table (void)
 {
+#ifdef ENABLE_VEC4
+    free (_ctab);
+#else
     delete[] _ctab;
+#endif
 }
 
 

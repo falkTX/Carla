@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-//  Copyright (C) 2006-2012 Fons Adriaensen <fons@linuxaudio.org>
+//  Copyright (C) 2006-2023 Fons Adriaensen <fons@linuxaudio.org>
 //    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -32,31 +32,31 @@ public:
     Resampler (void) noexcept;
     ~Resampler (void);
 
-    int  setup (unsigned int fs_inp,
+    bool setup (unsigned int fs_inp,
                 unsigned int fs_out,
                 unsigned int nchan,
                 unsigned int hlen);
 
-    int  setup (unsigned int fs_inp,
+    bool setup (unsigned int fs_inp,
                 unsigned int fs_out,
                 unsigned int nchan,
                 unsigned int hlen,
                 double       frel);
 
-    void         clear (void);
-    bool         reset (void) noexcept;
-    unsigned int nchan (void) const noexcept { return _nchan; }
-    unsigned int filtlen (void) const noexcept { return inpsize (); } // Deprecated
-    unsigned int inpsize (void) const noexcept;
-    double       inpdist (void) const noexcept;
-    bool         process (void);
+    void   clear (void);
+    bool   reset (void) noexcept;
+    int    nchan (void) const noexcept { return _nchan; }
+    int    filtlen (void) const noexcept { return inpsize (); } // Deprecated
+    int    inpsize (void) const noexcept;
+    double inpdist (void) const noexcept;
+    bool    process (void);
 
     unsigned int         inp_count;
     unsigned int         out_count;
     float               *inp_data;
     float               *out_data;
-    void                *inp_list;
-    void                *out_list;
+    float              **inp_list;
+    float              **out_list;
 
 private:
 
@@ -69,6 +69,7 @@ private:
     unsigned int         _phase;
     unsigned int         _pstep;
     float               *_buff;
+    void                *_dummy [8];
 };
 
 
