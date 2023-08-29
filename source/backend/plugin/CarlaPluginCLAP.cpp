@@ -963,6 +963,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fExtensions.params->get_info(fPlugin, parameterId, &paramInfo), false);
 
         std::strncpy(strBuf, paramInfo.name, STR_MAX);
+        strBuf[STR_MAX-1] = '\0';
         return true;
     }
 
@@ -1002,7 +1003,13 @@ public:
         if (char* const sep = std::strrchr(paramInfo.module, '/'))
         {
             paramInfo.module[STR_MAX/2-2] = sep[0] = '\0';
-            std::snprintf(strBuf, STR_MAX, "%s:%s", paramInfo.module, paramInfo.module);
+
+            char strBuf2[STR_MAX/2];
+            std::strncpy(strBuf2, paramInfo.module, STR_MAX/2);
+            strBuf2[STR_MAX/2-1] = '\0';
+
+            std::snprintf(strBuf, STR_MAX, "%s:%s", strBuf2, strBuf2);
+            strBuf[STR_MAX-1] = '\0';
             return true;
         }
 
@@ -2020,6 +2027,8 @@ public:
 
         const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
 
+        const double sampleRate = pData->engine->getSampleRate();
+
         clap_event_transport_t clapTransport = {
             { sizeof(clap_event_transport_t), 0, 0, CLAP_EVENT_TRANSPORT, 0 },
             0x0, // flags
@@ -2027,10 +2036,10 @@ public:
             0, // song_pos_seconds, position in seconds
             0.0, // tempo, in bpm
             0.0, // tempo_inc, tempo increment for each samples and until the next time info event
-            0, // loop_start_beats;
-            0, // loop_end_beats;
-            0, // loop_start_seconds;
-            0, // loop_end_seconds;
+            0, // loop_start_beats
+            0, // loop_end_beats
+            0, // loop_start_seconds
+            0, // loop_end_seconds
             0, // bar_start, start pos of the current bar
             0, // bar_number, bar at song pos 0 has the number 0
             0, // tsig_num, time signature numerator
@@ -2040,19 +2049,27 @@ public:
         if (timeInfo.playing)
             clapTransport.flags |= CLAP_TRANSPORT_IS_PLAYING;
 
-        // TODO song_pos_seconds (based on frame and sample rate)
+        const double positionSeconds = static_cast<double>(timeInfo.frame) / sampleRate;
+        clapTransport.song_pos_seconds = std::round(CLAP_SECTIME_FACTOR * positionSeconds);
+        clapTransport.flags |= CLAP_TRANSPORT_HAS_SECONDS_TIMELINE;
 
         if (timeInfo.bbt.valid)
         {
-            // TODO song_pos_beats
+            CARLA_SAFE_ASSERT_INT(timeInfo.bbt.bar > 0, timeInfo.bbt.bar);
+            CARLA_SAFE_ASSERT_INT(timeInfo.bbt.beat > 0, timeInfo.bbt.beat);
+
+            const double positionBeats = static_cast<double>(timeInfo.frame)
+                                       / (sampleRate * 60 / timeInfo.bbt.beatsPerMinute);
+
+            // Bar/Beats
+            clapTransport.bar_start = static_cast<double>(timeInfo.bbt.beatsPerBar) * (timeInfo.bbt.bar - 1);
+            clapTransport.bar_number = timeInfo.bbt.bar - 1;
+            clapTransport.song_pos_beats = std::round(CLAP_BEATTIME_FACTOR * positionBeats);
+            clapTransport.flags |= CLAP_TRANSPORT_HAS_BEATS_TIMELINE;
 
             // Tempo
             clapTransport.tempo  = timeInfo.bbt.beatsPerMinute;
             clapTransport.flags |= CLAP_TRANSPORT_HAS_TEMPO;
-
-            // Bar
-            // TODO bar_start
-            clapTransport.bar_number = timeInfo.bbt.bar - 1;
 
             // Time Signature
             clapTransport.tsig_num = static_cast<uint16_t>(timeInfo.bbt.beatsPerBar + 0.5f);
