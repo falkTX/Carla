@@ -26,7 +26,7 @@
 
 
 #undef ENABLE_VEC4
-#if defined(__SSE2_MATH__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+#if (defined(__SSE2_MATH__) || defined(__ARM_NEON) || defined(__ARM_NEON__)) && !defined(CARLA_OS_WIN)
 # define ENABLE_VEC4
 #endif
 

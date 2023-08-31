@@ -23,16 +23,18 @@
 #include <string.h>
 #include <math.h>
 
-#undef ENABLE_VEC4
-#if defined(__SSE2_MATH__)
-# define ENABLE_VEC4
-# include <xmmintrin.h>
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-# define ENABLE_VEC4
-# include <arm_neon.h>
-#endif
-
 #include "vresampler.h"
+
+#undef ENABLE_VEC4
+#ifndef CARLA_OS_WIN
+# if defined(__SSE2_MATH__)
+#  define ENABLE_VEC4
+#  include <xmmintrin.h>
+# elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#  define ENABLE_VEC4
+#  include <arm_neon.h>
+# endif
+#endif
 
 
 VResampler::VResampler (void) noexcept :
