@@ -241,7 +241,7 @@ bool Resampler::process (void)
                 c1 = _table->_ctab + hl * ph;
                 c2 = _table->_ctab + hl * (np - ph);
 
-#if defined(__SSE2_MATH__)
+#if defined(__SSE2_MATH__) && !defined(CARLA_OS_WIN)
                 __m128 C1, C2, Q1, Q2, S;
                 for (j = 0; j < _nchan; j++)
                 {
@@ -262,7 +262,7 @@ bool Resampler::process (void)
                     *out_data++ = S [0] + S [1] + S [2] + S [3];
                 }
 
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#elif (defined(__ARM_NEON) || defined(__ARM_NEON__)) && !defined(CARLA_OS_WIN)
                 // ARM64 version by Nicolas Belin <nbelin@baylibre.com>
                 float32x4_t *C1 = (float32x4_t *)c1;
                 float32x4_t *C2 = (float32x4_t *)c2;

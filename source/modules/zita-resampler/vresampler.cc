@@ -251,7 +251,7 @@ bool VResampler::process (void)
                 q1 = _table->_ctab + hl * n;
                 q2 = _table->_ctab + hl * (np - n);
 
-#if defined(__SSE2_MATH__)
+#if defined(__SSE2_MATH__) && !defined(CARLA_OS_WIN)
                 __m128 C1, C2, Q1, Q2, S;
                 C1 = _mm_load1_ps (&a);
                 C2 = _mm_load1_ps (&b);
@@ -285,7 +285,7 @@ bool VResampler::process (void)
                     *out_data++ = S [0] + S [1] + S [2] + S [3];
                 }
 
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#elif (defined(__ARM_NEON) || defined(__ARM_NEON__)) && !defined(CARLA_OS_WIN)
                 // ARM64 version by Nicolas Belin <nbelin@baylibre.com>
                 float32x4_t *C1 = (float32x4_t *)_c1;
                 float32x4_t *C2 = (float32x4_t *)_c2;
