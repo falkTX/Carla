@@ -79,17 +79,22 @@ LIBS_win64    = $(MODULEDIR)/lilv.win64.a
 LINK_FLAGS   += $(LILV_LIBS)
 
 LIBS_native  += $(MODULEDIR)/water.files.a
-LIBS_arm32    = $(MODULEDIR)/water.files.arm32.a
-LIBS_posix32  = $(MODULEDIR)/water.posix32.a
-LIBS_posix64  = $(MODULEDIR)/water.posix64.a
-LIBS_win32    = $(MODULEDIR)/water.win32.a
-LIBS_win64    = $(MODULEDIR)/water.win64.a
+LIBS_arm32   += $(MODULEDIR)/water.files.arm32.a
+LIBS_posix32 += $(MODULEDIR)/water.posix32.a
+LIBS_posix64 += $(MODULEDIR)/water.posix64.a
+LIBS_win32   += $(MODULEDIR)/water.win32.a
+LIBS_win64   += $(MODULEDIR)/water.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 LINK_FLAGS   += $(LIBDL_LIBS)
 
 ifeq ($(HAVE_YSFX),true)
 LIBS_native  += $(MODULEDIR)/ysfx.a
 LINK_FLAGS   += $(YSFX_GRAPHICS_LIBS)
+endif
+
+ifeq ($(BUILDING_FOR_WINE),true)
+LIBS_win32   += $(MODULEDIR)/jackbridge.win32e.a
+LIBS_win64   += $(MODULEDIR)/jackbridge.win64e.a
 endif
 
 ifeq ($(USING_JUCE),true)

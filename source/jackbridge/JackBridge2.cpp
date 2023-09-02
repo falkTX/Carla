@@ -1,6 +1,6 @@
 /*
  * JackBridge (Part 2, Semaphore + Shared memory and other misc functions)
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -22,9 +22,13 @@
 # include "CarlaProcessUtils.hpp"
 # include "CarlaSemUtils.hpp"
 # include "CarlaShmUtils.hpp"
+# include "CarlaTimeUtils.hpp"
+# ifdef __WINE__
+#  include "utils/PipeClient.cpp"
+# endif
 #endif // ! JACKBRIDGE_DUMMY
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 bool jackbridge_sem_init(void* sem) noexcept
 {
@@ -77,7 +81,7 @@ bool jackbridge_sem_timedwait(void* sem, uint msecs, bool server) noexcept
 }
 #endif
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 bool jackbridge_shm_is_valid(const void* shm) noexcept
 {
@@ -137,7 +141,68 @@ void jackbridge_shm_unmap(void* shm, void* ptr) noexcept
 #endif
 }
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
+
+#if !defined(JACKBRIDGE_DUMMY) && defined(__WINE__)
+static void discovery_pipe_callback(void*, const char* const msg) noexcept
+{
+    carla_stdout("discovery msgReceived %s", msg);
+}
+#endif
+
+void* jackbridge_discovery_pipe_create(const char* argv[])
+{
+#if defined(JACKBRIDGE_DUMMY) || !defined(__WINE__)
+    return nullptr;
+    // unused
+    (void)argv;
+#else
+    return carla_pipe_client_new(argv, discovery_pipe_callback, nullptr);
+#endif
+}
+
+void jackbridge_discovery_pipe_message(void* pipe, const char* key, const char* value)
+{
+#if defined(JACKBRIDGE_DUMMY) || !defined(__WINE__)
+    // unused
+    (void)pipe;
+    (void)key;
+    (void)value;
+#else
+    carla_pipe_client_lock(pipe);
+    carla_pipe_client_write_and_fix_msg(pipe, key);
+    carla_pipe_client_write_and_fix_msg(pipe, value);
+    carla_pipe_client_flush_and_unlock(pipe);
+#endif
+}
+
+void jackbridge_discovery_pipe_destroy(void* pipe)
+{
+#if defined(JACKBRIDGE_DUMMY) || !defined(__WINE__)
+    // unused
+    (void)pipe;
+#else
+    carla_pipe_client_lock(pipe);
+    carla_pipe_client_write_msg(pipe, "exiting\n");
+    carla_pipe_client_flush_and_unlock(pipe);
+
+    // NOTE: no more messages are handled after this point
+    // pData->clientClosingDown = true;
+
+    for (int i=0; i < 100 && carla_pipe_client_is_running(pipe); ++i)
+    {
+        carla_msleep(50);
+        carla_pipe_client_idle(pipe);
+    }
+
+    if (carla_pipe_client_is_running(pipe))
+        carla_stderr2("jackbridge_discovery_pipe_destroy: pipe is still running!");
+
+    carla_pipe_client_destroy(pipe);
+#endif
+}
+
+// --------------------------------------------------------------------------------------------------------------------
 
 void jackbridge_parent_deathsig(bool kill) noexcept
 {
@@ -146,4 +211,4 @@ void jackbridge_parent_deathsig(bool kill) noexcept
 #endif
 }
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------

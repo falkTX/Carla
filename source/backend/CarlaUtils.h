@@ -304,6 +304,7 @@ typedef bool (*CarlaPluginCheckCacheCallback)(void* ptr, const char* filename, c
  * @a carla_plugin_discovery_idle must be called at regular intervals afterwards.
  */
 CARLA_PLUGIN_EXPORT CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* discoveryTool,
+                                                                            BinaryType btype,
                                                                             PluginType ptype,
                                                                             const char* pluginPath,
                                                                             CarlaPluginDiscoveryCallback discoveryCb,

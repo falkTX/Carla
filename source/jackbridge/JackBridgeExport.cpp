@@ -1,6 +1,6 @@
 /*
  * JackBridge (Part 3, Export)
- * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -17,8 +17,11 @@
 #include "JackBridgeExport.hpp"
 
 #include "CarlaLibUtils.hpp"
+#include "CarlaUtils.h"
 
-// -----------------------------------------------------------------------------
+// #include <cstdio>
+
+// --------------------------------------------------------------------------------------------------------------------
 
 class JackBridgeExported
 {
@@ -27,11 +30,11 @@ public:
         : lib(nullptr),
           func(nullptr)
     {
-#ifdef CARLA_OS_WIN64
+       #ifdef CARLA_OS_WIN64
         lib = lib_open("jackbridge-wine64.dll");
-#else
+       #else
         lib = lib_open("jackbridge-wine32.dll");
-#endif
+       #endif
         CARLA_SAFE_ASSERT_RETURN(lib != nullptr,);
 
         func = lib_symbol<jackbridge_exported_function_type>(lib, "jackbridge_get_exported_functions");
@@ -59,12 +62,12 @@ public:
         static const JackBridgeExported bridge;
         CARLA_SAFE_ASSERT_RETURN(bridge.func != nullptr, fallback);
 
-        const JackBridgeExportedFunctions* const funcs(bridge.func());
+        const JackBridgeExportedFunctions* const funcs = bridge.func();
         CARLA_SAFE_ASSERT_RETURN(funcs != nullptr, fallback);
         CARLA_SAFE_ASSERT_RETURN(funcs->unique1 != 0, fallback);
         CARLA_SAFE_ASSERT_RETURN(funcs->unique1 == funcs->unique2, fallback);
         CARLA_SAFE_ASSERT_RETURN(funcs->unique2 == funcs->unique3, fallback);
-        CARLA_SAFE_ASSERT_RETURN(funcs->shm_map_ptr != nullptr, fallback);
+        CARLA_SAFE_ASSERT_RETURN(funcs->discovery_pipe_destroy_ptr != nullptr, fallback);
 
         return *funcs;
     }
@@ -77,7 +80,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE(JackBridgeExported);
 };
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 static const JackBridgeExportedFunctions& getBridgeInstance() noexcept
 {
@@ -85,7 +88,7 @@ static const JackBridgeExportedFunctions& getBridgeInstance() noexcept
     return funcs;
 }
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 bool jackbridge_is_ok() noexcept
 {
@@ -598,9 +601,28 @@ void jackbridge_shm_unmap(void* shm, void* ptr) noexcept
     return getBridgeInstance().shm_unmap_ptr(shm, ptr);
 }
 
+// --------------------------------------------------------------------------------------------------------------------
+
+void* jackbridge_discovery_pipe_create(const char* argv[])
+{
+    return getBridgeInstance().discovery_pipe_create_ptr(argv);
+}
+
+void jackbridge_discovery_pipe_message(void* pipe, const char* key, const char* value)
+{
+    return getBridgeInstance().discovery_pipe_message_ptr(pipe, key, value);
+}
+
+void jackbridge_discovery_pipe_destroy(void* pipe)
+{
+    return getBridgeInstance().discovery_pipe_destroy_ptr(pipe);
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
 void jackbridge_parent_deathsig(bool kill) noexcept
 {
     return getBridgeInstance().parent_deathsig_ptr(kill);
 }
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------

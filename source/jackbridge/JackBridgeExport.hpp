@@ -1,6 +1,6 @@
 /*
  * JackBridge (Part 3, Export)
- * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -13,6 +13,8 @@
  * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
+#pragma once
 
 #include "JackBridge.hpp"
 
@@ -123,6 +125,9 @@ typedef void (JACKBRIDGE_API *jackbridgesym_shm_attach)(void*, const char*);
 typedef void (JACKBRIDGE_API *jackbridgesym_shm_close)(void*);
 typedef void* (JACKBRIDGE_API *jackbridgesym_shm_map)(void*, uint64_t);
 typedef void (JACKBRIDGE_API *jackbridgesym_shm_unmap)(void*, void*);
+typedef void* (JACKBRIDGE_API *jackbridgesym_discovery_pipe_create)(const char**);
+typedef void (JACKBRIDGE_API *jackbridgesym_discovery_pipe_message)(void*, const char*, const char*);
+typedef void (JACKBRIDGE_API *jackbridgesym_discovery_pipe_destroy)(void*);
 typedef void (JACKBRIDGE_API *jackbridgesym_parent_deathsig)(bool);
 
 // -----------------------------------------------------------------------------
@@ -233,6 +238,9 @@ struct _JackBridgeExportedFunctions {
     jackbridgesym_shm_close shm_close_ptr;
     jackbridgesym_shm_map shm_map_ptr;
     jackbridgesym_shm_unmap shm_unmap_ptr;
+    jackbridgesym_discovery_pipe_create discovery_pipe_create_ptr;
+    jackbridgesym_discovery_pipe_message discovery_pipe_message_ptr;
+    jackbridgesym_discovery_pipe_destroy discovery_pipe_destroy_ptr;
     jackbridgesym_parent_deathsig parent_deathsig_ptr;
     ulong unique3;
 };

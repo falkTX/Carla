@@ -35,9 +35,8 @@
 
 #include <fcntl.h>
 
-#include "water/text/String.h"
-
 #ifdef CARLA_OS_WIN
+# include "water/text/String.h"
 # include <ctime>
 #else
 # include <cerrno>
@@ -1494,7 +1493,8 @@ uintptr_t CarlaPipeServer::getPID() const noexcept
 
 // --------------------------------------------------------------------------------------------------------------------
 
-bool CarlaPipeServer::startPipeServer(const char* const filename,
+bool CarlaPipeServer::startPipeServer(const char* const helperTool,
+                                      const char* const filename,
                                       const char* const arg1,
                                       const char* const arg2,
                                       const int size) noexcept
@@ -1642,31 +1642,30 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     //-----------------------------------------------------------------------------------------------------------------
     // set arguments
 
-    const char* argv[8];
+    const char* argv[9] = {};
+    int i = 0;
+
+    if (helperTool != nullptr)
+        argv[i++] = helperTool;
 
     //-----------------------------------------------------------------------------------------------------------------
     // argv[0] => filename
 
-    argv[0] = filename;
+    argv[i++] = filename;
 
     //-----------------------------------------------------------------------------------------------------------------
     // argv[1-2] => args
 
-    argv[1] = arg1;
-    argv[2] = arg2;
+    argv[i++] = arg1;
+    argv[i++] = arg2;
 
     //-----------------------------------------------------------------------------------------------------------------
     // argv[3-6] => pipes
 
-    argv[3] = pipeRecvServerStr;
-    argv[4] = pipeSendServerStr;
-    argv[5] = pipeRecvClientStr;
-    argv[6] = pipeSendClientStr;
-
-    //-----------------------------------------------------------------------------------------------------------------
-    // argv[7] => null
-
-    argv[7] = nullptr;
+    argv[i++] = pipeRecvServerStr;
+    argv[i++] = pipeSendServerStr;
+    argv[i++] = pipeRecvClientStr;
+    argv[i++] = pipeSendClientStr;
 
     //-----------------------------------------------------------------------------------------------------------------
     // start process
@@ -1764,6 +1763,14 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
 
     // maybe unused
     (void)size; (void)ovRecv; (void)process;
+}
+
+bool CarlaPipeServer::startPipeServer(const char* const filename,
+                                      const char* const arg1,
+                                      const char* const arg2,
+                                      const int size) noexcept
+{
+    return startPipeServer(nullptr, filename, arg1, arg2, size);
 }
 
 void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcept

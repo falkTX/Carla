@@ -18,7 +18,6 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaMathUtils.hpp"
-#include "CarlaPipeUtils.cpp"
 #include "CarlaScopeUtils.hpp"
 
 #include "CarlaMIDI.h"
@@ -30,6 +29,10 @@
 #include "CarlaVst2Utils.hpp"
 #include "CarlaVst3Utils.hpp"
 #include "CarlaClapUtils.hpp"
+
+#ifndef BUILDING_CARLA_FOR_WINE
+# include "CarlaPipeUtils.cpp"
+#endif
 
 #ifdef CARLA_OS_MAC
 # include "CarlaMacUtils.cpp"
@@ -80,6 +83,11 @@
 # pragma GCC diagnostic pop
 #endif
 
+// must be last
+#ifdef BUILDING_CARLA_FOR_WINE
+# include "../jackbridge/JackBridge.hpp"
+#endif
+
 #define MAX_DISCOVERY_AUDIO_IO 64
 #define MAX_DISCOVERY_CV_IO 32
 
@@ -102,6 +110,7 @@ static constexpr const float    kSampleRatef = 44100.0f;
 // --------------------------------------------------------------------------------------------------------------------
 // Dynamic discovery
 
+#ifndef BUILDING_CARLA_FOR_WINE
 class DiscoveryPipe : public CarlaPipeClient
 {
 public:
@@ -124,7 +133,7 @@ public:
         if (! writeAndFixMessage(value))
             return false;
 
-        flushMessages();
+        syncMessages();
         return true;
     }
 
@@ -135,6 +144,37 @@ protected:
         return true;
     }
 };
+#else
+class DiscoveryPipe
+{
+    void* pipe;
+
+public:
+    DiscoveryPipe() noexcept : pipe(nullptr) {}
+
+    ~DiscoveryPipe()
+    {
+        jackbridge_discovery_pipe_destroy(pipe);
+    }
+
+    bool initPipeClient(const char* argv[])
+    {
+        if (jackbridge_is_ok())
+            pipe = jackbridge_discovery_pipe_create(argv);
+
+        return pipe != nullptr;
+    }
+
+    bool writeDiscoveryMessage(const char* const key, const char* const value) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0', false);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr, false);
+
+        jackbridge_discovery_pipe_message(pipe, key, value);
+        return true;
+    }
+};
+#endif
 
 CarlaScopedPointer<DiscoveryPipe> gPipe;
 
@@ -2667,6 +2707,7 @@ int main(int argc, const char* argv[])
         if (handle == nullptr)
         {
             print_lib_error(filename);
+            gPipe = nullptr;
             return 1;
         }
     }
@@ -2685,6 +2726,7 @@ int main(int argc, const char* argv[])
         if (! lib_close(handle))
         {
             print_lib_error(filename);
+            gPipe = nullptr;
             return 1;
         }
 
@@ -2693,6 +2735,7 @@ int main(int argc, const char* argv[])
         if (handle == nullptr)
         {
             print_lib_error(filename);
+            gPipe = nullptr;
             return 1;
         }
     }

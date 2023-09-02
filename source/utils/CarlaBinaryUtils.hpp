@@ -88,7 +88,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
    #if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     static const CarlaMagic magic;
 
-    const char* const output(magic.getFileDescription(filename));
+    const char* const output = magic.getFileDescription(filename);
 
     if (output != nullptr && output[0] != '\0')
     {

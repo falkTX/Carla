@@ -356,16 +356,16 @@ struct PluginPaths {
 
         if (QDir(winePrefix).exists())
         {
-            vst2 += ":" + winePrefix + "/drive_c/Program Files/VSTPlugins";
-            vst2 += ":" + winePrefix + "/drive_c/Program Files/Steinberg/VSTPlugins";
+            vst2 += ":" + winePrefix + "/drive_c/Program Files/VstPlugins";
+            vst2 += ":" + winePrefix + "/drive_c/Program Files/Steinberg/VstPlugins";
             vst3 += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3";
             clap += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP";
 
            #ifdef CARLA_OS_64BIT
             if (QDir(winePrefix + "/drive_c/Program Files (x86)").exists())
             {
-                vst2 += ":" + winePrefix + "/drive_c/Program Files (x86)/VSTPlugins";
-                vst2 += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VSTPlugins";
+                vst2 += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins";
+                vst2 += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VstPlugins";
                 vst3 += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3";
                 clap += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/CLAP";
             }
@@ -606,7 +606,7 @@ static PluginFavorite asPluginFavorite(const QByteArray& qdata)
     CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(qdata.size()) >= sizeof(PluginFavoriteHeader) + sizeof(char) * 3, {});
 
     // read POD data first
-    const PluginFavoriteHeader* const data 
+    const PluginFavoriteHeader* const data
         = static_cast<const PluginFavoriteHeader*>(static_cast<const void*>(qdata.constData()));
     PluginFavorite fav = { data->type, data->uniqueId, {}, {} };
 
@@ -673,6 +673,7 @@ struct PluginListDialog::PrivateData {
     bool hasLoadedLv2Plugins = false;
 
     struct Discovery {
+        BinaryType btype = BINARY_NATIVE;
         PluginType ptype = PLUGIN_NONE;
         bool firstInit = true;
         bool ignoreCache = false;
@@ -682,17 +683,93 @@ struct PluginListDialog::PrivateData {
         CarlaScopedPointer<PluginRefreshDialog> dialog;
         Discovery()
         {
-            tool = carla_get_library_folder();
-            tool += CARLA_OS_SEP_STR "carla-discovery-native";
-           #ifdef CARLA_OS_WIN
-            tool += ".exe";
-           #endif
+            restart();
         }
 
         ~Discovery()
         {
             if (handle != nullptr)
                 carla_plugin_discovery_stop(handle);
+        }
+
+        bool nextTool()
+        {
+            if (handle != nullptr)
+            {
+                carla_plugin_discovery_stop(handle);
+                handle = nullptr;
+            }
+
+          #ifdef CARLA_OS_WIN
+           #ifdef CARLA_OS_WIN64
+            // look for win32 plugins on win64
+            if (btype == BINARY_NATIVE)
+            {
+                btype = BINARY_WIN32;
+                ptype = PLUGIN_INTERNAL;
+                tool = carla_get_library_folder();
+                tool += CARLA_OS_SEP_STR "carla-discovery-win32.exe";
+
+                if (QFile(tool).exists())
+                    return true;
+            }
+           #endif
+
+            // no other types to try
+            return false;
+          #else // CARLA_OS_WIN
+
+           #ifndef CARLA_OS_MAC
+            // try 32bit plugins on 64bit systems, skipping macOS where 32bit is no longer supported
+            if (btype == BINARY_NATIVE)
+            {
+                btype = BINARY_POSIX32;
+                ptype = PLUGIN_INTERNAL;
+                tool = carla_get_library_folder();
+                tool += CARLA_OS_SEP_STR "carla-discovery-posix32";
+
+                if (QFile(tool).exists())
+                    return true;
+            }
+           #endif
+
+            // try wine bridges
+           #ifdef CARLA_OS_64BIT
+            if (btype == BINARY_NATIVE || btype == BINARY_POSIX32)
+            {
+                btype = BINARY_WIN64;
+                ptype = PLUGIN_INTERNAL;
+                tool = carla_get_library_folder();
+                tool += CARLA_OS_SEP_STR "carla-discovery-win64.exe";
+
+                if (QFile(tool).exists())
+                    return true;
+            }
+           #endif
+
+            {
+                btype = BINARY_WIN32;
+                ptype = PLUGIN_INTERNAL;
+                tool = carla_get_library_folder();
+                tool += CARLA_OS_SEP_STR "carla-discovery-win32.exe";
+
+                if (QFile(tool).exists())
+                    return true;
+            }
+
+            return false;
+          #endif // CARLA_OS_WIN
+        }
+
+        void restart()
+        {
+            btype = BINARY_NATIVE;
+            ptype = PLUGIN_NONE;
+            tool = carla_get_library_folder();
+            tool += CARLA_OS_SEP_STR "carla-discovery-native";
+           #ifdef CARLA_OS_WIN
+            tool += ".exe";
+           #endif
         }
     } discovery;
 
@@ -788,10 +865,11 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
     // custom action that listens for Ctrl+F shortcut
     addAction(ui.act_focus_search);
 
-   #if BINARY_NATIVE == BINARY_POSIX32 || BINARY_NATIVE == BINARY_WIN32
-    ui.ch_bridged->setText(tr("Bridged (64bit)"));
-   #else
+   #ifdef CARLA_OS_64BIT
     ui.ch_bridged->setText(tr("Bridged (32bit)"));
+   #else
+    ui.ch_bridged->setChecked(false);
+    ui.ch_bridged->setEnabled(false);
    #endif
 
    #if !(defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC))
@@ -1081,9 +1159,13 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
             {
             case PLUGIN_NONE:
            #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
-                ui.label->setText(tr("Discovering internal plugins..."));
-                p->discovery.ptype = PLUGIN_INTERNAL;
-                break;
+                if (p->discovery.btype == BINARY_NATIVE)
+                {
+                    ui.label->setText(tr("Discovering internal plugins..."));
+                    p->discovery.ptype = PLUGIN_INTERNAL;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_INTERNAL:
                 ui.label->setText(tr("Discovering LADSPA plugins..."));
                 path = p->paths.ladspa;
@@ -1118,12 +1200,16 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
             case PLUGIN_CLAP:
           #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
            #ifdef CARLA_OS_MAC
-                ui.label->setText(tr("Discovering AU plugins..."));
-                p->discovery.ptype = PLUGIN_AU;
-                break;
+                if (p->discovery.btype == BINARY_POSIX32 || p->discovery.btype == BINARY_POSIX64)
+                {
+                    ui.label->setText(tr("Discovering AU plugins..."));
+                    p->discovery.ptype = PLUGIN_AU;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_AU:
            #endif
-                if (p->paths.jsfx.isNotEmpty())
+                if (p->discovery.btype == BINARY_NATIVE && p->paths.jsfx.isNotEmpty())
                 {
                     ui.label->setText(tr("Discovering JSFX plugins..."));
                     path = p->paths.jsfx;
@@ -1132,20 +1218,29 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
                 }
                 [[fallthrough]];
             case PLUGIN_JSFX:
-                ui.label->setText(tr("Discovering SF2 kits..."));
-                path = p->paths.sf2;
-                p->discovery.ptype = PLUGIN_SF2;
-                break;
+                if (p->discovery.btype == BINARY_NATIVE && p->paths.sf2.isNotEmpty())
+                {
+                    ui.label->setText(tr("Discovering SF2 kits..."));
+                    path = p->paths.sf2;
+                    p->discovery.ptype = PLUGIN_SF2;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_SF2:
-                ui.label->setText(tr("Discovering SFZ kits..."));
-                path = p->paths.sfz;
-                p->discovery.ptype = PLUGIN_SFZ;
-                break;
+                if (p->discovery.btype == BINARY_NATIVE && p->paths.sfz.isNotEmpty())
+                {
+                    ui.label->setText(tr("Discovering SFZ kits..."));
+                    path = p->paths.sfz;
+                    p->discovery.ptype = PLUGIN_SFZ;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_SFZ:
           #endif
             default:
                 // discovery complete
-                refreshPluginsStop();
+                if (! p->discovery.nextTool())
+                    refreshPluginsStop();
             }
 
             if (p->timerId == 0)
@@ -1155,6 +1250,7 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
                 p->discovery.dialog->progressBar->setFormat(ui.label->text());
 
             p->discovery.handle = carla_plugin_discovery_start(p->discovery.tool.toUtf8().constData(),
+                                                               p->discovery.btype,
                                                                p->discovery.ptype,
                                                                path.toUtf8().constData(),
                                                                discoveryCallback, checkCacheCallback, this);
@@ -1462,17 +1558,19 @@ void PluginListDialog::checkFilters()
     const bool hideNonIDisp  = ui.ch_inline_display->isChecked();
     const bool hideNonStereo = ui.ch_stereo->isChecked();
 
-#if 0
-    if HAIKU or LINUX or MACOS:
-        nativeBins = [BINARY_POSIX32, BINARY_POSIX64]
-        wineBins   = [BINARY_WIN32, BINARY_WIN64]
-    elif WINDOWS:
-        nativeBins = [BINARY_WIN32, BINARY_WIN64]
-        wineBins   = []
-    else:
-        nativeBins = []
-        wineBins   = []
-#endif
+   #if defined(CARLA_OS_WIN64)
+    static constexpr const BinaryType nativeBins[2] = { BINARY_WIN32, BINARY_WIN64 };
+    static constexpr const BinaryType wineBins[2] = { BINARY_NONE, BINARY_NONE };
+   #elif defined(CARLA_OS_WIN32)
+    static constexpr const BinaryType nativeBins[2] = { BINARY_WIN32, BINARY_NONE };
+    static constexpr const BinaryType wineBins[2] = { BINARY_NONE, BINARY_NONE };
+   #elif defined(CARLA_OS_MAC)
+    static constexpr const BinaryType nativeBins[2] = { BINARY_POSIX64, BINARY_NONE };
+    static constexpr const BinaryType wineBins[2] = { BINARY_WIN32, BINARY_WIN64 };
+   #else
+    static constexpr const BinaryType nativeBins[2] = { BINARY_POSIX32, BINARY_POSIX64 };
+    static constexpr const BinaryType wineBins[2] = { BINARY_WIN32, BINARY_WIN64 };
+   #endif
 
     for (int i=0, c=ui.tableWidget->rowCount(); i<c; ++i)
     {
@@ -1499,14 +1597,8 @@ void PluginListDialog::checkFilters()
         const bool hasCV    = cvIns + cvOuts > 0;
         const bool hasGui   = phints & PLUGIN_HAS_CUSTOM_UI;
         const bool hasIDisp = phints & PLUGIN_HAS_INLINE_DISPLAY;
-
-#if 0
-        const bool isBridged = bool(not isNative and info.build in nativeBins);
-        const bool isBridgedWine = bool(not isNative and info.build in wineBins);
-#else
-        const bool isBridged = false;
-        const bool isBridgedWine = false;
-#endif
+        const bool isBridged = !isNative && (nativeBins[0] == info.build || nativeBins[1] == info.build);
+        const bool isBridgedWine = !isNative && (wineBins[0] == info.build || wineBins[1] == info.build);
 
         const auto hasText = [text, ptext]() {
             const QStringList textSplit = text.strip().split(' ');
@@ -1798,7 +1890,7 @@ void PluginListDialog::refreshPluginsStart()
         p->plugins.cache.clear();
 
     // start discovery again
-    p->discovery.ptype = PLUGIN_NONE;
+    p->discovery.restart();
 
     if (p->timerId == 0)
         p->timerId = startTimer(0);
@@ -1806,7 +1898,7 @@ void PluginListDialog::refreshPluginsStart()
 
 void PluginListDialog::refreshPluginsStop()
 {
-	// stop previous discovery if still running
+    // stop previous discovery if still running
     if (p->discovery.handle != nullptr)
     {
         carla_plugin_discovery_stop(p->discovery.handle);

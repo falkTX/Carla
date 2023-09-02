@@ -18,6 +18,7 @@
 #include "CarlaUtils.h"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBinaryUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaSha1Utils.hpp"
@@ -64,12 +65,14 @@ class CarlaPluginDiscovery : private CarlaPipeServer
 {
 public:
     CarlaPluginDiscovery(const char* const discoveryTool,
+                         const BinaryType btype,
                          const PluginType ptype,
                          const std::vector<water::File>&& binaries,
                          const CarlaPluginDiscoveryCallback discoveryCb,
                          const CarlaPluginCheckCacheCallback checkCacheCb,
                          void* const callbackPtr)
-        : fPluginType(ptype),
+        : fBinaryType(btype),
+          fPluginType(ptype),
           fDiscoveryCallback(discoveryCb),
           fCheckCacheCallback(checkCacheCb),
           fCallbackPtr(callbackPtr),
@@ -87,11 +90,13 @@ public:
     }
 
     CarlaPluginDiscovery(const char* const discoveryTool,
+                         const BinaryType btype,
                          const PluginType ptype,
                          const CarlaPluginDiscoveryCallback discoveryCb,
                          const CarlaPluginCheckCacheCallback checkCacheCb,
                          void* const callbackPtr)
-        : fPluginType(ptype),
+        : fBinaryType(btype),
+          fPluginType(ptype),
           fDiscoveryCallback(discoveryCb),
           fCheckCacheCallback(checkCacheCb),
           fCallbackPtr(callbackPtr),
@@ -340,6 +345,7 @@ protected:
     }
 
 private:
+    const BinaryType fBinaryType;
     const PluginType fPluginType;
     const CarlaPluginDiscoveryCallback fDiscoveryCallback;
     const CarlaPluginCheckCacheCallback fCheckCacheCallback;
@@ -365,9 +371,25 @@ private:
         fPluginsFoundInBinary = false;
         fNextSha1Sum.clear();
 
+        const char* helperTool;
+        switch (fBinaryType)
+        {
+       #ifndef CARLA_OS_WIN
+        case CB::BINARY_WIN32:
+            helperTool = "wine";
+            break;
+        case CB::BINARY_WIN64:
+            helperTool = "wine64";
+            break;
+       #endif
+        default:
+            helperTool = nullptr;
+            break;
+        }
+
         if (fBinaries.empty())
         {
-            startPipeServer(fDiscoveryTool,
+            startPipeServer(helperTool, fDiscoveryTool,
                             getPluginTypeAsString(fPluginType),
                             ":all");
         }
@@ -389,7 +411,7 @@ private:
             }
 
             carla_stdout("Scanning \"%s\"...", filename.toRawUTF8());
-            startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
+            startPipeServer(helperTool, fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
         }
     }
 
@@ -455,7 +477,8 @@ static bool findDirectories(std::vector<water::File>& files, const char* const p
     return files.empty();
 }
 
-static bool findFiles(std::vector<water::File>& files, const char* const pluginPath, const char* const wildcard)
+static bool findFiles(std::vector<water::File>& files,
+                      const BinaryType btype, const char* const pluginPath, const char* const wildcard)
 {
     CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, true);
 
@@ -479,14 +502,22 @@ static bool findFiles(std::vector<water::File>& files, const char* const pluginP
         if (dir.findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard) > 0)
         {
             files.reserve(files.size() + results.size());
-            files.insert(files.end(), results.begin(), results.end());
+
+            for (std::vector<File>::const_iterator cit = results.begin(); cit != results.end(); ++cit)
+            {
+                const File file(*cit);
+
+                if (CB::getBinaryTypeFromFile(file.getFullPathName().toRawUTF8()) == btype)
+                    files.push_back(file);
+            }
         }
     }
 
     return files.empty();
 }
 
-static bool findVST3s(std::vector<water::File>& files, const char* const pluginPath)
+static bool findVST3s(std::vector<water::File>& files,
+                      const BinaryType btype, const char* const pluginPath)
 {
     CARLA_SAFE_ASSERT_RETURN(pluginPath != nullptr, true);
 
@@ -502,11 +533,9 @@ static bool findVST3s(std::vector<water::File>& files, const char* const pluginP
     if (splitPaths.size() == 0)
         return true;
 
-   #if defined(CARLA_OS_WIN)
-    static constexpr const uint flags = File::findDirectories|File::findFiles;
-   #else
-    static constexpr const uint flags = File::findDirectories;
-   #endif
+    const uint flags = btype == CB::BINARY_WIN32 || btype == CB::BINARY_WIN64
+                     ? File::findDirectories|File::findFiles
+                     : File::findDirectories;
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
@@ -516,7 +545,14 @@ static bool findVST3s(std::vector<water::File>& files, const char* const pluginP
         if (dir.findChildFiles(results, flags|File::ignoreHiddenFiles, true, "*.vst3") > 0)
         {
             files.reserve(files.size() + results.size());
-            files.insert(files.end(), results.begin(), results.end());
+
+            for (std::vector<File>::const_iterator cit = results.begin(); cit != results.end(); ++cit)
+            {
+                const File file(*cit);
+
+                if (CB::getBinaryTypeFromFile(file.getFullPathName().toRawUTF8()) == btype)
+                    files.push_back(file);
+            }
         }
     }
 
@@ -524,12 +560,15 @@ static bool findVST3s(std::vector<water::File>& files, const char* const pluginP
 }
 
 CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discoveryTool,
+                                                        const BinaryType btype,
                                                         const PluginType ptype,
                                                         const char* const pluginPath,
                                                         const CarlaPluginDiscoveryCallback discoveryCb,
                                                         const CarlaPluginCheckCacheCallback checkCacheCb,
                                                         void* const callbackPtr)
 {
+    CARLA_SAFE_ASSERT_RETURN(btype != CB::BINARY_NONE, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(ptype != CB::PLUGIN_NONE, nullptr);
     CARLA_SAFE_ASSERT_RETURN(discoveryTool != nullptr && discoveryTool[0] != '\0', nullptr);
     CARLA_SAFE_ASSERT_RETURN(discoveryCb != nullptr, nullptr);
 
@@ -547,44 +586,66 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
     case CB::PLUGIN_JSFX:
     {
         const CarlaScopedEnvVar csev("CARLA_DISCOVERY_PATH", pluginPath);
-        return new CarlaPluginDiscovery(discoveryTool, ptype, discoveryCb, checkCacheCb, callbackPtr);
+        return new CarlaPluginDiscovery(discoveryTool, btype, ptype, discoveryCb, checkCacheCb, callbackPtr);
     }
 
     case CB::PLUGIN_INTERNAL:
     case CB::PLUGIN_LV2:
     case CB::PLUGIN_AU:
-        return new CarlaPluginDiscovery(discoveryTool, ptype, discoveryCb, checkCacheCb, callbackPtr);
+        return new CarlaPluginDiscovery(discoveryTool, btype, ptype, discoveryCb, checkCacheCb, callbackPtr);
 
     case CB::PLUGIN_LADSPA:
     case CB::PLUGIN_DSSI:
-       #if defined(CARLA_OS_MAC)
-        wildcard = "*.dylib";
-       #elif defined(CARLA_OS_WIN)
+       #ifdef CARLA_OS_WIN
         wildcard = "*.dll";
        #else
-        wildcard = "*.so";
+        if (btype == CB::BINARY_WIN32 || btype == CB::BINARY_WIN64)
+        {
+            wildcard = "*.dll";
+        }
+        else
+        {
+           #ifdef CARLA_OS_MAC
+            wildcard = "*.dylib";
+           #else
+            wildcard = "*.so";
+           #endif
+        }
        #endif
         break;
+
     case CB::PLUGIN_VST2:
-       #if defined(CARLA_OS_MAC)
-        directories = true;
-        wildcard = "*.vst";
-       #elif defined(CARLA_OS_WIN)
+       #ifdef CARLA_OS_WIN
         wildcard = "*.dll";
        #else
-        wildcard = "*.so";
+        if (btype == CB::BINARY_WIN32 || btype == CB::BINARY_WIN64)
+        {
+            wildcard = "*.dll";
+        }
+        else
+        {
+           #ifdef CARLA_OS_MAC
+            directories = true;
+            wildcard = "*.vst";
+           #else
+            wildcard = "*.so";
+           #endif
+        }
        #endif
         break;
+
     case CB::PLUGIN_VST3:
         directories = true;
         wildcard = "*.vst3";
         break;
+
     case CB::PLUGIN_CLAP:
         wildcard = "*.clap";
        #ifdef CARLA_OS_MAC
         directories = true;
        #endif
         break;
+
     case CB::PLUGIN_DLS:
         wildcard = "*.dls";
         break;
@@ -602,7 +663,7 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
 
     if (ptype == CB::PLUGIN_VST3)
     {
-        if (findVST3s(files, pluginPath))
+        if (findVST3s(files, btype, pluginPath))
             return nullptr;
     }
     else if (directories)
@@ -612,11 +673,12 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
     }
     else
     {
-        if (findFiles(files, pluginPath, wildcard))
+        if (findFiles(files, btype, pluginPath, wildcard))
             return nullptr;
     }
 
-    return new CarlaPluginDiscovery(discoveryTool, ptype, std::move(files), discoveryCb, checkCacheCb, callbackPtr);
+    return new CarlaPluginDiscovery(discoveryTool, btype, ptype, std::move(files),
+                                    discoveryCb, checkCacheCb, callbackPtr);
 }
 
 bool carla_plugin_discovery_idle(const CarlaPluginDiscoveryHandle handle)

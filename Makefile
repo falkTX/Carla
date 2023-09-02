@@ -124,7 +124,7 @@ $(MODULEDIR)/carla_plugin.a: .FORCE
 $(MODULEDIR)/jackbridge.a: .FORCE
 	@$(MAKE) -C source/jackbridge
 
-$(MODULEDIR)/jackbridge.%.a: $(MODULEDIR)/jackbridge.a
+$(MODULEDIR)/jackbridge.%.a: .FORCE
 	@$(MAKE) -C source/jackbridge $*
 
 $(MODULEDIR)/native-plugins.a: .FORCE

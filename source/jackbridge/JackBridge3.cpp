@@ -1,6 +1,6 @@
 /*
  * JackBridge (Part 3, Export)
- * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -18,7 +18,7 @@
 
 #include "CarlaUtils.hpp"
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #if defined(CARLA_OS_WIN) && ! defined(__WINE__)
 # define JACKBRIDGE_EXPORT extern "C" __declspec (dllexport)
@@ -26,7 +26,7 @@
 # define JACKBRIDGE_EXPORT extern "C" __attribute__ ((visibility("default")))
 #endif
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 JACKBRIDGE_EXPORT
 const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functions();
@@ -140,6 +140,9 @@ const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functi
     funcs.shm_close_ptr                        = jackbridge_shm_close;
     funcs.shm_map_ptr                          = jackbridge_shm_map;
     funcs.shm_unmap_ptr                        = jackbridge_shm_unmap;
+    funcs.discovery_pipe_create_ptr            = jackbridge_discovery_pipe_create;
+    funcs.discovery_pipe_message_ptr           = jackbridge_discovery_pipe_message;
+    funcs.discovery_pipe_destroy_ptr           = jackbridge_discovery_pipe_destroy;
     funcs.parent_deathsig_ptr                  = jackbridge_parent_deathsig;
 
     funcs.unique1 = funcs.unique2 = funcs.unique3 = 0xdeadf00d;
@@ -147,4 +150,4 @@ const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functi
     return &funcs;
 }
 
-// -----------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
