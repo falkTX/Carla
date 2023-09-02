@@ -30,6 +30,7 @@ WINE_BUILD_FLAGS = $(filter-out -flto,$(BUILD_CXX_FLAGS))
 WINE_LINK_FLAGS  = $(filter-out -flto -static-libgcc -static-libstdc++,$(LINK_FLAGS))
 WINE_LINK_FLAGS += $(LIBDL_LIBS)
 WINE_LINK_FLAGS += -pthread
+WINE_LINK_FLAGS += -lpthread
 WINE_LINK_FLAGS += -lstdc++
 
 ifneq ($(MACOS),true)
