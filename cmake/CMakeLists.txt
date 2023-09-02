@@ -1285,6 +1285,7 @@ target_link_libraries(carla-utils
     carla-water-files
     $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
     PkgConfig::FLUIDSYNTH
+    PkgConfig::LIBMAGIC
     PkgConfig::X11
     $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
     ${CARLA_PTHREADS}
