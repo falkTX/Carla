@@ -314,7 +314,7 @@ bool VResampler::process (void)
                         S = vmlaq_f32 (S, vextq_f32 (T, T, 2), C2 [i]);
                         S = vmlaq_f32 (S, vld1q_f32 (q1), C1 [i]);
                     }
-                    *out_data++ = vaddvq_f32 (S);
+                    *out_data++ = S [0] + S [1] + S [2] + S [3];
                 }
 
 #else
