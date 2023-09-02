@@ -73,13 +73,13 @@ Resampler_table::Resampler_table (double fr, unsigned int hl, unsigned int np) :
     p = _ctab;
     for (j = 0; j <= np; j++)
     {
-	t = (double) j / (double) np;
-	for (i = 0; i < hl; i++)
-	{
-	    p [hl - i - 1] = (float)(fr * sinc (t * fr) * wind (t / hl));
-	    t += 1;
-	}
-	p += hl;
+        t = (double) j / (double) np;
+        for (i = 0; i < hl; i++)
+        {
+            p [hl - i - 1] = (float)(fr * sinc (t * fr) * wind (t / hl));
+            t += 1;
+        }
+        p += hl;
     }
 }
 
@@ -102,13 +102,13 @@ Resampler_table *Resampler_table::create (double fr, unsigned int hl, unsigned i
     P = _list;
     while (P)
     {
-	if ((fr >= P->_fr * 0.999) && (fr <= P->_fr * 1.001) && (hl == P->_hl) && (np == P->_np))
-	{
-	    P->_refc++;
+        if ((fr >= P->_fr * 0.999) && (fr <= P->_fr * 1.001) && (hl == P->_hl) && (np == P->_np))
+        {
+            P->_refc++;
             _mutex.unlock ();
             return P;
-	}
-	P = P->_next;
+        }
+        P = P->_next;
     }
     P = new Resampler_table (fr, hl, np);
     P->_refc = 1;
@@ -126,24 +126,24 @@ void Resampler_table::destroy (Resampler_table *T)
     _mutex.lock ();
     if (T)
     {
-	T->_refc--;
-	if (T->_refc == 0)
-	{
-	    P = _list;
-	    Q = 0;
-	    while (P)
-	    {
-		if (P == T)
-		{
-		    if (Q) Q->_next = T->_next;
-		    else      _list = T->_next;
-		    break;
-		}
-		Q = P;
-		P = P->_next;
-	    }
-	    delete T;
-	}
+        T->_refc--;
+        if (T->_refc == 0)
+        {
+            P = _list;
+            Q = 0;
+            while (P)
+            {
+                if (P == T)
+                {
+                    if (Q) Q->_next = T->_next;
+                    else      _list = T->_next;
+                    break;
+                }
+                Q = P;
+                P = P->_next;
+            }
+            delete T;
+        }
     }
     _mutex.unlock ();
 }
