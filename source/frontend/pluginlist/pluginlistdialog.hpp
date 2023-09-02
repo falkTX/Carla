@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "CarlaFrontend.h"
+
 #ifdef __clang__
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
@@ -26,14 +28,9 @@
 
 #include "ui_pluginlistdialog.h"
 
-struct HostSettings {
-    bool showPluginBridges;
-    bool showWineBridges;
-    bool useSystemIcons;
-};
-
 class QSafeSettings;
 typedef struct _CarlaPluginDiscoveryInfo CarlaPluginDiscoveryInfo;
+typedef struct _HostSettings HostSettings;
 struct PluginInfo;
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -63,12 +60,13 @@ class PluginListDialog : public QDialog
     // public methods
 
 public:
-    explicit PluginListDialog(QWidget* parent, const HostSettings& hostSettings);
+    explicit PluginListDialog(QWidget* parent, const HostSettings* hostSettings);
     ~PluginListDialog() override;
 
     const PluginInfo& getSelectedPluginInfo() const;
     void addPluginInfo(const CarlaPluginDiscoveryInfo* info, const char* sha1sum);
     bool checkPluginCache(const char* filename, const char* sha1sum);
+    void setPluginPath(PluginType ptype, const char* path);
 
     // ----------------------------------------------------------------------------------------------------------------
     // protected methods

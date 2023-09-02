@@ -644,7 +644,6 @@ typedef enum {
 
     /*!
      * VST3 plugin.
-     * @note Windows and MacOS only
      */
     PLUGIN_VST3 = 6,
 

@@ -204,6 +204,10 @@ CARLA_KEY_CANVAS_FULL_REPAINTS     = "Canvas/FullRepaints"    # bool
 
 CARLA_KEY_ENGINE_DRIVER_PREFIX         = "Engine/Driver-"
 CARLA_KEY_ENGINE_AUDIO_DRIVER          = "Engine/AudioDriver"         # str
+CARLA_KEY_ENGINE_AUDIO_DEVICE          = "Engine/AudioDevice"         # str
+CARLA_KEY_ENGINE_BUFFER_SIZE           = "Engine/BufferSize"          # int
+CARLA_KEY_ENGINE_SAMPLE_RATE           = "Engine/SampleRate"          # int
+CARLA_KEY_ENGINE_TRIPLE_BUFFER         = "Engine/TripleBuffer"        # bool
 CARLA_KEY_ENGINE_PROCESS_MODE          = "Engine/ProcessMode"         # enum
 CARLA_KEY_ENGINE_TRANSPORT_MODE        = "Engine/TransportMode"       # enum
 CARLA_KEY_ENGINE_TRANSPORT_EXTRA       = "Engine/TransportExtra"      # str

@@ -33,6 +33,23 @@ namespace CB = CARLA_BACKEND_NAMESPACE;
 
 // --------------------------------------------------------------------------------------------------------------------
 
+#ifndef CARLA_OS_WIN
+static water::String findWinePrefix(const water::String filename, const int recursionLimit = 10)
+{
+    if (recursionLimit == 0 || filename.length() < 5 || ! filename.contains("/"))
+        return "";
+
+    const water::String path(filename.upToLastOccurrenceOf("/", false, false));
+
+    if (water::File(path + "/dosdevices").isDirectory())
+        return path;
+
+    return findWinePrefix(path, recursionLimit-1);
+}
+#endif
+
+// --------------------------------------------------------------------------------------------------------------------
+
 static const char* const gPluginsDiscoveryNullCharPtr = "";
 
 _CarlaPluginDiscoveryMetadata::_CarlaPluginDiscoveryMetadata() noexcept
@@ -58,6 +75,24 @@ _CarlaPluginDiscoveryInfo::_CarlaPluginDiscoveryInfo() noexcept
       label(gPluginsDiscoveryNullCharPtr),
       uniqueId(0),
       metadata()  {}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+struct CarlaPluginDiscoveryOptions {
+   #if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
+    struct {
+        bool autoPrefix;
+        CarlaString executable;
+        CarlaString fallbackPrefix;
+    } wine;
+   #endif
+
+    static CarlaPluginDiscoveryOptions& getInstance() noexcept
+    {
+        static CarlaPluginDiscoveryOptions instance;
+        return instance;
+    }
+};
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -367,36 +402,59 @@ private:
 
     void start()
     {
+        using water::File;
+        using water::String;
+
         fLastMessageTime = carla_gettime_ms();
         fPluginsFoundInBinary = false;
         fNextSha1Sum.clear();
 
-        const char* helperTool;
+       #ifndef CARLA_OS_WIN
+        const CarlaPluginDiscoveryOptions& options(CarlaPluginDiscoveryOptions::getInstance());
+
+        String helperTool;
+
         switch (fBinaryType)
         {
-       #ifndef CARLA_OS_WIN
         case CB::BINARY_WIN32:
-            helperTool = "wine";
+            if (options.wine.executable.isNotEmpty())
+                helperTool = options.wine.executable.buffer();
+            else
+                helperTool = "wine";
             break;
+
         case CB::BINARY_WIN64:
-            helperTool = "wine64";
+            if (options.wine.executable.isNotEmpty())
+            {
+                helperTool = options.wine.executable.buffer();
+
+                if (helperTool[0] == CARLA_OS_SEP && File(helperTool + "64").existsAsFile())
+                    helperTool += "64";
+            }
+            else
+            {
+                helperTool = "wine";
+            }
             break;
-       #endif
+
         default:
-            helperTool = nullptr;
             break;
         }
+       #endif
 
         if (fBinaries.empty())
         {
-            startPipeServer(helperTool, fDiscoveryTool,
-                            getPluginTypeAsString(fPluginType),
-                            ":all");
+           #ifndef CARLA_OS_WIN
+            if (helperTool.isNotEmpty())
+                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all");
+            else
+           #endif
+                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all");
         }
         else
         {
-            const water::File file(fBinaries[fBinaryIndex]);
-            const water::String filename(file.getFullPathName());
+            const File file(fBinaries[fBinaryIndex]);
+            const String filename(file.getFullPathName());
 
             if (fCheckCacheCallback != nullptr)
             {
@@ -410,8 +468,36 @@ private:
                 }
             }
 
+           #ifndef CARLA_OS_WIN
+            String winePrefix;
+
+            if (options.wine.autoPrefix)
+                winePrefix = findWinePrefix(filename);
+
+            if (winePrefix.isEmpty())
+            {
+                const char* const envWinePrefix = std::getenv("WINEPREFIX");
+
+                if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
+                    winePrefix = envWinePrefix;
+                else if (options.wine.fallbackPrefix != nullptr && options.wine.fallbackPrefix[0] != '\0')
+                    winePrefix = options.wine.fallbackPrefix.buffer();
+                else
+                    winePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
+            }
+
+            const CarlaScopedEnvVar sev1("WINEDEBUG", "-all");
+            const CarlaScopedEnvVar sev2("WINEPREFIX", winePrefix.toRawUTF8());
+           #endif
+
             carla_stdout("Scanning \"%s\"...", filename.toRawUTF8());
-            startPipeServer(helperTool, fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
+
+           #ifndef CARLA_OS_WIN
+            if (helperTool.isNotEmpty())
+                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
+            else
+           #endif
+                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
         }
     }
 
@@ -694,6 +780,33 @@ void carla_plugin_discovery_skip(const CarlaPluginDiscoveryHandle handle)
 void carla_plugin_discovery_stop(const CarlaPluginDiscoveryHandle handle)
 {
     delete static_cast<CarlaPluginDiscovery*>(handle);
+}
+
+void carla_plugin_discovery_set_option(const EngineOption option, const int value, const char* const valueStr)
+{
+    switch (option)
+    {
+   #if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
+    case CB::ENGINE_OPTION_WINE_EXECUTABLE:
+        if (valueStr != nullptr && valueStr[0] != '\0')
+            CarlaPluginDiscoveryOptions::getInstance().wine.executable = valueStr;
+        else
+            CarlaPluginDiscoveryOptions::getInstance().wine.executable.clear();
+        break;
+    case CB::ENGINE_OPTION_WINE_AUTO_PREFIX:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        CarlaPluginDiscoveryOptions::getInstance().wine.autoPrefix = value != 0;
+        break;
+    case CB::ENGINE_OPTION_WINE_FALLBACK_PREFIX:
+        if (valueStr != nullptr && valueStr[0] != '\0')
+            CarlaPluginDiscoveryOptions::getInstance().wine.fallbackPrefix = valueStr;
+        else
+            CarlaPluginDiscoveryOptions::getInstance().wine.fallbackPrefix.clear();
+        break;
+   #endif
+    default:
+        break;
+    }
 }
 
 // --------------------------------------------------------------------------------------------------------------------

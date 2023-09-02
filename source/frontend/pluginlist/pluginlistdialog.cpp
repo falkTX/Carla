@@ -33,7 +33,6 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaJuceUtils.hpp"
-#include "CarlaFrontend.h"
 #include "CarlaUtils.h"
 
 #include "CarlaString.hpp"
@@ -41,22 +40,6 @@
 #include <cstdlib>
 
 CARLA_BACKEND_USE_NAMESPACE
-
-// --------------------------------------------------------------------------------------------------------------------
-// Carla Settings keys
-
-#define CARLA_KEY_PATHS_LADSPA "Paths/LADSPA"
-#define CARLA_KEY_PATHS_DSSI   "Paths/DSSI"
-#define CARLA_KEY_PATHS_LV2    "Paths/LV2"
-#define CARLA_KEY_PATHS_VST2   "Paths/VST2"
-#define CARLA_KEY_PATHS_VST3   "Paths/VST3"
-#define CARLA_KEY_PATHS_CLAP   "Paths/CLAP"
-#define CARLA_KEY_PATHS_SF2    "Paths/SF2"
-#define CARLA_KEY_PATHS_SFZ    "Paths/SFZ"
-#define CARLA_KEY_PATHS_JSFX   "Paths/JSFX"
-
-// --------------------------------------------------------------------------------------------------------------------
-// Carla Settings defaults
 
 // --------------------------------------------------------------------------------------------------------------------
 // getenv with a fallback value if unset
@@ -381,11 +364,11 @@ struct PluginPaths {
 static inline
 int fontMetricsHorizontalAdvance(const QFontMetrics& fontMetrics, const QString& string)
 {
-#if QT_VERSION >= 0x50b00
+   #if QT_VERSION >= 0x50b00
     return fontMetrics.horizontalAdvance(string);
-#else
+   #else
     return fontMetrics.width(string);
-#endif
+   #endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -692,6 +675,7 @@ struct PluginListDialog::PrivateData {
                 carla_plugin_discovery_stop(handle);
         }
 
+       #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
         bool nextTool()
         {
             if (handle != nullptr)
@@ -771,6 +755,7 @@ struct PluginListDialog::PrivateData {
             tool += ".exe";
            #endif
         }
+       #endif // CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     } discovery;
 
     PluginPaths paths;
@@ -825,13 +810,20 @@ struct PluginListDialog::PrivateData {
 // --------------------------------------------------------------------------------------------------------------------
 // Plugin List Dialog
 
-PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& hostSettings)
+PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings* const hostSettings)
     : QDialog(parent),
       p(new PrivateData)
 {
     ui.setupUi(this);
 
-    // p->hostSettings = hostSettings;
+    // ----------------------------------------------------------------------------------------------------------------
+    // Set-up global discovery options
+
+   #ifndef CARLA_OS_WIN
+    carla_plugin_discovery_set_option(ENGINE_OPTION_WINE_AUTO_PREFIX, hostSettings->wineAutoPrefix, nullptr);
+    carla_plugin_discovery_set_option(ENGINE_OPTION_WINE_EXECUTABLE, 0, hostSettings->wineExecutable);
+    carla_plugin_discovery_set_option(ENGINE_OPTION_WINE_FALLBACK_PREFIX, 0, hostSettings->wineFallbackPrefix);
+   #endif
 
     // ----------------------------------------------------------------------------------------------------------------
     // Set-up GUI
@@ -917,7 +909,7 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings& ho
     // ----------------------------------------------------------------------------------------------------------------
     // Set-up Icons
 
-    if (hostSettings.useSystemIcons)
+    if (hostSettings->useSystemIcons)
     {
 #if 0
         ui.b_add.setIcon(getIcon('list-add', 16, 'svgz'))
@@ -1090,6 +1082,44 @@ bool PluginListDialog::checkPluginCache(const char* const filename, const char* 
     return true;
 }
 
+void PluginListDialog::setPluginPath(const PluginType ptype, const char* const path)
+{
+    switch (ptype)
+    {
+    case PLUGIN_LV2:
+        p->paths.lv2 = path;
+        break;
+    case PLUGIN_VST2:
+        p->paths.vst2 = path;
+        break;
+    case PLUGIN_VST3:
+        p->paths.vst3 = path;
+        break;
+    case PLUGIN_CLAP:
+        p->paths.clap = path;
+        break;
+   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+    case PLUGIN_LADSPA:
+        p->paths.ladspa = path;
+        break;
+    case PLUGIN_DSSI:
+        p->paths.dssi = path;
+        break;
+    case PLUGIN_SF2:
+        p->paths.sf2 = path;
+        break;
+    case PLUGIN_SFZ:
+        p->paths.sfz = path;
+        break;
+    case PLUGIN_JSFX:
+        p->paths.jsfx = path;
+        break;
+   #endif
+    default:
+        break;
+    }
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 // protected methods
 
@@ -1239,7 +1269,9 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
           #endif
             default:
                 // discovery complete
+               #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
                 if (! p->discovery.nextTool())
+               #endif
                     refreshPluginsStop();
             }
 
@@ -1489,7 +1521,7 @@ void PluginListDialog::loadSettings()
    #endif
 }
 
-// -----------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // private slots
 
 void PluginListDialog::cellClicked(const int row, const int column)
@@ -1994,10 +2026,22 @@ void PluginListDialog::saveSettings()
 // --------------------------------------------------------------------------------------------------------------------
 
 PluginListDialog*
-carla_frontend_createPluginListDialog(void* const parent)
+carla_frontend_createPluginListDialog(void* const parent, const HostSettings* const hostSettings)
 {
-    const HostSettings hostSettings = {};
     return new PluginListDialog(reinterpret_cast<QWidget*>(parent), hostSettings);
+}
+
+void
+carla_frontend_destroyPluginListDialog(PluginListDialog* const dialog)
+{
+    dialog->close();
+    delete dialog;
+}
+
+void
+carla_frontend_setPluginListDialogPath(PluginListDialog* const dialog, const int ptype, const char* const path)
+{
+    dialog->setPluginPath(static_cast<PluginType>(ptype), path);
 }
 
 const PluginListDialogResults*
@@ -2046,13 +2090,12 @@ carla_frontend_execPluginListDialog(PluginListDialog* const dialog)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-const PluginListDialogResults*
-carla_frontend_createAndExecPluginListDialog(void* const parent/*, const HostSettings& hostSettings*/)
-{
-    const HostSettings hostSettings = {};
-    PluginListDialog gui(reinterpret_cast<QWidget*>(parent), hostSettings);
-
-    return carla_frontend_execPluginListDialog(&gui);
-}
+// const PluginListDialogResults*
+// carla_frontend_createAndExecPluginListDialog(void* const parent, const HostSettings* const hostSettings)
+// {
+//     PluginListDialog gui(reinterpret_cast<QWidget*>(parent), hostSettings);
+//
+//     return carla_frontend_execPluginListDialog(&gui);
+// }
 
 // --------------------------------------------------------------------------------------------------------------------

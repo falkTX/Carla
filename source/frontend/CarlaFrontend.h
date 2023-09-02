@@ -20,6 +20,7 @@
 #include "CarlaBackend.h"
 
 #ifdef __cplusplus
+using CARLA_BACKEND_NAMESPACE::PluginType;
 extern "C" {
 #endif
 
@@ -30,6 +31,15 @@ typedef struct {
     const char* name;
     const char* labelSetup;
 } JackAppDialogResults;
+
+typedef struct _HostSettings {
+    bool showPluginBridges;
+    bool showWineBridges;
+    bool useSystemIcons;
+    bool wineAutoPrefix;
+    const char* wineExecutable;
+    const char* wineFallbackPrefix;
+} HostSettings;
 
 typedef struct {
     uint build;
@@ -55,20 +65,28 @@ struct PluginListDialog;
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_API void
+CARLA_PLUGIN_EXPORT void
 carla_frontend_createAndExecAboutJuceDialog(void* parent);
 
-CARLA_API const JackAppDialogResults*
+CARLA_PLUGIN_EXPORT const JackAppDialogResults*
 carla_frontend_createAndExecJackAppDialog(void* parent, const char* projectFilename);
 
-CARLA_API PluginListDialog*
-carla_frontend_createPluginListDialog(void* parent);
+CARLA_PLUGIN_EXPORT PluginListDialog*
+carla_frontend_createPluginListDialog(void* parent, const HostSettings* hostSettings);
 
-CARLA_API const PluginListDialogResults*
+CARLA_PLUGIN_EXPORT void
+carla_frontend_destroyPluginListDialog(PluginListDialog* dialog);
+
+// TODO get favorites
+
+CARLA_PLUGIN_EXPORT void
+carla_frontend_setPluginListDialogPath(PluginListDialog* dialog, int ptype, const char* path);
+
+CARLA_PLUGIN_EXPORT const PluginListDialogResults*
 carla_frontend_execPluginListDialog(PluginListDialog* dialog);
 
-CARLA_API const PluginListDialogResults*
-carla_frontend_createAndExecPluginListDialog(void* parent/*, const HostSettings& hostSettings*/);
+// CARLA_PLUGIN_EXPORT const PluginListDialogResults*
+// carla_frontend_createAndExecPluginListDialog(void* parent, const HostSettings* hostSettings);
 
 // --------------------------------------------------------------------------------------------------------------------
 

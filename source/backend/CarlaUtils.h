@@ -22,6 +22,7 @@
 
 #ifdef __cplusplus
 using CARLA_BACKEND_NAMESPACE::BinaryType;
+using CARLA_BACKEND_NAMESPACE::EngineOption;
 using CARLA_BACKEND_NAMESPACE::PluginCategory;
 using CARLA_BACKEND_NAMESPACE::PluginType;
 #endif
@@ -34,100 +35,6 @@ using CARLA_BACKEND_NAMESPACE::PluginType;
  * This API allows to call advanced features from Python.
  * @{
  */
-
-/*!
- * Information about a cached plugin.
- * @see carla_get_cached_plugin_info()
- */
-typedef struct _CarlaCachedPluginInfo {
-    /*!
-     * Wherever the data in this struct is valid.
-     * For performance reasons, plugins are only checked on request,
-     *  and as such, the count vs number of really valid plugins might not match.
-     * Use this field to skip on plugins which cannot be loaded in Carla.
-     */
-    bool valid;
-
-    /*!
-     * Plugin category.
-     */
-    PluginCategory category;
-
-    /*!
-     * Plugin hints.
-     * @see PluginHints
-     */
-    uint hints;
-
-    /*!
-     * Number of audio inputs.
-     */
-    uint32_t audioIns;
-
-    /*!
-     * Number of audio outputs.
-     */
-    uint32_t audioOuts;
-
-    /*!
-     * Number of CV inputs.
-     */
-    uint32_t cvIns;
-
-    /*!
-     * Number of CV outputs.
-     */
-    uint32_t cvOuts;
-
-    /*!
-     * Number of MIDI inputs.
-     */
-    uint32_t midiIns;
-
-    /*!
-     * Number of MIDI outputs.
-     */
-    uint32_t midiOuts;
-
-    /*!
-     * Number of input parameters.
-     */
-    uint32_t parameterIns;
-
-    /*!
-     * Number of output parameters.
-     */
-    uint32_t parameterOuts;
-
-    /*!
-     * Plugin name.
-     */
-    const char* name;
-
-    /*!
-     * Plugin label.
-     */
-    const char* label;
-
-    /*!
-     * Plugin author/maker.
-     */
-    const char* maker;
-
-    /*!
-     * Plugin copyright/license.
-     */
-    const char* copyright;
-
-#ifdef __cplusplus
-    /*!
-     * C++ constructor.
-     */
-    CARLA_API _CarlaCachedPluginInfo() noexcept;
-    CARLA_DECLARE_NON_COPYABLE(_CarlaCachedPluginInfo)
-#endif
-
-} CarlaCachedPluginInfo;
 
 /* --------------------------------------------------------------------------------------------------------------------
  * plugin discovery */
@@ -330,8 +237,107 @@ CARLA_PLUGIN_EXPORT void carla_plugin_discovery_skip(CarlaPluginDiscoveryHandle 
  */
 CARLA_PLUGIN_EXPORT void carla_plugin_discovery_stop(CarlaPluginDiscoveryHandle handle);
 
+/*!
+ * Set a plugin discovery setting, to be applied globally.
+ */
+CARLA_PLUGIN_EXPORT void carla_plugin_discovery_set_option(EngineOption option, int value, const char* valueStr);
+
 /* --------------------------------------------------------------------------------------------------------------------
  * cached plugins */
+
+/*!
+ * Information about a cached plugin.
+ * @see carla_get_cached_plugin_info()
+ */
+typedef struct _CarlaCachedPluginInfo {
+    /*!
+     * Wherever the data in this struct is valid.
+     * For performance reasons, plugins are only checked on request,
+     *  and as such, the count vs number of really valid plugins might not match.
+     * Use this field to skip on plugins which cannot be loaded in Carla.
+     */
+    bool valid;
+
+    /*!
+     * Plugin category.
+     */
+    PluginCategory category;
+
+    /*!
+     * Plugin hints.
+     * @see PluginHints
+     */
+    uint hints;
+
+    /*!
+     * Number of audio inputs.
+     */
+    uint32_t audioIns;
+
+    /*!
+     * Number of audio outputs.
+     */
+    uint32_t audioOuts;
+
+    /*!
+     * Number of CV inputs.
+     */
+    uint32_t cvIns;
+
+    /*!
+     * Number of CV outputs.
+     */
+    uint32_t cvOuts;
+
+    /*!
+     * Number of MIDI inputs.
+     */
+    uint32_t midiIns;
+
+    /*!
+     * Number of MIDI outputs.
+     */
+    uint32_t midiOuts;
+
+    /*!
+     * Number of input parameters.
+     */
+    uint32_t parameterIns;
+
+    /*!
+     * Number of output parameters.
+     */
+    uint32_t parameterOuts;
+
+    /*!
+     * Plugin name.
+     */
+    const char* name;
+
+    /*!
+     * Plugin label.
+     */
+    const char* label;
+
+    /*!
+     * Plugin author/maker.
+     */
+    const char* maker;
+
+    /*!
+     * Plugin copyright/license.
+     */
+    const char* copyright;
+
+#ifdef __cplusplus
+    /*!
+     * C++ constructor.
+     */
+    CARLA_API _CarlaCachedPluginInfo() noexcept;
+    CARLA_DECLARE_NON_COPYABLE(_CarlaCachedPluginInfo)
+#endif
+
+} CarlaCachedPluginInfo;
 
 /*!
  * Get how many cached plugins are available.

@@ -52,6 +52,7 @@ static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 
 // --------------------------------------------------------------------------------------------------------------------
 
+#ifndef CARLA_OS_WIN
 static String findWinePrefix(const String filename, const int recursionLimit = 10)
 {
     if (recursionLimit == 0 || filename.length() < 5 || ! filename.contains("/"))
@@ -64,6 +65,7 @@ static String findWinePrefix(const String filename, const int recursionLimit = 1
 
     return findWinePrefix(path, recursionLimit-1);
 }
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -128,15 +130,15 @@ public:
           fBridgeBinary(),
           fLabel(),
           fShmIds(),
-#ifndef CARLA_OS_WIN
+         #ifndef CARLA_OS_WIN
           fWinePrefix(),
-#endif
+         #endif
           fProcess() {}
 
     void setData(
-#ifndef CARLA_OS_WIN
+                #ifndef CARLA_OS_WIN
                  const char* const winePrefix,
-#endif
+                #endif
                  const char* const binaryArchName,
                  const char* const bridgeBinary,
                  const char* const label,
@@ -146,9 +148,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
-#ifndef CARLA_OS_WIN
+       #ifndef CARLA_OS_WIN
         fWinePrefix = winePrefix;
-#endif
+       #endif
         fBinaryArchName = binaryArchName;
         fBridgeBinary = bridgeBinary;
         fShmIds = shmIds;
@@ -190,7 +192,7 @@ protected:
 
         StringArray arguments;
 
-#ifndef CARLA_OS_WIN
+       #ifndef CARLA_OS_WIN
         // start with "wine" if needed
         if (fBridgeBinary.endsWithIgnoreCase(".exe"))
         {
@@ -212,7 +214,7 @@ protected:
 
             arguments.add(wineCMD);
         }
-#endif
+       #endif
 
         // setup binary arch
         ChildProcess::Type childType;
@@ -245,10 +247,10 @@ protected:
         {
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
-#ifdef CARLA_OS_LINUX
+           #ifdef CARLA_OS_LINUX
             const CarlaScopedEnvVar sev1("LD_LIBRARY_PATH", nullptr);
             const CarlaScopedEnvVar sev2("LD_PRELOAD", nullptr);
-#endif
+           #endif
 
             carla_setenv("ENGINE_OPTION_FORCE_STEREO",          bool2str(options.forceStereo));
             carla_setenv("ENGINE_OPTION_PREFER_PLUGIN_BRIDGES", bool2str(options.preferPluginBridges));
@@ -318,7 +320,7 @@ protected:
 
             carla_setenv("ENGINE_BRIDGE_SHM_IDS", fShmIds.toRawUTF8());
 
-#ifndef CARLA_OS_WIN
+           #ifndef CARLA_OS_WIN
             if (fWinePrefix.isNotEmpty())
             {
                 carla_setenv("WINEDEBUG", "-all");
@@ -354,12 +356,12 @@ protected:
                     carla_stdout("Using WINEPREFIX '%s', without RT priorities", fWinePrefix.toRawUTF8());
                 }
             }
-#endif
+           #endif
 
             carla_stdout("Starting plugin bridge, command is:\n%s \"%s\" \"%s\" \"%s\" " P_INT64,
                          fBridgeBinary.toRawUTF8(), getPluginTypeAsString(kPlugin->getType()), filename.toRawUTF8(), fLabel.toRawUTF8(), kPlugin->getUniqueId());
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+           #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
             const File projFolder(kEngine->getCurrentProjectFolder());
 
             if (projFolder.isNotNull())
@@ -370,7 +372,7 @@ protected:
                 oldFolder.setAsCurrentWorkingDirectory();
             }
             else
-#endif
+           #endif
             {
                 started = fProcess->start(arguments, childType);
             }
@@ -427,9 +429,9 @@ private:
     String fBridgeBinary;
     String fLabel;
     String fShmIds;
-#ifndef CARLA_OS_WIN
+   #ifndef CARLA_OS_WIN
     String fWinePrefix;
-#endif
+   #endif
 
     CarlaScopedPointer<ChildProcess> fProcess;
 
@@ -460,9 +462,9 @@ public:
           fShmRtClientControl(),
           fShmNonRtClientControl(),
           fShmNonRtServerControl(),
-#ifndef CARLA_OS_WIN
+         #ifndef CARLA_OS_WIN
           fWinePrefix(),
-#endif
+         #endif
           fReceivingParamText(),
           fInfo(),
           fUniqueId(0),
@@ -478,11 +480,11 @@ public:
     {
         carla_debug("CarlaPluginBridge::~CarlaPluginBridge()");
 
-#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
             pData->transientTryCounter = 0;
-#endif
+       #endif
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -2754,7 +2756,7 @@ public:
             return false;
         }
 
-#ifndef CARLA_OS_WIN
+       #ifndef CARLA_OS_WIN
         // ---------------------------------------------------------------
         // set wine prefix
 
@@ -2767,7 +2769,7 @@ public:
 
             if (fWinePrefix.isEmpty())
             {
-                const char* const envWinePrefix(std::getenv("WINEPREFIX"));
+                const char* const envWinePrefix = std::getenv("WINEPREFIX");
 
                 if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
                     fWinePrefix = envWinePrefix;
@@ -2777,7 +2779,7 @@ public:
                     fWinePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
             }
         }
-#endif
+       #endif
 
         // ---------------------------------------------------------------
         // init bridge thread
@@ -2914,9 +2916,9 @@ private:
     BridgeNonRtClientControl fShmNonRtClientControl;
     BridgeNonRtServerControl fShmNonRtServerControl;
 
-#ifndef CARLA_OS_WIN
+   #ifndef CARLA_OS_WIN
     String fWinePrefix;
-#endif
+   #endif
 
     class ReceivingParamText {
     public:
