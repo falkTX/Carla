@@ -353,7 +353,7 @@ protected:
 
             CARLA_SAFE_ASSERT_RETURN(writeMessage(strBuf),);
 
-            flushMessages();
+            syncMessages();
         }
     }
 #endif

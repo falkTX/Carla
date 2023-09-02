@@ -432,7 +432,7 @@ protected:
                 std::snprintf(tmpBuf, STR_MAX, "%i\n", newBufferSize);
 
                 if (fUiServer.writeMessage(tmpBuf))
-                    fUiServer.flushMessages();
+                    fUiServer.syncMessages();
             }
         }
 #endif
@@ -461,7 +461,7 @@ protected:
                 }
 
                 if (fUiServer.writeMessage(tmpBuf))
-                    fUiServer.flushMessages();
+                    fUiServer.syncMessages();
             }
         }
 #endif
@@ -550,7 +550,7 @@ protected:
                       pluginId, plugin->getMidiInCount(), plugin->getMidiOutCount());
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
     }
 
     void uiServerSendPluginParameters(const CarlaPluginPtr& plugin)
@@ -571,7 +571,7 @@ protected:
             std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(plugin->getInternalParameterValue(i)));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            fUiServer.flushMessages();
+            fUiServer.syncMessages();
         }
 
         uint32_t ins, outs, count;
@@ -640,7 +640,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         }
 
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
     }
 
     void uiServerSendPluginPrograms(const CarlaPluginPtr& plugin)
@@ -668,7 +668,7 @@ protected:
             }
         }
 
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         count = plugin->getMidiProgramCount();
         std::snprintf(tmpBuf, STR_MAX, "MIDI_PROGRAM_COUNT_%i:%i:%i\n",
@@ -688,7 +688,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(mpData.name),);
         }
 
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
     }
 
     void uiServerSendPluginProperties(const CarlaPluginPtr& plugin)
@@ -719,7 +719,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(customData.value),);
         }
 
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
     }
 
     void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId,
@@ -829,7 +829,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeEmptyMessage(),);
         }
 
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
     }
 
     void uiServerInfo()
@@ -863,7 +863,7 @@ protected:
         }
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
     }
 
     void uiServerOptions()
@@ -885,66 +885,66 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
         std::snprintf(tmpBuf, STR_MAX, "%i\n", options.processMode);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_TRANSPORT_MODE);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
         std::snprintf(tmpBuf, STR_MAX, "%i\n", options.transportMode);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_FORCE_STEREO);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.forceStereo ? "true\n" : "false\n"),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_PLUGIN_BRIDGES);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.preferPluginBridges ? "true\n" : "false\n"),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_UI_BRIDGES);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.preferUiBridges ? "true\n" : "false\n"),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UIS_ALWAYS_ON_TOP);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(options.uisAlwaysOnTop ? "true\n" : "false\n"),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_MAX_PARAMETERS);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
         std::snprintf(tmpBuf, STR_MAX, "%i\n", options.maxParameters);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UI_BRIDGES_TIMEOUT);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize),);
         std::snprintf(tmpBuf, STR_MAX, "%i\n", options.uiBridgesTimeout);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("true\n", 5),);
         std::snprintf(tmpBuf, STR_MAX, "%s\n", options.binaryDir);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         std::snprintf(tmpBuf, STR_MAX, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("true\n", 5),);
         std::snprintf(tmpBuf, STR_MAX, "%s\n", options.resourceDir);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
     }
 #endif
 
@@ -1451,7 +1451,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("runtime-info\n"),);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         if (const char* const projFolder = getCurrentProjectFolder())
         {
@@ -1461,7 +1461,7 @@ protected:
                 fLastProjectFolder = projFolder;
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("project-folder\n"),);
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeAndFixMessage(projFolder),);
-                fUiServer.flushMessages();
+                fUiServer.syncMessages();
             }
         }
 
@@ -1488,7 +1488,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("0.0\n"),);
         }
 
-        fUiServer.flushMessages();
+        fUiServer.syncMessages();
 
         // ------------------------------------------------------------------------------------------------------------
         // send peaks and param outputs for all plugins
@@ -1507,7 +1507,7 @@ protected:
                           static_cast<double>(plugData.peaks[3]));
             CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-            fUiServer.flushMessages();
+            fUiServer.syncMessages();
 
             for (uint32_t j=0, count=plugin->getParameterCount(); j < count; ++j)
             {
@@ -1519,7 +1519,7 @@ protected:
                 std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(plugin->getParameterValue(j)));
                 CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
-                fUiServer.flushMessages();
+                fUiServer.syncMessages();
             }
         }
     }
@@ -2398,7 +2398,7 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         const CarlaMutexLocker cml(getPipeLock());
 
         if (writeMessage("error\n", 6) && writeAndFixMessage(fEngine->getLastError()))
-            flushMessages();
+            syncMessages();
     }
 
     return true;

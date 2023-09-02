@@ -182,19 +182,19 @@ bool carla_pipe_client_write_and_fix_msg(CarlaPipeClientHandle handle, const cha
     return ((ExposedCarlaPipeClient*)handle)->writeAndFixMessage(msg);
 }
 
-bool carla_pipe_client_flush(CarlaPipeClientHandle handle)
+bool carla_pipe_client_sync(CarlaPipeClientHandle handle)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, false);
 
-    return ((ExposedCarlaPipeClient*)handle)->flushMessages();
+    return ((ExposedCarlaPipeClient*)handle)->syncMessages();
 }
 
-bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handle)
+bool carla_pipe_client_sync_and_unlock(CarlaPipeClientHandle handle)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, false);
 
     ExposedCarlaPipeClient* const pipe = (ExposedCarlaPipeClient*)handle;
-    const bool ret = pipe->flushMessages();
+    const bool ret = pipe->syncMessages();
     pipe->unlockPipe();
     return ret;
 }
@@ -207,6 +207,18 @@ void carla_pipe_client_destroy(CarlaPipeClientHandle handle)
     ExposedCarlaPipeClient* const pipe = (ExposedCarlaPipeClient*)handle;
     pipe->closePipeClient();
     delete pipe;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+bool carla_pipe_client_flush(CarlaPipeClientHandle handle)
+{
+    return carla_pipe_client_sync(handle);
+}
+
+bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handle)
+{
+    return carla_pipe_client_sync_and_unlock(handle);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

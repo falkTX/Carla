@@ -959,7 +959,7 @@ bool CarlaPipeCommon::writeEmptyMessage() const noexcept
     return _writeMsgBuffer("\n", 1);
 }
 
-bool CarlaPipeCommon::flushMessages() const noexcept
+bool CarlaPipeCommon::syncMessages() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
@@ -991,7 +991,7 @@ bool CarlaPipeCommon::writeErrorMessage(const char* const error) const noexcept
     if (! writeAndFixMessage(error))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1021,7 +1021,7 @@ bool CarlaPipeCommon::writeControlMessage(const uint32_t index, const float valu
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1039,7 +1039,7 @@ bool CarlaPipeCommon::writeConfigureMessage(const char* const key, const char* c
     if (! writeAndFixMessage(value))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1057,7 +1057,7 @@ bool CarlaPipeCommon::writeProgramMessage(const uint32_t index) const noexcept
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1083,7 +1083,7 @@ bool CarlaPipeCommon::writeProgramMessage(const uint8_t channel, const uint32_t 
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1105,7 +1105,7 @@ bool CarlaPipeCommon::writeMidiProgramMessage(const uint32_t bank, const uint32_
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1123,7 +1123,7 @@ bool CarlaPipeCommon::writeReloadProgramsMessage(const int32_t index) const noex
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1157,7 +1157,7 @@ bool CarlaPipeCommon::writeMidiNoteMessage(const bool onOff, const uint8_t chann
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1191,7 +1191,7 @@ bool CarlaPipeCommon::writeLv2AtomMessage(const uint32_t index, const LV2_Atom* 
     if (! writeAndFixMessage(base64atom.buffer()))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1220,7 +1220,7 @@ bool CarlaPipeCommon::writeLv2ParameterMessage(const char* const uri, const floa
     if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1248,7 +1248,7 @@ bool CarlaPipeCommon::writeLv2UridMessage(const uint32_t urid, const char* const
     if (! writeAndFixMessage(uri))
         return false;
 
-    flushMessages();
+    syncMessages();
     return true;
 }
 
@@ -1778,7 +1778,7 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
         if (pData->pipeSend != INVALID_PIPE_VALUE && ! pData->pipeClosed)
         {
             if (_writeMsgBuffer("__carla-quit__\n", 15))
-                flushMessages();
+                syncMessages();
         }
 
         waitForProcessToStopOrKillIt(pData->processInfo.hProcess, timeOutMilliseconds);
@@ -1796,7 +1796,7 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
         if (pData->pipeSend != INVALID_PIPE_VALUE && ! pData->pipeClosed)
         {
             if (_writeMsgBuffer("__carla-quit__\n", 15))
-                flushMessages();
+                syncMessages();
         }
 
         waitForChildToStopOrKillIt(pData->pid, timeOutMilliseconds);
@@ -1847,7 +1847,7 @@ void CarlaPipeServer::writeShowMessage() const noexcept
     if (! _writeMsgBuffer("show\n", 5))
         return;
 
-    flushMessages();
+    syncMessages();
 }
 
 void CarlaPipeServer::writeFocusMessage() const noexcept
@@ -1857,7 +1857,7 @@ void CarlaPipeServer::writeFocusMessage() const noexcept
     if (! _writeMsgBuffer("focus\n", 6))
         return;
 
-    flushMessages();
+    syncMessages();
 }
 
 void CarlaPipeServer::writeHideMessage() const noexcept
@@ -1867,7 +1867,7 @@ void CarlaPipeServer::writeHideMessage() const noexcept
     if (! _writeMsgBuffer("show\n", 5))
         return;
 
-    flushMessages();
+    syncMessages();
 }
 
 // -----------------------------------------------------------------------
@@ -1937,7 +1937,7 @@ bool CarlaPipeClient::initPipeClient(const char* argv[]) noexcept
     pData->clientClosingDown = false;
 
     if (writeMessage("\n", 1))
-        flushMessages();
+        syncMessages();
 
     return true;
 }
@@ -1977,7 +1977,7 @@ void CarlaPipeClient::writeExitingMessageAndWait() noexcept
         const CarlaMutexLocker cml(pData->writeLock);
 
         if (_writeMsgBuffer("exiting\n", 8))
-            flushMessages();
+            syncMessages();
     }
 
     // NOTE: no more messages are handled after this point

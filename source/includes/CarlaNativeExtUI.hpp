@@ -139,7 +139,7 @@ protected:
         if (! writeAndFixMessage(uiName))
             return;
 
-        flushMessages();
+        syncMessages();
     }
 
     bool uiMIDIEvent(const uint8_t size, const uint8_t data[]) override

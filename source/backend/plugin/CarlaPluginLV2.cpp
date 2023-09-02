@@ -584,7 +584,7 @@ public:
         if (! writeAndFixMessage(title))
             return;
 
-        flushMessages();
+        syncMessages();
     }
 
 protected:
@@ -1946,7 +1946,7 @@ public:
                     if (! fPipeServer.writeMessage("show\n", 5))
                         return;
 
-                    fPipeServer.flushMessages();
+                    fPipeServer.syncMessages();
                 }
 
 #ifndef BUILD_BRIDGE

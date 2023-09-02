@@ -413,78 +413,94 @@ CARLA_PLUGIN_EXPORT void carla_juce_cleanup(void);
 /* --------------------------------------------------------------------------------------------------------------------
  * pipes */
 
-/*!
- * TODO.
- */
 typedef void* CarlaPipeClientHandle;
 
 /*!
- * TODO.
+ * Callback for when a message has been received (in the context of carla_pipe_client_idle()).
+ * If extra data is required, use any of the carla_pipe_client_readlineblock* functions.
  */
 typedef void (*CarlaPipeCallbackFunc)(void* ptr, const char* msg);
 
 /*!
- * TODO.
+ * Create and connect to pipes as used by a server.
+ * @a argv must match the arguments set the by server.
  */
-CARLA_PLUGIN_EXPORT CarlaPipeClientHandle carla_pipe_client_new(const char* argv[], CarlaPipeCallbackFunc callbackFunc, void* callbackPtr);
+CARLA_PLUGIN_EXPORT CarlaPipeClientHandle carla_pipe_client_new(const char* argv[],
+                                                                CarlaPipeCallbackFunc callbackFunc,
+                                                                void* callbackPtr);
 
 /*!
- * TODO.
+ * Check the pipe for new messages and send them to the callback function.
  */
 CARLA_PLUGIN_EXPORT void carla_pipe_client_idle(CarlaPipeClientHandle handle);
 
 /*!
- * TODO.
+ * Check if the pipe is running.
  */
 CARLA_PLUGIN_EXPORT bool carla_pipe_client_is_running(CarlaPipeClientHandle handle);
 
 /*!
- * TODO.
+ * Lock the pipe write mutex.
  */
 CARLA_PLUGIN_EXPORT void carla_pipe_client_lock(CarlaPipeClientHandle handle);
 
 /*!
- * TODO.
+ * Unlock the pipe write mutex.
  */
 CARLA_PLUGIN_EXPORT void carla_pipe_client_unlock(CarlaPipeClientHandle handle);
 
 /*!
- * TODO.
+ * Read the next line as a string.
  */
 CARLA_PLUGIN_EXPORT const char* carla_pipe_client_readlineblock(CarlaPipeClientHandle handle, uint timeout);
 
 /*!
- * Extras.
- * TODO.
+ * Read the next line as a boolean.
  */
 CARLA_PLUGIN_EXPORT bool carla_pipe_client_readlineblock_bool(CarlaPipeClientHandle handle, uint timeout);
+
+/*!
+ * Read the next line as an integer.
+ */
 CARLA_PLUGIN_EXPORT int carla_pipe_client_readlineblock_int(CarlaPipeClientHandle handle, uint timeout);
+
+/*!
+ * Read the next line as a floating point number (double precision).
+ */
 CARLA_PLUGIN_EXPORT double carla_pipe_client_readlineblock_float(CarlaPipeClientHandle handle, uint timeout);
 
 /*!
- * TODO.
+ * Write a valid message.
+ * A valid message has only one '\n' character and it's at the end.
  */
 CARLA_PLUGIN_EXPORT bool carla_pipe_client_write_msg(CarlaPipeClientHandle handle, const char* msg);
 
 /*!
- * TODO.
+ * Write and fix a message.
  */
 CARLA_PLUGIN_EXPORT bool carla_pipe_client_write_and_fix_msg(CarlaPipeClientHandle handle, const char* msg);
 
 /*!
- * TODO.
+ * Sync all messages currently in cache.
+ * This call will forcely write any messages in cache to any relevant IO.
  */
-CARLA_PLUGIN_EXPORT bool carla_pipe_client_flush(CarlaPipeClientHandle handle);
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_sync(CarlaPipeClientHandle handle);
 
 /*!
- * TODO.
+ * Convenience call for doing both sync and unlock in one-go.
  */
-CARLA_PLUGIN_EXPORT bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handle);
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_sync_and_unlock(CarlaPipeClientHandle handle);
 
 /*!
- * TODO.
+ * Destroy a previously created pipes instance.
  */
 CARLA_PLUGIN_EXPORT void carla_pipe_client_destroy(CarlaPipeClientHandle handle);
+
+/* DEPRECATED use carla_pipe_client_sync */
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_flush(CarlaPipeClientHandle handle);
+
+/* DEPRECATED use carla_pipe_client_sync_and_unlock */
+CARLA_PLUGIN_EXPORT bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handle);
 
 /* --------------------------------------------------------------------------------------------------------------------
  * system stuff */

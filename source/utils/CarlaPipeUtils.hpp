@@ -175,9 +175,10 @@ public:
     bool writeEmptyMessage() const noexcept;
 
     /*!
-     * Flush all messages currently in cache.
+     * Sync all messages currently in cache.
+     * This call will forcely write any messages in cache to any relevant IO.
      */
-    bool flushMessages() const noexcept;
+    bool syncMessages() const noexcept;
 
     // -------------------------------------------------------------------
     // write prepared messages, no lock or flush needed (done internally)
