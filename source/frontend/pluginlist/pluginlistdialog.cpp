@@ -745,6 +745,7 @@ struct PluginListDialog::PrivateData {
             return false;
           #endif // CARLA_OS_WIN
         }
+       #endif // CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
 
         void restart()
         {
@@ -756,7 +757,6 @@ struct PluginListDialog::PrivateData {
             tool += ".exe";
            #endif
         }
-       #endif // CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     } discovery;
 
     PluginPaths paths;
