@@ -731,6 +731,7 @@ struct PluginListDialog::PrivateData {
             }
            #endif
 
+            if (btype != BINARY_WIN32)
             {
                 btype = BINARY_WIN32;
                 ptype = PLUGIN_INTERNAL;
