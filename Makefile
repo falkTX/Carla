@@ -533,6 +533,7 @@ endif
 		source/utils/CarlaBridgeUtils.hpp \
 		source/utils/CarlaMacUtils.hpp \
 		source/utils/CarlaMathUtils.hpp \
+		source/utils/CarlaMemUtils.hpp \
 		source/utils/CarlaMutex.hpp \
 		source/utils/CarlaRingBuffer.hpp \
 		source/utils/CarlaProcessUtils.hpp \

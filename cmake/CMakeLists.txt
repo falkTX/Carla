@@ -1335,6 +1335,7 @@ if(${CARLA_BUILD_FRAMEWORKS})
     ../source/utils/CarlaBridgeUtils.hpp
     ../source/utils/CarlaMacUtils.hpp
     ../source/utils/CarlaMathUtils.hpp
+    ../source/utils/CarlaMemUtils.hpp
     ../source/utils/CarlaMutex.hpp
     ../source/utils/CarlaRingBuffer.hpp
     ../source/utils/CarlaProcessUtils.hpp
@@ -1420,6 +1421,7 @@ set_property(TARGET carla-headers-utils
     ../source/utils/CarlaBridgeUtils.hpp
     ../source/utils/CarlaMacUtils.hpp
     ../source/utils/CarlaMathUtils.hpp
+    ../source/utils/CarlaMemUtils.hpp
     ../source/utils/CarlaMutex.hpp
     ../source/utils/CarlaRingBuffer.hpp
     ../source/utils/CarlaProcessUtils.hpp
