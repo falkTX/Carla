@@ -1265,7 +1265,7 @@ private:
 //=====================================================================================================================
 namespace
 {
-   #ifdef CARLA_OS_LINUX
+   #ifdef __GLIBC__
     typedef struct stat64 water_statStruct;
     #define WATER_STAT    stat64
    #else
