@@ -341,6 +341,7 @@ struct PluginPaths {
         {
             vst2 += ":" + winePrefix + "/drive_c/Program Files/VstPlugins";
             vst2 += ":" + winePrefix + "/drive_c/Program Files/Steinberg/VstPlugins";
+            vst2 += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST2";
             vst3 += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3";
             clap += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP";
 
@@ -349,6 +350,7 @@ struct PluginPaths {
             {
                 vst2 += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins";
                 vst2 += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VstPlugins";
+                vst2 += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST2";
                 vst3 += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3";
                 clap += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/CLAP";
             }
