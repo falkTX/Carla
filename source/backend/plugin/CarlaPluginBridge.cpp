@@ -289,7 +289,7 @@ protected:
             if (fWinePrefix.isNotEmpty())
             {
                 carla_setenv("WINEDEBUG", "-all");
-                carla_setenv("WINEPREFIX", fWinePrefix.toRawUTF8());
+                carla_setenv("WINEPREFIX", fWinePrefix.buffer());
 
                 if (options.wine.rtPrio)
                 {
@@ -306,7 +306,7 @@ protected:
                     carla_setenv("WINE_SVR_RT", strBuf);
 
                     carla_stdout("Using WINEPREFIX '%s', with base RT prio %i and server RT prio %i",
-                                fWinePrefix.toRawUTF8(), options.wine.baseRtPrio, options.wine.serverRtPrio);
+                                 fWinePrefix.buffer(), options.wine.baseRtPrio, options.wine.serverRtPrio);
                 }
                 else
                 {
@@ -318,7 +318,7 @@ protected:
                     carla_unsetenv("WINE_RT_PRIO");
                     carla_unsetenv("WINE_SVR_RT");
 
-                    carla_stdout("Using WINEPREFIX '%s', without RT priorities", fWinePrefix.toRawUTF8());
+                    carla_stdout("Using WINEPREFIX '%s', without RT priorities", fWinePrefix.buffer());
                 }
             }
 #endif
@@ -394,9 +394,9 @@ private:
     String fBridgeBinary;
     String fLabel;
     String fShmIds;
-#ifndef CARLA_OS_WIN
-    String fWinePrefix;
-#endif
+   #ifndef CARLA_OS_WIN
+    CarlaString fWinePrefix;
+   #endif
 
     CarlaScopedPointer<ChildProcess> fProcess;
 
@@ -2540,15 +2540,15 @@ public:
                     if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
                     {
                         const StringArray driveLetterSplit(StringArray::fromTokens(realBigValueFilePath, ":/", ""));
-                        carla_stdout("big value save path BEFORE => %s", realBigValueFilePath.toRawUTF8());
+                        carla_stdout("big value save path BEFORE => '%s' | using wineprefix '%s'", realBigValueFilePath.toRawUTF8(), fWinePrefix.buffer());
 
-                        realBigValueFilePath  = fWinePrefix;
+                        realBigValueFilePath  = fWinePrefix.buffer();
                         realBigValueFilePath += "/drive_";
                         realBigValueFilePath += driveLetterSplit[0].toLowerCase();
                         realBigValueFilePath += driveLetterSplit[1];
 
                         realBigValueFilePath  = realBigValueFilePath.replace("\\", "/");
-                        carla_stdout("big value save path AFTER => %s", realBigValueFilePath.toRawUTF8());
+                        carla_stdout("big value save path AFTER => '%s'", realBigValueFilePath.toRawUTF8());
                     }
 #endif
 
@@ -2588,15 +2588,15 @@ public:
                 if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
                 {
                     const StringArray driveLetterSplit(StringArray::fromTokens(realChunkFilePath, ":/", ""));
-                    carla_stdout("chunk save path BEFORE => %s", realChunkFilePath.toRawUTF8());
+                    carla_stdout("chunk save path BEFORE => '%s' | using wineprefix '%s'", realChunkFilePath.toRawUTF8(), fWinePrefix.buffer());
 
-                    realChunkFilePath  = fWinePrefix;
+                    realChunkFilePath  = fWinePrefix.buffer();
                     realChunkFilePath += "/drive_";
                     realChunkFilePath += driveLetterSplit[0].toLowerCase();
                     realChunkFilePath += driveLetterSplit[1];
 
                     realChunkFilePath  = realChunkFilePath.replace("\\", "/");
-                    carla_stdout("chunk save path AFTER => %s", realChunkFilePath.toRawUTF8());
+                    carla_stdout("chunk save path AFTER => '%s'", realChunkFilePath.toRawUTF8());
                 }
 #endif
 
@@ -2778,20 +2778,24 @@ public:
         {
             const EngineOptions& engineOptions(pData->engine->getOptions());
 
-            if (engineOptions.wine.autoPrefix)
-                fWinePrefix = findWinePrefix(pData->filename);
+            water::String winePrefix;
 
-            if (fWinePrefix.isEmpty())
+            if (engineOptions.wine.autoPrefix)
+                winePrefix = findWinePrefix(pData->filename);
+
+            if (winePrefix.isEmpty())
             {
                 const char* const envWinePrefix(std::getenv("WINEPREFIX"));
 
                 if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
-                    fWinePrefix = envWinePrefix;
+                    winePrefix = envWinePrefix;
                 else if (engineOptions.wine.fallbackPrefix != nullptr && engineOptions.wine.fallbackPrefix[0] != '\0')
-                    fWinePrefix = engineOptions.wine.fallbackPrefix;
+                    winePrefix = engineOptions.wine.fallbackPrefix;
                 else
-                    fWinePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
+                    winePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
             }
+
+            fWinePrefix = winePrefix.toRawUTF8();
         }
 #endif
 
@@ -2808,9 +2812,9 @@ public:
             std::strncpy(shmIdsStr+6*3, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
 
             fBridgeThread.setData(
-#ifndef CARLA_OS_WIN
-                                  fWinePrefix.toRawUTF8(),
-#endif
+                                 #ifndef CARLA_OS_WIN
+                                  fWinePrefix,
+                                 #endif
                                   binaryArchName, bridgeBinary, label, shmIdsStr);
         }
 
@@ -2930,9 +2934,9 @@ private:
     BridgeNonRtClientControl fShmNonRtClientControl;
     BridgeNonRtServerControl fShmNonRtServerControl;
 
-#ifndef CARLA_OS_WIN
-    String fWinePrefix;
-#endif
+   #ifndef CARLA_OS_WIN
+    CarlaString fWinePrefix;
+   #endif
 
     class ReceivingParamText {
     public:
