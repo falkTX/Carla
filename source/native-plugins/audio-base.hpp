@@ -362,10 +362,11 @@ public:
             }
 
             // within bounds, skip frames until we reach the end of the memory pool
-            if (fRingBufferR.getReadableDataSize() >= numPoolFrames * sizeof(float))
+            const uint32_t framesUpToPoolEnd = numPoolFrames - fRingBufferFramePos;
+            if (fRingBufferR.getReadableDataSize() / sizeof(float) >= framesUpToPoolEnd)
             {
-                fRingBufferL.skipRead(numPoolFrames * sizeof(float));
-                fRingBufferR.skipRead(numPoolFrames * sizeof(float));
+                fRingBufferL.skipRead(framesUpToPoolEnd * sizeof(float));
+                fRingBufferR.skipRead(framesUpToPoolEnd * sizeof(float));
                 fRingBufferFramePos = numPoolFrames;
             }
 
@@ -383,9 +384,9 @@ public:
                 carla_zeroFloats(outR, frames);
                 carla_zeroFloats(playCV, frames);
 
-                // wait until there previous relocation is done
+                // wait until the previous relocation is done
                 if (fNextFileReadPos == -1)
-                    fNextFileReadPos = framePos;
+                    fNextFileReadPos = framePos - frames;
 
                 return true;
             }
@@ -408,8 +409,8 @@ public:
             return framePos < fTotalResampledFrames;
         }
 
-        fRingBufferL.readCustomData(outL, sizeof(float) * usableFrames);
-        fRingBufferR.readCustomData(outR, sizeof(float) * usableFrames);
+        fRingBufferL.readCustomData(outL, usableFrames * sizeof(float));
+        fRingBufferR.readCustomData(outR, usableFrames * sizeof(float));
         carla_fillFloatsWithSingleValue(playCV, 10.f, usableFrames);
 
         fRingBufferFramePos += usableFrames;

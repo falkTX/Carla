@@ -172,7 +172,7 @@ public:
 
         const uint32_t wrap = fBuffer->tail > fBuffer->wrtn ? 0 : fBuffer->size;
 
-        return wrap + fBuffer->tail - fBuffer->wrtn;
+        return wrap + fBuffer->tail - fBuffer->wrtn - 1;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -448,7 +448,7 @@ protected:
         const uint32_t wrtn = fBuffer->wrtn;
         const uint32_t wrap = tail > wrtn ? 0 : fBuffer->size;
 
-        if (size > wrap + tail - wrtn)
+        if (size >= wrap + tail - wrtn)
         {
             if (! fErrorWriting)
             {
