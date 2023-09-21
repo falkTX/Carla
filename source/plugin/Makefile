@@ -353,7 +353,7 @@ $(BINDIR)/carla-%.lv2/manifest.ttl: $(DATADIR)/lv2-bundles/%/*.ttl
 $(BINDIR)/carla-audiogain.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.audiogain.o $(MODULEDIR)/native-plugins_audiogain.a
 	-@mkdir -p $(BINDIR)/carla-audiogain.lv2
 	@echo "Linking carla-audiogain.lv2/carla$(LIB_EXT)"
-	$(SILENT)$(CXX) $^ $(BUILD_CXX_FLAGS) $(SHARED) $(SYMBOLS_LV2) $(BUNDLE_LIBS) $(LINK_FLAGS) -ldl -o $@
+	$(SILENT)$(CXX) $^ $(BUILD_CXX_FLAGS) $(SHARED) $(SYMBOLS_LV2) $(BUNDLE_LIBS) $(LINK_FLAGS) -o $@
 
 $(BINDIR)/carla-files.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2-bundles.cpp.files.o $(MODULEDIR)/native-plugins_files.a
 	-@mkdir -p $(BINDIR)/carla-files.lv2
