@@ -3554,7 +3554,7 @@ def runHostWithoutUI(host):
     # Init engine
 
     audioDriver = setEngineSettings(host, oscPort)
-    if not host.engine_init(audioDriver, "Carla"):
+    if not host.engine_init(audioDriver, CARLA_CLIENT_NAME or "Carla"):
         print("Engine failed to initialize, possible reasons:\n%s" % host.get_last_error())
         sys.exit(1)
 
