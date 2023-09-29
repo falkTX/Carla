@@ -2339,7 +2339,7 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerParameterData2: {
-                // uint/index, uint/size, str[] (name), uint/size, str[] (unit)
+                // uint/index, uint/size, str[] (name), uint/size, str[] (symbol), uint/size, str[] (unit)
                 const uint32_t index = fShmNonRtServerControl.readUInt();
 
                 // name
