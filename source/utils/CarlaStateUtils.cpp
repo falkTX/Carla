@@ -249,7 +249,7 @@ void CarlaStateSave::clear() noexcept
     }
 
     uniqueId = 0;
-    options  = 0x0;
+    options  = PLUGIN_OPTIONS_NULL;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     active = false;

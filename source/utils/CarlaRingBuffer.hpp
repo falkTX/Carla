@@ -155,7 +155,7 @@ public:
 
         const uint32_t wrap((fBuffer->tail > fBuffer->wrtn) ? 0 : fBuffer->size);
 
-        return wrap + fBuffer->tail - fBuffer->wrtn;
+        return wrap + fBuffer->tail - fBuffer->wrtn - 1;
     }
 
     // -------------------------------------------------------------------
