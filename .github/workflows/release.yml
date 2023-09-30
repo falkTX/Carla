@@ -53,7 +53,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            path: ./*.dmg
+            ./*.dmg
 
   # linux with win32 cross-compilation
   win32:
@@ -116,7 +116,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            path: ./*.zip
+            ./*.zip
 
   # linux with win64 cross-compilation
   win64:
@@ -180,4 +180,4 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            path: ./*.zip
+            ./*.zip
