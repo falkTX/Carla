@@ -7745,7 +7745,7 @@ private:
         carla_debug("carla_lv2_state_map_to_abstract_path_real(%p, \"%s\")", handle, absolute_path);
 
         // handle invalid empty paths the same way as lilv
-        if (absolute_path[0] != '\0')
+        if (absolute_path[0] == '\0')
             return strdup("");
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(false, absolute_path);
@@ -7758,7 +7758,7 @@ private:
         carla_debug("carla_lv2_state_map_to_abstract_path_tmp(%p, \"%s\")", handle, absolute_path);
 
         // handle invalid empty paths the same way as lilv
-        if (absolute_path[0] != '\0')
+        if (absolute_path[0] == '\0')
             return strdup("");
 
         return ((CarlaPluginLV2*)handle)->handleStateMapToAbstractPath(true, absolute_path);
