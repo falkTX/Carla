@@ -1017,6 +1017,8 @@ private:
         return loop->posixfds.append(posixfd) ? V3_OK : V3_NOMEM;
       #else
         return V3_NOT_IMPLEMENTED;
+        // unused
+        (void)self; (void)handler; (void)fd;
       #endif
     }
 
@@ -1043,6 +1045,8 @@ private:
         return V3_INVALID_ARG;
        #else
         return V3_NOT_IMPLEMENTED;
+        // unused
+        (void)self; (void)handler;
        #endif
     }
 

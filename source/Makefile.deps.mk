@@ -455,7 +455,7 @@ ifneq ($(USE_GLES2)$(USE_GLES3),true)
 DGL_LIBS   = -sLEGACY_GL_EMULATION -sGL_UNSAFE_OPTS=0
 endif
 else ifeq ($(WINDOWS),true)
-DGL_LIBS   = -lopengl32 -lgdi32
+DGL_LIBS   = -lcomdlg32 -ldwmapi -lopengl32 -lgdi32
 else
 DGL_FLAGS += -DHAVE_X11 -DHAVE_XCURSOR -DHAVE_XEXT -DHAVE_XSYNC -DHAVE_XRANDR
 DGL_FLAGS += $(shell $(PKG_CONFIG) --cflags gl x11 xcursor xext xrandr)
