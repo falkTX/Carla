@@ -6154,16 +6154,24 @@ public:
 
     // -------------------------------------------------------------------
 
-    LV2_ControlInputPort_Change_Status handleCtrlInPortChangeReq(const uint32_t index, const float value)
+    LV2_ControlInputPort_Change_Status handleCtrlInPortChangeReq(const uint32_t rindex, const float value)
     {
-        CARLA_SAFE_ASSERT_RETURN(index < fRdfDescriptor->PortCount, LV2_CONTROL_INPUT_PORT_CHANGE_ERR_INVALID_INDEX);
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr, LV2_CONTROL_INPUT_PORT_CHANGE_ERR_UNKNOWN);
 
-        const float fixedValue = pData->param.getFixedValue(index, value);
-        fParamBuffers[index] = fixedValue;
+        for (uint32_t i=0; i < pData->param.count; ++i)
+        {
+            if (pData->param.data[i].rindex != static_cast<int32_t>(rindex))
+                continue;
 
-        CarlaPlugin::setParameterValueRT(index, fixedValue, 0, true);
-        return LV2_CONTROL_INPUT_PORT_CHANGE_SUCCESS;
+            const uint32_t index = i;
+            const float fixedValue = pData->param.getFixedValue(index, value);
+            fParamBuffers[index] = fixedValue;
+
+            CarlaPlugin::setParameterValueRT(index, fixedValue, 0, true);
+            return LV2_CONTROL_INPUT_PORT_CHANGE_SUCCESS;
+        }
+
+        return LV2_CONTROL_INPUT_PORT_CHANGE_ERR_INVALID_INDEX;
     }
 
     // -------------------------------------------------------------------
