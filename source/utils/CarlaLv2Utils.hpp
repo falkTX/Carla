@@ -72,6 +72,8 @@
 #include "lv2/lv2_programs.h"
 #include "lv2/lv2_rtmempool.h"
 
+#include "lv2/control-input-port-change-request.h"
+
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
 #include "lilv/config/lilv_config.h"
@@ -3183,6 +3185,8 @@ bool is_lv2_feature_supported(const LV2_URI uri) noexcept
     if (std::strcmp(uri, LV2_BUF_SIZE__fixedBlockLength) == 0)
         return true;
     if (std::strcmp(uri, LV2_BUF_SIZE__powerOf2BlockLength) == 0)
+        return true;
+    if (std::strcmp(uri, LV2_CONTROL_INPUT_PORT_CHANGE_REQUEST_URI) == 0)
         return true;
     if (std::strcmp(uri, LV2_CORE__hardRTCapable) == 0)
         return true;

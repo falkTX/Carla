@@ -188,6 +188,7 @@ enum CarlaLv2Features {
     kFeatureIdWorker,
     kFeatureIdInlineDisplay,
     kFeatureIdMidnam,
+    kFeatureIdCtrlInPortChangeReq,
     kFeatureCountPlugin,
     // UI features
     kFeatureIdUiDataAccess = kFeatureCountPlugin,
@@ -834,6 +835,9 @@ public:
 
         if (fFeatures[kFeatureIdMidnam] != nullptr && fFeatures[kFeatureIdMidnam]->data != nullptr)
             delete (LV2_Midnam*)fFeatures[kFeatureIdMidnam]->data;
+
+        if (fFeatures[kFeatureIdCtrlInPortChangeReq] != nullptr && fFeatures[kFeatureIdCtrlInPortChangeReq]->data != nullptr)
+            delete (LV2_ControlInputPort_Change_Request*)fFeatures[kFeatureIdCtrlInPortChangeReq]->data;
 
         for (uint32_t i=0; i < kFeatureCountAll; ++i)
         {
@@ -6150,6 +6154,20 @@ public:
 
     // -------------------------------------------------------------------
 
+    LV2_ControlInputPort_Change_Status handleCtrlInPortChangeReq(const uint32_t index, const float value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < fRdfDescriptor->PortCount, LV2_CONTROL_INPUT_PORT_CHANGE_ERR_INVALID_INDEX);
+        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr, LV2_CONTROL_INPUT_PORT_CHANGE_ERR_UNKNOWN);
+
+        const float fixedValue = pData->param.getFixedValue(index, value);
+        fParamBuffers[index] = fixedValue;
+
+        CarlaPlugin::setParameterValueRT(index, fixedValue, 0, true);
+        return LV2_CONTROL_INPUT_PORT_CHANGE_SUCCESS;
+    }
+
+    // -------------------------------------------------------------------
+
     void handleExternalUIClosed()
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EXTERNAL,);
@@ -6791,6 +6809,10 @@ public:
         midnam->handle = this;
         midnam->update = carla_lv2_midnam_update;
 
+        LV2_ControlInputPort_Change_Request* const portChangeReq = new LV2_ControlInputPort_Change_Request;
+        portChangeReq->handle = this;
+        portChangeReq->request_change = carla_lv2_ctrl_in_port_change_req;
+
         // ---------------------------------------------------------------
         // initialize features (part 2)
 
@@ -6867,6 +6889,9 @@ public:
 
         fFeatures[kFeatureIdMidnam]->URI  = LV2_MIDNAM__update;
         fFeatures[kFeatureIdMidnam]->data = midnam;
+
+        fFeatures[kFeatureIdCtrlInPortChangeReq]->URI  = LV2_CONTROL_INPUT_PORT_CHANGE_REQUEST_URI;
+        fFeatures[kFeatureIdCtrlInPortChangeReq]->data = portChangeReq;
 
         // ---------------------------------------------------------------
         // initialize features (part 3)
@@ -8174,6 +8199,18 @@ private:
         carla_stdout("carla_lv2_midnam_update(%p)", handle);
 
         ((CarlaPluginLV2*)handle)->handleMidnamUpdate();
+    }
+
+    // -------------------------------------------------------------------
+    // ControlInputPort change request Feature
+
+    static LV2_ControlInputPort_Change_Status carla_lv2_ctrl_in_port_change_req(
+        LV2_ControlInputPort_Change_Request_Handle handle, uint32_t index, float value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2_CONTROL_INPUT_PORT_CHANGE_ERR_UNKNOWN);
+        carla_stdout("carla_lv2_ctrl_in_port_change_req(%p, %u, %f)", handle, index, value);
+
+        return ((CarlaPluginLV2*)handle)->handleCtrlInPortChangeReq(index, value);
     }
 
     // -------------------------------------------------------------------
