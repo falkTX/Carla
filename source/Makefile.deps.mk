@@ -55,6 +55,18 @@ endif # BSD
 # ---------------------------------------------------------------------------------------------------------------------
 # Auto-detect the processor
 
+COMPILER_VERSION := $(shell $(CC) --version)
+
+ifneq (,$(findstring clang,$(COMPILER_VERSION)))
+CLANG = true
+endif
+ifneq (,$(findstring gcc,$(COMPILER_VERSION)))
+GCC = true
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Auto-detect the processor
+
 TARGET_PROCESSOR := $(firstword $(subst -, ,$(TARGET_MACHINE)))
 
 ifneq (,$(filter i%86,$(TARGET_PROCESSOR)))
