@@ -2158,7 +2158,7 @@ public:
 
             for (uint32_t i=0; i < numSysEvents; ++i)
             {
-                EngineEvent& event(fInputEvents.defaultPort->port->getEvent(i));
+                EngineEvent& event(pData->event.portIn->getEvent(i));
 
                 uint32_t eventTime = event.time;
                 CARLA_SAFE_ASSERT_UINT2_CONTINUE(eventTime < frames, eventTime, frames);
