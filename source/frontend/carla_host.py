@@ -169,6 +169,8 @@ class HostWindow(QMainWindow):
         self.fCurrentlyRemovingAllPlugins = False
         self.fHasLoadedLv2Plugins = False
 
+        self.fRecentFileList = []
+
         self.fLastTransportBPM   = 0.0
         self.fLastTransportFrame = 0
         self.fLastTransportState = False
@@ -249,6 +251,7 @@ class HostWindow(QMainWindow):
             if self.host.isControl:
                 self.ui.act_file_new.setVisible(False)
                 self.ui.act_file_open.setVisible(False)
+                self.ui.menu_Open_Recent.setVisible(False)
                 self.ui.act_file_save_as.setVisible(False)
                 self.ui.tabUtils.removeTab(0)
             else:
@@ -275,6 +278,7 @@ class HostWindow(QMainWindow):
             self.ui.act_file_new.setEnabled(False)
 
         self.ui.act_file_open.setEnabled(False)
+        self.ui.menu_Open_Recent.setEnabled(False)
         self.ui.act_file_save.setEnabled(False)
         self.ui.act_file_save_as.setEnabled(False)
         self.ui.act_engine_stop.setEnabled(False)
@@ -438,6 +442,7 @@ class HostWindow(QMainWindow):
         # Load Settings
 
         self.loadSettings(True)
+        self.updateRecentFiles()
 
         # ----------------------------------------------------------------------------------------------------
         # Set-up Canvas
@@ -460,6 +465,7 @@ class HostWindow(QMainWindow):
             self.ui.act_file_refresh.setIcon(getIcon('view-refresh', 16, 'svgz'))
             self.ui.act_file_new.setIcon(getIcon('document-new', 16, 'svgz'))
             self.ui.act_file_open.setIcon(getIcon('document-open', 16, 'svgz'))
+            self.ui.menu_Open_Recent.setIcon(getIcon('document-open', 16, 'svgz'))
             self.ui.act_file_save.setIcon(getIcon('document-save', 16, 'svgz'))
             self.ui.act_file_save_as.setIcon(getIcon('document-save-as', 16, 'svgz'))
             self.ui.act_file_quit.setIcon(getIcon('application-exit', 16, 'svgz'))
@@ -897,6 +903,70 @@ class HostWindow(QMainWindow):
             self.loadProjectNow()
             self.fProjectFilename = filenameOld
 
+        self.addToRecentFilesList(self.fProjectFilename)
+    
+    def addToRecentFilesList(self, filePath):
+        # FIXME: move this constant elsewhere? or add it to global settings?
+        MAX_RECENT_FILES = 4
+        settings = QSafeSettings()
+        recentFileList = settings.value("RecentFileList", [], list)
+
+        # TODO: reorder the list so last used are listed first?
+        if filePath not in recentFileList:
+            recentFileList.insert(0, filePath)
+            if len(recentFileList) > MAX_RECENT_FILES:
+                recentFileList.pop()
+
+        settings.setValue("RecentFileList", recentFileList)
+        del settings
+        self.updateRecentFiles()
+
+    def updateRecentFiles(self):
+        settings = QSafeSettings()
+        recentFileList = settings.value("RecentFileList", [], list)
+        del settings
+
+        menu = self.ui.menu_Open_Recent
+        menu.clear()
+
+        for f in recentFileList:
+            act = menu.addAction(f)
+            act.triggered.connect(self.slot_fileMenuOpenRecent)
+        act = menu.addSeparator()
+        act = menu.addAction("Clear")
+        act.triggered.connect(self.slot_clearRecentFiles)
+
+    @pyqtSlot()
+    def slot_clearRecentFiles(self):
+        menu = self.ui.menu_Open_Recent
+        menu.clear()
+        settings = QSafeSettings()
+        settings.setValue("RecentFileList", [])
+        del settings
+
+    @pyqtSlot()
+    def slot_fileMenuOpenRecent(self):
+        sender = self.sender()
+        filename = sender.text()
+
+        newFile = True
+
+        if self.fPluginCount > 0:
+            ask = QMessageBox.question(self, self.tr("Question"), self.tr("There are some plugins loaded, do you want to remove them now?"),
+                                                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            newFile = (ask == QMessageBox.Yes)
+
+        if newFile:
+            self.pluginRemoveAll()
+            self.fProjectFilename = filename
+            self.setProperWindowTitle()
+            self.loadProjectNow()
+        else:
+            filenameOld = self.fProjectFilename
+            self.fProjectFilename = filename
+            self.loadProjectNow()
+            self.fProjectFilename = filenameOld
+
     @pyqtSlot()
     def slot_fileSave(self, saveAs=False):
         if self.fProjectFilename and not saveAs:
@@ -916,6 +986,7 @@ class HostWindow(QMainWindow):
             self.fProjectFilename = filename
             self.setProperWindowTitle()
 
+        self.addToRecentFilesList(filename)
         self.saveProjectNow()
 
     @pyqtSlot()
@@ -1096,6 +1167,7 @@ class HostWindow(QMainWindow):
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(True)
+            self.ui.menu_Open_Recent.setEnabled(True)
             self.ui.act_file_save_as.setEnabled(True)
 
         self.ui.cb_transport_jack.setChecked(transportMode == ENGINE_TRANSPORT_MODE_JACK)
@@ -1139,6 +1211,7 @@ class HostWindow(QMainWindow):
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(False)
+            self.ui.act_file_open_recent.setEnabled(False)
             self.ui.act_file_save_as.setEnabled(False)
 
     @pyqtSlot(int, str)
