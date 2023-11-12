@@ -49,8 +49,8 @@ else()
   set(CARLA_USE_OSC_DEFAULT TRUE)
 endif()
 
-
 set(CARLA_BUILD_FRAMEWORKS FALSE CACHE BOOL "Build libraries as macOS frameworks")
+set(CARLA_BUILD_STATIC FALSE CACHE BOOL "Build static libraries")
 set(CARLA_ENABLE_JSFX TRUE CACHE BOOL "Enable JSFX")
 set(CARLA_USE_JACK ${CARLA_USE_JACK_DEFAULT} CACHE BOOL "Enable JACK")
 set(CARLA_USE_OSC ${CARLA_USE_OSC_DEFAULT} CACHE BOOL "Enable OSC")
@@ -58,6 +58,12 @@ set(CARLA_USE_OSC ${CARLA_USE_OSC_DEFAULT} CACHE BOOL "Enable OSC")
 if(${CARLA_BUILD_FRAMEWORKS} AND NOT APPLE)
   set(CARLA_BUILD_FRAMEWORKS FALSE)
   mark_as_advanced(CARLA_BUILD_FRAMEWORKS)
+endif()
+
+if(${CARLA_BUILD_STATIC})
+  set(CARLA_LIB_TYPE STATIC)
+else()
+  set(CARLA_LIB_TYPE SHARED)
 endif()
 
 if(${CARLA_BUILD_FRAMEWORKS})
@@ -158,6 +164,8 @@ function(set_common_target_properties TARGET)
   target_compile_definitions(${TARGET}
     PRIVATE
       BUILDING_CARLA
+      $<$<BOOL:${MSVC}>:_USE_MATH_DEFINES>
+    PUBLIC
       $<$<BOOL:${CARLA_ENABLE_JSFX}>:HAVE_YSFX>
       $<$<BOOL:${CARLA_USE_JACK}>:HAVE_JACK>
       $<$<BOOL:${FLUIDSYNTH_FOUND}>:HAVE_FLUIDSYNTH>
@@ -166,7 +174,6 @@ function(set_common_target_properties TARGET)
       $<$<BOOL:${PYQT_FOUND}>:HAVE_PYQT>
       $<$<BOOL:${SNDFILE_FOUND}>:HAVE_SNDFILE>
       $<$<BOOL:${X11_FOUND}>:HAVE_X11>
-      $<$<BOOL:${MSVC}>:_USE_MATH_DEFINES>
   )
 
   target_compile_options(${TARGET}
@@ -240,7 +247,7 @@ target_include_directories(carla-audio-decoder
 )
 
 target_link_libraries(carla-audio-decoder
-  PRIVATE
+  PUBLIC
     PkgConfig::SNDFILE
 )
 
@@ -268,7 +275,7 @@ target_include_directories(carla-jackbridge
 )
 
 target_link_libraries(carla-jackbridge
-  PRIVATE
+  PUBLIC
     ${CARLA_LIBDL}
     ${CARLA_LIBRT}
 )
@@ -418,6 +425,7 @@ target_link_libraries(carla-lilv
     carla-lilv_sord
     carla-lilv_sratom
     carla-lilv_lilv
+  PUBLIC
     ${CARLA_LIBDL}
     ${CARLA_LIBM}
     ${CARLA_LIBRT}
@@ -439,7 +447,7 @@ target_include_directories(carla-native-plugins
 )
 
 target_link_libraries(carla-native-plugins
-  PRIVATE
+  PUBLIC
     ${CARLA_PTHREADS}
 )
 
@@ -484,7 +492,7 @@ target_include_directories(carla-rtmempool
 )
 
 target_link_libraries(carla-rtmempool
-  PRIVATE
+  PUBLIC
     ${CARLA_LIBDL}
     ${CARLA_LIBRT}
     ${CARLA_PTHREADS}
@@ -513,6 +521,7 @@ target_include_directories(carla-sfzero
 target_link_libraries(carla-sfzero
   PRIVATE
     carla-audio-decoder
+  PUBLIC
     ${CARLA_PTHREADS}
 )
 
@@ -541,7 +550,7 @@ target_include_directories(carla-water
 )
 
 target_link_libraries(carla-water
-  PRIVATE
+  PUBLIC
     $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>>
     $<$<BOOL:${WIN32}>:comdlg32>
     $<$<BOOL:${WIN32}>:ole32>
@@ -576,7 +585,7 @@ target_include_directories(carla-water-files
 )
 
 target_link_libraries(carla-water-files
-  PRIVATE
+  PUBLIC
     $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,AppKit.framework>>
     $<$<BOOL:${WIN32}>:ole32>
     $<$<BOOL:${WIN32}>:winmm>
@@ -691,7 +700,7 @@ target_include_directories(carla-zita-resampler
 )
 
 target_link_libraries(carla-zita-resampler
-  PRIVATE
+  PUBLIC
     ${CARLA_PTHREADS}
 )
 
@@ -753,6 +762,7 @@ target_link_libraries(carla-bridge-native
     carla-water
     $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
     carla-zita-resampler
+  PUBLIC
     PkgConfig::FLUIDSYNTH
     PkgConfig::LIBLO
     PkgConfig::LIBMAGIC
@@ -824,6 +834,7 @@ target_link_libraries(carla-bridge-lv2-gtk2
   PRIVATE
     carla-lilv
     carla-water-files
+  PUBLIC
     PkgConfig::X11
     ${CARLA_PTHREADS}
 )
@@ -867,6 +878,7 @@ target_link_libraries(carla-bridge-lv2-gtk3
   PRIVATE
     carla-lilv
     carla-water-files
+  PUBLIC
     PkgConfig::X11
     ${CARLA_PTHREADS}
 )
@@ -904,6 +916,7 @@ target_link_libraries(carla-discovery-native
     carla-lilv
     carla-water-files
     $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
+  PUBLIC
     PkgConfig::FLUIDSYNTH
     ${CARLA_PTHREADS}
 )
@@ -914,10 +927,134 @@ target_sources(carla-discovery-native
 )
 
 #######################################################################################################################
+# carla host-plugin
+
+add_library(carla-host-plugin ${CARLA_LIB_TYPE})
+add_library(carla::host-plugin ALIAS carla-host-plugin)
+
+set_common_target_properties(carla-host-plugin)
+
+if(${CARLA_BUILD_FRAMEWORKS})
+  set(carla-host-plugin-public-headers
+    ../source/backend/CarlaBackend.h
+    ../source/backend/CarlaHost.h
+    ../source/backend/CarlaUtils.h
+  )
+
+  set_target_properties(carla-host-plugin
+    PROPERTIES
+      FRAMEWORK TRUE
+      FRAMEWORK_VERSION A
+      OUTPUT_NAME carla-host-plugin
+      PUBLIC_HEADER "${carla-host-plugin-public-headers}"
+      MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info-framework.plist.in"
+      MACOSX_FRAMEWORK_IDENTIFIER "studio.kx.carla.host-plugin"
+      MACOSX_FRAMEWORK_BUNDLE_VERSION "${CARLA_DATE}"
+      MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${PROJECT_SHORT_VERSION}"
+  )
+else()
+  set_target_properties(carla-host-plugin
+    PROPERTIES
+      OUTPUT_NAME carla_host-plugin
+      IMPORT_PREFIX lib
+      PREFIX lib
+  )
+endif()
+
+target_compile_definitions(carla-host-plugin
+  PRIVATE
+    CARLA_PLUGIN_BUILD
+    CARLA_LIB_EXT="${CMAKE_SHARED_LIBRARY_SUFFIX}"
+)
+
+# FIXME
+# target_compile_options(carla-host-plugin
+#   PRIVATE
+#     $<$<STREQUAL:${CMAKE_C_COMPILER_FRONTEND_VARIANT},GNU>:-Wno-unused-parameter>
+# )
+
+target_include_directories(carla-host-plugin
+  PRIVATE
+    ../source
+    ../source/modules
+  PUBLIC
+    ../source/backend
+    ../source/includes
+    ../source/utils
+)
+
+target_link_libraries(carla-host-plugin
+  PRIVATE
+    carla-jackbridge
+    carla-lilv
+    carla-native-plugins
+    carla-rtmempool
+    carla-sfzero
+    carla-water
+    $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
+    carla-zita-resampler
+  PUBLIC
+    PkgConfig::FLUIDSYNTH
+    PkgConfig::LIBLO
+    PkgConfig::LIBMAGIC
+    PkgConfig::X11
+    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
+    ${CARLA_PTHREADS}
+)
+
+target_sources(carla-host-plugin
+  PRIVATE
+    ../source/backend/engine/CarlaEngine.cpp
+    ../source/backend/engine/CarlaEngineClient.cpp
+    ../source/backend/engine/CarlaEngineData.cpp
+    ../source/backend/engine/CarlaEngineGraph.cpp
+    ../source/backend/engine/CarlaEngineInternal.cpp
+    ../source/backend/engine/CarlaEngineNative.cpp
+    ../source/backend/engine/CarlaEngineOsc.cpp
+    ../source/backend/engine/CarlaEngineOscHandlers.cpp
+    ../source/backend/engine/CarlaEngineOscSend.cpp
+    ../source/backend/engine/CarlaEnginePorts.cpp
+    ../source/backend/engine/CarlaEngineRunner.cpp
+    ../source/backend/plugin/CarlaPlugin.cpp
+    ../source/backend/plugin/CarlaPluginBridge.cpp
+    ../source/backend/plugin/CarlaPluginInternal.cpp
+    ../source/backend/plugin/CarlaPluginAU.cpp
+    ../source/backend/plugin/CarlaPluginCLAP.cpp
+    ../source/backend/plugin/CarlaPluginFluidSynth.cpp
+    ../source/backend/plugin/CarlaPluginJuce.cpp
+    ../source/backend/plugin/CarlaPluginJSFX.cpp
+    ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
+    ../source/backend/plugin/CarlaPluginLV2.cpp
+    ../source/backend/plugin/CarlaPluginNative.cpp
+    ../source/backend/plugin/CarlaPluginSFZero.cpp
+    ../source/backend/plugin/CarlaPluginVST2.cpp
+    ../source/backend/plugin/CarlaPluginVST3.cpp
+    ../source/plugin/carla-host-plugin.cpp
+    $<$<BOOL:${CARLA_USE_JACK}>:../source/backend/plugin/CarlaPluginJack.cpp>
+  PUBLIC
+    ${carla-host-plugin-public-headers}
+)
+
+install(TARGETS carla-host-plugin
+  ARCHIVE DESTINATION ${CARLA_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CARLA_INSTALL_LIBDIR}
+  FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CARLA_INSTALL_BINDIR}
+)
+
+if(${CARLA_BUILD_FRAMEWORKS})
+  install(FILES
+    ../source/includes/CarlaDefines.h
+    ../source/includes/CarlaNative.h
+    ../source/includes/CarlaNativePlugin.h
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-standalone.framework/Versions/A/Headers/includes)
+endif()
+
+#######################################################################################################################
 # carla native-plugin
 
-add_library(carla-native-plugin SHARED)
-add_library(carla::standalone ALIAS carla-native-plugin)
+add_library(carla-native-plugin ${CARLA_LIB_TYPE})
+add_library(carla::native-plugin ALIAS carla-native-plugin)
 
 set_common_target_properties(carla-native-plugin)
 
@@ -963,9 +1100,10 @@ target_compile_definitions(carla-native-plugin
 target_include_directories(carla-native-plugin
   PRIVATE
     ../source
+    ../source/modules
+  PUBLIC
     ../source/backend
     ../source/includes
-    ../source/modules
     ../source/utils
 )
 
@@ -1023,6 +1161,7 @@ target_link_libraries(carla-native-plugin
     carla-water
     $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
     carla-zita-resampler
+  PUBLIC
     PkgConfig::FLUIDSYNTH
     PkgConfig::LIBLO
     PkgConfig::LIBMAGIC
@@ -1082,7 +1221,7 @@ endif()
 #######################################################################################################################
 # carla standalone
 
-add_library(carla-standalone SHARED)
+add_library(carla-standalone ${CARLA_LIB_TYPE})
 add_library(carla::standalone ALIAS carla-standalone)
 
 set_common_target_properties(carla-standalone)
@@ -1134,9 +1273,10 @@ target_compile_options(carla-standalone
 target_include_directories(carla-standalone
   PRIVATE
     ../source
+    ../source/modules
+  PUBLIC
     ../source/backend
     ../source/includes
-    ../source/modules
     ../source/utils
 )
 
@@ -1150,6 +1290,7 @@ target_link_libraries(carla-standalone
     carla-water
     $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
     carla-zita-resampler
+  PUBLIC
     PkgConfig::FLUIDSYNTH
     PkgConfig::LIBLO
     PkgConfig::LIBMAGIC
@@ -1238,7 +1379,7 @@ endif()
 #######################################################################################################################
 # carla utils
 
-add_library(carla-utils SHARED)
+add_library(carla-utils ${CARLA_LIB_TYPE})
 add_library(carla::utils ALIAS carla-utils)
 
 set_common_target_properties(carla-utils)
@@ -1272,9 +1413,10 @@ endif()
 target_include_directories(carla-utils
   PRIVATE
     ../source
+    ../source/modules
+  PUBLIC
     ../source/backend
     ../source/includes
-    ../source/modules
     ../source/utils
 )
 
@@ -1284,12 +1426,12 @@ target_link_libraries(carla-utils
     carla-lilv
     carla-water-files
     $<$<BOOL:${CARLA_ENABLE_JSFX}>:carla-ysfx>
+  PUBLIC
     PkgConfig::FLUIDSYNTH
     PkgConfig::LIBMAGIC
     PkgConfig::X11
-    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
     ${CARLA_PTHREADS}
-  PUBLIC
+    $<$<BOOL:${APPLE}>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>
     $<$<BOOL:${WIN32}>:winmm>
 )
 
