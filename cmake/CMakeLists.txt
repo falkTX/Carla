@@ -425,7 +425,6 @@ target_link_libraries(carla-lilv
     carla-lilv_sord
     carla-lilv_sratom
     carla-lilv_lilv
-  PUBLIC
     ${CARLA_LIBDL}
     ${CARLA_LIBM}
     ${CARLA_LIBRT}
