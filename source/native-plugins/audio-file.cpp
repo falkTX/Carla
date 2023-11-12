@@ -449,12 +449,21 @@ protected:
             return;
         }
 
+        const bool offline = isOffline();
         bool needsIdleRequest = false;
 
-        if (fReader.tickFrames(outBuffer, 0, frames, framePos, fLoopMode, isOffline()) && ! fPendingFileRead)
+        if (fReader.tickFrames(outBuffer, 0, frames, framePos, fLoopMode, offline) && ! fPendingFileRead)
         {
-            fPendingFileRead = true;
-            needsIdleRequest = true;
+            if (offline)
+            {
+                fPendingFileRead = false;
+                fReader.readPoll();
+            }
+            else
+            {
+                fPendingFileRead = true;
+                needsIdleRequest = true;
+            }
         }
 
         fLastPosition = fReader.getLastPlayPosition() * 100.f;
