@@ -407,7 +407,7 @@ static QVariant asByteArray(const PluginInfo& info)
     QByteArray qdata;
 
     // start with the POD data, stored as-is
-    qdata.append(static_cast<const char*>(static_cast<const void*>(&info)), sizeof(PluginInfoHeader));
+    qdata.append(reinterpret_cast<const char*>(&info), sizeof(PluginInfoHeader));
 
     // then all the strings, with a null terminating byte
     {
@@ -455,8 +455,8 @@ static PluginInfo asPluginInfo(const QByteArray &qdata)
     CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(qdata.size()) >= sizeof(PluginInfoHeader) + sizeof(char) * 5, {});
 
     // read POD data first
-    const PluginInfoHeader* const data
-        = static_cast<const PluginInfoHeader*>(static_cast<const void*>(qdata.constData()));
+    const PluginInfoHeader* const data = reinterpret_cast<const PluginInfoHeader*>(qdata.constData());
+
     PluginInfo info = {};
     info.build = data->build;
     info.type = data->type;
@@ -472,7 +472,7 @@ static PluginInfo asPluginInfo(const QByteArray &qdata)
     info.parameterOuts = data->parameterOuts;
 
     // then all the strings, keeping the same order as in `asVariant`
-    const char* sdata = static_cast<const char*>(static_cast<const void*>(data + 1));
+    const char* sdata = reinterpret_cast<const char*>(data + 1);
 
     info.category = QString::fromUtf8(sdata);
     sdata += info.category.size() + 1;
@@ -556,7 +556,7 @@ static QByteArray asByteArray(const PluginFavorite& fav)
     QByteArray qdata;
 
     // start with the POD data, stored as-is
-    qdata.append(static_cast<const char*>(static_cast<const void*>(&fav)), sizeof(PluginFavoriteHeader));
+    qdata.append(reinterpret_cast<const char*>(&fav), sizeof(PluginFavoriteHeader));
 
     // then all the strings, with a null terminating byte
     {
@@ -591,12 +591,11 @@ static PluginFavorite asPluginFavorite(const QByteArray& qdata)
     CARLA_SAFE_ASSERT_RETURN(static_cast<size_t>(qdata.size()) >= sizeof(PluginFavoriteHeader) + sizeof(char) * 3, {});
 
     // read POD data first
-    const PluginFavoriteHeader* const data
-        = static_cast<const PluginFavoriteHeader*>(static_cast<const void*>(qdata.constData()));
+    const PluginFavoriteHeader* const data = reinterpret_cast<const PluginFavoriteHeader*>(qdata.constData());
     PluginFavorite fav = { data->type, data->uniqueId, {}, {} };
 
     // then all the strings, keeping the same order as in `asVariant`
-    const char* sdata = static_cast<const char*>(static_cast<const void*>(data + 1));
+    const char* sdata = reinterpret_cast<const char*>(data + 1);
 
     fav.filename = QString::fromUtf8(sdata);
     sdata += fav.filename.size() + 1;
@@ -663,6 +662,8 @@ struct PluginListDialog::PrivateData {
         bool firstInit = true;
         bool ignoreCache = false;
         bool checkInvalid = false;
+        bool usePluginBridges = false;
+        bool useWineBridges = false;
         CarlaPluginDiscoveryHandle handle = nullptr;
         QCarlaString tool;
         CarlaScopedPointer<PluginRefreshDialog> dialog;
@@ -685,6 +686,9 @@ struct PluginListDialog::PrivateData {
                 carla_plugin_discovery_stop(handle);
                 handle = nullptr;
             }
+
+            if (!usePluginBridges)
+                return false;
 
           #ifdef CARLA_OS_WIN
            #ifdef CARLA_OS_WIN64
@@ -718,6 +722,9 @@ struct PluginListDialog::PrivateData {
                     return true;
             }
            #endif
+
+            if (!useWineBridges)
+                return false;
 
             // try wine bridges
            #ifdef CARLA_OS_64BIT
@@ -821,6 +828,9 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings* co
 
     // ----------------------------------------------------------------------------------------------------------------
     // Set-up global discovery options
+
+    p->discovery.usePluginBridges = hostSettings->showPluginBridges;
+    p->discovery.useWineBridges = hostSettings->showWineBridges;
 
    #ifndef CARLA_OS_WIN
     carla_plugin_discovery_set_option(ENGINE_OPTION_WINE_AUTO_PREFIX, hostSettings->wineAutoPrefix, nullptr);
