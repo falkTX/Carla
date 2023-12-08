@@ -554,9 +554,19 @@ read_STRING_LITERAL_LONG(SerdReader* reader, SerdNodeFlags* flags, uint8_t q)
 					eat_byte_safe(reader, q3);
 					return ref;
 				} else {
-					*flags |= SERD_HAS_QUOTE;
-					push_byte(reader, ref, c);
-					read_character(reader, ref, flags, q2);
+					if (q2 == '\\') {
+						push_byte(reader, ref, c);
+						if (!read_ECHAR(reader, ref, flags) &&
+							!read_UCHAR(reader, ref, &code)) {
+							r_err(reader, SERD_ERR_BAD_SYNTAX,
+								"invalid escape `\\%c'\n", peek_byte(reader));
+							return pop_node(reader, ref);
+						}
+					} else {
+						*flags |= SERD_HAS_QUOTE;
+						push_byte(reader, ref, c);
+						read_character(reader, ref, flags, q2);
+					}
 				}
 			} else {
 				read_character(reader, ref, flags, eat_byte_safe(reader, c));
