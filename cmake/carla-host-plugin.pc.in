@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+carla_libdir=${libdir}/carla
+
+Name: carla-host-plugin
+Version: @PROJECT_VERSION@
+Description: Carla Host as Native Plugin
+Libs: -Wl,-rpath,${carla_libdir} -L${carla_libdir} -lcarla_host-plugin
+Cflags: -I${includedir}/carla -I${includedir}/carla/includes

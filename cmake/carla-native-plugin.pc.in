@@ -1,0 +1,9 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: carla-native-plugin
+Version: @PROJECT_VERSION@
+Description: Carla Native Plugin
+Libs: -Wl,-rpath,${libdir}/carla -L${libdir}/carla -lcarla_native-plugin
+Cflags: -I${includedir}/carla -I${includedir}/carla/includes
