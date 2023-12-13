@@ -1,0 +1,9 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: carla-standalone
+Version: @PROJECT_VERSION@
+Description: Carla Host Standalone
+Libs: -Wl,-rpath,${libdir}/carla -L${libdir}/carla -lcarla_standalone2
+Cflags: -I${includedir}/carla -I${includedir}/carla/includes

@@ -1587,9 +1587,15 @@ install(TARGETS carla-headers-utils PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_IN
 
 if(NOT ${CARLA_BUILD_FRAMEWORKS} AND NOT MSVC)
   configure_file(carla-utils.pc.in carla-utils.pc @ONLY)
+  configure_file(carla-standalone.pc.in carla-standalone.pc @ONLY)
+  configure_file(carla-native-plugin.pc.in carla-native-plugin.pc @ONLY)
+  configure_file(carla-host-plugin.pc.in carla-host-plugin.pc @ONLY)
 
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/carla-utils.pc
+    ${CMAKE_CURRENT_BINARY_DIR}/carla-standalone.pc
+    ${CMAKE_CURRENT_BINARY_DIR}/carla-native-plugin.pc
+    ${CMAKE_CURRENT_BINARY_DIR}/carla-host-plugin.pc
     DESTINATION
       ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   )
