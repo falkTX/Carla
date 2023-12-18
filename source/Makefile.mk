@@ -85,7 +85,7 @@ CXXFLAGS   += -fvisibility-inlines-hidden
 endif
 
 ifneq ($(MACOS_OR_WASM_OR_WINDOWS),true)
-ifneq ($(BSD),true)
+ifeq ($(GCC),true)
 BASE_FLAGS += -fno-gnu-unique
 endif
 endif

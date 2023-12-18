@@ -68,6 +68,50 @@ jobs:
       - name: make posix32
         run: make posix32 -j $(nproc)
 
+  ubuntu-clang-20_04:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
+      - name: Set up dependencies
+        run: |
+          sudo apt-get install -yqq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libsdl2-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
+          sudo apt-get install -yqq clang lld libx11-6:i386 libxext6:i386
+          # Fix 32bit bridge build
+          sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
+      - name: make features
+        run: make CC=clang CXX=clang++ LDFLAGS="-fuse-ld=lld" features
+      - name: make
+        run: make CC=clang CXX=clang++ LDFLAGS="-fuse-ld=lld" -j $(nproc)
+
+  ubuntu-clang-22_04:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fix GitHub's mess
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --allow-downgrades libc6:i386 libgcc-s1:i386 libstdc++6:i386
+      - name: Set up dependencies
+        run: |
+          sudo apt-get install -yqq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libsdl2-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
+          sudo apt-get install -yqq clang lld libx11-6:i386 libxext6:i386
+          # Fix 32bit bridge build
+          sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
+          sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
+      - name: make features
+        run: make CC=clang CXX=clang++ LDFLAGS="-fuse-ld=lld" features
+      - name: make
+        run: make CC=clang CXX=clang++ LDFLAGS="-fuse-ld=lld" -j $(nproc)
+
   wasm:
     runs-on: ubuntu-22.04
     env:
