@@ -118,6 +118,7 @@ static void writeManifestFile(PluginListManager& plm, const uint32_t microVersio
     text += "@prefix atom: <" LV2_ATOM_PREFIX "> .\n";
     text += "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
     text += "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n";
+    text += "@prefix idpy: <http://harrisonconsoles.com/lv2/inlinedisplay#> .\n";
     text += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
     text += "@prefix mod:  <http://moddevices.com/ns/mod#> .\n";
     text += "@prefix opts: <" LV2_OPTIONS_PREFIX "> .\n";
@@ -141,6 +142,17 @@ static void writeManifestFile(PluginListManager& plm, const uint32_t microVersio
     text += "    lv2:microVersion " + String(microVersion) + " ;\n";
     text += "    lv2:minorVersion " + String(minorVersion) + " ;\n";
     text += "    lv2:symbol \"carla\" .\n";
+    text += "\n";
+
+    // -------------------------------------------------------------------
+    // Extensions
+
+    text += "idpy:interface\n";
+    text += "    a lv2:ExtensionData .\n";
+    text += "\n";
+
+    text += "idpy:queue_draw\n";
+    text += "    a lv2:Feature .\n";
     text += "\n";
 
     // -------------------------------------------------------------------
@@ -291,28 +303,28 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
     switch (pluginDesc->category)
     {
     case NATIVE_PLUGIN_CATEGORY_SYNTH:
-        text += "    a lv2:InstrumentPlugin, lv2:Plugin ;\n";
+        text += "    a lv2:InstrumentPlugin, lv2:Plugin, doap:Project ;\n";
         break;
     case NATIVE_PLUGIN_CATEGORY_DELAY:
-        text += "    a lv2:DelayPlugin, lv2:Plugin ;\n";
+        text += "    a lv2:DelayPlugin, lv2:Plugin, doap:Project ;\n";
         break;
     case NATIVE_PLUGIN_CATEGORY_EQ:
-        text += "    a lv2:EQPlugin, lv2:Plugin ;\n";
+        text += "    a lv2:EQPlugin, lv2:Plugin, doap:Project ;\n";
         break;
     case NATIVE_PLUGIN_CATEGORY_FILTER:
-        text += "    a lv2:FilterPlugin, lv2:Plugin ;\n";
+        text += "    a lv2:FilterPlugin, lv2:Plugin, doap:Project ;\n";
         break;
     case NATIVE_PLUGIN_CATEGORY_DYNAMICS:
-        text += "    a lv2:DynamicsPlugin, lv2:Plugin ;\n";
+        text += "    a lv2:DynamicsPlugin, lv2:Plugin, doap:Project ;\n";
         break;
     case NATIVE_PLUGIN_CATEGORY_MODULATOR:
-        text += "    a lv2:ModulatorPlugin, lv2:Plugin ;\n";
+        text += "    a lv2:ModulatorPlugin, lv2:Plugin, doap:Project ;\n";
         break;
     case NATIVE_PLUGIN_CATEGORY_UTILITY:
-        text += "    a lv2:UtilityPlugin, lv2:Plugin ;\n";
+        text += "    a lv2:UtilityPlugin, lv2:Plugin, doap:Project ;\n";
         break;
     default:
-        text += "    a lv2:Plugin ;\n";
+        text += "    a lv2:Plugin, doap:Project ;\n";
         break;
     }
 
@@ -325,7 +337,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
     if (pluginDesc->hints & NATIVE_PLUGIN_IS_RTSAFE)
         text += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ;\n";
     if (pluginDesc->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
-        text += "    lv2:optionalFeature <" LV2_INLINEDISPLAY__queue_draw "> ;\n";
+        text += "    lv2:optionalFeature idpy:queue_draw ;\n";
     if ((pluginDesc->hints & NATIVE_PLUGIN_USES_STATE) || (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE))
         text += "    lv2:optionalFeature <" LV2_STATE__threadSafeRestore "> ;\n";
     text += "\n";
@@ -358,7 +370,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
         text += "    lv2:extensionData <" LV2_WORKER__interface "> ;\n";
 
     if (pluginDesc->hints & NATIVE_PLUGIN_HAS_INLINE_DISPLAY)
-        text += "    lv2:extensionData <" LV2_INLINEDISPLAY__interface "> ;\n";
+        text += "    lv2:extensionData idpy:interface ;\n";
 
     text += "\n";
 

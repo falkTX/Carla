@@ -10,7 +10,9 @@ jobs:
   linux:
     strategy:
       matrix:
-        target: [linux-arm64, linux-armhf, linux-i686, linux-riscv64, linux-x86_64]
+        target: [linux-x86_64]
+        # TODO: add PawPaw bootstrap type
+        # linux-arm64, linux-armhf, linux-i686, linux-riscv64,
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
