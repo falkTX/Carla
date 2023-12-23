@@ -10,8 +10,7 @@ jobs:
   linux:
     strategy:
       matrix:
-        target: [linux-x86_64]
-        # linux-arm64, linux-armhf, linux-i686, linux-riscv64
+        target: [linux-arm64, linux-armhf, linux-i686, linux-riscv64, linux-x86_64]
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
@@ -58,15 +57,16 @@ jobs:
           pawpaw: true
           release: false
 
-  # pluginval:
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #       with:
-  #         submodules: recursive
-  #     - uses: distrho/dpf-makefile-action@v1
-  #       with:
-  #         target: pluginval
+  pluginval:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: distrho/dpf-makefile-action@v1
+        with:
+          target: pluginval
+          pawpaw: true
 
   source:
     runs-on: ubuntu-20.04
