@@ -130,7 +130,7 @@ static void writeManifestFile(PluginListManager& plm, const uint32_t microVersio
     // Project
 
     text += "<https://kx.studio/carla>\n";
-    text += "    a lv2:Project ;\n";
+    text += "    a lv2:Project, doap:Project ;\n";
     text += "    doap:homepage <https://kx.studio/carla> ;\n";
     text += "    doap:maintainer [\n";
     text += "        foaf:homepage <https://falktx.com/> ;\n";
@@ -283,6 +283,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
     text += "@prefix atom:  <" LV2_ATOM_PREFIX "> .\n";
     text += "@prefix doap:  <http://usefulinc.com/ns/doap#> .\n";
     text += "@prefix foaf:  <http://xmlns.com/foaf/0.1/> .\n";
+    text += "@prefix idpy: <http://harrisonconsoles.com/lv2/inlinedisplay#> .\n";
     text += "@prefix lv2:   <" LV2_CORE_PREFIX "> .\n";
     text += "@prefix opts:  <" LV2_OPTIONS_PREFIX "> .\n";
     text += "@prefix patch: <" LV2_PATCH_PREFIX "> .\n";
