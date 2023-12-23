@@ -2,6 +2,10 @@ name: dpf
 
 on: [push, pull_request]
 
+env:
+  PAWPAW_SKIP_LTO: 1
+  PAWPAW_SKIP_TESTS: 1
+
 jobs:
   linux:
     strategy:
@@ -22,7 +26,7 @@ jobs:
   macos:
     strategy:
       matrix:
-        target: [macos-intel, macos-universal]
+        target: [macos-intel, macos-universal, macos-universal-10.15]
     runs-on: macos-11
     steps:
       - uses: actions/checkout@v3

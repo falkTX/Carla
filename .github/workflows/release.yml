@@ -4,8 +4,12 @@ on: [push, pull_request]
 
 env:
   CACHE_VERSION: 1
+  DEBIAN_FRONTEND: noninteractive
+  HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
   PAWPAW_SKIP_LTO: 1
-  PAWPAW_VERSION: cd7b760d6a32ecad263b112c12be8a306ed1e89c
+  PAWPAW_SKIP_TESTS: 1
+  PAWPAW_VERSION: 9534e2b4f9bafc993e05fada89b824f3a2176708
 
 jobs:
   # macOS native universal build
@@ -29,6 +33,7 @@ jobs:
         run: |
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
+          ./PawPaw/.github/workflows/bootstrap-deps.sh macos-universal
           ./PawPaw/bootstrap-carla.sh macos-universal && ./PawPaw/.cleanup.sh macos-universal
       - name: Build macOS universal
         shell: bash
@@ -92,6 +97,7 @@ jobs:
         run: |
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
+          ./PawPaw/.github/workflows/bootstrap-deps.sh win32
           ./PawPaw/bootstrap-carla.sh win32 && ./PawPaw/.cleanup.sh win32
       - name: Build win32 cross-compiled
         shell: bash
@@ -155,6 +161,7 @@ jobs:
         run: |
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
+          ./PawPaw/.github/workflows/bootstrap-deps.sh win64
           ./PawPaw/bootstrap-carla.sh win64 && ./PawPaw/.cleanup.sh win64
       - name: Build win64 cross-compiled
         shell: bash

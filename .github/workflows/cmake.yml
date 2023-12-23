@@ -12,7 +12,7 @@ jobs:
         include:
           - container: debian:11
           - container: debian:12
-          - container: ubuntu:20.04
+          #- container: ubuntu:20.04
           - container: ubuntu:22.04
           - container: ubuntu:23.10
     runs-on: ubuntu-latest
@@ -68,9 +68,9 @@ jobs:
     strategy:
       matrix:
         include:
-          #- container: debian:11
+          - container: debian:11
           - container: debian:12
-          - container: ubuntu:20.04
+          #- container: ubuntu:20.04
           - container: ubuntu:22.04
           - container: ubuntu:23.10
     runs-on: ubuntu-latest
@@ -106,9 +106,9 @@ jobs:
     strategy:
       matrix:
         include:
-          #- container: debian:11
+          - container: debian:11
           - container: debian:12
-          - container: ubuntu:20.04
+          #- container: ubuntu:20.04
           - container: ubuntu:22.04
           - container: ubuntu:23.10
     runs-on: ubuntu-latest
