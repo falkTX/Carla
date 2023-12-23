@@ -324,7 +324,10 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
         text += "    a lv2:UtilityPlugin, lv2:Plugin, doap:Project ;\n";
         break;
     default:
-        text += "    a lv2:Plugin, doap:Project ;\n";
+        if (pluginDesc->midiIns >= 1 && pluginDesc->midiOuts >= 1 && pluginDesc->audioIns + pluginDesc->audioOuts == 0)
+            text += "    a lv2:MIDIPlugin, lv2:Plugin, doap:Project ;\n";
+        else
+            text += "    a lv2:Plugin, doap:Project ;\n";
         break;
     }
 
