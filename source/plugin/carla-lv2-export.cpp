@@ -130,7 +130,7 @@ static void writeManifestFile(PluginListManager& plm, const uint32_t microVersio
     // Project
 
     text += "<https://kx.studio/carla>\n";
-    text += "    a lv2:Project, doap:Project ;\n";
+    text += "    a owl:Ontology, lv2:Project, doap:Project ;\n";
     text += "    doap:homepage <https://kx.studio/carla> ;\n";
     text += "    doap:maintainer [\n";
     text += "        foaf:homepage <https://falktx.com/> ;\n";
