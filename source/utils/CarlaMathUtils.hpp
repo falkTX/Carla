@@ -1,6 +1,6 @@
 /*
  * Carla math utils
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -177,7 +177,7 @@ void carla_addFloats(float dest[], const float src[], const std::size_t count) n
             __builtin_unreachable();
         if (!std::isfinite(src[i]))
             __builtin_unreachable();
-        *dest++ += *src++;
+        dest[i] += src[i];
     }
 }
 
@@ -213,7 +213,7 @@ void carla_fillFloatsWithSingleValue(float data[], const float& value, const std
         {
             if (!std::isfinite(data[i]))
                 __builtin_unreachable();
-            *data++ = value;
+            data[i] = value;
         }
     }
 }
@@ -294,7 +294,7 @@ void carla_multiply(float data[], const float& multiplier, const std::size_t cou
         {
             if (!std::isfinite(data[i]))
                 __builtin_unreachable();
-            *data++ *= multiplier;
+            data[i] *= multiplier;
         }
     }
 }
