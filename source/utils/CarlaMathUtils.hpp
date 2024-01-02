@@ -179,7 +179,7 @@ void carla_addFloats(float dest[], const float src[], const std::size_t count) n
         if (!std::isfinite(src[i]))
             __builtin_unreachable();
        #endif
-        *dest++ += *src++;
+        dest[i] += src[i];
     }
 }
 
@@ -217,7 +217,7 @@ void carla_fillFloatsWithSingleValue(float data[], const float& value, const std
             if (!std::isfinite(data[i]))
                 __builtin_unreachable();
            #endif
-            *data++ = value;
+            data[i] = value;
         }
     }
 }
@@ -302,7 +302,7 @@ void carla_multiply(float data[], const float& multiplier, const std::size_t cou
             if (!std::isfinite(data[i]))
                 __builtin_unreachable();
            #endif
-            *data++ *= multiplier;
+            data[i] *= multiplier;
         }
     }
 }
