@@ -41,7 +41,7 @@ static HINSTANCE getCurrentModuleInstanceHandle() noexcept
 }
 
 CARLA_PLUGIN_EXPORT
-BOOL WINAPI DllMain(HINSTANCE hInst, DWORD, LPVOID)
+BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 {
     if (reason == DLL_PROCESS_ATTACH)
         currentModuleHandle = hInst;
