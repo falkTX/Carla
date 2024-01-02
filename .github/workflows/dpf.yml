@@ -59,16 +59,20 @@ jobs:
           pawpaw: true
           release: false
 
-  pluginval:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - uses: distrho/dpf-makefile-action@v1
-        with:
-          target: pluginval
-          pawpaw: true
+  # NOTE disabled for now
+  # lv2lint does not allow to differentiate exposed features for multiple plugins in a single binary
+  # (e.g. plugin A uses worker while plugin B does not, but they come from the same binary)
+  # see https://github.com/falkTX/Carla/actions/runs/7389992205/job/20103997236
+  #pluginval:
+    #runs-on: ubuntu-20.04
+    #steps:
+      #- uses: actions/checkout@v3
+        #with:
+          #submodules: recursive
+      #- uses: distrho/dpf-makefile-action@v1
+        #with:
+          #target: pluginval
+          #pawpaw: true
 
   source:
     runs-on: ubuntu-20.04

@@ -122,6 +122,7 @@ static void writeManifestFile(PluginListManager& plm, const uint32_t microVersio
     text += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
     text += "@prefix mod:  <http://moddevices.com/ns/mod#> .\n";
     text += "@prefix opts: <" LV2_OPTIONS_PREFIX "> .\n";
+    text += "@prefix owl:  <http://www.w3.org/2002/07/owl#> .\n";
     text += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
     text += "@prefix ui:   <" LV2_UI_PREFIX "> .\n";
     text += "\n";
@@ -130,7 +131,7 @@ static void writeManifestFile(PluginListManager& plm, const uint32_t microVersio
     // Project
 
     text += "<https://kx.studio/carla>\n";
-    text += "    a owl:Ontology, lv2:Project, doap:Project ;\n";
+    text += "    a owl:Ontology, doap:Project ;\n";
     text += "    doap:homepage <https://kx.studio/carla> ;\n";
     text += "    doap:maintainer [\n";
     text += "        foaf:homepage <https://falktx.com/> ;\n";
