@@ -2003,10 +2003,8 @@ public:
             const int32_t numChannels = busInfo.channel_count;
             CARLA_SAFE_ASSERT_BREAK(numChannels >= 0);
 
-            if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
-                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component,
-                                                                                V3_AUDIO, V3_INPUT, b, true) == V3_OK);
-            }
+            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component,
+                                                                            V3_AUDIO, V3_INPUT, b, true) == V3_OK);
 
             fBuses.inputs[b].num_channels = numChannels;
             fBuses.inputInfo[b].bus_type = busInfo.bus_type;
@@ -2031,10 +2029,8 @@ public:
             const int32_t numChannels = busInfo.channel_count;
             CARLA_SAFE_ASSERT_BREAK(numChannels >= 0);
 
-            if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
-                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component,
-                                                                                V3_AUDIO, V3_OUTPUT, b, true) == V3_OK);
-            }
+            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(fV3.component)->activate_bus(fV3.component,
+                                                                            V3_AUDIO, V3_OUTPUT, b, true) == V3_OK);
 
             fBuses.outputs[b].num_channels = numChannels;
             fBuses.outputInfo[b].bus_type = busInfo.bus_type;
