@@ -1896,7 +1896,9 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             }
 
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, true) == V3_OK);
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->set_processing(processor, true) == V3_OK);
+            // some plugins return kNotImplemented, see https://github.com/falkTX/Carla/issues/1848
+            int32_t res = v3_cpp_obj(processor)->set_processing(processor, true);
+            CARLA_SAFE_ASSERT_BREAK(res == V3_OK || res == V3_NOT_IMPLEMENTED);
 
             float* bufferAudioIn[MAX_DISCOVERY_AUDIO_IO + MAX_DISCOVERY_CV_IO];
             float* bufferAudioOut[MAX_DISCOVERY_AUDIO_IO + MAX_DISCOVERY_CV_IO];
@@ -1958,7 +1960,9 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             for (int j=0; j < audioOuts + cvOuts; ++j)
                 delete[] bufferAudioOut[j];
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->set_processing(processor, false) == V3_OK);
+            // some plugins return kNotImplemented, see https://github.com/falkTX/Carla/issues/1848
+            res = v3_cpp_obj(processor)->set_processing(processor, false);
+            CARLA_SAFE_ASSERT_BREAK(res == V3_OK || res == V3_NOT_IMPLEMENTED);
             CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, false) == V3_OK);
 
             v3_cpp_obj_unref(processor);
