@@ -440,6 +440,31 @@ private:
         default:
             break;
         }
+
+        String winePrefix;
+
+        if (options.wine.autoPrefix && !fBinaries.empty())
+        {
+            const File file(fBinaries[fBinaryIndex]);
+            const String filename(file.getFullPathName());
+
+            winePrefix = findWinePrefix(filename);
+        }
+
+        if (winePrefix.isEmpty())
+        {
+            const char* const envWinePrefix = std::getenv("WINEPREFIX");
+
+            if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
+                winePrefix = envWinePrefix;
+            else if (options.wine.fallbackPrefix != nullptr && options.wine.fallbackPrefix[0] != '\0')
+                winePrefix = options.wine.fallbackPrefix.buffer();
+            else
+                winePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
+        }
+
+        const CarlaScopedEnvVar sev1("WINEDEBUG", "-all");
+        const CarlaScopedEnvVar sev2("WINEPREFIX", winePrefix.toRawUTF8());
        #endif
 
         if (fBinaries.empty())
@@ -467,28 +492,6 @@ private:
                     return;
                 }
             }
-
-           #ifndef CARLA_OS_WIN
-            String winePrefix;
-
-            if (options.wine.autoPrefix)
-                winePrefix = findWinePrefix(filename);
-
-            if (winePrefix.isEmpty())
-            {
-                const char* const envWinePrefix = std::getenv("WINEPREFIX");
-
-                if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
-                    winePrefix = envWinePrefix;
-                else if (options.wine.fallbackPrefix != nullptr && options.wine.fallbackPrefix[0] != '\0')
-                    winePrefix = options.wine.fallbackPrefix.buffer();
-                else
-                    winePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
-            }
-
-            const CarlaScopedEnvVar sev1("WINEDEBUG", "-all");
-            const CarlaScopedEnvVar sev2("WINEPREFIX", winePrefix.toRawUTF8());
-           #endif
 
             carla_stdout("Scanning \"%s\"...", filename.toRawUTF8());
 

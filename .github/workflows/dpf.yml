@@ -2,12 +2,17 @@ name: dpf
 
 on: [push, pull_request]
 
+env:
+  PAWPAW_SKIP_LTO: 1
+  PAWPAW_SKIP_TESTS: 1
+
 jobs:
   linux:
     strategy:
       matrix:
         target: [linux-x86_64]
-        # linux-arm64, linux-armhf, linux-i686, linux-riscv64
+        # TODO: add PawPaw bootstrap type
+        # linux-arm64, linux-armhf, linux-i686, linux-riscv64,
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
@@ -22,7 +27,7 @@ jobs:
   macos:
     strategy:
       matrix:
-        target: [macos-intel, macos-universal]
+        target: [macos-intel, macos-universal, macos-universal-10.15]
     runs-on: macos-11
     steps:
       - uses: actions/checkout@v3
@@ -54,15 +59,20 @@ jobs:
           pawpaw: true
           release: false
 
-  # pluginval:
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #       with:
-  #         submodules: recursive
-  #     - uses: distrho/dpf-makefile-action@v1
-  #       with:
-  #         target: pluginval
+  # NOTE disabled for now
+  # lv2lint does not allow to differentiate exposed features for multiple plugins in a single binary
+  # (e.g. plugin A uses worker while plugin B does not, but they come from the same binary)
+  # see https://github.com/falkTX/Carla/actions/runs/7389992205/job/20103997236
+  #pluginval:
+    #runs-on: ubuntu-20.04
+    #steps:
+      #- uses: actions/checkout@v3
+        #with:
+          #submodules: recursive
+      #- uses: distrho/dpf-makefile-action@v1
+        #with:
+          #target: pluginval
+          #pawpaw: true
 
   source:
     runs-on: ubuntu-20.04

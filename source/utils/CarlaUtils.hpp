@@ -406,7 +406,7 @@ void carla_add(T dest[], const T src[], const std::size_t count) noexcept
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     for (std::size_t i=0; i<count; ++i)
-        *dest++ += *src++;
+        dest[i] += src[i];
 }
 
 /*
@@ -422,7 +422,7 @@ void carla_addWithMultiply(T dest[], const T src[], const T& multiplier, const s
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     for (std::size_t i=0; i<count; ++i)
-        *dest++ += *src++ * multiplier;
+        dest[i] += src[i] * multiplier;
 }
 
 /*
@@ -453,7 +453,7 @@ void carla_copyWithMultiply(T dest[], const T src[], const T& multiplier, const 
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     for (std::size_t i=0; i<count; ++i)
-        *dest++ = *src++ * multiplier;
+        dest[i] = src[i] * multiplier;
 }
 
 /*
@@ -473,7 +473,7 @@ void carla_fill(T data[], const T& value, const std::size_t count) noexcept
     else
     {
         for (std::size_t i=0; i<count; ++i)
-            *data++ = value;
+            data[i] = value;
     }
 }
 
@@ -494,7 +494,7 @@ void carla_multiply(T data[], const T& multiplier, const std::size_t count) noex
     else
     {
         for (std::size_t i=0; i<count; ++i)
-            *data++ *= multiplier;
+            data[i] *= multiplier;
     }
 }
 

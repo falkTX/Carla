@@ -4,14 +4,52 @@ on: [push, pull_request]
 
 env:
   DEBIAN_FRONTEND: noninteractive
+  EMSCRIPTEN_VERSION: 3.1.27
   HOMEBREW_NO_AUTO_UPDATE: 1
-  WITH_LTO: false
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
 
 jobs:
-  macos-11:
-    runs-on: macos-11
+  linux:
+    strategy:
+      matrix:
+        include:
+          - target: debian:11
+          - target: debian:12
+          - target: ubuntu:18.04
+          - target: ubuntu:20.04
+          - target: ubuntu:22.04
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v3
+      - name: Set up dependencies
+        run: |
+          dpkg --add-architecture i386
+          apt-get update -qq
+          apt-get install -yqq g++-multilib libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libsdl2-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev make pkg-config pyqt5-dev-tools qtbase5-dev
+          apt-get install -yqq libx11-6:i386 libxext6:i386
+          # Fix 32bit bridge build
+          ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
+          ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
+      - name: make features
+        run: make features
+      - name: make
+        run: make -j $(nproc)
+      - name: make posix32
+        run: make posix32 -j $(nproc)
+
+  macos:
+    strategy:
+      matrix:
+        include:
+          #- target: macos-11
+          - target: macos-12
+    runs-on: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - name: Set up dependencies
         run: |
           brew install fluid-synth liblo libmagic libsndfile pkg-config pyqt@5 qt@5 sdl2
@@ -20,58 +58,8 @@ jobs:
       - name: make
         run: make -j $(sysctl -n hw.logicalcpu)
 
-  ubuntu-20_04:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Fix GitHub's mess
-        run: |
-          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -yqq --allow-downgrades libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
-      - name: Set up dependencies
-        run: |
-          sudo apt-get install -yqq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libsdl2-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
-          sudo apt-get install -yqq g++-multilib libx11-6:i386 libxext6:i386
-          # Fix 32bit bridge build
-          sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
-          sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
-      - name: make features
-        run: make features
-      - name: make
-        run: make -j $(nproc)
-      - name: make posix32
-        run: make posix32 -j $(nproc)
-
-  ubuntu-22_04:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Fix GitHub's mess
-        run: |
-          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -yqq --allow-downgrades libc6:i386 libgcc-s1:i386 libstdc++6:i386
-      - name: Set up dependencies
-        run: |
-          sudo apt-get install -yqq libasound2-dev libfluidsynth-dev libgl1-mesa-dev liblo-dev libmagic-dev libpulse-dev libsdl2-dev libsndfile1-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev pkg-config pyqt5-dev-tools qtbase5-dev
-          sudo apt-get install -yqq g++-multilib libx11-6:i386 libxext6:i386
-          # Fix 32bit bridge build
-          sudo ln -s /usr/lib/i386-linux-gnu/libX11.so.6 /usr/lib/i386-linux-gnu/libX11.so
-          sudo ln -s /usr/lib/i386-linux-gnu/libXext.so.6 /usr/lib/i386-linux-gnu/libXext.so
-      - name: make features
-        run: make features
-      - name: make
-        run: make -j $(nproc)
-      - name: make posix32
-        run: make posix32 -j $(nproc)
-
   wasm:
     runs-on: ubuntu-22.04
-    env:
-      EMSCRIPTEN_VERSION: 3.1.27
     steps:
       - uses: actions/checkout@v3
         with:
