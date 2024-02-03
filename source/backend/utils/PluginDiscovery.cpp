@@ -111,6 +111,7 @@ public:
           fDiscoveryCallback(discoveryCb),
           fCheckCacheCallback(checkCacheCb),
           fCallbackPtr(callbackPtr),
+          fPluginPath(nullptr),
           fPluginsFoundInBinary(false),
           fBinaryIndex(0),
           fBinaryCount(static_cast<uint>(binaries.size())),
@@ -129,12 +130,14 @@ public:
                          const PluginType ptype,
                          const CarlaPluginDiscoveryCallback discoveryCb,
                          const CarlaPluginCheckCacheCallback checkCacheCb,
-                         void* const callbackPtr)
+                         void* const callbackPtr,
+                         const char* const pluginPath = nullptr)
         : fBinaryType(btype),
           fPluginType(ptype),
           fDiscoveryCallback(discoveryCb),
           fCheckCacheCallback(checkCacheCb),
           fCallbackPtr(callbackPtr),
+          fPluginPath(pluginPath != nullptr ? carla_strdup_safe(pluginPath) : nullptr),
           fPluginsFoundInBinary(false),
           fBinaryIndex(0),
           fBinaryCount(1),
@@ -153,6 +156,7 @@ public:
         std::free(fNextLabel);
         std::free(fNextMaker);
         std::free(fNextName);
+        delete[] fPluginPath;
     }
 
     bool idle()
@@ -385,6 +389,7 @@ private:
     const CarlaPluginDiscoveryCallback fDiscoveryCallback;
     const CarlaPluginCheckCacheCallback fCheckCacheCallback;
     void* const fCallbackPtr;
+    const char* fPluginPath;
 
     bool fPluginsFoundInBinary;
     uint fBinaryIndex;
@@ -469,6 +474,66 @@ private:
 
         if (fBinaries.empty())
         {
+            if (fBinaryType == CB::BINARY_NATIVE)
+            {
+                switch (fPluginType)
+                {
+                default:
+                    break;
+                case CB::PLUGIN_INTERNAL:
+                case CB::PLUGIN_LV2:
+                case CB::PLUGIN_JSFX:
+                case CB::PLUGIN_SFZ:
+                    if (const uint count = carla_get_cached_plugin_count(fPluginType, fPluginPath))
+                    {
+                        for (uint i=0; i<count; ++i)
+                        {
+                            const CarlaCachedPluginInfo* const pinfo = carla_get_cached_plugin_info(fPluginType, i);
+
+                            if (pinfo == nullptr || !pinfo->valid)
+                                continue;
+
+                            char* filename = nullptr;
+                            CarlaPluginDiscoveryInfo info = {};
+                            info.btype = CB::BINARY_NATIVE;
+                            info.ptype = fPluginType;
+                            info.metadata.name = pinfo->name;
+                            info.metadata.maker = pinfo->maker;
+                            info.metadata.category = pinfo->category;
+                            info.metadata.hints = pinfo->hints;
+                            info.io.audioIns = pinfo->audioIns;
+                            info.io.audioOuts = pinfo->audioOuts;
+                            info.io.cvIns = pinfo->cvIns;
+                            info.io.cvOuts = pinfo->cvOuts;
+                            info.io.midiIns = pinfo->midiIns;
+                            info.io.midiOuts = pinfo->midiOuts;
+                            info.io.parameterIns = pinfo->parameterIns;
+                            info.io.parameterOuts = pinfo->parameterOuts;
+
+                            if (fPluginType == CB::PLUGIN_LV2)
+                            {
+                                const char* const slash = std::strchr(pinfo->label, CARLA_OS_SEP);
+                                CARLA_SAFE_ASSERT_BREAK(slash != nullptr);
+                                filename = strdup(pinfo->label);
+                                filename[slash - pinfo->label] = '\0';
+                                info.filename = filename;
+                                info.label = slash + 1;
+                            }
+                            else
+                            {
+                                info.filename = gPluginsDiscoveryNullCharPtr;
+                                info.label = pinfo->label;
+                            }
+
+                            fDiscoveryCallback(fCallbackPtr, &info, nullptr);
+
+                            std::free(filename);
+                        }
+                    }
+                    return;
+                }
+            }
+
            #ifndef CARLA_OS_WIN
             if (helperTool.isNotEmpty())
                 startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all");
@@ -666,20 +731,35 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
 
     switch (ptype)
     {
+    case CB::PLUGIN_INTERNAL:
+    case CB::PLUGIN_LV2:
+    case CB::PLUGIN_SFZ:
+    case CB::PLUGIN_JSFX:
+    case CB::PLUGIN_DLS:
+    case CB::PLUGIN_GIG:
+    case CB::PLUGIN_SF2:
+        CARLA_SAFE_ASSERT_UINT_RETURN(btype == CB::BINARY_NATIVE, btype, nullptr);
+        break;
+    default:
+        break;
+    }
+
+    switch (ptype)
+    {
     case CB::PLUGIN_NONE:
     case CB::PLUGIN_JACK:
     case CB::PLUGIN_TYPE_COUNT:
         return nullptr;
 
+    case CB::PLUGIN_LV2:
     case CB::PLUGIN_SFZ:
     case CB::PLUGIN_JSFX:
     {
         const CarlaScopedEnvVar csev("CARLA_DISCOVERY_PATH", pluginPath);
-        return new CarlaPluginDiscovery(discoveryTool, btype, ptype, discoveryCb, checkCacheCb, callbackPtr);
+        return new CarlaPluginDiscovery(discoveryTool, btype, ptype, discoveryCb, checkCacheCb, callbackPtr, pluginPath);
     }
 
     case CB::PLUGIN_INTERNAL:
-    case CB::PLUGIN_LV2:
     case CB::PLUGIN_AU:
         return new CarlaPluginDiscovery(discoveryTool, btype, ptype, discoveryCb, checkCacheCb, callbackPtr);
 

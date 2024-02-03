@@ -696,7 +696,7 @@ struct PluginListDialog::PrivateData {
             if (btype == BINARY_NATIVE)
             {
                 btype = BINARY_WIN32;
-                ptype = PLUGIN_INTERNAL;
+                ptype = PLUGIN_NONE;
                 tool = carla_get_library_folder();
                 tool += CARLA_OS_SEP_STR "carla-discovery-win32.exe";
 
@@ -714,7 +714,7 @@ struct PluginListDialog::PrivateData {
             if (btype == BINARY_NATIVE)
             {
                 btype = BINARY_POSIX32;
-                ptype = PLUGIN_INTERNAL;
+                ptype = PLUGIN_NONE;
                 tool = carla_get_library_folder();
                 tool += CARLA_OS_SEP_STR "carla-discovery-posix32";
 
@@ -731,7 +731,7 @@ struct PluginListDialog::PrivateData {
             if (btype == BINARY_NATIVE || btype == BINARY_POSIX32)
             {
                 btype = BINARY_WIN64;
-                ptype = PLUGIN_INTERNAL;
+                ptype = PLUGIN_NONE;
                 tool = carla_get_library_folder();
                 tool += CARLA_OS_SEP_STR "carla-discovery-win64.exe";
 
@@ -743,7 +743,7 @@ struct PluginListDialog::PrivateData {
             if (btype != BINARY_WIN32)
             {
                 btype = BINARY_WIN32;
-                ptype = PLUGIN_INTERNAL;
+                ptype = PLUGIN_NONE;
                 tool = carla_get_library_folder();
                 tool += CARLA_OS_SEP_STR "carla-discovery-win32.exe";
 
@@ -1221,10 +1221,14 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
                 break;
             case PLUGIN_DSSI:
            #endif
-                ui.label->setText(tr("Discovering LV2 plugins..."));
-                path = p->paths.lv2;
-                p->discovery.ptype = PLUGIN_LV2;
-                break;
+                if (p->discovery.btype == BINARY_NATIVE && p->paths.lv2.isNotEmpty())
+                {
+                    ui.label->setText(tr("Discovering LV2 plugins..."));
+                    path = p->paths.lv2;
+                    p->discovery.ptype = PLUGIN_LV2;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_LV2:
                 ui.label->setText(tr("Discovering VST2 plugins..."));
                 path = p->paths.vst2;
@@ -1281,11 +1285,24 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
             case PLUGIN_SFZ:
           #endif
             default:
-                // discovery complete
-               #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
-                if (! p->discovery.nextTool())
-               #endif
+                // discovery complete?
+                for (;;)
+                {
+                   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+                    if (p->discovery.nextTool())
+                    {
+                        // tool has nothing to search, go to next one
+                        if (p->discovery.ptype == PLUGIN_NONE)
+                            continue;
+
+                        // there is still to do, break out of loop
+                        break;
+                    }
+                   #endif
+
                     refreshPluginsStop();
+                    break;
+                }
             }
 
             if (p->timerId == 0)
