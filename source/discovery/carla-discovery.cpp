@@ -1,19 +1,5 @@
-/*
- * Carla Plugin discovery
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
@@ -1472,7 +1458,7 @@ struct carla_v3_host_application : v3_host_application_cpp {
 private:
     static v3_result V3_API carla_get_name(void*, v3_str_128 name)
     {
-        static const char hostname[] = "Carla-Discovery\0";
+        static constexpr const char hostname[] = "Carla-Discovery\0";
 
         for (size_t i=0; i<sizeof(hostname); ++i)
             name[i] = hostname[i];
@@ -1480,7 +1466,10 @@ private:
         return V3_OK;
     }
 
-    static v3_result V3_API carla_create_instance(void*, v3_tuid, v3_tuid, void**) { return V3_NOT_IMPLEMENTED; }
+    static v3_result V3_API carla_create_instance(void*, v3_tuid, v3_tuid, void**)
+    {
+        return V3_NOT_IMPLEMENTED;
+    }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_host_application)
     CARLA_PREVENT_HEAP_ALLOCATION
@@ -1681,6 +1670,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
     // go through all relevant classes
     for (int32_t i=0; i<numClasses; ++i)
     {
+        v3_result res;
+
         // v3_class_info_2 is ABI compatible with v3_class_info
         union {
             v3_class_info v1;
@@ -1701,14 +1692,15 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
 
         // create instance
         void* instance = nullptr;
-        CARLA_SAFE_ASSERT_CONTINUE(v3_cpp_obj(factory1)->create_instance(factory1, classInfo.v1.class_id,
-                                                                         v3_component_iid, &instance) == V3_OK);
+        res = v3_cpp_obj(factory1)->create_instance(factory1, classInfo.v1.class_id, v3_component_iid, &instance);
+        CARLA_SAFE_ASSERT_INT_CONTINUE(res == V3_OK, res);
         CARLA_SAFE_ASSERT_CONTINUE(instance != nullptr);
 
         // initialize instance
         v3_component** const component = static_cast<v3_component**>(instance);
 
-        CARLA_SAFE_ASSERT_CONTINUE(v3_cpp_obj_initialize(component, hostContext) == V3_OK);
+        res = v3_cpp_obj_initialize(component, hostContext);
+        CARLA_SAFE_ASSERT_INT_CONTINUE(res == V3_OK, res);
 
         // create edit controller
         v3_edit_controller** controller = nullptr;
@@ -1784,8 +1776,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         for (int32_t b=0; b<numAudioInputBuses; ++b)
         {
             v3_bus_info busInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
-                                                                        V3_AUDIO, V3_INPUT, b, &busInfo) == V3_OK);
+            res = v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_INPUT, b, &busInfo);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             if (busInfo.flags & V3_IS_CONTROL_VOLTAGE)
                 cvIns += busInfo.channel_count;
@@ -1796,8 +1788,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         for (int32_t b=0; b<numAudioOutputBuses; ++b)
         {
             v3_bus_info busInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
-                                                                        V3_AUDIO, V3_OUTPUT, b, &busInfo) == V3_OK);
+            res = v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_OUTPUT, b, &busInfo);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             if (busInfo.flags & V3_IS_CONTROL_VOLTAGE)
                 cvOuts += busInfo.channel_count;
@@ -1808,7 +1800,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         for (int32_t p=0; p<numParameters; ++p)
         {
             v3_param_info paramInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(controller)->get_parameter_info(controller, p, &paramInfo) == V3_OK);
+            res = v3_cpp_obj(controller)->get_parameter_info(controller, p, &paramInfo);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             if (paramInfo.flags & (V3_PARAM_IS_BYPASS|V3_PARAM_IS_HIDDEN|V3_PARAM_PROGRAM_CHANGE))
                 continue;
@@ -1845,17 +1838,23 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         if (doInit)
         {
             v3_audio_processor** processor = nullptr;
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj_query_interface(component, v3_audio_processor_iid, &processor) == V3_OK);
+            v3_process_setup setup = { V3_REALTIME, V3_SAMPLE_32, kBufferSize, kSampleRate };
+
+            res = v3_cpp_obj_query_interface(component, v3_audio_processor_iid, &processor);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
             CARLA_SAFE_ASSERT_BREAK(processor != nullptr);
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->can_process_sample_size(processor, V3_SAMPLE_32) == V3_OK);
+            res = v3_cpp_obj(processor)->can_process_sample_size(processor, V3_SAMPLE_32);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, true) == V3_OK);
+            res = v3_cpp_obj(component)->set_active(component, true);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
-            v3_process_setup setup = { V3_REALTIME, V3_SAMPLE_32, kBufferSize, kSampleRate };
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->setup_processing(processor, &setup) == V3_OK);
+            res = v3_cpp_obj(processor)->setup_processing(processor, &setup);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, false) == V3_OK);
+            res = v3_cpp_obj(component)->set_active(component, false);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             v3_audio_bus_buffers* const inputsBuffers = numAudioInputBuses > 0
                                                       ? new v3_audio_bus_buffers[numAudioInputBuses]
@@ -1869,13 +1868,12 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             {
                 v3_bus_info busInfo = {};
                 carla_zeroStruct(inputsBuffers[b]);
-                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
-                                                                            V3_AUDIO, V3_INPUT, b, &busInfo) == V3_OK);
 
-                if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
-                    CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->activate_bus(component,
-                                                                                V3_AUDIO, V3_INPUT, b, true) == V3_OK);
-                }
+                res = v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_INPUT, b, &busInfo);
+                CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
+
+                res = v3_cpp_obj(component)->activate_bus(component, V3_AUDIO, V3_INPUT, b, true);
+                CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
                 inputsBuffers[b].num_channels = busInfo.channel_count;
             }
@@ -1884,19 +1882,21 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             {
                 v3_bus_info busInfo = {};
                 carla_zeroStruct(outputsBuffers[b]);
-                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
-                                                                            V3_AUDIO, V3_OUTPUT, b, &busInfo) == V3_OK);
 
-                if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
-                    CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->activate_bus(component,
-                                                                                V3_AUDIO, V3_OUTPUT, b, true) == V3_OK);
-                }
+                res = v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_OUTPUT, b, &busInfo);
+                CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
+
+                res = v3_cpp_obj(component)->activate_bus(component, V3_AUDIO, V3_OUTPUT, b, true);
+                CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
                 outputsBuffers[b].num_channels = busInfo.channel_count;
             }
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, true) == V3_OK);
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->set_processing(processor, true) == V3_OK);
+            res = v3_cpp_obj(component)->set_active(component, true);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
+
+            res = v3_cpp_obj(processor)->set_processing(processor, true);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK || res == V3_NOT_IMPLEMENTED, res);
 
             float* bufferAudioIn[MAX_DISCOVERY_AUDIO_IO + MAX_DISCOVERY_CV_IO];
             float* bufferAudioOut[MAX_DISCOVERY_AUDIO_IO + MAX_DISCOVERY_CV_IO];
@@ -1948,7 +1948,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
                 (v3_event_list**)&eventListPtr,
                 &processContext
             };
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->process(processor, &processData) == V3_OK);
+            res = v3_cpp_obj(processor)->process(processor, &processData);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             delete[] inputsBuffers;
             delete[] outputsBuffers;
@@ -1958,8 +1959,11 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             for (int j=0; j < audioOuts + cvOuts; ++j)
                 delete[] bufferAudioOut[j];
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->set_processing(processor, false) == V3_OK);
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, false) == V3_OK);
+            res = v3_cpp_obj(processor)->set_processing(processor, false);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK || res == V3_NOT_IMPLEMENTED, res);
+
+            res = v3_cpp_obj(component)->set_active(component, false);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             v3_cpp_obj_unref(processor);
         }

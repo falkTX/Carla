@@ -61,6 +61,7 @@ bool v3_tuid_match(const v3_tuid a, const v3_tuid b)
 
 #if V3_COM_COMPAT
 enum {
+	_V3_SIGNEDNESS     = -1,
 	V3_NO_INTERFACE    = 0x80004002L,
 	V3_OK              = 0,
 	V3_TRUE            = 0,
