@@ -59,7 +59,11 @@
  #elif defined(__mips) || defined(__mips__)
   #define V3_ARCHITECTURE "mips"
  #elif defined(__ppc64) || defined(__ppc64__) || defined(__powerpc64__)
-  #define V3_ARCHITECTURE "ppc64"
+  #ifdef __LITTLE_ENDIAN__
+   #define V3_ARCHITECTURE "ppc64le"
+  #else
+   #define V3_ARCHITECTURE "ppc64"
+  #endif
  #elif defined(__ppc) || defined(__ppc__) || defined(__powerpc__)
   #define V3_ARCHITECTURE "ppc"
  #elif defined(__riscv)
