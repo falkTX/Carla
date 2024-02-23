@@ -1,8 +1,5 @@
-/*
- * Carla plugin host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "pluginlistdialog.hpp"
 #include "pluginrefreshdialog.hpp"
@@ -65,6 +62,9 @@ struct PluginPaths {
     QCarlaString vst2;
     QCarlaString vst3;
     QCarlaString clap;
+   #ifdef CARLA_OS_MAC
+    QCarlaString au;
+   #endif
    #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     QCarlaString jsfx;
     QCarlaString sf2;
@@ -260,6 +260,12 @@ struct PluginPaths {
             clap += ":/usr/lib/clap";
            #endif
         }
+
+       #ifdef CARLA_OS_MAC
+        au = HOME + "/Library/Audio/Plug-Ins/Components";
+        au += ":/Library/Audio/Plug-Ins/Components";
+        au += ":/System/Library/Components";
+       #endif
 
        #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
         if (const char *const envJSFX = std::getenv("JSFX_PATH"))
@@ -780,13 +786,13 @@ struct PluginListDialog::PrivateData {
         std::vector<PluginInfo> vst2;
         std::vector<PluginInfo> vst3;
         std::vector<PluginInfo> clap;
-      #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
        #ifdef CARLA_OS_MAC
         std::vector<PluginInfo> au;
        #endif
+       #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
         std::vector<PluginInfo> jsfx;
         std::vector<PluginInfo> kits;
-      #endif
+       #endif
         QMap<QString, QList<PluginInfo>> cache;
         QList<PluginFavorite> favorites;
 
@@ -803,14 +809,14 @@ struct PluginListDialog::PrivateData {
             case PLUGIN_VST2:     vst2.push_back(pinfo);     return true;
             case PLUGIN_VST3:     vst3.push_back(pinfo);     return true;
             case PLUGIN_CLAP:     clap.push_back(pinfo);     return true;
-          #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
            #ifdef CARLA_OS_MAC
             case PLUGIN_AU:       au.push_back(pinfo);       return true;
            #endif
+           #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
             case PLUGIN_JSFX:     jsfx.push_back(pinfo);     return true;
             case PLUGIN_SF2:
             case PLUGIN_SFZ:      kits.push_back(pinfo);     return true;
-          #endif
+           #endif
             default: return false;
             }
         }
@@ -1111,6 +1117,11 @@ void PluginListDialog::setPluginPath(const PluginType ptype, const char* const p
     case PLUGIN_CLAP:
         p->paths.clap = path;
         break;
+   #ifdef CARLA_OS_MAC
+    case PLUGIN_AU:
+        p->paths.au = path;
+        break;
+   #endif
    #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     case PLUGIN_LADSPA:
         p->paths.ladspa = path;
@@ -1245,17 +1256,14 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
                 p->discovery.ptype = PLUGIN_CLAP;
                 break;
             case PLUGIN_CLAP:
-          #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
            #ifdef CARLA_OS_MAC
-                if (p->discovery.btype == BINARY_POSIX32 || p->discovery.btype == BINARY_POSIX64)
-                {
-                    ui.label->setText(tr("Discovering AU plugins..."));
-                    p->discovery.ptype = PLUGIN_AU;
-                    break;
-                }
-                [[fallthrough]];
+                ui.label->setText(tr("Discovering AU plugins..."));
+                path = p->paths.au;
+                p->discovery.ptype = PLUGIN_AU;
+                break;
             case PLUGIN_AU:
            #endif
+          #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
                 if (p->discovery.btype == BINARY_NATIVE && p->paths.jsfx.isNotEmpty())
                 {
                     ui.label->setText(tr("Discovering JSFX plugins..."));
@@ -1422,18 +1430,18 @@ void PluginListDialog::addPluginsToTable()
     for (const PluginInfo& plugin : p->plugins.clap)
         addPluginToTable(plugin);
 
-  #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
    #ifdef CARLA_OS_MAC
     for (const PluginInfo& plugin : p->plugins.au)
         addPluginToTable(plugin);
    #endif
 
+   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     for (const PluginInfo& plugin : p->plugins.jsfx)
         addPluginToTable(plugin);
 
     for (const PluginInfo& plugin : p->plugins.kits)
         addPluginToTable(plugin);
-  #endif
+   #endif
 
     CARLA_SAFE_ASSERT_INT2(p->lastTableWidgetIndex == ui.tableWidget->rowCount(),
                            p->lastTableWidgetIndex, ui.tableWidget->rowCount());
@@ -1936,13 +1944,13 @@ void PluginListDialog::refreshPluginsStart()
     p->plugins.vst2.clear();
     p->plugins.vst3.clear();
     p->plugins.clap.clear();
-  #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
    #ifdef CARLA_OS_MAC
     p->plugins.au.clear();
    #endif
+   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     p->plugins.jsfx.clear();
     p->plugins.kits.clear();
-  #endif
+   #endif
     p->discovery.dialog->b_start->setEnabled(false);
     p->discovery.dialog->b_skip->setEnabled(true);
     p->discovery.ignoreCache = p->discovery.dialog->ch_all->isChecked();

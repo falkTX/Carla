@@ -1,19 +1,5 @@
-﻿/*
- * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+﻿// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_UTILS_H_INCLUDED
 #define CARLA_UTILS_H_INCLUDED
@@ -341,19 +327,13 @@ typedef struct _CarlaCachedPluginInfo {
 
 /*!
  * Get how many cached plugins are available.
- * Internal and LV2 plugin formats are cached and need to be discovered via this function.
+ * Internal, LV2 and SFZ plugin formats are cached and can be discovered via this function.
  * Do not call this for any other plugin formats.
- *
- * @note if this carla build uses JUCE, then you must call carla_juce_init beforehand
- * @note for AU plugins, you cannot call this outside the main thread
  */
 CARLA_PLUGIN_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath);
 
 /*!
  * Get information about a cached plugin.
- *
- * @note if this carla build uses JUCE, then you must call carla_juce_init beforehand
- * @note for AU plugins, you cannot call this outside the main thread
  */
 CARLA_PLUGIN_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint index);
 
@@ -368,7 +348,7 @@ CARLA_PLUGIN_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(Pl
 CARLA_PLUGIN_EXPORT const char* carla_get_complete_license_text(void);
 
 /*!
- * Get the juce version used in the current Carla build.
+ * @deprecated do not use
  */
 CARLA_PLUGIN_EXPORT const char* carla_get_juce_version(void);
 
@@ -397,23 +377,17 @@ CARLA_PLUGIN_EXPORT const char* carla_get_library_folder(void);
  * JUCE */
 
 /*!
- * Initialize data structures and GUI support for JUCE.
- * This is only needed when carla builds use JUCE and you call cached-plugin related APIs.
- *
- * Idle must then be called at somewhat regular intervals, though in practice there is no reason for it yet.
- *
- * Make sure to call carla_juce_cleanup after you are done with APIs that need JUCE.
+ * @deprecated do not use
  */
 CARLA_PLUGIN_EXPORT void carla_juce_init(void);
 
 /*!
- * Give idle time to JUCE stuff.
- * Currently only used for Linux.
+ * @deprecated do not use
  */
 CARLA_PLUGIN_EXPORT void carla_juce_idle(void);
 
 /*!
- * Cleanup the JUCE stuff that was initialized by carla_juce_init.
+ * @deprecated do not use
  */
 CARLA_PLUGIN_EXPORT void carla_juce_cleanup(void);
 

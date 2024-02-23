@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaUtils.h"
 
@@ -21,11 +7,6 @@
 #include "CarlaString.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLv2Utils.hpp"
-
-#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-# include "AppConfig.h"
-# include "juce_audio_processors/juce_audio_processors.h"
-#endif
 
 #ifndef STATIC_PLUGIN_TARGET
 # define HAVE_SFZ
@@ -603,67 +584,6 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-static juce::StringArray gCachedAuPluginResults;
-
-static void findAUs()
-{
-    if (gCachedAuPluginResults.size() != 0)
-        return;
-
-    juce::AudioUnitPluginFormat auFormat;
-    gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false, false);
-}
-
-static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String pluginId)
-{
-    static CarlaCachedPluginInfo info;
-    static CarlaString sname, slabel, smaker;
-
-    info.valid = false;
-
-    juce::AudioUnitPluginFormat auFormat;
-    juce::OwnedArray<juce::PluginDescription> results;
-    auFormat.findAllTypesForFile(results, pluginId);
-    CARLA_SAFE_ASSERT_RETURN(results.size() > 0, &info);
-    CARLA_SAFE_ASSERT(results.size() == 1);
-
-    juce::PluginDescription* const desc(results[0]);
-    CARLA_SAFE_ASSERT_RETURN(desc != nullptr, &info);
-
-    info.category = CB::getPluginCategoryFromName(desc->category.toRawUTF8());
-    info.hints    = 0x0;
-    info.valid    = true;
-
-    if (desc->isInstrument)
-        info.hints |= CB::PLUGIN_IS_SYNTH;
-    if (true)
-        info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
-
-    info.audioIns  = static_cast<uint32_t>(desc->numInputChannels);
-    info.audioOuts = static_cast<uint32_t>(desc->numOutputChannels);
-    info.cvIns     = 0;
-    info.cvOuts    = 0;
-    info.midiIns   = desc->isInstrument ? 1 : 0;
-    info.midiOuts  = 0;
-    info.parameterIns  = 0;
-    info.parameterOuts = 0;
-
-    sname  = desc->name.toRawUTF8();
-    slabel = desc->fileOrIdentifier.toRawUTF8();
-    smaker = desc->manufacturerName.toRawUTF8();
-
-    info.name      = sname;
-    info.label     = slabel;
-    info.maker     = smaker;
-    info.copyright = gCachedPluginsNullCharPtr;
-
-    return &info;
-}
-#endif
-
-// -------------------------------------------------------------------------------------------------------------------
-
 #ifdef HAVE_SFZ
 static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& file)
 {
@@ -796,12 +716,6 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
         return lv2World.getPluginCount();
     }
 
-   #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-    case CB::PLUGIN_AU:
-        findAUs();
-        return static_cast<uint>(gCachedAuPluginResults.size());
-   #endif
-
    #ifdef HAVE_SFZ
     case CB::PLUGIN_SFZ:
         findSFZs(pluginPath);
@@ -846,12 +760,6 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
         return get_cached_plugin_lv2(lv2World, lilvPlugin);
     }
-
-   #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-    case CB::PLUGIN_AU:
-        CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gCachedAuPluginResults.size()));
-        return get_cached_plugin_au(gCachedAuPluginResults.strings.getUnchecked(static_cast<int>(index)));
-   #endif
 
    #ifdef HAVE_SFZ
     case CB::PLUGIN_SFZ:

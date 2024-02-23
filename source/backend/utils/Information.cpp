@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaUtils.h"
 #include "CarlaString.hpp"
@@ -29,10 +15,6 @@
 # pragma GCC diagnostic ignored "-Wsign-conversion"
 # pragma GCC diagnostic ignored "-Wundef"
 # pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#endif
-
-#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
-# include "carla_juce/carla_juce.h"
 #endif
 
 #ifdef USING_RTAUDIO
@@ -126,19 +108,11 @@ const char* carla_get_juce_version()
 {
     carla_debug("carla_get_juce_version()");
 
-    static CarlaString retVersion;
-
-   #if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
-    if (retVersion.isEmpty())
-    {
-        if (const char* const version = CarlaJUCE::getVersion())
-            retVersion = version+6;
-        else
-            retVersion = "Unknown";
-    }
+   #ifdef USING_JUCE
+    return "JUCE v7.0.1";
+   #else
+    return "Unknown";
    #endif
-
-    return retVersion;
 }
 
 const char* const* carla_get_supported_file_extensions()

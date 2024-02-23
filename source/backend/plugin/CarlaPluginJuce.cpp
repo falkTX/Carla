@@ -1642,7 +1642,33 @@ public:
 
         if (std::strcmp(format, "AU") == 0)
         {
-            fileOrIdentifier = label;
+            // compat with new scanning
+            if (std::strlen(label) == 14 && label[4] == ',' && label[9] == ',')
+            {
+                fileOrIdentifier = "AudioUnit:";
+
+                /**/ if (std::strncmp(label, "aumu", 4) == 0)
+                    fileOrIdentifier += "Synths/";
+                else if (std::strncmp(label, "aumf", 4) == 0)
+                    fileOrIdentifier += "Effects/";
+                else if (std::strncmp(label, "aufx", 4) == 0)
+                    fileOrIdentifier += "Effects/";
+                else if (std::strncmp(label, "augn", 4) == 0)
+                    fileOrIdentifier += "Generators/";
+                else if (std::strncmp(label, "aupn", 4) == 0)
+                    fileOrIdentifier += "Panners/";
+                else if (std::strncmp(label, "aumx", 4) == 0)
+                    fileOrIdentifier += "Mixers/";
+                else if (std::strncmp(label, "aumi", 4) == 0)
+                    fileOrIdentifier += "MidiEffects/";
+
+                fileOrIdentifier += label;
+            }
+            // old style label
+            else
+            {
+                fileOrIdentifier = label;
+            }
         }
         else
         {

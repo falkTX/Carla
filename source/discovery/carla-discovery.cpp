@@ -36,7 +36,6 @@
 #ifdef BUILD_BRIDGE
 # undef HAVE_FLUIDSYNTH
 # undef HAVE_YSFX
-# undef USING_JUCE
 #endif
 
 #ifdef HAVE_FLUIDSYNTH
@@ -52,22 +51,6 @@
 # include "CarlaDssiUtils.cpp"
 # include "CarlaJsfxUtils.hpp"
 # include "../backend/utils/CachedPlugins.cpp"
-#endif
-
-#ifdef USING_JUCE
-# include "carla_juce/carla_juce.h"
-# pragma GCC diagnostic ignored "-Wdouble-promotion"
-# pragma GCC diagnostic ignored "-Wduplicated-branches"
-# pragma GCC diagnostic ignored "-Weffc++"
-# pragma GCC diagnostic ignored "-Wfloat-equal"
-# include "juce_audio_processors/juce_audio_processors.h"
-# if JUCE_PLUGINHOST_VST
-#  define USING_JUCE_FOR_VST2
-# endif
-# if JUCE_PLUGINHOST_VST3
-#  define USING_JUCE_FOR_VST3
-# endif
-# pragma GCC diagnostic pop
 #endif
 
 // must be last
@@ -230,11 +213,6 @@ static void do_cached_check(const PluginType type)
         }
     }
 
-   #ifdef USING_JUCE
-    if (type == PLUGIN_AU)
-        CarlaJUCE::initialiseJuce_GUI();
-   #endif
-
     const uint count = carla_get_cached_plugin_count(type, plugPath);
 
     for (uint i=0; i<count; ++i)
@@ -244,11 +222,6 @@ static void do_cached_check(const PluginType type)
 
         print_cached_plugin(pinfo);
     }
-
-   #ifdef USING_JUCE
-    if (type == PLUGIN_AU)
-        CarlaJUCE::shutdownJuce_GUI();
-   #endif
 }
 #endif // ! BUILD_BRIDGE
 
@@ -889,7 +862,6 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 }
 #endif // ! BUILD_BRIDGE
 
-#ifndef USING_JUCE_FOR_VST2
 // --------------------------------------------------------------------------------------------------------------------
 // VST2
 
@@ -1452,12 +1424,10 @@ static bool do_vst2_check(lib_t& libHandle, const char* const filename, const bo
     (void)filename;
 #endif
 }
-#endif // ! USING_JUCE_FOR_VST2
 
 // --------------------------------------------------------------------------------------------------------------------
 // VST3
 
-#ifndef USING_JUCE_FOR_VST3
 struct carla_v3_host_application : v3_host_application_cpp {
     carla_v3_host_application()
     {
@@ -2033,7 +2003,6 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
     v3_exit();
     return false;
 }
-#endif // ! USING_JUCE_FOR_VST3
 
 // --------------------------------------------------------------------------------------------------------------------
 // AU
@@ -2259,7 +2228,9 @@ static bool do_au_check(const char* const filename, const bool doInit)
             {
                 hints |= PLUGIN_HAS_CUSTOM_UI;
                #ifndef BUILD_BRIDGE
+                /* FIXME only enable this after doing custom AU hosting
                 hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+                */
                #endif
             }
 
@@ -2326,7 +2297,7 @@ static bool do_au_check(const char* const filename, const bool doInit)
 
     return false;
 }
-#endif
+#endif // CARLA_OS_MAC
 
 // --------------------------------------------------------------------------------------------------------------------
 // CLAP
@@ -2595,172 +2566,6 @@ static bool do_clap_check(lib_t& libHandle, const char* const filename, const bo
     entry->deinit();
     return false;
 }
-
-#ifdef USING_JUCE
-// --------------------------------------------------------------------------------------------------------------------
-// JUCE
-
-// find all available plugin audio ports
-static void findMaxTotalChannels(juce::AudioProcessor* const filter, int& maxTotalIns, int& maxTotalOuts)
-{
-    filter->enableAllBuses();
-
-    const int numInputBuses  = filter->getBusCount(true);
-    const int numOutputBuses = filter->getBusCount(false);
-
-    if (numInputBuses > 1 || numOutputBuses > 1)
-    {
-        maxTotalIns = maxTotalOuts = 0;
-
-        for (int i = 0; i < numInputBuses; ++i)
-            maxTotalIns += filter->getChannelCountOfBus(true, i);
-
-        for (int i = 0; i < numOutputBuses; ++i)
-            maxTotalOuts += filter->getChannelCountOfBus(false, i);
-    }
-    else
-    {
-        maxTotalIns  = numInputBuses  > 0 ? filter->getBus(true,  0)->getMaxSupportedChannels(64) : 0;
-        maxTotalOuts = numOutputBuses > 0 ? filter->getBus(false, 0)->getMaxSupportedChannels(64) : 0;
-    }
-}
-
-static bool do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
-{
-    CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0, false) // FIXME
-    carla_debug("do_juce_check(%s, %s, %s)", filename_, stype, bool2str(doInit));
-
-    CarlaJUCE::initialiseJuce_GUI();
-
-    juce::String filename;
-
-   #ifdef CARLA_OS_WIN
-    // Fix for wine usage
-    if (juce::File("Z:\\usr\\").isDirectory() && filename_[0] == '/')
-    {
-        filename = filename_;
-        filename.replace("/", "\\");
-        filename = "Z:" + filename;
-    }
-    else
-   #endif
-    {
-        filename = juce::File(filename_).getFullPathName();
-    }
-
-    CarlaScopedPointer<juce::AudioPluginFormat> pluginFormat;
-
-    /* */ if (std::strcmp(stype, "VST2") == 0)
-    {
-       #if JUCE_PLUGINHOST_VST
-        pluginFormat = new juce::VSTPluginFormat();
-       #else
-        DISCOVERY_OUT("error", "VST2 support not available");
-        return false;
-       #endif
-    }
-    else if (std::strcmp(stype, "VST3") == 0)
-    {
-       #if JUCE_PLUGINHOST_VST3
-        pluginFormat = new juce::VST3PluginFormat();
-       #else
-        DISCOVERY_OUT("error", "VST3 support not available");
-        return false;
-       #endif
-    }
-    else if (std::strcmp(stype, "AU") == 0)
-    {
-       #if JUCE_PLUGINHOST_AU
-        pluginFormat = new juce::AudioUnitPluginFormat();
-       #else
-        DISCOVERY_OUT("error", "AU support not available");
-        return false;
-       #endif
-    }
-
-    if (pluginFormat == nullptr)
-    {
-        DISCOVERY_OUT("error", stype << " support not available");
-        return false;
-    }
-
-   #ifdef CARLA_OS_WIN
-    CARLA_CUSTOM_SAFE_ASSERT_RETURN("Plugin file/folder does not exist", juce::File(filename).exists(), false);
-   #endif
-    CARLA_SAFE_ASSERT_RETURN(pluginFormat->fileMightContainThisPluginType(filename), false);
-
-    juce::OwnedArray<juce::PluginDescription> results;
-    pluginFormat->findAllTypesForFile(results, filename);
-
-    if (results.size() == 0)
-    {
-       #if defined(CARLA_OS_MAC) && defined(__aarch64__)
-        if (std::strcmp(stype, "VST2") == 0 || std::strcmp(stype, "VST3") == 0)
-            return true;
-       #endif
-        DISCOVERY_OUT("error", "No plugins found");
-        return false;
-    }
-
-    for (juce::PluginDescription **it = results.begin(), **end = results.end(); it != end; ++it)
-    {
-        juce::PluginDescription* const desc(*it);
-
-        uint hints = 0x0;
-        int audioIns = desc->numInputChannels;
-        int audioOuts = desc->numOutputChannels;
-        int midiIns = 0;
-        int midiOuts = 0;
-        int parameters = 0;
-
-        if (desc->isInstrument)
-        {
-            hints |= PLUGIN_IS_SYNTH;
-            midiIns = 1;
-        }
-
-        if (doInit)
-        {
-            if (std::unique_ptr<juce::AudioPluginInstance> instance
-                    = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
-            {
-                CarlaJUCE::idleJuce_GUI();
-
-                findMaxTotalChannels(instance.get(), audioIns, audioOuts);
-                instance->refreshParameterList();
-
-                parameters = instance->getParameters().size();
-
-                if (instance->hasEditor())
-                    hints |= PLUGIN_HAS_CUSTOM_UI;
-                if (instance->acceptsMidi())
-                    midiIns = 1;
-                if (instance->producesMidi())
-                    midiOuts = 1;
-            }
-        }
-
-        DISCOVERY_OUT("init", "------------");
-        DISCOVERY_OUT("build", BINARY_NATIVE);
-        DISCOVERY_OUT("hints", hints);
-        DISCOVERY_OUT("category", getPluginCategoryAsString(getPluginCategoryFromName(desc->category.toRawUTF8())));
-        DISCOVERY_OUT("name", desc->descriptiveName);
-        DISCOVERY_OUT("label", desc->name);
-        DISCOVERY_OUT("maker", desc->manufacturerName);
-        DISCOVERY_OUT("uniqueId", desc->uniqueId);
-        DISCOVERY_OUT("audio.ins", audioIns);
-        DISCOVERY_OUT("audio.outs", audioOuts);
-        DISCOVERY_OUT("midi.ins", midiIns);
-        DISCOVERY_OUT("midi.outs", midiOuts);
-        DISCOVERY_OUT("parameters.ins", parameters);
-        DISCOVERY_OUT("end", "------------");
-    }
-
-    CarlaJUCE::idleJuce_GUI();
-    CarlaJUCE::shutdownJuce_GUI();
-    return false;
-}
-#endif // USING_JUCE_FOR_VST2
 
 // --------------------------------------------------------------------------------------------------------------------
 // fluidsynth (dls, sf2, sfz)
@@ -3102,25 +2907,15 @@ int main(int argc, const char* argv[])
    #endif
 
     case PLUGIN_VST2:
-       #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST
-        retryAsX64lugin = do_juce_check(filename, "VST2", doInit);
-       #else
         retryAsX64lugin = do_vst2_check(handle, filename, doInit);
-       #endif
         break;
 
     case PLUGIN_VST3:
-       #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST3
-        retryAsX64lugin = do_juce_check(filename, "VST3", doInit);
-       #else
         retryAsX64lugin = do_vst3_check(handle, filename, doInit);
-       #endif
         break;
 
     case PLUGIN_AU:
-       #if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
-        do_juce_check(filename, "AU", doInit);
-       #elif defined(CARLA_OS_MAC)
+       #ifdef CARLA_OS_MAC
         retryAsX64lugin = do_au_check(filename, doInit);
        #else
         DISCOVERY_OUT("error", "AU support not available");

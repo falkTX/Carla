@@ -8,13 +8,6 @@ CWD=..
 MODULENAME=carla-discovery
 include $(CWD)/Makefile.mk
 
-# Workaround GCC bug
-ifeq ($(TESTBUILD),true)
-ifeq ($(USING_JUCE),true)
-BUILD_CXX_FLAGS += -Wno-undef
-endif
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin
@@ -44,10 +37,6 @@ LINK_FLAGS += -lpthread
 else
 BUILD_CXX_FLAGS += -pthread
 LINK_FLAGS += -pthread
-endif
-
-ifeq ($(USING_JUCE),true)
-BUILD_CXX_FLAGS += -std=gnu++14
 endif
 
 32BIT_FLAGS += -DBUILD_BRIDGE -DBUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -96,27 +85,6 @@ ifeq ($(BUILDING_FOR_WINE),true)
 LIBS_win32   += $(MODULEDIR)/jackbridge.win32e.a
 LIBS_win64   += $(MODULEDIR)/jackbridge.win64e.a
 endif
-
-ifeq ($(USING_JUCE),true)
-LIBS_native  += $(MODULEDIR)/carla_juce.a
-LIBS_native  += $(MODULEDIR)/juce_audio_basics.a
-LIBS_native  += $(MODULEDIR)/juce_audio_processors.a
-LIBS_native  += $(MODULEDIR)/juce_core.a
-LIBS_native  += $(MODULEDIR)/juce_data_structures.a
-LIBS_native  += $(MODULEDIR)/juce_events.a
-LIBS_native  += $(MODULEDIR)/juce_graphics.a
-LIBS_native  += $(MODULEDIR)/juce_gui_basics.a
-LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
-
-LINK_FLAGS   += $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS   += $(JUCE_AUDIO_PROCESSORS_LIBS)
-LINK_FLAGS   += $(JUCE_CORE_LIBS)
-LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
-LINK_FLAGS   += $(JUCE_GRAPHICS_LIBS)
-LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
-LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
-endif # USING_JUCE
 
 # ---------------------------------------------------------------------------------------------------------------------
 
