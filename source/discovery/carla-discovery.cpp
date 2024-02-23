@@ -22,6 +22,7 @@
 
 #ifdef CARLA_OS_MAC
 # include "CarlaMacUtils.cpp"
+# include <AudioToolbox/AudioUnit.h>
 # ifdef __aarch64__
 #  include <spawn.h>
 # endif
@@ -183,7 +184,7 @@ static void print_lib_error(const char* const filename)
 }
 
 // --------------------------------------------------------------------------------------------------------------------
-// Plugin Checks
+// Carla Cached API
 
 #ifndef BUILD_BRIDGE
 static void print_cached_plugin(const CarlaCachedPluginInfo* const pinfo)
@@ -250,6 +251,9 @@ static void do_cached_check(const PluginType type)
    #endif
 }
 #endif // ! BUILD_BRIDGE
+
+// --------------------------------------------------------------------------------------------------------------------
+// LADSPA
 
 static void do_ladspa_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
@@ -486,6 +490,9 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
         DISCOVERY_OUT("end", "------------");
     }
 }
+
+// --------------------------------------------------------------------------------------------------------------------
+// DSSI
 
 static void do_dssi_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
@@ -792,6 +799,9 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
     }
 }
 
+// --------------------------------------------------------------------------------------------------------------------
+// LV2
+
 #ifndef BUILD_BRIDGE
 static void do_lv2_check(const char* const bundle, const bool doInit)
 {
@@ -881,7 +891,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 
 #ifndef USING_JUCE_FOR_VST2
 // --------------------------------------------------------------------------------------------------------------------
-// VST stuff
+// VST2
 
 // Check if plugin is currently processing
 static bool gVstIsProcessing = false;
@@ -1443,6 +1453,9 @@ static bool do_vst2_check(lib_t& libHandle, const char* const filename, const bo
 #endif
 }
 #endif // ! USING_JUCE_FOR_VST2
+
+// --------------------------------------------------------------------------------------------------------------------
+// VST3
 
 #ifndef USING_JUCE_FOR_VST3
 struct carla_v3_host_application : v3_host_application_cpp {
@@ -2022,6 +2035,302 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
 }
 #endif // ! USING_JUCE_FOR_VST3
 
+// --------------------------------------------------------------------------------------------------------------------
+// AU
+
+#ifdef CARLA_OS_MAC
+typedef AudioComponentPlugInInterface* (*FactoryFn)(const AudioComponentDescription*);
+
+typedef OSStatus (*InitializeFn)(void*);
+typedef OSStatus (*UninitializeFn)(void*);
+typedef OSStatus (*GetPropertyInfoFn)(void*, AudioUnitPropertyID, AudioUnitScope, AudioUnitElement, UInt32*, Boolean*);
+typedef OSStatus (*GetPropertyFn)(void*, AudioUnitPropertyID, AudioUnitScope, AudioUnitElement, void*, UInt32*);
+typedef OSStatus (*MIDIEventFn)(void*, UInt32, UInt32, UInt32, UInt32);
+
+static constexpr FourCharCode getFourCharCodeFromString(const char str[4])
+{
+    return (str[0] << 24) + (str[1] << 16) + (str[2] << 8) + str[3];
+}
+
+static bool do_au_check(const char* const filename, const bool doInit)
+{
+    BundleLoader bundleLoader;
+
+    if (! bundleLoader.load(filename))
+    {
+       #ifdef __aarch64__
+        return true;
+       #else
+        DISCOVERY_OUT("error", "Failed to load AU bundle executable");
+        return false;
+       #endif
+    }
+
+    const CFTypeRef componentsRef = CFBundleGetValueForInfoDictionaryKey(bundleLoader.getRef(), CFSTR("AudioComponents"));
+
+    if (componentsRef == nullptr || CFGetTypeID(componentsRef) != CFArrayGetTypeID())
+    {
+        DISCOVERY_OUT("error", "Not an AU component");
+        return false;
+    }
+
+    const CFArrayRef components = static_cast<CFArrayRef>(componentsRef);
+
+    for (uint32_t c = 0, count = CFArrayGetCount(components); c < count; ++c)
+    {
+        const CFTypeRef componentRef = CFArrayGetValueAtIndex(components, c);
+        CARLA_SAFE_ASSERT_CONTINUE(componentRef != nullptr);
+        CARLA_SAFE_ASSERT_CONTINUE(CFGetTypeID(componentRef) == CFDictionaryGetTypeID());
+
+        const CFDictionaryRef component = static_cast<CFDictionaryRef>(componentRef);
+
+        CFStringRef componentName = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("name"), (const void **)&componentName));
+
+        CFStringRef componentFactoryFunction = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("factoryFunction"), (const void **)&componentFactoryFunction));
+
+        CFStringRef componentType = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("type"), (const void **)&componentType));
+        CARLA_SAFE_ASSERT_CONTINUE(CFStringGetLength(componentType) == 4);
+
+        CFStringRef componentSubType = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("subtype"), (const void **)&componentSubType));
+        CARLA_SAFE_ASSERT_CONTINUE(CFStringGetLength(componentSubType) == 4);
+
+        CFStringRef componentManufacturer = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("manufacturer"), (const void **)&componentManufacturer));
+        CARLA_SAFE_ASSERT_CONTINUE(CFStringGetLength(componentManufacturer) == 4);
+
+        const FactoryFn factoryFn = bundleLoader.getSymbol<FactoryFn>(componentFactoryFunction);
+        CARLA_SAFE_ASSERT_CONTINUE(factoryFn != nullptr);
+
+        char label[15] = {};
+        CFStringGetCString(componentType, label, 5, kCFStringEncodingASCII);
+        CFStringGetCString(componentSubType, label + 5, 5, kCFStringEncodingASCII);
+        CFStringGetCString(componentManufacturer, label + 10, 5, kCFStringEncodingASCII);
+
+        const AudioComponentDescription desc = {
+            getFourCharCodeFromString(label),
+            getFourCharCodeFromString(label + 5),
+            getFourCharCodeFromString(label + 10),
+            0, 0
+        };
+
+        CARLA_SAFE_ASSERT_CONTINUE(desc.componentType != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(desc.componentSubType != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(desc.componentManufacturer != 0);
+
+        label[4] = label[9] = ',';
+
+        AudioComponentPlugInInterface* const interface = factoryFn(&desc);
+        CARLA_SAFE_ASSERT_CONTINUE(interface != nullptr);
+
+        const InitializeFn auInitialize = (InitializeFn)interface->Lookup(kAudioUnitInitializeSelect);
+        const UninitializeFn auUninitialize = (UninitializeFn)interface->Lookup(kAudioUnitUninitializeSelect);
+        const GetPropertyInfoFn auGetPropertyInfo = (GetPropertyInfoFn)interface->Lookup(kAudioUnitGetPropertyInfoSelect);
+        const GetPropertyFn auGetProperty = (GetPropertyFn)interface->Lookup(kAudioUnitGetPropertySelect);
+        const MIDIEventFn auMIDIEvent = (MIDIEventFn)interface->Lookup(kMusicDeviceMIDIEventSelect);
+
+        if (auInitialize == nullptr || auUninitialize == nullptr)
+            continue;
+        if (auGetPropertyInfo == nullptr || auGetProperty == nullptr)
+            continue;
+
+        if (interface->Open(interface, (AudioUnit)(void*)0x1) == noErr)
+        {
+            uint hints = 0x0;
+            uint audioIns = 0;
+            uint audioOuts = 0;
+            uint midiIns = 0;
+            uint midiOuts = 0;
+            uint parametersIns = 0;
+            uint parametersOuts = 0;
+            PluginCategory category;
+
+            switch (desc.componentType)
+            {
+            case kAudioUnitType_Effect:
+            case kAudioUnitType_MusicEffect:
+                category = PLUGIN_CATEGORY_NONE;
+                break;
+            case kAudioUnitType_Generator:
+            case kAudioUnitType_MusicDevice:
+                category = PLUGIN_CATEGORY_SYNTH;
+                break;
+            case kAudioUnitType_MIDIProcessor:
+            case kAudioUnitType_Mixer:
+            case kAudioUnitType_Panner:
+            case kAudioUnitType_SpeechSynthesizer:
+                category = PLUGIN_CATEGORY_UTILITY;
+                break;
+            case kAudioUnitType_FormatConverter:
+            case kAudioUnitType_OfflineEffect:
+            case kAudioUnitType_Output:
+                category = PLUGIN_CATEGORY_OTHER;
+                break;
+            default:
+                category = PLUGIN_CATEGORY_NONE;
+                break;
+            }
+
+            UInt32 outDataSize;
+            Boolean outWritable = false;
+
+            // audio port count
+            outDataSize = 0;
+            if (auGetPropertyInfo(interface, kAudioUnitProperty_SupportedNumChannels, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize != 0 && outDataSize % sizeof(AUChannelInfo) == 0)
+            {
+                const uint32_t numChannels = outDataSize / sizeof(AUChannelInfo);
+                AUChannelInfo* const channelInfo = new AUChannelInfo[numChannels];
+
+                if (auGetProperty(interface, kAudioUnitProperty_SupportedNumChannels, kAudioUnitScope_Global, 0, channelInfo, &outDataSize) == noErr && outDataSize == numChannels * sizeof(AUChannelInfo))
+                {
+                    AUChannelInfo* highestInfo = &channelInfo[0];
+
+                    for (uint32_t i=1; i<numChannels; ++i)
+                    {
+                        if (channelInfo[i].inChannels > highestInfo->inChannels && channelInfo[i].outChannels > highestInfo->outChannels)
+                            highestInfo = &channelInfo[i];
+                    }
+
+                    audioIns = highestInfo->inChannels;
+                    audioOuts = highestInfo->outChannels;
+                }
+            }
+
+            // parameter count
+            outDataSize = 0;
+            if (auGetPropertyInfo(interface, kAudioUnitProperty_ParameterList, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize != 0 && outDataSize % sizeof(AudioUnitParameterID) == 0)
+            {
+                const uint32_t numParams = outDataSize / sizeof(AudioUnitParameterID);
+                AudioUnitParameterID* const paramIds = new AudioUnitParameterID[numParams];
+
+                if (auGetProperty(interface, kAudioUnitProperty_ParameterList, kAudioUnitScope_Global, 0, paramIds, &outDataSize) == noErr && outDataSize == numParams * sizeof(AudioUnitParameterID))
+                {
+                    AudioUnitParameterInfo info;
+
+                    for (uint32_t i=0; i<numParams; ++i)
+                    {
+                        carla_zeroStruct(info);
+
+                        outDataSize = 0;
+                        if (auGetPropertyInfo(interface, kAudioUnitProperty_ParameterInfo, kAudioUnitScope_Global, paramIds[i], &outDataSize, &outWritable) != noErr)
+                            break;
+                        if (outDataSize != sizeof(AudioUnitParameterInfo))
+                            break;
+                        if (auGetProperty(interface, kAudioUnitProperty_ParameterInfo, kAudioUnitScope_Global, paramIds[i], &info, &outDataSize) != noErr)
+                            break;
+
+                        if ((info.flags & kAudioUnitParameterFlag_IsReadable) == 0)
+                            continue;
+
+                        if (info.flags & kAudioUnitParameterFlag_IsWritable)
+                            ++parametersIns;
+                        else
+                            ++parametersOuts;
+                    }
+                }
+
+                delete[] paramIds;
+            }
+
+            // MIDI input
+            if (auMIDIEvent != nullptr && auInitialize(interface) == noErr)
+            {
+                if (auMIDIEvent(interface, 0x90, 60, 64, 0) == noErr)
+                    midiIns = 1;
+
+                auUninitialize(interface);
+            }
+
+            // MIDI output
+            outDataSize = 0;
+            outWritable = false;
+            if (auGetPropertyInfo(interface, kAudioUnitProperty_MIDIOutputCallback, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize == sizeof(AUMIDIOutputCallbackStruct) && outWritable)
+                midiOuts = 1;
+
+            // hints
+            if (category == PLUGIN_CATEGORY_SYNTH)
+                hints |= PLUGIN_IS_SYNTH;
+
+            outDataSize = 0;
+            if (auGetPropertyInfo(interface, kAudioUnitProperty_CocoaUI, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize == sizeof(AudioUnitCocoaViewInfo))
+            {
+                hints |= PLUGIN_HAS_CUSTOM_UI;
+               #ifndef BUILD_BRIDGE
+                hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+               #endif
+            }
+
+            if (doInit)
+            {
+                // test valid scopes
+                outDataSize = 0;
+                if (auGetPropertyInfo(interface, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &outDataSize, &outWritable) == noErr && outDataSize == sizeof(UInt32))
+                {
+                    UInt32 count = 0;
+                    if (auGetProperty(interface, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &count, &outDataSize) == noErr && outDataSize == sizeof(UInt32) && count != 0)
+                    {
+                    }
+                }
+
+                // TODO
+            }
+
+            const CFIndex componentNameLen = CFStringGetLength(componentName);
+            char* const nameBuffer = new char[componentNameLen + 1];
+            const char* name;
+            const char* maker;
+
+            if (CFStringGetCString(componentName, nameBuffer, componentNameLen + 1, kCFStringEncodingUTF8))
+            {
+                if (char* const sep = std::strstr(nameBuffer, ": "))
+                {
+                    sep[0] = sep[1] = '\0';
+                    name = sep + 2;
+                    maker = nameBuffer;
+                }
+                else
+                {
+                    name = nameBuffer;
+                    maker = nameBuffer + componentNameLen;
+                }
+            }
+            else
+            {
+                nameBuffer[0] = '\0';
+                name = maker = nameBuffer;
+            }
+
+            interface->Close(interface);
+
+            DISCOVERY_OUT("init", "------------");
+            DISCOVERY_OUT("build", BINARY_NATIVE);
+            DISCOVERY_OUT("hints", hints);
+            DISCOVERY_OUT("category", getPluginCategoryAsString(category));
+            DISCOVERY_OUT("name", name);
+            DISCOVERY_OUT("label", label);
+            DISCOVERY_OUT("maker", maker);
+            DISCOVERY_OUT("audio.ins", audioIns);
+            DISCOVERY_OUT("audio.outs", audioOuts);
+            DISCOVERY_OUT("midi.ins", midiIns);
+            DISCOVERY_OUT("midi.outs", midiOuts);
+            DISCOVERY_OUT("parameters.ins", parametersIns);
+            DISCOVERY_OUT("parameters.outs", parametersOuts);
+            DISCOVERY_OUT("end", "------------");
+
+            delete[] nameBuffer;
+        }
+    }
+
+    return false;
+}
+#endif
+
+// --------------------------------------------------------------------------------------------------------------------
+// CLAP
+
 struct carla_clap_host : clap_host_t {
     carla_clap_host()
     {
@@ -2289,8 +2598,9 @@ static bool do_clap_check(lib_t& libHandle, const char* const filename, const bo
 
 #ifdef USING_JUCE
 // --------------------------------------------------------------------------------------------------------------------
-// find all available plugin audio ports
+// JUCE
 
+// find all available plugin audio ports
 static void findMaxTotalChannels(juce::AudioProcessor* const filter, int& maxTotalIns, int& maxTotalOuts)
 {
     filter->enableAllBuses();
@@ -2314,8 +2624,6 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter, int& maxTot
         maxTotalOuts = numOutputBuses > 0 ? filter->getBus(false, 0)->getMaxSupportedChannels(64) : 0;
     }
 }
-
-// --------------------------------------------------------------------------------------------------------------------
 
 static bool do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
 {
@@ -2454,6 +2762,9 @@ static bool do_juce_check(const char* const filename_, const char* const stype, 
 }
 #endif // USING_JUCE_FOR_VST2
 
+// --------------------------------------------------------------------------------------------------------------------
+// fluidsynth (dls, sf2, sfz)
+
 #ifdef HAVE_FLUIDSYNTH
 static void do_fluidsynth_check(const char* const filename, const PluginType type, const bool doInit)
 {
@@ -2551,6 +2862,7 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
 #endif // HAVE_FLUIDSYNTH
 
 // --------------------------------------------------------------------------------------------------------------------
+// JSFX
 
 #ifdef HAVE_YSFX
 static void do_jsfx_check(const char* const filename, bool doInit)
@@ -2761,6 +3073,7 @@ int main(int argc, const char* argv[])
     case PLUGIN_DSSI:
     case PLUGIN_VST2:
     case PLUGIN_VST3:
+    case PLUGIN_AU:
     case PLUGIN_CLAP:
         removeFileFromQuarantine(filename);
         break;
@@ -2807,6 +3120,8 @@ int main(int argc, const char* argv[])
     case PLUGIN_AU:
        #if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
         do_juce_check(filename, "AU", doInit);
+       #elif defined(CARLA_OS_MAC)
+        retryAsX64lugin = do_au_check(filename, doInit);
        #else
         DISCOVERY_OUT("error", "AU support not available");
        #endif
