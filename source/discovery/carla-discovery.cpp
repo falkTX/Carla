@@ -26,6 +26,11 @@
 # ifdef __aarch64__
 #  include <spawn.h>
 # endif
+# ifndef __MAC_13_0
+enum {
+    kAudioUnitType_SpeechSynthesizer = 'ausp',
+};
+# endif
 #endif
 
 #ifdef CARLA_OS_WIN
