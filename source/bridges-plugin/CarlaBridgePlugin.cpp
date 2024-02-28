@@ -86,6 +86,11 @@ static void saveSignalHandler(int) noexcept
     gSaveNow = true;
 }
 #elif defined(CARLA_OS_WIN)
+static LONG WINAPI winExceptionFilter(_EXCEPTION_POINTERS*)
+{
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
 static BOOL WINAPI winSignalHandler(DWORD dwCtrlType) noexcept
 {
     if (dwCtrlType == CTRL_C_EVENT)
@@ -115,6 +120,8 @@ static void initSignalHandler()
     sigaction(SIGUSR1, &sig, nullptr);
 #elif defined(CARLA_OS_WIN)
     SetConsoleCtrlHandler(winSignalHandler, TRUE);
+    SetErrorMode(SEM_NOGPFAULTERRORBOX);
+    SetUnhandledExceptionFilter(winExceptionFilter);
 #endif
 }
 
