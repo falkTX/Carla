@@ -448,7 +448,7 @@ private:
 
             if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
                 winePrefix = envWinePrefix;
-            else if (options.wine.fallbackPrefix.isNotEmpty() && options.wine.fallbackPrefix[0] != '\0')
+            else if (options.wine.fallbackPrefix.isNotEmpty())
                 winePrefix = options.wine.fallbackPrefix.buffer();
             else
                 winePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
@@ -713,6 +713,9 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
     CARLA_SAFE_ASSERT_RETURN(ptype != CB::PLUGIN_NONE, nullptr);
     CARLA_SAFE_ASSERT_RETURN(discoveryTool != nullptr && discoveryTool[0] != '\0', nullptr);
     CARLA_SAFE_ASSERT_RETURN(discoveryCb != nullptr, nullptr);
+    carla_debug("carla_plugin_discovery_start(%s, %d:%s, %d:%s, %s, %p, %p, %p)",
+                discoveryTool, btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), pluginPath,
+                discoveryCb, checkCacheCb, callbackPtr);
 
     bool directories = false;
     const char* wildcard = nullptr;

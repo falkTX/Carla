@@ -693,7 +693,7 @@ struct PluginListDialog::PrivateData {
                 handle = nullptr;
             }
 
-            if (!usePluginBridges)
+            if (! usePluginBridges)
                 return false;
 
           #ifdef CARLA_OS_WIN
@@ -729,7 +729,7 @@ struct PluginListDialog::PrivateData {
             }
            #endif
 
-            if (!useWineBridges)
+            if (! useWineBridges)
                 return false;
 
             // try wine bridges
@@ -1294,23 +1294,13 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
           #endif
             default:
                 // discovery complete?
-                for (;;)
-                {
-                   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
-                    if (p->discovery.nextTool())
-                    {
-                        // tool has nothing to search, go to next one
-                        if (p->discovery.ptype == PLUGIN_NONE)
-                            continue;
+               #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+                if (p->discovery.nextTool())
+                    continue;
+               #endif
 
-                        // there is still to do, break out of loop
-                        break;
-                    }
-                   #endif
-
-                    refreshPluginsStop();
-                    break;
-                }
+                refreshPluginsStop();
+                break;
             }
 
             if (p->timerId == 0)

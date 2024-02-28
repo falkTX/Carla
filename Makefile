@@ -340,6 +340,10 @@ else
 	$(MAKE) -C source/discovery win64
 endif
 
+mingw64:
+	$(MAKE) AR=i686-w64-mingw32-ar CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ win32
+	$(MAKE) AR=x86_64-w64-mingw32-ar CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ win64
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (wine)
 
