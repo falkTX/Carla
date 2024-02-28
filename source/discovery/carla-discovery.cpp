@@ -129,7 +129,8 @@ public:
 
     ~DiscoveryPipe()
     {
-        jackbridge_discovery_pipe_destroy(pipe);
+        if (pipe != nullptr)
+            jackbridge_discovery_pipe_destroy(pipe);
     }
 
     bool initPipeClient(const char* argv[])
@@ -170,6 +171,16 @@ static void print_lib_error(const char* const filename)
         DISCOVERY_OUT("error", error);
     }
 }
+
+#ifdef CARLA_OS_WIN
+// --------------------------------------------------------------------------------------------------------------------
+// Do not show error message box on Windows
+
+static LONG win32ExceptionFilter(_EXCEPTION_POINTERS*)
+{
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 // Carla Cached API
@@ -2804,13 +2815,19 @@ int main(int argc, const char* argv[])
    #endif
 
   #ifdef CARLA_OS_WIN
+    // init win32 stuff that plugins might use
     OleInitialize(nullptr);
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
    #ifndef __WINPTHREADS_VERSION
     // (non-portable) initialization of statically linked pthread library
     pthread_win32_process_attach_np();
     pthread_win32_thread_attach_np();
    #endif
+
+    // do not show error message box on Windows
+    SetErrorMode(SEM_NOGPFAULTERRORBOX);
+    SetUnhandledExceptionFilter(win32ExceptionFilter);
   #endif
 
     // ----------------------------------------------------------------------------------------------------------------
