@@ -1497,7 +1497,8 @@ bool CarlaPipeServer::startPipeServer(const char* const helperTool,
                                       const char* const filename,
                                       const char* const arg1,
                                       const char* const arg2,
-                                      const int size) noexcept
+                                      const int size,
+                                      int timeOutMilliseconds) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeRecv == INVALID_PIPE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend == INVALID_PIPE_VALUE, false);
@@ -1511,6 +1512,9 @@ bool CarlaPipeServer::startPipeServer(const char* const helperTool,
     CARLA_SAFE_ASSERT_RETURN(arg1 != nullptr, false);
     CARLA_SAFE_ASSERT_RETURN(arg2 != nullptr, false);
     carla_debug("CarlaPipeServer::startPipeServer(\"%s\", \"%s\", \"%s\")", filename, arg1, arg2);
+
+    if (timeOutMilliseconds < 0)
+        timeOutMilliseconds = 10 * 1000;
 
     char pipeRecvServerStr[100+1];
     char pipeSendServerStr[100+1];
@@ -1714,7 +1718,7 @@ bool CarlaPipeServer::startPipeServer(const char* const helperTool,
     void* const process = nullptr;
 #endif
 
-    if (waitForClientFirstMessage(pipeRecvClient, ovRecv, process, 10*1000 /* 10 secs */))
+    if (waitForClientFirstMessage(pipeRecvClient, ovRecv, process, timeOutMilliseconds))
     {
         pData->pipeRecv = pipeRecvClient;
         pData->pipeSend = pipeSendClient;
@@ -1768,9 +1772,10 @@ bool CarlaPipeServer::startPipeServer(const char* const helperTool,
 bool CarlaPipeServer::startPipeServer(const char* const filename,
                                       const char* const arg1,
                                       const char* const arg2,
-                                      const int size) noexcept
+                                      const int size,
+                                      const int timeOutMilliseconds) noexcept
 {
-    return startPipeServer(nullptr, filename, arg1, arg2, size);
+    return startPipeServer(nullptr, filename, arg1, arg2, size, timeOutMilliseconds);
 }
 
 void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcept

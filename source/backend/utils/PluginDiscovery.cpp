@@ -458,6 +458,8 @@ private:
         const CarlaScopedEnvVar sev2("WINEPREFIX", winePrefix.toRawUTF8());
        #endif
 
+        const CarlaScopedEnvVar sev3("CARLA_DISCOVERY_NO_PROCESSING_CHECKS", "1");
+
         if (fBinaries.empty())
         {
             if (fBinaryType == CB::BINARY_NATIVE)
@@ -522,10 +524,10 @@ private:
 
            #ifndef CARLA_OS_WIN
             if (helperTool.isNotEmpty())
-                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all");
+                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all", -1, 2000);
             else
            #endif
-                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all");
+                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all", -1, 2000);
         }
         else
         {
@@ -548,10 +550,10 @@ private:
 
            #ifndef CARLA_OS_WIN
             if (helperTool.isNotEmpty())
-                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
+                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8(), -1, 2000);
             else
            #endif
-                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
+                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8(), -1, 2000);
         }
     }
 

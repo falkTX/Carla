@@ -285,14 +285,15 @@ public:
      * Start the pipe server using @a filename with 2 arguments.
      * @see fail()
      */
-    bool startPipeServer(const char* helperTool,
-                         const char* filename, const char* arg1, const char* arg2, int size = -1) noexcept;
+    bool startPipeServer(const char* helperTool, const char* filename, const char* arg1, const char* arg2,
+                         int size = -1, int timeOutMilliseconds = -1) noexcept;
 
     /*!
      * Start the pipe server using @a filename with 2 arguments.
      * @see fail()
      */
-    bool startPipeServer(const char* filename, const char* arg1, const char* arg2, int size = -1) noexcept;
+    bool startPipeServer(const char* filename, const char* arg1, const char* arg2,
+                         int size = -1, int timeOutMilliseconds = -1) noexcept;
 
     /*!
      * Stop the pipe server.
