@@ -28,6 +28,7 @@ WINE_32BIT_FLAGS = $(32BIT_FLAGS) -fpermissive
 WINE_64BIT_FLAGS = $(64BIT_FLAGS) -fpermissive
 WINE_BUILD_FLAGS = $(filter-out -flto,$(BUILD_CXX_FLAGS))
 WINE_LINK_FLAGS  = $(filter-out -flto -static-libgcc -static-libstdc++,$(LINK_FLAGS))
+WINE_LINK_FLAGS += -nostartfiles
 WINE_LINK_FLAGS += $(LIBDL_LIBS)
 WINE_LINK_FLAGS += -pthread
 WINE_LINK_FLAGS += -lpthread

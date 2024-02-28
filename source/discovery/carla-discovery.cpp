@@ -176,7 +176,7 @@ static void print_lib_error(const char* const filename)
 // --------------------------------------------------------------------------------------------------------------------
 // Do not show error message box on Windows
 
-static LONG win32ExceptionFilter(_EXCEPTION_POINTERS*)
+static LONG WINAPI winExceptionFilter(_EXCEPTION_POINTERS*)
 {
     return EXCEPTION_EXECUTE_HANDLER;
 }
@@ -2827,7 +2827,7 @@ int main(int argc, const char* argv[])
 
     // do not show error message box on Windows
     SetErrorMode(SEM_NOGPFAULTERRORBOX);
-    SetUnhandledExceptionFilter(win32ExceptionFilter);
+    SetUnhandledExceptionFilter(winExceptionFilter);
   #endif
 
     // ----------------------------------------------------------------------------------------------------------------
