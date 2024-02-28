@@ -419,7 +419,7 @@ private:
             {
                 helperTool = options.wine.executable.buffer();
 
-                if (helperTool[0] == CARLA_OS_SEP && File(helperTool + "64").existsAsFile())
+                if (helperTool.isNotEmpty() && helperTool[0] == CARLA_OS_SEP && File(helperTool + "64").existsAsFile())
                     helperTool += "64";
             }
             else
@@ -448,7 +448,7 @@ private:
 
             if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
                 winePrefix = envWinePrefix;
-            else if (options.wine.fallbackPrefix != nullptr && options.wine.fallbackPrefix[0] != '\0')
+            else if (options.wine.fallbackPrefix.isNotEmpty() && options.wine.fallbackPrefix[0] != '\0')
                 winePrefix = options.wine.fallbackPrefix.buffer();
             else
                 winePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";

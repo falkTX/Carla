@@ -1,6 +1,6 @@
 /*
  * Carla String
- * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -722,8 +722,7 @@ public:
 
         carla_safe_assert("pos < fBufferLen", __FILE__, __LINE__);
 
-        static char fallback;
-        fallback = '\0';
+        static char fallback = '\0';
         return fallback;
     }
 
@@ -734,8 +733,7 @@ public:
 
         carla_safe_assert("pos < fBufferLen", __FILE__, __LINE__);
 
-        static char fallback;
-        fallback = '\0';
+        static char fallback = '\0';
         return fallback;
     }
 
