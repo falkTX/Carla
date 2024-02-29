@@ -934,7 +934,7 @@ public:
                 {
                     if (valueSize > maxLocalValueLen)
                     {
-                        const BridgeTextReader bigValueFilePathTry(fShmNonRtClientControl, valueSize);
+                        const BridgeTextReader bigValueFilePathTry(fShmNonRtClientControl);
 
                         CARLA_SAFE_ASSERT_BREAK(bigValueFilePathTry.text[0] != '\0');
                         if (! plugin->isEnabled()) break;
