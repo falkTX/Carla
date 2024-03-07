@@ -2368,7 +2368,7 @@ void CarlaPlugin::clearBuffers() noexcept
 // OSC stuff
 
 // FIXME
-void CarlaPlugin::handleOscMessage(const char* const, const int, const void* const, const char* const, const lo_message)
+void CarlaPlugin::handleOscMessage(const char*, int, const void*, const char*, void*)
 {
     // do nothing
 }

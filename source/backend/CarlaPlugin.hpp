@@ -24,7 +24,6 @@
 // -----------------------------------------------------------------------
 // Avoid including extra libs here
 
-typedef void* lo_message;
 typedef struct _NativePluginDescriptor NativePluginDescriptor;
 struct LADSPA_RDF_Descriptor;
 
@@ -778,7 +777,7 @@ public:
                                   int argc,
                                   const void* argv,
                                   const char* types,
-                                  lo_message msg);
+                                  void* msg);
 
     // -------------------------------------------------------------------
     // MIDI events
