@@ -61,7 +61,7 @@ jobs:
         run: cmake --install build --verbose
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ env.PACK_NAME }}
+          name: macos-${{ env.PACK_NAME }}-${{ matrix.frameworks }}
           path: ${{ env.DESTDIR }}
 
   mingw32-cross:
