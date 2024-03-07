@@ -2395,9 +2395,9 @@ public:
     // -------------------------------------------------------------------
     // OSC stuff
 
-    void handleOscMessage(const char* const method, const int argc, const void* const argvx, const char* const types, const lo_message msg) override
+    void handleOscMessage(const char* const method, const int argc, const void* const argvx, const char* const types, void* const msg) override
     {
-        const lo_address source(lo_message_get_source(msg));
+        const lo_address source = lo_message_get_source(static_cast<lo_message>(msg));
         CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
 
         // protocol for DSSI UIs *must* be UDP
@@ -2432,7 +2432,7 @@ public:
         if (std::strcmp(method, "midi") == 0)
             return handleOscMessageMIDI(argc, argv, types);
         if (std::strcmp(method, "update") == 0)
-            return handleOscMessageUpdate(argc, argv, types, lo_message_get_source(msg));
+            return handleOscMessageUpdate(argc, argv, types, source);
         if (std::strcmp(method, "exiting") == 0)
             return handleOscMessageExiting();
 
