@@ -11,7 +11,7 @@ jobs:
   macos-11:
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up dependencies
         run: |
           brew install fluid-synth liblo libmagic libsndfile pkg-config sdl2
@@ -25,7 +25,7 @@ jobs:
   ubuntu-20_04:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Fix GitHub's mess
         run: |
           sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
@@ -51,7 +51,7 @@ jobs:
   ubuntu-22_04:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Fix GitHub's mess
         run: |
           sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list

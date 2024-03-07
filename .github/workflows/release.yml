@@ -5,18 +5,18 @@ on: [push, pull_request]
 env:
   CACHE_VERSION: 1
   PAWPAW_SKIP_LTO: 1
-  PAWPAW_VERSION: cd7b760d6a32ecad263b112c12be8a306ed1e89c
+  PAWPAW_VERSION: 80607a764da0b5a6b2daa4d5dd165beafa0535bc
 
 jobs:
   # macOS native universal build
   macos_universal:
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Set up cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/PawPawBuilds
@@ -29,6 +29,7 @@ jobs:
         run: |
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
+          ./PawPaw/.github/workflows/bootstrap-deps.sh macos-universal
           ./PawPaw/bootstrap-carla.sh macos-universal && ./PawPaw/.cleanup.sh macos-universal
       - name: Build macOS universal
         shell: bash
@@ -41,7 +42,7 @@ jobs:
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} -j 1
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: macOS dmg
           path: ./*.dmg
@@ -59,11 +60,11 @@ jobs:
   win32:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Set up cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/PawPawBuilds
@@ -92,6 +93,7 @@ jobs:
         run: |
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
+          ./PawPaw/.github/workflows/bootstrap-deps.sh win32
           ./PawPaw/bootstrap-carla.sh win32 && ./PawPaw/.cleanup.sh win32
       - name: Build win32 cross-compiled
         shell: bash
@@ -104,7 +106,7 @@ jobs:
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} -j 1
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: win32 zip
           path: ./*.zip
@@ -122,11 +124,11 @@ jobs:
   win64:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Set up cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/PawPawBuilds
@@ -155,6 +157,7 @@ jobs:
         run: |
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
+          ./PawPaw/.github/workflows/bootstrap-deps.sh win64
           ./PawPaw/bootstrap-carla.sh win64 && ./PawPaw/.cleanup.sh win64
       - name: Build win64 cross-compiled
         shell: bash
@@ -168,7 +171,7 @@ jobs:
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} -j 1
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: win64 zip
           path: ./*.zip
