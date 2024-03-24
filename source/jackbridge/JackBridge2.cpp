@@ -55,28 +55,28 @@ bool jackbridge_sem_connect(void* sem) noexcept
 #ifdef JACKBRIDGE_DUMMY
     return false;
 #else
-    return carla_sem_connect(*(carla_sem_t*)sem);
+    return true;
 #endif
 }
 
-void jackbridge_sem_post(void* sem, bool server) noexcept
+void jackbridge_sem_post(void* sem, bool) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(sem != nullptr,);
 
 #ifndef JACKBRIDGE_DUMMY
-    carla_sem_post(*(carla_sem_t*)sem, server);
+    carla_sem_post(*(carla_sem_t*)sem);
 #endif
 }
 
 #ifndef CARLA_OS_WASM
-bool jackbridge_sem_timedwait(void* sem, uint msecs, bool server) noexcept
+bool jackbridge_sem_timedwait(void* sem, uint msecs, bool) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(sem != nullptr, false);
 
 #ifdef JACKBRIDGE_DUMMY
     return false;
 #else
-    return carla_sem_timedwait(*(carla_sem_t*)sem, msecs, server);
+    return carla_sem_timedwait(*(carla_sem_t*)sem, msecs);
 #endif
 }
 #endif
