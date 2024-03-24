@@ -2723,7 +2723,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             }
             // some plugins use rdfs:label, spec was not clear which one to use
             else if (LilvNode* const portGroupLabelNode = lilv_world_get(lv2World.me, portGroupNode,
-                                                                        lv2World.rdfs_label.me, nullptr))
+                                                                         lv2World.rdfs_label.me, nullptr))
             {
                 portGroup.Name = carla_strdup_safe(lilv_node_as_string(portGroupLabelNode));
                 lilv_node_free(portGroupLabelNode);
