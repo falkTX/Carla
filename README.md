@@ -14,7 +14,7 @@ Features
 * SF2/3 and SFZ sound banks
 * Internal audio and midi file player
 * Automation of plugin parameters via MIDI CC
-* Remote control over OSC
+* Remote control over [OSC](https://opensoundcontrol.stanford.edu/)
 * Rack and Patchbay processing modes, plus Single and Multi-Client if using JACK
 * Native audio drivers (ALSA, DirectSound, CoreAudio, etc) and JACK
 
