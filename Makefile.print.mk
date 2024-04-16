@@ -116,28 +116,19 @@ endif
 	@printf -- "LV2:      $(ANS_YES)\n"
 	@printf -- "CLAP:     $(ANS_YES)\n"
 ifeq ($(MACOS_OR_WINDOWS),true)
-ifeq ($(USING_JUCE),true)
-	@printf -- "VST2:     $(ANS_YES) (with UI, using JUCE)\n"
-	@printf -- "VST3:     $(ANS_YES) (with UI, using JUCE)\n"
-else  # USING_JUCE
 	@printf -- "VST2:     $(ANS_YES) (with UI)\n"
-	@printf -- "VST3:     $(ANS_NO)\n"
-endif # USING_JUCE
+	@printf -- "VST3:     $(ANS_YES) (with UI)\n"
 else  # MACOS_OR_WINDOWS
 ifeq ($(HAIKU),true)
 	@printf -- "VST2:     $(ANS_YES) (without UI)\n"
-	@printf -- "VST3:     $(ANS_NO)\n"
+	@printf -- "VST3:     $(ANS_YES) (without UI)\n"
 else  # HAIKU
 ifeq ($(HAVE_X11),true)
 	@printf -- "VST2:     $(ANS_YES) (with UI)\n"
-ifeq ($(USING_JUCE),true)
-	@printf -- "VST3:     $(ANS_YES) (with UI, using JUCE)\n"
-else  # USING_JUCE
-	@printf -- "VST3:     $(ANS_NO)\n"
-endif # USING_JUCE
+	@printf -- "VST3:     $(ANS_YES) (with UI)\n"
 else  # HAVE_X11
 	@printf -- "VST2:     $(ANS_YES) (without UI) $(mS)Missing X11$(mE)\n"
-	@printf -- "VST3:     $(ANS_NO)\n"
+	@printf -- "VST3:     $(ANS_YES) (without UI) $(mS)Missing X11$(mE)\n"
 endif # HAVE_X11
 endif # HAIKU
 endif # MACOS_OR_WINDOWS
