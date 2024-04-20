@@ -351,6 +351,14 @@ public:
                 pHost->ui_closed(pHost->handle);
             break;
 
+        case ENGINE_CALLBACK_EMBED_UI_RESIZED:
+            if (sendHost && fUsesEmbed)
+                pHost->dispatcher(pHost->handle,
+                                  NATIVE_HOST_OPCODE_UI_RESIZE,
+                                  value1, value2,
+                                  nullptr, 0.0f);
+            break;
+
         default:
             break;
         }
@@ -1391,11 +1399,13 @@ protected:
         if (carla_isNotEqual(fLastScaleFactor, pData->options.uiScale))
         {
             fLastScaleFactor = pData->options.uiScale;
-            pHost->dispatcher(pHost->handle,
-                              NATIVE_HOST_OPCODE_UI_RESIZE,
-                              static_cast<int>(kUiWidth * fLastScaleFactor + 0.5f),
-                              static_cast<int>(kUiHeight * fLastScaleFactor + 0.5f),
-                              nullptr, 0.0f);
+
+            if (! fUsesEmbed)
+                pHost->dispatcher(pHost->handle,
+                                  NATIVE_HOST_OPCODE_UI_RESIZE,
+                                  static_cast<int>(kUiWidth * fLastScaleFactor + 0.5f),
+                                  static_cast<int>(kUiHeight * fLastScaleFactor + 0.5f),
+                                  nullptr, 0.0f);
         }
 
         {
