@@ -1406,9 +1406,7 @@ public:
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            /* TODO
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            */
             options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
         }
 
@@ -2390,6 +2388,9 @@ public:
             }
         }
 
+        if (fEvents.paramInputs != nullptr && fV3.midiMapping != nullptr)
+            fMidiControllerAssignments.init(fV3.midiMapping, numEventInputBuses);
+
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 
@@ -2460,7 +2461,32 @@ public:
 
         if (pData->needsReset)
         {
-            if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS && fEvents.eventInputs != nullptr)
+            if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+            {
+                for (uint8_t c=0; c<MAX_MIDI_CHANNELS; ++c)
+                {
+                    v3_param_id paramId;
+                    if (fMidiControllerAssignments.get(0, c, MIDI_CONTROL_ALL_NOTES_OFF, paramId))
+                    {
+                        // TODO create mapping between paramId -> index
+                        uint32_t index = UINT32_MAX;
+                        for (uint32_t i=0; i < pData->param.count; ++i)
+                        {
+                            if (static_cast<v3_param_id>(pData->param.data[i].rindex) == paramId)
+                            {
+                                index = i;
+                                break;
+                            }
+                        }
+
+                        if (index == UINT32_MAX)
+                            break;
+
+                        fEvents.paramInputs->setParamValueRT(index, 0, 0.f);
+                    }
+                }
+            }
+            else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS && fEvents.eventInputs != nullptr)
             {
                 fEvents.eventInputs->numEvents = MAX_MIDI_NOTE;
 
@@ -2588,6 +2614,9 @@ public:
             // --------------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            bool allNotesOffSent  = false;
+#endif
             bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t startTime = 0;
@@ -2718,13 +2747,10 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_VALUE)
                         {
-                            v3_param_id paramId = 0;
-                            if (v3_cpp_obj(fV3.midiMapping)->get_midi_controller_assignment(fV3.midiMapping,
-                                                                                            0,
-                                                                                            event.channel,
-                                                                                            ctrlEvent.param,
-                                                                                            &paramId) == V3_OK)
+                            v3_param_id paramId;
+                            if (fMidiControllerAssignments.get(0, event.channel, ctrlEvent.param, paramId))
                             {
+                                // TODO create mapping between paramId -> index
                                 uint32_t index = UINT32_MAX;
                                 for (uint32_t i=0; i < pData->param.count; ++i)
                                 {
@@ -2764,8 +2790,61 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            v3_param_id paramId;
+                            if (fMidiControllerAssignments.get(0, event.channel, MIDI_CONTROL_ALL_SOUND_OFF, paramId))
+                            {
+                                // TODO create mapping between paramId -> index
+                                uint32_t index = UINT32_MAX;
+                                for (uint32_t i=0; i < pData->param.count; ++i)
+                                {
+                                    if (static_cast<v3_param_id>(pData->param.data[i].rindex) == paramId)
+                                    {
+                                        index = i;
+                                        break;
+                                    }
+                                }
+
+                                if (index == UINT32_MAX)
+                                    break;
+
+                                fEvents.paramInputs->setParamValueRT(index, event.time, 0.f);
+                            }
+                        }
+                        break;
+
                     case kEngineControlEventTypeAllNotesOff:
-                        // TODO map to CC
+                        if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+                            if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
+                                postponeRtAllNotesOff();
+                            }
+#endif
+
+                            v3_param_id paramId;
+                            if (fMidiControllerAssignments.get(0, event.channel, MIDI_CONTROL_ALL_NOTES_OFF, paramId))
+                            {
+                                // TODO create mapping between paramId -> index
+                                uint32_t index = UINT32_MAX;
+                                for (uint32_t i=0; i < pData->param.count; ++i)
+                                {
+                                    if (static_cast<v3_param_id>(pData->param.data[i].rindex) == paramId)
+                                    {
+                                        index = i;
+                                        break;
+                                    }
+                                }
+
+                                if (index == UINT32_MAX)
+                                    break;
+
+                                fEvents.paramInputs->setParamValueRT(index, event.time, 0.f);
+                            }
+                        }
                         break;
                     } // switch (ctrlEvent.type)
                     break;
@@ -2854,13 +2933,10 @@ public:
                             const uint8_t control = midiEvent.data[1];
                             const uint8_t value   = midiEvent.data[2];
 
-                            v3_param_id paramId = 0;
-                            if (v3_cpp_obj(fV3.midiMapping)->get_midi_controller_assignment(fV3.midiMapping,
-                                                                                            midiEvent.port,
-                                                                                            event.channel,
-                                                                                            control,
-                                                                                            &paramId) == V3_OK)
+                            v3_param_id paramId;
+                            if (fMidiControllerAssignments.get(midiEvent.port, event.channel, control, paramId))
                             {
+                                // TODO create mapping between paramId -> index
                                 uint32_t index = UINT32_MAX;
                                 for (uint32_t i=0; i < pData->param.count; ++i)
                                 {
@@ -2885,13 +2961,10 @@ public:
                         {
                             const uint8_t pressure = midiEvent.data[1];
 
-                            v3_param_id paramId = 0;
-                            if (v3_cpp_obj(fV3.midiMapping)->get_midi_controller_assignment(fV3.midiMapping,
-                                                                                            midiEvent.port,
-                                                                                            event.channel,
-                                                                                            128,
-                                                                                            &paramId) == V3_OK)
+                            v3_param_id paramId;
+                            if (fMidiControllerAssignments.get(midiEvent.port, event.channel, 128, paramId))
                             {
+                                // TODO create mapping between paramId -> index
                                 uint32_t index = UINT32_MAX;
                                 for (uint32_t i=0; i < pData->param.count; ++i)
                                 {
@@ -2916,13 +2989,10 @@ public:
                         {
                             const uint16_t pitchbend = (midiEvent.data[2] << 7) | midiEvent.data[1];
 
-                            v3_param_id paramId = 0;
-                            if (v3_cpp_obj(fV3.midiMapping)->get_midi_controller_assignment(fV3.midiMapping,
-                                                                                            midiEvent.port,
-                                                                                            event.channel,
-                                                                                            129,
-                                                                                            &paramId) == V3_OK)
+                            v3_param_id paramId;
+                            if (fMidiControllerAssignments.get(midiEvent.port, event.channel, 129, paramId))
                             {
+                                // TODO create mapping between paramId -> index
                                 uint32_t index = UINT32_MAX;
                                 for (uint32_t i=0; i < pData->param.count; ++i)
                                 {
@@ -3544,10 +3614,8 @@ public:
                 pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_PITCHBEND))
                 pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-            /* TODO
             if (isPluginOptionEnabled(options, PLUGIN_OPTION_SEND_ALL_SOUND_OFF))
                 pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            */
             if (isPluginOptionInverseEnabled(options, PLUGIN_OPTION_SKIP_SENDING_NOTES))
                 pData->options |= PLUGIN_OPTION_SKIP_SENDING_NOTES;
         }
@@ -4132,6 +4200,80 @@ private:
 
         CARLA_DECLARE_NON_COPYABLE(Events)
     } fEvents;
+
+    struct MidiControllerAssignments {
+        v3_param_id* mappings;
+        bool* used;
+
+        MidiControllerAssignments() noexcept
+          : mappings(nullptr),
+            used(nullptr) {}
+
+        ~MidiControllerAssignments() noexcept
+        {
+            clear();
+        }
+
+        void init(v3_midi_mapping** const midiMapping, const uint32_t numPorts)
+        {
+            clear();
+
+            if (numPorts == 0)
+                return;
+
+            const uint32_t dataPoints = numPorts * MAX_MIDI_CHANNELS * 130;
+
+            mappings = new v3_param_id[dataPoints];
+            used = new bool[dataPoints];
+
+            carla_zeroStructs(mappings, dataPoints);
+            carla_zeroStructs(used, dataPoints);
+
+            v3_param_id paramId;
+            for (uint32_t p=0; p<numPorts; ++p)
+            {
+                for (uint8_t ch=0; ch<MAX_MIDI_CHANNELS; ++ch)
+                {
+                    for (uint16_t cc=0; cc<130; ++cc)
+                    {
+                        if (v3_cpp_obj(midiMapping)->get_midi_controller_assignment(midiMapping, p,
+                                                                                    ch, cc, &paramId) == V3_OK)
+                        {
+                            const uint32_t index = p * (130 + MAX_MIDI_CHANNELS) + cc * MAX_MIDI_CHANNELS + ch;
+                            mappings[index] = paramId;
+                            used[index] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        void clear() noexcept
+        {
+            delete[] mappings;
+            delete[] used;
+            mappings = nullptr;
+            used = nullptr;
+        }
+
+        bool get(const uint8_t port, const uint8_t channel, const uint8_t cc, v3_param_id& paramId) noexcept
+        {
+            CARLA_SAFE_ASSERT_UINT_RETURN(channel < MAX_MIDI_CHANNELS, channel, false);
+            CARLA_SAFE_ASSERT_UINT_RETURN(cc < 130, cc, false);
+
+            if (used == nullptr)
+                return false;
+
+            const uint32_t index = port * (130 + MAX_MIDI_CHANNELS) + cc * MAX_MIDI_CHANNELS + channel;
+            if (used[index])
+            {
+                paramId = mappings[index];
+                return true;
+            }
+
+            return false;
+        }
+    } fMidiControllerAssignments;
 
    #ifdef V3_VIEW_PLATFORM_TYPE_NATIVE
     struct UI {
