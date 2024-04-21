@@ -22,6 +22,12 @@ typedef OSStatus (*InitializeFn)(void*);
 typedef OSStatus (*UninitializeFn)(void*);
 typedef OSStatus (*GetPropertyInfoFn)(void*, AudioUnitPropertyID, AudioUnitScope, AudioUnitElement, UInt32*, Boolean*);
 typedef OSStatus (*GetPropertyFn)(void*, AudioUnitPropertyID, AudioUnitScope, AudioUnitElement, void*, UInt32*);
+typedef OSStatus (*SetPropertyFn)(void*, AudioUnitPropertyID, AudioUnitScope, AudioUnitElement, const void*, UInt32);
+typedef OSStatus (*GetParameterFn)(void*, AudioUnitParameterID, AudioUnitScope, AudioUnitElement, AudioUnitParameterValue*);
+typedef OSStatus (*SetParameterFn)(void*, AudioUnitParameterID, AudioUnitScope, AudioUnitElement, AudioUnitParameterValue, UInt32);
+typedef OSStatus (*ScheduleParametersFn)(void*, const AudioUnitParameterEvent*, UInt32);
+typedef OSStatus (*ResetFn)(void*, AudioUnitScope, AudioUnitElement);
+typedef OSStatus (*RenderFn)(void*, AudioUnitRenderActionFlags*, const AudioTimeStamp*, UInt32, UInt32, AudioBufferList*);
 typedef OSStatus (*MIDIEventFn)(void*, UInt32, UInt32, UInt32, UInt32);
 
 static constexpr FourCharCode getFourCharCodeFromString(const char str[4])
@@ -103,6 +109,25 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
+    uint getOptionsAvailable() const noexcept override
+    {
+        // TODO
+        return 0x0;
+    }
+
+    float getParameterValue(const uint32_t parameterId) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fInterface != nullptr, 0.f);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.f);
+
+        const AudioUnitParameterID paramId = pData->param.data[parameterId].rindex;
+        AudioUnitParameterValue value = 0.f;
+        if (fFunctions.getParameter(fInterface, paramId, kAudioUnitScope_Global, 0, &value) == noErr)
+            return value;
+
+        return 0.f;
+    }
+
     bool getLabel(char* const strBuf) const noexcept override
     {
         std::strncpy(strBuf, fLabel.buffer(), STR_MAX);
@@ -121,6 +146,76 @@ public:
         return true;
     }
 
+    bool getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fInterface != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
+
+        const AudioUnitParameterID paramId = pData->param.data[parameterId].rindex;
+        AudioUnitParameterInfo info = {};
+        UInt32 outDataSize = sizeof(AudioUnitParameterInfo);
+
+        if (fFunctions.getProperty(fInterface, kAudioUnitProperty_ParameterInfo, kAudioUnitScope_Global, paramId, &info, &outDataSize) == noErr)
+        {
+            if (info.flags & kAudioUnitParameterFlag_HasCFNameString)
+            {
+                *strBuf = '\0';
+                if (! CFStringGetCString(info.cfNameString, strBuf, std::min<int>(STR_MAX, CFStringGetLength(info.cfNameString) + 1), kCFStringEncodingUTF8))
+                {
+                    carla_stdout("CFStringGetCString fail '%s'", info.name);
+                    std::strncpy(strBuf, info.name, STR_MAX);
+                }
+                else
+                {
+                    carla_stdout("CFStringGetCString ok '%s' '%s'", info.name, strBuf);
+                    std::strncpy(strBuf, info.name, STR_MAX);
+                }
+
+                if (info.flags & kAudioUnitParameterFlag_CFNameRelease)
+                    CFRelease(info.cfNameString);
+
+                return true;
+            }
+
+                    carla_stdout("CFStringGetCString not used '%s'", info.name);
+            std::strncpy(strBuf, info.name, STR_MAX);
+            return true;
+        }
+
+        carla_safe_assert("fFunctions.getProperty(...)", __FILE__, __LINE__);
+        return CarlaPlugin::getParameterName(parameterId, strBuf);
+    }
+
+    // -------------------------------------------------------------------
+    // Set data (plugin-specific stuff)
+
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fInterface != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        const AudioUnitParameterID paramId = pData->param.data[parameterId].rindex;
+        const float fixedValue = pData->param.getFixedValue(parameterId, value);
+
+        fFunctions.setParameter(fInterface, paramId, kAudioUnitScope_Global, 0, value, 0);
+
+        CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
+    }
+
+    void setParameterValueRT(const uint32_t parameterId, const float value, const uint32_t frameOffset, const bool sendCallbackLater) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fInterface != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        const AudioUnitParameterID paramId = pData->param.data[parameterId].rindex;
+        const float fixedValue = pData->param.getFixedValue(parameterId, value);
+
+        // TODO use scheduled events
+        fFunctions.setParameter(fInterface, paramId, kAudioUnitScope_Global, 0, value, 0);
+
+        CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
+    }
+
     // -------------------------------------------------------------------
     // Plugin state
 
@@ -130,6 +225,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fInterface != nullptr,);
         carla_debug("CarlaPluginAU::reload() - start");
 
+        const EngineProcessMode processMode = pData->engine->getProccessMode();
+
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
@@ -137,6 +234,259 @@ public:
             deactivate();
 
         clearBuffers();
+
+        uint32_t audioIns, audioOuts, parametersIns, parametersOuts;
+        audioIns = audioOuts = parametersIns = parametersOuts = 0;
+
+        bool needsCtrlIn, needsCtrlOut, hasMidiIn, hasMidiOut;
+        needsCtrlIn = needsCtrlOut = hasMidiIn = hasMidiOut = false;
+
+        CarlaString portName;
+        const uint portNameSize(pData->engine->getMaxPortNameSize());
+
+        UInt32 outDataSize;
+        Boolean outWritable = false;
+
+        // audio ports
+        outDataSize = 0;
+        if (fFunctions.getPropertyInfo(fInterface, kAudioUnitProperty_SupportedNumChannels, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize != 0 && outDataSize % sizeof(AUChannelInfo) == 0)
+        {
+            const uint32_t numChannels = outDataSize / sizeof(AUChannelInfo);
+            AUChannelInfo* const channelInfo = new AUChannelInfo[numChannels];
+
+            if (fFunctions.getProperty(fInterface, kAudioUnitProperty_SupportedNumChannels, kAudioUnitScope_Global, 0, channelInfo, &outDataSize) == noErr && outDataSize == numChannels * sizeof(AUChannelInfo))
+            {
+                AUChannelInfo* highestInfo = &channelInfo[0];
+
+                for (uint32_t i=1; i<numChannels; ++i)
+                {
+                    if (channelInfo[i].inChannels > highestInfo->inChannels && channelInfo[i].outChannels > highestInfo->outChannels)
+                        highestInfo = &channelInfo[i];
+                }
+
+                audioIns = highestInfo->inChannels;
+                audioOuts = highestInfo->outChannels;
+            }
+        }
+
+        if (audioIns > 0)
+        {
+            pData->audioIn.createNew(audioIns);
+        }
+
+        if (audioOuts > 0)
+        {
+            pData->audioOut.createNew(audioOuts);
+            needsCtrlIn = true;
+        }
+
+        // Audio Ins
+        for (uint32_t i=0; i < audioIns; ++i)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (audioIns > 1)
+            {
+                portName += "input_";
+                portName += CarlaString(i+1);
+            }
+            else
+                portName += "input";
+
+            portName.truncate(portNameSize);
+
+            pData->audioIn.ports[i].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, i);
+            pData->audioIn.ports[i].rindex = i;
+        }
+
+        // Audio Outs
+        for (uint32_t i=0; i < audioOuts; ++i)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            if (audioOuts > 1)
+            {
+                portName += "output_";
+                portName += CarlaString(i+1);
+            }
+            else
+                portName += "output";
+
+            portName.truncate(portNameSize);
+
+            pData->audioOut.ports[i].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, i);
+            pData->audioOut.ports[i].rindex = i;
+        }
+
+        // parameters
+        outDataSize = 0;
+        if (fFunctions.getPropertyInfo(fInterface, kAudioUnitProperty_ParameterList, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize != 0 && outDataSize % sizeof(AudioUnitParameterID) == 0)
+        {
+            const uint32_t numParams = outDataSize / sizeof(AudioUnitParameterID);
+            AudioUnitParameterID* const paramIds = new AudioUnitParameterID[numParams];
+
+            if (fFunctions.getProperty(fInterface, kAudioUnitProperty_ParameterList, kAudioUnitScope_Global, 0, paramIds, &outDataSize) == noErr && outDataSize == numParams * sizeof(AudioUnitParameterID))
+            {
+                pData->param.createNew(numParams, false);
+
+                AudioUnitParameterInfo info;
+                float min, max, def, step, stepSmall, stepLarge;
+
+                for (uint32_t i=0; i<numParams; ++i)
+                {
+                    carla_zeroStruct(info);
+
+                    outDataSize = 0;
+                    if (fFunctions.getPropertyInfo(fInterface, kAudioUnitProperty_ParameterInfo, kAudioUnitScope_Global, paramIds[i], &outDataSize, &outWritable) != noErr)
+                        break;
+                    if (outDataSize != sizeof(AudioUnitParameterInfo))
+                        break;
+                    if (fFunctions.getProperty(fInterface, kAudioUnitProperty_ParameterInfo, kAudioUnitScope_Global, paramIds[i], &info, &outDataSize) != noErr)
+                        break;
+
+                    if (info.flags & kAudioUnitParameterFlag_CFNameRelease)
+                        CFRelease(info.cfNameString);
+
+                    pData->param.data[i].index  = static_cast<int32_t>(i);
+                    pData->param.data[i].rindex = static_cast<int32_t>(paramIds[i]);
+
+                    if (info.flags & kAudioUnitParameterFlag_IsWritable)
+                    {
+                        pData->param.data[i].type = PARAMETER_INPUT;
+                        needsCtrlIn = true;
+                    }
+                    else if (info.flags & (kAudioUnitParameterFlag_IsReadable|kAudioUnitParameterFlag_MeterReadOnly))
+                    {
+                        pData->param.data[i].type = PARAMETER_OUTPUT;
+                        needsCtrlOut = true;
+                    }
+                    else
+                    {
+                        pData->param.data[i].type = PARAMETER_UNKNOWN;
+                        continue;
+                    }
+
+                    min = info.minValue;
+                    max = info.maxValue;
+                    def = info.defaultValue;
+
+                    if (min > max)
+                        max = min;
+
+                    if (carla_isEqual(min, max))
+                    {
+                        carla_stderr2("WARNING - Broken plugin parameter '%s': max == min", info.name);
+                        max = min + 0.1f;
+                    }
+
+                    if (def < min)
+                        def = min;
+                    else if (def > max)
+                        def = max;
+
+                    pData->param.data[i].hints |= PARAMETER_IS_ENABLED;
+
+                    if ((info.flags & kAudioUnitParameterFlag_NonRealTime) == 0)
+                    {
+                        pData->param.data[i].hints |= PARAMETER_IS_AUTOMATABLE;
+                        pData->param.data[i].hints |= PARAMETER_CAN_BE_CV_CONTROLLED;
+                    }
+
+                    if (info.unit == kAudioUnitParameterUnit_Boolean)
+                    {
+                        step = max - min;
+                        stepSmall = step;
+                        stepLarge = step;
+                        pData->param.data[i].hints |= PARAMETER_IS_BOOLEAN;
+                    }
+                    else if (info.unit == kAudioUnitParameterUnit_Indexed)
+                    {
+                        step = 1.0f;
+                        stepSmall = 1.0f;
+                        stepLarge = 10.0f;
+                        pData->param.data[i].hints |= PARAMETER_IS_INTEGER;
+                    }
+                    else
+                    {
+                        float range = max - min;
+                        step = range/100.0f;
+                        stepSmall = range/1000.0f;
+                        stepLarge = range/10.0f;
+                    }
+
+                    pData->param.ranges[i].min = min;
+                    pData->param.ranges[i].max = max;
+                    pData->param.ranges[i].def = def;
+                    pData->param.ranges[i].step = step;
+                    pData->param.ranges[i].stepSmall = stepSmall;
+                    pData->param.ranges[i].stepLarge = stepLarge;
+                }
+            }
+
+            delete[] paramIds;
+        }
+
+        if (needsCtrlIn || hasMidiIn)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            portName += "events-in";
+            portName.truncate(portNameSize);
+
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+            pData->event.cvSourcePorts = pData->client->createCVSourcePorts();
+#endif
+        }
+
+        if (needsCtrlOut || hasMidiOut)
+        {
+            portName.clear();
+
+            if (processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = pData->name;
+                portName += ":";
+            }
+
+            portName += "events-out";
+            portName.truncate(portNameSize);
+
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
+        }
+
+        // plugin hints
+        pData->hints = 0x0;
+
+        if (audioOuts > 0 && (audioIns == audioOuts || audioIns == 1))
+            pData->hints |= PLUGIN_CAN_DRYWET;
+
+        if (audioOuts > 0)
+            pData->hints |= PLUGIN_CAN_VOLUME;
+
+        if (audioOuts >= 2 && audioOuts % 2 == 0)
+            pData->hints |= PLUGIN_CAN_BALANCE;
+
+        // extra plugin hints
+        pData->extraHints = 0x0;
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -314,16 +664,7 @@ public:
             return false;
         }
 
-        const InitializeFn auInitialize = (InitializeFn)fInterface->Lookup(kAudioUnitInitializeSelect);
-        const UninitializeFn auUninitialize = (UninitializeFn)fInterface->Lookup(kAudioUnitUninitializeSelect);
-        const GetPropertyInfoFn auGetPropertyInfo = (GetPropertyInfoFn)fInterface->Lookup(kAudioUnitGetPropertyInfoSelect);
-        const GetPropertyFn auGetProperty = (GetPropertyFn)fInterface->Lookup(kAudioUnitGetPropertySelect);
-        const MIDIEventFn auMIDIEvent = (MIDIEventFn)fInterface->Lookup(kMusicDeviceMIDIEventSelect);
-
-        if (auInitialize == nullptr ||
-            auUninitialize == nullptr ||
-            auGetPropertyInfo == nullptr ||
-            auGetProperty == nullptr)
+        if (! fFunctions.init(fInterface))
         {
             pData->engine->setLastError("Component does not provide all necessary functions");
             fInterface = nullptr;
@@ -390,6 +731,58 @@ private:
     CarlaString fName;
     CarlaString fLabel;
     CarlaString fMaker;
+
+    struct Functions {
+        InitializeFn initialize;
+        UninitializeFn uninitialize;
+        GetPropertyInfoFn getPropertyInfo;
+        GetPropertyFn getProperty;
+        SetPropertyFn setProperty;
+        GetParameterFn getParameter;
+        SetParameterFn setParameter;
+        ScheduleParametersFn scheduleParameters;
+        ResetFn reset;
+        RenderFn render;
+        MIDIEventFn midiEvent;
+
+        Functions()
+            : initialize(nullptr),
+              uninitialize(nullptr),
+              getPropertyInfo(nullptr),
+              getProperty(nullptr),
+              setProperty(nullptr),
+              getParameter(nullptr),
+              setParameter(nullptr),
+              scheduleParameters(nullptr),
+              reset(nullptr),
+              render(nullptr),
+              midiEvent(nullptr) {}
+
+        bool init(AudioComponentPlugInInterface* const interface)
+        {
+            initialize = (InitializeFn)interface->Lookup(kAudioUnitInitializeSelect);
+            uninitialize = (UninitializeFn)interface->Lookup(kAudioUnitUninitializeSelect);
+            getPropertyInfo = (GetPropertyInfoFn)interface->Lookup(kAudioUnitGetPropertyInfoSelect);
+            getProperty = (GetPropertyFn)interface->Lookup(kAudioUnitGetPropertySelect);
+            setProperty = (SetPropertyFn)interface->Lookup(kAudioUnitSetPropertySelect);
+            getParameter = (GetParameterFn)interface->Lookup(kAudioUnitGetParameterSelect);
+            setParameter = (SetParameterFn)interface->Lookup(kAudioUnitSetParameterSelect);
+            scheduleParameters = (ScheduleParametersFn)interface->Lookup(kAudioUnitScheduleParametersSelect);
+            reset = (ResetFn)interface->Lookup(kAudioUnitResetSelect);
+            render = (RenderFn)interface->Lookup(kAudioUnitRenderSelect);
+            midiEvent = (MIDIEventFn)interface->Lookup(kMusicDeviceMIDIEventSelect);
+
+            return initialize != nullptr
+                && uninitialize != nullptr
+                && getPropertyInfo != nullptr
+                && getProperty != nullptr
+                && setProperty != nullptr
+                && getParameter != nullptr
+                && setParameter != nullptr
+                && scheduleParameters != nullptr
+                && render != nullptr;
+        }
+    } fFunctions;
 };
 #endif
 
