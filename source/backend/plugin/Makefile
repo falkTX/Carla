@@ -75,20 +75,13 @@ $(OBJDIR)/CarlaPluginJSFX.cpp.o: CarlaPluginJSFX.cpp
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(YSFX_FLAGS) -c -o $@
 
 ifeq ($(MACOS),true)
-$(OBJDIR)/CarlaPluginVST2.cpp.o: CarlaPluginVST2.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+$(OBJDIR)/CarlaPluginAU.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 
-$(OBJDIR)/CarlaPluginVST3.cpp.o: CarlaPluginVST3.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+$(OBJDIR)/CarlaPluginCLAP.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 
-$(OBJDIR)/CarlaPluginCLAP.cpp.o: CarlaPluginCLAP.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+$(OBJDIR)/CarlaPluginVST2.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+
+$(OBJDIR)/CarlaPluginVST3.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp

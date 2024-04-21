@@ -704,12 +704,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             plugin = CarlaPlugin::newVST3(initializer);
             break;
 
-        case PLUGIN_AU:
-            plugin = CarlaPlugin::newAU(initializer);
-            break;
-
         case PLUGIN_CLAP:
             plugin = CarlaPlugin::newCLAP(initializer);
+            break;
+
+        case PLUGIN_AU:
+            plugin = CarlaPlugin::newAU(initializer);
             break;
 
        #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -1364,6 +1364,9 @@ bool CarlaEngine::loadFile(const char* const filename)
     // Direct plugin binaries
 
 #ifdef CARLA_OS_MAC
+    if (extension == "component")
+        return addPlugin(PLUGIN_AU, filename, nullptr, nullptr, 0, nullptr);
+
     if (extension == "vst")
         return addPlugin(PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr);
 #else
@@ -3096,6 +3099,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             case PLUGIN_VST2:
             case PLUGIN_VST3:
             case PLUGIN_CLAP:
+            case PLUGIN_AU:
                 btype = getBinaryTypeFromFile(stateSave.binary);
                 break;
             default:

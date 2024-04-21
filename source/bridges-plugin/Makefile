@@ -276,6 +276,8 @@ $(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
 $(OBJDIR)/CarlaPluginJSFX.cpp.o: BUILD_CXX_FLAGS += $(YSFX_FLAGS)
 
 ifeq ($(MACOS),true)
+$(OBJDIR)/CarlaPluginAU.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+
 $(OBJDIR)/CarlaPluginCLAP.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 
 $(OBJDIR)/CarlaPluginVST2.cpp.o: BUILD_CXX_FLAGS += -ObjC++
