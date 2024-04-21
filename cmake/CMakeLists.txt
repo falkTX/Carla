@@ -1510,6 +1510,7 @@ if(APPLE)
   set_source_files_properties(
     ../source/backend/CarlaStandalone.cpp
     ../source/backend/engine/CarlaEngineNative.cpp
+    ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginVST2.cpp
     ../source/backend/plugin/CarlaPluginVST3.cpp
