@@ -237,18 +237,6 @@ ifeq ($(HAVE_YSFX),true)
 BASE_FLAGS += -DHAVE_YSFX
 endif
 
-ifeq ($(USING_JUCE),true)
-BASE_FLAGS += -DUSING_JUCE
-BASE_FLAGS += -DJUCE_APP_CONFIG_HEADER='"AppConfig.h"'
-ifeq ($(WINDOWS),true)
-BASE_FLAGS += -D_WIN32_WINNT=0x0600
-endif
-endif
-
-ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
-BASE_FLAGS += -DUSING_JUCE_AUDIO_DEVICES
-endif
-
 ifeq ($(USING_RTAUDIO),true)
 BASE_FLAGS += -DUSING_RTAUDIO
 endif

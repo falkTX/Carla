@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaDefines.h"
 
@@ -47,10 +33,6 @@
 
 #ifdef CARLA_OS_WIN
 # include <direct.h>
-#endif
-
-#ifdef USING_JUCE
-# include "carla_juce/carla_juce.h"
 #endif
 
 using water::File;
@@ -111,13 +93,6 @@ public:
                       const uint32_t cvIns = 0, const uint32_t cvOuts = 0)
         : CarlaEngine(),
           pHost(host),
-#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-          // if not running inside Carla, we will have to run event loop ourselves
-          kNeedsJuceEvents(host->dispatcher(pHost->handle,
-                                            NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0),
-          fJuceMsgMgr(),
-          fJuceMsgMutex(),
-#endif
           kIsPatchbay(isPatchbay),
           kHasMidiIn(withMidiIn),
           kHasMidiOut(withMidiOut),
@@ -135,11 +110,6 @@ public:
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
         carla_zeroFloats(fParameters, kNumInParams+kNumOutParams);
-
-#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-        if (kNeedsJuceEvents)
-            fJuceMsgMgr.incRef();
-#endif
 
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
         pData->sampleRate = pHost->get_sample_rate(pHost->handle);
@@ -198,21 +168,11 @@ public:
         pData->aboutToClose = true;
         fIsRunning = false;
 
-        {
-#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-            const ScopedJuceMessageThreadRunner sjmtr(*this, true);
-#endif
-            removeAllPlugins();
-            //runPendingRtEvents();
-            close();
+        removeAllPlugins();
+        //runPendingRtEvents();
+        close();
 
-            pData->graph.destroy();
-        }
-
-#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-        if (kNeedsJuceEvents)
-            fJuceMsgMgr.decRef();
-#endif
+        pData->graph.destroy();
 
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
     }
@@ -1353,13 +1313,6 @@ protected:
 
     void uiIdle()
     {
-#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-        const ScopedJuceMessageThreadRunner sjmtr(*this, false);
-
-        if (kNeedsJuceEvents && ! sjmtr.wasLocked)
-            return;
-#endif
-
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
             if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
@@ -1547,10 +1500,6 @@ protected:
 
     void setState(const char* const data)
     {
-#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-        const ScopedJuceMessageThreadRunner sjmtr(*this, true);
-#endif
-
         // remove all plugins from UI side
         for (uint i=0, count=pData->curPluginCount; i < count; ++i)
             CarlaEngine::callback(true, true, ENGINE_CALLBACK_PLUGIN_REMOVED, count-i-1, 0, 0, 0, 0.0f, nullptr);
@@ -1759,36 +1708,6 @@ public:
 
 private:
     const NativeHostDescriptor* const pHost;
-
-#ifdef USE_REFCOUNTER_JUCE_MESSAGE_MANAGER
-    const bool kNeedsJuceEvents;
-    const CarlaJUCE::ReferenceCountedJuceMessageMessager fJuceMsgMgr;
-    CarlaMutex fJuceMsgMutex;
-
-    struct ScopedJuceMessageThreadRunner {
-        const CarlaMutexTryLocker cmtl;
-        const bool wasLocked;
-
-        ScopedJuceMessageThreadRunner(CarlaEngineNative& self, const bool forceLock) noexcept
-            : cmtl(self.fJuceMsgMutex, forceLock),
-              wasLocked(cmtl.wasLocked())
-        {
-            if (! self.kNeedsJuceEvents)
-                return;
-            if (! wasLocked)
-                return;
-
-            CarlaJUCE::setMessageManagerForThisThread();
-        }
-
-        ~ScopedJuceMessageThreadRunner()
-        {
-            CarlaJUCE::dispatchMessageManagerMessages();
-        }
-
-        CARLA_DECLARE_NON_COPYABLE(ScopedJuceMessageThreadRunner)
-    };
-#endif
 
     const bool kIsPatchbay; // rack if false
     const bool kHasMidiIn;
@@ -3120,15 +3039,6 @@ namespace EngineInit {
 
 #ifdef HAVE_JACK
 CarlaEngine* newJack() { return nullptr; }
-#endif
-
-#ifdef USING_JUCE_AUDIO_DEVICES
-CarlaEngine*       newJuce(const AudioApi)           { return nullptr; }
-uint               getJuceApiCount()                 { return 0;       }
-const char*        getJuceApiName(const uint)        { return nullptr; }
-const char* const* getJuceApiDeviceNames(const uint) { return nullptr; }
-const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint, const char* const) { return nullptr; }
-bool               showJuceDeviceControlPanel(const uint, const char* const)   { return false; }
 #endif
 
 #ifdef USING_RTAUDIO

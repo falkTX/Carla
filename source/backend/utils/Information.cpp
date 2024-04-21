@@ -46,18 +46,10 @@ const char* carla_get_complete_license_text()
         "<li>LADSPA plugin support</li>"
         "<li>DSSI plugin support</li>"
         "<li>LV2 plugin support</li>"
-       #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST
-        "<li>VST2 plugin support (using JUCE)</li>"
-       #else
         "<li>VST2 plugin support (using VeSTige header by Javier Serrano Polo)</li>"
-       #endif
-       #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST3
-        "<li>VST3 plugin support (using JUCE)</li>"
-       #else
         "<li>VST3 plugin support (using Travesty header files)</li>"
-       #endif
-       #if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
-        "<li>AU plugin support (using JUCE)</li>"
+       #ifdef CARLA_OS_MAC
+        "<li>AU plugin support (discovery only)</li>"
        #endif
        #ifdef HAVE_YSFX
         "<li>JSFX plugin support (using ysfx)</li>"
@@ -102,17 +94,6 @@ const char* carla_get_complete_license_text()
     }
 
     return retText;
-}
-
-const char* carla_get_juce_version()
-{
-    carla_debug("carla_get_juce_version()");
-
-   #ifdef USING_JUCE
-    return "JUCE v7.0.1";
-   #else
-    return "Unknown";
-   #endif
 }
 
 const char* const* carla_get_supported_file_extensions()
@@ -203,12 +184,6 @@ const char* const* carla_get_supported_features()
        #ifdef HAVE_YSFX
         "jsfx",
        #endif
-      #ifdef USING_JUCE
-        "juce",
-       #if defined(CARLA_OS_MAC)
-        "au",
-       #endif
-      #endif
         nullptr
     };
 

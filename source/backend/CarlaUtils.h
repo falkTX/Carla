@@ -348,11 +348,6 @@ CARLA_PLUGIN_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(Pl
 CARLA_PLUGIN_EXPORT const char* carla_get_complete_license_text(void);
 
 /*!
- * @deprecated do not use
- */
-CARLA_PLUGIN_EXPORT const char* carla_get_juce_version(void);
-
-/*!
  * Get the list of supported file extensions in carla_load_file().
  */
 CARLA_PLUGIN_EXPORT const char* const* carla_get_supported_file_extensions(void);
@@ -372,24 +367,6 @@ CARLA_PLUGIN_EXPORT const char* carla_get_library_filename(void);
  */
 CARLA_PLUGIN_EXPORT const char* carla_get_library_folder(void);
 #endif
-
-/* --------------------------------------------------------------------------------------------------------------------
- * JUCE */
-
-/*!
- * @deprecated do not use
- */
-CARLA_PLUGIN_EXPORT void carla_juce_init(void);
-
-/*!
- * @deprecated do not use
- */
-CARLA_PLUGIN_EXPORT void carla_juce_idle(void);
-
-/*!
- * @deprecated do not use
- */
-CARLA_PLUGIN_EXPORT void carla_juce_cleanup(void);
 
 /* --------------------------------------------------------------------------------------------------------------------
  * pipes */

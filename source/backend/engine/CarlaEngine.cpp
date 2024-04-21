@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 /* TODO:
  * - complete processRack(): carefully add to input, sorted events
@@ -100,10 +86,6 @@ uint CarlaEngine::getDriverCount()
         ++count;
 #endif
 
-#ifdef USING_JUCE_AUDIO_DEVICES
-    count += getJuceApiCount();
-#endif
-
 #ifdef USING_RTAUDIO
     count += getRtAudioApiCount();
 #endif
@@ -128,15 +110,6 @@ const char* CarlaEngine::getDriverName(const uint index)
         if (index2 == 0)
             return "JACK";
         --index2;
-    }
-#endif
-
-#ifdef USING_JUCE_AUDIO_DEVICES
-    if (const uint count = getJuceApiCount())
-    {
-        if (index2 < count)
-            return getJuceApiName(index2);
-        index2 -= count;
     }
 #endif
 
@@ -178,15 +151,6 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index)
     }
 #endif
 
-#ifdef USING_JUCE_AUDIO_DEVICES
-    if (const uint count = getJuceApiCount())
-    {
-        if (index2 < count)
-            return getJuceApiDeviceNames(index2);
-        index2 -= count;
-    }
-#endif
-
 #ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
@@ -225,15 +189,6 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index,
             return &devInfo;
         }
         --index2;
-    }
-#endif
-
-#ifdef USING_JUCE_AUDIO_DEVICES
-    if (const uint count = getJuceApiCount())
-    {
-        if (index2 < count)
-            return getJuceDeviceInfo(index2, deviceName);
-        index2 -= count;
     }
 #endif
 
@@ -280,15 +235,6 @@ bool CarlaEngine::showDriverDeviceControlPanel(const uint index, const char* con
     }
 #endif
 
-#ifdef USING_JUCE_AUDIO_DEVICES
-    if (const uint count = getJuceApiCount())
-    {
-        if (index2 < count)
-            return showJuceDeviceControlPanel(index2, deviceName);
-        index2 -= count;
-    }
-#endif
-
 #ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
@@ -322,30 +268,6 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_OS_WASM) || defined(CARLA_PLUGIN_BUILD) || defined(STATIC_PLUGIN_TARGET))
     if (std::strcmp(driverName, "Dummy") == 0)
         return newDummy();
-#endif
-
-#ifdef USING_JUCE_AUDIO_DEVICES
-    // -------------------------------------------------------------------
-    // linux
-
-    if (std::strcmp(driverName, "ALSA") == 0)
-        return newJuce(AUDIO_API_ALSA);
-
-    // -------------------------------------------------------------------
-    // macos
-
-    if (std::strcmp(driverName, "CoreAudio") == 0)
-        return newJuce(AUDIO_API_COREAUDIO);
-
-    // -------------------------------------------------------------------
-    // windows
-
-    if (std::strcmp(driverName, "ASIO") == 0)
-        return newJuce(AUDIO_API_ASIO);
-    if (std::strcmp(driverName, "DirectSound") == 0)
-        return newJuce(AUDIO_API_DIRECTSOUND);
-    if (std::strcmp(driverName, "WASAPI") == 0 || std::strcmp(driverName, "Windows Audio") == 0)
-        return newJuce(AUDIO_API_WASAPI);
 #endif
 
 #ifdef USING_RTAUDIO

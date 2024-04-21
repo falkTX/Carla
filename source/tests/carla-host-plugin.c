@@ -1,6 +1,6 @@
 /*
  * Carla Host Plugin test
- * Copyright (C) 2020 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2020-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -74,8 +74,6 @@ int main(void)
 
     const char* const lib_folder = carla_get_library_folder();
     assert(lib_folder != NULL && lib_folder[0] != '\0');
-
-    carla_juce_init();
 
     const NativePluginDescriptor* const rack = carla_get_native_rack_plugin();
     assert(rack != NULL);
@@ -151,8 +149,6 @@ int main(void)
     assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaRack.so", "", "", 0, NULL, 0x0));
     assert(carla_add_plugin(patchbay_host_handle, BINARY_NATIVE, PLUGIN_VST2, "../../bin/CarlaPatchbay.so", "", "", 0, NULL, 0x0));
 
-    carla_juce_idle();
-
     plugins_count = carla_get_current_plugin_count(rack_host_handle);
 
     for (uint32_t i=0; i<plugins_count; ++i)
@@ -172,8 +168,6 @@ int main(void)
         carla_get_midi_port_count_info(patchbay_host_handle, i);
         carla_get_parameter_count_info(patchbay_host_handle, i);
     }
-
-    carla_juce_idle();
 #endif
 
 #if 0
@@ -189,7 +183,5 @@ int main(void)
 
     carla_host_handle_free(rack_host_handle);
     carla_host_handle_free(patchbay_host_handle);
-
-    carla_juce_cleanup();
     return 0;
 }

@@ -13,16 +13,12 @@ BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
 BUILD_CXX_FLAGS += $(MAGIC_LIBS)
 BUILD_CXX_FLAGS += $(YSFX_FLAGS)
 
-# FIXME remove this after getting rid of juce
-BUILD_CXX_FLAGS += -UUSING_JUCE
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 OBJS = \
 	$(OBJDIR)/CachedPlugins.cpp.o \
 	$(OBJDIR)/CarlaUtils.cpp.o \
 	$(OBJDIR)/Information.cpp.o \
-	$(OBJDIR)/JUCE.cpp.o \
 	$(OBJDIR)/PipeClient.cpp.o \
 	$(OBJDIR)/PluginDiscovery.cpp.o \
 	$(OBJDIR)/System.cpp.o \

@@ -1,6 +1,6 @@
 /*
  * Carla Host Plugin SDL test
- * Copyright (C) 2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2022-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -45,7 +45,6 @@ static void engine_idle_loop(void* const arg)
 int main(void)
 {
     printf("carla_get_complete_license_text: %s\n", carla_get_complete_license_text());
-//     printf("carla_get_juce_version: %s\n", carla_get_juce_version());
 //     printf("carla_get_supported_file_extensions: %s\n", carla_get_supported_file_extensions());
 //     printf("carla_get_supported_features: %s\n", carla_get_supported_features());
     printf("carla_get_library_filename: %s\n", carla_get_library_filename());

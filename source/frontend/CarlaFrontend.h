@@ -55,9 +55,6 @@ struct PluginListDialog;
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_PLUGIN_EXPORT void
-carla_frontend_createAndExecAboutJuceDialog(void* parent);
-
 CARLA_PLUGIN_EXPORT const JackAppDialogResults*
 carla_frontend_createAndExecJackAppDialog(void* parent, const char* projectFilename);
 

@@ -214,6 +214,7 @@ HAVE_QT4        = $(shell $(PKG_CONFIG) --exists QtCore QtGui && echo true)
 HAVE_QT5        = $(shell $(PKG_CONFIG) --exists Qt5Core Qt5Gui Qt5Widgets && \
                           $(PKG_CONFIG) --variable=qt_config Qt5Core | grep -q -v "static" && echo true)
 HAVE_QT5PKG     = $(shell $(PKG_CONFIG) --silence-errors --variable=prefix Qt5OpenGLExtensions 1>/dev/null && echo true)
+HAVE_QT5BREW    = $(shell test -e /usr/local/opt/qt5/bin/uic && echo true)
 HAVE_SNDFILE    = $(shell $(PKG_CONFIG) --exists sndfile && echo true)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -276,6 +277,8 @@ ifeq ($(HAVE_QT5),true)
 QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=host_bins Qt5Core)
 else ifeq ($(HAVE_QT5PKG),true)
 QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)/bin
+else ifeq ($(HAVE_QT5BREW),true)
+QT5_HOSTBINS = /usr/local/opt/qt5/bin
 endif
 
 MOC_QT5 ?= $(QT5_HOSTBINS)/moc
@@ -301,7 +304,7 @@ else ifeq ($(WINDOWS),true)
 HAVE_QT = true
 endif
 
-ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)))
+ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)))
 HAVE_THEME = true
 endif
 
@@ -314,7 +317,7 @@ PYUIC5 ?= $(shell which pyuic5 2>/dev/null)
 ifneq ($(PYUIC5),)
 ifneq ($(PYRCC5),)
 HAVE_PYQT = true
-ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)))
+ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)))
 HAVE_FRONTEND = true
 endif
 endif
@@ -327,21 +330,11 @@ PYRCC ?= $(PYRCC5)
 PYUIC ?= $(PYUIC5)
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Set USING_JUCE
-
-ifeq ($(MACOS_OR_WINDOWS),true)
-USING_JUCE = true
-USING_JUCE_AUDIO_DEVICES = true
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
 # Set USING_RTAUDIO
 
 ifneq ($(HAIKU),true)
 ifneq ($(WASM),true)
-ifneq ($(USING_JUCE_AUDIO_DEVICES),true)
 USING_RTAUDIO = true
-endif
 endif
 endif
 
@@ -360,11 +353,10 @@ HAVE_PYQT = false
 HAVE_QT4 = false
 HAVE_QT5 = false
 HAVE_QT5PKG = false
+HAVE_QT5BREW = false
 HAVE_SDL = false
 HAVE_SDL1 = false
 HAVE_SDL2 = false
-USING_JUCE = false
-USING_JUCE_AUDIO_DEVICES = false
 USING_RTAUDIO = false
 endif
 
@@ -484,35 +476,6 @@ else ifeq ($(HAVE_LIBMAGIC),true)
 MAGIC_LIBS += -lmagic
 ifeq ($(LINUX_OR_MACOS),true)
 MAGIC_LIBS += -lz
-endif
-
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Set libs stuff (juce)
-
-ifeq ($(USING_JUCE),true)
-
-ifeq ($(MACOS),true)
-JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
-JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
-JUCE_AUDIO_FORMATS_LIBS    = -framework AudioToolbox -framework CoreFoundation
-JUCE_AUDIO_PROCESSORS_LIBS = -framework AudioToolbox -framework AudioUnit -framework CoreAudio -framework CoreAudioKit -framework Cocoa
-JUCE_CORE_LIBS             = -framework AppKit
-JUCE_EVENTS_LIBS           = -framework AppKit
-JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
-JUCE_GUI_BASICS_LIBS       = -framework Cocoa
-JUCE_GUI_EXTRA_LIBS        = -framework IOKit
-else ifeq ($(WINDOWS),true)
-JUCE_AUDIO_BASICS_LIBS     =
-JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
-JUCE_AUDIO_FORMATS_LIBS    =
-JUCE_AUDIO_PROCESSORS_LIBS =
-JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
-JUCE_EVENTS_LIBS           = -lole32
-JUCE_GRAPHICS_LIBS         = -lgdi32
-JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
-JUCE_GUI_EXTRA_LIBS        =
 endif
 
 endif
@@ -649,17 +612,6 @@ STATIC_CARLA_PLUGIN_LIBS += $(MAGIC_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(RTMEMPOOL_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(WATER_LIBS)
 STATIC_CARLA_PLUGIN_LIBS += $(YSFX_LIBS)
-
-ifeq ($(USING_JUCE),true)
-STATIC_CARLA_PLUGIN_LIBS += $(JUCE_AUDIO_BASICS_LIBS)
-STATIC_CARLA_PLUGIN_LIBS += $(JUCE_AUDIO_FORMATS_LIBS)
-STATIC_CARLA_PLUGIN_LIBS += $(JUCE_AUDIO_PROCESSORS_LIBS)
-STATIC_CARLA_PLUGIN_LIBS += $(JUCE_CORE_LIBS)
-STATIC_CARLA_PLUGIN_LIBS += $(JUCE_EVENTS_LIBS)
-STATIC_CARLA_PLUGIN_LIBS += $(JUCE_GRAPHICS_LIBS)
-STATIC_CARLA_PLUGIN_LIBS += $(JUCE_GUI_BASICS_LIBS)
-STATIC_CARLA_PLUGIN_LIBS += $(JUCE_GUI_EXTRA_LIBS)
-endif
 
 ifeq ($(EXTERNAL_PLUGINS),true)
 ifneq ($(DEBUG),true)

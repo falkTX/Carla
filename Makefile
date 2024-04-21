@@ -82,21 +82,6 @@ ifeq ($(HAVE_YSFX),true)
 3RD_LIBS += $(MODULEDIR)/ysfx.a
 endif
 
-ifeq ($(USING_JUCE),true)
-3RD_LIBS += $(MODULEDIR)/carla_juce.a
-3RD_LIBS += $(MODULEDIR)/juce_audio_basics.a
-ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
-3RD_LIBS += $(MODULEDIR)/juce_audio_devices.a
-endif
-3RD_LIBS += $(MODULEDIR)/juce_audio_processors.a
-3RD_LIBS += $(MODULEDIR)/juce_core.a
-3RD_LIBS += $(MODULEDIR)/juce_data_structures.a
-3RD_LIBS += $(MODULEDIR)/juce_events.a
-3RD_LIBS += $(MODULEDIR)/juce_graphics.a
-3RD_LIBS += $(MODULEDIR)/juce_gui_basics.a
-3RD_LIBS += $(MODULEDIR)/juce_gui_extra.a
-endif
-
 ifeq ($(USING_RTAUDIO),true)
 3RD_LIBS += $(MODULEDIR)/rtaudio.a
 3RD_LIBS += $(MODULEDIR)/rtmidi.a

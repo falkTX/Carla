@@ -11,11 +11,10 @@ EXPORTS
     carla_host_handle_free @8
     carla_get_native_plugin_engine @9
     carla_get_complete_license_text @10
-    carla_get_juce_version @11
-    carla_get_supported_file_extensions @12
-    carla_get_supported_features @13
-    carla_get_library_filename @14
-    carla_get_library_folder @15
-    carla_get_native_patchbay_cv8_plugin @16
-    carla_get_native_patchbay_cv32_plugin @17
-    carla_get_native_patchbay_obs_plugin @18
+    carla_get_supported_file_extensions @11
+    carla_get_supported_features @12
+    carla_get_library_filename @13
+    carla_get_library_folder @14
+    carla_get_native_patchbay_cv8_plugin @15
+    carla_get_native_patchbay_cv32_plugin @16
+    carla_get_native_patchbay_obs_plugin @17

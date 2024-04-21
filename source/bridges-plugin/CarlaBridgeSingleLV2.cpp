@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Single Plugin
- * Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,10 +29,6 @@
 
 #include "water/files/File.h"
 
-#ifdef USING_JUCE
-# include "carla_juce/carla_juce.h"
-#endif
-
 template<>
 void Lv2PluginBaseClass<CARLA_BACKEND_NAMESPACE::EngineTimeInfo>::clearTimeData() noexcept
 {
@@ -53,9 +49,6 @@ public:
                          const LV2_Feature* const* const features)
         : Lv2PluginBaseClass<EngineTimeInfo>(sampleRate, features),
           fPlugin(nullptr)
-#ifdef USING_JUCE
-        , fJuceInitialiser()
-#endif
     {
         CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount == 0,)
         CARLA_SAFE_ASSERT_RETURN(pData->plugins == nullptr,);
@@ -489,10 +482,6 @@ protected:
 
 private:
     CarlaPluginPtr fPlugin;
-
-#ifdef USING_JUCE
-    CarlaJUCE::ScopedJuceInitialiser_GUI fJuceInitialiser;
-#endif
 
     void updateParameterOutputs() noexcept
     {

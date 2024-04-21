@@ -43,6 +43,10 @@ else ifeq ($(HAVE_QT5PKG),true)
 QT5_PREFIX       = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)
 BUILD_CXX_FLAGS += -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT5_PREFIX)/include/qt5
 QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib -F $(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
+else ifeq ($(HAVE_QT5BREW),true)
+QT5_PREFIX       = /usr/local/opt/qt5
+BUILD_CXX_FLAGS += -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT5_PREFIX)/include
+QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib -F $(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
 else
 $(error Trying to build frontend without Qt5, cannot continue)
 endif
@@ -71,7 +75,6 @@ QMs = $(patsubst %,translations/carla_%.qm,$(I18N_LANGUAGES))
 
 CPP_FILES = \
 	carla_frontend.cpp \
-	dialogs/aboutjucedialog.cpp \
 	dialogs/jackappdialog.cpp \
 	pluginlist/pluginlistdialog.cpp
 
@@ -217,7 +220,6 @@ $(OBJDIR)/%.cpp.o: %.cpp $(UIs)
 clean:
 	rm -rf $(BINDIR)/libcarla_frontend$(LIB_EXT) $(UIs) $(RES) $(QMs) __pycache__ *.pyc
 	# old files
-	rm -f ui_carla_about_juce.py
 	rm -f ui_carla_add_jack.py
 	rm -f ui_carla_database.py
 	rm -f ui_carla_refresh.py

@@ -202,18 +202,11 @@ class CarlaAboutW(QDialog):
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
                                       "</ul>"))
 
-        usingJuce = "juce" in gCarla.utils.get_supported_features()
-
-        if usingJuce and (MACOS or WINDOWS):
-            self.ui.l_vst2.setText(self.tr("Using JUCE host"))
-        else:
-            self.ui.l_vst2.setText(self.tr("About 85&#37; complete (missing vst bank/presets and some minor stuff)"))
-
-        if usingJuce:
-            self.ui.l_vst3.setText(self.tr("Using JUCE host"))
+        self.ui.l_vst2.setText(self.tr("About 85&#37; complete (missing vst bank/presets and some minor stuff)"))
+        self.ui.l_vst3.setText(self.tr("About 66&#37; complete"))
 
         if MACOS:
-            self.ui.l_au.setText(self.tr("Using JUCE host"))
+            self.ui.l_au.setText(self.tr("About 20&#37; complete"))
         else:
             self.ui.line_vst3.hide()
             self.ui.l_au.hide()

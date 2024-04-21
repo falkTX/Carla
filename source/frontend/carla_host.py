@@ -430,7 +430,6 @@ class HostWindow(QMainWindow):
             self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
             self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
             self.ui.act_help_about.setMenuRole(QAction.AboutRole)
-            self.ui.act_help_about_juce.setMenuRole(QAction.ApplicationSpecificRole)
             self.ui.act_help_about_qt.setMenuRole(QAction.AboutQtRole)
             self.ui.menu_Settings.setTitle("Panels")
 
@@ -520,7 +519,6 @@ class HostWindow(QMainWindow):
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
-        self.ui.act_help_about_juce.triggered.connect(self.slot_aboutJuce)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
 
         self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
@@ -623,10 +621,6 @@ class HostWindow(QMainWindow):
         if "link" not in features:
             self.ui.cb_transport_link.setEnabled(False)
             self.ui.cb_transport_link.setVisible(False)
-
-        if "juce" not in features:
-            self.ui.act_help_about_juce.setEnabled(False)
-            self.ui.act_help_about_juce.setVisible(False)
 
         # Plugin needs to have timers always running so it receives messages
         if self.host.isPlugin or self.host.isRemote:
@@ -2181,10 +2175,6 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_aboutCarla(self):
         CarlaAboutW(self.fParentOrSelf, self.host).exec_()
-
-    @pyqtSlot()
-    def slot_aboutJuce(self):
-        gCarla.felib.createAndExecAboutJuceDialog(self.fParentOrSelf)
 
     @pyqtSlot()
     def slot_aboutQt(self):

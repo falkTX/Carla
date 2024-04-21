@@ -20,17 +20,4 @@ clean:
 	$(MAKE) clean -C ysfx
 	$(MAKE) clean -C zita-resampler
 
-ifneq ($(STATIC_PLUGIN_TARGET),true)
-	$(MAKE) clean -C carla_juce
-	$(MAKE) clean -C juce_audio_basics
-	$(MAKE) clean -C juce_audio_devices
-	$(MAKE) clean -C juce_audio_processors
-	$(MAKE) clean -C juce_core
-	$(MAKE) clean -C juce_data_structures
-	$(MAKE) clean -C juce_events
-	$(MAKE) clean -C juce_graphics
-	$(MAKE) clean -C juce_gui_basics
-	$(MAKE) clean -C juce_gui_extra
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
