@@ -41,7 +41,8 @@ class CarlaPluginAU : public CarlaPlugin,
 public:
     CarlaPluginAU(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
-          fInterface(nullptr)
+          fInterface(nullptr),
+          fAudioBufferData(nullptr)
     {
         carla_stdout("CarlaPluginAU::CarlaPluginAU(%p, %i)", engine, id);
     }
@@ -69,6 +70,12 @@ public:
         {
             fInterface->Close(fInterface);
             fInterface = nullptr;
+        }
+
+        if (fAudioBufferData != nullptr)
+        {
+            std::free(fAudioBufferData);
+            fAudioBufferData = nullptr;
         }
 
         // if (fLastChunk != nullptr)
@@ -211,12 +218,12 @@ public:
         const float fixedValue = pData->param.getFixedValue(parameterId, value);
 
         // TODO use scheduled events
-        fFunctions.setParameter(fInterface, paramId, kAudioUnitScope_Global, 0, value, 0);
+        fFunctions.setParameter(fInterface, paramId, kAudioUnitScope_Global, 0, value, frameOffset);
 
         CarlaPlugin::setParameterValueRT(parameterId, fixedValue, frameOffset, sendCallbackLater);
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Plugin state
 
     void reload() override
@@ -242,31 +249,63 @@ public:
         needsCtrlIn = needsCtrlOut = hasMidiIn = hasMidiOut = false;
 
         CarlaString portName;
-        const uint portNameSize(pData->engine->getMaxPortNameSize());
+        const uint portNameSize = pData->engine->getMaxPortNameSize();
 
         UInt32 outDataSize;
         Boolean outWritable = false;
 
         // audio ports
         outDataSize = 0;
-        if (fFunctions.getPropertyInfo(fInterface, kAudioUnitProperty_SupportedNumChannels, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize != 0 && outDataSize % sizeof(AUChannelInfo) == 0)
+        if (fFunctions.getPropertyInfo(fInterface,
+                                       kAudioUnitProperty_SupportedNumChannels,
+                                       kAudioUnitScope_Global,
+                                       0, &outDataSize, &outWritable) == noErr
+            /*
+            && outDataSize != 0
+            && outDataSize % sizeof(AUChannelInfo) == 0
+            */
+            )
         {
             const uint32_t numChannels = outDataSize / sizeof(AUChannelInfo);
             AUChannelInfo* const channelInfo = new AUChannelInfo[numChannels];
 
-            if (fFunctions.getProperty(fInterface, kAudioUnitProperty_SupportedNumChannels, kAudioUnitScope_Global, 0, channelInfo, &outDataSize) == noErr && outDataSize == numChannels * sizeof(AUChannelInfo))
+            carla_stdout("kAudioUnitProperty_SupportedNumChannels returns %u configs", numChannels);
+
+            if (fFunctions.getProperty(fInterface,
+                                       kAudioUnitProperty_SupportedNumChannels,
+                                       kAudioUnitScope_Global,
+                                       0, channelInfo, &outDataSize) == noErr
+                && outDataSize == numChannels * sizeof(AUChannelInfo))
             {
                 AUChannelInfo* highestInfo = &channelInfo[0];
 
+                carla_stdout("getProperty returns {%u,%u}... config",
+                             channelInfo[0].inChannels,
+                             channelInfo[0].outChannels);
+
                 for (uint32_t i=1; i<numChannels; ++i)
                 {
-                    if (channelInfo[i].inChannels > highestInfo->inChannels && channelInfo[i].outChannels > highestInfo->outChannels)
+                    if (channelInfo[i].inChannels > highestInfo->inChannels
+                        && channelInfo[i].outChannels > highestInfo->outChannels)
+                    {
                         highestInfo = &channelInfo[i];
+                    }
                 }
 
                 audioIns = highestInfo->inChannels;
                 audioOuts = highestInfo->outChannels;
             }
+            else
+            {
+                carla_stdout("getProperty failed");
+            }
+
+            delete[] channelInfo;
+        }
+        else
+        {
+            carla_stdout("kAudioUnitProperty_SupportedNumChannels returns no configs, assume stereo");
+            audioIns = audioOuts = 2;
         }
 
         if (audioIns > 0)
@@ -278,6 +317,22 @@ public:
         {
             pData->audioOut.createNew(audioOuts);
             needsCtrlIn = true;
+        }
+
+        std::free(fAudioBufferData);
+
+        if (const uint32_t numBuffers = std::max(audioIns, audioOuts))
+        {
+            fAudioBufferData = static_cast<AudioBufferList*>(std::malloc(sizeof(uint32_t) + sizeof(AudioBuffer) * numBuffers));
+            fAudioBufferData->mNumberBuffers = numBuffers;
+
+            for (uint32_t i = 0; i < numBuffers; ++i)
+                fAudioBufferData->mBuffers[i].mNumberChannels = 1;
+        }
+        else
+        {
+            fAudioBufferData = static_cast<AudioBufferList*>(std::malloc(sizeof(uint32_t)));
+            fAudioBufferData->mNumberBuffers = 0;
         }
 
         // Audio Ins
@@ -294,14 +349,14 @@ public:
             if (audioIns > 1)
             {
                 portName += "input_";
-                portName += CarlaString(i+1);
+                portName += CarlaString(i + 1);
             }
             else
                 portName += "input";
 
             portName.truncate(portNameSize);
 
-            pData->audioIn.ports[i].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, i);
+            pData->audioIn.ports[i].port = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, i);
             pData->audioIn.ports[i].rindex = i;
         }
 
@@ -319,7 +374,7 @@ public:
             if (audioOuts > 1)
             {
                 portName += "output_";
-                portName += CarlaString(i+1);
+                portName += CarlaString(i + 1);
             }
             else
                 portName += "output";
@@ -332,7 +387,12 @@ public:
 
         // parameters
         outDataSize = 0;
-        if (fFunctions.getPropertyInfo(fInterface, kAudioUnitProperty_ParameterList, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize != 0 && outDataSize % sizeof(AudioUnitParameterID) == 0)
+        if (fFunctions.getPropertyInfo(fInterface,
+                                       kAudioUnitProperty_ParameterList,
+                                       kAudioUnitScope_Global,
+                                       0, &outDataSize, &outWritable) == noErr
+            && outDataSize != 0
+            && outDataSize % sizeof(AudioUnitParameterID) == 0)
         {
             const uint32_t numParams = outDataSize / sizeof(AudioUnitParameterID);
             AudioUnitParameterID* const paramIds = new AudioUnitParameterID[numParams];
@@ -504,31 +564,160 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fInterface != nullptr,);
 
-        // TODO
+        AudioStreamBasicDescription streamFormat = {
+            .mFormatID         = kAudioFormatLinearPCM,
+            .mBitsPerChannel   = 32,
+            .mBytesPerFrame    = sizeof(float),
+            .mBytesPerPacket   = sizeof(float),
+            .mFramesPerPacket  = 1,
+            .mFormatFlags      = kAudioFormatFlagsNativeFloatPacked | kAudioFormatFlagIsNonInterleaved,
+            .mChannelsPerFrame = 0,
+            .mSampleRate       = pData->engine->getSampleRate(),
+        };
+
+        if (pData->audioIn.count != 0)
+        {
+            streamFormat.mChannelsPerFrame = pData->audioIn.count;
+            CARLA_SAFE_ASSERT_RETURN(fFunctions.setProperty(fInterface,
+                                                            kAudioUnitProperty_StreamFormat,
+                                                            kAudioUnitScope_Input,
+                                                            0, &streamFormat, sizeof(streamFormat)) == noErr,);
+        }
+
+        if (pData->audioOut.count != 0)
+        {
+            streamFormat.mChannelsPerFrame = pData->audioOut.count;
+            CARLA_SAFE_ASSERT_RETURN(fFunctions.setProperty(fInterface,
+                                                            kAudioUnitProperty_StreamFormat,
+                                                            kAudioUnitScope_Output,
+                                                            0, &streamFormat, sizeof(streamFormat)) == noErr,);
+        }
+
+        fFunctions.initialize(fInterface);
     }
 
     void deactivate() noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fInterface != nullptr,);
 
-        // TODO
+        fFunctions.uninitialize(fInterface);
     }
 
     void process(const float* const* const audioIn,
                  float** const audioOut,
-                 const float* const* const cvIn,
+                 const float* const* const,
                  float** const,
                  const uint32_t frames) override
     {
+        // ------------------------------------------------------------------------------------------------------------
+        // Check if active
+
+        if (! pData->active)
+        {
+            // disable any output sound
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+                carla_zeroFloats(audioOut[i], frames);
+            return;
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Check buffers
+
+        CARLA_SAFE_ASSERT_RETURN(frames > 0,);
+
+        if (pData->audioIn.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(audioIn != nullptr,);
+        }
+        if (pData->audioOut.count > 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr,);
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Try lock, silence otherwise
+
+        if (pData->engine->isOffline())
+        {
+            pData->singleMutex.lock();
+        }
+        else if (! pData->singleMutex.tryLock())
+        {
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+                carla_zeroFloats(audioOut[i], frames);
+            return;
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Check if needs reset
+
+        if (pData->needsReset)
+        {
+            // TODO
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Event Input (main port)
+
+        if (pData->event.portIn != nullptr)
+        {
+            // TODO
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Plugin processing
+
+        const EngineTimeInfo timeInfo(pData->engine->getTimeInfo());
+
+        AudioUnitRenderActionFlags actionFlags = kAudioUnitRenderAction_DoNotCheckRenderArgs;
+        AudioTimeStamp timeStamp = {};
+        timeStamp.mFlags = kAudioTimeStampSampleTimeValid;
+        timeStamp.mSampleTime = timeInfo.frame;
+        const UInt32 inBusNumber = 0;
+
+        {
+            uint32_t i = 0;
+            for (; i < pData->audioOut.count; ++i)
+            {
+                fAudioBufferData->mBuffers[i].mData = audioOut[i];
+                fAudioBufferData->mBuffers[i].mDataByteSize = sizeof(float) * frames;
+
+                if (audioOut[i] != audioIn[i])
+                    std::memcpy(audioOut[i], audioIn[i], sizeof(float) * frames);
+            }
+
+            for (; i < pData->audioIn.count; ++i)
+            {
+                fAudioBufferData->mBuffers[i].mData = audioOut[i];
+                fAudioBufferData->mBuffers[i].mDataByteSize = sizeof(float) * frames;
+            }
+        }
+
+        fFunctions.render(fInterface, &actionFlags, &timeStamp, inBusNumber, frames, fAudioBufferData);
+
+        // ------------------------------------------------------------------------------------------------------------
+
+        pData->singleMutex.unlock();
+
+       #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+        // ------------------------------------------------------------------------------------------------------------
+        // Control Output
+
+        // TODO
+       #endif
+
+        // ------------------------------------------------------------------------------------------------------------
+        // Events/MIDI Output
+
         // TODO
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
 protected:
     void handlePluginUIClosed() override
     {
-        carla_stdout("CarlaPluginCLAP::handlePluginUIClosed()");
+        carla_stdout("CarlaPluginAU::handlePluginUIClosed()");
 
         // TODO
     }
@@ -561,12 +750,6 @@ public:
         if (filename == nullptr || filename[0] == '\0')
         {
             pData->engine->setLastError("null filename");
-            return false;
-        }
-
-        if (label == nullptr)
-        {
-            pData->engine->setLastError("null label");
             return false;
         }
 
@@ -643,7 +826,7 @@ public:
 
             clabel[4] = clabel[9] = ',';
 
-            if (label[0] == '\0' || std::strcmp(label, clabel) == 0)
+            if (label == nullptr || label[0] == '\0' || std::strcmp(label, clabel) == 0)
                 break;
         }
 
@@ -717,7 +900,81 @@ public:
             return false;
         }
 
-        // ---------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
+        // init component
+
+        {
+            const UInt32 bufferSize = pData->engine->getBufferSize();
+
+            if (fFunctions.setProperty(fInterface,
+                                       kAudioUnitProperty_MaximumFramesPerSlice,
+                                       kAudioUnitScope_Global,
+                                       0, &bufferSize, sizeof(bufferSize)) != noErr)
+            {
+                pData->engine->setLastError("Failed to set Component maximum frames per slice");
+                return false;
+            }
+        }
+
+        {
+            const Float64 sampleRate = pData->engine->getSampleRate();
+
+            // input scope
+            UInt32 outDataSize = 0;
+            Boolean outWritable = false;
+            if (fFunctions.getPropertyInfo(fInterface,
+                                           kAudioUnitProperty_ElementCount,
+                                           kAudioUnitScope_Input,
+                                           0, &outDataSize, &outWritable) == noErr
+                && outDataSize == sizeof(UInt32))
+            {
+                UInt32 outData = 0;
+                if (fFunctions.getProperty(fInterface,
+                                           kAudioUnitProperty_ElementCount,
+                                           kAudioUnitScope_Input,
+                                           0, &outData, &outDataSize) == noErr
+                    && outData != 0)
+                {
+                    if (fFunctions.setProperty(fInterface,
+                                               kAudioUnitProperty_SampleRate,
+                                               kAudioUnitScope_Input,
+                                               0, &sampleRate, sizeof(sampleRate)) != noErr)
+                    {
+                        pData->engine->setLastError("Failed to set Component input sample rate");
+                        return false;
+                    }
+                }
+            }
+
+            // output scope
+            outDataSize = 0;
+            outWritable = false;
+            if (fFunctions.getPropertyInfo(fInterface,
+                                           kAudioUnitProperty_ElementCount,
+                                           kAudioUnitScope_Output,
+                                           0, &outDataSize, &outWritable) == noErr
+                && outDataSize == sizeof(UInt32))
+            {
+                UInt32 outData = 0;
+                if (fFunctions.getProperty(fInterface,
+                                           kAudioUnitProperty_ElementCount,
+                                           kAudioUnitScope_Output,
+                                           0, &outData, &outDataSize) == noErr
+                    && outData != 0)
+                {
+                    if (fFunctions.setProperty(fInterface,
+                                               kAudioUnitProperty_SampleRate,
+                                               kAudioUnitScope_Output,
+                                               0, &sampleRate, sizeof(sampleRate)) != noErr)
+                    {
+                        pData->engine->setLastError("Failed to set Component output sample rate");
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
         // set default options
 
         pData->options = PLUGIN_OPTION_FIXED_BUFFERS;
@@ -728,6 +985,7 @@ public:
 private:
     BundleLoader fBundleLoader;
     AudioComponentPlugInInterface* fInterface;
+    AudioBufferList* fAudioBufferData;
     CarlaString fName;
     CarlaString fLabel;
     CarlaString fMaker;
@@ -786,7 +1044,7 @@ private:
 };
 #endif
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 CarlaPluginPtr CarlaPlugin::newAU(const Initializer& init)
 {
@@ -806,6 +1064,6 @@ CarlaPluginPtr CarlaPlugin::newAU(const Initializer& init)
    #endif
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

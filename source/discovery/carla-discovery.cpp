@@ -2164,34 +2164,57 @@ static bool do_au_check(const char* const filename, const bool doInit)
 
             // audio port count
             outDataSize = 0;
-            if (auGetPropertyInfo(interface, kAudioUnitProperty_SupportedNumChannels, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize != 0 && outDataSize % sizeof(AUChannelInfo) == 0)
+            if (auGetPropertyInfo(interface,
+                                  kAudioUnitProperty_SupportedNumChannels,
+                                  kAudioUnitScope_Global,
+                                  0, &outDataSize, &outWritable) == noErr
+                && outDataSize != 0
+                && outDataSize % sizeof(AUChannelInfo) == 0)
             {
                 const uint32_t numChannels = outDataSize / sizeof(AUChannelInfo);
                 AUChannelInfo* const channelInfo = new AUChannelInfo[numChannels];
 
-                if (auGetProperty(interface, kAudioUnitProperty_SupportedNumChannels, kAudioUnitScope_Global, 0, channelInfo, &outDataSize) == noErr && outDataSize == numChannels * sizeof(AUChannelInfo))
+                if (auGetProperty(interface,
+                                  kAudioUnitProperty_SupportedNumChannels,
+                                  kAudioUnitScope_Global,
+                                  0, channelInfo, &outDataSize) == noErr
+                    && outDataSize == numChannels * sizeof(AUChannelInfo))
                 {
                     AUChannelInfo* highestInfo = &channelInfo[0];
 
                     for (uint32_t i=1; i<numChannels; ++i)
                     {
-                        if (channelInfo[i].inChannels > highestInfo->inChannels && channelInfo[i].outChannels > highestInfo->outChannels)
+                        if (channelInfo[i].inChannels > highestInfo->inChannels
+                            && channelInfo[i].outChannels > highestInfo->outChannels)
+                        {
                             highestInfo = &channelInfo[i];
+                        }
                     }
 
                     audioIns = highestInfo->inChannels;
                     audioOuts = highestInfo->outChannels;
                 }
+
+                delete[] channelInfo;
             }
 
             // parameter count
             outDataSize = 0;
-            if (auGetPropertyInfo(interface, kAudioUnitProperty_ParameterList, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize != 0 && outDataSize % sizeof(AudioUnitParameterID) == 0)
+            if (auGetPropertyInfo(interface,
+                                  kAudioUnitProperty_ParameterList,
+                                  kAudioUnitScope_Global,
+                                  0, &outDataSize, &outWritable) == noErr
+                && outDataSize != 0
+                && outDataSize % sizeof(AudioUnitParameterID) == 0)
             {
                 const uint32_t numParams = outDataSize / sizeof(AudioUnitParameterID);
                 AudioUnitParameterID* const paramIds = new AudioUnitParameterID[numParams];
 
-                if (auGetProperty(interface, kAudioUnitProperty_ParameterList, kAudioUnitScope_Global, 0, paramIds, &outDataSize) == noErr && outDataSize == numParams * sizeof(AudioUnitParameterID))
+                if (auGetProperty(interface,
+                                  kAudioUnitProperty_ParameterList,
+                                  kAudioUnitScope_Global,
+                                  0, paramIds, &outDataSize) == noErr
+                    && outDataSize == numParams * sizeof(AudioUnitParameterID))
                 {
                     AudioUnitParameterInfo info;
 
@@ -2200,11 +2223,17 @@ static bool do_au_check(const char* const filename, const bool doInit)
                         carla_zeroStruct(info);
 
                         outDataSize = 0;
-                        if (auGetPropertyInfo(interface, kAudioUnitProperty_ParameterInfo, kAudioUnitScope_Global, paramIds[i], &outDataSize, &outWritable) != noErr)
+                        if (auGetPropertyInfo(interface,
+                                              kAudioUnitProperty_ParameterInfo,
+                                              kAudioUnitScope_Global,
+                                              paramIds[i], &outDataSize, &outWritable) != noErr)
                             break;
                         if (outDataSize != sizeof(AudioUnitParameterInfo))
                             break;
-                        if (auGetProperty(interface, kAudioUnitProperty_ParameterInfo, kAudioUnitScope_Global, paramIds[i], &info, &outDataSize) != noErr)
+                        if (auGetProperty(interface,
+                                          kAudioUnitProperty_ParameterInfo,
+                                          kAudioUnitScope_Global,
+                                          paramIds[i], &info, &outDataSize) != noErr)
                             break;
 
                         if ((info.flags & kAudioUnitParameterFlag_IsReadable) == 0)
@@ -2232,15 +2261,26 @@ static bool do_au_check(const char* const filename, const bool doInit)
             // MIDI output
             outDataSize = 0;
             outWritable = false;
-            if (auGetPropertyInfo(interface, kAudioUnitProperty_MIDIOutputCallback, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize == sizeof(AUMIDIOutputCallbackStruct) && outWritable)
+            if (auGetPropertyInfo(interface,
+                                  kAudioUnitProperty_MIDIOutputCallback,
+                                  kAudioUnitScope_Global,
+                                  0, &outDataSize, &outWritable) == noErr
+                && outDataSize == sizeof(AUMIDIOutputCallbackStruct)
+                && outWritable)
+            {
                 midiOuts = 1;
+            }
 
             // hints
             if (category == PLUGIN_CATEGORY_SYNTH)
                 hints |= PLUGIN_IS_SYNTH;
 
             outDataSize = 0;
-            if (auGetPropertyInfo(interface, kAudioUnitProperty_CocoaUI, kAudioUnitScope_Global, 0, &outDataSize, &outWritable) == noErr && outDataSize == sizeof(AudioUnitCocoaViewInfo))
+            if (auGetPropertyInfo(interface,
+                                  kAudioUnitProperty_CocoaUI,
+                                  kAudioUnitScope_Global,
+                                  0, &outDataSize, &outWritable) == noErr
+                && outDataSize == sizeof(AudioUnitCocoaViewInfo))
             {
                 hints |= PLUGIN_HAS_CUSTOM_UI;
                #ifndef BUILD_BRIDGE
