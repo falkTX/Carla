@@ -1,6 +1,6 @@
 /*
  * Carla DSSI utils
- * Copyright (C) 2013-2018 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
         water::String pluginDir(water::String(filename).upToLastOccurrenceOf(".", false, false));
 
         water::String checkLabel(label);
-        water::String checkSName(water::File(pluginDir).getFileName());
+        water::String checkSName(water::File(pluginDir.toRawUTF8()).getFileName());
 
         if (checkSName.endsWithIgnoreCase("dssi"))
         {
@@ -47,9 +47,8 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
 
         std::vector<water::File> results;
 
-        if (const uint count = water::File(pluginDir).findChildFiles(results,
-                                                                     water::File::findFiles|water::File::ignoreHiddenFiles,
-                                                                     false))
+        if (const uint count = water::File(pluginDir.toRawUTF8()).findChildFiles(
+                results, water::File::findFiles|water::File::ignoreHiddenFiles, false))
         {
             for (uint i=0; i<count; ++i)
             {

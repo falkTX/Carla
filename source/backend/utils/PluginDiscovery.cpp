@@ -27,7 +27,7 @@ static water::String findWinePrefix(const water::String filename, const int recu
 
     const water::String path(filename.upToLastOccurrenceOf("/", false, false));
 
-    if (water::File(path + "/dosdevices").isDirectory())
+    if (water::File(water::String(path + "/dosdevices").toRawUTF8()).isDirectory())
         return path;
 
     return findWinePrefix(path, recursionLimit-1);
@@ -419,7 +419,7 @@ private:
             {
                 helperTool = options.wine.executable.buffer();
 
-                if (helperTool.isNotEmpty() && helperTool[0] == CARLA_OS_SEP && File(helperTool + "64").existsAsFile())
+                if (helperTool.isNotEmpty() && helperTool[0] == CARLA_OS_SEP && File(String(helperTool + "64").toRawUTF8()).existsAsFile())
                     helperTool += "64";
             }
             else
@@ -606,7 +606,7 @@ static bool findDirectories(std::vector<water::File>& files, const char* const p
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        const File dir(*it);
+        const File dir(it->toRawUTF8());
         std::vector<File> results;
 
         if (dir.findChildFiles(results, File::findDirectories|File::ignoreHiddenFiles, true, wildcard) > 0)
@@ -638,7 +638,7 @@ static bool findFiles(std::vector<water::File>& files,
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        const File dir(*it);
+        const File dir(it->toRawUTF8());
         std::vector<File> results;
 
         if (dir.findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard) > 0)
@@ -681,7 +681,7 @@ static bool findVST3s(std::vector<water::File>& files,
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        const File dir(*it);
+        const File dir(it->toRawUTF8());
         std::vector<File> results;
 
         if (dir.findChildFiles(results, flags|File::ignoreHiddenFiles, true, "*.vst3") > 0)

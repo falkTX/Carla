@@ -79,7 +79,7 @@ static void findSFZs(const char* const sfzPaths)
     {
         std::vector<water::File> results;
 
-        if (water::File(*it).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*.sfz") > 0)
+        if (water::File(it->toRawUTF8()).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*.sfz") > 0)
         {
             gSFZs.reserve(gSFZs.size() + results.size());
             gSFZs.insert(gSFZs.end(), results.begin(), results.end());
@@ -107,7 +107,7 @@ static void findJSFXs(const char* const jsfxPaths)
     for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
         std::vector<water::File> results;
-        const water::File path(*it);
+        const water::File path(it->toRawUTF8());
 
         if (path.findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*") > 0)
         {

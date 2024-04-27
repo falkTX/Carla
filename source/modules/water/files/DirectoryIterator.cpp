@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -149,7 +149,7 @@ const File& DirectoryIterator::getFile() const
 float DirectoryIterator::getEstimatedProgress() const
 {
     if (totalNumFiles < 0)
-        totalNumFiles = File (path).getNumberOfChildFiles (File::findFilesAndDirectories);
+        totalNumFiles = File (path.toRawUTF8()).getNumberOfChildFiles (File::findFilesAndDirectories);
 
     if (totalNumFiles <= 0)
         return 0.0f;

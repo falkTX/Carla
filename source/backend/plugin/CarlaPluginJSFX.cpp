@@ -1,6 +1,6 @@
 /*
  * Carla JSFX Plugin
- * Copyright (C) 2021-2023 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -943,7 +943,7 @@ public:
                 // find which engine search path we're in, and use this as the root
                 for (int i = 0; i < splitPaths.size() && !fUnit; ++i)
                 {
-                    const File currentPath(splitPaths[i]);
+                    const File currentPath(splitPaths[i].toRawUTF8());
                     if (file.isAChildOf(currentPath))
                         fUnit = CarlaJsfxUnit(currentPath, file);
                 }
@@ -957,10 +957,10 @@ public:
                 // search a matching file in plugin paths
                 for (int i = 0; i < splitPaths.size() && !fUnit; ++i)
                 {
-                    const File currentPath(splitPaths[i]);
+                    const File currentPath(splitPaths[i].toRawUTF8());
                     const File currentFile = currentPath.getChildFile(CharPointer_UTF8(label));
                     const CarlaJsfxUnit currentUnit(currentPath, currentFile);
-                    if (File(currentUnit.getFilePath()).existsAsFile())
+                    if (File(currentUnit.getFilePath().toRawUTF8()).existsAsFile())
                         fUnit = currentUnit;
                 }
             }

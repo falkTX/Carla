@@ -1,19 +1,5 @@
-﻿/*
- * Carla Plugin Host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+﻿// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef BUILD_BRIDGE
 # error This file should not be compiled if not building bridge
@@ -947,7 +933,7 @@ public:
                             bigValueFilePath = bigValueFilePath.replaceSection(0, 1, "Z:\\").replace("/", "\\");
 #endif
 
-                        File bigValueFile(bigValueFilePath);
+                        File bigValueFile(bigValueFilePath.toRawUTF8());
                         CARLA_SAFE_ASSERT_BREAK(bigValueFile.existsAsFile());
 
                         plugin->setCustomData(type.text, key.text, bigValueFile.loadFileAsString().toRawUTF8(), true);
@@ -988,7 +974,7 @@ public:
                     chunkFilePath = chunkFilePath.replaceSection(0, 1, "Z:\\").replace("/", "\\");
 #endif
 
-                File chunkFile(chunkFilePath);
+                File chunkFile(chunkFilePath.toRawUTF8());
                 CARLA_SAFE_ASSERT_BREAK(chunkFile.existsAsFile());
 
                 String chunkDataBase64(chunkFile.loadFileAsString());
@@ -1122,7 +1108,7 @@ public:
                                 filePath += CARLA_OS_SEP_STR ".CarlaCustomData_";
                                 filePath += fShmAudioPool.getFilenameSuffix();
 
-                                if (File(filePath).replaceWithText(cdata.value))
+                                if (File(filePath.toRawUTF8()).replaceWithText(cdata.value))
                                 {
                                     const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
 
@@ -1160,7 +1146,7 @@ public:
                         filePath += CARLA_OS_SEP_STR ".CarlaChunk_";
                         filePath += fShmAudioPool.getFilenameSuffix();
 
-                        if (File(filePath).replaceWithText(dataBase64.buffer()))
+                        if (File(filePath.toRawUTF8()).replaceWithText(dataBase64.buffer()))
                         {
                             const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
 

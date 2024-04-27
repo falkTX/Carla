@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2023 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -26,7 +26,6 @@
 #ifndef WATER_FILE_H_INCLUDED
 #define WATER_FILE_H_INCLUDED
 
-#include "../containers/Array.h"
 #include "../misc/Result.h"
 #include "../text/String.h"
 
@@ -69,7 +68,7 @@ public:
         On the Mac/Linux, the path can include "~" notation for referring to
         user home directories.
     */
-    File (const String& absolutePath);
+    File (const char* absolutePath);
 
     /** Creates a copy of another file object. */
     File (const File&);
@@ -87,7 +86,7 @@ public:
         On the Mac/Linux, the path can include "~" notation for referring to
         user home directories.
     */
-    File& operator= (const String& newAbsolutePath);
+    File& operator= (const char* newAbsolutePath);
 
     /** Copies from another file object. */
     File& operator= (const File& otherFile);
@@ -469,7 +468,7 @@ public:
         Assuming that this file is a directory, this method will search it
         for either files or subdirectories whose names match a filename pattern.
 
-        @param results                  an array to which File objects will be added for the
+        @param results                  an vector to which File objects will be added for the
                                         files that the search comes up with
         @param whatToLookFor            a value from the TypesOfFileToFind enum, specifying whether to
                                         return files, directories, or both. If the ignoreHiddenFiles flag
@@ -484,7 +483,7 @@ public:
     uint findChildFiles (std::vector<File>& results,
                          int whatToLookFor,
                          bool searchRecursively,
-                         const String& wildCardPattern = "*") const;
+                         const char* wildCardPattern = "*") const;
 
     /** Searches inside a directory and counts how many files match a wildcard pattern.
 
@@ -503,7 +502,7 @@ public:
         @see findChildFiles, DirectoryIterator
     */
     uint getNumberOfChildFiles (int whatToLookFor,
-                                const String& wildCardPattern = "*") const;
+                                const char* wildCardPattern = "*") const;
 
     /** Returns true if this file is a directory that contains one or more subdirectories.
         @see isDirectory, findChildFiles
@@ -552,11 +551,6 @@ public:
         read either UTF-16 or UTF-8 file formats.
     */
     String loadFileAsString() const;
-
-    /** Reads the contents of this file as text and splits it into lines, which are
-        appended to the given StringArray.
-    */
-    void readLines (StringArray& destLines) const;
 
     //==============================================================================
     /** Appends a block of binary data to the end of the file.

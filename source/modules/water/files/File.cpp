@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2023 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -57,8 +57,8 @@ File::File () noexcept
 {
 }
 
-File::File (const String& fullPathName)
-    : fullPath (parseAbsolutePath (fullPathName))
+File::File (const char* const absolutePath)
+    : fullPath (parseAbsolutePath (absolutePath))
 {
 }
 
@@ -74,9 +74,9 @@ File::File (const File& other)
 {
 }
 
-File& File::operator= (const String& newPath)
+File& File::operator= (const char* const newAbsolutePath)
 {
-    fullPath = parseAbsolutePath (newPath);
+    fullPath = parseAbsolutePath (newAbsolutePath);
     return *this;
 }
 
@@ -420,7 +420,7 @@ File File::getChildFile (StringRef relativePath) const
     CharPointer_UTF8 r = relativePath.text;
 
     if (isAbsolutePath (r))
-        return File (String (r));
+        return File (r);
 
    #ifdef CARLA_OS_WIN
     if (r.indexOf ((water_uchar) '/') >= 0)
@@ -467,7 +467,7 @@ File File::getChildFile (StringRef relativePath) const
 
     path = addTrailingSeparator (path);
     path.appendCharPointer (r);
-    return File (path);
+    return File (path.toRawUTF8());
 }
 
 File File::getSiblingFile (StringRef fileName) const
@@ -572,16 +572,11 @@ String File::loadFileAsString() const
                          : String();
 }
 
-void File::readLines (StringArray& destLines) const
-{
-    destLines.addLines (loadFileAsString());
-}
-
 //==============================================================================
 uint File::findChildFiles (std::vector<File>& results,
                            const int whatToLookFor,
                            const bool searchRecursively,
-                           const String& wildCardPattern) const
+                           const char* const wildCardPattern) const
 {
     uint total = 0;
 
@@ -594,7 +589,7 @@ uint File::findChildFiles (std::vector<File>& results,
     return total;
 }
 
-uint File::getNumberOfChildFiles (const int whatToLookFor, const String& wildCardPattern) const
+uint File::getNumberOfChildFiles (const int whatToLookFor, const char* const wildCardPattern) const
 {
     uint total = 0;
 
@@ -1443,7 +1438,7 @@ File water_getExecutableFile()
 
                 for (int i=paths.size(); --i>=0;)
                 {
-                    const File filepath (File (paths[i]).getChildFile (filename));
+                    const File filepath (File (paths[i].toRawUTF8()).getChildFile (filename));
 
                     if (filepath.existsAsFile())
                         return filepath.getFullPathName();
@@ -1457,7 +1452,7 @@ File water_getExecutableFile()
     };
 
     static String filename (DLAddrReader::getFilename());
-    return filename;
+    return filename.toRawUTF8();
 }
 
 #ifdef CARLA_OS_MAC
@@ -1511,9 +1506,9 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
         case tempDirectory:
         {
-            File tmp ("~/Library/Caches/" + water_getExecutableFile().getFileNameWithoutExtension());
+            File tmp (String("~/Library/Caches/" + water_getExecutableFile().getFileNameWithoutExtension()).toRawUTF8());
             tmp.createDirectory();
-            return File (tmp.getFullPathName());
+            return File (tmp.getFullPathName().toRawUTF8());
         }
 
         case currentExecutableFile:
@@ -1522,11 +1517,10 @@ File File::getSpecialLocation (const SpecialLocationType type)
         case hostApplicationPath:
         {
             unsigned int size = 8192;
-            HeapBlock<char> buffer;
-            buffer.calloc (size + 8);
-
-            _NSGetExecutablePath (buffer.getData(), &size);
-            return File (String::fromUTF8 (buffer, (int) size));
+            char* const buffer = new char[size + 8];
+            _NSGetExecutablePath (buffer, &size);
+            buffer[size] = 0;
+            return File (buffer);
         }
 
         default:
@@ -1535,7 +1529,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
     }
 
     if (resultPath.isNotEmpty())
-        return File (resultPath.convertToPrecomposedUnicode());
+        return File (resultPath.convertToPrecomposedUnicode().toRawUTF8());
 
     return File();
 }
