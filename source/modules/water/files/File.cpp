@@ -151,7 +151,7 @@ String File::parseAbsolutePath (const String& p)
             // Check if path is valid under Wine
             String testpath ("Z:" + path);
 
-            if (File(testpath).exists())
+            if (File(testpath.toRawUTF8()).exists())
             {
                 path = testpath;
             }
@@ -181,7 +181,7 @@ String File::parseAbsolutePath (const String& p)
         */
         carla_safe_assert(path.toRawUTF8(), __FILE__, __LINE__);
 
-        return File::getCurrentWorkingDirectory().getChildFile (path).getFullPathName();
+        return File::getCurrentWorkingDirectory().getChildFile (path.toRawUTF8()).getFullPathName();
     }
 #else
     // Mac or Linux..
@@ -424,7 +424,7 @@ File File::getChildFile (const char* const relativePath) const
 
    #ifdef CARLA_OS_WIN
     if (r.indexOf ((water_uchar) '/') >= 0)
-        return getChildFile (String (r).replaceCharacter ('/', '\\'));
+        return getChildFile (String (r).replaceCharacter ('/', '\\').toRawUTF8());
    #endif
 
     String path (fullPath);
@@ -992,7 +992,7 @@ namespace WindowsFileHelpers
             CHAR apath [MAX_PATH + 256];
 
             if (WideCharToMultiByte (CP_UTF8, 0, wpath, -1, apath, numElementsInArray (apath), nullptr, nullptr))
-                return File (String (apath));
+                return File (apath);
         }
 
         return File();
@@ -1006,7 +1006,7 @@ namespace WindowsFileHelpers
         GetModuleFileNameW (moduleHandle, wdest, (DWORD) numElementsInArray (wdest));
 
         if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
-            return File (String (adest));
+            return File (adest);
 
         return File();
     }
@@ -1120,7 +1120,7 @@ File File::getCurrentWorkingDirectory()
     GetCurrentDirectoryW ((DWORD) numElementsInArray (wdest), wdest);
 
     if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
-        return File (String (adest));
+        return File (adest);
 
     return File();
 }
@@ -1153,7 +1153,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
             GetTempPathW ((DWORD) numElementsInArray (wdest), wdest);
 
             if (WideCharToMultiByte (CP_UTF8, 0, wdest, -1, adest, numElementsInArray (adest), nullptr, nullptr))
-                return File (String (adest));
+                return File (adest);
 
             return File();
         }

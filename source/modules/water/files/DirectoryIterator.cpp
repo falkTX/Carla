@@ -24,7 +24,6 @@
 */
 
 #include "DirectoryIterator.h"
-#include "../text/StringArray.h"
 
 namespace water {
 
@@ -144,20 +143,6 @@ const File& DirectoryIterator::getFile() const
     wassert (hasBeenAdvanced);
 
     return currentFile;
-}
-
-float DirectoryIterator::getEstimatedProgress() const
-{
-    if (totalNumFiles < 0)
-        totalNumFiles = File (path.toRawUTF8()).getNumberOfChildFiles (File::findFilesAndDirectories);
-
-    if (totalNumFiles <= 0)
-        return 0.0f;
-
-    const float detailedIndex = (subIterator != nullptr) ? index + subIterator->getEstimatedProgress()
-                                                         : (float) index;
-
-    return detailedIndex / totalNumFiles;
 }
 
 }

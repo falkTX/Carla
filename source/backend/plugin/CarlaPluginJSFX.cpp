@@ -224,7 +224,7 @@ public:
 
     bool getLabel(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fUnit.getFileId().toRawUTF8(), STR_MAX);
+        std::strncpy(strBuf, fUnit.getFileId(), STR_MAX);
         return true;
     }
 
@@ -960,7 +960,7 @@ public:
                     const File currentPath(splitPaths[i].toRawUTF8());
                     const File currentFile = currentPath.getChildFile(CharPointer_UTF8(label));
                     const CarlaJsfxUnit currentUnit(currentPath, currentFile);
-                    if (File(currentUnit.getFilePath().toRawUTF8()).existsAsFile())
+                    if (File(currentUnit.getFilePath()).existsAsFile())
                         fUnit = currentUnit;
                 }
             }
@@ -977,12 +977,12 @@ public:
         ysfx_config_u config(ysfx_config_new());
         CARLA_SAFE_ASSERT_RETURN(config != nullptr, false);
 
-        const water::String rootPath = fUnit.getRootPath();
-        const water::String filePath = fUnit.getFilePath();
+        const CarlaString rootPath = fUnit.getRootPath();
+        const CarlaString filePath = fUnit.getFilePath();
 
         ysfx_register_builtin_audio_formats(config.get());
-        ysfx_set_import_root(config.get(), rootPath.toRawUTF8());
-        ysfx_guess_file_roots(config.get(), filePath.toRawUTF8());
+        ysfx_set_import_root(config.get(), rootPath);
+        ysfx_guess_file_roots(config.get(), filePath);
         ysfx_set_log_reporter(config.get(), &CarlaJsfxLogging::logAll);
         ysfx_set_user_data(config.get(), (intptr_t)this);
 
@@ -993,7 +993,7 @@ public:
         // get info
 
         {
-            if (! ysfx_load_file(fEffect, filePath.toRawUTF8(), 0))
+            if (! ysfx_load_file(fEffect, filePath, 0))
             {
                 pData->engine->setLastError("Failed to load JSFX");
                 return false;
@@ -1021,7 +1021,7 @@ public:
             pData->name = carla_strdup(ysfx_get_name(fEffect));
         }
 
-        pData->filename = carla_strdup(filePath.toRawUTF8());
+        pData->filename = filePath.dup();
 
         // ---------------------------------------------------------------
         // register client

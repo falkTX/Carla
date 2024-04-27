@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -109,13 +109,6 @@ public:
     */
     const File& getFile() const;
 
-    /** Returns a guess of how far through the search the iterator has got.
-
-        @returns    a value 0.0 to 1.0 to show the progress, although this won't be
-                    very accurate.
-    */
-    float getEstimatedProgress() const;
-
 private:
     //==============================================================================
     class NativeIterator
@@ -124,8 +117,7 @@ private:
         NativeIterator (const File& directory, const String& wildCard);
         ~NativeIterator();
 
-        bool next (String& filenameFound,
-                   bool* isDirectory, int64* fileSize, bool* isReadOnly);
+        bool next (String& filenameFound, bool* isDirectory, int64* fileSize, bool* isReadOnly);
 
         class Pimpl;
 

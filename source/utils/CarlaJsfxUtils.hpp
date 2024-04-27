@@ -1,7 +1,7 @@
 /*
  * Carla JSFX utils
  * Copyright (C) 2021 Jean Pierre Cimalando
- * Copyright (C) 2021-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2021-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,20 +19,15 @@
 #ifndef CARLA_JSFX_UTILS_HPP_INCLUDED
 #define CARLA_JSFX_UTILS_HPP_INCLUDED
 
-#include "CarlaDefines.h"
 #include "CarlaBackend.h"
-#include "CarlaUtils.hpp"
-#include "CarlaJuceUtils.hpp"
+#include "CarlaString.hpp"
 
 #include "water/files/File.h"
-#include "water/text/String.h"
 
 #ifdef YSFX_API
 # error YSFX_API is not private
 #endif
 #include "ysfx/include/ysfx.h"
-
-#include <memory>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -76,7 +71,7 @@ struct CarlaJsfxLogging
 
 struct CarlaJsfxCategories
 {
-    static PluginCategory getFromEffect(ysfx_t* effect)
+    static PluginCategory getFromEffect(ysfx_t* const effect)
     {
         PluginCategory category = PLUGIN_CATEGORY_OTHER;
 
@@ -88,8 +83,8 @@ struct CarlaJsfxCategories
 
             for (uint32_t i=0; i<tagCount && category == PLUGIN_CATEGORY_OTHER; ++i)
             {
-                water::CharPointer_UTF8 tag(tags[i]);
-                PluginCategory current = getFromTag(tag);
+                PluginCategory current = getFromTag(tags[i]);
+
                 if (current != PLUGIN_CATEGORY_NONE)
                     category = current;
             }
@@ -98,30 +93,30 @@ struct CarlaJsfxCategories
         return category;
     }
 
-    static PluginCategory getFromTag(const water::CharPointer_UTF8 tag)
+    static PluginCategory getFromTag(const char* const tag)
     {
-        if (tag.compareIgnoreCase(water::CharPointer_UTF8("synthesis")) == 0)
+        if (carla_strcasecmp(tag, "synthesis") == 0)
             return PLUGIN_CATEGORY_SYNTH;
 
-        if (tag.compareIgnoreCase(water::CharPointer_UTF8("delay")) == 0)
+        if (carla_strcasecmp(tag, "delay") == 0)
             return PLUGIN_CATEGORY_DELAY;
 
-        if (tag.compareIgnoreCase(water::CharPointer_UTF8("equalizer")) == 0)
+        if (carla_strcasecmp(tag, "equalizer") == 0)
             return PLUGIN_CATEGORY_EQ;
 
-        if (tag.compareIgnoreCase(water::CharPointer_UTF8("filter")) == 0)
+        if (carla_strcasecmp(tag, "filter") == 0)
             return PLUGIN_CATEGORY_FILTER;
 
-        if (tag.compareIgnoreCase(water::CharPointer_UTF8("distortion")) == 0)
+        if (carla_strcasecmp(tag, "distortion") == 0)
             return PLUGIN_CATEGORY_DISTORTION;
 
-        if (tag.compareIgnoreCase(water::CharPointer_UTF8("dynamics")) == 0)
+        if (carla_strcasecmp(tag, "dynamics") == 0)
             return PLUGIN_CATEGORY_DYNAMICS;
 
-        if (tag.compareIgnoreCase(water::CharPointer_UTF8("modulation")) == 0)
+        if (carla_strcasecmp(tag, "modulation") == 0)
             return PLUGIN_CATEGORY_MODULATOR;
 
-        if (tag.compareIgnoreCase(water::CharPointer_UTF8("utility")) == 0)
+        if (carla_strcasecmp(tag, "utility") == 0)
             return PLUGIN_CATEGORY_UTILITY;
 
         return PLUGIN_CATEGORY_NONE;
@@ -132,12 +127,12 @@ struct CarlaJsfxCategories
 
 class CarlaJsfxUnit
 {
-    static water::String createFileId(const water::File& rootPath, const water::File& filePath)
+    static CarlaString createFileId(const water::File& rootPath, const water::File& filePath)
     {
-        water::String fileId(filePath.getRelativePathFrom(rootPath));
-#ifdef CARLA_OS_WIN
-        fileId.replaceCharacter('\\', '/');
-#endif
+        CarlaString fileId(filePath.getRelativePathFrom(rootPath).toRawUTF8());
+       #ifdef CARLA_OS_WIN
+        fileId.replace('\\', '/');
+       #endif
         return fileId;
     }
 
@@ -149,33 +144,33 @@ public:
 
     CarlaJsfxUnit(const water::File& rootPath, const water::File& filePath)
         : fFileId(createFileId(rootPath, filePath)),
-          fFilePath(rootPath.getChildFile(fFileId.toRawUTF8()).getFullPathName()),
-          fRootPath(rootPath.getFullPathName()) {}
+          fFilePath(rootPath.getChildFile(fFileId).getFullPathName().toRawUTF8()),
+          fRootPath(rootPath.getFullPathName().toRawUTF8()) {}
 
     explicit operator bool() const noexcept
     {
         return fFileId.isNotEmpty();
     }
 
-    const water::String& getFileId() const noexcept
+    const CarlaString& getFileId() const noexcept
     {
         return fFileId;
     }
 
-    const water::String& getFilePath() const noexcept
+    const CarlaString& getFilePath() const noexcept
     {
         return fFilePath;
     }
 
-    const water::String& getRootPath() const noexcept
+    const CarlaString& getRootPath() const noexcept
     {
         return fRootPath;
     }
 
 private:
-    water::String fFileId;
-    water::String fFilePath;
-    water::String fRootPath;
+    CarlaString fFileId;
+    CarlaString fFilePath;
+    CarlaString fRootPath;
 };
 
 // --------------------------------------------------------------------------------------------------------------------

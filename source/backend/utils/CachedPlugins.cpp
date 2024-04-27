@@ -627,17 +627,17 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CB::CarlaJsfxUn
 
     ysfx_config_u config(ysfx_config_new());
 
-    const water::String rootPath = unit.getRootPath();
-    const water::String filePath = unit.getFilePath();
+    const CarlaString rootPath = unit.getRootPath();
+    const CarlaString filePath = unit.getFilePath();
 
     ysfx_register_builtin_audio_formats(config.get());
-    ysfx_set_import_root(config.get(), rootPath.toRawUTF8());
-    ysfx_guess_file_roots(config.get(), filePath.toRawUTF8());
+    ysfx_set_import_root(config.get(), rootPath);
+    ysfx_guess_file_roots(config.get(), filePath);
     ysfx_set_log_reporter(config.get(), &CB::CarlaJsfxLogging::logErrorsOnly);
 
     ysfx_u effect(ysfx_new(config.get()));
 
-    if (! ysfx_load_file(effect.get(), filePath.toRawUTF8(), 0))
+    if (! ysfx_load_file(effect.get(), filePath, 0))
     {
         info.valid = false;
         return &info;
@@ -654,11 +654,11 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CB::CarlaJsfxUn
     }
 
     static CarlaString name, label, maker;
-    label = unit.getFileId().toRawUTF8();
+    label = unit.getFileId();
     name = ysfx_get_name(effect.get());
     maker = ysfx_get_author(effect.get());
 
-    info.valid         = true;
+    info.valid = true;
 
     info.category = CB::CarlaJsfxCategories::getFromEffect(effect.get());
 
