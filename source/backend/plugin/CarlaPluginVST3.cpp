@@ -3458,7 +3458,7 @@ public:
             binaryfilename += ".so";
            #endif
 
-            if (! water::File(binaryfilename).existsAsFile())
+            if (! water::File(binaryfilename.toRawUTF8()).existsAsFile())
             {
                 pData->engine->setLastError("Failed to find a suitable VST3 bundle binary");
                 return false;

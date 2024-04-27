@@ -1583,7 +1583,7 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         binaryfilename += ".so";
        #endif
 
-        if (! water::File(binaryfilename).existsAsFile())
+        if (! water::File(binaryfilename.toRawUTF8()).existsAsFile())
         {
             DISCOVERY_OUT("error", "Failed to find a suitable VST3 bundle binary");
             return false;
