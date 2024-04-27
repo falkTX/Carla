@@ -111,8 +111,8 @@ static void initSignalHandler()
 
 // -------------------------------------------------------------------------
 
-static String gProjectFilename;
 static CarlaHostHandle gHostHandle;
+static CarlaString gProjectFilename;
 
 static void gIdle()
 {
@@ -124,7 +124,7 @@ static void gIdle()
 
         if (gProjectFilename.isNotEmpty())
         {
-            if (! carla_save_plugin_state(gHostHandle, 0, gProjectFilename.toRawUTF8()))
+            if (! carla_save_plugin_state(gHostHandle, 0, gProjectFilename))
                 carla_stderr("Plugin preset save failed, error was:\n%s", carla_get_last_error(gHostHandle));
         }
     }
@@ -195,15 +195,15 @@ public:
             const CarlaPluginInfo* const pInfo = carla_get_plugin_info(gHostHandle, 0);
             CARLA_SAFE_ASSERT_RETURN(pInfo != nullptr,);
 
-            gProjectFilename  = CharPointer_UTF8(pInfo->name);
+            gProjectFilename  = pInfo->name;
             gProjectFilename += ".carxs";
 
             if (! File::isAbsolutePath(gProjectFilename))
-                gProjectFilename = File::getCurrentWorkingDirectory().getChildFile(gProjectFilename).getFullPathName();
+                gProjectFilename = File::getCurrentWorkingDirectory().getChildFile(gProjectFilename).getFullPathName().toRawUTF8();
 
-            if (File(gProjectFilename.toRawUTF8()).existsAsFile())
+            if (File(gProjectFilename).existsAsFile())
             {
-                if (carla_load_plugin_state(gHostHandle, 0, gProjectFilename.toRawUTF8()))
+                if (carla_load_plugin_state(gHostHandle, 0, gProjectFilename))
                     carla_stdout("Plugin state loaded successfully");
                 else
                     carla_stderr("Plugin state load failed, error was:\n%s", carla_get_last_error(gHostHandle));
@@ -211,7 +211,7 @@ public:
             else
             {
                 carla_stdout("Previous plugin state in '%s' is non-existent, will start from default state",
-                             gProjectFilename.toRawUTF8());
+                             gProjectFilename.buffer());
             }
         }
 

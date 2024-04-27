@@ -45,12 +45,12 @@ Sample *Sound::addSample(water::String path, water::String defaultPath)
   water::File sampleFile;
   if (defaultPath.isEmpty())
   {
-    sampleFile = file_.getSiblingFile(path);
+    sampleFile = file_.getSiblingFile(path.toRawUTF8());
   }
   else
   {
-    water::File defaultDir = file_.getSiblingFile(defaultPath);
-    sampleFile = defaultDir.getChildFile(path);
+    water::File defaultDir = file_.getSiblingFile(defaultPath.toRawUTF8());
+    sampleFile = defaultDir.getChildFile(path.toRawUTF8());
   }
   water::String samplePath = sampleFile.getFullPathName();
   Sample *sample = samples_[samplePath];

@@ -129,13 +129,6 @@ public:
     */
     int64 getSize() const;
 
-    /** Utility function to convert a file size in bytes to a neat string description.
-
-        So for example 100 would return "100 bytes", 2000 would return "2 KB",
-        2000000 would produce "2 MB", etc.
-    */
-    static String descriptionOfSizeInBytes (int64 bytes);
-
     //==============================================================================
     /** Returns the complete, absolute path of this file.
 
@@ -204,7 +197,7 @@ public:
 
         @see getFileExtension, withFileExtension, getFileNameWithoutExtension
     */
-    bool hasFileExtension (StringRef extensionToTest) const;
+    bool hasFileExtension (const char* extensionToTest) const;
 
     /** Returns a version of this file with a different file extension.
 
@@ -216,7 +209,7 @@ public:
 
         @see getFileName, getFileExtension, hasFileExtension, getFileNameWithoutExtension
     */
-    File withFileExtension (StringRef newExtension) const;
+    File withFileExtension (const char* newExtension) const;
 
     /** Returns the last part of the filename, without its file extension.
 
@@ -241,7 +234,7 @@ public:
 
         @see getSiblingFile, getParentDirectory, getRelativePathFrom, isAChildOf
     */
-    File getChildFile (StringRef relativeOrAbsolutePath) const;
+    File getChildFile (const char* relativeOrAbsolutePath) const;
 
     /** Returns a file which is in the same directory as this one.
 
@@ -249,7 +242,7 @@ public:
 
         @see getChildFile, getParentDirectory
     */
-    File getSiblingFile (StringRef siblingFileName) const;
+    File getSiblingFile (const char* siblingFileName) const;
 
     //==============================================================================
     /** Returns the directory that contains this file or directory.
@@ -661,7 +654,7 @@ public:
         This will try to return the name of a non-existent temp file.
         To get the temp folder, you can use getSpecialLocation (File::tempDirectory).
     */
-    static File createTempFile (StringRef fileNameEnding);
+    static File createTempFile (const char* fileNameEnding);
 
     //==============================================================================
     /** Returns the current working directory.
@@ -677,17 +670,6 @@ public:
         @see getCurrentWorkingDirectory
     */
     bool setAsCurrentWorkingDirectory() const;
-
-    //==============================================================================
-    /** The system-specific file separator character.
-        On Windows, this will be '\', on Mac/Linux, it'll be '/'
-    */
-    static const water_uchar separator;
-
-    /** The system-specific file separator character, as a string.
-        On Windows, this will be '\', on Mac/Linux, it'll be '/'
-    */
-    static const String separatorString;
 
     //==============================================================================
     /** Returns a version of a filename with any illegal characters removed.
@@ -716,7 +698,7 @@ public:
     static bool areFileNamesCaseSensitive();
 
     /** Returns true if the string seems to be a fully-specified absolute path. */
-    static bool isAbsolutePath (StringRef path);
+    static bool isAbsolutePath (const char* path);
 
     /** Creates a file that simply contains this string, without doing the sanity-checking
         that the normal constructors do.

@@ -149,7 +149,7 @@ public:
 
     CarlaJsfxUnit(const water::File& rootPath, const water::File& filePath)
         : fFileId(createFileId(rootPath, filePath)),
-          fFilePath(rootPath.getChildFile(fFileId).getFullPathName()),
+          fFilePath(rootPath.getChildFile(fFileId.toRawUTF8()).getFullPathName()),
           fRootPath(rootPath.getFullPathName()) {}
 
     explicit operator bool() const noexcept

@@ -108,7 +108,7 @@ static String removeEllipsis (const String& path)
    #endif
     {
         StringArray toks;
-        toks.addTokens (path, File::separatorString, StringRef());
+        toks.addTokens (path, CARLA_OS_SEP_STR, StringRef());
         bool anythingChanged = false;
 
         for (int i = 1; i < toks.size(); ++i)
@@ -129,7 +129,7 @@ static String removeEllipsis (const String& path)
         }
 
         if (anythingChanged)
-            return toks.joinIntoString (File::separatorString);
+            return toks.joinIntoString (CARLA_OS_SEP_STR);
     }
 
     return path;
@@ -144,9 +144,9 @@ String File::parseAbsolutePath (const String& p)
     // Windows..
     String path (removeEllipsis (p.replaceCharacter ('/', '\\')));
 
-    if (path.startsWithChar (separator))
+    if (path.startsWithChar (CARLA_OS_SEP))
     {
-        if (path[1] != separator)
+        if (path[1] != CARLA_OS_SEP)
         {
             // Check if path is valid under Wine
             String testpath ("Z:" + path);
@@ -195,7 +195,7 @@ String File::parseAbsolutePath (const String& p)
 
     if (path.startsWithChar ('~'))
     {
-        if (path[1] == separator || path[1] == 0)
+        if (path[1] == CARLA_OS_SEP || path[1] == 0)
         {
             // expand a name of the form "~/abc"
             path = File::getSpecialLocation (File::userHomeDirectory).getFullPathName()
@@ -210,13 +210,13 @@ String File::parseAbsolutePath (const String& p)
                 path = addTrailingSeparator (pw->pw_dir) + path.fromFirstOccurrenceOf ("/", false, false);
         }
     }
-    else if (! path.startsWithChar (separator))
+    else if (! path.startsWithChar (CARLA_OS_SEP))
     {
-        return File::getCurrentWorkingDirectory().getChildFile (path).getFullPathName();
+        return File::getCurrentWorkingDirectory().getChildFile (path.toRawUTF8()).getFullPathName();
     }
 #endif
 
-    while (path.endsWithChar (separator) && path != separatorString) // careful not to turn a single "/" into an empty string.
+    while (path.endsWithChar (CARLA_OS_SEP) && path != CARLA_OS_SEP_STR) // careful not to turn a single "/" into an empty string.
         path = path.dropLastCharacters (1);
 
     return path;
@@ -224,8 +224,8 @@ String File::parseAbsolutePath (const String& p)
 
 String File::addTrailingSeparator (const String& path)
 {
-    return path.endsWithChar (separator) ? path
-                                         : path + separator;
+    return path.endsWithChar (CARLA_OS_SEP) ? path
+                                            : path + CARLA_OS_SEP;
 }
 
 //==============================================================================
@@ -321,7 +321,7 @@ bool File::copyDirectoryTo (const File& newDirectory) const
         for (size_t i = 0; i < subFiles.size(); ++i)
         {
             const File& src (subFiles[i]);
-            const File& dst (newDirectory.getChildFile (src.getFileName()));
+            const File& dst (newDirectory.getChildFile (src.getFileName().toRawUTF8()));
 
             if (src.isSymbolicLink())
             {
@@ -339,7 +339,7 @@ bool File::copyDirectoryTo (const File& newDirectory) const
         findChildFiles (subFiles, File::findDirectories, false);
 
         for (size_t i = 0; i < subFiles.size(); ++i)
-            if (! subFiles[i].copyDirectoryTo (newDirectory.getChildFile (subFiles[i].getFileName())))
+            if (! subFiles[i].copyDirectoryTo (newDirectory.getChildFile (subFiles[i].getFileName().toRawUTF8())))
                 return false;
 
         return true;
@@ -351,13 +351,13 @@ bool File::copyDirectoryTo (const File& newDirectory) const
 //==============================================================================
 String File::getPathUpToLastSlash() const
 {
-    const int lastSlash = fullPath.lastIndexOfChar (separator);
+    const int lastSlash = fullPath.lastIndexOfChar (CARLA_OS_SEP);
 
     if (lastSlash > 0)
         return fullPath.substring (0, lastSlash);
 
     if (lastSlash == 0)
-        return separatorString;
+        return CARLA_OS_SEP_STR;
 
     return fullPath;
 }
@@ -372,12 +372,12 @@ File File::getParentDirectory() const
 //==============================================================================
 String File::getFileName() const
 {
-    return fullPath.substring (fullPath.lastIndexOfChar (separator) + 1);
+    return fullPath.substring (fullPath.lastIndexOfChar (CARLA_OS_SEP) + 1);
 }
 
 String File::getFileNameWithoutExtension() const
 {
-    const int lastSlash = fullPath.lastIndexOfChar (separator) + 1;
+    const int lastSlash = fullPath.lastIndexOfChar (CARLA_OS_SEP) + 1;
     const int lastDot   = fullPath.lastIndexOfChar ('.');
 
     if (lastDot > lastSlash)
@@ -403,24 +403,24 @@ bool File::isAChildOf (const File& potentialParent) const
 }
 
 //==============================================================================
-bool File::isAbsolutePath (StringRef path)
+bool File::isAbsolutePath (const char* const path)
 {
-    const water_uchar firstChar = *(path.text);
+    const char firstChar = *path;
 
-    return firstChar == separator
+    return firstChar == CARLA_OS_SEP
            #ifdef CARLA_OS_WIN
-            || (firstChar != 0 && path.text[1] == ':');
+            || (firstChar != '\0' && path[1] == ':');
            #else
             || firstChar == '~';
            #endif
 }
 
-File File::getChildFile (StringRef relativePath) const
+File File::getChildFile (const char* const relativePath) const
 {
-    CharPointer_UTF8 r = relativePath.text;
+    if (isAbsolutePath (relativePath))
+        return File (relativePath);
 
-    if (isAbsolutePath (r))
-        return File (r);
+    CharPointer_UTF8 r(relativePath);
 
    #ifdef CARLA_OS_WIN
     if (r.indexOf ((water_uchar) '/') >= 0)
@@ -438,13 +438,13 @@ File File::getChildFile (StringRef relativePath) const
         {
             const water_uchar thirdChar = *++r;
 
-            if (thirdChar == separator || thirdChar == 0)
+            if (thirdChar == CARLA_OS_SEP || thirdChar == 0)
             {
-                const int lastSlash = path.lastIndexOfChar (separator);
+                const int lastSlash = path.lastIndexOfChar (CARLA_OS_SEP);
                 if (lastSlash >= 0)
                     path = path.substring (0, lastSlash);
 
-                while (*r == separator) // ignore duplicate slashes
+                while (*r == CARLA_OS_SEP) // ignore duplicate slashes
                     ++r;
             }
             else
@@ -453,9 +453,9 @@ File File::getChildFile (StringRef relativePath) const
                 break;
             }
         }
-        else if (secondChar == separator || secondChar == 0)  // remove "./"
+        else if (secondChar == CARLA_OS_SEP || secondChar == 0)  // remove "./"
         {
-            while (*r == separator) // ignore duplicate slashes
+            while (*r == CARLA_OS_SEP) // ignore duplicate slashes
                 ++r;
         }
         else
@@ -470,24 +470,9 @@ File File::getChildFile (StringRef relativePath) const
     return File (path.toRawUTF8());
 }
 
-File File::getSiblingFile (StringRef fileName) const
+File File::getSiblingFile (const char* const fileName) const
 {
     return getParentDirectory().getChildFile (fileName);
-}
-
-//==============================================================================
-String File::descriptionOfSizeInBytes (const int64 bytes)
-{
-    const char* suffix;
-    double divisor = 0;
-
-    if (bytes == 1)                       { suffix = " byte"; }
-    else if (bytes < 1024)                { suffix = " bytes"; }
-    else if (bytes < 1024 * 1024)         { suffix = " KB"; divisor = 1024.0; }
-    else if (bytes < 1024 * 1024 * 1024)  { suffix = " MB"; divisor = 1024.0 * 1024.0; }
-    else                                  { suffix = " GB"; divisor = 1024.0 * 1024.0 * 1024.0; }
-
-    return (divisor > 0 ? String (bytes / divisor, 1) : String (bytes)) + suffix;
 }
 
 //==============================================================================
@@ -525,7 +510,7 @@ Result File::createDirectory() const
     Result r (parentDir.createDirectory());
 
     if (r.wasOk())
-        r = createDirectoryInternal (fullPath.trimCharactersAtEnd (separatorString));
+        r = createDirectoryInternal (fullPath.trimCharactersAtEnd (CARLA_OS_SEP_STR));
 
     return r;
 }
@@ -613,7 +598,7 @@ File File::getNonexistentChildFile (const String& suggestedPrefix,
                                     const String& suffix,
                                     bool putNumbersInBrackets) const
 {
-    File f (getChildFile (suggestedPrefix + suffix));
+    File f (getChildFile (String(suggestedPrefix + suffix).toRawUTF8()));
 
     if (f.exists())
     {
@@ -653,7 +638,7 @@ File File::getNonexistentChildFile (const String& suggestedPrefix,
                 newName << ++number;
             }
 
-            f = getChildFile (newName + suffix);
+            f = getChildFile (String(newName + suffix).toRawUTF8());
 
         } while (f.exists());
     }
@@ -676,26 +661,28 @@ String File::getFileExtension() const
 {
     const int indexOfDot = fullPath.lastIndexOfChar ('.');
 
-    if (indexOfDot > fullPath.lastIndexOfChar (separator))
+    if (indexOfDot > fullPath.lastIndexOfChar (CARLA_OS_SEP))
         return fullPath.substring (indexOfDot);
 
     return String();
 }
 
-bool File::hasFileExtension (StringRef possibleSuffix) const
+bool File::hasFileExtension (const char* const possibleSuffix_) const
 {
-    if (possibleSuffix.isEmpty())
-        return fullPath.lastIndexOfChar ('.') <= fullPath.lastIndexOfChar (separator);
+    const CharPointer_UTF8 possibleSuffix(possibleSuffix_);
 
-    const int semicolon = possibleSuffix.text.indexOf ((water_uchar) ';');
+    if (possibleSuffix.isEmpty())
+        return fullPath.lastIndexOfChar ('.') <= fullPath.lastIndexOfChar (CARLA_OS_SEP);
+
+    const int semicolon = possibleSuffix.indexOf ((water_uchar) ';');
 
     if (semicolon >= 0)
-        return hasFileExtension (String (possibleSuffix.text).substring (0, semicolon).trimEnd())
-                || hasFileExtension ((possibleSuffix.text + (semicolon + 1)).findEndOfWhitespace());
+        return hasFileExtension (String (possibleSuffix).substring (0, semicolon).trimEnd().toRawUTF8())
+                || hasFileExtension ((possibleSuffix + (semicolon + 1)).findEndOfWhitespace());
 
     if (fullPath.endsWithIgnoreCase (possibleSuffix))
     {
-        if (possibleSuffix.text[0] == '.')
+        if (possibleSuffix[0] == '.')
             return true;
 
         const int dotPos = fullPath.length() - possibleSuffix.length() - 1;
@@ -707,21 +694,21 @@ bool File::hasFileExtension (StringRef possibleSuffix) const
     return false;
 }
 
-File File::withFileExtension (StringRef newExtension) const
+File File::withFileExtension (const char* const newExtension) const
 {
     if (fullPath.isEmpty())
         return File();
 
-    String filePart (getFileName());
+    String filePart (getFileName().toRawUTF8());
 
     const int i = filePart.lastIndexOfChar ('.');
     if (i >= 0)
         filePart = filePart.substring (0, i);
 
-    if (newExtension.isNotEmpty() && newExtension.text[0] != '.')
+    if (newExtension[0] != '\0' && newExtension[0] != '.')
         filePart << '.';
 
-    return getSiblingFile (filePart + newExtension);
+    return getSiblingFile (String(filePart + newExtension).toRawUTF8());
 }
 
 //==============================================================================
@@ -877,7 +864,7 @@ static int countNumberOfSeparators (CharPointer_UTF8 s)
         if (c == 0)
             break;
 
-        if (c == File::separator)
+        if (c == CARLA_OS_SEP)
             ++num;
     }
 
@@ -888,7 +875,7 @@ String File::getRelativePathFrom (const File& dir)  const
 {
     String thisPath (fullPath);
 
-    while (thisPath.endsWithChar (separator))
+    while (thisPath.endsWithChar (CARLA_OS_SEP))
         thisPath = thisPath.dropLastCharacters (1);
 
     String dirPath (addTrailingSeparator (dir.existsAsFile() ? dir.getParentDirectory().getFullPathName()
@@ -917,7 +904,7 @@ String File::getRelativePathFrom (const File& dir)  const
 
             ++i;
 
-            if (c1 == separator)
+            if (c1 == CARLA_OS_SEP)
             {
                 thisPathAfterCommon = thisPathIter;
                 dirPathAfterCommon  = dirPathIter;
@@ -927,7 +914,7 @@ String File::getRelativePathFrom (const File& dir)  const
     }
 
     // if the only common bit is the root, then just return the full path..
-    if (commonBitLength == 0 || (commonBitLength == 1 && thisPath[1] == separator))
+    if (commonBitLength == 0 || (commonBitLength == 1 && thisPath[1] == CARLA_OS_SEP))
         return fullPath;
 
     const int numUpDirectoriesNeeded = countNumberOfSeparators (dirPathAfterCommon);
@@ -945,10 +932,10 @@ String File::getRelativePathFrom (const File& dir)  const
 }
 
 //==============================================================================
-File File::createTempFile (StringRef fileNameEnding)
+File File::createTempFile (const char* const fileNameEnding)
 {
     const File tempFile (getSpecialLocation (tempDirectory)
-                            .getChildFile ("temp_" + String::toHexString (Random::getSystemRandom().nextInt()))
+                            .getChildFile (String("temp_" + String::toHexString (Random::getSystemRandom().nextInt())).toRawUTF8())
                             .withFileExtension (fileNameEnding));
 
     if (tempFile.exists())
@@ -1024,9 +1011,6 @@ namespace WindowsFileHelpers
         return File();
     }
 }
-
-const water_uchar File::separator = '\\';
-const String File::separatorString ("\\");
 
 bool File::isDirectory() const
 {
@@ -1295,9 +1279,6 @@ namespace
     }
 }
 
-const water_uchar File::separator = '/';
-const String File::separatorString ("/");
-
 bool File::isDirectory() const
 {
     water_statStruct info;
@@ -1322,7 +1303,7 @@ bool File::hasWriteAccess() const
     if (exists())
         return access (fullPath.toUTF8(), W_OK) == 0;
 
-    if ((! isDirectory()) && fullPath.containsChar (separator))
+    if ((! isDirectory()) && fullPath.containsChar (CARLA_OS_SEP))
         return getParentDirectory().hasWriteAccess();
 
     return false;
@@ -1606,7 +1587,7 @@ File File::getLinkedTarget() const
     String f (getLinkedFile (getFullPathName()));
 
     if (f.isNotEmpty())
-        return getSiblingFile (f);
+        return getSiblingFile (f.toRawUTF8());
 
     return *this;
 }
