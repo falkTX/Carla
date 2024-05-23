@@ -1450,7 +1450,7 @@ bool File::isSymbolicLink() const
 File File::getLinkedTarget() const
 {
     if (NSString* dest = getFileLink (fullPath))
-        return getSiblingFile (nsStringToWater (dest));
+        return getSiblingFile ([dest UTF8String]);
 
     return *this;
 }
@@ -1482,7 +1482,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
     switch (type)
     {
         case userHomeDirectory:
-          resultPath = nsStringToWater (NSHomeDirectory());
+          resultPath = [NSHomeDirectory() UTF8String];
           break;
 
         case tempDirectory:
