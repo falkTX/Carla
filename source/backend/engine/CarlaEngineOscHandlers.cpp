@@ -245,6 +245,7 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
 
         oscData.owner  = carla_strdup_safe(host);
         oscData.path   = carla_strdup_free(lo_url_get_path(url));
+        oscData.url = carla_strdup_safe(url);
         oscData.target = target;
 
         char* const targeturl = lo_address_get_url(target);
@@ -299,14 +300,14 @@ int CarlaEngineOsc::handleMsgUnregister(const bool isTCP,
 
     const char* const url = &argv[0]->s;
 
-    if (std::strcmp(oscData.owner, url) == 0)
+    if (std::strcmp(oscData.url, url) == 0)
     {
         carla_stdout("OSC client %s unregistered", url);
         oscData.clear();
         return 0;
     }
 
-    carla_stderr("OSC backend unregister failed, current owner %s does not match requested %s", oscData.owner, url);
+    carla_stderr("OSC backend unregister failed, current owner %s does not match requested %s", oscData.url, url);
     return 0;
 }
 
