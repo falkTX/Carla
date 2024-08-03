@@ -78,6 +78,10 @@ ifeq ($(HAVE_QT5),true)
 3RD_LIBS += $(MODULEDIR)/theme.qt5.a
 endif
 
+ifeq ($(HAVE_QT6),true)
+3RD_LIBS += $(MODULEDIR)/theme.qt6.a
+endif
+
 ifeq ($(HAVE_YSFX),true)
 3RD_LIBS += $(MODULEDIR)/ysfx.a
 endif
@@ -120,6 +124,9 @@ $(MODULEDIR)/theme.qt4.a: .FORCE
 
 $(MODULEDIR)/theme.qt5.a: .FORCE
 	@$(MAKE) -C source/theme qt5
+
+$(MODULEDIR)/theme.qt6.a: .FORCE
+	@$(MAKE) -C source/theme qt6
 
 $(MODULEDIR)/%.arm32.a: .FORCE
 ifneq ($(WINDOWS),true)

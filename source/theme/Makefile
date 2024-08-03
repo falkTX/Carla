@@ -44,6 +44,12 @@ QT5_LINK_FLAGS = $(NON_STATIC_LINK_FLAGS) -F $(QT5_PREFIX)/lib -framework QtCore
 QT5_STYLES_DIR = $(QT5_PREFIX)/plugins/styles
 endif
 
+ifeq ($(HAVE_QT6),true)
+QT6_CXX_FLAGS  = $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags Qt6Core Qt6Gui Qt6Widgets) -std=gnu++17
+QT6_LINK_FLAGS = $(NON_STATIC_LINK_FLAGS) $(shell pkg-config --libs Qt6Core Qt6Gui Qt6Widgets)
+QT6_STYLES_DIR = $(shell pkg-config --variable=libdir Qt6Core)/qt6/plugins/styles
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(HAVE_QT4),true)
@@ -62,6 +68,15 @@ FILES_qt5 = \
 	$(OBJDIR)/moc_CarlaStylePlugin.qt5.cpp \
 	$(OBJDIR)/moc_CarlaStylePrivate.qt5.cpp \
 	$(OBJDIR)/resources.qt5.cpp
+endif
+
+ifeq ($(HAVE_QT6),true)
+FILES_qt6 = \
+	$(OBJDIR)/moc_CarlaStyle.qt6.cpp \
+	$(OBJDIR)/moc_CarlaStyleAnimations.qt6.cpp \
+	$(OBJDIR)/moc_CarlaStylePlugin.qt6.cpp \
+	$(OBJDIR)/moc_CarlaStylePrivate.qt6.cpp \
+	$(OBJDIR)/resources.qt6.cpp
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -92,6 +107,19 @@ OBJS_qt5_shared = $(OBJS_qt5) \
 	$(OBJDIR)/moc_CarlaStylePlugin.qt5.cpp.o
 endif
 
+ifeq ($(HAVE_QT6),true)
+OBJS_qt6 = \
+	$(OBJDIR)/CarlaStyle.cpp.qt6.o \
+	$(OBJDIR)/moc_CarlaStyle.qt6.cpp.o \
+	$(OBJDIR)/moc_CarlaStyleAnimations.qt6.cpp.o \
+	$(OBJDIR)/moc_CarlaStylePrivate.qt6.cpp.o \
+	$(OBJDIR)/resources.qt6.cpp.o
+
+OBJS_qt6_shared = $(OBJS_qt6) \
+	$(OBJDIR)/CarlaStylePlugin.cpp.qt6.o \
+	$(OBJDIR)/moc_CarlaStylePlugin.qt6.cpp.o
+endif
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(HAVE_QT5),true)
@@ -102,11 +130,13 @@ endif
 
 qt4: $(MODULEDIR)/$(MODULENAME).qt4.a
 qt5: $(MODULEDIR)/$(MODULENAME).qt5.a
+qt6: $(MODULEDIR)/$(MODULENAME).qt6.a
 
 # ---------------------------------------------------------------------------------------------------------------------
 
 clean:
-	rm -f $(OBJDIR)/*.o $(MODULEDIR)/$(MODULENAME)*.a $(BINDIR)/styles/carlastyle$(LIB_EXT) $(FILES_qt4) $(FILES_qt5)
+	rm -f $(OBJDIR)/*.o $(MODULEDIR)/$(MODULENAME)*.a
+	rm -f $(BINDIR)/styles/carlastyle$(LIB_EXT) $(FILES_qt4) $(FILES_qt5) $(FILES_qt6)
 
 debug:
 	$(MAKE) DEBUG=true
@@ -128,6 +158,12 @@ $(MODULEDIR)/$(MODULENAME).qt5.a: $(FILES_qt5) $(OBJS_qt5)
 	@echo "Creating $(MODULENAME).qt5.a"
 	$(SILENT)rm -f $@
 	$(SILENT)$(AR) crs $@ $(OBJS_qt5)
+
+$(MODULEDIR)/$(MODULENAME).qt6.a: $(FILES_qt6) $(OBJS_qt6)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).qt6.a"
+	$(SILENT)rm -f $@
+	$(SILENT)$(AR) crs $@ $(OBJS_qt6)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -162,6 +198,11 @@ $(OBJDIR)/moc_%.qt5.cpp: %.hpp
 	@echo "Generating moc_$*.qt5.cpp"
 	$(SILENT)$(MOC_QT5) -Istyles $< -o $@
 
+$(OBJDIR)/moc_%.qt6.cpp: %.hpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Generating moc_$*.qt6.cpp"
+	$(SILENT)$(MOC_QT6) -Istyles $< -o $@
+
 $(OBJDIR)/resources.qt4.cpp: $(CWD)/../resources/resources-theme.qrc
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating resources.qt4.cpp"
@@ -171,6 +212,11 @@ $(OBJDIR)/resources.qt5.cpp: $(CWD)/../resources/resources-theme.qrc
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating resources.qt5.cpp"
 	$(SILENT)$(RCC_QT5) $< -o $@
+
+$(OBJDIR)/resources.qt6.cpp: $(CWD)/../resources/resources-theme.qrc
+	-@mkdir -p $(OBJDIR)
+	@echo "Generating resources.qt6.cpp"
+	$(SILENT)$(RCC_QT6) $< -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -184,6 +230,11 @@ $(OBJDIR)/%.qt5.cpp.o: $(OBJDIR)/%.qt5.cpp $(OBJDIR)/moc_CarlaStyle.qt5.cpp
 	@echo "Compiling $*.cpp (Qt5)"
 	$(SILENT)$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
 
+$(OBJDIR)/%.qt6.cpp.o: $(OBJDIR)/%.qt6.cpp $(OBJDIR)/moc_CarlaStyle.qt6.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $*.cpp (Qt6)"
+	$(SILENT)$(CXX) $< $(QT6_CXX_FLAGS) -c -o $@
+
 $(OBJDIR)/%.cpp.qt4.o: %.cpp $(OBJDIR)/moc_CarlaStyle.qt4.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Qt4)"
@@ -193,6 +244,11 @@ $(OBJDIR)/%.cpp.qt5.o: %.cpp $(OBJDIR)/moc_CarlaStyle.qt5.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Qt5)"
 	$(SILENT)$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
+
+$(OBJDIR)/%.cpp.qt6.o: %.cpp $(OBJDIR)/moc_CarlaStyle.qt6.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (Qt6)"
+	$(SILENT)$(CXX) $< $(QT6_CXX_FLAGS) -c -o $@
 
 # ---------------------------------------------------------------------------------------------------------------------
 

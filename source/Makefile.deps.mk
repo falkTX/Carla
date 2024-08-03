@@ -215,6 +215,7 @@ HAVE_QT5        = $(shell $(PKG_CONFIG) --exists Qt5Core Qt5Gui Qt5Widgets && \
                           $(PKG_CONFIG) --variable=qt_config Qt5Core | grep -q -v "static" && echo true)
 HAVE_QT5PKG     = $(shell $(PKG_CONFIG) --silence-errors --variable=prefix Qt5OpenGLExtensions 1>/dev/null && echo true)
 HAVE_QT5BREW    = $(shell test -e /usr/local/opt/qt5/bin/uic && echo true)
+HAVE_QT6        = $(shell $(PKG_CONFIG) --exists Qt6Core Qt6Gui Qt6Widgets && echo true)
 HAVE_SNDFILE    = $(shell $(PKG_CONFIG) --exists sndfile && echo true)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -295,9 +296,19 @@ ifeq (,$(wildcard $(UIC_QT5)))
 HAVE_QT5 = false
 endif
 
+ifeq ($(HAVE_QT6),true)
+QT6_HOSTBINS = $(shell $(PKG_CONFIG) --variable=libexecdir Qt6Core)
+endif
+
+MOC_QT6 ?= $(QT6_HOSTBINS)/moc
+RCC_QT6 ?= $(QT6_HOSTBINS)/rcc
+UIC_QT6 ?= $(QT6_HOSTBINS)/uic
+
 ifeq ($(HAVE_QT4),true)
 HAVE_QT = true
 else ifeq ($(HAVE_QT5),true)
+HAVE_QT = true
+else ifeq ($(HAVE_QT6),true)
 HAVE_QT = true
 # FIXME
 else ifeq ($(WINDOWS),true)
@@ -354,6 +365,7 @@ HAVE_QT4 = false
 HAVE_QT5 = false
 HAVE_QT5PKG = false
 HAVE_QT5BREW = false
+HAVE_QT6 = false
 HAVE_SDL = false
 HAVE_SDL1 = false
 HAVE_SDL2 = false

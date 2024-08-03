@@ -885,7 +885,11 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
         painter->restore();
     }
         break;
+   #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    case PE_IndicatorItemViewItemCheck:
+   #else
     case PE_IndicatorViewItemCheck:
+   #endif
     {
         QStyleOptionButton button;
         button.QStyleOption::operator=(*option);
@@ -1406,7 +1410,13 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             QColor dimHighlight(qMin(highlight.red()/2 + 110, 255),
                                 qMin(highlight.green()/2 + 110, 255),
                                 qMin(highlight.blue()/2 + 110, 255));
-            dimHighlight.setAlpha(widget && widget->isTopLevel() ? 255 : 80);
+            dimHighlight.setAlpha(widget &&
+                                 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                                  widget->isWindow()
+                                 #else
+                                  widget->isTopLevel()
+                                 #endif
+                                  ? 255 : 80);
             QLinearGradient gradient(rect.topLeft(), QPoint(rect.bottomLeft().x(), rect.bottomLeft().y()));
             gradient.setColorAt(0, dimHighlight.lighter(120));
             gradient.setColorAt(1, dimHighlight);
@@ -1689,7 +1699,11 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             bool complete = bar->progress == bar->maximum;
 
             // Get extra style options if version 2
+           #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            vertical = bar->state != QStyle::State_Horizontal;
+           #else
             vertical = (bar->orientation == Qt::Vertical);
+           #endif
             inverted = bar->invertedAppearance;
 
             // If the orientation is vertical, we use a transform to rotate
@@ -1771,12 +1785,12 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                     highlightedGradientStartColor.setAlpha(120);
                     painter->setPen(QPen(highlightedGradientStartColor, 9.0));
                     painter->setClipRect(progressBar.adjusted(1, 1, -1, -1));
-#ifndef QT_NO_ANIMATION
+               #ifndef QT_NO_ANIMATION
                 if (CarlaProgressStyleAnimation *animation = qobject_cast<CarlaProgressStyleAnimation*>(d->animation(widget)))
                     step = animation->animationStep() % 22;
                 else
                     d->startAnimation(new CarlaProgressStyleAnimation(d->animationFps(), const_cast<QWidget*>(widget)));
-#endif
+               #endif
                 for (int x = progressBar.left() - rect.height(); x < rect.right() ; x += 22)
                     painter->drawLine(x + step, progressBar.bottom() + 1,
                                       x + rect.height() + step, progressBar.top() - 2);
@@ -1794,7 +1808,11 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
 
             painter->save();
             bool vertical = false, inverted = false;
+           #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            vertical = bar->state != QStyle::State_Horizontal;
+           #else
             vertical = (bar->orientation == Qt::Vertical);
+           #endif
             inverted = bar->invertedAppearance;
             if (vertical)
                 rect = QRect(rect.left(), rect.top(), rect.height(), rect.width()); // flip width and height
@@ -1962,13 +1980,13 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 else
                     pixmap = menuItem->icon.pixmap(iconSize, mode);
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+               #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
                 const int pixw = pixmap.width() / pixmap.devicePixelRatioF();
                 const int pixh = pixmap.height() / pixmap.devicePixelRatioF();
-#else
+               #else
                 const int pixw = pixmap.width();
                 const int pixh = pixmap.height();
-#endif
+               #endif
 
                 QRect pmr(0, 0, pixw, pixh);
                 pmr.moveCenter(vCheckRect.center());
@@ -1993,7 +2011,11 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             }
             int x, y, w, h;
             menuitem->rect.getRect(&x, &y, &w, &h);
+           #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            int tab = menuitem->reservedShortcutWidth;
+           #else
             int tab = menuitem->tabWidth;
+           #endif
             QColor discol;
             if (dis) {
                 discol = menuitem->palette.text().color();
@@ -2056,7 +2078,11 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 newMI.rect = vSubMenuRect;
                 newMI.state = !enabled ? State_None : State_Enabled;
                 if (selected)
+                   #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                    newMI.palette.setColor(QPalette::WindowText,
+                   #else
                     newMI.palette.setColor(QPalette::Foreground,
+                   #endif
                                            newMI.palette.highlightedText().color());
                 proxy()->drawPrimitive(arrow, &newMI, painter, widget);
             }
@@ -3950,7 +3976,11 @@ int CarlaStyle::styleHint(StyleHint hint, const QStyleOption* option, const QWid
     case SH_FontDialog_SelectAssociatedText:
     case SH_MenuBar_AltKeyNavigation:
     case SH_ComboBox_ListMouseTracking:
+   #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    case SH_Slider_StopMouseOverSlider:
+   #else
     case SH_ScrollBar_StopMouseOverSlider:
+   #endif
     case SH_ScrollBar_MiddleClickAbsolutePosition:
     case SH_TitleBar_AutoRaise:
     case SH_TitleBar_NoBorder:
