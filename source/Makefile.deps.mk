@@ -261,30 +261,58 @@ endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Set Qt tools
+# Set Qt tools, part1
 
 ifeq ($(HAVE_QT4),true)
 MOC_QT4 ?= $(shell $(PKG_CONFIG) --variable=moc_location QtCore)
 RCC_QT4 ?= $(shell $(PKG_CONFIG) --variable=rcc_location QtCore)
+QT4_CXX_FLAGS  = $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags QtCore QtGui)
+QT4_LINK_FLAGS = $(NON_STATIC_LINK_FLAGS) $(shell pkg-config --libs QtCore QtGui)
+QT4_STYLES_DIR = $(shell pkg-config --variable=libdir QtCore)/qt4/plugins/styles
+endif
+
+ifeq ($(HAVE_QT5),true)
+QT5_HOSTBINS   = $(shell $(PKG_CONFIG) --variable=host_bins Qt5Core)
+QT5_PREFIX     = $(shell $(PKG_CONFIG) --variable=prefix Qt5Core)
+QT5_CXX_FLAGS  = $(shell $(PKG_CONFIG) --cflags Qt5Core Qt5Gui Qt5Widgets)
+QT5_LINK_FLAGS = -Wl,-rpath,$(QT5_PREFIX)/lib $(shell $(PKG_CONFIG) --libs Qt5Core Qt5Gui Qt5Widgets)
+QT5_STYLES_DIR = $(shell pkg-config --variable=libdir Qt5Core)/qt5/plugins/styles
+else ifeq ($(HAVE_QT5PKG),true)
+QT5_HOSTBINS   = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)/bin
+QT5_PREFIX     = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)
+QT5_CXX_FLAGS  = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT5_PREFIX)/include/qt5
+QT5_LINK_FLAGS = -Wl,-rpath,$(QT5_PREFIX)/lib -F $(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
+QT5_STYLES_DIR = $(QT5_PREFIX)/lib/qt5/plugins/styles
+else ifeq ($(HAVE_QT5BREW),true)
+QT5_HOSTBINS   = /usr/local/opt/qt5/bin
+QT5_PREFIX     = /usr/local/opt/qt5
+QT5_CXX_FLAGS  = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT5_PREFIX)/include
+QT5_LINK_FLAGS = -Wl,-rpath,$(QT5_PREFIX)/lib -F $(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
+QT5_STYLES_DIR = $(QT5_PREFIX)/plugins/styles
+endif
+
+ifeq ($(HAVE_QT6),true)
+QT6_HOSTBINS   = $(shell $(PKG_CONFIG) --variable=libexecdir Qt6Core)
+QT6_PREFIX     = $(shell $(PKG_CONFIG) --variable=prefix Qt6Core)
+QT6_CXX_FLAGS  = $(shell $(PKG_CONFIG) --cflags Qt6Core Qt6Gui Qt6Widgets) -std=gnu++17
+QT6_LINK_FLAGS = -Wl,-rpath,$(QT6_PREFIX)/lib $(shell $(PKG_CONFIG) --libs Qt6Core Qt6Gui Qt6Widgets)
+QT6_STYLES_DIR = $(shell pkg-config --variable=libdir Qt6Core)/qt6/plugins/styles
+endif
+
+MOC_QT5 ?= $(QT5_HOSTBINS)/moc
+RCC_QT5 ?= $(QT5_HOSTBINS)/rcc
+UIC_QT5 ?= $(QT5_HOSTBINS)/uic
+
+MOC_QT6 ?= $(QT6_HOSTBINS)/moc
+RCC_QT6 ?= $(QT6_HOSTBINS)/rcc
+UIC_QT6 ?= $(QT6_HOSTBINS)/uic
+
 ifeq (,$(wildcard $(MOC_QT4)))
 HAVE_QT4 = false
 endif
 ifeq (,$(wildcard $(RCC_QT4)))
 HAVE_QT4 = false
 endif
-endif
-
-ifeq ($(HAVE_QT5),true)
-QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=host_bins Qt5Core)
-else ifeq ($(HAVE_QT5PKG),true)
-QT5_HOSTBINS = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)/bin
-else ifeq ($(HAVE_QT5BREW),true)
-QT5_HOSTBINS = /usr/local/opt/qt5/bin
-endif
-
-MOC_QT5 ?= $(QT5_HOSTBINS)/moc
-RCC_QT5 ?= $(QT5_HOSTBINS)/rcc
-UIC_QT5 ?= $(QT5_HOSTBINS)/uic
 
 ifeq (,$(wildcard $(MOC_QT5)))
 HAVE_QT5 = false
@@ -296,27 +324,14 @@ ifeq (,$(wildcard $(UIC_QT5)))
 HAVE_QT5 = false
 endif
 
-ifeq ($(HAVE_QT6),true)
-QT6_HOSTBINS = $(shell $(PKG_CONFIG) --variable=libexecdir Qt6Core)
+ifeq (,$(wildcard $(MOC_QT6)))
+HAVE_QT6 = false
 endif
-
-MOC_QT6 ?= $(QT6_HOSTBINS)/moc
-RCC_QT6 ?= $(QT6_HOSTBINS)/rcc
-UIC_QT6 ?= $(QT6_HOSTBINS)/uic
-
-ifeq ($(HAVE_QT4),true)
-HAVE_QT = true
-else ifeq ($(HAVE_QT5),true)
-HAVE_QT = true
-else ifeq ($(HAVE_QT6),true)
-HAVE_QT = true
-# FIXME
-else ifeq ($(WINDOWS),true)
-HAVE_QT = true
+ifeq (,$(wildcard $(RCC_QT6)))
+HAVE_QT6 = false
 endif
-
-ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)))
-HAVE_THEME = true
+ifeq (,$(wildcard $(UIC_QT6)))
+HAVE_QT6 = false
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -325,20 +340,54 @@ endif
 PYRCC5 ?= $(shell which pyrcc5 2>/dev/null)
 PYUIC5 ?= $(shell which pyuic5 2>/dev/null)
 
-ifneq ($(PYUIC5),)
-ifneq ($(PYRCC5),)
-HAVE_PYQT = true
-ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)))
+PYUIC6 ?= $(shell which pyuic6 2>/dev/null)
+
+ifeq ($(HAVE_QT6),true)
+ifneq ($(PYUIC6),)
 HAVE_FRONTEND = true
+HAVE_PYQT = true
+FRONTEND_TYPE = 6
 endif
 endif
+
+ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)))
+ifneq ($(PYUIC5)$(PYRCC5),)
+HAVE_FRONTEND = true
+HAVE_PYQT = true
+FRONTEND_TYPE = 5
+endif
+endif
+
+ifneq ($(PYUIC5)$(PYRCC5),)
+PYRCC ?= $(PYRCC5)
+PYUIC ?= $(PYUIC5)
+else ifneq ($(PYUIC6),)
+PYRCC ?= $(RCC_QT6) -g python
+PYUIC ?= $(PYRCC6)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Set PyQt tools, part2
+# Set Qt tools, part2
 
-PYRCC ?= $(PYRCC5)
-PYUIC ?= $(PYUIC5)
+ifneq (,$(findstring true,$(HAVE_QT4)$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)$(HAVE_QT6)))
+HAVE_QT = true
+endif
+
+ifeq ($(FRONTEND_TYPE),5)
+MOC = $(MOC_QT5)
+RCC = $(RCC_QT5)
+UIC = $(UIC_QT5)
+HAVE_THEME    = $(HAVE_QT5)
+QT_CXX_FLAGS  = $(QT5_CXX_FLAGS)
+QT_LINK_FLAGS = $(QT5_LINK_FLAGS)
+else ifeq ($(FRONTEND_TYPE),6)
+MOC = $(MOC_QT6)
+RCC = $(RCC_QT6)
+UIC = $(UIC_QT6)
+HAVE_THEME    = $(HAVE_QT6)
+QT_CXX_FLAGS  = $(QT6_CXX_FLAGS)
+QT_LINK_FLAGS = $(QT6_LINK_FLAGS)
+endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Set USING_RTAUDIO
@@ -403,6 +452,11 @@ endif
 ifeq ($(HAVE_QT5),true)
 QT5_FLAGS = $(shell $(PKG_CONFIG) --cflags Qt5Core Qt5Gui Qt5Widgets)
 QT5_LIBS  = $(shell $(PKG_CONFIG) --libs Qt5Core Qt5Gui Qt5Widgets)
+endif
+
+ifeq ($(HAVE_QT6),true)
+QT6_FLAGS = $(shell $(PKG_CONFIG) --cflags Qt6Core Qt6Gui Qt6Widgets)
+QT6_LIBS  = $(shell $(PKG_CONFIG) --libs Qt6Core Qt6Gui Qt6Widgets)
 endif
 
 ifeq ($(WASM),true)
