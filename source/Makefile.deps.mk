@@ -363,7 +363,7 @@ PYRCC ?= $(PYRCC5)
 PYUIC ?= $(PYUIC5)
 else ifneq ($(PYUIC6),)
 PYRCC ?= $(RCC_QT6) -g python
-PYUIC ?= $(PYRCC6)
+PYUIC ?= $(PYUIC6)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

@@ -1,31 +1,25 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Scalable Dial, a custom Qt widget
-# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from math import cos, floor, pi, sin
 
-from PyQt5.QtCore import pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
-from PyQt5.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QPen, QPixmap
-from PyQt5.QtSvg import QSvgWidget
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
+    from PyQt5.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QPen, QPixmap
+    from PyQt5.QtSvg import QSvgWidget
+elif qt_config == 6:
+    from PyQt6.QtCore import pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
+    from PyQt6.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QPen, QPixmap
+    from PyQt6.QtSvg import QSvgWidget
 
 from .commondial import CommonDial
+from carla_shared import fontMetricsHorizontalAdvance
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Widget Class
@@ -34,7 +28,7 @@ class ScalableDial(CommonDial):
     def __init__(self, parent, index=0):
         CommonDial.__init__(self, parent, index)
 
-        self.fImage    = QSvgWidget(":/scalable/dial_03.svg")
+        self.fImage = QSvgWidget(":/scalable/dial_03.svg")
         self.fImageNum = "01"
 
         if self.fImage.sizeHint().width() > self.fImage.sizeHint().height():
@@ -76,8 +70,9 @@ class ScalableDial(CommonDial):
             self.fLabelWidth  = 0
             return
 
-        self.fLabelWidth  = QFontMetrics(self.fLabelFont).width(self.fLabel)
-        self.fLabelHeight = QFontMetrics(self.fLabelFont).height()
+        metrics = QFontMetrics(self.fLabelFont)
+        self.fLabelWidth  = fontMetricsHorizontalAdvance(metrics, self.fLabel)
+        self.fLabelHeight = metrics.height()
 
         self.fLabelPos.setX(float(self.fImageBaseSize)/2.0 - float(self.fLabelWidth)/2.0)
 

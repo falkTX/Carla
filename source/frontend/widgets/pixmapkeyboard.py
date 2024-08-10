@@ -1,27 +1,20 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Pixmap Keyboard, a custom Qt widget
-# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QPointF, QRectF, QTimer, QSize
-from PyQt5.QtGui import QColor, QPainter, QPixmap
-from PyQt5.QtWidgets import QActionGroup, QMenu, QScrollArea, QWidget
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt5.QtGui import QColor, QPainter, QPixmap
+    from PyQt5.QtWidgets import QActionGroup, QMenu, QScrollArea, QWidget
+elif qt_config == 6:
+    from PyQt6.QtCore import pyqtSignal, pyqtSlot, Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt6.QtGui import QActionGroup, QColor, QPainter, QPixmap
+    from PyQt6.QtWidgets import QMenu, QScrollArea, QWidget
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Carla)

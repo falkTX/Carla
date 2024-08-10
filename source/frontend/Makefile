@@ -71,6 +71,7 @@ OBJS = $(CPP_FILES:%=$(OBJDIR)/%.o)
 # Resources
 
 RES = \
+	qt_config.py \
 	resources_rc.py \
 	$(BINDIR)/resources/modgui \
 	$(BINDIR)/resources/patchcanvas \
@@ -164,6 +165,10 @@ pluginlist/ui_%.h: pluginlist/%.ui
 
 ui_%.py: $(RESDIR)/ui/%.ui
 	$(PYUIC) $< -o $@
+
+qt_config.py:
+	echo "#!/usr/bin/env python3" > $@
+	echo "qt = $(FRONTEND_TYPE)" >> $@
 
 resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
 	$(PYRCC) $< -o $@

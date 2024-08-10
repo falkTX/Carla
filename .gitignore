@@ -60,6 +60,7 @@ qrc_resources.cpp
 *.pyc
 
 # Qt files
+qt_config.py
 *_ui.hpp
 *_ui.py
 *_rc.cpp

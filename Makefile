@@ -707,6 +707,8 @@ endif
 	$(LINK) ../carla_utils.py              $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../qt_compat.py                $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../qt_config.py                $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources

@@ -1,20 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-# Parameter SpinBox, a custom Qt widget
-# Copyright (C) 2011-2019 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -22,9 +8,16 @@
 from math import isnan, modf
 from random import random
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
-from PyQt5.QtGui import QCursor, QPalette
-from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, QMenu, QProgressBar
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, QT_VERSION, Qt, QTimer
+    from PyQt5.QtGui import QCursor, QPalette
+    from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, QMenu, QProgressBar
+elif qt_config == 6:
+    from PyQt6.QtCore import pyqtSignal, pyqtSlot, QT_VERSION, Qt, QTimer
+    from PyQt6.QtGui import QCursor, QPalette
+    from PyQt6.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, QMenu, QProgressBar
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -452,7 +445,10 @@ class ParamSpinBox(QAbstractSpinBox):
         if self.fValue is not None:
             self._setScalePointValue(self.fValue)
 
-        self.fBox.currentIndexChanged['QString'].connect(self.slot_comboBoxIndexChanged)
+        if QT_VERSION >= 0x60000:
+            self.fBox.currentTextChanged.connect(self.slot_comboBoxIndexChanged)
+        else:
+            self.fBox.currentIndexChanged['QString'].connect(self.slot_comboBoxIndexChanged)
 
     def setToolTip(self, text):
         self.fBar.setToolTip(text)
