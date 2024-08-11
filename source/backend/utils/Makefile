@@ -10,7 +10,7 @@ include ../Makefile.mk
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
-BUILD_CXX_FLAGS += $(MAGIC_LIBS)
+BUILD_CXX_FLAGS += $(MAGIC_FLAGS)
 BUILD_CXX_FLAGS += $(YSFX_FLAGS)
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -38,6 +38,7 @@ endif
 
 LINK_FLAGS += $(JACKBRIDGE_LIBS)
 LINK_FLAGS += $(LILV_LIBS)
+LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(WATER_LIBS)
 
 ifeq ($(HAVE_X11),true)

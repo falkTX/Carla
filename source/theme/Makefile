@@ -34,7 +34,7 @@ OBJS_qt4 = \
 	$(OBJDIR)/resources.qt4.cpp.o
 endif
 
-ifeq ($(HAVE_QT5),true)
+ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)))
 FILES_qt5 = \
 	$(OBJDIR)/moc_CarlaStyle.qt5.cpp \
 	$(OBJDIR)/moc_CarlaStyleAnimations.qt5.cpp \
@@ -50,7 +50,7 @@ OBJS_qt5 = \
 	$(OBJDIR)/resources.qt5.cpp.o
 endif
 
-ifeq ($(HAVE_QT6),true)
+ifneq (,$(findstring true,$(HAVE_QT6)$(HAVE_QT6BREW)))
 FILES_qt6 = \
 	$(OBJDIR)/moc_CarlaStyle.qt6.cpp \
 	$(OBJDIR)/moc_CarlaStyleAnimations.qt6.cpp \

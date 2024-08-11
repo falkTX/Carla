@@ -216,6 +216,7 @@ HAVE_QT5        = $(shell $(PKG_CONFIG) --exists Qt5Core Qt5Gui Qt5Widgets && \
 HAVE_QT5PKG     = $(shell $(PKG_CONFIG) --silence-errors --variable=prefix Qt5OpenGLExtensions 1>/dev/null && echo true)
 HAVE_QT5BREW    = $(shell test -e /usr/local/opt/qt5/bin/uic && echo true)
 HAVE_QT6        = $(shell $(PKG_CONFIG) --exists Qt6Core Qt6Gui Qt6Widgets && echo true)
+HAVE_QT6BREW    = $(shell test -e /opt/homebrew/opt/qt6/share/qt/libexec/uic && echo true)
 HAVE_SNDFILE    = $(shell $(PKG_CONFIG) --exists sndfile && echo true)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -297,6 +298,12 @@ QT6_PREFIX     = $(shell $(PKG_CONFIG) --variable=prefix Qt6Core)
 QT6_CXX_FLAGS  = $(shell $(PKG_CONFIG) --cflags Qt6Core Qt6Gui Qt6Widgets) -std=gnu++17
 QT6_LINK_FLAGS = -Wl,-rpath,$(QT6_PREFIX)/lib $(shell $(PKG_CONFIG) --libs Qt6Core Qt6Gui Qt6Widgets)
 QT6_STYLES_DIR = $(shell pkg-config --variable=libdir Qt6Core)/qt6/plugins/styles
+else ifeq ($(HAVE_QT6BREW),true)
+QT6_HOSTBINS   = /opt/homebrew/opt/qt6/share/qt/libexec
+QT6_PREFIX     = /opt/homebrew/opt/qt6
+QT6_CXX_FLAGS  = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT6_PREFIX)/include -std=gnu++17
+QT6_LINK_FLAGS = -Wl,-rpath,$(QT6_PREFIX)/lib -F $(QT6_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
+QT6_STYLES_DIR = $(QT6_PREFIX)/share/qt/plugins/styles
 endif
 
 MOC_QT5 ?= $(QT5_HOSTBINS)/moc
@@ -342,7 +349,7 @@ PYUIC5 ?= $(shell which pyuic5 2>/dev/null)
 
 PYUIC6 ?= $(shell which pyuic6 2>/dev/null)
 
-ifeq ($(HAVE_QT6),true)
+ifneq (,$(findstring true,$(HAVE_QT6)$(HAVE_QT6BREW)))
 ifneq ($(PYUIC6),)
 HAVE_FRONTEND = true
 HAVE_PYQT = true
@@ -369,7 +376,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set Qt tools, part2
 
-ifneq (,$(findstring true,$(HAVE_QT4)$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)$(HAVE_QT6)))
+ifneq (,$(findstring true,$(HAVE_QT4)$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)$(HAVE_QT6)$(HAVE_QT6BREW)))
 HAVE_QT = true
 endif
 

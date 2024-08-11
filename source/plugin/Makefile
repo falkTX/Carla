@@ -35,21 +35,11 @@ endif
 BUILD_CXX_FLAGS += -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 BUILD_CXX_FLAGS += $(NATIVE_PLUGINS_FLAGS)
 
-ifeq ($(HAVE_LIBLO),true)
-BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
-endif
-
-ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
-endif
-
-ifeq ($(HAVE_X11),true)
+BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
+BUILD_CXX_FLAGS += $(MAGIC_FLAGS)
 BUILD_CXX_FLAGS += $(X11_FLAGS)
-endif
-
-ifeq ($(HAVE_YSFX),true)
 BUILD_CXX_FLAGS += $(YSFX_FLAGS)
-endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Libs
