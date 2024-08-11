@@ -569,6 +569,8 @@ class CarlaEmbedW(QEmbedWidget):
 # Main
 
 if __name__ == '__main__':
+    import resources_rc
+
     # -------------------------------------------------------------
     # Get details regarding target usage
 

@@ -16,7 +16,7 @@ if qt_config == 5:
 elif qt_config == 6:
     from PyQt6.QtCore import pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
     from PyQt6.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QPen, QPixmap
-    from PyQt6.QtSvg import QSvgWidget
+    from PyQt6.QtSvgWidgets import QSvgWidget
 
 from .commondial import CommonDial
 from carla_shared import fontMetricsHorizontalAdvance
@@ -276,7 +276,6 @@ class ScalableDial(CommonDial):
 
             # Custom knobs
             else:
-                painter.restore()
                 return
 
             if self.HOVER_MIN < self.fHoverStep < self.HOVER_MAX:

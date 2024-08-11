@@ -15,7 +15,8 @@ if qt_config == 5:
 elif qt_config == 6:
     from PyQt6.QtCore import qCritical, QRectF
     from PyQt6.QtGui import QPainter
-    from PyQt6.QtSvg import QGraphicsSvgItem, QSvgRenderer
+    from PyQt6.QtSvg import QSvgRenderer
+    from PyQt6.QtSvgWidgets import QGraphicsSvgItem
     from PyQt6.QtWidgets import QGraphicsColorizeEffect
 
 # ------------------------------------------------------------------------------------------------------------

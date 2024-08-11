@@ -27,7 +27,7 @@ endif
 features_print_main:
 	@printf -- "$(tS)---> Main features $(tE)\n"
 ifeq ($(HAVE_FRONTEND),true)
-	@printf -- "Front-End:     $(ANS_YES)\n"
+	@printf -- "Front-End:     $(ANS_YES) (Qt$(FRONTEND_TYPE))\n"
 	@printf -- "LV2 plugin:    $(ANS_YES)\n"
 ifneq ($(HAIKU),true)
 	@printf -- "VST2 plugin:   $(ANS_YES)\n"

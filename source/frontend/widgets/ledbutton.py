@@ -15,7 +15,7 @@ if qt_config == 5:
 elif qt_config == 6:
     from PyQt6.QtCore import QRectF
     from PyQt6.QtGui import QPainter, QPixmap
-    from PyQt6.QtSvg import QSvgWidget
+    from PyQt6.QtSvgWidgets import QSvgWidget
     from PyQt6.QtWidgets import QPushButton
 
 # ---------------------------------------------------------------------------------------------------------------------

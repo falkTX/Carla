@@ -1700,7 +1700,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
 
             // Get extra style options if version 2
            #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-            vertical = bar->state != QStyle::State_Horizontal;
+            vertical = (bar->state & QStyle::State_Horizontal) == 0;
            #else
             vertical = (bar->orientation == Qt::Vertical);
            #endif
@@ -1809,7 +1809,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             painter->save();
             bool vertical = false, inverted = false;
            #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-            vertical = bar->state != QStyle::State_Horizontal;
+            vertical = (bar->state & QStyle::State_Horizontal) == 0;
            #else
             vertical = (bar->orientation == Qt::Vertical);
            #endif
