@@ -12,9 +12,8 @@ jobs:
         include:
           - container: debian:11
           - container: debian:12
-          #- container: ubuntu:20.04
           - container: ubuntu:22.04
-          - container: ubuntu:23.10
+          - container: ubuntu:24.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
@@ -70,9 +69,8 @@ jobs:
         include:
           - container: debian:11
           - container: debian:12
-          #- container: ubuntu:20.04
           - container: ubuntu:22.04
-          - container: ubuntu:23.10
+          - container: ubuntu:24.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
@@ -108,9 +106,8 @@ jobs:
         include:
           - container: debian:11
           - container: debian:12
-          #- container: ubuntu:20.04
           - container: ubuntu:22.04
-          - container: ubuntu:23.10
+          - container: ubuntu:24.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
