@@ -382,6 +382,10 @@ const char* carla_strdup_safe(const char* const strBuf) noexcept
 // carla_strcase*
 
 #ifdef CARLA_OS_WIN
+# ifdef _MSC_VER
+#  pragma comment(lib, "shlwapi.lib")
+# endif
+
 static inline
 int carla_strcasecmp(const char* const str1, const char* const str2) noexcept
 {
