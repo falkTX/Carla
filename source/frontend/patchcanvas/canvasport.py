@@ -385,6 +385,7 @@ class CanvasPort(QGraphicsItem):
             conn_pen = QPen(theme.port_parameter_pen_sel)
         else:
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'" % port_type2str(self.m_port_type))
+            painter.restore()
             return
 
         # To prevent quality worsening
@@ -421,6 +422,7 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[4] = lineHinting
             else:
                 qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
+                painter.restore()
                 return
 
         elif self.m_port_mode == PORT_MODE_OUTPUT:
@@ -440,10 +442,12 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[4] = self.m_port_width + 12 - lineHinting
             else:
                 qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
+                painter.restore()
                 return
 
         else:
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port mode '%s'" % port_mode2str(self.m_port_mode))
+            painter.restore()
             return
 
         polygon = QPolygonF()
