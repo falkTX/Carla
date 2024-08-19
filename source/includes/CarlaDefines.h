@@ -27,8 +27,8 @@
 #endif
 
 /* Set Version */
-#define CARLA_VERSION_HEX    0x020508
-#define CARLA_VERSION_STRING "2.5.8"
+#define CARLA_VERSION_HEX    0x020509
+#define CARLA_VERSION_STRING "2.5.9"
 #define CARLA_VERSION_STRMIN "2.5"
 
 /* Check OS */
