@@ -207,7 +207,7 @@ class CanvasPreviewFrame(QFrame):
         if event.button() == Qt.LeftButton:
             event.accept()
             self.fMouseLeftDown = False
-            self._updateMouseMode()
+            self._updateMouseMode(event)
             return
         if event.button() == Qt.RightButton:
             event.accept()
@@ -386,7 +386,7 @@ class CanvasPreviewFrame(QFrame):
 
         self.cursor().setPos(self.fMouseInitialZoomPos)
 
-    def _updateMouseMode(self, event = None):
+    def _updateMouseMode(self, event):
         if self.fMouseLeftDown and self.fMouseRightDown:
             self.fMouseInitialZoomPos = event.globalPos()
             self.setCursor(self.fZoomCursors[self._kCursorZoom])

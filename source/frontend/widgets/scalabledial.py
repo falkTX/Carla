@@ -76,8 +76,9 @@ class ScalableDial(CommonDial):
             self.fLabelWidth  = 0
             return
 
-        self.fLabelWidth  = QFontMetrics(self.fLabelFont).width(self.fLabel)
-        self.fLabelHeight = QFontMetrics(self.fLabelFont).height()
+        metrics = QFontMetrics(self.fLabelFont)
+        self.fLabelWidth  = fontMetricsHorizontalAdvance(metrics, self.fLabel)
+        self.fLabelHeight = metrics.height()
 
         self.fLabelPos.setX(float(self.fImageBaseSize)/2.0 - float(self.fLabelWidth)/2.0)
 
@@ -281,7 +282,6 @@ class ScalableDial(CommonDial):
 
             # Custom knobs
             else:
-                painter.restore()
                 return
 
             if self.HOVER_MIN < self.fHoverStep < self.HOVER_MAX:

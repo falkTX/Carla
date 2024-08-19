@@ -72,8 +72,9 @@ class PixmapDial(CommonDial):
             self.fLabelWidth  = 0
             return
 
-        self.fLabelWidth  = QFontMetrics(self.fLabelFont).width(self.fLabel)
-        self.fLabelHeight = QFontMetrics(self.fLabelFont).height()
+        metrics = QFontMetrics(self.fLabelFont)
+        self.fLabelWidth  = fontMetricsHorizontalAdvance(metrics, self.fLabel)
+        self.fLabelHeight = metrics.height()
 
         self.fLabelPos.setX(float(self.fPixmapBaseSize)/2.0 - float(self.fLabelWidth)/2.0)
 

@@ -120,7 +120,16 @@ class CanvasPort(QGraphicsItem):
         self.update()
 
     def setPortName(self, port_name):
-        if QFontMetrics(self.m_port_font).width(port_name) < QFontMetrics(self.m_port_font).width(self.m_port_name):
+        metrics = QFontMetrics(self.m_port_font)
+
+        if QT_VERSION >= 0x50b00:
+            width1 = metrics.horizontalAdvance(port_name)
+            width2 = metrics.horizontalAdvance(self.m_port_name)
+        else:
+            width1 = metrics.width(port_name)
+            width2 = metrics.width(self.m_port_name)
+
+        if width1 < width2:
             QTimer.singleShot(0, canvas.scene.update)
 
         self.m_port_name = port_name
