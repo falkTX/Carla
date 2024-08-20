@@ -26,6 +26,7 @@ from PyQt5.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QP
 from PyQt5.QtSvg import QSvgWidget
 
 from .commondial import CommonDial
+from carla_shared import fontMetricsHorizontalAdvance
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Widget Class

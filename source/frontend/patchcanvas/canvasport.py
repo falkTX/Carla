@@ -21,7 +21,7 @@
 
 from math import floor
 
-from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer
+from PyQt5.QtCore import qCritical, QT_VERSION, Qt, QLineF, QPointF, QRectF, QTimer
 from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF
 from PyQt5.QtWidgets import QGraphicsItem, QMenu
 
