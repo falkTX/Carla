@@ -61,7 +61,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
         return handleMsgRegister(isTCP, argc, argv, types, source);
 
     if (std::strcmp(path, "/unregister") == 0)
-        return handleMsgUnregister(isTCP, argc, argv, types);
+        return handleMsgUnregister(isTCP, argc, argv, types, source);
 
     if (std::strncmp(path, "/ctrl/", 6) == 0)
     {
@@ -284,7 +284,8 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP,
 }
 
 int CarlaEngineOsc::handleMsgUnregister(const bool isTCP,
-                                        const int argc, const lo_arg* const* const argv, const char* const types)
+                                        const int argc, const lo_arg* const* const argv, const char* const types,
+                                        const lo_address source)
 {
     carla_debug("CarlaEngineOsc::handleMsgUnregister()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
@@ -297,16 +298,26 @@ int CarlaEngineOsc::handleMsgUnregister(const bool isTCP,
         return 0;
     }
 
-    const char* const url = &argv[0]->s;
+    const char* const url  = &argv[0]->s;
+    const char* const host = lo_address_get_hostname(source);
+    const char* const path = lo_url_get_path(url);
 
-    if (std::strcmp(oscData.owner, url) == 0)
+    if (std::strcmp(oscData.owner, host) != 0)
     {
-        carla_stdout("OSC client %s unregistered", url);
-        oscData.clear();
+        carla_stderr("OSC backend unregister failed, current owner host %s does not match requested %s",
+                     oscData.owner, host);
         return 0;
     }
 
-    carla_stderr("OSC backend unregister failed, current owner %s does not match requested %s", oscData.owner, url);
+    if (std::strcmp(oscData.path, path) != 0)
+    {
+        carla_stderr("OSC backend unregister failed, current owner path %s does not match requested %s",
+                     oscData.path, path);
+        return 0;
+    }
+
+    carla_stdout("OSC client %s unregistered", url);
+    oscData.clear();
     return 0;
 }
 
