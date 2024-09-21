@@ -34,10 +34,6 @@ else
 NON_STATIC_LINK_FLAGS = $(LINK_FLAGS)
 endif
 
-ifeq (,$(FRONTEND_TYPE))
-$(error Trying to build frontend without Qt and/or PyQt, cannot continue)
-endif
-
 ifeq ($(WINDOWS),true)
 QT_LINK_FLAGS += -L$(BINDIR) $(BINDIR)/libcarla_utils.dll
 else
@@ -154,21 +150,26 @@ all: $(BINDIR)/libcarla_frontend$(LIB_EXT) $(QMs) $(RES) $(UIs)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-dialogs/ui_%.h: dialogs/%.ui
+dialogs/ui_%.h: dialogs/%.ui qt_config.py
 	$(UIC) $< -o $@
 
-pluginlist/ui_%.h: pluginlist/%.ui
+pluginlist/ui_%.h: pluginlist/%.ui qt_config.py
 	$(UIC) $< -o $@
 
-%_ui.py: %.ui
+%_ui.py: %.ui qt_config.py
 	$(PYUIC) $< -o $@
 
-ui_%.py: $(RESDIR)/ui/%.ui
+ui_%.py: $(RESDIR)/ui/%.ui qt_config.py
 	$(PYUIC) $< -o $@
 
 qt_config.py:
+ifneq (,$(FRONTEND_TYPE))
 	echo "#!/usr/bin/env python3" > $@
 	echo "qt = $(FRONTEND_TYPE)" >> $@
+else
+	@echo Error: Trying to build frontend without Qt and/or PyQt, cannot continue
+	@false
+endif
 
 resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
 	$(PYRCC) $< -o $@
