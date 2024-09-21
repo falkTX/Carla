@@ -2842,8 +2842,10 @@ class HostWindow(QMainWindow):
             if MACOS:
                 nsViewPtr = int(self.winId())
                 winIdStr  = "%x" % gCarla.utils.cocoa_get_window(nsViewPtr)
-            else:
+            elif WINDOWS or QApplication.platformName() == "xcb":
                 winIdStr = "%x" % int(self.winId())
+            else:
+                winIdStr = "0"
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def hideEvent(self, event):
