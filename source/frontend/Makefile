@@ -172,7 +172,11 @@ else
 endif
 
 resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
+ifeq ($(FRONTEND_TYPE),6)
+	$(PYRCC) $< | sed -e 's/PySide6/PyQt6/' > $@
+else
 	$(PYRCC) $< -o $@
+endif
 
 test: $(OBJS) $(LIBS) test.cpp
 	@echo "Linking test"

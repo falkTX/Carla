@@ -365,14 +365,6 @@ FRONTEND_TYPE = 5
 endif
 endif
 
-ifneq ($(PYUIC5)$(PYRCC5),)
-PYRCC ?= $(PYRCC5)
-PYUIC ?= $(PYUIC5)
-else ifneq ($(PYUIC6),)
-PYRCC ?= $(RCC_QT6) -g python
-PYUIC ?= $(PYUIC6)
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Set Qt tools, part2
 
@@ -384,6 +376,8 @@ ifeq ($(FRONTEND_TYPE),5)
 MOC = $(MOC_QT5)
 RCC = $(RCC_QT5)
 UIC = $(UIC_QT5)
+PYRCC ?= $(PYRCC5)
+PYUIC ?= $(PYUIC5)
 HAVE_THEME    = $(HAVE_QT5)
 QT_CXX_FLAGS  = $(QT5_CXX_FLAGS)
 QT_LINK_FLAGS = $(QT5_LINK_FLAGS)
@@ -391,6 +385,8 @@ else ifeq ($(FRONTEND_TYPE),6)
 MOC = $(MOC_QT6)
 RCC = $(RCC_QT6)
 UIC = $(UIC_QT6)
+PYRCC ?= $(RCC_QT6) -g python
+PYUIC ?= $(PYUIC6)
 HAVE_THEME    = $(HAVE_QT6)
 QT_CXX_FLAGS  = $(QT6_CXX_FLAGS)
 QT_LINK_FLAGS = $(QT6_LINK_FLAGS)

@@ -31,8 +31,6 @@ elif qt_config == 6:
         QStyle,
     )
 
-    # TODO fill up everything else
-
     Qt.AlignCenter = Qt.AlignmentFlag.AlignCenter
     Qt.AlignLeft = Qt.AlignmentFlag.AlignLeft
 
