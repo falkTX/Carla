@@ -260,11 +260,8 @@ public:
                                        kAudioUnitProperty_SupportedNumChannels,
                                        kAudioUnitScope_Global,
                                        0, &outDataSize, &outWritable) == noErr
-            /*
             && outDataSize != 0
-            && outDataSize % sizeof(AUChannelInfo) == 0
-            */
-            )
+            && outDataSize % sizeof(AUChannelInfo) == 0)
         {
             const uint32_t numChannels = outDataSize / sizeof(AUChannelInfo);
             AUChannelInfo* const channelInfo = new AUChannelInfo[numChannels];
@@ -279,12 +276,17 @@ public:
             {
                 AUChannelInfo* highestInfo = &channelInfo[0];
 
-                carla_stdout("getProperty returns {%u,%u}... config",
+                carla_stdout("kAudioUnitProperty_SupportedNumChannels returns {%d,%d}... config",
                              channelInfo[0].inChannels,
                              channelInfo[0].outChannels);
 
-                for (uint32_t i=1; i<numChannels; ++i)
+                for (uint32_t i=0; i<numChannels; ++i)
                 {
+                    if (channelInfo[i].inChannels < 0)
+                        channelInfo[i].inChannels = 2;
+                    if (channelInfo[i].outChannels < 0)
+                        channelInfo[i].outChannels = 2;
+
                     if (channelInfo[i].inChannels > highestInfo->inChannels
                         && channelInfo[i].outChannels > highestInfo->outChannels)
                     {
@@ -292,20 +294,69 @@ public:
                     }
                 }
 
-                audioIns = highestInfo->inChannels;
-                audioOuts = highestInfo->outChannels;
+                audioIns = std::min<int16_t>(64, highestInfo->inChannels);
+                audioOuts = std::min<int16_t>(64, highestInfo->outChannels);
             }
             else
             {
-                carla_stdout("getProperty failed");
+                carla_stdout("kAudioUnitProperty_SupportedNumChannels failed");
             }
 
             delete[] channelInfo;
         }
         else
         {
-            carla_stdout("kAudioUnitProperty_SupportedNumChannels returns no configs, assume stereo");
-            audioIns = audioOuts = 2;
+            outDataSize = 0;
+            if (fFunctions.getPropertyInfo(fInterface,
+                                           kAudioUnitProperty_ElementCount,
+                                           kAudioUnitScope_Input,
+                                           0, &outDataSize, &outWritable) == noErr
+                && outDataSize == sizeof(UInt32))
+            {
+                UInt32 count = 0;
+                if (fFunctions.getProperty(fInterface,
+                                           kAudioUnitProperty_ElementCount,
+                                           kAudioUnitScope_Input,
+                                           0, &count, &outDataSize) == noErr
+                    && outDataSize == sizeof(UInt32) && count != 0)
+                {
+                    AudioStreamBasicDescription desc;
+                    std::memset(&desc, 0, sizeof(desc));
+                    outDataSize = sizeof(AudioStreamBasicDescription);
+
+                    if (fFunctions.getProperty(fInterface,
+                                               kAudioUnitProperty_StreamFormat,
+                                               kAudioUnitScope_Input,
+                                               0, &desc, &outDataSize) == noErr)
+                        audioIns = std::min<uint32_t>(64, desc.mChannelsPerFrame);
+                }
+            }
+
+            outDataSize = 0;
+            if (fFunctions.getPropertyInfo(fInterface,
+                                           kAudioUnitProperty_ElementCount,
+                                           kAudioUnitScope_Output,
+                                           0, &outDataSize, &outWritable) == noErr
+                && outDataSize == sizeof(UInt32))
+            {
+                UInt32 count = 0;
+                if (fFunctions.getProperty(fInterface,
+                                           kAudioUnitProperty_ElementCount,
+                                           kAudioUnitScope_Output,
+                                           0, &count, &outDataSize) == noErr
+                    && outDataSize == sizeof(UInt32) && count != 0)
+                {
+                    AudioStreamBasicDescription desc;
+                    std::memset(&desc, 0, sizeof(desc));
+                    outDataSize = sizeof(AudioStreamBasicDescription);
+
+                    if (fFunctions.getProperty(fInterface,
+                                               kAudioUnitProperty_StreamFormat,
+                                               kAudioUnitScope_Output,
+                                               0, &desc, &outDataSize) == noErr)
+                        audioOuts = std::min<uint32_t>(64, desc.mChannelsPerFrame);
+                }
+            }
         }
 
         if (audioIns > 0)

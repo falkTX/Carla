@@ -2182,8 +2182,13 @@ static bool do_au_check(const char* const filename, const bool doInit)
                 {
                     AUChannelInfo* highestInfo = &channelInfo[0];
 
-                    for (uint32_t i=1; i<numChannels; ++i)
+                    for (uint32_t i=0; i<numChannels; ++i)
                     {
+                        if (channelInfo[i].inChannels < 0)
+                            channelInfo[i].inChannels = 2;
+                        if (channelInfo[i].outChannels < 0)
+                            channelInfo[i].outChannels = 2;
+
                         if (channelInfo[i].inChannels > highestInfo->inChannels
                             && channelInfo[i].outChannels > highestInfo->outChannels)
                         {
@@ -2191,11 +2196,69 @@ static bool do_au_check(const char* const filename, const bool doInit)
                         }
                     }
 
-                    audioIns = highestInfo->inChannels;
-                    audioOuts = highestInfo->outChannels;
+                    audioIns = std::min<int16_t>(64, highestInfo->inChannels);
+                    audioOuts = std::min<int16_t>(64, highestInfo->outChannels);
                 }
 
                 delete[] channelInfo;
+            }
+            else
+            {
+                // unsupported for now
+                interface->Close(interface);
+                continue;
+
+                outDataSize = 0;
+                if (auGetPropertyInfo(interface,
+                                      kAudioUnitProperty_ElementCount,
+                                      kAudioUnitScope_Input,
+                                      0, &outDataSize, &outWritable) == noErr
+                    && outDataSize == sizeof(UInt32))
+                {
+                    UInt32 count = 0;
+                    if (auGetProperty(interface,
+                                      kAudioUnitProperty_ElementCount,
+                                      kAudioUnitScope_Input,
+                                      0, &count, &outDataSize) == noErr
+                        && outDataSize == sizeof(UInt32) && count != 0)
+                    {
+                        AudioStreamBasicDescription desc;
+                        std::memset(&desc, 0, sizeof(desc));
+                        outDataSize = sizeof(AudioStreamBasicDescription);
+
+                        if (auGetProperty(interface,
+                                          kAudioUnitProperty_StreamFormat,
+                                          kAudioUnitScope_Input,
+                                          0, &desc, &outDataSize) == noErr)
+                            audioIns = std::min<uint32_t>(64, desc.mChannelsPerFrame);
+                    }
+                }
+
+                outDataSize = 0;
+                if (auGetPropertyInfo(interface,
+                                      kAudioUnitProperty_ElementCount,
+                                      kAudioUnitScope_Output,
+                                      0, &outDataSize, &outWritable) == noErr
+                    && outDataSize == sizeof(UInt32))
+                {
+                    UInt32 count = 0;
+                    if (auGetProperty(interface,
+                                      kAudioUnitProperty_ElementCount,
+                                      kAudioUnitScope_Output,
+                                      0, &count, &outDataSize) == noErr
+                        && outDataSize == sizeof(UInt32) && count != 0)
+                    {
+                        AudioStreamBasicDescription desc;
+                        std::memset(&desc, 0, sizeof(desc));
+                        outDataSize = sizeof(AudioStreamBasicDescription);
+
+                        if (auGetProperty(interface,
+                                          kAudioUnitProperty_StreamFormat,
+                                          kAudioUnitScope_Output,
+                                          0, &desc, &outDataSize) == noErr)
+                            audioOuts = std::min<uint32_t>(64, desc.mChannelsPerFrame);
+                    }
+                }
             }
 
             // parameter count
@@ -2292,17 +2355,7 @@ static bool do_au_check(const char* const filename, const bool doInit)
 
             if (doInit)
             {
-                // test valid scopes
-                outDataSize = 0;
-                if (auGetPropertyInfo(interface, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &outDataSize, &outWritable) == noErr && outDataSize == sizeof(UInt32))
-                {
-                    UInt32 count = 0;
-                    if (auGetProperty(interface, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &count, &outDataSize) == noErr && outDataSize == sizeof(UInt32) && count != 0)
-                    {
-                    }
-                }
-
-                // TODO
+                // TODO tests
             }
 
             const CFIndex componentNameLen = CFStringGetLength(componentName);
