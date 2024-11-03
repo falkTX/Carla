@@ -517,22 +517,21 @@ if not WINDOWS:
     if not winePrefix:
         winePrefix = HOME + "/.wine"
 
-    if os.path.exists(winePrefix):
-        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VstPlugins"
-        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VSTPlugins"
-        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/Steinberg/VstPlugins"
-        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/Steinberg/VSTPlugins"
-        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST2"
-        DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3"
-        DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VstPlugins"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VSTPlugins"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/Steinberg/VstPlugins"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/Steinberg/VSTPlugins"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST2"
+    DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3"
+    DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP"
 
-        if kIs64bit and os.path.exists(winePrefix + "/drive_c/Program Files (x86)"):
-            DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
-            DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VSTPlugins"
-            DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VstPlugins"
-            DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VSTPlugins"
-            DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3"
-            DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/CLAP"
+    if kIs64bit:
+        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
+        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VSTPlugins"
+        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VstPlugins"
+        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VSTPlugins"
+        DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3"
+        DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/CLAP"
 
     del winePrefix
 
