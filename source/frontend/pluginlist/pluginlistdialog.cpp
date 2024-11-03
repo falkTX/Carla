@@ -1178,7 +1178,9 @@ void PluginListDialog::showEvent(QShowEvent* const event)
         p->discovery.dialog->ch_updated->setChecked(true);
         p->discovery.dialog->ch_invalid->setChecked(false);
         p->discovery.dialog->group->setEnabled(false);
+        p->discovery.dialog->group_formats->hide();
         p->discovery.dialog->progressBar->setFormat("Starting initial discovery...");
+        p->discovery.dialog->adjustSize();
 
         QObject::connect(p->discovery.dialog->b_skip, &QPushButton::clicked,
                          this, &PluginListDialog::refreshPluginsSkip);
@@ -1221,73 +1223,109 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
                 }
                 [[fallthrough]];
             case PLUGIN_INTERNAL:
-                ui.label->setText(tr("Discovering LADSPA plugins..."));
-                path = p->paths.ladspa;
-                p->discovery.ptype = PLUGIN_LADSPA;
-                break;
+                if (p->discovery.dialog->ch_ladspa->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering LADSPA plugins..."));
+                    path = p->paths.ladspa;
+                    p->discovery.ptype = PLUGIN_LADSPA;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_LADSPA:
-                ui.label->setText(tr("Discovering DSSI plugins..."));
-                path = p->paths.dssi;
-                p->discovery.ptype = PLUGIN_DSSI;
-                break;
+                if (p->discovery.dialog->ch_dssi->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering DSSI plugins..."));
+                    path = p->paths.dssi;
+                    p->discovery.ptype = PLUGIN_DSSI;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_DSSI:
            #endif
-                if (p->discovery.btype == BINARY_NATIVE && p->paths.lv2.isNotEmpty())
+                if (p->discovery.dialog->ch_lv2->isChecked() || !p->discovery.dialog->group_formats->isVisible())
                 {
-                    ui.label->setText(tr("Discovering LV2 plugins..."));
-                    path = p->paths.lv2;
-                    p->discovery.ptype = PLUGIN_LV2;
-                    break;
+                    if (p->discovery.btype == BINARY_NATIVE && p->paths.lv2.isNotEmpty())
+                    {
+                        ui.label->setText(tr("Discovering LV2 plugins..."));
+                        path = p->paths.lv2;
+                        p->discovery.ptype = PLUGIN_LV2;
+                        break;
+                    }
                 }
                 [[fallthrough]];
             case PLUGIN_LV2:
-                ui.label->setText(tr("Discovering VST2 plugins..."));
-                path = p->paths.vst2;
-                p->discovery.ptype = PLUGIN_VST2;
-                break;
+                if (p->discovery.dialog->ch_vst2->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering VST2 plugins..."));
+                    path = p->paths.vst2;
+                    p->discovery.ptype = PLUGIN_VST2;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_VST2:
-                ui.label->setText(tr("Discovering VST3 plugins..."));
-                path = p->paths.vst3;
-                p->discovery.ptype = PLUGIN_VST3;
-                break;
+                if (p->discovery.dialog->ch_vst3->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering VST3 plugins..."));
+                    path = p->paths.vst3;
+                    p->discovery.ptype = PLUGIN_VST3;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_VST3:
-                ui.label->setText(tr("Discovering CLAP plugins..."));
-                path = p->paths.clap;
-                p->discovery.ptype = PLUGIN_CLAP;
-                break;
+                if (p->discovery.dialog->ch_clap->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering CLAP plugins..."));
+                    path = p->paths.clap;
+                    p->discovery.ptype = PLUGIN_CLAP;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_CLAP:
            #ifdef CARLA_OS_MAC
-                ui.label->setText(tr("Discovering AU plugins..."));
-                path = p->paths.au;
-                p->discovery.ptype = PLUGIN_AU;
-                break;
+                if (p->discovery.dialog->ch_au->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering AU plugins..."));
+                    path = p->paths.au;
+                    p->discovery.ptype = PLUGIN_AU;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_AU:
            #endif
           #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
-                if (p->discovery.btype == BINARY_NATIVE && p->paths.jsfx.isNotEmpty())
+                if (p->discovery.dialog->ch_jsfx->isChecked() || !p->discovery.dialog->group_formats->isVisible())
                 {
-                    ui.label->setText(tr("Discovering JSFX plugins..."));
-                    path = p->paths.jsfx;
-                    p->discovery.ptype = PLUGIN_JSFX;
-                    break;
+                    if (p->discovery.btype == BINARY_NATIVE && p->paths.jsfx.isNotEmpty())
+                    {
+                        ui.label->setText(tr("Discovering JSFX plugins..."));
+                        path = p->paths.jsfx;
+                        p->discovery.ptype = PLUGIN_JSFX;
+                        break;
+                    }
                 }
                 [[fallthrough]];
             case PLUGIN_JSFX:
-                if (p->discovery.btype == BINARY_NATIVE && p->paths.sf2.isNotEmpty())
+                if (p->discovery.dialog->ch_sf2->isChecked() || !p->discovery.dialog->group_formats->isVisible())
                 {
-                    ui.label->setText(tr("Discovering SF2 kits..."));
-                    path = p->paths.sf2;
-                    p->discovery.ptype = PLUGIN_SF2;
-                    break;
+                    if (p->discovery.btype == BINARY_NATIVE && p->paths.sf2.isNotEmpty())
+                    {
+                        ui.label->setText(tr("Discovering SF2 kits..."));
+                        path = p->paths.sf2;
+                        p->discovery.ptype = PLUGIN_SF2;
+                        break;
+                    }
                 }
                 [[fallthrough]];
             case PLUGIN_SF2:
-                if (p->discovery.btype == BINARY_NATIVE && p->paths.sfz.isNotEmpty())
+                if (p->discovery.dialog->ch_sfz->isChecked() || !p->discovery.dialog->group_formats->isVisible())
                 {
-                    ui.label->setText(tr("Discovering SFZ kits..."));
-                    path = p->paths.sfz;
-                    p->discovery.ptype = PLUGIN_SFZ;
-                    break;
+                    if (p->discovery.btype == BINARY_NATIVE && p->paths.sfz.isNotEmpty())
+                    {
+                        ui.label->setText(tr("Discovering SFZ kits..."));
+                        path = p->paths.sfz;
+                        p->discovery.ptype = PLUGIN_SFZ;
+                        break;
+                    }
                 }
                 [[fallthrough]];
             case PLUGIN_SFZ:
@@ -1306,7 +1344,7 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
             if (p->timerId == 0)
                 break;
 
-            if (p->discovery.dialog)
+            if (p->discovery.dialog != nullptr)
                 p->discovery.dialog->progressBar->setFormat(ui.label->text());
 
             p->discovery.handle = carla_plugin_discovery_start(p->discovery.tool.toUtf8().constData(),
