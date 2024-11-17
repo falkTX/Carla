@@ -1444,9 +1444,6 @@
               <property name="enabled">
                <bool>false</bool>
               </property>
-              <property name="toolTip">
-               <string>Maximum number of parameters to allow in the built-in 'Edit' dialog</string>
-              </property>
               <property name="minimum">
                <number>1024</number>
               </property>
@@ -1514,9 +1511,6 @@
              <widget class="QSpinBox" name="sb_osc_udp_port_number">
               <property name="enabled">
                <bool>false</bool>
-              </property>
-              <property name="toolTip">
-               <string>Maximum number of parameters to allow in the built-in 'Edit' dialog</string>
               </property>
               <property name="minimum">
                <number>1024</number>
