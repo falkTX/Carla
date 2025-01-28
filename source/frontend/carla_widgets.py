@@ -14,7 +14,7 @@ from qt_compat import qt_config
 
 if qt_config == 5:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray
-    from PyQt5.QtGui import QCursor, QIcon, QPalette, QPixmap
+    from PyQt5.QtGui import QCursor, QIcon, QPalette, QPixmap, QFont
     from PyQt5.QtWidgets import (
         QDialog,
         QFileDialog,
@@ -24,10 +24,13 @@ if qt_config == 5:
         QScrollArea,
         QVBoxLayout,
         QWidget,
+        QGraphicsScene,
+        QGraphicsTextItem,
+        QGraphicsView,
     )
 elif qt_config == 6:
     from PyQt6.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray
-    from PyQt6.QtGui import QCursor, QIcon, QPalette, QPixmap
+    from PyQt6.QtGui import QCursor, QIcon, QPalette, QPixmap, QFont
     from PyQt6.QtWidgets import (
         QDialog,
         QFileDialog,
@@ -37,6 +40,9 @@ elif qt_config == 6:
         QScrollArea,
         QVBoxLayout,
         QWidget,
+        QGraphicsScene,
+        QGraphicsTextItem,
+        QGraphicsView,
     )
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1111,6 +1117,10 @@ class PluginEdit(QDialog):
                 self.ui.tabWidget.currentWidget().verticalScrollBar().setValue(scrollVal)
 
     def reloadPrograms(self):
+
+# jpka: That's wrong place fot it of course, please move to correct one.
+        self._createDescriptionWidgets(self.tr("Description"))
+
         # Programs
         self.ui.cb_programs.blockSignals(True)
         self.ui.cb_programs.clear()
@@ -1805,6 +1815,39 @@ class PluginEdit(QDialog):
             paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
             paramWidget.blockSignals(False)
+
+    #------------------------------------------------------------------
+
+    def _createDescriptionWidgets(self, tabPageName):
+# jpka: To be filled from 'rdfs:comment'
+        strDescr = "To be filled from rdfs:comment"
+
+        realPluginName = self.host.get_real_plugin_name(self.fPluginId)
+        labelURI = self.fPluginInfo['label']
+
+        strLoadState = ""
+        programCount = self.host.get_program_count(self.fPluginId)
+        if programCount > 0:
+            strLoadState = '<div style="letter-spacing:1px"><br>'\
+                '<b>Note: </b>This plugin collected some presets for you.<br>'\
+                'Use <i>Edit</i> tab, then <i>Load State</i> button.</div>'
+
+        scene = QGraphicsScene(self)
+        text = QGraphicsTextItem("",None)
+        text.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        text.setTextWidth(600);
+#        text.setFont(QFont("Arial, 16"))    # NOTE: All Qt sizes are in Pt; real px~=4/3Pt.
+        text.setHtml('<body>\
+            <h1>' + realPluginName + '</h1><br>'\
+            '<a href=' + labelURI + '>' + labelURI + '</a><br><br>'\
+            '<div style="line-height:1.5;">' + strDescr + '</div>' +\
+            strLoadState +\
+            '<body>');
+
+        scene.addItem(text)
+        view = QGraphicsView(scene, self)
+
+        self.ui.tabWidget.addTab(view, tabPageName)
 
     #------------------------------------------------------------------
 
