@@ -7,6 +7,11 @@
 
 from abc import abstractmethod
 
+import markdown
+
+import subprocess
+import shlex
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (PyQt)
 
@@ -1819,30 +1824,83 @@ class PluginEdit(QDialog):
     #------------------------------------------------------------------
 
     def _createDescriptionWidgets(self, tabPageName):
-# jpka: To be filled from 'rdfs:comment'
-        strDescr = "To be filled from rdfs:comment"
+        if self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_LV2, PLUGIN_SF2):
+            return
 
-        realPluginName = self.host.get_real_plugin_name(self.fPluginId)
-        labelURI = self.fPluginInfo['label']
+# jpka: To be filled from 'rdfs:comment' FIXME
+        strDescrFlatMdHtml = "To be filled from rdfs:comment. Test **bold** & _italic_ markdown."
+        # This one converts to html, i.e. 'unmarkdown's.
+        strDescrHtml = markdown.markdown(strDescrFlatMdHtml)
 
-        strLoadState = ""
-        programCount = self.host.get_program_count(self.fPluginId)
-        if programCount > 0:
+        realPluginName = self.fPluginInfo['name'] or "(none)"
+
+        if self.fPluginInfo['type'] == PLUGIN_LV2:
+            strTemp = self.fPluginInfo['label']
+            strURI = '<a href=' + strTemp + '>' + strTemp + '</a>'
+
+        elif self.fPluginInfo['type'] == PLUGIN_SF2:
+            strURI = '<b>' + self.fPluginInfo['maker'] + '</b> using ' +\
+                     '<b>' + self.fPluginInfo['label'] + '</b> sound font'
+
+# if with autodetection of sf2dump:
+# jpka: This adds 'libgig' dependency for 'sf2dump'.
+# jpka: To be filled with real .sf2 filename, line below is tests only. FIXME
+            strSoundFontFile = '/usr/share/sounds/sf2/' + realPluginName + '.sf2'
+            strCmd = 'sf2dump ' + strSoundFontFile
+            result = subprocess.run(shlex.split
+                     (f'sh -c "set -o pipefail ; timeout 0.2 ' + strCmd +\
+                       ' | sed /Samples/q"'),
+                     stdout=subprocess.PIPE)
+            ret = result.returncode
+
+            strCmdHt = '<tt>&nbsp;<u>' + strCmd + '</u>&nbsp;</tt>'
+
+            if (ret == 0):
+                if MACOS:
+# jpka: Please check it. FIXME
+                    strEOL = '\r'
+                elif WINDOWS:
+# jpka: Please check it. FIXME
+                    strEOL = '\r\n'
+                else:
+                    strEOL = '\n'
+                strResult = result.stdout.decode('utf-8')\
+                            .replace('\t', '&nbsp;&#8226;&nbsp;')\
+                            .replace(strEOL, '<br>') +\
+                            '<i>Please use ' + strCmdHt + ' for full info.</i>'
+            else:
+               strResult = 'Err ' + str(ret) + ' while run ' + strCmdHt + ' .'
+
+            strDescrHtml = strResult
+# if no sf2dump:
+            # strDescrHtml = "<small>(No sf2dump support, sorry.)</small>"
+
+        else:
+            strURI = "Carla Internal Plugin"
+
+        if self.host.get_program_count(self.fPluginId) == 0:
+            strLoadState = ""
+        else:
             strLoadState = '<div style="letter-spacing:1px"><br>'\
-                '<b>Note: </b>This plugin collected some presets for you.<br>'\
-                'Use <i>Edit</i> tab, then <i>Load State</i> button.</div>'
+                           '<b>Note: </b>This plugin collected some presets for you.<br>'\
+                           'Use <i>Edit</i> tab, then <i>Load State</i> button.</div>'
 
         scene = QGraphicsScene(self)
         text = QGraphicsTextItem("",None)
         text.setTextInteractionFlags(Qt.TextSelectableByMouse)
+# jpka: Should be like this, but not work. FIXME
+#        text.setTextWidth(self.ui.tabWidget.geometry().width());
+#        text.setTextWidth(self.ui.tabWidget.tabs.geometry().width());
+#        text.setTextWidth(self.ui.tabWidget.widget(1).geometry().width());
+#        text.setTextWidth(self.ui.tabWidget.size().width());
         text.setTextWidth(600);
 #        text.setFont(QFont("Arial, 16"))    # NOTE: All Qt sizes are in Pt; real px~=4/3Pt.
-        text.setHtml('<body>\
-            <h1>' + realPluginName + '</h1><br>'\
-            '<a href=' + labelURI + '>' + labelURI + '</a><br><br>'\
-            '<div style="line-height:1.5;">' + strDescr + '</div>' +\
-            strLoadState +\
-            '<body>');
+        text.setHtml('<body>' +\
+                '<h1>' + realPluginName + '</h1><br>' +\
+                strURI + '<br><br>' +\
+                '<div style="line-height:1.25;">' + strDescrHtml + '</div>' +\
+                strLoadState +\
+                '<body>');
 
         scene.addItem(text)
         view = QGraphicsView(scene, self)
