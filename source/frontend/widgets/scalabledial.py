@@ -233,8 +233,8 @@ class ScalableDial(CommonDial):
                 spanAngle = int(-int(angleSpan*value/(360/ticks)+0.5)*(360/ticks)*16)
                 n = ticks*2
                 for i in range(0, n, 2):
-                    gradient.setColorAt((i-0.40)/n, color0)
-                    gradient.setColorAt((i+0.85)/n, color1.lighter(100))
+                    gradient.setColorAt(((i-0.40)/n % 1.0), color0)
+                    gradient.setColorAt(((i+0.85)/n % 1.0), color1.lighter(100))
 
             if dialType == 3:  # openav
                 painter.setPen(QPen(gradient, barWidth, cap=Qt.RoundCap))
@@ -267,18 +267,10 @@ class ScalableDial(CommonDial):
 
         # Custom knobs (Color)
         elif self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_COLOR:
-            # FIXME It's better to move it below, because calf is not custom colored.
-            # (need to change not in this file)
-            if self.fImageId in (1, 2, 7, 8, 9, 10):   # calf
-                hue = 0.52 # Aqua
+            # NOTE here all incoming color data, except hue, is lost.
+            hue = self.fCustomPaintColor.hueF()
 
-                createDial(12, hue, hue, 4, 296, 36, 2, normValue)
-
-            else:                                      # internal
-                # NOTE here all incoming color data, except hue, is lost.
-                hue = self.fCustomPaintColor.hueF()
-
-                createDial(10, hue, hue, 3, 260, 0, 1, normValue)
+            createDial(10, hue, hue, 3, 260, 0, 1, normValue)
 
         # Custom knobs
         elif self.fImageId in (11, 12, 13):            # openav
@@ -292,7 +284,13 @@ class ScalableDial(CommonDial):
 
             createDial(12, hue1, hue2, 2.5, 270, 0, 3, normValue)
 
+        elif self.fImageId in (1, 2, 7, 8, 9, 10):     # calf
+            hue = 0.52 # Aqua
+
+            createDial(12, hue, hue, 4, 296, 36, 2, normValue)
+
         else:
+            print("Unknown type knob.")
             return
 
 
