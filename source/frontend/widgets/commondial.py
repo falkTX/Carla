@@ -61,6 +61,7 @@ class CommonDial(QDial):
         self.fRealValue = 0.0
         self.fPrecision = 10000
         self.fIsInteger = False
+        self.fIsButton  = False
 
         self.fIsHovered = False
         self.fIsPressed = False
@@ -126,7 +127,11 @@ class CommonDial(QDial):
     def setPrecision(self, value, isInteger):
         self.fPrecision = value
         self.fIsInteger = isInteger
+        # NOTE: Booleans are mimic as isInteger with range [0 or 1].
+        if self.fIsInteger and (self.fMinimum == 0) and (self.fMaximum in (1, 2)):
+            self.fIsButton = True
         QDial.setMaximum(self, int(value))
+        # print("setPrecision "+str(value)+" "+str(isInteger)+" "+str(self.fIsButton))
 
     def setMinimum(self, value):
         self.fMinimum = value
@@ -189,6 +194,9 @@ class CommonDial(QDial):
         self.realValueChanged.emit(self.fRealValue)
 
     def enterEvent(self, event):
+
+        self.setFocus(Qt.MouseFocusReason)
+
         self.fIsHovered = True
         if self.fHoverStep == self.HOVER_MIN:
             self.fHoverStep = self.HOVER_MIN + 1
@@ -206,10 +214,16 @@ class CommonDial(QDial):
             return
 
         if event.button() == Qt.LeftButton:
-            self.fIsPressed = True
-            self.fLastDragPos = event.pos()
-            self.fLastDragValue = self.fRealValue
-            self.dragStateChanged.emit(True)
+            if self.fIsButton:
+                value = self.value() + 1;
+                if (value > self.fMaximum):
+                    value = 0;
+                self.setValue(value, True)
+            else:
+                self.fIsPressed = True
+                self.fLastDragPos = event.pos()
+                self.fLastDragValue = self.fRealValue
+                self.dragStateChanged.emit(True)
 
     def mouseMoveEvent(self, event):
         if self.fDialMode == self.MODE_DEFAULT:
@@ -243,6 +257,62 @@ class CommonDial(QDial):
             self.fIsPressed = False
             self.dragStateChanged.emit(False)
 
+    def wheelEvent(self, event):
+        direction = event.angleDelta().y()
+        mod = int(event.modifiers())
+        if direction < 0:
+            delta = -1.0
+        elif direction > 0:
+            delta = 1.0
+        else:
+            return
+
+        if self.fIsButton:
+            self.setValue(self.rvalue() + delta, True)
+            return
+
+        if self.fIsInteger: # max. 50 ticks per revolution
+            if (mod & Qt.ShiftModifier):
+                delta = delta * 5
+        else: # Floats are 250 to 500 ticks per revolution
+            if (mod & Qt.ControlModifier):
+                delta = delta * 2
+            elif (mod & Qt.ShiftModifier):
+                delta = delta * 50
+            else:
+                delta = delta * 10
+        self.setValue(self.rvalue() + float(self.fMaximum-self.fMinimum)*(float(delta)/float(self.fPrecision)), True)
+
+        return
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        mod = int(event.modifiers())
+        # print(str(self.value())+" "+str(self.rvalue())+" "+str(self.fMinimum)+" "+str(self.fMaximum))
+
+        match key:
+            case key if Qt.Key_0 <= key <= Qt.Key_9:
+                if self.fIsButton:
+                    self.setValue(key-Qt.Key_0, True)
+                else:
+                    self.setValue(self.fMinimum + float(self.fMaximum-self.fMinimum)/10.0*(key-Qt.Key_0), True)
+            case Qt.Key_Home: # NOTE: interferes with Canvas control hotkey
+                self.setValue(self.fMinimum, True)
+            case Qt.Key_End:
+                self.setValue(self.fMaximum, True)
+            case Qt.Key_PageDown:
+                if self.fIsButton:
+                    self.setValue(self.rvalue() - 1, True)
+                else:
+                    self.setValue(self.rvalue() - float(self.fMaximum-self.fMinimum)/10.0, True)
+            case Qt.Key_PageUp:
+                if self.fIsButton:
+                    self.setValue(self.rvalue() + 1, True)
+                else:
+                    self.setValue(self.rvalue() + float(self.fMaximum-self.fMinimum)/10.0, True)
+
+        return
+
     def paintEvent(self, event):
         painter = QPainter(self)
         event.accept()
@@ -260,7 +330,11 @@ class CommonDial(QDial):
             painter.setPen(self.fLabelGradientColorT[0 if self.isEnabled() else 1])
             painter.drawText(self.fLabelPos, self.fLabel)
 
-        self.paintDial(painter)
+        if self.fIsButton:
+            # Only 0 or 1 values (normal 2-pos. switch) or 0, 1 and 2 (3-pos. one).
+            self.paintButton(painter, self.fMaximum)
+        else:
+            self.paintDial(painter)
 
         painter.restore()
 
