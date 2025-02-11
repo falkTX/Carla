@@ -1,28 +1,21 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# A piano roll viewer/editor
-# Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
-# Copyright (C) 2014-2015 Perry Nguyen
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2014-2015 Perry Nguyen
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSlot, Qt, QEvent
-from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QMainWindow
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import pyqtSlot, QT_VERSION, Qt, QEvent
+    from PyQt5.QtGui import QKeyEvent
+    from PyQt5.QtWidgets import QMainWindow
+elif qt_config == 6:
+    from PyQt6.QtCore import pyqtSlot, QT_VERSION, Qt, QEvent
+    from PyQt6.QtGui import QKeyEvent
+    from PyQt6.QtWidgets import QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -74,15 +67,25 @@ class MidiPatternW(ExternalUI, QMainWindow):
         self.ui.piano.modeupdate.connect(self.ui.modeIndicator.changeMode)
         self.ui.piano.modeupdate.connect(self.slot_modeChanged)
 
-        self.ui.timeSigBox.currentIndexChanged[int].connect(self.slot_paramChanged)
-        self.ui.measureBox.currentIndexChanged[int].connect(self.slot_paramChanged)
-        self.ui.defaultLengthBox.currentIndexChanged[int].connect(self.slot_paramChanged)
-        self.ui.quantizeBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+        if QT_VERSION >= 0x60000:
+            self.ui.timeSigBox.currentIndexChanged.connect(self.slot_paramChanged)
+            self.ui.measureBox.currentIndexChanged.connect(self.slot_paramChanged)
+            self.ui.defaultLengthBox.currentIndexChanged.connect(self.slot_paramChanged)
+            self.ui.quantizeBox.currentIndexChanged.connect(self.slot_paramChanged)
+            self.ui.timeSigBox.currentTextChanged.connect(self.slot_setTimeSignature)
+            self.ui.measureBox.currentTextChanged.connect(self.ui.piano.setMeasures)
+            self.ui.defaultLengthBox.currentTextChanged.connect(self.ui.piano.setDefaultLength)
+            self.ui.quantizeBox.currentTextChanged.connect(self.ui.piano.setGridDiv)
+        else:
+            self.ui.timeSigBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+            self.ui.measureBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+            self.ui.defaultLengthBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+            self.ui.quantizeBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+            self.ui.timeSigBox.currentIndexChanged[str].connect(self.slot_setTimeSignature)
+            self.ui.measureBox.currentIndexChanged[str].connect(self.ui.piano.setMeasures)
+            self.ui.defaultLengthBox.currentIndexChanged[str].connect(self.ui.piano.setDefaultLength)
+            self.ui.quantizeBox.currentIndexChanged[str].connect(self.ui.piano.setGridDiv)
 
-        self.ui.timeSigBox.currentIndexChanged[str].connect(self.slot_setTimeSignature)
-        self.ui.measureBox.currentIndexChanged[str].connect(self.ui.piano.setMeasures)
-        self.ui.defaultLengthBox.currentIndexChanged[str].connect(self.ui.piano.setDefaultLength)
-        self.ui.quantizeBox.currentIndexChanged[str].connect(self.ui.piano.setGridDiv)
         self.ui.hSlider.valueChanged.connect(self.ui.graphicsView.setZoomX)
         self.ui.vSlider.valueChanged.connect(self.ui.graphicsView.setZoomY)
 

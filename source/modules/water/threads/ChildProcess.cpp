@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -130,8 +130,8 @@ public:
 
         // Looks like you're trying to launch a non-existent exe or a folder (perhaps on OSX
         // you're trying to launch the .app folder rather than the actual binary inside it?)
-        wassert (File::getCurrentWorkingDirectory().getChildFile (exe).existsAsFile()
-                  || ! exe.containsChar (File::separator));
+        wassert (File::getCurrentWorkingDirectory().getChildFile (exe.toRawUTF8()).existsAsFile()
+                  || ! exe.containsChar (CARLA_OS_SEP));
 
         Array<char*> argv;
         for (int i = 0; i < arguments.size(); ++i)

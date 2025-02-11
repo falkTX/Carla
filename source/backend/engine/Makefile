@@ -7,13 +7,6 @@
 CWD=../..
 include ../Makefile.mk
 
-# Workaround GCC bug
-ifeq ($(TESTBUILD),true)
-ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
-BUILD_CXX_FLAGS += -Wno-undef
-endif
-endif
-
 BUILD_CXX_FLAGS += $(MAGIC_FLAGS)
 
 ifneq ($(HAIKU),true)
@@ -47,11 +40,6 @@ endif
 
 OBJSa = $(OBJS) \
 	$(OBJDIR)/CarlaEngineNative.cpp.o
-
-ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
-OBJSa += \
-	$(OBJDIR)/CarlaEngineJuce.cpp.o
-endif
 
 ifeq ($(USING_RTAUDIO),true)
 OBJSa += \
@@ -130,13 +118,6 @@ $(OBJDIR)/CarlaEngineJack.cpp.o: CarlaEngineJack.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEngineJack.cpp"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(JACK_FLAGS) -c -o $@
-endif
-
-ifeq ($(USING_JUCE),true)
-$(OBJDIR)/CarlaEngineJuce.cpp.o: CarlaEngineJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp

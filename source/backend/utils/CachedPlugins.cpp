@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaUtils.h"
 
@@ -21,11 +7,6 @@
 #include "CarlaString.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLv2Utils.hpp"
-
-#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-# include "AppConfig.h"
-# include "juce_audio_processors/juce_audio_processors.h"
-#endif
 
 #ifndef STATIC_PLUGIN_TARGET
 # define HAVE_SFZ
@@ -98,7 +79,7 @@ static void findSFZs(const char* const sfzPaths)
     {
         std::vector<water::File> results;
 
-        if (water::File(*it).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*.sfz") > 0)
+        if (water::File(it->toRawUTF8()).findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*.sfz") > 0)
         {
             gSFZs.reserve(gSFZs.size() + results.size());
             gSFZs.insert(gSFZs.end(), results.begin(), results.end());
@@ -126,7 +107,7 @@ static void findJSFXs(const char* const jsfxPaths)
     for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
         std::vector<water::File> results;
-        const water::File path(*it);
+        const water::File path(it->toRawUTF8());
 
         if (path.findChildFiles(results, water::File::findFiles|water::File::ignoreHiddenFiles, true, "*") > 0)
         {
@@ -603,67 +584,6 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-static juce::StringArray gCachedAuPluginResults;
-
-static void findAUs()
-{
-    if (gCachedAuPluginResults.size() != 0)
-        return;
-
-    juce::AudioUnitPluginFormat auFormat;
-    gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false, false);
-}
-
-static const CarlaCachedPluginInfo* get_cached_plugin_au(const juce::String pluginId)
-{
-    static CarlaCachedPluginInfo info;
-    static CarlaString sname, slabel, smaker;
-
-    info.valid = false;
-
-    juce::AudioUnitPluginFormat auFormat;
-    juce::OwnedArray<juce::PluginDescription> results;
-    auFormat.findAllTypesForFile(results, pluginId);
-    CARLA_SAFE_ASSERT_RETURN(results.size() > 0, &info);
-    CARLA_SAFE_ASSERT(results.size() == 1);
-
-    juce::PluginDescription* const desc(results[0]);
-    CARLA_SAFE_ASSERT_RETURN(desc != nullptr, &info);
-
-    info.category = CB::getPluginCategoryFromName(desc->category.toRawUTF8());
-    info.hints    = 0x0;
-    info.valid    = true;
-
-    if (desc->isInstrument)
-        info.hints |= CB::PLUGIN_IS_SYNTH;
-    if (true)
-        info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
-
-    info.audioIns  = static_cast<uint32_t>(desc->numInputChannels);
-    info.audioOuts = static_cast<uint32_t>(desc->numOutputChannels);
-    info.cvIns     = 0;
-    info.cvOuts    = 0;
-    info.midiIns   = desc->isInstrument ? 1 : 0;
-    info.midiOuts  = 0;
-    info.parameterIns  = 0;
-    info.parameterOuts = 0;
-
-    sname  = desc->name.toRawUTF8();
-    slabel = desc->fileOrIdentifier.toRawUTF8();
-    smaker = desc->manufacturerName.toRawUTF8();
-
-    info.name      = sname;
-    info.label     = slabel;
-    info.maker     = smaker;
-    info.copyright = gCachedPluginsNullCharPtr;
-
-    return &info;
-}
-#endif
-
-// -------------------------------------------------------------------------------------------------------------------
-
 #ifdef HAVE_SFZ
 static const CarlaCachedPluginInfo* get_cached_plugin_sfz(const water::File& file)
 {
@@ -707,17 +627,17 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CB::CarlaJsfxUn
 
     ysfx_config_u config(ysfx_config_new());
 
-    const water::String rootPath = unit.getRootPath();
-    const water::String filePath = unit.getFilePath();
+    const CarlaString rootPath = unit.getRootPath();
+    const CarlaString filePath = unit.getFilePath();
 
     ysfx_register_builtin_audio_formats(config.get());
-    ysfx_set_import_root(config.get(), rootPath.toRawUTF8());
-    ysfx_guess_file_roots(config.get(), filePath.toRawUTF8());
+    ysfx_set_import_root(config.get(), rootPath);
+    ysfx_guess_file_roots(config.get(), filePath);
     ysfx_set_log_reporter(config.get(), &CB::CarlaJsfxLogging::logErrorsOnly);
 
     ysfx_u effect(ysfx_new(config.get()));
 
-    if (! ysfx_load_file(effect.get(), filePath.toRawUTF8(), 0))
+    if (! ysfx_load_file(effect.get(), filePath, 0))
     {
         info.valid = false;
         return &info;
@@ -734,11 +654,11 @@ static const CarlaCachedPluginInfo* get_cached_plugin_jsfx(const CB::CarlaJsfxUn
     }
 
     static CarlaString name, label, maker;
-    label = unit.getFileId().toRawUTF8();
+    label = unit.getFileId();
     name = ysfx_get_name(effect.get());
     maker = ysfx_get_author(effect.get());
 
-    info.valid         = true;
+    info.valid = true;
 
     info.category = CB::CarlaJsfxCategories::getFromEffect(effect.get());
 
@@ -796,12 +716,6 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
         return lv2World.getPluginCount();
     }
 
-   #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-    case CB::PLUGIN_AU:
-        findAUs();
-        return static_cast<uint>(gCachedAuPluginResults.size());
-   #endif
-
    #ifdef HAVE_SFZ
     case CB::PLUGIN_SFZ:
         findSFZs(pluginPath);
@@ -846,12 +760,6 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
         return get_cached_plugin_lv2(lv2World, lilvPlugin);
     }
-
-   #if defined(USING_JUCE) && defined(CARLA_OS_MAC)
-    case CB::PLUGIN_AU:
-        CARLA_SAFE_ASSERT_BREAK(index < static_cast<uint>(gCachedAuPluginResults.size()));
-        return get_cached_plugin_au(gCachedAuPluginResults.strings.getUnchecked(static_cast<int>(index)));
-   #endif
 
    #ifdef HAVE_SFZ
     case CB::PLUGIN_SFZ:

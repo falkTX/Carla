@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Bridge
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -60,7 +60,7 @@ static String findWinePrefix(const String filename, const int recursionLimit = 1
 
     const String path(filename.upToLastOccurrenceOf("/", false, false));
 
-    if (File(path + "/dosdevices").isDirectory())
+    if (File(String(path + "/dosdevices").toRawUTF8()).isDirectory())
         return path;
 
     return findWinePrefix(path, recursionLimit-1);
@@ -204,7 +204,7 @@ protected:
 
                 if (fBridgeBinary.endsWithIgnoreCase("64.exe")
                     && options.wine.executable[0] == CARLA_OS_SEP
-                    && File(wineCMD + "64").existsAsFile())
+                    && File(String(wineCMD + "64").toRawUTF8()).existsAsFile())
                     wineCMD += "64";
             }
             else
@@ -996,7 +996,7 @@ public:
                     filePath += CARLA_OS_SEP_STR ".CarlaCustomData_";
                     filePath += fShmAudioPool.getFilenameSuffix();
 
-                    if (File(filePath).replaceWithText(value))
+                    if (File(filePath.toRawUTF8()).replaceWithText(value))
                     {
                         const uint32_t ulength = static_cast<uint32_t>(filePath.length());
 
@@ -1034,7 +1034,7 @@ public:
         filePath += CARLA_OS_SEP_STR ".CarlaChunk_";
         filePath += fShmAudioPool.getFilenameSuffix();
 
-        if (File(filePath).replaceWithText(dataBase64.buffer()))
+        if (File(filePath.toRawUTF8()).replaceWithText(dataBase64.buffer()))
         {
             const uint32_t ulength = static_cast<uint32_t>(filePath.length());
 
@@ -2550,7 +2550,7 @@ public:
                     }
                    #endif
 
-                    const File bigValueFile(realBigValueFilePath);
+                    const File bigValueFile(realBigValueFilePath.toRawUTF8());
                     CARLA_SAFE_ASSERT_BREAK(bigValueFile.existsAsFile());
 
                     CarlaPlugin::setCustomData(type.text, key.text, bigValueFile.loadFileAsString().toRawUTF8(), false);
@@ -2591,7 +2591,7 @@ public:
                 }
                #endif
 
-                const File chunkFile(realChunkFilePath);
+                const File chunkFile(realChunkFilePath.toRawUTF8());
                 CARLA_SAFE_ASSERT_BREAK(chunkFile.existsAsFile());
 
                 fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
@@ -3245,7 +3245,7 @@ private:
             filePath += CARLA_OS_SEP_STR ".CarlaChunk_";
             filePath += fShmAudioPool.getFilenameSuffix();
 
-            if (File(filePath).replaceWithText(dataBase64.buffer()))
+            if (File(filePath.toRawUTF8()).replaceWithText(dataBase64.buffer()))
             {
                 const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
 

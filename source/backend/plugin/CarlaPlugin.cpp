@@ -1,19 +1,5 @@
-﻿/*
- * Carla Plugin
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+﻿// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
@@ -987,8 +973,7 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     out << streamState;
     out << "</CARLA-PRESET>\n";
 
-    const String jfilename = String(CharPointer_UTF8(filename));
-    File file(jfilename);
+    File file(filename);
 
     if (file.replaceWithData(out.getData(), out.getDataSize()))
         return true;
@@ -1004,8 +989,7 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
 
-    const String jfilename = String(CharPointer_UTF8(filename));
-    File file(jfilename);
+    File file(filename);
     CARLA_SAFE_ASSERT_RETURN(file.existsAsFile(), false);
 
     XmlDocument xml(file);
@@ -2368,7 +2352,7 @@ void CarlaPlugin::clearBuffers() noexcept
 // OSC stuff
 
 // FIXME
-void CarlaPlugin::handleOscMessage(const char* const, const int, const void* const, const char* const, const lo_message)
+void CarlaPlugin::handleOscMessage(const char*, int, const void*, const char*, void*)
 {
     // do nothing
 }

@@ -1,6 +1,6 @@
 /*
  * Carla Backend utils
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,6 +19,7 @@
 #define CARLA_BACKEND_UTILS_HPP_INCLUDED
 
 #include "CarlaBackend.h"
+#include "CarlaNative.h"
 #include "CarlaString.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -499,6 +500,80 @@ const char* PatchbayIcon2Str(const PatchbayIcon icon) noexcept
     }
 
     carla_stderr("CarlaBackend::PatchbayIcon2Str(%i) - invalid icon", icon);
+    return "";
+}
+
+// -----------------------------------------------------------------------
+
+static inline
+const char* NativePluginDispatcherOpcode2Str(const NativePluginDispatcherOpcode opcode) noexcept
+{
+    switch (opcode)
+    {
+    case NATIVE_PLUGIN_OPCODE_NULL:
+        return "NATIVE_PLUGIN_OPCODE_NULL";
+    case NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
+        return "NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED";
+    case NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+        return "NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED";
+    case NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED:
+        return "NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED";
+    case NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED:
+        return "NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED";
+    case NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE:
+        return "NATIVE_PLUGIN_OPCODE_GET_INTERNAL_HANDLE";
+    case NATIVE_PLUGIN_OPCODE_IDLE:
+        return "NATIVE_PLUGIN_OPCODE_IDLE";
+    case NATIVE_PLUGIN_OPCODE_UI_MIDI_EVENT:
+        return "NATIVE_PLUGIN_OPCODE_UI_MIDI_EVENT";
+    case NATIVE_PLUGIN_OPCODE_HOST_USES_EMBED:
+        return "NATIVE_PLUGIN_OPCODE_HOST_USES_EMBED";
+    case NATIVE_PLUGIN_OPCODE_HOST_OPTION:
+        return "NATIVE_PLUGIN_OPCODE_HOST_OPTION";
+    }
+
+    carla_stderr("CarlaBackend::NativePluginDispatcherOpcode2Str(%i) - invalid icon", opcode);
+    return "";
+}
+
+static inline
+const char* NativeHostDispatcherOpcode2Str(const NativeHostDispatcherOpcode opcode) noexcept
+{
+    switch (opcode)
+    {
+    case NATIVE_HOST_OPCODE_NULL:
+        return "NATIVE_HOST_OPCODE_NULL";
+    case NATIVE_HOST_OPCODE_UPDATE_PARAMETER:
+        return "NATIVE_HOST_OPCODE_UPDATE_PARAMETER";
+    case NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM:
+        return "NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM";
+    case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
+        return "NATIVE_HOST_OPCODE_RELOAD_PARAMETERS";
+    case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
+        return "NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS";
+    case NATIVE_HOST_OPCODE_RELOAD_ALL:
+        return "NATIVE_HOST_OPCODE_RELOAD_ALL";
+    case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
+        return "NATIVE_HOST_OPCODE_UI_UNAVAILABLE";
+    case NATIVE_HOST_OPCODE_HOST_IDLE:
+        return "NATIVE_HOST_OPCODE_HOST_IDLE";
+    case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
+        return "NATIVE_HOST_OPCODE_INTERNAL_PLUGIN";
+    case NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY:
+        return "NATIVE_HOST_OPCODE_QUEUE_INLINE_DISPLAY";
+    case NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER:
+        return "NATIVE_HOST_OPCODE_UI_TOUCH_PARAMETER";
+    case NATIVE_HOST_OPCODE_REQUEST_IDLE:
+        return "NATIVE_HOST_OPCODE_REQUEST_IDLE";
+    case NATIVE_HOST_OPCODE_GET_FILE_PATH:
+        return "NATIVE_HOST_OPCODE_GET_FILE_PATH";
+    case NATIVE_HOST_OPCODE_UI_RESIZE:
+        return "NATIVE_HOST_OPCODE_UI_RESIZE";
+    case NATIVE_HOST_OPCODE_PREVIEW_BUFFER_DATA:
+        return "NATIVE_HOST_OPCODE_PREVIEW_BUFFER_DATA";
+    }
+
+    carla_stderr("CarlaBackend::NativeHostDispatcherOpcode2Str(%i) - invalid icon", opcode);
     return "";
 }
 

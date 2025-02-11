@@ -1,19 +1,5 @@
-/*
- * Carla common utils
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_UTILS_HPP_INCLUDED
 #define CARLA_UTILS_HPP_INCLUDED
@@ -40,9 +26,11 @@
 #  define NOMINMAX
 # endif
 # define WIN32_LEAN_AND_MEAN 1
+# include <shlwapi.h>
 # include <winsock2.h>
 # include <windows.h>
 #else
+# include <strings.h>
 # include <unistd.h>
 #endif
 
@@ -361,7 +349,7 @@ const char* carla_strdup(const char* const strBuf)
 static inline
 const char* carla_strdup_free(char* const strBuf)
 {
-    const char* const buffer(carla_strdup(strBuf));
+    const char* const buffer = carla_strdup(strBuf);
     std::free(strBuf);
     return buffer;
 }
@@ -389,6 +377,39 @@ const char* carla_strdup_safe(const char* const strBuf) noexcept
 
     return buffer;
 }
+
+// --------------------------------------------------------------------------------------------------------------------
+// carla_strcase*
+
+#ifdef CARLA_OS_WIN
+# ifdef _MSC_VER
+#  pragma comment(lib, "shlwapi.lib")
+# endif
+
+static inline
+int carla_strcasecmp(const char* const str1, const char* const str2) noexcept
+{
+    return ::StrCmpIA(str1, str2);
+}
+
+static inline
+const char* carla_strcasestr(const char* const haystack, const char* const needle) noexcept
+{
+    return ::StrStrIA(haystack, needle);
+}
+#else
+static inline
+ssize_t carla_strcasecmp(const char* const str1, const char* const str2) noexcept
+{
+    return ::strcasecmp(str1, str2);
+}
+
+static inline
+const char* carla_strcasestr(const char* const haystack, const char* const needle) noexcept
+{
+    return ::strcasestr(haystack, needle);
+}
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 // memory functions

@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 /* TODO:
  * - complete processRack(): carefully add to input, sorted events
@@ -100,10 +86,6 @@ uint CarlaEngine::getDriverCount()
         ++count;
 #endif
 
-#ifdef USING_JUCE_AUDIO_DEVICES
-    count += getJuceApiCount();
-#endif
-
 #ifdef USING_RTAUDIO
     count += getRtAudioApiCount();
 #endif
@@ -128,15 +110,6 @@ const char* CarlaEngine::getDriverName(const uint index)
         if (index2 == 0)
             return "JACK";
         --index2;
-    }
-#endif
-
-#ifdef USING_JUCE_AUDIO_DEVICES
-    if (const uint count = getJuceApiCount())
-    {
-        if (index2 < count)
-            return getJuceApiName(index2);
-        index2 -= count;
     }
 #endif
 
@@ -178,15 +151,6 @@ const char* const* CarlaEngine::getDriverDeviceNames(const uint index)
     }
 #endif
 
-#ifdef USING_JUCE_AUDIO_DEVICES
-    if (const uint count = getJuceApiCount())
-    {
-        if (index2 < count)
-            return getJuceApiDeviceNames(index2);
-        index2 -= count;
-    }
-#endif
-
 #ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
@@ -225,15 +189,6 @@ const EngineDriverDeviceInfo* CarlaEngine::getDriverDeviceInfo(const uint index,
             return &devInfo;
         }
         --index2;
-    }
-#endif
-
-#ifdef USING_JUCE_AUDIO_DEVICES
-    if (const uint count = getJuceApiCount())
-    {
-        if (index2 < count)
-            return getJuceDeviceInfo(index2, deviceName);
-        index2 -= count;
     }
 #endif
 
@@ -280,15 +235,6 @@ bool CarlaEngine::showDriverDeviceControlPanel(const uint index, const char* con
     }
 #endif
 
-#ifdef USING_JUCE_AUDIO_DEVICES
-    if (const uint count = getJuceApiCount())
-    {
-        if (index2 < count)
-            return showJuceDeviceControlPanel(index2, deviceName);
-        index2 -= count;
-    }
-#endif
-
 #ifdef USING_RTAUDIO
     if (const uint count = getRtAudioApiCount())
     {
@@ -322,30 +268,6 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_OS_WASM) || defined(CARLA_PLUGIN_BUILD) || defined(STATIC_PLUGIN_TARGET))
     if (std::strcmp(driverName, "Dummy") == 0)
         return newDummy();
-#endif
-
-#ifdef USING_JUCE_AUDIO_DEVICES
-    // -------------------------------------------------------------------
-    // linux
-
-    if (std::strcmp(driverName, "ALSA") == 0)
-        return newJuce(AUDIO_API_ALSA);
-
-    // -------------------------------------------------------------------
-    // macos
-
-    if (std::strcmp(driverName, "CoreAudio") == 0)
-        return newJuce(AUDIO_API_COREAUDIO);
-
-    // -------------------------------------------------------------------
-    // windows
-
-    if (std::strcmp(driverName, "ASIO") == 0)
-        return newJuce(AUDIO_API_ASIO);
-    if (std::strcmp(driverName, "DirectSound") == 0)
-        return newJuce(AUDIO_API_DIRECTSOUND);
-    if (std::strcmp(driverName, "WASAPI") == 0 || std::strcmp(driverName, "Windows Audio") == 0)
-        return newJuce(AUDIO_API_WASAPI);
 #endif
 
 #ifdef USING_RTAUDIO
@@ -782,12 +704,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
             plugin = CarlaPlugin::newVST3(initializer);
             break;
 
-        case PLUGIN_AU:
-            plugin = CarlaPlugin::newAU(initializer);
-            break;
-
         case PLUGIN_CLAP:
             plugin = CarlaPlugin::newCLAP(initializer);
+            break;
+
+        case PLUGIN_AU:
+            plugin = CarlaPlugin::newAU(initializer);
             break;
 
        #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -1298,8 +1220,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::loadFile(\"%s\")", filename);
 
-    const String jfilename = String(CharPointer_UTF8(filename));
-    File file(jfilename);
+    File file(filename);
     CARLA_SAFE_ASSERT_RETURN_ERR(file.exists(), "Requested file does not exist or is not a readable");
 
     CarlaString baseName(file.getFileNameWithoutExtension().toRawUTF8());
@@ -1442,6 +1363,9 @@ bool CarlaEngine::loadFile(const char* const filename)
     // Direct plugin binaries
 
 #ifdef CARLA_OS_MAC
+    if (extension == "component")
+        return addPlugin(PLUGIN_AU, filename, nullptr, nullptr, 0, nullptr);
+
     if (extension == "vst")
         return addPlugin(PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr);
 #else
@@ -1467,8 +1391,7 @@ bool CarlaEngine::loadProject(const char* const filename, const bool setAsCurren
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
-    const String jfilename = String(CharPointer_UTF8(filename));
-    const File file(jfilename);
+    const File file(filename);
     CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
     if (setAsCurrentProject)
@@ -1529,8 +1452,7 @@ bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurren
     MemoryOutputStream out;
     saveProjectInternal(out);
 
-    const String jfilename = String(CharPointer_UTF8(filename));
-    File file(jfilename);
+    File file(filename);
 
     if (file.replaceWithData(out.getData(), out.getDataSize()))
         return true;
@@ -2679,7 +2601,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
         jbinary = jbinary.substring(2).replaceCharacter('\\', '/');
 #endif
 
-    String filename = File(jbinary).getFileName();
+    String filename = File(jbinary.toRawUTF8()).getFileName();
 
     int searchFlags = File::findFiles|File::ignoreHiddenFiles;
 
@@ -2693,10 +2615,10 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
     std::vector<File> results;
     for (const String *it=searchPaths.begin(), *end=searchPaths.end(); it != end; ++it)
     {
-        const File path(*it);
+        const File path(it->toRawUTF8());
 
         results.clear();
-        path.findChildFiles(results, searchFlags, true, filename);
+        path.findChildFiles(results, searchFlags, true, filename.toRawUTF8());
 
         if (!results.empty())
             return results.front().getFullPathName();
@@ -2705,23 +2627,23 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
     // try changing extension
 #if defined(CARLA_OS_MAC)
     if (filename.endsWithIgnoreCase(".dll") || filename.endsWithIgnoreCase(".so"))
-        filename = File(jbinary).getFileNameWithoutExtension() + ".dylib";
+        filename = File(jbinary.toRawUTF8()).getFileNameWithoutExtension() + ".dylib";
 #elif defined(CARLA_OS_WIN)
     if (filename.endsWithIgnoreCase(".dylib") || filename.endsWithIgnoreCase(".so"))
-        filename = File(jbinary).getFileNameWithoutExtension() + ".dll";
+        filename = File(jbinary.toRawUTF8()).getFileNameWithoutExtension() + ".dll";
 #else
     if (filename.endsWithIgnoreCase(".dll") || filename.endsWithIgnoreCase(".dylib"))
-        filename = File(jbinary).getFileNameWithoutExtension() + ".so";
+        filename = File(jbinary.toRawUTF8()).getFileNameWithoutExtension() + ".so";
 #endif
     else
         return String();
 
     for (const String *it=searchPaths.begin(), *end=searchPaths.end(); it != end; ++it)
     {
-        const File path(*it);
+        const File path(it->toRawUTF8());
 
         results.clear();
-        path.findChildFiles(results, searchFlags, true, filename);
+        path.findChildFiles(results, searchFlags, true, filename.toRawUTF8());
 
         if (!results.empty())
             return results.front().getFullPathName();
@@ -3174,6 +3096,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             case PLUGIN_VST2:
             case PLUGIN_VST3:
             case PLUGIN_CLAP:
+            case PLUGIN_AU:
                 btype = getBinaryTypeFromFile(stateSave.binary);
                 break;
             default:

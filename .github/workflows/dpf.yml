@@ -13,9 +13,9 @@ jobs:
         target: [linux-x86_64]
         # TODO: add PawPaw bootstrap type
         # linux-arm64, linux-armhf, linux-i686, linux-riscv64,
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: distrho/dpf-makefile-action@v1
@@ -28,9 +28,9 @@ jobs:
     strategy:
       matrix:
         target: [macos-intel, macos-universal, macos-universal-10.15]
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: fake dpf script
@@ -50,7 +50,7 @@ jobs:
         target: [win32, win64]
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: distrho/dpf-makefile-action@v1
@@ -66,7 +66,7 @@ jobs:
   #pluginval:
     #runs-on: ubuntu-20.04
     #steps:
-      #- uses: actions/checkout@v3
+      #- uses: actions/checkout@v4
         #with:
           #submodules: recursive
       #- uses: distrho/dpf-makefile-action@v1
@@ -75,9 +75,9 @@ jobs:
           #pawpaw: true
 
   source:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: distrho/dpf-makefile-action@v1

@@ -1068,7 +1068,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         carla_debug("CarlaPluginNative::reload() - start");
 
-        const EngineProcessMode processMode(pData->engine->getProccessMode());
+        const EngineProcessMode processMode = pData->engine->getProccessMode();
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);

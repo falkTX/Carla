@@ -1008,7 +1008,7 @@
                <string>Maximum number of parameters to allow in the built-in 'Edit' dialog</string>
               </property>
               <property name="maximum">
-               <number>1000</number>
+               <number>2000</number>
               </property>
              </widget>
             </item>

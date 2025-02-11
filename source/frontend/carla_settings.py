@@ -1,26 +1,18 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Carla settings code
-# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Imports (PyQt5)
+# Imports (PyQt)
 
-from PyQt5.QtCore import pyqtSlot, QT_VERSION, Qt
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import pyqtSlot, QT_VERSION, Qt
+    from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
+elif qt_config == 6:
+    from PyQt6.QtCore import pyqtSlot, QT_VERSION, Qt
+    from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -601,6 +593,10 @@ class CarlaSettingsW(QDialog):
         # FIXME broken in some Qt5 versions
         self.ui.cb_canvas_eyecandy.setEnabled(QT_VERSION >= 0x50c00)
 
+        # removed in Qt6
+        if QT_VERSION >= 0x60000:
+            self.ui.cb_canvas_render_hq_aa.hide()
+
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         if MACOS:
@@ -749,7 +745,7 @@ class CarlaSettingsW(QDialog):
                                                                CARLA_DEFAULT_CANVAS_USE_OPENGL, bool))
 
         self.ui.cb_canvas_render_aa.setCheckState(
-            settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, int))
+            Qt.CheckState(settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, int)))
 
         self.ui.cb_canvas_render_hq_aa.setChecked(self.ui.cb_canvas_render_hq_aa.isEnabled() and
                                                   settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,

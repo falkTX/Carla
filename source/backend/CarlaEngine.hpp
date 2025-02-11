@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_ENGINE_HPP_INCLUDED
 #define CARLA_ENGINE_HPP_INCLUDED
@@ -53,34 +39,29 @@ enum EngineType {
     kEngineTypeJack = 1,
 
     /*!
-     * JUCE engine type, used to provide Native Audio and MIDI support.
-     */
-    kEngineTypeJuce = 2,
-
-    /*!
      * RtAudio engine type, used to provide Native Audio and MIDI support.
      */
-    kEngineTypeRtAudio = 3,
+    kEngineTypeRtAudio = 2,
 
     /*!
      * SDL engine type, used to provide Native Audio support.
      */
-    kEngineTypeSDL = 4,
+    kEngineTypeSDL = 3,
 
     /*!
      * Plugin engine type, used to export the engine as a plugin.
      */
-    kEngineTypePlugin = 5,
+    kEngineTypePlugin = 4,
 
     /*!
      * Bridge engine type, used in BridgePlugin class.
      */
-    kEngineTypeBridge = 6,
+    kEngineTypeBridge = 5,
 
     /*!
      * Dummy engine type, does not send audio or MIDI anywhere.
      */
-    kEngineTypeDummy = 7
+    kEngineTypeDummy = 6
 };
 
 /*!

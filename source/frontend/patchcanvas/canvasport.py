@@ -1,29 +1,22 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# PatchBay Canvas engine using QGraphicsView/Scene
-# Copyright (C) 2010-2019 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from math import floor
 
-from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer
-from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF
-from PyQt5.QtWidgets import QGraphicsItem, QMenu
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer
+    from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF
+    from PyQt5.QtWidgets import QGraphicsItem, QMenu
+elif qt_config == 6:
+    from PyQt6.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer
+    from PyQt6.QtGui import QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF
+    from PyQt6.QtWidgets import QGraphicsItem, QMenu
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -120,7 +113,16 @@ class CanvasPort(QGraphicsItem):
         self.update()
 
     def setPortName(self, port_name):
-        if QFontMetrics(self.m_port_font).width(port_name) < QFontMetrics(self.m_port_font).width(self.m_port_name):
+        metrics = QFontMetrics(self.m_port_font)
+
+        if QT_VERSION >= 0x50b00:
+            width1 = metrics.horizontalAdvance(port_name)
+            width2 = metrics.horizontalAdvance(self.m_port_name)
+        else:
+            width1 = metrics.width(port_name)
+            width2 = metrics.width(self.m_port_name)
+
+        if width1 < width2:
             QTimer.singleShot(0, canvas.scene.update)
 
         self.m_port_name = port_name
@@ -376,6 +378,7 @@ class CanvasPort(QGraphicsItem):
             conn_pen = QPen(theme.port_parameter_pen_sel)
         else:
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'" % port_type2str(self.m_port_type))
+            painter.restore()
             return
 
         # To prevent quality worsening
@@ -412,6 +415,7 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[4] = lineHinting
             else:
                 qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
+                painter.restore()
                 return
 
         elif self.m_port_mode == PORT_MODE_OUTPUT:
@@ -431,10 +435,12 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[4] = self.m_port_width + 12 - lineHinting
             else:
                 qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
+                painter.restore()
                 return
 
         else:
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port mode '%s'" % port_mode2str(self.m_port_mode))
+            painter.restore()
             return
 
         polygon = QPolygonF()

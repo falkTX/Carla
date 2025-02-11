@@ -1,19 +1,5 @@
-/*
- * Carla Standalone
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 // TODO:
 // Check carla_stderr2("Engine is not running"); <= prepend func name and args
@@ -29,10 +15,6 @@
 #include "ThreadSafeFFTW.hpp"
 
 #include "water/files/File.h"
-
-#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
-# include "carla_juce/carla_juce.h"
-#endif
 
 #define CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(cond, msg, ret) \
     if (! (cond)) {                                              \
@@ -404,10 +386,6 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
 #endif
 
-#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
-    CarlaJUCE::initialiseJuce_GUI();
-#endif
-
     CarlaHostStandalone& shandle((CarlaHostStandalone&)*handle);
 
     CarlaEngine* const engine = CarlaEngine::newDriverByName(driverName);
@@ -454,9 +432,6 @@ bool carla_engine_init(CarlaHostHandle handle, const char* driverName, const cha
         shandle.lastError = engine->getLastError();
         shandle.engine = nullptr;
         delete engine;
-#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
-        CarlaJUCE::shutdownJuce_GUI();
-#endif
         return false;
     }
 }
@@ -534,9 +509,6 @@ bool carla_engine_close(CarlaHostHandle handle)
     shandle.engine = nullptr;
     delete engine;
 
-#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
-    CarlaJUCE::shutdownJuce_GUI();
-#endif
     return closed;
 }
 
@@ -545,11 +517,6 @@ void carla_engine_idle(CarlaHostHandle handle)
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr && handle->isStandalone,);
 
     handle->engine->idle();
-
-#if defined(USING_JUCE) && !defined(BUILD_BRIDGE)
-    if (handle->isStandalone)
-        CarlaJUCE::idleJuce_GUI();
-#endif
 }
 
 bool carla_is_engine_running(CarlaHostHandle handle)

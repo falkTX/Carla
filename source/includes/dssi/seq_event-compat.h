@@ -195,6 +195,16 @@ typedef struct snd_seq_ev_raw32 {
         unsigned int d[3];		/**< 32 bit value */
 } snd_seq_ev_raw32_t;
 
+/** external stored data */
+typedef struct snd_seq_ev_ext {
+        unsigned int len;		/**< length of data */
+        void *ptr;			/**< pointer to data (note: can be 64-bit) */
+}
+#ifndef _MSC_VER
+__attribute__((packed))
+#endif
+snd_seq_ev_ext_t;
+
 /** Result events */
 typedef struct snd_seq_result {
         int event;		/**< processed event type */
@@ -238,6 +248,7 @@ typedef struct snd_seq_event {
                 snd_seq_ev_ctrl_t control;      /**< MIDI control information */
                 snd_seq_ev_raw8_t raw8;         /**< raw8 data */
                 snd_seq_ev_raw32_t raw32;       /**< raw32 data */
+                snd_seq_ev_ext_t ext;           /**< external data */
                 snd_seq_ev_queue_control_t queue; /**< queue control */
                 snd_seq_timestamp_t time;       /**< timestamp */
                 snd_seq_addr_t addr;            /**< address */

@@ -1,0 +1,6 @@
+# binary files
+*.dll
+*.so
+
+# this script
+build.sh

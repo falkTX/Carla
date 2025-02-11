@@ -1,8 +1,5 @@
-/*
- * Carla plugin host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "pluginlistdialog.hpp"
 #include "pluginrefreshdialog.hpp"
@@ -65,6 +62,9 @@ struct PluginPaths {
     QCarlaString vst2;
     QCarlaString vst3;
     QCarlaString clap;
+   #ifdef CARLA_OS_MAC
+    QCarlaString au;
+   #endif
    #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     QCarlaString jsfx;
     QCarlaString sf2;
@@ -260,6 +260,12 @@ struct PluginPaths {
             clap += ":/usr/lib/clap";
            #endif
         }
+
+       #ifdef CARLA_OS_MAC
+        au = HOME + "/Library/Audio/Plug-Ins/Components";
+        au += ":/Library/Audio/Plug-Ins/Components";
+        au += ":/System/Library/Components";
+       #endif
 
        #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
         if (const char *const envJSFX = std::getenv("JSFX_PATH"))
@@ -687,7 +693,7 @@ struct PluginListDialog::PrivateData {
                 handle = nullptr;
             }
 
-            if (!usePluginBridges)
+            if (! usePluginBridges)
                 return false;
 
           #ifdef CARLA_OS_WIN
@@ -696,7 +702,7 @@ struct PluginListDialog::PrivateData {
             if (btype == BINARY_NATIVE)
             {
                 btype = BINARY_WIN32;
-                ptype = PLUGIN_INTERNAL;
+                ptype = PLUGIN_NONE;
                 tool = carla_get_library_folder();
                 tool += CARLA_OS_SEP_STR "carla-discovery-win32.exe";
 
@@ -714,7 +720,7 @@ struct PluginListDialog::PrivateData {
             if (btype == BINARY_NATIVE)
             {
                 btype = BINARY_POSIX32;
-                ptype = PLUGIN_INTERNAL;
+                ptype = PLUGIN_NONE;
                 tool = carla_get_library_folder();
                 tool += CARLA_OS_SEP_STR "carla-discovery-posix32";
 
@@ -723,7 +729,7 @@ struct PluginListDialog::PrivateData {
             }
            #endif
 
-            if (!useWineBridges)
+            if (! useWineBridges)
                 return false;
 
             // try wine bridges
@@ -731,7 +737,7 @@ struct PluginListDialog::PrivateData {
             if (btype == BINARY_NATIVE || btype == BINARY_POSIX32)
             {
                 btype = BINARY_WIN64;
-                ptype = PLUGIN_INTERNAL;
+                ptype = PLUGIN_NONE;
                 tool = carla_get_library_folder();
                 tool += CARLA_OS_SEP_STR "carla-discovery-win64.exe";
 
@@ -743,7 +749,7 @@ struct PluginListDialog::PrivateData {
             if (btype != BINARY_WIN32)
             {
                 btype = BINARY_WIN32;
-                ptype = PLUGIN_INTERNAL;
+                ptype = PLUGIN_NONE;
                 tool = carla_get_library_folder();
                 tool += CARLA_OS_SEP_STR "carla-discovery-win32.exe";
 
@@ -780,13 +786,13 @@ struct PluginListDialog::PrivateData {
         std::vector<PluginInfo> vst2;
         std::vector<PluginInfo> vst3;
         std::vector<PluginInfo> clap;
-      #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
        #ifdef CARLA_OS_MAC
         std::vector<PluginInfo> au;
        #endif
+       #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
         std::vector<PluginInfo> jsfx;
         std::vector<PluginInfo> kits;
-      #endif
+       #endif
         QMap<QString, QList<PluginInfo>> cache;
         QList<PluginFavorite> favorites;
 
@@ -803,14 +809,14 @@ struct PluginListDialog::PrivateData {
             case PLUGIN_VST2:     vst2.push_back(pinfo);     return true;
             case PLUGIN_VST3:     vst3.push_back(pinfo);     return true;
             case PLUGIN_CLAP:     clap.push_back(pinfo);     return true;
-          #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
            #ifdef CARLA_OS_MAC
             case PLUGIN_AU:       au.push_back(pinfo);       return true;
            #endif
+           #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
             case PLUGIN_JSFX:     jsfx.push_back(pinfo);     return true;
             case PLUGIN_SF2:
             case PLUGIN_SFZ:      kits.push_back(pinfo);     return true;
-          #endif
+           #endif
             default: return false;
             }
         }
@@ -1111,6 +1117,11 @@ void PluginListDialog::setPluginPath(const PluginType ptype, const char* const p
     case PLUGIN_CLAP:
         p->paths.clap = path;
         break;
+   #ifdef CARLA_OS_MAC
+    case PLUGIN_AU:
+        p->paths.au = path;
+        break;
+   #endif
    #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     case PLUGIN_LADSPA:
         p->paths.ladspa = path;
@@ -1167,7 +1178,9 @@ void PluginListDialog::showEvent(QShowEvent* const event)
         p->discovery.dialog->ch_updated->setChecked(true);
         p->discovery.dialog->ch_invalid->setChecked(false);
         p->discovery.dialog->group->setEnabled(false);
+        p->discovery.dialog->group_formats->hide();
         p->discovery.dialog->progressBar->setFormat("Starting initial discovery...");
+        p->discovery.dialog->adjustSize();
 
         QObject::connect(p->discovery.dialog->b_skip, &QPushButton::clicked,
                          this, &PluginListDialog::refreshPluginsSkip);
@@ -1210,88 +1223,128 @@ void PluginListDialog::timerEvent(QTimerEvent* const event)
                 }
                 [[fallthrough]];
             case PLUGIN_INTERNAL:
-                ui.label->setText(tr("Discovering LADSPA plugins..."));
-                path = p->paths.ladspa;
-                p->discovery.ptype = PLUGIN_LADSPA;
-                break;
+                if (p->discovery.dialog->ch_ladspa->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering LADSPA plugins..."));
+                    path = p->paths.ladspa;
+                    p->discovery.ptype = PLUGIN_LADSPA;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_LADSPA:
-                ui.label->setText(tr("Discovering DSSI plugins..."));
-                path = p->paths.dssi;
-                p->discovery.ptype = PLUGIN_DSSI;
-                break;
+                if (p->discovery.dialog->ch_dssi->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering DSSI plugins..."));
+                    path = p->paths.dssi;
+                    p->discovery.ptype = PLUGIN_DSSI;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_DSSI:
            #endif
-                ui.label->setText(tr("Discovering LV2 plugins..."));
-                path = p->paths.lv2;
-                p->discovery.ptype = PLUGIN_LV2;
-                break;
+                if (p->discovery.dialog->ch_lv2->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    if (p->discovery.btype == BINARY_NATIVE && p->paths.lv2.isNotEmpty())
+                    {
+                        ui.label->setText(tr("Discovering LV2 plugins..."));
+                        path = p->paths.lv2;
+                        p->discovery.ptype = PLUGIN_LV2;
+                        break;
+                    }
+                }
+                [[fallthrough]];
             case PLUGIN_LV2:
-                ui.label->setText(tr("Discovering VST2 plugins..."));
-                path = p->paths.vst2;
-                p->discovery.ptype = PLUGIN_VST2;
-                break;
+                if (p->discovery.dialog->ch_vst2->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering VST2 plugins..."));
+                    path = p->paths.vst2;
+                    p->discovery.ptype = PLUGIN_VST2;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_VST2:
-                ui.label->setText(tr("Discovering VST3 plugins..."));
-                path = p->paths.vst3;
-                p->discovery.ptype = PLUGIN_VST3;
-                break;
+                if (p->discovery.dialog->ch_vst3->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering VST3 plugins..."));
+                    path = p->paths.vst3;
+                    p->discovery.ptype = PLUGIN_VST3;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_VST3:
-                ui.label->setText(tr("Discovering CLAP plugins..."));
-                path = p->paths.clap;
-                p->discovery.ptype = PLUGIN_CLAP;
-                break;
+                if (p->discovery.dialog->ch_clap->isChecked() || !p->discovery.dialog->group_formats->isVisible())
+                {
+                    ui.label->setText(tr("Discovering CLAP plugins..."));
+                    path = p->paths.clap;
+                    p->discovery.ptype = PLUGIN_CLAP;
+                    break;
+                }
+                [[fallthrough]];
             case PLUGIN_CLAP:
-          #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
            #ifdef CARLA_OS_MAC
-                if (p->discovery.btype == BINARY_POSIX32 || p->discovery.btype == BINARY_POSIX64)
+                if (p->discovery.dialog->ch_au->isChecked() || !p->discovery.dialog->group_formats->isVisible())
                 {
                     ui.label->setText(tr("Discovering AU plugins..."));
+                    path = p->paths.au;
                     p->discovery.ptype = PLUGIN_AU;
                     break;
                 }
                 [[fallthrough]];
             case PLUGIN_AU:
            #endif
-                if (p->discovery.btype == BINARY_NATIVE && p->paths.jsfx.isNotEmpty())
+          #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
+                if (p->discovery.dialog->ch_jsfx->isChecked() || !p->discovery.dialog->group_formats->isVisible())
                 {
-                    ui.label->setText(tr("Discovering JSFX plugins..."));
-                    path = p->paths.jsfx;
-                    p->discovery.ptype = PLUGIN_JSFX;
-                    break;
+                    if (p->discovery.btype == BINARY_NATIVE && p->paths.jsfx.isNotEmpty())
+                    {
+                        ui.label->setText(tr("Discovering JSFX plugins..."));
+                        path = p->paths.jsfx;
+                        p->discovery.ptype = PLUGIN_JSFX;
+                        break;
+                    }
                 }
                 [[fallthrough]];
             case PLUGIN_JSFX:
-                if (p->discovery.btype == BINARY_NATIVE && p->paths.sf2.isNotEmpty())
+                if (p->discovery.dialog->ch_sf2->isChecked() || !p->discovery.dialog->group_formats->isVisible())
                 {
-                    ui.label->setText(tr("Discovering SF2 kits..."));
-                    path = p->paths.sf2;
-                    p->discovery.ptype = PLUGIN_SF2;
-                    break;
+                    if (p->discovery.btype == BINARY_NATIVE && p->paths.sf2.isNotEmpty())
+                    {
+                        ui.label->setText(tr("Discovering SF2 kits..."));
+                        path = p->paths.sf2;
+                        p->discovery.ptype = PLUGIN_SF2;
+                        break;
+                    }
                 }
                 [[fallthrough]];
             case PLUGIN_SF2:
-                if (p->discovery.btype == BINARY_NATIVE && p->paths.sfz.isNotEmpty())
+                if (p->discovery.dialog->ch_sfz->isChecked() || !p->discovery.dialog->group_formats->isVisible())
                 {
-                    ui.label->setText(tr("Discovering SFZ kits..."));
-                    path = p->paths.sfz;
-                    p->discovery.ptype = PLUGIN_SFZ;
-                    break;
+                    if (p->discovery.btype == BINARY_NATIVE && p->paths.sfz.isNotEmpty())
+                    {
+                        ui.label->setText(tr("Discovering SFZ kits..."));
+                        path = p->paths.sfz;
+                        p->discovery.ptype = PLUGIN_SFZ;
+                        break;
+                    }
                 }
                 [[fallthrough]];
             case PLUGIN_SFZ:
           #endif
             default:
-                // discovery complete
+                // discovery complete?
                #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
-                if (! p->discovery.nextTool())
+                if (p->discovery.nextTool())
+                    continue;
                #endif
-                    refreshPluginsStop();
+
+                refreshPluginsStop();
+                break;
             }
 
             if (p->timerId == 0)
                 break;
 
-            if (p->discovery.dialog)
+            if (p->discovery.dialog != nullptr)
                 p->discovery.dialog->progressBar->setFormat(ui.label->text());
 
             p->discovery.handle = carla_plugin_discovery_start(p->discovery.tool.toUtf8().constData(),
@@ -1405,18 +1458,18 @@ void PluginListDialog::addPluginsToTable()
     for (const PluginInfo& plugin : p->plugins.clap)
         addPluginToTable(plugin);
 
-  #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
    #ifdef CARLA_OS_MAC
     for (const PluginInfo& plugin : p->plugins.au)
         addPluginToTable(plugin);
    #endif
 
+   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     for (const PluginInfo& plugin : p->plugins.jsfx)
         addPluginToTable(plugin);
 
     for (const PluginInfo& plugin : p->plugins.kits)
         addPluginToTable(plugin);
-  #endif
+   #endif
 
     CARLA_SAFE_ASSERT_INT2(p->lastTableWidgetIndex == ui.tableWidget->rowCount(),
                            p->lastTableWidgetIndex, ui.tableWidget->rowCount());
@@ -1919,13 +1972,13 @@ void PluginListDialog::refreshPluginsStart()
     p->plugins.vst2.clear();
     p->plugins.vst3.clear();
     p->plugins.clap.clear();
-  #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
    #ifdef CARLA_OS_MAC
     p->plugins.au.clear();
    #endif
+   #ifndef CARLA_FRONTEND_ONLY_EMBEDDABLE_PLUGINS
     p->plugins.jsfx.clear();
     p->plugins.kits.clear();
-  #endif
+   #endif
     p->discovery.dialog->b_start->setEnabled(false);
     p->discovery.dialog->b_skip->setEnabled(true);
     p->discovery.ignoreCache = p->discovery.dialog->ch_all->isChecked();

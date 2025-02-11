@@ -790,7 +790,6 @@ target_sources(carla-bridge-native
     ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginFluidSynth.cpp
-    ../source/backend/plugin/CarlaPluginJuce.cpp
     ../source/backend/plugin/CarlaPluginJSFX.cpp
     ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
     ../source/backend/plugin/CarlaPluginLV2.cpp
@@ -1021,7 +1020,6 @@ target_sources(carla-host-plugin
     ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginFluidSynth.cpp
-    ../source/backend/plugin/CarlaPluginJuce.cpp
     ../source/backend/plugin/CarlaPluginJSFX.cpp
     ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
     ../source/backend/plugin/CarlaPluginLV2.cpp
@@ -1122,7 +1120,6 @@ if(APPLE)
       -Wl,-exported_symbol,_carla_host_handle_free
       -Wl,-exported_symbol,_carla_get_native_plugin_engine
       -Wl,-exported_symbol,_carla_get_complete_license_text
-      -Wl,-exported_symbol,_carla_get_juce_version
       -Wl,-exported_symbol,_carla_get_supported_file_extensions
       -Wl,-exported_symbol,_carla_get_supported_features
       -Wl,-exported_symbol,_carla_get_library_filename
@@ -1132,7 +1129,7 @@ elseif(EMSCRIPTEN)
   target_link_options(carla-native-plugin
     PRIVATE
       -sSIDE_MODULE=2
-      -sEXPORTED_FUNCTIONS="['carla_get_native_rack_plugin','carla_get_native_patchbay_plugin','carla_get_native_patchbay16_plugin','carla_get_native_patchbay32_plugin','carla_get_native_patchbay64_plugin','carla_get_native_patchbay_cv_plugin','carla_get_native_patchbay_cv8_plugin','carla_get_native_patchbay_cv32_plugin','carla_get_native_patchbay_obs_plugin','carla_create_native_plugin_host_handle','carla_host_handle_free','carla_get_native_plugin_engine','carla_get_complete_license_text','carla_get_juce_version','carla_get_supported_file_extensions','carla_get_supported_features','carla_get_library_filename','carla_get_library_folder']"
+      -sEXPORTED_FUNCTIONS="['carla_get_native_rack_plugin','carla_get_native_patchbay_plugin','carla_get_native_patchbay16_plugin','carla_get_native_patchbay32_plugin','carla_get_native_patchbay64_plugin','carla_get_native_patchbay_cv_plugin','carla_get_native_patchbay_cv8_plugin','carla_get_native_patchbay_cv32_plugin','carla_get_native_patchbay_obs_plugin','carla_create_native_plugin_host_handle','carla_host_handle_free','carla_get_native_plugin_engine','carla_get_complete_license_text','carla_get_supported_file_extensions','carla_get_supported_features','carla_get_library_filename','carla_get_library_folder']"
   )
 elseif(MSVC)
   target_link_options(carla-native-plugin
@@ -1189,7 +1186,6 @@ target_sources(carla-native-plugin
     ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginFluidSynth.cpp
-    ../source/backend/plugin/CarlaPluginJuce.cpp
     ../source/backend/plugin/CarlaPluginJSFX.cpp
     ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
     ../source/backend/plugin/CarlaPluginLV2.cpp
@@ -1321,7 +1317,6 @@ target_sources(carla-standalone
     ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginFluidSynth.cpp
-    ../source/backend/plugin/CarlaPluginJuce.cpp
     ../source/backend/plugin/CarlaPluginJSFX.cpp
     ../source/backend/plugin/CarlaPluginLADSPADSSI.cpp
     ../source/backend/plugin/CarlaPluginLV2.cpp
@@ -1440,7 +1435,6 @@ target_sources(carla-utils
     ../source/backend/utils/CachedPlugins.cpp
     ../source/backend/utils/CarlaUtils.cpp
     ../source/backend/utils/Information.cpp
-    ../source/backend/utils/JUCE.cpp
     ../source/backend/utils/PipeClient.cpp
     ../source/backend/utils/PluginDiscovery.cpp
     ../source/backend/utils/System.cpp
@@ -1516,6 +1510,7 @@ if(APPLE)
   set_source_files_properties(
     ../source/backend/CarlaStandalone.cpp
     ../source/backend/engine/CarlaEngineNative.cpp
+    ../source/backend/plugin/CarlaPluginAU.cpp
     ../source/backend/plugin/CarlaPluginCLAP.cpp
     ../source/backend/plugin/CarlaPluginVST2.cpp
     ../source/backend/plugin/CarlaPluginVST3.cpp

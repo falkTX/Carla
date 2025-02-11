@@ -1,19 +1,5 @@
-﻿/*
- * Carla Bridge Plugin
- * Copyright (C) 2012-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+﻿// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef BUILD_BRIDGE
 # error This file should not be compiled if not building bridge
@@ -84,6 +70,11 @@ static void saveSignalHandler(int) noexcept
     gSaveNow = true;
 }
 #elif defined(CARLA_OS_WIN)
+static LONG WINAPI winExceptionFilter(_EXCEPTION_POINTERS*)
+{
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
 static BOOL WINAPI winSignalHandler(DWORD dwCtrlType) noexcept
 {
     if (dwCtrlType == CTRL_C_EVENT)
@@ -113,13 +104,15 @@ static void initSignalHandler()
     sigaction(SIGUSR1, &sig, nullptr);
 #elif defined(CARLA_OS_WIN)
     SetConsoleCtrlHandler(winSignalHandler, TRUE);
+    SetErrorMode(SEM_NOGPFAULTERRORBOX);
+    SetUnhandledExceptionFilter(winExceptionFilter);
 #endif
 }
 
 // -------------------------------------------------------------------------
 
-static String gProjectFilename;
 static CarlaHostHandle gHostHandle;
+static CarlaString gProjectFilename;
 
 static void gIdle()
 {
@@ -131,7 +124,7 @@ static void gIdle()
 
         if (gProjectFilename.isNotEmpty())
         {
-            if (! carla_save_plugin_state(gHostHandle, 0, gProjectFilename.toRawUTF8()))
+            if (! carla_save_plugin_state(gHostHandle, 0, gProjectFilename))
                 carla_stderr("Plugin preset save failed, error was:\n%s", carla_get_last_error(gHostHandle));
         }
     }
@@ -202,15 +195,15 @@ public:
             const CarlaPluginInfo* const pInfo = carla_get_plugin_info(gHostHandle, 0);
             CARLA_SAFE_ASSERT_RETURN(pInfo != nullptr,);
 
-            gProjectFilename  = CharPointer_UTF8(pInfo->name);
+            gProjectFilename  = pInfo->name;
             gProjectFilename += ".carxs";
 
             if (! File::isAbsolutePath(gProjectFilename))
-                gProjectFilename = File::getCurrentWorkingDirectory().getChildFile(gProjectFilename).getFullPathName();
+                gProjectFilename = File::getCurrentWorkingDirectory().getChildFile(gProjectFilename).getFullPathName().toRawUTF8();
 
             if (File(gProjectFilename).existsAsFile())
             {
-                if (carla_load_plugin_state(gHostHandle, 0, gProjectFilename.toRawUTF8()))
+                if (carla_load_plugin_state(gHostHandle, 0, gProjectFilename))
                     carla_stdout("Plugin state loaded successfully");
                 else
                     carla_stderr("Plugin state load failed, error was:\n%s", carla_get_last_error(gHostHandle));
@@ -218,7 +211,7 @@ public:
             else
             {
                 carla_stdout("Previous plugin state in '%s' is non-existent, will start from default state",
-                             gProjectFilename.toRawUTF8());
+                             gProjectFilename.buffer());
             }
         }
 

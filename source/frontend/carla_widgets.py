@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Carla widgets code
-# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -22,11 +8,36 @@
 from abc import abstractmethod
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (PyQt5)
+# Imports (PyQt)
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray
-from PyQt5.QtGui import QCursor, QIcon, QPalette, QPixmap
-from PyQt5.QtWidgets import QDialog, QFileDialog, QInputDialog, QMenu, QMessageBox, QScrollArea, QVBoxLayout, QWidget
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray
+    from PyQt5.QtGui import QCursor, QIcon, QPalette, QPixmap
+    from PyQt5.QtWidgets import (
+        QDialog,
+        QFileDialog,
+        QInputDialog,
+        QMenu,
+        QMessageBox,
+        QScrollArea,
+        QVBoxLayout,
+        QWidget,
+    )
+elif qt_config == 6:
+    from PyQt6.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray
+    from PyQt6.QtGui import QCursor, QIcon, QPalette, QPixmap
+    from PyQt6.QtWidgets import (
+        QDialog,
+        QFileDialog,
+        QInputDialog,
+        QMenu,
+        QMessageBox,
+        QScrollArea,
+        QVBoxLayout,
+        QWidget,
+    )
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -202,18 +213,11 @@ class CarlaAboutW(QDialog):
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
                                       "</ul>"))
 
-        usingJuce = "juce" in gCarla.utils.get_supported_features()
-
-        if usingJuce and (MACOS or WINDOWS):
-            self.ui.l_vst2.setText(self.tr("Using JUCE host"))
-        else:
-            self.ui.l_vst2.setText(self.tr("About 85&#37; complete (missing vst bank/presets and some minor stuff)"))
-
-        if usingJuce:
-            self.ui.l_vst3.setText(self.tr("Using JUCE host"))
+        self.ui.l_vst2.setText(self.tr("About 85&#37; complete (missing vst bank/presets and some minor stuff)"))
+        self.ui.l_vst3.setText(self.tr("About 66&#37; complete"))
 
         if MACOS:
-            self.ui.l_au.setText(self.tr("Using JUCE host"))
+            self.ui.l_au.setText(self.tr("About 20&#37; complete"))
         else:
             self.ui.line_vst3.hide()
             self.ui.l_au.hide()

@@ -139,7 +139,7 @@ private:
                       int argc, const lo_arg* const* argv, const char* types, lo_message msg);
 
     int handleMsgRegister(bool isTCP, int argc, const lo_arg* const* argv, const char* types, lo_address source);
-    int handleMsgUnregister(bool isTCP, int argc, const lo_arg* const* argv, const char* types);
+    int handleMsgUnregister(bool isTCP, int argc, const lo_arg* const* argv, const char* types, lo_address source);
     int handleMsgControl(const char* method,
                          int argc, const lo_arg* const* argv, const char* types);
 

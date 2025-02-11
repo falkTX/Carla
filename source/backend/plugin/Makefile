@@ -7,13 +7,6 @@
 CWD=../..
 include ../Makefile.mk
 
-# Workaround GCC bug
-ifeq ($(TESTBUILD),true)
-ifeq ($(USING_JUCE),true)
-BUILD_CXX_FLAGS += -Wno-undef
-endif
-endif
-
 BUILD_CXX_FLAGS += $(MAGIC_FLAGS)
 
 ifneq ($(HAIKU),true)
@@ -35,7 +28,6 @@ OBJS = \
 	$(OBJDIR)/CarlaPluginVST3.cpp.o \
 	$(OBJDIR)/CarlaPluginAU.cpp.o \
 	$(OBJDIR)/CarlaPluginJSFX.cpp.o \
-	$(OBJDIR)/CarlaPluginJuce.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
 	$(OBJDIR)/CarlaPluginSFZero.cpp.o
 
@@ -83,34 +75,13 @@ $(OBJDIR)/CarlaPluginJSFX.cpp.o: CarlaPluginJSFX.cpp
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(YSFX_FLAGS) -c -o $@
 
 ifeq ($(MACOS),true)
-$(OBJDIR)/CarlaPluginVST2.cpp.o: CarlaPluginVST2.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+$(OBJDIR)/CarlaPluginAU.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 
-$(OBJDIR)/CarlaPluginVST3.cpp.o: CarlaPluginVST3.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+$(OBJDIR)/CarlaPluginCLAP.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 
-$(OBJDIR)/CarlaPluginCLAP.cpp.o: CarlaPluginCLAP.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
-endif
+$(OBJDIR)/CarlaPluginVST2.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 
-ifeq ($(USING_JUCE),true)
-ifeq ($(MACOS),true)
-$(OBJDIR)/CarlaPluginJuce.cpp.o: CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -std=gnu++14 -c -o $@
-else
-$(OBJDIR)/CarlaPluginJuce.cpp.o: CarlaPluginJuce.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -std=gnu++14 -c -o $@
-endif
+$(OBJDIR)/CarlaPluginVST3.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp

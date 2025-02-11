@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -365,8 +365,7 @@ private:
 
         using namespace water;
 
-        const String jfilename = String(CharPointer_UTF8(filename));
-        File file(jfilename);
+        File file(filename);
 
         if (! file.existsAsFile())
            return;

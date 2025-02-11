@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Carla Backend utils
-# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -28,7 +14,11 @@ from ctypes import (
     POINTER
 )
 
-from sip import unwrapinstance
+try:
+    from sip import unwrapinstance
+except ImportError:
+    def unwrapinstance(_):
+        return None
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -91,9 +81,6 @@ class CarlaFrontendLib():
     def __init__(self, filename):
         self.lib = cdll.LoadLibrary(filename)
 
-        self.lib.carla_frontend_createAndExecAboutJuceDialog.argtypes = (c_void_p,)
-        self.lib.carla_frontend_createAndExecAboutJuceDialog.restype = None
-
         self.lib.carla_frontend_createAndExecJackAppDialog.argtypes = (c_void_p, c_char_p)
         self.lib.carla_frontend_createAndExecJackAppDialog.restype = POINTER(JackApplicationDialogResults)
 
@@ -110,9 +97,6 @@ class CarlaFrontendLib():
         self.lib.carla_frontend_execPluginListDialog.restype = POINTER(PluginListDialogResults)
 
     # --------------------------------------------------------------------------------------------------------
-
-    def createAndExecAboutJuceDialog(self, parent):
-        self.lib.carla_frontend_createAndExecAboutJuceDialog(unwrapinstance(parent))
 
     def createAndExecJackAppDialog(self, parent, projectFilename):
         return structToDictOrNull(self.lib.carla_frontend_createAndExecJackAppDialog(unwrapinstance(parent),

@@ -1,8 +1,5 @@
-/*
- * Carla plugin host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -19,14 +16,13 @@
 #endif
 
 #include <QtWidgets/QDialog>
+#include "ui_pluginlistdialog.h"
 
 #ifdef __clang__
 # pragma clang diagnostic pop
 #elif defined(__GNUC__) && __GNUC__ >= 8
 # pragma GCC diagnostic pop
 #endif
-
-#include "ui_pluginlistdialog.h"
 
 class QSafeSettings;
 typedef struct _CarlaPluginDiscoveryInfo CarlaPluginDiscoveryInfo;

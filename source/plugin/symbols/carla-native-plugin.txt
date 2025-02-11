@@ -11,7 +11,6 @@ carla_create_native_plugin_host_handle
 carla_host_handle_free
 carla_get_native_plugin_engine
 carla_get_complete_license_text
-carla_get_juce_version
 carla_get_supported_file_extensions
 carla_get_supported_features
 carla_get_library_filename

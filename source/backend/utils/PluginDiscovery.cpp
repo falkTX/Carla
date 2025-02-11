@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaUtils.h"
 
@@ -41,7 +27,7 @@ static water::String findWinePrefix(const water::String filename, const int recu
 
     const water::String path(filename.upToLastOccurrenceOf("/", false, false));
 
-    if (water::File(path + "/dosdevices").isDirectory())
+    if (water::File(water::String(path + "/dosdevices").toRawUTF8()).isDirectory())
         return path;
 
     return findWinePrefix(path, recursionLimit-1);
@@ -111,6 +97,7 @@ public:
           fDiscoveryCallback(discoveryCb),
           fCheckCacheCallback(checkCacheCb),
           fCallbackPtr(callbackPtr),
+          fPluginPath(nullptr),
           fPluginsFoundInBinary(false),
           fBinaryIndex(0),
           fBinaryCount(static_cast<uint>(binaries.size())),
@@ -129,12 +116,14 @@ public:
                          const PluginType ptype,
                          const CarlaPluginDiscoveryCallback discoveryCb,
                          const CarlaPluginCheckCacheCallback checkCacheCb,
-                         void* const callbackPtr)
+                         void* const callbackPtr,
+                         const char* const pluginPath = nullptr)
         : fBinaryType(btype),
           fPluginType(ptype),
           fDiscoveryCallback(discoveryCb),
           fCheckCacheCallback(checkCacheCb),
           fCallbackPtr(callbackPtr),
+          fPluginPath(pluginPath != nullptr ? carla_strdup_safe(pluginPath) : nullptr),
           fPluginsFoundInBinary(false),
           fBinaryIndex(0),
           fBinaryCount(1),
@@ -153,6 +142,7 @@ public:
         std::free(fNextLabel);
         std::free(fNextMaker);
         std::free(fNextName);
+        delete[] fPluginPath;
     }
 
     bool idle()
@@ -385,6 +375,7 @@ private:
     const CarlaPluginDiscoveryCallback fDiscoveryCallback;
     const CarlaPluginCheckCacheCallback fCheckCacheCallback;
     void* const fCallbackPtr;
+    const char* fPluginPath;
 
     bool fPluginsFoundInBinary;
     uint fBinaryIndex;
@@ -428,7 +419,7 @@ private:
             {
                 helperTool = options.wine.executable.buffer();
 
-                if (helperTool[0] == CARLA_OS_SEP && File(helperTool + "64").existsAsFile())
+                if (helperTool.isNotEmpty() && helperTool[0] == CARLA_OS_SEP && File(String(helperTool + "64").toRawUTF8()).existsAsFile())
                     helperTool += "64";
             }
             else
@@ -457,7 +448,7 @@ private:
 
             if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
                 winePrefix = envWinePrefix;
-            else if (options.wine.fallbackPrefix != nullptr && options.wine.fallbackPrefix[0] != '\0')
+            else if (options.wine.fallbackPrefix.isNotEmpty())
                 winePrefix = options.wine.fallbackPrefix.buffer();
             else
                 winePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
@@ -467,14 +458,76 @@ private:
         const CarlaScopedEnvVar sev2("WINEPREFIX", winePrefix.toRawUTF8());
        #endif
 
+        const CarlaScopedEnvVar sev3("CARLA_DISCOVERY_NO_PROCESSING_CHECKS", "1");
+
         if (fBinaries.empty())
         {
+            if (fBinaryType == CB::BINARY_NATIVE)
+            {
+                switch (fPluginType)
+                {
+                default:
+                    break;
+                case CB::PLUGIN_INTERNAL:
+                case CB::PLUGIN_LV2:
+                case CB::PLUGIN_JSFX:
+                case CB::PLUGIN_SFZ:
+                    if (const uint count = carla_get_cached_plugin_count(fPluginType, fPluginPath))
+                    {
+                        for (uint i=0; i<count; ++i)
+                        {
+                            const CarlaCachedPluginInfo* const pinfo = carla_get_cached_plugin_info(fPluginType, i);
+
+                            if (pinfo == nullptr || !pinfo->valid)
+                                continue;
+
+                            char* filename = nullptr;
+                            CarlaPluginDiscoveryInfo info = {};
+                            info.btype = CB::BINARY_NATIVE;
+                            info.ptype = fPluginType;
+                            info.metadata.name = pinfo->name;
+                            info.metadata.maker = pinfo->maker;
+                            info.metadata.category = pinfo->category;
+                            info.metadata.hints = pinfo->hints;
+                            info.io.audioIns = pinfo->audioIns;
+                            info.io.audioOuts = pinfo->audioOuts;
+                            info.io.cvIns = pinfo->cvIns;
+                            info.io.cvOuts = pinfo->cvOuts;
+                            info.io.midiIns = pinfo->midiIns;
+                            info.io.midiOuts = pinfo->midiOuts;
+                            info.io.parameterIns = pinfo->parameterIns;
+                            info.io.parameterOuts = pinfo->parameterOuts;
+
+                            if (fPluginType == CB::PLUGIN_LV2)
+                            {
+                                const char* const slash = std::strchr(pinfo->label, CARLA_OS_SEP);
+                                CARLA_SAFE_ASSERT_BREAK(slash != nullptr);
+                                filename = strdup(pinfo->label);
+                                filename[slash - pinfo->label] = '\0';
+                                info.filename = filename;
+                                info.label = slash + 1;
+                            }
+                            else
+                            {
+                                info.filename = gPluginsDiscoveryNullCharPtr;
+                                info.label = pinfo->label;
+                            }
+
+                            fDiscoveryCallback(fCallbackPtr, &info, nullptr);
+
+                            std::free(filename);
+                        }
+                    }
+                    return;
+                }
+            }
+
            #ifndef CARLA_OS_WIN
             if (helperTool.isNotEmpty())
-                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all");
+                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all", -1, 2000);
             else
            #endif
-                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all");
+                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all", -1, 2000);
         }
         else
         {
@@ -497,10 +550,10 @@ private:
 
            #ifndef CARLA_OS_WIN
             if (helperTool.isNotEmpty())
-                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
+                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8(), -1, 2000);
             else
            #endif
-                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
+                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8(), -1, 2000);
         }
     }
 
@@ -553,7 +606,7 @@ static bool findDirectories(std::vector<water::File>& files, const char* const p
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        const File dir(*it);
+        const File dir(it->toRawUTF8());
         std::vector<File> results;
 
         if (dir.findChildFiles(results, File::findDirectories|File::ignoreHiddenFiles, true, wildcard) > 0)
@@ -585,7 +638,7 @@ static bool findFiles(std::vector<water::File>& files,
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        const File dir(*it);
+        const File dir(it->toRawUTF8());
         std::vector<File> results;
 
         if (dir.findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard) > 0)
@@ -628,7 +681,7 @@ static bool findVST3s(std::vector<water::File>& files,
 
     for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
     {
-        const File dir(*it);
+        const File dir(it->toRawUTF8());
         std::vector<File> results;
 
         if (dir.findChildFiles(results, flags|File::ignoreHiddenFiles, true, "*.vst3") > 0)
@@ -660,9 +713,27 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
     CARLA_SAFE_ASSERT_RETURN(ptype != CB::PLUGIN_NONE, nullptr);
     CARLA_SAFE_ASSERT_RETURN(discoveryTool != nullptr && discoveryTool[0] != '\0', nullptr);
     CARLA_SAFE_ASSERT_RETURN(discoveryCb != nullptr, nullptr);
+    carla_debug("carla_plugin_discovery_start(%s, %d:%s, %d:%s, %s, %p, %p, %p)",
+                discoveryTool, btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), pluginPath,
+                discoveryCb, checkCacheCb, callbackPtr);
 
     bool directories = false;
     const char* wildcard = nullptr;
+
+    switch (ptype)
+    {
+    case CB::PLUGIN_INTERNAL:
+    case CB::PLUGIN_LV2:
+    case CB::PLUGIN_SFZ:
+    case CB::PLUGIN_JSFX:
+    case CB::PLUGIN_DLS:
+    case CB::PLUGIN_GIG:
+    case CB::PLUGIN_SF2:
+        CARLA_SAFE_ASSERT_UINT_RETURN(btype == CB::BINARY_NATIVE, btype, nullptr);
+        break;
+    default:
+        break;
+    }
 
     switch (ptype)
     {
@@ -671,16 +742,15 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
     case CB::PLUGIN_TYPE_COUNT:
         return nullptr;
 
+    case CB::PLUGIN_LV2:
     case CB::PLUGIN_SFZ:
     case CB::PLUGIN_JSFX:
     {
         const CarlaScopedEnvVar csev("CARLA_DISCOVERY_PATH", pluginPath);
-        return new CarlaPluginDiscovery(discoveryTool, btype, ptype, discoveryCb, checkCacheCb, callbackPtr);
+        return new CarlaPluginDiscovery(discoveryTool, btype, ptype, discoveryCb, checkCacheCb, callbackPtr, pluginPath);
     }
 
     case CB::PLUGIN_INTERNAL:
-    case CB::PLUGIN_LV2:
-    case CB::PLUGIN_AU:
         return new CarlaPluginDiscovery(discoveryTool, btype, ptype, discoveryCb, checkCacheCb, callbackPtr);
 
     case CB::PLUGIN_LADSPA:
@@ -726,6 +796,11 @@ CarlaPluginDiscoveryHandle carla_plugin_discovery_start(const char* const discov
     case CB::PLUGIN_VST3:
         directories = true;
         wildcard = "*.vst3";
+        break;
+
+    case CB::PLUGIN_AU:
+        directories = true;
+        wildcard = "*.component";
         break;
 
     case CB::PLUGIN_CLAP:

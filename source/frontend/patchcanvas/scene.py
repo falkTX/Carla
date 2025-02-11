@@ -1,29 +1,22 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# PatchBay Canvas engine using QGraphicsView/Scene
-# Copyright (C) 2010-2019 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from math import floor
 
-from PyQt5.QtCore import QT_VERSION, pyqtSignal, pyqtSlot, qFatal, Qt, QPointF, QRectF
-from PyQt5.QtGui import QCursor, QPixmap, QPolygonF
-from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import QT_VERSION, pyqtSignal, pyqtSlot, qFatal, Qt, QPointF, QRectF
+    from PyQt5.QtGui import QCursor, QPixmap, QPolygonF
+    from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene
+elif qt_config == 6:
+    from PyQt6.QtCore import QT_VERSION, pyqtSignal, pyqtSlot, qFatal, Qt, QPointF, QRectF
+    from PyQt6.QtGui import QCursor, QPixmap, QPolygonF
+    from PyQt6.QtWidgets import QGraphicsRectItem, QGraphicsScene
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -314,7 +307,7 @@ class PatchScene(QGraphicsScene):
         )
         self.m_mouse_rubberband = False
 
-        if event.button() == Qt.MidButton and ctrlDown:
+        if event.button() == Qt.MiddleButton and ctrlDown:
             self.startConnectionCut()
             items = self.items(event.scenePos())
             for item in items:

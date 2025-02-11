@@ -1,6 +1,6 @@
 /*
  * Carla State utils
- * Copyright (C) 2012-2023 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -310,7 +310,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                     name = xmlSafeStringCharDup(text, false);
                 else if (tag == "Label" || tag == "URI" || tag == "Identifier" || tag == "Setup")
                     label = xmlSafeStringCharDup(text, false);
-                else if (tag == "Binary" || tag == "Filename")
+                else if (tag == "Binary" || tag == "Bundle" || tag == "Filename")
                     binary = xmlSafeStringCharDup(text, false);
                 else if (tag == "UniqueID")
                     uniqueId = text.getLargeIntValue();
@@ -594,6 +594,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
             infoXml << "   <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
             break;
         case PLUGIN_AU:
+            infoXml << "   <Bundle>"   << xmlSafeString(binary, true) << "</Bundle>\n";
             infoXml << "   <Identifier>" << xmlSafeString(label, true) << "</Identifier>\n";
             break;
         case PLUGIN_CLAP:

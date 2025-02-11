@@ -38,20 +38,14 @@ Optional for extra Linux-only engine features:
 
  - ALSA
  - PulseAudio
- - X11 (LV2/VST X11 UI support)
+ - X11 (CLAP/LV2/VST2/VST3 X11 UI support)
 
 Optional for extended LV2 UIs support: (Linux only)
 
- - Gtk2
- - Gtk3
  - Qt4
  - Qt5
 
-Optional for Linux VST3 support:
-
- - freetype2
- - Xcursor
- - Xext
+NOTE: Gtk2 and Gtk3 support is always on, as Carla uses dlopen + dlsym to support them
 
 Optional for extra samplers support:
 
@@ -73,14 +67,14 @@ Under Debian based systems, you can use this command to install everything:
 ```
 sudo apt install python3-pyqt5.qtsvg python3-rdflib pyqt5-dev-tools \
   libmagic-dev liblo-dev libasound2-dev libpulse-dev libx11-dev libxcursor-dev libxext-dev \
-  libgtk2.0-dev libgtk-3-dev libqt4-dev qtbase5-dev libfluidsynth-dev
+  qtbase5-dev libfluidsynth-dev
 ```
 
 Under Fedora, you can use the following command instead:
 ```
 sudo dnf install python3-qt5-devel python3-rdflib \
   file-devel liblo-devel alsa-lib-devel pulseaudio-libs-devel libX11-devel
-  gtk2-devel gtk3-devel qt4-devel qt5-devel fluidsynth-devel libsndfile-devel
+  qt5-devel fluidsynth-devel libsndfile-devel
 ```
 
 ## BUILD BRIDGES (Experimental)

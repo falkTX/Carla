@@ -1,28 +1,22 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Middle-click draggable QGraphicsView
-# Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 import os
-from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QCursor, QMouseEvent
-from PyQt5.QtWidgets import QGraphicsView, QMessageBox
+
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import Qt, QT_VERSION, QEvent
+    from PyQt5.QtGui import QCursor, QMouseEvent
+    from PyQt5.QtWidgets import QGraphicsView, QMessageBox
+elif qt_config == 6:
+    from PyQt6.QtCore import Qt, QT_VERSION, QEvent
+    from PyQt6.QtGui import QCursor, QMouseEvent
+    from PyQt6.QtWidgets import QGraphicsView, QMessageBox
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -37,11 +31,6 @@ class DraggableGraphicsView(QGraphicsView):
         QGraphicsView.__init__(self, parent)
 
         self.fPanning = False
-
-        try:
-            self.fMiddleButton = Qt.MiddleButton
-        except:
-            self.fMiddleButton = Qt.MidButton
 
         exts = gCarla.utils.get_supported_file_extensions()
 
@@ -115,9 +104,9 @@ class DraggableGraphicsView(QGraphicsView):
     # -----------------------------------------------------------------------------------------------------------------
 
     def mousePressEvent(self, event):
-        if event.button() == self.fMiddleButton and not (event.modifiers() & Qt.ControlModifier):
+        if event.button() == Qt.MiddleButton and not (event.modifiers() & Qt.ControlModifier):
             buttons  = event.buttons()
-            buttons &= ~self.fMiddleButton
+            buttons &= ~Qt.MiddleButton
             buttons |= Qt.LeftButton
             timestamp = event.timestamp()
             self.fPanning = True
@@ -130,24 +119,31 @@ class DraggableGraphicsView(QGraphicsView):
         if timestamp is None:
             return
 
-        event = QMouseEvent(QEvent.MouseButtonPress,
-                            event.localPos(), event.windowPos(), event.screenPos(),
-                            Qt.LeftButton, Qt.LeftButton,
-                            Qt.NoModifier,
-                            Qt.MouseEventSynthesizedByApplication)
-        event.setTimestamp(timestamp)
+        if QT_VERSION >= 0x60000:
+            event = QMouseEvent(QEvent.MouseButtonPress,
+                                event.position(), event.scenePosition(), event.globalPosition(),
+                                Qt.LeftButton, Qt.LeftButton,
+                                Qt.NoModifier)
+        else:
+            event = QMouseEvent(QEvent.MouseButtonPress,
+                                event.localPos(), event.windowPos(), event.screenPos(),
+                                Qt.LeftButton, Qt.LeftButton,
+                                Qt.NoModifier,
+                                Qt.MouseEventSynthesizedByApplication)
+            event.setTimestamp(timestamp)
+
         QGraphicsView.mousePressEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         QGraphicsView.mouseReleaseEvent(self, event)
 
-        if event.button() == self.fMiddleButton and self.fPanning:
+        if event.button() == Qt.MiddleButton and self.fPanning:
             self.fPanning = False
             self.setDragMode(QGraphicsView.NoDrag)
             self.setCursor(QCursor(Qt.ArrowCursor))
 
     def wheelEvent(self, event):
-        if event.buttons() & self.fMiddleButton:
+        if event.buttons() & Qt.MiddleButton:
             event.ignore()
             return
         QGraphicsView.wheelEvent(self, event)

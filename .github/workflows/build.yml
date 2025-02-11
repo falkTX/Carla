@@ -15,9 +15,9 @@ jobs:
         include:
           - target: debian:11
           - target: debian:12
-          - target: ubuntu:18.04
           - target: ubuntu:20.04
           - target: ubuntu:22.04
+          - target: ubuntu:24.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.target }}
@@ -43,11 +43,11 @@ jobs:
     strategy:
       matrix:
         include:
-          #- target: macos-11
           - target: macos-12
+          - target: macos-13
     runs-on: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Set up dependencies
@@ -61,12 +61,12 @@ jobs:
   wasm:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Set up cache
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/emsdk

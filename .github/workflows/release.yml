@@ -14,13 +14,13 @@ env:
 jobs:
   # macOS native universal build
   macos_universal:
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Set up cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/PawPawBuilds
@@ -46,7 +46,7 @@ jobs:
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} -j 1
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: macOS dmg
           path: ./*.dmg
@@ -64,11 +64,11 @@ jobs:
   win32:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Set up cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/PawPawBuilds
@@ -110,7 +110,7 @@ jobs:
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} -j 1
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: win32 zip
           path: ./*.zip
@@ -128,11 +128,11 @@ jobs:
   win64:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Set up cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/PawPawBuilds
@@ -175,7 +175,7 @@ jobs:
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} -j 1
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: win64 zip
           path: ./*.zip

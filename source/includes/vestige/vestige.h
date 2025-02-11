@@ -30,11 +30,16 @@
  * Boston, MA 02110-1301 USA.
  *
  */
-#include <stdint.h>
+
 #ifndef _VESTIGE_H
 #define _VESTIGE_H
 
-#if ! (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
+#include <stdint.h>
+
+#if defined(__WINE__)
+# undef __cdecl
+# define __cdecl __attribute__((ms_abi))
+#elif ! (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
 # define __cdecl
 #endif
 

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API (C++)
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -64,7 +64,7 @@ struct NativePluginPresetManager {
         {
             std::vector<File> results;
 
-            if (const uint count = File(*it).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard))
+            if (const uint count = File(it->toRawUTF8()).findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, true, wildcard))
             {
                 for (uint i=0; i<count; ++i)
                     filenames.add(results[i].getFullPathName());
@@ -126,7 +126,7 @@ protected:
         const NativePluginPresetManagerType& pm(kPrograms.get());
         CARLA_SAFE_ASSERT_RETURN(index < pm.filenames.size(), nullptr);
 
-        fRetMidiProgramName = File(pm.filenames.strings.getUnchecked(index)).getFileNameWithoutExtension();
+        fRetMidiProgramName = File(pm.filenames.strings.getUnchecked(index).toRawUTF8()).getFileNameWithoutExtension();
 
         fRetMidiProgram.bank = 0;
         fRetMidiProgram.program = uindex;

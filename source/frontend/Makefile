@@ -21,7 +21,6 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I. -Iutils
-
 BUILD_CXX_FLAGS += -I../backend
 BUILD_CXX_FLAGS += -I../includes
 BUILD_CXX_FLAGS += -I../modules
@@ -30,34 +29,22 @@ BUILD_CXX_FLAGS += -I../utils
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(WINDOWS),true)
-QT5_LINK_FLAGS = $(shell echo $(LINK_FLAGS) | awk 'sub(" -static","")')
+NON_STATIC_LINK_FLAGS = $(shell echo $(LINK_FLAGS) | awk 'sub(" -static","")') -static-libgcc
 else
-QT5_LINK_FLAGS = $(LINK_FLAGS)
-endif
-
-ifeq ($(HAVE_QT5),true)
-QT5_PREFIX       = $(shell $(PKG_CONFIG) --variable=prefix Qt5Core)
-BUILD_CXX_FLAGS += $(shell $(PKG_CONFIG) --cflags Qt5Core Qt5Gui Qt5Widgets)
-QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib $(shell $(PKG_CONFIG) --libs Qt5Core Qt5Gui Qt5Widgets)
-else ifeq ($(HAVE_QT5PKG),true)
-QT5_PREFIX       = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)
-BUILD_CXX_FLAGS += -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I $(QT5_PREFIX)/include/qt5
-QT5_LINK_FLAGS  += -Wl,-rpath,$(QT5_PREFIX)/lib -F $(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
-else
-$(error Trying to build frontend without Qt5, cannot continue)
+NON_STATIC_LINK_FLAGS = $(LINK_FLAGS)
 endif
 
 ifeq ($(WINDOWS),true)
-QT5_LINK_FLAGS += -L$(BINDIR) $(BINDIR)/libcarla_utils.dll
+QT_LINK_FLAGS += -L$(BINDIR) $(BINDIR)/libcarla_utils.dll
 else
-QT5_LINK_FLAGS += -L$(BINDIR) -lcarla_utils
+QT_LINK_FLAGS += -L$(BINDIR) -lcarla_utils
 endif
 
 ifeq ($(MACOS),true)
-QT5_LINK_FLAGS += -install_name @rpath/libcarla_frontend.dylib
+QT_LINK_FLAGS += -install_name @rpath/libcarla_frontend.dylib
 # FIXME this does not work: -Wl,-rpath,@loader_path
 else
-QT5_LINK_FLAGS += -Wl,-rpath,'$${ORIGIN}'
+QT_LINK_FLAGS += -Wl,-rpath,'$${ORIGIN}'
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -71,7 +58,6 @@ QMs = $(patsubst %,translations/carla_%.qm,$(I18N_LANGUAGES))
 
 CPP_FILES = \
 	carla_frontend.cpp \
-	dialogs/aboutjucedialog.cpp \
 	dialogs/jackappdialog.cpp \
 	pluginlist/pluginlistdialog.cpp
 
@@ -81,6 +67,7 @@ OBJS = $(CPP_FILES:%=$(OBJDIR)/%.o)
 # Resources
 
 RES = \
+	qt_config.py \
 	resources_rc.py \
 	$(BINDIR)/resources/modgui \
 	$(BINDIR)/resources/patchcanvas \
@@ -163,24 +150,37 @@ all: $(BINDIR)/libcarla_frontend$(LIB_EXT) $(QMs) $(RES) $(UIs)
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-dialogs/ui_%.h: dialogs/%.ui
-	$(UIC_QT5) $< -o $@
+dialogs/ui_%.h: dialogs/%.ui qt_config.py
+	$(UIC) $< -o $@
 
-pluginlist/ui_%.h: pluginlist/%.ui
-	$(UIC_QT5) $< -o $@
+pluginlist/ui_%.h: pluginlist/%.ui qt_config.py
+	$(UIC) $< -o $@
 
-%_ui.py: %.ui
+%_ui.py: %.ui qt_config.py
 	$(PYUIC) $< -o $@
 
-ui_%.py: $(RESDIR)/ui/%.ui
+ui_%.py: $(RESDIR)/ui/%.ui qt_config.py
 	$(PYUIC) $< -o $@
+
+qt_config.py:
+ifneq (,$(FRONTEND_TYPE))
+	echo "#!/usr/bin/env python3" > $@
+	echo "qt = $(FRONTEND_TYPE)" >> $@
+else
+	@echo Error: Trying to build frontend without Qt and/or PyQt, cannot continue
+	@false
+endif
 
 resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
+ifeq ($(FRONTEND_TYPE),6)
+	$(PYRCC) $< | sed -e 's/PySide6/PyQt6/' > $@
+else
 	$(PYRCC) $< -o $@
+endif
 
 test: $(OBJS) $(LIBS) test.cpp
 	@echo "Linking test"
-	$(SILENT)$(CXX) $(OBJS) test.cpp $(BUILD_CXX_FLAGS) -Wl,-rpath,$(abspath $(BINDIR)) $(QT5_LINK_FLAGS) -o $@
+	$(SILENT)$(CXX) $(OBJS) test.cpp $(BUILD_CXX_FLAGS) $(NON_STATIC_LINK_FLAGS) -Wl,-rpath,$(abspath $(BINDIR)) $(QT_LINK_FLAGS) -o $@
 
 $(BINDIR)/resources/%: %
 	-@mkdir -p $(BINDIR)/resources
@@ -199,7 +199,7 @@ $(BINDIR)/resources/zynaddsubfx-ui: ../native-plugins/resources/zynaddsubfx-ui
 $(BINDIR)/libcarla_frontend$(LIB_EXT): $(OBJS) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_frontend$(LIB_EXT)"
-	$(SILENT)$(CXX) $(OBJS) $(BUILD_CXX_FLAGS) $(QT5_LINK_FLAGS) $(SHARED) -o $@
+	$(SILENT)$(CXX) $(OBJS) $(BUILD_CXX_FLAGS) $(QT_CXX_FLAGS) $(NON_STATIC_LINK_FLAGS) $(QT_LINK_FLAGS) $(SHARED) -o $@
 ifeq ($(MACOS),true)
 # FIXME this does not work: -Wl,-rpath,@loader_path
 	$(SILENT)install_name_tool -change ../../../bin/libcarla_utils.dylib @loader_path/libcarla_utils.dylib $@
@@ -208,7 +208,7 @@ endif
 $(OBJDIR)/%.cpp.o: %.cpp $(UIs)
 	-@mkdir -p $(shell dirname $@)
 	@echo "Compiling $<"
-	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) $(QT_CXX_FLAGS) -c -o $@
 
 -include $(OBJS:%.o=%.d)
 
@@ -217,7 +217,6 @@ $(OBJDIR)/%.cpp.o: %.cpp $(UIs)
 clean:
 	rm -rf $(BINDIR)/libcarla_frontend$(LIB_EXT) $(UIs) $(RES) $(QMs) __pycache__ *.pyc
 	# old files
-	rm -f ui_carla_about_juce.py
 	rm -f ui_carla_add_jack.py
 	rm -f ui_carla_database.py
 	rm -f ui_carla_refresh.py

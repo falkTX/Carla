@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Carla host code
-# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -29,23 +15,78 @@ from ctypes import (
 )
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (PyQt5)
+# Imports (PyQt)
 
-# This fails in some configurations, assume >= 5.6.0 in that case
-try:
-    from PyQt5.Qt import PYQT_VERSION
-except ImportError:
-    PYQT_VERSION = 0x50600
+from qt_compat import qt_config
 
-from PyQt5.QtCore import (
-    QT_VERSION, qCritical, QBuffer, QEventLoop, QFileInfo, QIODevice, QMimeData, QModelIndex, QPointF, QTimer, QEvent
-)
-from PyQt5.QtGui import (
-    QImage, QImageWriter, QPainter, QPalette, QBrush
-)
-from PyQt5.QtWidgets import (
-    QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QGraphicsView, QMainWindow
-)
+if qt_config == 5:
+    # This fails in some configurations, assume >= 5.6.0 in that case
+    try:
+        from PyQt5.Qt import PYQT_VERSION
+    except ImportError:
+        PYQT_VERSION = 0x50600
+
+    from PyQt5.QtCore import (
+        QT_VERSION,
+        qCritical,
+        QBuffer,
+        QEvent,
+        QEventLoop,
+        QFileInfo,
+        QIODevice,
+        QMimeData,
+        QModelIndex,
+        QPointF,
+        QTimer,
+    )
+    from PyQt5.QtGui import (
+        QBrush,
+        QImage,
+        QImageWriter,
+        QPainter,
+        QPalette,
+    )
+    from PyQt5.QtWidgets import (
+        QAction,
+        QApplication,
+        QInputDialog,
+        QFileSystemModel,
+        QListWidgetItem,
+        QGraphicsView,
+        QMainWindow,
+    )
+
+elif qt_config == 6:
+    from PyQt6.QtCore import (
+        PYQT_VERSION,
+        QT_VERSION,
+        qCritical,
+        QBuffer,
+        QEvent,
+        QEventLoop,
+        QFileInfo,
+        QIODevice,
+        QMimeData,
+        QModelIndex,
+        QPointF,
+        QTimer,
+    )
+    from PyQt6.QtGui import (
+        QAction,
+        QBrush,
+        QFileSystemModel,
+        QImage,
+        QImageWriter,
+        QPainter,
+        QPalette,
+    )
+    from PyQt6.QtWidgets import (
+        QApplication,
+        QInputDialog,
+        QListWidgetItem,
+        QGraphicsView,
+        QMainWindow,
+    )
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -434,7 +475,6 @@ class HostWindow(QMainWindow):
             self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
             self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
             self.ui.act_help_about.setMenuRole(QAction.AboutRole)
-            self.ui.act_help_about_juce.setMenuRole(QAction.ApplicationSpecificRole)
             self.ui.act_help_about_qt.setMenuRole(QAction.AboutQtRole)
             self.ui.menu_Settings.setTitle("Panels")
 
@@ -526,7 +566,6 @@ class HostWindow(QMainWindow):
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
-        self.ui.act_help_about_juce.triggered.connect(self.slot_aboutJuce)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
 
         self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
@@ -629,10 +668,6 @@ class HostWindow(QMainWindow):
         if "link" not in features:
             self.ui.cb_transport_link.setEnabled(False)
             self.ui.cb_transport_link.setVisible(False)
-
-        if "juce" not in features:
-            self.ui.act_help_about_juce.setEnabled(False)
-            self.ui.act_help_about_juce.setVisible(False)
 
         # Plugin needs to have timers always running so it receives messages
         if self.host.isPlugin or self.host.isRemote:
@@ -1674,7 +1709,7 @@ class HostWindow(QMainWindow):
             self.ui.graphicsView.setRenderHint(QPainter.SmoothPixmapTransform, fullAA)
             self.ui.graphicsView.setRenderHint(QPainter.TextAntialiasing, fullAA)
 
-            if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
+            if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL and QPainter.HighQualityAntialiasing is not None:
                 self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
 
         else:
@@ -2254,10 +2289,6 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_aboutCarla(self):
         CarlaAboutW(self.fParentOrSelf, self.host).exec_()
-
-    @pyqtSlot()
-    def slot_aboutJuce(self):
-        gCarla.felib.createAndExecAboutJuceDialog(self.fParentOrSelf)
 
     @pyqtSlot()
     def slot_aboutQt(self):
@@ -2884,8 +2915,10 @@ class HostWindow(QMainWindow):
             if MACOS:
                 nsViewPtr = int(self.winId())
                 winIdStr  = "%x" % gCarla.utils.cocoa_get_window(nsViewPtr)
-            else:
+            elif WINDOWS or QApplication.platformName() == "xcb":
                 winIdStr = "%x" % int(self.winId())
+            else:
+                winIdStr = "0"
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def hideEvent(self, event):

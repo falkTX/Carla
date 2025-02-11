@@ -1,27 +1,20 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# XY Controller UI, taken from Cadence
-# Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QPointF, QRectF, QSize, QTimer
-from PyQt5.QtGui import QColor, QPainter, QPen
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent, QMainWindow
+from qt_compat import qt_config
+
+if qt_config == 5:
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, QT_VERSION, Qt, QPointF, QRectF, QSize, QTimer
+    from PyQt5.QtGui import QColor, QPainter, QPen
+    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent, QMainWindow
+elif qt_config == 6:
+    from PyQt6.QtCore import pyqtSignal, pyqtSlot, QT_VERSION, Qt, QPointF, QRectF, QSize, QTimer
+    from PyQt6.QtGui import QColor, QPainter, QPen
+    from PyQt6.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent, QMainWindow
 
 # -----------------------------------------------------------------------
 # Imports (Custom)
@@ -278,8 +271,12 @@ class XYControllerUI(ExternalUI, QMainWindow):
         self.ui.dial_x.realValueChanged.connect(self.slot_knobValueChangedX)
         self.ui.dial_y.realValueChanged.connect(self.slot_knobValueChangedY)
 
-        self.ui.cb_control_x.currentIndexChanged[str].connect(self.slot_checkCC_X)
-        self.ui.cb_control_y.currentIndexChanged[str].connect(self.slot_checkCC_Y)
+        if QT_VERSION >= 0x60000:
+            self.ui.cb_control_x.currentTextChanged.connect(self.slot_checkCC_X)
+            self.ui.cb_control_y.currentTextChanged.connect(self.slot_checkCC_Y)
+        else:
+            self.ui.cb_control_x.currentIndexChanged[str].connect(self.slot_checkCC_X)
+            self.ui.cb_control_y.currentIndexChanged[str].connect(self.slot_checkCC_Y)
 
         self.ui.act_ch_01.triggered.connect(self.slot_checkChannel)
         self.ui.act_ch_02.triggered.connect(self.slot_checkChannel)

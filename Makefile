@@ -78,23 +78,12 @@ ifeq ($(HAVE_QT5),true)
 3RD_LIBS += $(MODULEDIR)/theme.qt5.a
 endif
 
-ifeq ($(HAVE_YSFX),true)
-3RD_LIBS += $(MODULEDIR)/ysfx.a
+ifeq ($(HAVE_QT6),true)
+3RD_LIBS += $(MODULEDIR)/theme.qt6.a
 endif
 
-ifeq ($(USING_JUCE),true)
-3RD_LIBS += $(MODULEDIR)/carla_juce.a
-3RD_LIBS += $(MODULEDIR)/juce_audio_basics.a
-ifeq ($(USING_JUCE_AUDIO_DEVICES),true)
-3RD_LIBS += $(MODULEDIR)/juce_audio_devices.a
-endif
-3RD_LIBS += $(MODULEDIR)/juce_audio_processors.a
-3RD_LIBS += $(MODULEDIR)/juce_core.a
-3RD_LIBS += $(MODULEDIR)/juce_data_structures.a
-3RD_LIBS += $(MODULEDIR)/juce_events.a
-3RD_LIBS += $(MODULEDIR)/juce_graphics.a
-3RD_LIBS += $(MODULEDIR)/juce_gui_basics.a
-3RD_LIBS += $(MODULEDIR)/juce_gui_extra.a
+ifeq ($(HAVE_YSFX),true)
+3RD_LIBS += $(MODULEDIR)/ysfx.a
 endif
 
 ifeq ($(USING_RTAUDIO),true)
@@ -135,6 +124,9 @@ $(MODULEDIR)/theme.qt4.a: .FORCE
 
 $(MODULEDIR)/theme.qt5.a: .FORCE
 	@$(MAKE) -C source/theme qt5
+
+$(MODULEDIR)/theme.qt6.a: .FORCE
+	@$(MAKE) -C source/theme qt6
 
 $(MODULEDIR)/%.arm32.a: .FORCE
 ifneq ($(WINDOWS),true)
@@ -339,6 +331,10 @@ else
 	$(MAKE) -C source/bridges-plugin win64
 	$(MAKE) -C source/discovery win64
 endif
+
+mingw64:
+	$(MAKE) AR=i686-w64-mingw32-ar CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ win32
+	$(MAKE) AR=x86_64-w64-mingw32-ar CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ win64
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Binaries (wine)
@@ -711,6 +707,8 @@ endif
 	$(LINK) ../carla_utils.py              $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../qt_compat.py                $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../qt_config.py                $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources

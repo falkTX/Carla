@@ -12,14 +12,13 @@ jobs:
         include:
           - container: debian:11
           - container: debian:12
-          #- container: ubuntu:20.04
           - container: ubuntu:22.04
-          - container: ubuntu:23.10
+          - container: ubuntu:24.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up dependencies
         run: |
           apt-get update -qq
@@ -31,7 +30,7 @@ jobs:
         run: cmake --build build -j $(nproc)
       - name: install
         run: cmake --install build --verbose
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: linux-${{ env.PACK_NAME }}
           path: ${{ env.DESTDIR }}
@@ -44,7 +43,7 @@ jobs:
           - frameworks: OFF
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up dependencies
         run: |
           brew install cmake fluid-synth liblo libmagic libsndfile pkg-config
@@ -59,9 +58,9 @@ jobs:
         run: cmake --build build -j $(sysctl -n hw.logicalcpu)
       - name: install
         run: cmake --install build --verbose
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ env.PACK_NAME }}
+          name: macos-${{ env.PACK_NAME }}-${{ matrix.frameworks }}
           path: ${{ env.DESTDIR }}
 
   mingw32-cross:
@@ -70,14 +69,13 @@ jobs:
         include:
           - container: debian:11
           - container: debian:12
-          #- container: ubuntu:20.04
           - container: ubuntu:22.04
-          - container: ubuntu:23.10
+          - container: ubuntu:24.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up dependencies
         run: |
           dpkg --add-architecture i386
@@ -97,7 +95,7 @@ jobs:
         run: cmake --build build -j $(nproc)
       - name: install
         run: cmake --install build --verbose
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: mingw32-${{ env.PACK_NAME }}
           path: ${{ env.DESTDIR }}
@@ -108,14 +106,13 @@ jobs:
         include:
           - container: debian:11
           - container: debian:12
-          #- container: ubuntu:20.04
           - container: ubuntu:22.04
-          - container: ubuntu:23.10
+          - container: ubuntu:24.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up dependencies
         run: |
           dpkg --add-architecture i386
@@ -135,7 +132,7 @@ jobs:
         run: cmake --build build -j $(nproc)
       - name: install
         run: cmake --install build --verbose
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: mingw64-${{ env.PACK_NAME }}
           path: ${{ env.DESTDIR }}
@@ -143,7 +140,7 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: configure
         run: cmake -S cmake -B build
       - name: build

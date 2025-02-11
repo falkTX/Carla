@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Common Carla code
-# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -36,17 +22,25 @@ except:
     haveSIGUSR1 = False
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (PyQt5)
+# Imports (PyQt)
 
-# import changed in PyQt 5.15.8, so try both
-try:
-    from PyQt5.Qt import PYQT_VERSION_STR
-except ImportError:
-    from PyQt5.QtCore import PYQT_VERSION_STR
+from qt_compat import qt_config
 
-from PyQt5.QtCore import qFatal, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
+if qt_config == 5:
+    # import changed in PyQt 5.15.8, so try both
+    try:
+        from PyQt5.Qt import PYQT_VERSION_STR
+    except ImportError:
+        from PyQt5.QtCore import PYQT_VERSION_STR
+
+    from PyQt5.QtCore import qFatal, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
+    from PyQt5.QtGui import QIcon
+    from PyQt5.QtWidgets import QFileDialog, QMessageBox
+
+elif qt_config == 6:
+    from PyQt6.QtCore import qFatal, PYQT_VERSION_STR, QT_VERSION, QT_VERSION_STR, qWarning, QDir, QSettings
+    from PyQt6.QtGui import QIcon
+    from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -523,15 +517,21 @@ if not WINDOWS:
     if not winePrefix:
         winePrefix = HOME + "/.wine"
 
-    if os.path.exists(winePrefix):
-        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VstPlugins"
-        DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3"
-        DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VstPlugins"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VSTPlugins"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/Steinberg/VstPlugins"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/Steinberg/VSTPlugins"
+    DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST2"
+    DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3"
+    DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP"
 
-        if kIs64bit and os.path.exists(winePrefix + "/drive_c/Program Files (x86)"):
-            DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
-            DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3"
-            DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/CLAP"
+    if kIs64bit:
+        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
+        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VSTPlugins"
+        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VstPlugins"
+        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VSTPlugins"
+        DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3"
+        DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/CLAP"
 
     del winePrefix
 

@@ -8,15 +8,6 @@ CWD=..
 MODULENAME=carla-bridge
 include $(CWD)/Makefile.mk
 
-# Workaround GCC bug
-ifeq ($(TESTBUILD),true)
-ifeq ($(USING_JUCE),true)
-BUILD_CXX_FLAGS += -Wno-undef
-# FIXME
-BUILD_CXX_FLAGS += -Wno-deprecated-declarations
-endif
-endif
-
 ifneq ($(HAIKU),true)
 ifneq ($(WASM),true)
 BUILD_CXX_FLAGS += -pthread
@@ -41,7 +32,6 @@ BUILD_CXX_FLAGS += -DBUILD_BRIDGE -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/include
 BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
 
 BUILD_CXX_FLAGS += -UHAVE_SDL
-BUILD_CXX_FLAGS += -UUSING_JUCE_AUDIO_DEVICES
 BUILD_CXX_FLAGS += -UUSING_RTAUDIO
 
 32BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -92,27 +82,6 @@ LIBS_native += $(MODULEDIR)/ysfx.a
 LINK_FLAGS  += $(YSFX_GRAPHICS_LIBS)
 endif
 
-ifeq ($(USING_JUCE),true)
-LIBS_native  += $(MODULEDIR)/carla_juce.a
-LIBS_native  += $(MODULEDIR)/juce_audio_basics.a
-LIBS_native  += $(MODULEDIR)/juce_audio_processors.a
-LIBS_native  += $(MODULEDIR)/juce_core.a
-LIBS_native  += $(MODULEDIR)/juce_data_structures.a
-LIBS_native  += $(MODULEDIR)/juce_events.a
-LIBS_native  += $(MODULEDIR)/juce_graphics.a
-LIBS_native  += $(MODULEDIR)/juce_gui_basics.a
-LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
-
-LINK_FLAGS   += $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS   += $(JUCE_AUDIO_PROCESSORS_LIBS)
-LINK_FLAGS   += $(JUCE_CORE_LIBS)
-LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
-LINK_FLAGS   += $(JUCE_GRAPHICS_LIBS)
-LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
-LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
-endif
-
 ifeq ($(JACKBRIDGE_DIRECT),true)
 LINK_FLAGS += $(JACK_LIBS)
 endif
@@ -130,6 +99,7 @@ NATIVE_LINK_FLAGS  += $(LIBLO_LIBS)
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
 
+NATIVE_BUILD_FLAGS += $(MAGIC_FLAGS)
 NATIVE_LINK_FLAGS  += $(MAGIC_LIBS)
 
 LIBS_native        += $(MODULEDIR)/audio_decoder.a
@@ -179,7 +149,6 @@ OBJS_native = \
 	$(OBJDIR)/CarlaPluginVST3.cpp.o \
 	$(OBJDIR)/CarlaPluginAU.cpp.o \
 	$(OBJDIR)/CarlaPluginJSFX.cpp.o \
-	$(OBJDIR)/CarlaPluginJuce.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
 	$(OBJDIR)/CarlaPluginSFZero.cpp.o \
 	$(OBJDIR)/CarlaStandalone.cpp.o
@@ -307,12 +276,10 @@ $(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
 
 $(OBJDIR)/CarlaPluginJSFX.cpp.o: BUILD_CXX_FLAGS += $(YSFX_FLAGS)
 
-$(OBJDIR)/CarlaPluginJuce.cpp.o: BUILD_CXX_FLAGS += -std=gnu++14
-
 ifeq ($(MACOS),true)
-$(OBJDIR)/CarlaPluginCLAP.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/CarlaPluginAU.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 
-$(OBJDIR)/CarlaPluginJuce.cpp.o: BUILD_CXX_FLAGS += -ObjC++
+$(OBJDIR)/CarlaPluginCLAP.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 
 $(OBJDIR)/CarlaPluginVST2.cpp.o: BUILD_CXX_FLAGS += -ObjC++
 

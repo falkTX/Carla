@@ -32,10 +32,15 @@
 # endif
 struct carla_sem_t { HANDLE handle; };
 #elif defined(CARLA_OS_MAC)
-# include <mach/mach.h>
-# include <mach/semaphore.h>
-# include <servers/bootstrap.h>
-struct carla_sem_t { char bootname[32]; semaphore_t sem; semaphore_t sem2; };
+# include <cerrno>
+#define UL_COMPARE_AND_WAIT        1
+#define UL_COMPARE_AND_WAIT_SHARED 3
+#define ULF_NO_ERRNO               0x01000000
+extern "C" {
+int __ulock_wait(uint32_t operation, void* addr, uint64_t value, uint32_t timeout_us);
+int __ulock_wake(uint32_t operation, void* addr, uint64_t value);
+}
+struct carla_sem_t { int count; bool external; };
 #elif defined(CARLA_USE_FUTEXES)
 # include <cerrno>
 # include <syscall.h>
@@ -66,32 +71,7 @@ bool carla_sem_create2(carla_sem_t& sem, const bool externalIPC) noexcept
     sem.handle = ::CreateSemaphoreA(externalIPC ? &sa : nullptr, 0, 1, nullptr);
 
     return (sem.handle != INVALID_HANDLE_VALUE);
-#elif defined(CARLA_OS_MAC)
-    mach_port_t bootport;
-    const mach_port_t task = ::mach_task_self();
-
-    if (externalIPC) {
-        CARLA_SAFE_ASSERT_RETURN(task_get_bootstrap_port(task, &bootport) == KERN_SUCCESS, false);
-    }
-    CARLA_SAFE_ASSERT_RETURN(::semaphore_create(task, &sem.sem, SYNC_POLICY_FIFO, 0) == KERN_SUCCESS, false);
-
-    if (! externalIPC)
-        return true;
-
-    static int bootcounter = 0;
-    std::snprintf(sem.bootname, 31, "crlsm_%i_%i_%p", ++bootcounter, ::getpid(), &sem);
-    sem.bootname[31] = '\0';
-
-   #pragma clang diagnostic push
-   #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    if (::bootstrap_register(bootport, sem.bootname, sem.sem) == KERN_SUCCESS)
-   #pragma clang diagnostic pop
-        return true;
-
-    sem.bootname[0] = '\0';
-    ::semaphore_destroy(task, sem.sem);
-    return false;
-#elif defined(CARLA_USE_FUTEXES)
+#elif defined(CARLA_OS_MAC) || defined(CARLA_USE_FUTEXES)
     sem.external = externalIPC;
     return true;
 #else
@@ -124,9 +104,7 @@ void carla_sem_destroy2(carla_sem_t& sem) noexcept
 {
 #if defined(CARLA_OS_WIN)
     ::CloseHandle(sem.handle);
-#elif defined(CARLA_OS_MAC)
-    ::semaphore_destroy(mach_task_self(), sem.sem);
-#elif defined(CARLA_USE_FUTEXES)
+#elif defined(CARLA_OS_MAC) || defined(CARLA_USE_FUTEXES)
     // nothing to do
 #else
     ::sem_destroy(&sem.sem);
@@ -147,39 +125,17 @@ void carla_sem_destroy(carla_sem_t* const sem) noexcept
 }
 
 /*
- * Connect to semaphore.
- * Used only on macOS for a client to connect to a server.
- */
-static inline
-bool carla_sem_connect(carla_sem_t& sem) noexcept
-{
-#ifdef CARLA_OS_MAC
-    mach_port_t bootport;
-    CARLA_SAFE_ASSERT_RETURN(task_get_bootstrap_port(mach_task_self(), &bootport) == KERN_SUCCESS, false);
-
-    try {
-        return (::bootstrap_look_up(bootport, sem.bootname, &sem.sem2) == KERN_SUCCESS);
-    } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_connect", false);
-#else
-    // nothing to do
-    return true;
-    // unused
-    (void)sem;
-#endif
-}
-
-/*
  * Post semaphore (unlock).
  */
 static inline
-void carla_sem_post(carla_sem_t& sem, const bool server = true) noexcept
+void carla_sem_post(carla_sem_t& sem) noexcept
 {
 #ifdef CARLA_OS_WIN
     ::ReleaseSemaphore(sem.handle, 1, nullptr);
 #elif defined(CARLA_OS_MAC)
-    try {
-        ::semaphore_signal(server ? sem.sem : sem.sem2);
-    } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_post",);
+    const bool unlocked = __sync_bool_compare_and_swap(&sem.count, 0, 1);
+    CARLA_SAFE_ASSERT_RETURN(unlocked,);
+    __ulock_wake(ULF_NO_ERRNO | (sem.external ? UL_COMPARE_AND_WAIT_SHARED : UL_COMPARE_AND_WAIT), &sem.count, 0);
 #elif defined(CARLA_USE_FUTEXES)
     const bool unlocked = __sync_bool_compare_and_swap(&sem.count, 0, 1);
     CARLA_SAFE_ASSERT_RETURN(unlocked,);
@@ -187,8 +143,6 @@ void carla_sem_post(carla_sem_t& sem, const bool server = true) noexcept
 #else
     ::sem_post(&sem.sem);
 #endif
-    // may be unused
-    return; (void)server;
 }
 
 #ifndef CARLA_OS_WASM
@@ -196,23 +150,27 @@ void carla_sem_post(carla_sem_t& sem, const bool server = true) noexcept
  * Wait for a semaphore (lock).
  */
 static inline
-bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server = true) noexcept
+bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(msecs > 0, false);
 
 #if defined(CARLA_OS_WIN)
     return (::WaitForSingleObject(sem.handle, msecs) == WAIT_OBJECT_0);
-#else
-    const uint secs  =  msecs / 1000;
-    const uint nsecs = (msecs % 1000) * 1000000;
+#elif defined(CARLA_OS_MAC)
+    const uint32_t timeout = msecs * 1000;
 
-# if defined(CARLA_OS_MAC)
-    const mach_timespec timeout = { secs, static_cast<int>(nsecs) };
+    for (;;)
+    {
+        if (__sync_bool_compare_and_swap(&sem.count, 1, 0))
+            return true;
 
-    try {
-        return (::semaphore_timedwait(server ? sem.sem : sem.sem2, timeout) == KERN_SUCCESS);
-    } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_timedwait", false);
-# elif defined(CARLA_USE_FUTEXES)
+        if (__ulock_wait(sem.external ? UL_COMPARE_AND_WAIT_SHARED : UL_COMPARE_AND_WAIT, &sem.count, 0, timeout) != 0)
+            if (errno != EAGAIN && errno != EINTR)
+                return false;
+    }
+#elif defined(CARLA_USE_FUTEXES)
+    const uint secs        =  msecs / 1000;
+    const uint nsecs       = (msecs % 1000) * 1000000;
     const timespec timeout = { static_cast<time_t>(secs), static_cast<long>(nsecs) };
 
     for (;;)
@@ -224,13 +182,15 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server =
             if (errno != EAGAIN && errno != EINTR)
                 return false;
     }
-# else
+#else
     if (::sem_trywait(&sem.sem) == 0)
         return true;
 
     timespec now;
     ::clock_gettime(CLOCK_REALTIME, &now);
 
+    const uint secs      =  msecs / 1000;
+    const uint nsecs     = (msecs % 1000) * 1000000;
     const timespec delta = { static_cast<time_t>(secs), static_cast<long>(nsecs) };
     /* */ timespec end   = { now.tv_sec + delta.tv_sec, now.tv_nsec + delta.tv_nsec };
     if (end.tv_nsec >= 1000000000L) {
@@ -246,13 +206,10 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server =
 
         if (ret == 0)
             return true;
-        if (errno != EINTR)
+        if (errno != EAGAIN && errno != EINTR)
             return false;
     }
-# endif
 #endif
-    // may be unused
-    (void)server;
 }
 #endif
 

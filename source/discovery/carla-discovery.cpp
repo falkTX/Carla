@@ -1,19 +1,5 @@
-/*
- * Carla Plugin discovery
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaLibUtils.hpp"
@@ -36,8 +22,14 @@
 
 #ifdef CARLA_OS_MAC
 # include "CarlaMacUtils.cpp"
+# include <AudioToolbox/AudioUnit.h>
 # ifdef __aarch64__
 #  include <spawn.h>
+# endif
+# ifndef __MAC_13_0
+enum {
+    kAudioUnitType_SpeechSynthesizer = 'ausp',
+};
 # endif
 #endif
 
@@ -49,7 +41,6 @@
 #ifdef BUILD_BRIDGE
 # undef HAVE_FLUIDSYNTH
 # undef HAVE_YSFX
-# undef USING_JUCE
 #endif
 
 #ifdef HAVE_FLUIDSYNTH
@@ -65,22 +56,6 @@
 # include "CarlaDssiUtils.cpp"
 # include "CarlaJsfxUtils.hpp"
 # include "../backend/utils/CachedPlugins.cpp"
-#endif
-
-#ifdef USING_JUCE
-# include "carla_juce/carla_juce.h"
-# pragma GCC diagnostic ignored "-Wdouble-promotion"
-# pragma GCC diagnostic ignored "-Wduplicated-branches"
-# pragma GCC diagnostic ignored "-Weffc++"
-# pragma GCC diagnostic ignored "-Wfloat-equal"
-# include "juce_audio_processors/juce_audio_processors.h"
-# if JUCE_PLUGINHOST_VST
-#  define USING_JUCE_FOR_VST2
-# endif
-# if JUCE_PLUGINHOST_VST3
-#  define USING_JUCE_FOR_VST3
-# endif
-# pragma GCC diagnostic pop
 #endif
 
 // must be last
@@ -154,7 +129,8 @@ public:
 
     ~DiscoveryPipe()
     {
-        jackbridge_discovery_pipe_destroy(pipe);
+        if (pipe != nullptr)
+            jackbridge_discovery_pipe_destroy(pipe);
     }
 
     bool initPipeClient(const char* argv[])
@@ -196,8 +172,18 @@ static void print_lib_error(const char* const filename)
     }
 }
 
+#ifdef CARLA_OS_WIN
 // --------------------------------------------------------------------------------------------------------------------
-// Plugin Checks
+// Do not show error message box on Windows
+
+static LONG WINAPI winExceptionFilter(_EXCEPTION_POINTERS*)
+{
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
+
+// --------------------------------------------------------------------------------------------------------------------
+// Carla Cached API
 
 #ifndef BUILD_BRIDGE
 static void print_cached_plugin(const CarlaCachedPluginInfo* const pinfo)
@@ -243,11 +229,6 @@ static void do_cached_check(const PluginType type)
         }
     }
 
-   #ifdef USING_JUCE
-    if (type == PLUGIN_AU)
-        CarlaJUCE::initialiseJuce_GUI();
-   #endif
-
     const uint count = carla_get_cached_plugin_count(type, plugPath);
 
     for (uint i=0; i<count; ++i)
@@ -257,13 +238,11 @@ static void do_cached_check(const PluginType type)
 
         print_cached_plugin(pinfo);
     }
-
-   #ifdef USING_JUCE
-    if (type == PLUGIN_AU)
-        CarlaJUCE::shutdownJuce_GUI();
-   #endif
 }
 #endif // ! BUILD_BRIDGE
+
+// --------------------------------------------------------------------------------------------------------------------
+// LADSPA
 
 static void do_ladspa_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
@@ -500,6 +479,9 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
         DISCOVERY_OUT("end", "------------");
     }
 }
+
+// --------------------------------------------------------------------------------------------------------------------
+// DSSI
 
 static void do_dssi_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
@@ -806,6 +788,9 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
     }
 }
 
+// --------------------------------------------------------------------------------------------------------------------
+// LV2
+
 #ifndef BUILD_BRIDGE
 static void do_lv2_check(const char* const bundle, const bool doInit)
 {
@@ -893,9 +878,8 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 }
 #endif // ! BUILD_BRIDGE
 
-#ifndef USING_JUCE_FOR_VST2
 // --------------------------------------------------------------------------------------------------------------------
-// VST stuff
+// VST2
 
 // Check if plugin is currently processing
 static bool gVstIsProcessing = false;
@@ -1456,9 +1440,10 @@ static bool do_vst2_check(lib_t& libHandle, const char* const filename, const bo
     (void)filename;
 #endif
 }
-#endif // ! USING_JUCE_FOR_VST2
 
-#ifndef USING_JUCE_FOR_VST3
+// --------------------------------------------------------------------------------------------------------------------
+// VST3
+
 struct carla_v3_host_application : v3_host_application_cpp {
     carla_v3_host_application()
     {
@@ -1472,7 +1457,7 @@ struct carla_v3_host_application : v3_host_application_cpp {
 private:
     static v3_result V3_API carla_get_name(void*, v3_str_128 name)
     {
-        static const char hostname[] = "Carla-Discovery\0";
+        static constexpr const char hostname[] = "Carla-Discovery\0";
 
         for (size_t i=0; i<sizeof(hostname); ++i)
             name[i] = hostname[i];
@@ -1480,7 +1465,10 @@ private:
         return V3_OK;
     }
 
-    static v3_result V3_API carla_create_instance(void*, v3_tuid, v3_tuid, void**) { return V3_NOT_IMPLEMENTED; }
+    static v3_result V3_API carla_create_instance(void*, v3_tuid, v3_tuid, void**)
+    {
+        return V3_NOT_IMPLEMENTED;
+    }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_host_application)
     CARLA_PREVENT_HEAP_ALLOCATION
@@ -1595,7 +1583,7 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         binaryfilename += ".so";
        #endif
 
-        if (! water::File(binaryfilename).existsAsFile())
+        if (! water::File(binaryfilename.toRawUTF8()).existsAsFile())
         {
             DISCOVERY_OUT("error", "Failed to find a suitable VST3 bundle binary");
             return false;
@@ -1681,6 +1669,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
     // go through all relevant classes
     for (int32_t i=0; i<numClasses; ++i)
     {
+        v3_result res;
+
         // v3_class_info_2 is ABI compatible with v3_class_info
         union {
             v3_class_info v1;
@@ -1701,14 +1691,15 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
 
         // create instance
         void* instance = nullptr;
-        CARLA_SAFE_ASSERT_CONTINUE(v3_cpp_obj(factory1)->create_instance(factory1, classInfo.v1.class_id,
-                                                                         v3_component_iid, &instance) == V3_OK);
+        res = v3_cpp_obj(factory1)->create_instance(factory1, classInfo.v1.class_id, v3_component_iid, &instance);
+        CARLA_SAFE_ASSERT_INT_CONTINUE(res == V3_OK, res);
         CARLA_SAFE_ASSERT_CONTINUE(instance != nullptr);
 
         // initialize instance
         v3_component** const component = static_cast<v3_component**>(instance);
 
-        CARLA_SAFE_ASSERT_CONTINUE(v3_cpp_obj_initialize(component, hostContext) == V3_OK);
+        res = v3_cpp_obj_initialize(component, hostContext);
+        CARLA_SAFE_ASSERT_INT_CONTINUE(res == V3_OK, res);
 
         // create edit controller
         v3_edit_controller** controller = nullptr;
@@ -1784,8 +1775,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         for (int32_t b=0; b<numAudioInputBuses; ++b)
         {
             v3_bus_info busInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
-                                                                        V3_AUDIO, V3_INPUT, b, &busInfo) == V3_OK);
+            res = v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_INPUT, b, &busInfo);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             if (busInfo.flags & V3_IS_CONTROL_VOLTAGE)
                 cvIns += busInfo.channel_count;
@@ -1796,8 +1787,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         for (int32_t b=0; b<numAudioOutputBuses; ++b)
         {
             v3_bus_info busInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
-                                                                        V3_AUDIO, V3_OUTPUT, b, &busInfo) == V3_OK);
+            res = v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_OUTPUT, b, &busInfo);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             if (busInfo.flags & V3_IS_CONTROL_VOLTAGE)
                 cvOuts += busInfo.channel_count;
@@ -1808,7 +1799,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         for (int32_t p=0; p<numParameters; ++p)
         {
             v3_param_info paramInfo = {};
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(controller)->get_parameter_info(controller, p, &paramInfo) == V3_OK);
+            res = v3_cpp_obj(controller)->get_parameter_info(controller, p, &paramInfo);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             if (paramInfo.flags & (V3_PARAM_IS_BYPASS|V3_PARAM_IS_HIDDEN|V3_PARAM_PROGRAM_CHANGE))
                 continue;
@@ -1845,17 +1837,23 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
         if (doInit)
         {
             v3_audio_processor** processor = nullptr;
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj_query_interface(component, v3_audio_processor_iid, &processor) == V3_OK);
+            v3_process_setup setup = { V3_REALTIME, V3_SAMPLE_32, kBufferSize, kSampleRate };
+
+            res = v3_cpp_obj_query_interface(component, v3_audio_processor_iid, &processor);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
             CARLA_SAFE_ASSERT_BREAK(processor != nullptr);
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->can_process_sample_size(processor, V3_SAMPLE_32) == V3_OK);
+            res = v3_cpp_obj(processor)->can_process_sample_size(processor, V3_SAMPLE_32);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, true) == V3_OK);
+            res = v3_cpp_obj(component)->set_active(component, true);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
-            v3_process_setup setup = { V3_REALTIME, V3_SAMPLE_32, kBufferSize, kSampleRate };
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->setup_processing(processor, &setup) == V3_OK);
+            res = v3_cpp_obj(processor)->setup_processing(processor, &setup);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, false) == V3_OK);
+            res = v3_cpp_obj(component)->set_active(component, false);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             v3_audio_bus_buffers* const inputsBuffers = numAudioInputBuses > 0
                                                       ? new v3_audio_bus_buffers[numAudioInputBuses]
@@ -1869,13 +1867,12 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             {
                 v3_bus_info busInfo = {};
                 carla_zeroStruct(inputsBuffers[b]);
-                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
-                                                                            V3_AUDIO, V3_INPUT, b, &busInfo) == V3_OK);
 
-                if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
-                    CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->activate_bus(component,
-                                                                                V3_AUDIO, V3_INPUT, b, true) == V3_OK);
-                }
+                res = v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_INPUT, b, &busInfo);
+                CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
+
+                res = v3_cpp_obj(component)->activate_bus(component, V3_AUDIO, V3_INPUT, b, true);
+                CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
                 inputsBuffers[b].num_channels = busInfo.channel_count;
             }
@@ -1884,19 +1881,21 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             {
                 v3_bus_info busInfo = {};
                 carla_zeroStruct(outputsBuffers[b]);
-                CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->get_bus_info(component,
-                                                                            V3_AUDIO, V3_OUTPUT, b, &busInfo) == V3_OK);
 
-                if ((busInfo.flags & V3_DEFAULT_ACTIVE) == 0x0) {
-                    CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->activate_bus(component,
-                                                                                V3_AUDIO, V3_OUTPUT, b, true) == V3_OK);
-                }
+                res = v3_cpp_obj(component)->get_bus_info(component, V3_AUDIO, V3_OUTPUT, b, &busInfo);
+                CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
+
+                res = v3_cpp_obj(component)->activate_bus(component, V3_AUDIO, V3_OUTPUT, b, true);
+                CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
                 outputsBuffers[b].num_channels = busInfo.channel_count;
             }
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, true) == V3_OK);
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->set_processing(processor, true) == V3_OK);
+            res = v3_cpp_obj(component)->set_active(component, true);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
+
+            res = v3_cpp_obj(processor)->set_processing(processor, true);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK || res == V3_NOT_IMPLEMENTED, res);
 
             float* bufferAudioIn[MAX_DISCOVERY_AUDIO_IO + MAX_DISCOVERY_CV_IO];
             float* bufferAudioOut[MAX_DISCOVERY_AUDIO_IO + MAX_DISCOVERY_CV_IO];
@@ -1948,7 +1947,8 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
                 (v3_event_list**)&eventListPtr,
                 &processContext
             };
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->process(processor, &processData) == V3_OK);
+            res = v3_cpp_obj(processor)->process(processor, &processData);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             delete[] inputsBuffers;
             delete[] outputsBuffers;
@@ -1958,8 +1958,11 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
             for (int j=0; j < audioOuts + cvOuts; ++j)
                 delete[] bufferAudioOut[j];
 
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(processor)->set_processing(processor, false) == V3_OK);
-            CARLA_SAFE_ASSERT_BREAK(v3_cpp_obj(component)->set_active(component, false) == V3_OK);
+            res = v3_cpp_obj(processor)->set_processing(processor, false);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK || res == V3_NOT_IMPLEMENTED, res);
+
+            res = v3_cpp_obj(component)->set_active(component, false);
+            CARLA_SAFE_ASSERT_INT_BREAK(res == V3_OK, res);
 
             v3_cpp_obj_unref(processor);
         }
@@ -2016,7 +2019,397 @@ static bool do_vst3_check(lib_t& libHandle, const char* const filename, const bo
     v3_exit();
     return false;
 }
-#endif // ! USING_JUCE_FOR_VST3
+
+// --------------------------------------------------------------------------------------------------------------------
+// AU
+
+#ifdef CARLA_OS_MAC
+typedef AudioComponentPlugInInterface* (*FactoryFn)(const AudioComponentDescription*);
+
+typedef OSStatus (*InitializeFn)(void*);
+typedef OSStatus (*UninitializeFn)(void*);
+typedef OSStatus (*GetPropertyInfoFn)(void*, AudioUnitPropertyID, AudioUnitScope, AudioUnitElement, UInt32*, Boolean*);
+typedef OSStatus (*GetPropertyFn)(void*, AudioUnitPropertyID, AudioUnitScope, AudioUnitElement, void*, UInt32*);
+typedef OSStatus (*MIDIEventFn)(void*, UInt32, UInt32, UInt32, UInt32);
+
+static constexpr FourCharCode getFourCharCodeFromString(const char str[4])
+{
+    return (str[0] << 24) + (str[1] << 16) + (str[2] << 8) + str[3];
+}
+
+static bool do_au_check(const char* const filename, const bool doInit)
+{
+    BundleLoader bundleLoader;
+
+    if (! bundleLoader.load(filename))
+    {
+       #ifdef __aarch64__
+        return true;
+       #else
+        DISCOVERY_OUT("error", "Failed to load AU bundle executable");
+        return false;
+       #endif
+    }
+
+    const CFTypeRef componentsRef = CFBundleGetValueForInfoDictionaryKey(bundleLoader.getRef(), CFSTR("AudioComponents"));
+
+    if (componentsRef == nullptr || CFGetTypeID(componentsRef) != CFArrayGetTypeID())
+    {
+        DISCOVERY_OUT("error", "Not an AU component");
+        return false;
+    }
+
+    const CFArrayRef components = static_cast<CFArrayRef>(componentsRef);
+
+    for (uint32_t c = 0, count = CFArrayGetCount(components); c < count; ++c)
+    {
+        const CFTypeRef componentRef = CFArrayGetValueAtIndex(components, c);
+        CARLA_SAFE_ASSERT_CONTINUE(componentRef != nullptr);
+        CARLA_SAFE_ASSERT_CONTINUE(CFGetTypeID(componentRef) == CFDictionaryGetTypeID());
+
+        const CFDictionaryRef component = static_cast<CFDictionaryRef>(componentRef);
+
+        CFStringRef componentName = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("name"), (const void **)&componentName));
+
+        CFStringRef componentFactoryFunction = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("factoryFunction"), (const void **)&componentFactoryFunction));
+
+        CFStringRef componentType = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("type"), (const void **)&componentType));
+        CARLA_SAFE_ASSERT_CONTINUE(CFStringGetLength(componentType) == 4);
+
+        CFStringRef componentSubType = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("subtype"), (const void **)&componentSubType));
+        CARLA_SAFE_ASSERT_CONTINUE(CFStringGetLength(componentSubType) == 4);
+
+        CFStringRef componentManufacturer = nullptr;
+        CARLA_SAFE_ASSERT_CONTINUE(CFDictionaryGetValueIfPresent(component, CFSTR("manufacturer"), (const void **)&componentManufacturer));
+        CARLA_SAFE_ASSERT_CONTINUE(CFStringGetLength(componentManufacturer) == 4);
+
+        const FactoryFn factoryFn = bundleLoader.getSymbol<FactoryFn>(componentFactoryFunction);
+        CARLA_SAFE_ASSERT_CONTINUE(factoryFn != nullptr);
+
+        char label[15] = {};
+        CFStringGetCString(componentType, label, 5, kCFStringEncodingASCII);
+        CFStringGetCString(componentSubType, label + 5, 5, kCFStringEncodingASCII);
+        CFStringGetCString(componentManufacturer, label + 10, 5, kCFStringEncodingASCII);
+
+        const AudioComponentDescription desc = {
+            getFourCharCodeFromString(label),
+            getFourCharCodeFromString(label + 5),
+            getFourCharCodeFromString(label + 10),
+            0, 0
+        };
+
+        CARLA_SAFE_ASSERT_CONTINUE(desc.componentType != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(desc.componentSubType != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(desc.componentManufacturer != 0);
+
+        label[4] = label[9] = ',';
+
+        AudioComponentPlugInInterface* const interface = factoryFn(&desc);
+        CARLA_SAFE_ASSERT_CONTINUE(interface != nullptr);
+
+        const InitializeFn auInitialize = (InitializeFn)interface->Lookup(kAudioUnitInitializeSelect);
+        const UninitializeFn auUninitialize = (UninitializeFn)interface->Lookup(kAudioUnitUninitializeSelect);
+        const GetPropertyInfoFn auGetPropertyInfo = (GetPropertyInfoFn)interface->Lookup(kAudioUnitGetPropertyInfoSelect);
+        const GetPropertyFn auGetProperty = (GetPropertyFn)interface->Lookup(kAudioUnitGetPropertySelect);
+        const MIDIEventFn auMIDIEvent = (MIDIEventFn)interface->Lookup(kMusicDeviceMIDIEventSelect);
+
+        if (auInitialize == nullptr || auUninitialize == nullptr)
+            continue;
+        if (auGetPropertyInfo == nullptr || auGetProperty == nullptr)
+            continue;
+
+        if (interface->Open(interface, (AudioUnit)(void*)0x1) == noErr)
+        {
+            uint hints = 0x0;
+            uint audioIns = 0;
+            uint audioOuts = 0;
+            uint midiIns = 0;
+            uint midiOuts = 0;
+            uint parametersIns = 0;
+            uint parametersOuts = 0;
+            PluginCategory category;
+
+            switch (desc.componentType)
+            {
+            case kAudioUnitType_Effect:
+            case kAudioUnitType_MusicEffect:
+                category = PLUGIN_CATEGORY_NONE;
+                break;
+            case kAudioUnitType_Generator:
+            case kAudioUnitType_MusicDevice:
+                category = PLUGIN_CATEGORY_SYNTH;
+                break;
+            case kAudioUnitType_MIDIProcessor:
+            case kAudioUnitType_Mixer:
+            case kAudioUnitType_Panner:
+            case kAudioUnitType_SpeechSynthesizer:
+                category = PLUGIN_CATEGORY_UTILITY;
+                break;
+            case kAudioUnitType_FormatConverter:
+            case kAudioUnitType_OfflineEffect:
+            case kAudioUnitType_Output:
+                category = PLUGIN_CATEGORY_OTHER;
+                break;
+            default:
+                category = PLUGIN_CATEGORY_NONE;
+                break;
+            }
+
+            UInt32 outDataSize;
+            Boolean outWritable = false;
+
+            // audio port count
+            outDataSize = 0;
+            if (auGetPropertyInfo(interface,
+                                  kAudioUnitProperty_SupportedNumChannels,
+                                  kAudioUnitScope_Global,
+                                  0, &outDataSize, &outWritable) == noErr
+                && outDataSize != 0
+                && outDataSize % sizeof(AUChannelInfo) == 0)
+            {
+                const uint32_t numChannels = outDataSize / sizeof(AUChannelInfo);
+                AUChannelInfo* const channelInfo = new AUChannelInfo[numChannels];
+
+                if (auGetProperty(interface,
+                                  kAudioUnitProperty_SupportedNumChannels,
+                                  kAudioUnitScope_Global,
+                                  0, channelInfo, &outDataSize) == noErr
+                    && outDataSize == numChannels * sizeof(AUChannelInfo))
+                {
+                    AUChannelInfo* highestInfo = &channelInfo[0];
+
+                    for (uint32_t i=0; i<numChannels; ++i)
+                    {
+                        if (channelInfo[i].inChannels < 0)
+                            channelInfo[i].inChannels = 2;
+                        if (channelInfo[i].outChannels < 0)
+                            channelInfo[i].outChannels = 2;
+
+                        if (channelInfo[i].inChannels > highestInfo->inChannels
+                            && channelInfo[i].outChannels > highestInfo->outChannels)
+                        {
+                            highestInfo = &channelInfo[i];
+                        }
+                    }
+
+                    audioIns = std::min<int16_t>(64, highestInfo->inChannels);
+                    audioOuts = std::min<int16_t>(64, highestInfo->outChannels);
+                }
+
+                delete[] channelInfo;
+            }
+            else
+            {
+                // unsupported for now
+                interface->Close(interface);
+                continue;
+
+                outDataSize = 0;
+                if (auGetPropertyInfo(interface,
+                                      kAudioUnitProperty_ElementCount,
+                                      kAudioUnitScope_Input,
+                                      0, &outDataSize, &outWritable) == noErr
+                    && outDataSize == sizeof(UInt32))
+                {
+                    UInt32 count = 0;
+                    if (auGetProperty(interface,
+                                      kAudioUnitProperty_ElementCount,
+                                      kAudioUnitScope_Input,
+                                      0, &count, &outDataSize) == noErr
+                        && outDataSize == sizeof(UInt32) && count != 0)
+                    {
+                        AudioStreamBasicDescription desc;
+                        std::memset(&desc, 0, sizeof(desc));
+                        outDataSize = sizeof(AudioStreamBasicDescription);
+
+                        if (auGetProperty(interface,
+                                          kAudioUnitProperty_StreamFormat,
+                                          kAudioUnitScope_Input,
+                                          0, &desc, &outDataSize) == noErr)
+                            audioIns = std::min<uint32_t>(64, desc.mChannelsPerFrame);
+                    }
+                }
+
+                outDataSize = 0;
+                if (auGetPropertyInfo(interface,
+                                      kAudioUnitProperty_ElementCount,
+                                      kAudioUnitScope_Output,
+                                      0, &outDataSize, &outWritable) == noErr
+                    && outDataSize == sizeof(UInt32))
+                {
+                    UInt32 count = 0;
+                    if (auGetProperty(interface,
+                                      kAudioUnitProperty_ElementCount,
+                                      kAudioUnitScope_Output,
+                                      0, &count, &outDataSize) == noErr
+                        && outDataSize == sizeof(UInt32) && count != 0)
+                    {
+                        AudioStreamBasicDescription desc;
+                        std::memset(&desc, 0, sizeof(desc));
+                        outDataSize = sizeof(AudioStreamBasicDescription);
+
+                        if (auGetProperty(interface,
+                                          kAudioUnitProperty_StreamFormat,
+                                          kAudioUnitScope_Output,
+                                          0, &desc, &outDataSize) == noErr)
+                            audioOuts = std::min<uint32_t>(64, desc.mChannelsPerFrame);
+                    }
+                }
+            }
+
+            // parameter count
+            outDataSize = 0;
+            if (auGetPropertyInfo(interface,
+                                  kAudioUnitProperty_ParameterList,
+                                  kAudioUnitScope_Global,
+                                  0, &outDataSize, &outWritable) == noErr
+                && outDataSize != 0
+                && outDataSize % sizeof(AudioUnitParameterID) == 0)
+            {
+                const uint32_t numParams = outDataSize / sizeof(AudioUnitParameterID);
+                AudioUnitParameterID* const paramIds = new AudioUnitParameterID[numParams];
+
+                if (auGetProperty(interface,
+                                  kAudioUnitProperty_ParameterList,
+                                  kAudioUnitScope_Global,
+                                  0, paramIds, &outDataSize) == noErr
+                    && outDataSize == numParams * sizeof(AudioUnitParameterID))
+                {
+                    AudioUnitParameterInfo info;
+
+                    for (uint32_t i=0; i<numParams; ++i)
+                    {
+                        carla_zeroStruct(info);
+
+                        outDataSize = 0;
+                        if (auGetPropertyInfo(interface,
+                                              kAudioUnitProperty_ParameterInfo,
+                                              kAudioUnitScope_Global,
+                                              paramIds[i], &outDataSize, &outWritable) != noErr)
+                            break;
+                        if (outDataSize != sizeof(AudioUnitParameterInfo))
+                            break;
+                        if (auGetProperty(interface,
+                                          kAudioUnitProperty_ParameterInfo,
+                                          kAudioUnitScope_Global,
+                                          paramIds[i], &info, &outDataSize) != noErr)
+                            break;
+
+                        if ((info.flags & kAudioUnitParameterFlag_IsReadable) == 0)
+                            continue;
+
+                        if (info.flags & kAudioUnitParameterFlag_IsWritable)
+                            ++parametersIns;
+                        else
+                            ++parametersOuts;
+                    }
+                }
+
+                delete[] paramIds;
+            }
+
+            // MIDI input
+            if (auMIDIEvent != nullptr && auInitialize(interface) == noErr)
+            {
+                if (auMIDIEvent(interface, 0x90, 60, 64, 0) == noErr)
+                    midiIns = 1;
+
+                auUninitialize(interface);
+            }
+
+            // MIDI output
+            outDataSize = 0;
+            outWritable = false;
+            if (auGetPropertyInfo(interface,
+                                  kAudioUnitProperty_MIDIOutputCallback,
+                                  kAudioUnitScope_Global,
+                                  0, &outDataSize, &outWritable) == noErr
+                && outDataSize == sizeof(AUMIDIOutputCallbackStruct)
+                && outWritable)
+            {
+                midiOuts = 1;
+            }
+
+            // hints
+            if (category == PLUGIN_CATEGORY_SYNTH)
+                hints |= PLUGIN_IS_SYNTH;
+
+            outDataSize = 0;
+            if (auGetPropertyInfo(interface,
+                                  kAudioUnitProperty_CocoaUI,
+                                  kAudioUnitScope_Global,
+                                  0, &outDataSize, &outWritable) == noErr
+                && outDataSize == sizeof(AudioUnitCocoaViewInfo))
+            {
+                hints |= PLUGIN_HAS_CUSTOM_UI;
+               #ifndef BUILD_BRIDGE
+                /* FIXME only enable this after doing custom AU hosting
+                hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+                */
+               #endif
+            }
+
+            if (doInit)
+            {
+                // TODO tests
+            }
+
+            const CFIndex componentNameLen = CFStringGetLength(componentName);
+            char* const nameBuffer = new char[componentNameLen + 1];
+            const char* name;
+            const char* maker;
+
+            if (CFStringGetCString(componentName, nameBuffer, componentNameLen + 1, kCFStringEncodingUTF8))
+            {
+                if (char* const sep = std::strstr(nameBuffer, ": "))
+                {
+                    sep[0] = sep[1] = '\0';
+                    name = sep + 2;
+                    maker = nameBuffer;
+                }
+                else
+                {
+                    name = nameBuffer;
+                    maker = nameBuffer + componentNameLen;
+                }
+            }
+            else
+            {
+                nameBuffer[0] = '\0';
+                name = maker = nameBuffer;
+            }
+
+            interface->Close(interface);
+
+            DISCOVERY_OUT("init", "------------");
+            DISCOVERY_OUT("build", BINARY_NATIVE);
+            DISCOVERY_OUT("hints", hints);
+            DISCOVERY_OUT("category", getPluginCategoryAsString(category));
+            DISCOVERY_OUT("name", name);
+            DISCOVERY_OUT("label", label);
+            DISCOVERY_OUT("maker", maker);
+            DISCOVERY_OUT("audio.ins", audioIns);
+            DISCOVERY_OUT("audio.outs", audioOuts);
+            DISCOVERY_OUT("midi.ins", midiIns);
+            DISCOVERY_OUT("midi.outs", midiOuts);
+            DISCOVERY_OUT("parameters.ins", parametersIns);
+            DISCOVERY_OUT("parameters.outs", parametersOuts);
+            DISCOVERY_OUT("end", "------------");
+
+            delete[] nameBuffer;
+        }
+    }
+
+    return false;
+}
+#endif // CARLA_OS_MAC
+
+// --------------------------------------------------------------------------------------------------------------------
+// CLAP
 
 struct carla_clap_host : clap_host_t {
     carla_clap_host()
@@ -2283,172 +2676,8 @@ static bool do_clap_check(lib_t& libHandle, const char* const filename, const bo
     return false;
 }
 
-#ifdef USING_JUCE
 // --------------------------------------------------------------------------------------------------------------------
-// find all available plugin audio ports
-
-static void findMaxTotalChannels(juce::AudioProcessor* const filter, int& maxTotalIns, int& maxTotalOuts)
-{
-    filter->enableAllBuses();
-
-    const int numInputBuses  = filter->getBusCount(true);
-    const int numOutputBuses = filter->getBusCount(false);
-
-    if (numInputBuses > 1 || numOutputBuses > 1)
-    {
-        maxTotalIns = maxTotalOuts = 0;
-
-        for (int i = 0; i < numInputBuses; ++i)
-            maxTotalIns += filter->getChannelCountOfBus(true, i);
-
-        for (int i = 0; i < numOutputBuses; ++i)
-            maxTotalOuts += filter->getChannelCountOfBus(false, i);
-    }
-    else
-    {
-        maxTotalIns  = numInputBuses  > 0 ? filter->getBus(true,  0)->getMaxSupportedChannels(64) : 0;
-        maxTotalOuts = numOutputBuses > 0 ? filter->getBus(false, 0)->getMaxSupportedChannels(64) : 0;
-    }
-}
-
-// --------------------------------------------------------------------------------------------------------------------
-
-static bool do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
-{
-    CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0, false) // FIXME
-    carla_debug("do_juce_check(%s, %s, %s)", filename_, stype, bool2str(doInit));
-
-    CarlaJUCE::initialiseJuce_GUI();
-
-    juce::String filename;
-
-   #ifdef CARLA_OS_WIN
-    // Fix for wine usage
-    if (juce::File("Z:\\usr\\").isDirectory() && filename_[0] == '/')
-    {
-        filename = filename_;
-        filename.replace("/", "\\");
-        filename = "Z:" + filename;
-    }
-    else
-   #endif
-    {
-        filename = juce::File(filename_).getFullPathName();
-    }
-
-    CarlaScopedPointer<juce::AudioPluginFormat> pluginFormat;
-
-    /* */ if (std::strcmp(stype, "VST2") == 0)
-    {
-       #if JUCE_PLUGINHOST_VST
-        pluginFormat = new juce::VSTPluginFormat();
-       #else
-        DISCOVERY_OUT("error", "VST2 support not available");
-        return false;
-       #endif
-    }
-    else if (std::strcmp(stype, "VST3") == 0)
-    {
-       #if JUCE_PLUGINHOST_VST3
-        pluginFormat = new juce::VST3PluginFormat();
-       #else
-        DISCOVERY_OUT("error", "VST3 support not available");
-        return false;
-       #endif
-    }
-    else if (std::strcmp(stype, "AU") == 0)
-    {
-       #if JUCE_PLUGINHOST_AU
-        pluginFormat = new juce::AudioUnitPluginFormat();
-       #else
-        DISCOVERY_OUT("error", "AU support not available");
-        return false;
-       #endif
-    }
-
-    if (pluginFormat == nullptr)
-    {
-        DISCOVERY_OUT("error", stype << " support not available");
-        return false;
-    }
-
-   #ifdef CARLA_OS_WIN
-    CARLA_CUSTOM_SAFE_ASSERT_RETURN("Plugin file/folder does not exist", juce::File(filename).exists(), false);
-   #endif
-    CARLA_SAFE_ASSERT_RETURN(pluginFormat->fileMightContainThisPluginType(filename), false);
-
-    juce::OwnedArray<juce::PluginDescription> results;
-    pluginFormat->findAllTypesForFile(results, filename);
-
-    if (results.size() == 0)
-    {
-       #if defined(CARLA_OS_MAC) && defined(__aarch64__)
-        if (std::strcmp(stype, "VST2") == 0 || std::strcmp(stype, "VST3") == 0)
-            return true;
-       #endif
-        DISCOVERY_OUT("error", "No plugins found");
-        return false;
-    }
-
-    for (juce::PluginDescription **it = results.begin(), **end = results.end(); it != end; ++it)
-    {
-        juce::PluginDescription* const desc(*it);
-
-        uint hints = 0x0;
-        int audioIns = desc->numInputChannels;
-        int audioOuts = desc->numOutputChannels;
-        int midiIns = 0;
-        int midiOuts = 0;
-        int parameters = 0;
-
-        if (desc->isInstrument)
-        {
-            hints |= PLUGIN_IS_SYNTH;
-            midiIns = 1;
-        }
-
-        if (doInit)
-        {
-            if (std::unique_ptr<juce::AudioPluginInstance> instance
-                    = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
-            {
-                CarlaJUCE::idleJuce_GUI();
-
-                findMaxTotalChannels(instance.get(), audioIns, audioOuts);
-                instance->refreshParameterList();
-
-                parameters = instance->getParameters().size();
-
-                if (instance->hasEditor())
-                    hints |= PLUGIN_HAS_CUSTOM_UI;
-                if (instance->acceptsMidi())
-                    midiIns = 1;
-                if (instance->producesMidi())
-                    midiOuts = 1;
-            }
-        }
-
-        DISCOVERY_OUT("init", "------------");
-        DISCOVERY_OUT("build", BINARY_NATIVE);
-        DISCOVERY_OUT("hints", hints);
-        DISCOVERY_OUT("category", getPluginCategoryAsString(getPluginCategoryFromName(desc->category.toRawUTF8())));
-        DISCOVERY_OUT("name", desc->descriptiveName);
-        DISCOVERY_OUT("label", desc->name);
-        DISCOVERY_OUT("maker", desc->manufacturerName);
-        DISCOVERY_OUT("uniqueId", desc->uniqueId);
-        DISCOVERY_OUT("audio.ins", audioIns);
-        DISCOVERY_OUT("audio.outs", audioOuts);
-        DISCOVERY_OUT("midi.ins", midiIns);
-        DISCOVERY_OUT("midi.outs", midiOuts);
-        DISCOVERY_OUT("parameters.ins", parameters);
-        DISCOVERY_OUT("end", "------------");
-    }
-
-    CarlaJUCE::idleJuce_GUI();
-    CarlaJUCE::shutdownJuce_GUI();
-    return false;
-}
-#endif // USING_JUCE_FOR_VST2
+// fluidsynth (dls, sf2, sfz)
 
 #ifdef HAVE_FLUIDSYNTH
 static void do_fluidsynth_check(const char* const filename, const PluginType type, const bool doInit)
@@ -2547,6 +2776,7 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
 #endif // HAVE_FLUIDSYNTH
 
 // --------------------------------------------------------------------------------------------------------------------
+// JSFX
 
 #ifdef HAVE_YSFX
 static void do_jsfx_check(const char* const filename, bool doInit)
@@ -2678,13 +2908,19 @@ int main(int argc, const char* argv[])
    #endif
 
   #ifdef CARLA_OS_WIN
+    // init win32 stuff that plugins might use
     OleInitialize(nullptr);
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
    #ifndef __WINPTHREADS_VERSION
     // (non-portable) initialization of statically linked pthread library
     pthread_win32_process_attach_np();
     pthread_win32_thread_attach_np();
    #endif
+
+    // do not show error message box on Windows
+    SetErrorMode(SEM_NOGPFAULTERRORBOX);
+    SetUnhandledExceptionFilter(winExceptionFilter);
   #endif
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -2757,6 +2993,7 @@ int main(int argc, const char* argv[])
     case PLUGIN_DSSI:
     case PLUGIN_VST2:
     case PLUGIN_VST3:
+    case PLUGIN_AU:
     case PLUGIN_CLAP:
         removeFileFromQuarantine(filename);
         break;
@@ -2785,24 +3022,16 @@ int main(int argc, const char* argv[])
    #endif
 
     case PLUGIN_VST2:
-       #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST
-        retryAsX64lugin = do_juce_check(filename, "VST2", doInit);
-       #else
         retryAsX64lugin = do_vst2_check(handle, filename, doInit);
-       #endif
         break;
 
     case PLUGIN_VST3:
-       #if defined(USING_JUCE) && JUCE_PLUGINHOST_VST3
-        retryAsX64lugin = do_juce_check(filename, "VST3", doInit);
-       #else
         retryAsX64lugin = do_vst3_check(handle, filename, doInit);
-       #endif
         break;
 
     case PLUGIN_AU:
-       #if defined(USING_JUCE) && JUCE_PLUGINHOST_AU
-        do_juce_check(filename, "AU", doInit);
+       #ifdef CARLA_OS_MAC
+        retryAsX64lugin = do_au_check(filename, doInit);
        #else
         DISCOVERY_OUT("error", "AU support not available");
        #endif

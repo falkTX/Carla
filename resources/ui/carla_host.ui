@@ -574,7 +574,6 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="act_help_about"/>
-    <addaction name="act_help_about_juce"/>
     <addaction name="act_help_about_qt"/>
    </widget>
    <addaction name="menu_File"/>
@@ -1466,14 +1465,6 @@
   <action name="act_help_about">
    <property name="text">
     <string>&amp;About</string>
-   </property>
-   <property name="menuRole">
-    <enum>QAction::NoRole</enum>
-   </property>
-  </action>
-  <action name="act_help_about_juce">
-   <property name="text">
-    <string>About &amp;JUCE</string>
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>
