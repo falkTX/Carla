@@ -6,6 +6,7 @@
 # Imports (Global)
 
 from qt_compat import qt_config
+import math
 
 if qt_config == 5:
     from PyQt5.QtCore import Qt, QRectF, QLineF, QTimer
@@ -154,7 +155,7 @@ def getColorFromCategory(category):
 # ------------------------------------------------------------------------------------------------------------
 #
 
-def setScalableDialStyle(widget, parameterId, parameterCount, whiteLabels, skinStyle):
+def setScalableDialStyle(widget, parameterId, whiteLabels, skinStyle):
     if skinStyle.startswith("calf"):
         widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
         widget.setImage(7)
@@ -176,10 +177,10 @@ def setScalableDialStyle(widget, parameterId, parameterCount, whiteLabels, skinS
             widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_CARLA_VOL)
 
         else:
-            _r = 255 - int((float(parameterId)/float(parameterCount))*200.0)
-            _g =  55 + int((float(parameterId)/float(parameterCount))*200.0)
-            _b = 0 #(r-40)*4
-            widget.setCustomPaintColor(QColor(_r, _g, _b))
+            # _r = 255 - int((float(index)/float(parameterCount))*200.0)
+            # _g =  55 + int((float(index)/float(parameterCount))*200.0)
+            # _b = 0 #(r-40)*4
+            # widget.setCustomPaintColor(QColor(_r, _g, _b))
             widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_COLOR)
 
         if whiteLabels:
@@ -565,6 +566,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
             index = 0
             layout = self.w_knobs_left.layout()
+
             for i in range(parameterCount):
                 # 50 should be enough for everybody, right?
                 if index >= 50:
@@ -573,20 +575,37 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
                 paramData   = self.host.get_parameter_data(self.fPluginId, i)
                 paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
+                isBoolean   = (paramData['hints'] & PARAMETER_IS_BOOLEAN) != 0
                 isInteger   = (paramData['hints'] & PARAMETER_IS_INTEGER) != 0
+
+                scalePoints = []
+                prefix = ""
+                suffix = ""
+                if ((paramData['hints'] & PARAMETER_USES_SCALEPOINTS) != 0):
+                    for j in range(paramInfo['scalePointCount']):
+                        scalePoints.append(self.host.get_parameter_scalepoint_info(self.fPluginId, index, j))
+                    suffix = paramInfo['unit'].strip()
+                    # There is very few plugins with this, and none with scalepoints i found, but still... (but how do i test it?)
+                    if suffix == "(coef)":
+                        prefix = "* "
+                        suffix = ""
+                    else:
+                        suffix = " " + suffix
 
                 if paramData['type'] != PARAMETER_INPUT:
                     continue
-                if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                    continue
+                # if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                #     continue
                 if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                    continue
-                if (paramData['hints'] & PARAMETER_USES_SCALEPOINTS) != 0 and not isInteger:
-                    # NOTE: we assume integer scalepoints are continuous
-                    continue
-                if isInteger and paramRanges['max']-paramRanges['min'] <= 3:
-                    continue
+                    print("INFO: Parameter "+str(i)+" is Disabled.")
+                    # continue
+                # if (paramData['hints'] & PARAMETER_USES_SCALEPOINTS) != 0 and not isInteger:
+                #     # NOTE: we assume integer scalepoints are continuous
+                #     continue
+                # if isInteger and paramRanges['max']-paramRanges['min'] <= 3:
+                #     continue
                 if paramInfo['name'].startswith("unused"):
+                    print("INFO: Parameter "+str(i)+" is Unused, so skipped.")
                     continue
 
                 paramName = getParameterShortName(paramInfo['name'])
@@ -597,21 +616,49 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 widget.setMaximum(paramRanges['max'])
                 widget.hide()
 
-                if isInteger:
-                    widget.setPrecision(paramRanges['max']-paramRanges['min'], True)
+                delta = paramRanges['max']-paramRanges['min']
+                if delta <= 0:
+                    print("ERROR: Parameter "+str(i)+": Max and Min are same or wrong.")
+                    return
 
-                setScalableDialStyle(widget, i, parameterCount, whiteLabels, self.fSkinStyle)
+                if isBoolean: # Mimic as [0 or 1] integer
+                    widget.setPrecision(1, True, scalePoints, prefix, suffix)
+
+                elif isInteger:
+                    while delta > 50:
+                        delta = int(math.ceil(delta / 2))
+                    widget.setPrecision(delta, True, scalePoints, prefix, suffix)
+
+                else:  # Floats are finer-step smoothed
+                    delta = paramRanges['max']-paramRanges['min']
+                    while delta > 500:
+                        delta = delta / 2.0
+                    while delta < 250:
+                        delta = delta * 2.0
+                    widget.setPrecision(math.ceil(delta), False, scalePoints, prefix, suffix)
+
+                setScalableDialStyle(widget, 0, whiteLabels, self.fSkinStyle)
 
                 index += 1
                 self.fParameterList.append([i, widget])
                 layout.addWidget(widget)
+
+            CUSTOM_PAINT_HUE_FROM = -0.025 # Deep Red
+            CUSTOM_PAINT_HUE_SPAN = 0.4    # Deep Red -> Green. Can be negative.
+            for i in range(index):
+                widget = layout.itemAt(i).widget()
+                if widget is not None:
+                    coef = i/(index-1) if index > 1 else 0.5 # 0.5 = Midrange
+                    hue = (CUSTOM_PAINT_HUE_FROM + coef * CUSTOM_PAINT_HUE_SPAN) % 1.0
+                    widget.setCustomPaintColor(QColor.fromHslF(hue, 1, 0.5, 1))
+
 
         if self.w_knobs_right is not None and (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) != 0:
             widget = ScalableDial(self, PARAMETER_DRYWET)
             widget.setLabel("Dry/Wet")
             widget.setMinimum(0.0)
             widget.setMaximum(1.0)
-            setScalableDialStyle(widget, PARAMETER_DRYWET, 0, whiteLabels, self.fSkinStyle)
+            setScalableDialStyle(widget, PARAMETER_DRYWET, whiteLabels, self.fSkinStyle)
 
             self.fParameterList.append([PARAMETER_DRYWET, widget])
             self.w_knobs_right.layout().addWidget(widget)
@@ -621,7 +668,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             widget.setLabel("Volume")
             widget.setMinimum(0.0)
             widget.setMaximum(1.27)
-            setScalableDialStyle(widget, PARAMETER_VOLUME, 0, whiteLabels, self.fSkinStyle)
+            setScalableDialStyle(widget, PARAMETER_VOLUME, whiteLabels, self.fSkinStyle)
 
             self.fParameterList.append([PARAMETER_VOLUME, widget])
             self.w_knobs_right.layout().addWidget(widget)
