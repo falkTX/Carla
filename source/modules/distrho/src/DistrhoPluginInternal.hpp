@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -39,6 +39,7 @@ extern uint32_t    d_nextBufferSize;
 extern double      d_nextSampleRate;
 extern const char* d_nextBundlePath;
 extern bool        d_nextPluginIsDummy;
+extern bool        d_nextPluginIsSelfTest;
 extern bool        d_nextCanRequestParameterValueChanges;
 
 // -----------------------------------------------------------------------
@@ -67,7 +68,8 @@ struct PortGroupWithId : PortGroup {
           groupId(kPortGroupNone) {}
 };
 
-static void fillInPredefinedPortGroupData(const uint32_t groupId, PortGroup& portGroup)
+static inline
+void fillInPredefinedPortGroupData(const uint32_t groupId, PortGroup& portGroup)
 {
     switch (groupId)
     {
@@ -86,12 +88,62 @@ static void fillInPredefinedPortGroupData(const uint32_t groupId, PortGroup& por
     }
 }
 
+static inline
+void d_strncpy(char* const dst, const char* const src, const size_t length)
+{
+    DISTRHO_SAFE_ASSERT_RETURN(length > 0,);
+
+    if (const size_t len = std::min(std::strlen(src), length-1U))
+    {
+        std::memcpy(dst, src, len);
+        dst[len] = '\0';
+    }
+    else
+    {
+        dst[0] = '\0';
+    }
+}
+
+template<typename T>
+static inline
+void snprintf_t(char* const dst, const T value, const char* const format, const size_t size)
+{
+    DISTRHO_SAFE_ASSERT_RETURN(size > 0,);
+    std::snprintf(dst, size-1, format, value);
+    dst[size-1] = '\0';
+}
+
+static inline
+void snprintf_f32(char* const dst, const float value, const size_t size)
+{
+    return snprintf_t<float>(dst, value, "%f", size);
+}
+
+static inline
+void snprintf_f32(char* const dst, const double value, const size_t size)
+{
+    return snprintf_t<double>(dst, value, "%f", size);
+}
+
+static inline
+void snprintf_i32(char* const dst, const int32_t value, const size_t size)
+{
+    return snprintf_t<int32_t>(dst, value, "%d", size);
+}
+
+static inline
+void snprintf_u32(char* const dst, const uint32_t value, const size_t size)
+{
+    return snprintf_t<uint32_t>(dst, value, "%u", size);
+}
+
 // -----------------------------------------------------------------------
 // Plugin private data
 
 struct Plugin::PrivateData {
     const bool canRequestParameterValueChanges;
     const bool isDummy;
+    const bool isSelfTest;
     bool isProcessing;
 
 #if DISTRHO_PLUGIN_NUM_INPUTS+DISTRHO_PLUGIN_NUM_OUTPUTS > 0
@@ -136,6 +188,7 @@ struct Plugin::PrivateData {
     PrivateData() noexcept
         : canRequestParameterValueChanges(d_nextCanRequestParameterValueChanges),
           isDummy(d_nextPluginIsDummy),
+          isSelfTest(d_nextPluginIsSelfTest),
           isProcessing(false),
 #if DISTRHO_PLUGIN_NUM_INPUTS+DISTRHO_PLUGIN_NUM_OUTPUTS > 0
           audioPorts(nullptr),
@@ -256,6 +309,9 @@ struct Plugin::PrivateData {
 #if DISTRHO_PLUGIN_WANT_STATE
     bool updateStateValueCallback(const char* const key, const char* const value)
     {
+        DISTRHO_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0', false);
+        DISTRHO_SAFE_ASSERT_RETURN(value != nullptr, false);
+
         d_stdout("updateStateValueCallback %p", updateStateValueCallbackFunc);
         if (updateStateValueCallbackFunc != nullptr)
             return updateStateValueCallbackFunc(callbacksPtr, key, value);
@@ -281,79 +337,6 @@ public:
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
-
-#if defined(DPF_RUNTIME_TESTING) && defined(__GNUC__) && !defined(__clang__)
-        /* Run-time testing build.
-         * Verify that virtual functions are overriden if parameters, programs or states are in use.
-         * This does not work on all compilers, but we use it purely as informational check anyway. */
-        if (fData->parameterCount != 0)
-        {
-            if ((void*)(fPlugin->*(&Plugin::initParameter)) == (void*)&Plugin::initParameter)
-            {
-                d_stderr2("DPF warning: Plugins with parameters must implement `initParameter`");
-                abort();
-            }
-            if ((void*)(fPlugin->*(&Plugin::getParameterValue)) == (void*)&Plugin::getParameterValue)
-            {
-                d_stderr2("DPF warning: Plugins with parameters must implement `getParameterValue`");
-                abort();
-            }
-            if ((void*)(fPlugin->*(&Plugin::setParameterValue)) == (void*)&Plugin::setParameterValue)
-            {
-                d_stderr2("DPF warning: Plugins with parameters must implement `setParameterValue`");
-                abort();
-            }
-        }
-
-# if DISTRHO_PLUGIN_WANT_PROGRAMS
-        if (fData->programCount != 0)
-        {
-            if ((void*)(fPlugin->*(&Plugin::initProgramName)) == (void*)&Plugin::initProgramName)
-            {
-                d_stderr2("DPF warning: Plugins with programs must implement `initProgramName`");
-                abort();
-            }
-            if ((void*)(fPlugin->*(&Plugin::loadProgram)) == (void*)&Plugin::loadProgram)
-            {
-                d_stderr2("DPF warning: Plugins with programs must implement `loadProgram`");
-                abort();
-            }
-        }
-# endif
-
-# if DISTRHO_PLUGIN_WANT_STATE
-        if (fData->stateCount != 0)
-        {
-            if ((void*)(fPlugin->*(&Plugin::initState)) == (void*)&Plugin::initState)
-            {
-                d_stderr2("DPF warning: Plugins with state must implement `initState`");
-                abort();
-            }
-
-            if ((void*)(fPlugin->*(&Plugin::setState)) == (void*)&Plugin::setState)
-            {
-                d_stderr2("DPF warning: Plugins with state must implement `setState`");
-                abort();
-            }
-        }
-# endif
-
-# if DISTRHO_PLUGIN_WANT_FULL_STATE
-        if (fData->stateCount != 0)
-        {
-            if ((void*)(fPlugin->*(&Plugin::getState)) == (void*)&Plugin::getState)
-            {
-                d_stderr2("DPF warning: Plugins with full state must implement `getState`");
-                abort();
-            }
-        }
-        else
-        {
-            d_stderr2("DPF warning: Plugins with full state must have at least 1 state");
-            abort();
-        }
-# endif
-#endif
 
 #if DISTRHO_PLUGIN_NUM_INPUTS+DISTRHO_PLUGIN_NUM_OUTPUTS > 0
         {
@@ -404,13 +387,100 @@ public:
         }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-        for (uint32_t i=0, count=fData->programCount; i < count; ++i)
+        for (uint32_t i=0; i < fData->programCount; ++i)
             fPlugin->initProgramName(i, fData->programNames[i]);
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-        for (uint32_t i=0, count=fData->stateCount; i < count; ++i)
+        for (uint32_t i=0; i < fData->stateCount; ++i)
             fPlugin->initState(i, fData->states[i]);
+#endif
+
+#if defined(DPF_RUNTIME_TESTING) && defined(__GNUC__) && !defined(__clang__)
+        /* Run-time testing build.
+         * Verify that virtual functions are overriden if parameters, programs or states are in use.
+         * This does not work on all compilers, but we use it purely as informational check anyway. */
+        if (fData->parameterCount != 0)
+        {
+            if ((void*)(fPlugin->*(&Plugin::initParameter)) == (void*)&Plugin::initParameter)
+            {
+                d_stderr2("DPF warning: Plugins with parameters must implement `initParameter`");
+                abort();
+            }
+            if ((void*)(fPlugin->*(&Plugin::getParameterValue)) == (void*)&Plugin::getParameterValue)
+            {
+                d_stderr2("DPF warning: Plugins with parameters must implement `getParameterValue`");
+                abort();
+            }
+            if ((void*)(fPlugin->*(&Plugin::setParameterValue)) == (void*)&Plugin::setParameterValue)
+            {
+                d_stderr2("DPF warning: Plugins with parameters must implement `setParameterValue`");
+                abort();
+            }
+        }
+
+# if DISTRHO_PLUGIN_WANT_PROGRAMS
+        if (fData->programCount != 0)
+        {
+            if ((void*)(fPlugin->*(&Plugin::initProgramName)) == (void*)&Plugin::initProgramName)
+            {
+                d_stderr2("DPF warning: Plugins with programs must implement `initProgramName`");
+                abort();
+            }
+            if ((void*)(fPlugin->*(&Plugin::loadProgram)) == (void*)&Plugin::loadProgram)
+            {
+                d_stderr2("DPF warning: Plugins with programs must implement `loadProgram`");
+                abort();
+            }
+        }
+# endif
+
+# if DISTRHO_PLUGIN_WANT_STATE
+        if (fData->stateCount != 0)
+        {
+            bool hasNonUiState = false;
+            for (uint32_t i=0; i < fData->stateCount; ++i)
+            {
+                if ((fData->states[i].hints & kStateIsOnlyForUI) == 0)
+                {
+                    hasNonUiState = true;
+                    break;
+                }
+            }
+
+            if (hasNonUiState)
+            {
+                if ((void*)(fPlugin->*(static_cast<void(Plugin::*)(uint32_t,State&)>(&Plugin::initState))) ==
+                    (void*)static_cast<void(Plugin::*)(uint32_t,State&)>(&Plugin::initState))
+                {
+                    d_stderr2("DPF warning: Plugins with state must implement `initState`");
+                    abort();
+                }
+
+                if ((void*)(fPlugin->*(&Plugin::setState)) == (void*)&Plugin::setState)
+                {
+                    d_stderr2("DPF warning: Plugins with state must implement `setState`");
+                    abort();
+                }
+            }
+        }
+# endif
+
+# if DISTRHO_PLUGIN_WANT_FULL_STATE
+        if (fData->stateCount != 0)
+        {
+            if ((void*)(fPlugin->*(&Plugin::getState)) == (void*)&Plugin::getState)
+            {
+                d_stderr2("DPF warning: Plugins with full state must implement `getState`");
+                abort();
+            }
+        }
+        else
+        {
+            d_stderr2("DPF warning: Plugins with full state must have at least 1 state");
+            abort();
+        }
+# endif
 #endif
 
         fData->callbacksPtr = callbacksPtr;
@@ -593,6 +663,11 @@ public:
         return (getParameterHints(index) & kParameterIsOutput) != 0x0;
     }
 
+    bool isParameterInteger(const uint32_t index) const noexcept
+    {
+        return (getParameterHints(index) & kParameterIsInteger) != 0x0;
+    }
+
     bool isParameterTrigger(const uint32_t index) const noexcept
     {
         return (getParameterHints(index) & kParameterIsTrigger) == kParameterIsTrigger;
@@ -697,6 +772,24 @@ public:
         fPlugin->setParameterValue(index, value);
     }
 
+    /*
+    bool getParameterIndexForSymbol(const char* const symbol, uint32_t& index)
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, false);
+
+        for (uint32_t i=0; i < fData->parameterCount; ++i)
+        {
+            if (fData->parameters[i].symbol == symbol)
+            {
+                index = i;
+                return true;
+            }
+        }
+
+        return false;
+    }
+    */
+
     uint32_t getPortGroupCount() const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, 0);
@@ -800,7 +893,16 @@ public:
         return fData->states[index].description;
     }
 
-# if DISTRHO_PLUGIN_WANT_FULL_STATE
+   #ifdef __MOD_DEVICES__
+    const String& getStateFileTypes(const uint32_t index) const noexcept
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->stateCount, sFallbackString);
+
+        return fData->states[index].fileTypes;
+    }
+   #endif
+
+   #if DISTRHO_PLUGIN_WANT_FULL_STATE
     String getStateValue(const char* const key) const
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, sFallbackString);
@@ -808,7 +910,7 @@ public:
 
         return fPlugin->getState(key);
     }
-# endif
+   #endif
 
     void setState(const char* const key, const char* const value)
     {
@@ -879,7 +981,7 @@ public:
         }
     }
 
-#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
+   #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
     void run(const float** const inputs, float** const outputs, const uint32_t frames,
              const MidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
@@ -896,7 +998,7 @@ public:
         fPlugin->run(inputs, outputs, frames, midiEvents, midiEventCount);
         fData->isProcessing = false;
     }
-#else
+   #else
     void run(const float** const inputs, float** const outputs, const uint32_t frames)
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
@@ -912,7 +1014,21 @@ public:
         fPlugin->run(inputs, outputs, frames);
         fData->isProcessing = false;
     }
-#endif
+   #endif
+
+    // -------------------------------------------------------------------
+
+   #ifdef DISTRHO_PLUGIN_TARGET_AU
+    void setAudioPortIO(const uint16_t numInputs, const uint16_t numOutputs)
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+
+        if (fIsActive) fPlugin->deactivate();
+        fPlugin->ioChanged(numInputs, numOutputs);
+        if (fIsActive) fPlugin->activate();
+    }
+   #endif
 
     // -------------------------------------------------------------------
 
@@ -928,14 +1044,14 @@ public:
         return fData->sampleRate;
     }
 
-    void setBufferSize(const uint32_t bufferSize, const bool doCallback = false)
+    bool setBufferSize(const uint32_t bufferSize, const bool doCallback = false)
     {
-        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
-        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, false);
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, false);
         DISTRHO_SAFE_ASSERT(bufferSize >= 2);
 
         if (fData->bufferSize == bufferSize)
-            return;
+            return false;
 
         fData->bufferSize = bufferSize;
 
@@ -945,6 +1061,8 @@ public:
             fPlugin->bufferSizeChanged(bufferSize);
             if (fIsActive) fPlugin->activate();
         }
+
+        return true;
     }
 
     void setSampleRate(const double sampleRate, const bool doCallback = false)

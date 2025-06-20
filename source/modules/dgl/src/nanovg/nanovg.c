@@ -23,10 +23,46 @@
 
 #include "nanovg.h"
 #define FONTSTASH_IMPLEMENTATION
+#define stbtt_fontinfo dpf_nvg_stbtt_fontinfo
+#define stbrp_context dpf_nvg_stbrp_context
+#define stbrp_rect dpf_nvg_stbrp_rect
+#define stbrp_node dpf_nvg_stbrp_node
+#define stbrp_coord dpf_nvg_stbrp_coord
 #include "fontstash.h"
 
 #ifndef NVG_NO_STB
 #define STB_IMAGE_IMPLEMENTATION
+#define stbi_convert_iphone_png_to_rgb dpf_stbi_convert_iphone_png_to_rgb
+#define stbi_failure_reason dpf_stbi_failure_reason
+#define stbi_hdr_to_ldr_gamma dpf_stbi_hdr_to_ldr_gamma
+#define stbi_hdr_to_ldr_scale dpf_stbi_hdr_to_ldr_scale
+#define stbi_image_free dpf_stbi_image_free
+#define stbi_info dpf_stbi_info
+#define stbi_info_from_callbacks dpf_stbi_info_from_callbacks
+#define stbi_info_from_file dpf_stbi_info_from_file
+#define stbi_info_from_memory dpf_stbi_info_from_memory
+#define stbi_is_hdr dpf_stbi_is_hdr
+#define stbi_is_hdr_from_callbacks dpf_stbi_is_hdr_from_callbacks
+#define stbi_is_hdr_from_file dpf_stbi_is_hdr_from_file
+#define stbi_is_hdr_from_memory dpf_stbi_is_hdr_from_memory
+#define stbi_ldr_to_hdr_gamma dpf_stbi_ldr_to_hdr_gamma
+#define stbi_ldr_to_hdr_scale dpf_stbi_ldr_to_hdr_scale
+#define stbi_load dpf_stbi_load
+#define stbi_load_from_callbacks dpf_stbi_load_from_callbacks
+#define stbi_load_from_file dpf_stbi_load_from_file
+#define stbi_load_from_memory dpf_stbi_load_from_memory
+#define stbi_loadf dpf_stbi_loadf
+#define stbi_loadf_from_callbacks dpf_stbi_loadf_from_callbacks
+#define stbi_loadf_from_file dpf_stbi_loadf_from_file
+#define stbi_loadf_from_memory dpf_stbi_loadf_from_memory
+#define stbi_set_flip_vertically_on_load dpf_stbi_set_flip_vertically_on_load
+#define stbi_set_unpremultiply_on_load dpf_stbi_set_unpremultiply_on_load
+#define stbi_zlib_decode_buffer dpf_stbi_zlib_decode_buffer
+#define stbi_zlib_decode_malloc dpf_stbi_zlib_decode_malloc
+#define stbi_zlib_decode_malloc_guesssize dpf_stbi_zlib_decode_malloc_guesssize
+#define stbi_zlib_decode_malloc_guesssize_headerflag dpf_stbi_zlib_decode_malloc_guesssize_headerflag
+#define stbi_zlib_decode_noheader_buffer dpf_stbi_zlib_decode_noheader_buffer
+#define stbi_zlib_decode_noheader_malloc dpf_stbi_zlib_decode_noheader_malloc
 #include "stb_image.h"
 #endif
 
@@ -869,7 +905,7 @@ int nvgCreateImage(NVGcontext* ctx, const char* filename, int imageFlags)
 	return image;
 }
 
-int nvgCreateImageMem(NVGcontext* ctx, int imageFlags, unsigned char* data, int ndata)
+int nvgCreateImageMem(NVGcontext* ctx, int imageFlags, const unsigned char* data, int ndata)
 {
 	int w, h, n, image;
 	unsigned char* img = stbi_load_from_memory(data, ndata, &w, &h, &n, 4);
@@ -2592,6 +2628,11 @@ float nvgText(NVGcontext* ctx, float x, float y, const char* string, const char*
 		nvgTransformPoint(&c[6],&c[7], state->xform, q.x0*invscale, q.y1*invscale);
 		// Create triangles
 		if (nverts+6 <= cverts) {
+#if NVG_FONT_TEXTURE_FLAGS
+			// align font kerning to integer pixel positions
+			for (int i = 0; i < 8; ++i)
+				c[i] = (int)(c[i] + 0.5f);
+#endif
 			nvg__vset(&verts[nverts], c[0], c[1], q.s0, q.t0); nverts++;
 			nvg__vset(&verts[nverts], c[4], c[5], q.s1, q.t1); nverts++;
 			nvg__vset(&verts[nverts], c[2], c[3], q.s1, q.t0); nverts++;

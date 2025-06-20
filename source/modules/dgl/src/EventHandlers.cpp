@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -31,6 +31,8 @@ struct ButtonEventHandler::PrivateData {
     int state;
     bool checkable;
     bool checked;
+    bool enabled;
+    bool enabledInput;
 
     Point<double> lastClickPos;
     Point<double> lastMotionPos;
@@ -44,11 +46,16 @@ struct ButtonEventHandler::PrivateData {
           state(kButtonStateDefault),
           checkable(false),
           checked(false),
+          enabled(true),
+          enabledInput(true),
           lastClickPos(0, 0),
           lastMotionPos(0, 0)  {}
 
     bool mouseEvent(const Widget::MouseEvent& ev)
     {
+        if (! enabledInput)
+            return false;
+
         lastClickPos = ev.pos;
 
         // button was released, handle it now
@@ -98,6 +105,9 @@ struct ButtonEventHandler::PrivateData {
 
     bool motionEvent(const Widget::MotionEvent& ev)
     {
+        if (! enabledInput)
+            return false;
+
         // keep pressed
         if (button != -1)
         {
@@ -171,6 +181,27 @@ struct ButtonEventHandler::PrivateData {
         }
     }
 
+    void setEnabled(const bool enabled2, const bool appliesToEventInput) noexcept
+    {
+        if (appliesToEventInput)
+            enabledInput = enabled2;
+
+        if (enabled == enabled2)
+            return;
+
+        // reset temp vars if disabling
+        if (! enabled2)
+        {
+            button = -1;
+            state = kButtonStateDefault;
+            lastClickPos = Point<double>();
+            lastMotionPos = Point<double>();
+        }
+
+        enabled = enabled2;
+        widget->repaint();
+    }
+
     DISTRHO_DECLARE_NON_COPYABLE(PrivateData)
 };
 
@@ -215,6 +246,16 @@ void ButtonEventHandler::setCheckable(const bool checkable) noexcept
         return;
 
     pData->checkable = checkable;
+}
+
+bool ButtonEventHandler::isEnabled() const noexcept
+{
+    return pData->enabled;
+}
+
+void ButtonEventHandler::setEnabled(const bool enabled, const bool appliesToEventInput) noexcept
+{
+    pData->setEnabled(enabled, appliesToEventInput);
 }
 
 Point<double> ButtonEventHandler::getLastClickPosition() const noexcept
@@ -274,12 +315,15 @@ struct KnobEventHandler::PrivateData {
     SubWidget* const widget;
     KnobEventHandler::Callback* callback;
 
+    float accel;
     float minimum;
     float maximum;
     float step;
     float value;
     float valueDef;
     float valueTmp;
+    bool enabled;
+    bool enabledInput;
     bool usingDefault;
     bool usingLog;
     Orientation orientation;
@@ -287,56 +331,69 @@ struct KnobEventHandler::PrivateData {
 
     double lastX;
     double lastY;
+    uint lastClickTime;
 
     PrivateData(KnobEventHandler* const s, SubWidget* const w)
         : self(s),
           widget(w),
           callback(nullptr),
-          minimum(0.0f),
-          maximum(1.0f),
+          accel(200.f),
+          minimum(0.f),
+          maximum(1.f),
           step(0.0f),
           value(0.5f),
           valueDef(value),
           valueTmp(value),
+          enabled(true),
+          enabledInput(true),
           usingDefault(false),
           usingLog(false),
           orientation(Vertical),
           state(kKnobStateDefault),
           lastX(0.0),
-          lastY(0.0) {}
+          lastY(0.0),
+          lastClickTime(0) {}
 
     PrivateData(KnobEventHandler* const s, SubWidget* const w, PrivateData* const other)
         : self(s),
           widget(w),
           callback(other->callback),
+          accel(other->accel),
           minimum(other->minimum),
           maximum(other->maximum),
           step(other->step),
           value(other->value),
           valueDef(other->valueDef),
           valueTmp(value),
+          enabled(other->enabled),
+          enabledInput(other->enabledInput),
           usingDefault(other->usingDefault),
           usingLog(other->usingLog),
           orientation(other->orientation),
           state(kKnobStateDefault),
           lastX(0.0),
-          lastY(0.0) {}
+          lastY(0.0),
+          lastClickTime(0) {}
 
     void assignFrom(PrivateData* const other)
     {
         callback     = other->callback;
+        accel        = other->accel;
         minimum      = other->minimum;
         maximum      = other->maximum;
         step         = other->step;
         value        = other->value;
         valueDef     = other->valueDef;
         valueTmp     = value;
+        enabled      = other->enabled;
+        enabledInput = other->enabledInput;
         usingDefault = other->usingDefault;
         usingLog     = other->usingLog;
         orientation  = other->orientation;
         state        = kKnobStateDefault;
         lastX        = 0.0;
         lastY        = 0.0;
+        lastClickTime = 0;
     }
 
     inline float logscale(const float v) const
@@ -353,8 +410,11 @@ struct KnobEventHandler::PrivateData {
         return std::log(v/a)/b;
     }
 
-    bool mouseEvent(const Widget::MouseEvent& ev)
+    bool mouseEvent(const Widget::MouseEvent& ev, const double scaleFactor)
     {
+        if (! enabledInput)
+            return false;
+
         if (ev.button != 1)
             return false;
 
@@ -370,9 +430,21 @@ struct KnobEventHandler::PrivateData {
                 return true;
             }
 
+            lastX = ev.pos.getX() / scaleFactor;
+            lastY = ev.pos.getY() / scaleFactor;
+
+            if (lastClickTime > 0 && ev.time > lastClickTime && ev.time - lastClickTime <= 300)
+            {
+                lastClickTime = 0;
+
+                if (callback != nullptr)
+                    callback->knobDoubleClicked(widget);
+
+                return true;
+            }
+
+            lastClickTime = ev.time;
             state |= kKnobStateDragging;
-            lastX = ev.pos.getX();
-            lastY = ev.pos.getY();
             widget->repaint();
 
             if (callback != nullptr)
@@ -394,73 +466,104 @@ struct KnobEventHandler::PrivateData {
         return false;
     }
 
-    bool motionEvent(const Widget::MotionEvent& ev)
+    bool motionEvent(const Widget::MotionEvent& ev, const double scaleFactor)
     {
+        if (! enabledInput)
+            return false;
+
         if ((state & kKnobStateDragging) == 0x0)
             return false;
 
-        bool doVal = false;
-        float d, value2 = 0.0f;
+        double movDiff;
 
-        if (orientation == Horizontal)
+        switch (orientation)
         {
-            if (const double movX = ev.pos.getX() - lastX)
+        case Horizontal:
+            movDiff = ev.pos.getX() / scaleFactor - lastX;
+            break;
+        case Vertical:
+            movDiff = lastY - ev.pos.getY() / scaleFactor;
+            break;
+        case Both:
             {
-                d      = (ev.mod & kModifierControl) ? 2000.0f : 200.0f;
-                value2 = (usingLog ? invlogscale(valueTmp) : valueTmp) + (float(maximum - minimum) / d * float(movX));
-                doVal  = true;
+                const double movDiffX = ev.pos.getX() / scaleFactor - lastX;
+                const double movDiffY = lastY - ev.pos.getY() / scaleFactor;
+                movDiff = std::abs(movDiffX) > std::abs(movDiffY) ? movDiffX : movDiffY;
             }
-        }
-        else if (orientation == Vertical)
-        {
-            if (const double movY = lastY - ev.pos.getY())
-            {
-                d      = (ev.mod & kModifierControl) ? 2000.0f : 200.0f;
-                value2 = (usingLog ? invlogscale(valueTmp) : valueTmp) + (float(maximum - minimum) / d * float(movY));
-                doVal  = true;
-            }
-        }
-
-        if (! doVal)
+            break;
+        default:
             return false;
+        }
+
+        if (d_isZero(movDiff))
+            return true;
+
+        const float divisor = (ev.mod & kModifierControl) ? accel * 10.f : accel;
+        valueTmp += (maximum - minimum) / divisor * static_cast<float>(movDiff);
 
         if (usingLog)
-            value2 = logscale(value2);
+            valueTmp = logscale(valueTmp);
 
-        if (value2 < minimum)
+        float value2;
+        bool valueChanged = false;
+
+        if (valueTmp < minimum)
         {
             valueTmp = value2 = minimum;
+            valueChanged = true;
         }
-        else if (value2 > maximum)
+        else if (valueTmp > maximum)
         {
             valueTmp = value2 = maximum;
+            valueChanged = true;
         }
         else
         {
-            valueTmp = value2;
-
             if (d_isNotZero(step))
             {
-                const float rest = std::fmod(value2, step);
-                value2 -= rest + (rest > step/2.0f ? step : 0.0f);
+                if (std::abs(valueTmp - value) >= step)
+                {
+                    const float rest = std::fmod(valueTmp, step);
+                    valueChanged = true;
+                    value2 = valueTmp - rest;
+
+                    if (rest < 0 && rest < step * -0.5f)
+                        value2 -= step;
+                    else if (rest > 0 && rest > step * 0.5f)
+                        value2 += step;
+
+                    if (value2 < minimum)
+                        value2 = minimum;
+                    else if (value2 > maximum)
+                        value2 = maximum;
+                }
+            }
+            else
+            {
+                value2 = valueTmp;
+                valueChanged = true;
             }
         }
 
-        setValue(value2, true);
+        if (valueChanged)
+            setValue(value2, true);
 
-        lastX = ev.pos.getX();
-        lastY = ev.pos.getY();
+        lastX = ev.pos.getX() / scaleFactor;
+        lastY = ev.pos.getY() / scaleFactor;
 
         return true;
     }
 
     bool scrollEvent(const Widget::ScrollEvent& ev)
     {
+        if (! enabledInput)
+            return false;
+
         if (! widget->contains(ev.pos))
             return false;
 
         const float dir    = (ev.delta.getY() > 0.f) ? 1.f : -1.f;
-        const float d      = (ev.mod & kModifierControl) ? 2000.0f : 200.0f;
+        const float d      = (ev.mod & kModifierControl) ? accel * 10.f : accel;
         float       value2 = (usingLog ? invlogscale(valueTmp) : valueTmp)
                            + ((maximum - minimum) / d * 10.f * dir);
 
@@ -494,6 +597,28 @@ struct KnobEventHandler::PrivateData {
     {
         const float diff = maximum - minimum;
         return ((usingLog ? invlogscale(value) : value) - minimum) / diff;
+    }
+
+    void setEnabled(const bool enabled2, const bool appliesToEventInput) noexcept
+    {
+        if (appliesToEventInput)
+            enabledInput = enabled2;
+
+        if (enabled == enabled2)
+            return;
+
+        // reset temp vars if disabling
+        if (! enabled2)
+        {
+            state = kKnobStateDefault;
+            lastX = 0.0;
+            lastY = 0.0;
+            lastClickTime = 0;
+            valueTmp = value;
+        }
+
+        enabled = enabled2;
+        widget->repaint();
     }
 
     void setRange(const float min, const float max) noexcept
@@ -553,6 +678,21 @@ KnobEventHandler::~KnobEventHandler()
     delete pData;
 }
 
+bool KnobEventHandler::isEnabled() const noexcept
+{
+    return pData->enabled;
+}
+
+void KnobEventHandler::setEnabled(const bool enabled, const bool appliesToEventInput) noexcept
+{
+    pData->setEnabled(enabled, appliesToEventInput);
+}
+
+bool KnobEventHandler::isInteger() const noexcept
+{
+    return d_isEqual(pData->step, 1.f);
+}
+
 float KnobEventHandler::getValue() const noexcept
 {
     return pData->value;
@@ -568,10 +708,25 @@ float KnobEventHandler::getNormalizedValue() const noexcept
     return pData->getNormalizedValue();
 }
 
+float KnobEventHandler::getDefault() const noexcept
+{
+    return pData->valueDef;
+}
+
 void KnobEventHandler::setDefault(const float def) noexcept
 {
     pData->valueDef = def;
     pData->usingDefault = true;
+}
+
+float KnobEventHandler::getMinimum() const noexcept
+{
+    return pData->minimum;
+}
+
+float KnobEventHandler::getMaximum() const noexcept
+{
+    return pData->maximum;
 }
 
 void KnobEventHandler::setRange(const float min, const float max) noexcept
@@ -596,9 +751,6 @@ KnobEventHandler::Orientation KnobEventHandler::getOrientation() const noexcept
 
 void KnobEventHandler::setOrientation(const Orientation orientation) noexcept
 {
-    if (pData->orientation == orientation)
-        return;
-
     pData->orientation = orientation;
 }
 
@@ -607,14 +759,19 @@ void KnobEventHandler::setCallback(Callback* const callback) noexcept
     pData->callback = callback;
 }
 
-bool KnobEventHandler::mouseEvent(const Widget::MouseEvent& ev)
+void KnobEventHandler::setMouseDeceleration(float accel) noexcept
 {
-    return pData->mouseEvent(ev);
+    pData->accel = accel;
 }
 
-bool KnobEventHandler::motionEvent(const Widget::MotionEvent& ev)
+bool KnobEventHandler::mouseEvent(const Widget::MouseEvent& ev, const double scaleFactor)
 {
-    return pData->motionEvent(ev);
+    return pData->mouseEvent(ev, scaleFactor);
+}
+
+bool KnobEventHandler::motionEvent(const Widget::MotionEvent& ev, const double scaleFactor)
+{
+    return pData->motionEvent(ev, scaleFactor);
 }
 
 bool KnobEventHandler::scrollEvent(const Widget::ScrollEvent& ev)

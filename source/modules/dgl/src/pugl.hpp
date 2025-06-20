@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2023 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -19,7 +19,7 @@
 
 #include "../Base.hpp"
 
-/* we will include all header files used in pugl.h in their C++ friendly form, then pugl stuff in custom namespace */
+// we will include all header files used in pugl.h in their C++ friendly form, then pugl stuff in custom namespace
 #include <cstddef>
 #ifdef DISTRHO_PROPER_CPP11_SUPPORT
 # include <cstdbool>
@@ -29,9 +29,26 @@
 # include <stdint.h>
 #endif
 
-// hidden api
+// custom attributes
+#define PUGL_ATTRIBUTES_H
+#define PUGL_BEGIN_DECLS
+#define PUGL_END_DECLS
 #define PUGL_API
 #define PUGL_DISABLE_DEPRECATED
+
+// GCC function attributes
+#if defined(__GNUC__) && !defined(__clang__)
+ #define PUGL_CONST_FUNC __attribute__((const))
+ #define PUGL_MALLOC_FUNC __attribute__((malloc))
+#else
+ #define PUGL_CONST_FUNC
+ #define PUGL_MALLOC_FUNC
+#endif
+
+#define PUGL_CONST_API PUGL_CONST_FUNC
+#define PUGL_MALLOC_API PUGL_MALLOC_FUNC
+
+// we do our own OpenGL inclusion
 #define PUGL_NO_INCLUDE_GL_H
 #define PUGL_NO_INCLUDE_GLU_H
 
@@ -39,7 +56,7 @@
 START_NAMESPACE_DGL
 #endif
 
-#include "pugl-upstream/include/pugl/pugl.h"
+#include "pugl/pugl.h"
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -55,9 +72,6 @@ void puglSetMatchingBackendForCurrentBuild(PuglView* view);
 // bring view window into the foreground, aka "raise" window
 void puglRaiseWindow(PuglView* view);
 
-// get scale factor from parent window if possible, fallback to puglGetScaleFactor
-double puglGetScaleFactorFromParent(const PuglView* view);
-
 // combined puglSetSizeHint using PUGL_MIN_SIZE, PUGL_MIN_ASPECT and PUGL_MAX_ASPECT
 PuglStatus puglSetGeometryConstraints(PuglView* view, uint width, uint height, bool aspect);
 
@@ -71,9 +85,13 @@ PuglStatus puglSetSizeAndDefault(PuglView* view, uint width, uint height);
 void puglOnDisplayPrepare(PuglView* view);
 
 // DGL specific, build-specific fallback resize
-void puglFallbackOnResize(PuglView* view);
+void puglFallbackOnResize(PuglView* view, uint width, uint height);
 
-#if defined(DISTRHO_OS_MAC)
+#if defined(DISTRHO_OS_HAIKU)
+
+// nothing here yet
+
+#elif defined(DISTRHO_OS_MAC)
 
 // macOS specific, add another view's window as child
 PuglStatus puglMacOSAddChildWindow(PuglView* view, PuglView* child);
@@ -100,7 +118,7 @@ void puglWin32ShowCentered(PuglView* view);
 
 #define DGL_USING_X11
 
-// X11 specific, update world without triggering exposure evente
+// X11 specific, update world without triggering exposure events
 PuglStatus puglX11UpdateWithoutExposures(PuglWorld* world);
 
 // X11 specific, set dialog window type and pid hints

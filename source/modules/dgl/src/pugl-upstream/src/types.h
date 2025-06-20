@@ -21,6 +21,12 @@ typedef struct PuglInternalsImpl PuglInternals;
 /// View hints
 typedef int PuglHints[PUGL_NUM_VIEW_HINTS];
 
+/// View position (both X and Y coordinates) or general point
+typedef struct {
+  PuglCoord x;
+  PuglCoord y;
+} PuglPoint;
+
 /// View size (both X and Y coordinates)
 typedef struct {
   PuglSpan width;
@@ -33,6 +39,13 @@ typedef struct {
   size_t len;  ///< Length of data in bytes
 } PuglBlob;
 
+/// Stage of a view along its lifespan
+typedef enum {
+  PUGL_VIEW_STAGE_ALLOCATED,
+  PUGL_VIEW_STAGE_REALIZED,
+  PUGL_VIEW_STAGE_CONFIGURED,
+} PuglViewStage;
+
 /// Cross-platform view definition
 struct PuglViewImpl {
   PuglWorld*         world;
@@ -40,24 +53,27 @@ struct PuglViewImpl {
   PuglInternals*     impl;
   PuglHandle         handle;
   PuglEventFunc      eventFunc;
-  char*              title;
   PuglNativeView     parent;
   uintptr_t          transientParent;
-  PuglRect           frame;
   PuglConfigureEvent lastConfigure;
   PuglHints          hints;
   PuglViewSize       sizeHints[PUGL_NUM_SIZE_HINTS];
-  bool               visible;
+  char*              strings[PUGL_NUM_STRING_HINTS];
+  int                defaultX;
+  int                defaultY;
+  PuglViewStage      stage;
+  bool               resizing;
 };
 
 /// Cross-platform world definition
 struct PuglWorldImpl {
   PuglWorldInternals* impl;
   PuglWorldHandle     handle;
-  char*               className;
   double              startTime;
   size_t              numViews;
   PuglView**          views;
+  char*               strings[PUGL_NUM_STRING_HINTS];
+  PuglWorldType       type;
 };
 
 /// Opaque surface used by graphics backend

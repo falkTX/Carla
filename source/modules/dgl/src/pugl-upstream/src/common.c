@@ -1,4 +1,4 @@
-// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// Copyright 2012-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 // Common implementations of public API functions in the core library
@@ -10,7 +10,9 @@
 
 #include "pugl/pugl.h"
 
+#include <limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -48,12 +50,9 @@ puglNewWorld(PuglWorldType type, PuglWorldFlags flags)
   }
 
   world->startTime = puglGetTime(world);
+  world->type      = type;
 
-#ifdef __EMSCRIPTEN__
-  puglSetString(&world->className, "canvas");
-#else
-  puglSetString(&world->className, "Pugl");
-#endif
+  puglSetString(&world->strings[PUGL_CLASS_NAME], "Pugl");
 
   return world;
 }
@@ -62,7 +61,11 @@ void
 puglFreeWorld(PuglWorld* const world)
 {
   puglFreeWorldInternals(world);
-  free(world->className);
+
+  for (size_t i = 0; i < PUGL_NUM_STRING_HINTS; ++i) {
+    free(world->strings[i]);
+  }
+
   free(world->views);
   free(world);
 }
@@ -80,36 +83,50 @@ puglGetWorldHandle(PuglWorld* world)
 }
 
 PuglStatus
-puglSetClassName(PuglWorld* const world, const char* const name)
+puglSetWorldString(PuglWorld* const     world,
+                   const PuglStringHint key,
+                   const char* const    value)
 {
-  puglSetString(&world->className, name);
+  if ((unsigned)key >= PUGL_NUM_STRING_HINTS) {
+    return PUGL_BAD_PARAMETER;
+  }
+
+  puglSetString(&world->strings[key], value);
   return PUGL_SUCCESS;
 }
 
 const char*
-puglGetClassName(const PuglWorld* world)
+puglGetWorldString(const PuglWorld* const world, const PuglStringHint key)
 {
-  return world->className;
+  if ((unsigned)key >= PUGL_NUM_STRING_HINTS) {
+    return NULL;
+  }
+
+  return world->strings[key];
 }
 
 static void
 puglSetDefaultHints(PuglHints hints)
 {
-  hints[PUGL_USE_COMPAT_PROFILE]    = PUGL_TRUE;
+  hints[PUGL_CONTEXT_API]           = PUGL_OPENGL_API;
   hints[PUGL_CONTEXT_VERSION_MAJOR] = 2;
   hints[PUGL_CONTEXT_VERSION_MINOR] = 0;
+  hints[PUGL_CONTEXT_PROFILE]       = PUGL_OPENGL_CORE_PROFILE;
+  hints[PUGL_CONTEXT_DEBUG]         = PUGL_FALSE;
   hints[PUGL_RED_BITS]              = 8;
   hints[PUGL_GREEN_BITS]            = 8;
   hints[PUGL_BLUE_BITS]             = 8;
   hints[PUGL_ALPHA_BITS]            = 8;
   hints[PUGL_DEPTH_BITS]            = 0;
   hints[PUGL_STENCIL_BITS]          = 0;
+  hints[PUGL_SAMPLE_BUFFERS]        = PUGL_DONT_CARE;
   hints[PUGL_SAMPLES]               = 0;
   hints[PUGL_DOUBLE_BUFFER]         = PUGL_TRUE;
   hints[PUGL_SWAP_INTERVAL]         = PUGL_DONT_CARE;
   hints[PUGL_RESIZABLE]             = PUGL_FALSE;
   hints[PUGL_IGNORE_KEY_REPEAT]     = PUGL_FALSE;
   hints[PUGL_REFRESH_RATE]          = PUGL_DONT_CARE;
+  hints[PUGL_VIEW_TYPE]             = PUGL_DONT_CARE;
 }
 
 PuglView*
@@ -124,15 +141,25 @@ puglNewView(PuglWorld* const world)
   view->world                           = world;
   view->sizeHints[PUGL_MIN_SIZE].width  = 1;
   view->sizeHints[PUGL_MIN_SIZE].height = 1;
+  view->defaultX                        = INT_MIN;
+  view->defaultY                        = INT_MIN;
 
   puglSetDefaultHints(view->hints);
 
-  // Add to world view list
-  ++world->numViews;
-  world->views =
-    (PuglView**)realloc(world->views, world->numViews * sizeof(PuglView*));
+  // Enlarge world view list
+  const size_t     newNumViews = world->numViews + 1U;
+  PuglView** const views =
+    (PuglView**)realloc(world->views, newNumViews * sizeof(PuglView*));
 
-  world->views[world->numViews - 1] = view;
+  if (!views) {
+    free(view);
+    return NULL;
+  }
+
+  // Add to world view list
+  world->views                  = views;
+  world->views[world->numViews] = view;
+  world->numViews               = newNumViews;
 
   return view;
 }
@@ -140,10 +167,6 @@ puglNewView(PuglWorld* const world)
 void
 puglFreeView(PuglView* view)
 {
-  if (view->eventFunc && view->backend) {
-    puglDispatchSimpleEvent(view, PUGL_DESTROY);
-  }
-
   // Remove from world view list
   PuglWorld* world = view->world;
   for (size_t i = 0; i < world->numViews; ++i) {
@@ -160,7 +183,10 @@ puglFreeView(PuglView* view)
     }
   }
 
-  free(view->title);
+  for (size_t i = 0; i < PUGL_NUM_STRING_HINTS; ++i) {
+    free(view->strings[i]);
+  }
+
   puglFreeViewInternals(view);
   free(view);
 }
@@ -208,10 +234,11 @@ puglSetViewHint(PuglView* view, PuglViewHint hint, int value)
 {
   if (value == PUGL_DONT_CARE) {
     switch (hint) {
-    case PUGL_USE_COMPAT_PROFILE:
-    case PUGL_USE_DEBUG_CONTEXT:
+    case PUGL_CONTEXT_API:
     case PUGL_CONTEXT_VERSION_MAJOR:
     case PUGL_CONTEXT_VERSION_MINOR:
+    case PUGL_CONTEXT_PROFILE:
+    case PUGL_CONTEXT_DEBUG:
     case PUGL_SWAP_INTERVAL:
       return PUGL_BAD_PARAMETER;
     default:
@@ -219,26 +246,73 @@ puglSetViewHint(PuglView* view, PuglViewHint hint, int value)
     }
   }
 
-  view->hints[hint] = value;
-  return PUGL_SUCCESS;
+  if ((unsigned)hint < PUGL_NUM_VIEW_HINTS) {
+    view->hints[hint] = value;
+    return PUGL_SUCCESS;
+  }
+
+  return PUGL_BAD_PARAMETER;
 }
 
 int
 puglGetViewHint(const PuglView* view, PuglViewHint hint)
 {
-  return view->hints[hint];
+  if ((unsigned)hint < PUGL_NUM_VIEW_HINTS) {
+    return view->hints[hint];
+  }
+
+  return PUGL_DONT_CARE;
+}
+
+PuglStatus
+puglSetViewString(PuglView* const      view,
+                  const PuglStringHint key,
+                  const char* const    value)
+{
+  if ((unsigned)key >= PUGL_NUM_STRING_HINTS) {
+    return PUGL_BAD_PARAMETER;
+  }
+
+  puglSetString(&view->strings[key], value);
+  return puglViewStringChanged(view, key, view->strings[key]);
+}
+
+const char*
+puglGetViewString(const PuglView* const view, const PuglStringHint key)
+{
+  if ((unsigned)key >= PUGL_NUM_STRING_HINTS) {
+    return NULL;
+  }
+
+  return view->strings[key];
 }
 
 PuglRect
 puglGetFrame(const PuglView* view)
 {
-  return view->frame;
-}
+  if (view->lastConfigure.type == PUGL_CONFIGURE) {
+    // Return the last configured frame
+    const PuglRect frame = {view->lastConfigure.x,
+                            view->lastConfigure.y,
+                            view->lastConfigure.width,
+                            view->lastConfigure.height};
+    return frame;
+  }
 
-const char*
-puglGetWindowTitle(const PuglView* const view)
-{
-  return view->title;
+  // Get the default position if set, or fallback to (0, 0)
+  int x = view->defaultX;
+  int y = view->defaultY;
+  if (x < INT16_MIN || x > INT16_MAX || y < INT16_MIN || y > INT16_MAX) {
+    x = 0;
+    y = 0;
+  }
+
+  // Return the default frame, sanitized if necessary
+  const PuglRect frame = {(PuglCoord)x,
+                          (PuglCoord)y,
+                          view->sizeHints[PUGL_DEFAULT_SIZE].width,
+                          view->sizeHints[PUGL_DEFAULT_SIZE].height};
+  return frame;
 }
 
 PuglStatus
@@ -263,11 +337,18 @@ puglGetTransientParent(const PuglView* const view)
 bool
 puglGetVisible(const PuglView* view)
 {
-  return view->visible;
+  return (view->lastConfigure.style & PUGL_VIEW_STYLE_MAPPED) &&
+         !(view->lastConfigure.style & PUGL_VIEW_STYLE_HIDDEN);
 }
 
 void*
-puglGetContext(PuglView* view)
+puglGetContext(PuglView* const view)
 {
   return view->backend->getContext(view);
+}
+
+PuglViewStyleFlags
+puglGetViewStyle(const PuglView* const view)
+{
+  return view->lastConfigure.style;
 }

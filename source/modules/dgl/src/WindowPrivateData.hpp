@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -60,7 +60,10 @@ struct Window::PrivateData : IdleCallback {
     /** Whether this Window is embed into another (usually not DGL-controlled) Window. */
     const bool isEmbed;
 
-    /** Whether to ignore resize requests and feed them into the host instead. used for VST3 */
+    /** Whether to schedule repaints on the next idle call, used for AU */
+    const bool usesScheduledRepaints;
+
+    /** Whether to ignore resize requests and feed them into the host instead, used for CLAP and VST3 */
     const bool usesSizeRequest;
 
     /** Scale factor to report to widgets on request, purely informational. */
@@ -87,10 +90,16 @@ struct Window::PrivateData : IdleCallback {
     /** Render to a picture file when non-null, automatically free+unset after saving. */
     char* filenameToRenderInto;
 
-#ifndef DGL_FILE_BROWSER_DISABLED
+   #ifdef DGL_USE_FILE_BROWSER
     /** Handle for file browser dialog operations. */
     DGL_NAMESPACE::FileBrowserHandle fileBrowserHandle;
-#endif
+   #endif
+
+   #ifdef DGL_USE_WEB_VIEW
+    /** Handle for web view operations. */
+    DGL_NAMESPACE::WebViewHandle webViewHandle;
+    DGL_NAMESPACE::Point<int> webViewOffset;
+   #endif
 
     /** Modal window setup. */
     struct Modal {
@@ -131,7 +140,8 @@ struct Window::PrivateData : IdleCallback {
 
     /** Constructor for an embed Window, with a few extra hints from the host side. */
     explicit PrivateData(Application& app, Window* self, uintptr_t parentWindowHandle,
-                         uint width, uint height, double scaling, bool resizable, bool isVST3);
+                         uint width, uint height, double scaling, bool resizable,
+                         bool usesScheduledRepaints, bool usesSizeRequest);
 
     /** Destructor. */
     ~PrivateData() override;
@@ -164,10 +174,15 @@ struct Window::PrivateData : IdleCallback {
     bool addIdleCallback(IdleCallback* callback, uint timerFrequencyInMs);
     bool removeIdleCallback(IdleCallback* callback);
 
-#ifndef DGL_FILE_BROWSER_DISABLED
-    // file handling
+   #ifdef DGL_USE_FILE_BROWSER
+    // file browser dialog
     bool openFileBrowser(const DGL_NAMESPACE::FileBrowserOptions& options);
-#endif
+   #endif
+
+   #ifdef DGL_USE_WEB_VIEW
+    // web view
+    bool createWebView(const char* url, const DGL_NAMESPACE::WebViewOptions& options);
+   #endif
 
     static void renderToPicture(const char* filename, const GraphicsContext& context, uint width, uint height);
 
@@ -177,7 +192,7 @@ struct Window::PrivateData : IdleCallback {
     void runAsModal(bool blockWait);
 
     // pugl events
-    void onPuglConfigure(double width, double height);
+    void onPuglConfigure(uint width, uint height);
     void onPuglExpose();
     void onPuglClose();
     void onPuglFocus(bool focus, CrossingMode mode);

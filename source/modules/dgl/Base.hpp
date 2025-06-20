@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -19,6 +19,35 @@
 
 #include "../distrho/extra/LeakDetector.hpp"
 #include "../distrho/extra/ScopedPointer.hpp"
+
+// --------------------------------------------------------------------------------------------------------------------
+// Compatibility checks
+
+#if defined(DGL_CAIRO) && defined(DGL_EXTERNAL)
+# error invalid build config: trying to build for both cairo and external at the same time
+#elif defined(DGL_CAIRO) && defined(DGL_OPENGL)
+# error invalid build config: trying to build for both cairo and opengl at the same time
+#elif defined(DGL_CAIRO) && defined(DGL_VULKAN)
+# error invalid build config: trying to build for both cairo and vulkan at the same time
+#elif defined(DGL_EXTERNAL) && defined(DGL_OPENGL)
+# error invalid build config: trying to build for both external and opengl at the same time
+#elif defined(DGL_EXTERNAL) && defined(DGL_VULKAN)
+# error invalid build config: trying to build for both external and vulkan at the same time
+#elif defined(DGL_OPENGL) && defined(DGL_VULKAN)
+# error invalid build config: trying to build for both opengl and vulkan at the same time
+#endif
+
+#ifdef DGL_USE_FILEBROWSER
+# error typo detected use DGL_USE_FILE_BROWSER instead of DGL_USE_FILEBROWSER
+#endif
+
+#ifdef DGL_USE_WEBVIEW
+# error typo detected use DGL_USE_WEB_VIEW instead of DGL_USE_WEBVIEW
+#endif
+
+#if defined(DGL_FILE_BROWSER_DISABLED)
+# error DGL_FILE_BROWSER_DISABLED has been replaced by DGL_USE_FILE_BROWSER (opt-in vs opt-out)
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 // Define namespace
@@ -40,10 +69,13 @@ START_NAMESPACE_DGL
    Keyboard modifier flags.
  */
 enum Modifier {
-    kModifierShift   = 1u << 0u, ///< Shift key
-    kModifierControl = 1u << 1u, ///< Control key
-    kModifierAlt     = 1u << 2u, ///< Alt/Option key
-    kModifierSuper   = 1u << 3u  ///< Mod4/Command/Windows key
+    kModifierShift      = 1U << 0U, ///< Shift key
+    kModifierControl    = 1U << 1U, ///< Control key
+    kModifierAlt        = 1U << 2U, ///< Alt/Option key
+    kModifierSuper      = 1U << 3U, ///< Mod4/Command/Windows key
+    kModifierNumLock    = 1U << 4U, ///< Num lock enabled
+    kModifierScrollLock = 1U << 5U, ///< Scroll lock enabled
+    kModifierCapsLock   = 1U << 6U, ///< Caps lock enabled
 };
 
 /**
@@ -62,55 +94,88 @@ enum Modifier {
  */
 enum Key {
     // Convenience symbols for ASCII control characters
-    kKeyBackspace = 0x08,
-    kKeyEscape    = 0x1B,
-    kKeyDelete    = 0x7F,
+    kKeyBackspace = 0x00000008U, ///< Backspace
+    kKeyTab       = 0x00000009U, ///< Tab
+    kKeyEnter     = 0x0000000DU, ///< Enter
+    kKeyEscape    = 0x0000001BU, ///< Escape
+    kKeyDelete    = 0x0000007FU, ///< Delete
+    kKeySpace     = 0x00000020U, ///< Space
+
+    // Unicode Private Use Area
+    kKeyF1 = 0xE000U,          ///< F1
+    kKeyF2,                    ///< F2
+    kKeyF3,                    ///< F3
+    kKeyF4,                    ///< F4
+    kKeyF5,                    ///< F5
+    kKeyF6,                    ///< F6
+    kKeyF7,                    ///< F7
+    kKeyF8,                    ///< F8
+    kKeyF9,                    ///< F9
+    kKeyF10,                   ///< F10
+    kKeyF11,                   ///< F11
+    kKeyF12,                   ///< F12
+    kKeyPageUp = 0xE031U,      ///< Page Up
+    kKeyPageDown,              ///< Page Down
+    kKeyEnd,                   ///< End
+    kKeyHome,                  ///< Home
+    kKeyLeft,                  ///< Left
+    kKeyUp,                    ///< Up
+    kKeyRight,                 ///< Right
+    kKeyDown,                  ///< Down
+    kKeyPrintScreen = 0xE041U, ///< Print Screen
+    kKeyInsert,                ///< Insert
+    kKeyPause,                 ///< Pause/Break
+    kKeyMenu,                  ///< Menu
+    kKeyNumLock,               ///< Num Lock
+    kKeyScrollLock,            ///< Scroll Lock
+    kKeyCapsLock,              ///< Caps Lock
+    kKeyShiftL = 0xE051U,      ///< Left Shift
+    kKeyShiftR,                ///< Right Shift
+    kKeyControlL,              ///< Left Control
+    kKeyControlR,              ///< Right Control
+    kKeyAltL,                  ///< Left Alt
+    kKeyAltR,                  ///< Right Alt / AltGr
+    kKeySuperL,                ///< Left Super
+    kKeySuperR,                ///< Right Super
+    kKeyPad0 = 0xE060U,        ///< Keypad 0
+    kKeyPad1,                  ///< Keypad 1
+    kKeyPad2,                  ///< Keypad 2
+    kKeyPad3,                  ///< Keypad 3
+    kKeyPad4,                  ///< Keypad 4
+    kKeyPad5,                  ///< Keypad 5
+    kKeyPad6,                  ///< Keypad 6
+    kKeyPad7,                  ///< Keypad 7
+    kKeyPad8,                  ///< Keypad 8
+    kKeyPad9,                  ///< Keypad 9
+    kKeyPadEnter,              ///< Keypad Enter
+    kKeyPadPageUp = 0xE071U,   ///< Keypad Page Up
+    kKeyPadPageDown,           ///< Keypad Page Down
+    kKeyPadEnd,                ///< Keypad End
+    kKeyPadHome,               ///< Keypad Home
+    kKeyPadLeft,               ///< Keypad Left
+    kKeyPadUp,                 ///< Keypad Up
+    kKeyPadRight,              ///< Keypad Right
+    kKeyPadDown,               ///< Keypad Down
+    kKeyPadClear = 0xE09DU,    ///< Keypad Clear/Begin
+    kKeyPadInsert,             ///< Keypad Insert
+    kKeyPadDelete,             ///< Keypad Delete
+    kKeyPadEqual,              ///< Keypad Equal
+    kKeyPadMultiply = 0xE0AAU, ///< Keypad Multiply
+    kKeyPadAdd,                ///< Keypad Add
+    kKeyPadSeparator,          ///< Keypad Separator
+    kKeyPadSubtract,           ///< Keypad Subtract
+    kKeyPadDecimal,            ///< Keypad Decimal
+    kKeyPadDivide,             ///< Keypad Divide
 
     // Backwards compatibility with old DPF
     kCharBackspace DISTRHO_DEPRECATED_BY("kKeyBackspace") = kKeyBackspace,
     kCharEscape    DISTRHO_DEPRECATED_BY("kKeyEscape") = kKeyEscape,
     kCharDelete    DISTRHO_DEPRECATED_BY("kKeyDelete") = kKeyDelete,
 
-    // Unicode Private Use Area
-    kKeyF1 = 0xE000,
-    kKeyF2,
-    kKeyF3,
-    kKeyF4,
-    kKeyF5,
-    kKeyF6,
-    kKeyF7,
-    kKeyF8,
-    kKeyF9,
-    kKeyF10,
-    kKeyF11,
-    kKeyF12,
-    kKeyLeft,
-    kKeyUp,
-    kKeyRight,
-    kKeyDown,
-    kKeyPageUp,
-    kKeyPageDown,
-    kKeyHome,
-    kKeyEnd,
-    kKeyInsert,
-    kKeyShift,
-    kKeyShiftL = kKeyShift,
-    kKeyShiftR,
-    kKeyControl,
-    kKeyControlL = kKeyControl,
-    kKeyControlR,
-    kKeyAlt,
-    kKeyAltL = kKeyAlt,
-    kKeyAltR,
-    kKeySuper,
-    kKeySuperL = kKeySuper,
-    kKeySuperR,
-    kKeyMenu,
-    kKeyCapsLock,
-    kKeyScrollLock,
-    kKeyNumLock,
-    kKeyPrintScreen,
-    kKeyPause
+    kKeyShift   DISTRHO_DEPRECATED_BY("kKeyShiftL") = kKeyShiftL,
+    kKeyControl DISTRHO_DEPRECATED_BY("kKeyControlL") = kKeyControlL,
+    kKeyAlt     DISTRHO_DEPRECATED_BY("kKeyAltL") = kKeyAltL,
+    kKeySuper   DISTRHO_DEPRECATED_BY("kKeySuperL") = kKeySuperL,
 };
 
 /**
@@ -118,7 +183,7 @@ enum Key {
  */
 enum EventFlag {
     kFlagSendEvent = 1, ///< Event is synthetic
-    kFlagIsHint    = 2  ///< Event is a hint (not direct user input)
+    kFlagIsHint    = 2, ///< Event is a hint (not direct user input)
 };
 
 /**
@@ -127,7 +192,7 @@ enum EventFlag {
 enum CrossingMode {
     kCrossingNormal, ///< Crossing due to pointer motion
     kCrossingGrab,   ///< Crossing due to a grab
-    kCrossingUngrab  ///< Crossing due to a grab release
+    kCrossingUngrab, ///< Crossing due to a grab release
 };
 
 /**
@@ -159,15 +224,20 @@ enum MouseButton {
    This is a portable subset of mouse cursors that exist on X11, MacOS, and Windows.
 */
 enum MouseCursor {
-    kMouseCursorArrow,       ///< Default pointing arrow
-    kMouseCursorCaret,       ///< Caret (I-Beam) for text entry
-    kMouseCursorCrosshair,   ///< Cross-hair
-    kMouseCursorHand,        ///< Hand with a pointing finger
-    kMouseCursorNotAllowed,  ///< Operation not allowed
-    kMouseCursorLeftRight,   ///< Left/right arrow for horizontal resize
-    kMouseCursorUpDown,      ///< Up/down arrow for vertical resize
-    kMouseCursorDiagonal,    ///< Top-left to bottom-right arrow for diagonal resize
-    kMouseCursorAntiDiagonal ///< Bottom-left to top-right arrow for diagonal resize
+    kMouseCursorArrow,           ///< Default pointing arrow
+    kMouseCursorCaret,           ///< Caret (I-Beam) for text entry
+    kMouseCursorCrosshair,       ///< Cross-hair
+    kMouseCursorHand,            ///< Hand with a pointing finger
+    kMouseCursorNotAllowed,      ///< Operation not allowed
+    kMouseCursorLeftRight,       ///< Left/right arrow for horizontal resize
+    kMouseCursorUpDown,          ///< Up/down arrow for vertical resize
+    kMouseCursorUpLeftDownRight, ///< Diagonal arrow for down/right resize
+    kMouseCursorUpRightDownLeft, ///< Diagonal arrow for down/left resize
+    kMouseCursorAllScroll,       ///< Omnidirectional "arrow" for scrolling
+
+    // Backwards compatibility with old DPF
+    kMouseCursorDiagonal     DISTRHO_DEPRECATED_BY("kMouseCursorUpLeftDownRight") = kMouseCursorUpLeftDownRight,
+    kMouseCursorAntiDiagonal DISTRHO_DEPRECATED_BY("kMouseCursorUpRightDownLeft") = kMouseCursorUpRightDownLeft,
 };
 
 /**
@@ -178,11 +248,11 @@ enum MouseCursor {
    while a smooth scroll is for those with arbitrary scroll direction freedom, like some touchpads.
 */
 enum ScrollDirection {
-    kScrollUp,    ///< Scroll up
-    kScrollDown,  ///< Scroll down
-    kScrollLeft,  ///< Scroll left
-    kScrollRight, ///< Scroll right
-    kScrollSmooth ///< Smooth scroll in any direction
+    kScrollUp,     ///< Scroll up
+    kScrollDown,   ///< Scroll down
+    kScrollLeft,   ///< Scroll left
+    kScrollRight,  ///< Scroll right
+    kScrollSmooth, ///< Smooth scroll in any direction
 };
 
 /**

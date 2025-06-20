@@ -75,7 +75,8 @@ puglMacVulkanCreate(PuglView* view)
 {
   PuglInternals*  impl     = view->impl;
   PuglVulkanView* drawView = [PuglVulkanView alloc];
-  const NSRect rect = NSMakeRect(0, 0, view->frame.width, view->frame.height);
+  const NSRect    rect =
+    NSMakeRect(0, 0, view->lastConfigure.width, view->lastConfigure.height);
 
   drawView->puglview = view;
   [drawView initWithFrame:rect];
@@ -107,7 +108,8 @@ struct PuglVulkanLoaderImpl {
 };
 
 PuglVulkanLoader*
-puglNewVulkanLoader(PuglWorld* PUGL_UNUSED(world))
+puglNewVulkanLoader(PuglWorld*        PUGL_UNUSED(world),
+                    const char* const libraryName)
 {
   PuglVulkanLoader* loader =
     (PuglVulkanLoader*)calloc(1, sizeof(PuglVulkanLoader));
@@ -115,7 +117,8 @@ puglNewVulkanLoader(PuglWorld* PUGL_UNUSED(world))
     return NULL;
   }
 
-  if (!(loader->libvulkan = dlopen("libvulkan.dylib", RTLD_LAZY))) {
+  const char* const filename = libraryName ? libraryName : "libvulkan.dylib";
+  if (!(loader->libvulkan = dlopen(filename, RTLD_LAZY))) {
     free(loader);
     return NULL;
   }

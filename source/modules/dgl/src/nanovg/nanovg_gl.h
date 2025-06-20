@@ -18,6 +18,28 @@
 #ifndef NANOVG_GL_H
 #define NANOVG_GL_H
 
+#if defined NANOVG_GL2_FORCED
+#  undef NANOVG_GL3
+#  undef NANOVG_GLES2
+#  undef NANOVG_GLES3
+#  define NANOVG_GL2 1
+#elif defined NANOVG_GL3_FORCED
+#  undef NANOVG_GL2
+#  undef NANOVG_GLES2
+#  undef NANOVG_GLES3
+#  define NANOVG_GL3 1
+#elif defined NANOVG_GLES2_FORCED
+#  undef NANOVG_GL2
+#  undef NANOVG_GL3
+#  undef NANOVG_GLES3
+#  define NANOVG_GLES2 1
+#elif defined NANOVG_GLES3_FORCED
+#  undef NANOVG_GL2
+#  undef NANOVG_GL3
+#  undef NANOVG_GLES2
+#  define NANOVG_GLES3 1
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

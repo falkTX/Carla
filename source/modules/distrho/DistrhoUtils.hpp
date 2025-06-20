@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -19,10 +19,8 @@
 
 #include "src/DistrhoDefines.h"
 
-#if defined(DISTRHO_OS_WINDOWS) && !defined(_MSC_VER)
-#include <winsock2.h>
-#undef max
-#undef min
+#ifndef __STDC_LIMIT_MACROS
+# define __STDC_LIMIT_MACROS
 #endif
 
 #include <cstdarg>
@@ -44,7 +42,7 @@
 typedef SSIZE_T ssize_t;
 #endif
 
-#if ! defined(CARLA_MATH_UTILS_HPP_INCLUDED) && ! defined(DISTRHO_PROPER_CPP11_SUPPORT)
+#if ! defined(CARLA_MATH_UTILS_HPP_INCLUDED) && ! defined(DISTRHO_PROPER_CPP11_SUPPORT) && ! defined(DISTRHO_OS_MAC)
 namespace std {
 inline float fmin(float __x, float __y)
   { return __builtin_fminf(__x, __y); }
@@ -61,10 +59,7 @@ inline float round(float __x)
 # define M_PI 3.14159265358979323846
 #endif
 
-#define DISTRHO_MACRO_AS_STRING_VALUE(MACRO) #MACRO
-#define DISTRHO_MACRO_AS_STRING(MACRO) DISTRHO_MACRO_AS_STRING_VALUE(MACRO)
-
-/* ------------------------------------------------------------------------------------------------------------
+/* --------------------------------------------------------------------------------------------------------------------
  * misc functions */
 
 /**
@@ -84,6 +79,15 @@ int64_t d_cconst(const uint8_t a, const uint8_t b, const uint8_t c, const uint8_
 }
 
 /**
+   Return a 32-bit number from 4 ASCII characters.
+ */
+static inline constexpr
+uint32_t d_cconst(const char str[4])
+{
+    return (str[0] << 24) | (str[1] << 16) | (str[2] << 8) | str[3];
+}
+
+/**
    Return an hexadecimal representation of a MAJ.MIN.MICRO version number.
  */
 static inline constexpr
@@ -100,7 +104,7 @@ void d_pass() noexcept {}
 
 /** @} */
 
-/* ------------------------------------------------------------------------------------------------------------
+/* --------------------------------------------------------------------------------------------------------------------
  * string print functions */
 
 /**
@@ -108,6 +112,27 @@ void d_pass() noexcept {}
 
    @{
  */
+
+/*
+ * Internal noexcept-safe fopen function.
+ */
+static inline
+FILE* __d_fopen(const char* const filename, FILE* const fallback) noexcept
+{
+    if (std::getenv("DPF_CAPTURE_CONSOLE_OUTPUT") == nullptr)
+        return fallback;
+
+    FILE* ret = nullptr;
+
+    try {
+        ret = std::fopen(filename, "a+");
+    } catch (...) {}
+
+    if (ret == nullptr)
+        ret = fallback;
+
+    return ret;
+}
 
 /**
    Print a string to stdout with newline (gray color).
@@ -119,12 +144,30 @@ void d_pass() noexcept {}
 static inline
 void d_debug(const char* const fmt, ...) noexcept
 {
+    static FILE* const output = __d_fopen("/tmp/dpf.debug.log", stdout);
+
     try {
         va_list args;
         va_start(args, fmt);
-        std::fprintf(stdout, "\x1b[30;1m");
-        std::vfprintf(stdout, fmt, args);
-        std::fprintf(stdout, "\x1b[0m\n");
+
+        if (output == stdout)
+        {
+           #ifdef DISTRHO_OS_MAC
+            std::fprintf(output, "\x1b[37;1m[dpf] ");
+           #else
+            std::fprintf(output, "\x1b[30;1m[dpf] ");
+           #endif
+            std::vfprintf(output, fmt, args);
+            std::fprintf(output, "\x1b[0m\n");
+        }
+        else
+        {
+            std::fprintf(output, "[dpf] ");
+            std::vfprintf(output, fmt, args);
+            std::fprintf(output, "\n");
+        }
+
+        std::fflush(output);
         va_end(args);
     } catch (...) {}
 }
@@ -136,11 +179,18 @@ void d_debug(const char* const fmt, ...) noexcept
 static inline
 void d_stdout(const char* const fmt, ...) noexcept
 {
+    static FILE* const output = __d_fopen("/tmp/dpf.stdout.log", stdout);
+
     try {
         va_list args;
         va_start(args, fmt);
-        std::vfprintf(stdout, fmt, args);
-        std::fprintf(stdout, "\n");
+        std::fprintf(output, "[dpf] ");
+        std::vfprintf(output, fmt, args);
+        std::fprintf(output, "\n");
+       #ifndef DEBUG
+        if (output != stdout)
+       #endif
+            std::fflush(output);
         va_end(args);
     } catch (...) {}
 }
@@ -151,11 +201,18 @@ void d_stdout(const char* const fmt, ...) noexcept
 static inline
 void d_stderr(const char* const fmt, ...) noexcept
 {
+    static FILE* const output = __d_fopen("/tmp/dpf.stderr.log", stderr);
+
     try {
         va_list args;
         va_start(args, fmt);
-        std::vfprintf(stderr, fmt, args);
-        std::fprintf(stderr, "\n");
+        std::fprintf(output, "[dpf] ");
+        std::vfprintf(output, fmt, args);
+        std::fprintf(output, "\n");
+       #ifndef DEBUG
+        if (output != stderr)
+       #endif
+            std::fflush(output);
         va_end(args);
     } catch (...) {}
 }
@@ -166,12 +223,26 @@ void d_stderr(const char* const fmt, ...) noexcept
 static inline
 void d_stderr2(const char* const fmt, ...) noexcept
 {
+    static FILE* const output = __d_fopen("/tmp/dpf.stderr2.log", stderr);
+
     try {
         va_list args;
         va_start(args, fmt);
-        std::fprintf(stderr, "\x1b[31m");
-        std::vfprintf(stderr, fmt, args);
-        std::fprintf(stderr, "\x1b[0m\n");
+
+        if (output == stdout)
+        {
+            std::fprintf(output, "\x1b[31m[dpf] ");
+            std::vfprintf(output, fmt, args);
+            std::fprintf(output, "\x1b[0m\n");
+        }
+        else
+        {
+            std::fprintf(output, "[dpf] ");
+            std::vfprintf(output, fmt, args);
+            std::fprintf(output, "\n");
+        }
+
+        std::fflush(output);
         va_end(args);
     } catch (...) {}
 }
@@ -246,7 +317,7 @@ void d_safe_exception(const char* const exception, const char* const file, const
 
 /** @} */
 
-/* ------------------------------------------------------------------------------------------------------------
+/* --------------------------------------------------------------------------------------------------------------------
  * math functions */
 
 /**
@@ -260,7 +331,7 @@ void d_safe_exception(const char* const exception, const char* const file, const
    Returns true if they match.
  */
 template<typename T>
-static inline
+static inline constexpr
 bool d_isEqual(const T& v1, const T& v2)
 {
     return std::abs(v1-v2) < std::numeric_limits<T>::epsilon();
@@ -271,7 +342,7 @@ bool d_isEqual(const T& v1, const T& v2)
    Returns true if they don't match.
  */
 template<typename T>
-static inline
+static inline constexpr
 bool d_isNotEqual(const T& v1, const T& v2)
 {
     return std::abs(v1-v2) >= std::numeric_limits<T>::epsilon();
@@ -281,7 +352,7 @@ bool d_isNotEqual(const T& v1, const T& v2)
    Safely check if a floating point number is zero.
  */
 template<typename T>
-static inline
+static inline constexpr
 bool d_isZero(const T& value)
 {
     return std::abs(value) < std::numeric_limits<T>::epsilon();
@@ -291,7 +362,7 @@ bool d_isZero(const T& value)
    Safely check if a floating point number is not zero.
  */
 template<typename T>
-static inline
+static inline constexpr
 bool d_isNotZero(const T& value)
 {
     return std::abs(value) >= std::numeric_limits<T>::epsilon();
@@ -315,17 +386,62 @@ uint32_t d_nextPowerOf2(uint32_t size) noexcept
     return ++size;
 }
 
+/**
+   Round a floating point number to an integer.
+   Fast operation for values known to be 0 or positive.
+ */
+template<typename T>
+static inline constexpr
+int32_t d_roundToIntPositive(const T& value)
+{
+    return static_cast<int32_t>(value + static_cast<T>(0.5));
+}
+
+/**
+   Round a floating point number to an unsigned integer.
+   Fast operation for values known to be 0 or positive.
+ */
+template<typename T>
+static inline constexpr
+uint32_t d_roundToUnsignedInt(const T& value)
+{
+    return static_cast<uint32_t>(value + static_cast<T>(0.5));
+}
+
+/**
+   Round a floating point number to an integer.
+   Fast operation for values known to be 0 or negative.
+ */
+template<typename T>
+static inline constexpr
+int32_t d_roundToIntNegative(const T& value)
+{
+    return static_cast<int32_t>(value - static_cast<T>(0.5));
+}
+
+/**
+   Round a floating point number to integer.
+ */
+template<typename T>
+static inline constexpr
+int32_t d_roundToInt(const T& value)
+{
+    return value >= 0 ? static_cast<int32_t>(value + static_cast<T>(0.5))
+                      : static_cast<int32_t>(value - static_cast<T>(0.5));
+}
+
 /** @} */
 
-// -----------------------------------------------------------------------
+/* --------------------------------------------------------------------------------------------------------------------
+ * other stuff */
 
 #ifndef DONT_SET_USING_DISTRHO_NAMESPACE
-  // If your code uses a lot of DISTRHO classes, then this will obviously save you
-  // a lot of typing, but can be disabled by setting DONT_SET_USING_DISTRHO_NAMESPACE.
-  namespace DISTRHO_NAMESPACE {}
-  using namespace DISTRHO_NAMESPACE;
+/**
+   If your code uses a lot of DISTRHO classes, then this will obviously save you a lot of typing,
+   but can be disabled by setting DONT_SET_USING_DISTRHO_NAMESPACE.
+ */
+namespace DISTRHO_NAMESPACE {}
+using namespace DISTRHO_NAMESPACE;
 #endif
-
-// -----------------------------------------------------------------------
 
 #endif // DISTRHO_UTILS_HPP_INCLUDED

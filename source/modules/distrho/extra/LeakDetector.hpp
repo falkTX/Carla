@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2023 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -50,7 +50,7 @@ START_NAMESPACE_DISTRHO
 #define DISTRHO_JOIN_MACRO_HELPER(a, b) a ## b
 #define DISTRHO_JOIN_MACRO(item1, item2) DISTRHO_JOIN_MACRO_HELPER(item1, item2)
 
-#ifdef DEBUG
+#if defined(DPF_DEBUG) && !defined(NDEBUG)
 /** This macro lets you embed a leak-detecting object inside a class.\n
     To use it, simply declare a DISTRHO_LEAK_DETECTOR(YourClassName) inside a private section
     of the class declaration. E.g.

@@ -28,6 +28,17 @@ TopLevelWidget::PrivateData::PrivateData(TopLevelWidget* const s, Window& w)
       selfw(s),
       window(w)
 {
+    /* if window already has a top-level-widget, make the new one match the first one in size
+     * this is needed because window creation and resize is a synchronous operation in some systems.
+     * as such, there's a chance the non-1st top-level-widgets would never get a valid size.
+     */
+    if (!window.pData->topLevelWidgets.empty())
+    {
+        TopLevelWidget* const first = window.pData->topLevelWidgets.front();
+
+        selfw->pData->size = first->getSize();
+    }
+
     window.pData->topLevelWidgets.push_back(self);
 }
 
@@ -124,9 +135,9 @@ bool TopLevelWidget::PrivateData::scrollEvent(const ScrollEvent& ev)
     return selfw->pData->giveScrollEventForSubWidgets(rev);
 }
 
-void TopLevelWidget::PrivateData::fallbackOnResize()
+void TopLevelWidget::PrivateData::fallbackOnResize(const uint width, const uint height)
 {
-    puglFallbackOnResize(window.pData->view);
+    puglFallbackOnResize(window.pData->view, width, height);
 }
 
 // -----------------------------------------------------------------------

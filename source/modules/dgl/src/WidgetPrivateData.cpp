@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -33,6 +33,7 @@ Widget::PrivateData::PrivateData(Widget* const s, TopLevelWidget* const tlw)
       topLevelWidget(tlw),
       parentWidget(nullptr),
       id(0),
+      name(nullptr),
       needsScaling(false),
       visible(true),
       size(0, 0),
@@ -43,6 +44,7 @@ Widget::PrivateData::PrivateData(Widget* const s, Widget* const pw)
       topLevelWidget(findTopLevelWidget(pw)),
       parentWidget(pw),
       id(0),
+      name(nullptr),
       needsScaling(false),
       visible(true),
       size(0, 0),
@@ -51,6 +53,7 @@ Widget::PrivateData::PrivateData(Widget* const s, Widget* const pw)
 Widget::PrivateData::~PrivateData()
 {
     subWidgets.clear();
+    std::free(name);
 }
 
 void Widget::PrivateData::displaySubWidgets(const uint width, const uint height, const double autoScaleFactor)

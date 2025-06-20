@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -14,8 +14,9 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "DistrhoDetails.hpp"
+#include "DistrhoPluginUtils.hpp"
 #include "src/DistrhoPluginChecks.h"
-#include "src/DistrhoDefines.h"
 
 #include <cstddef>
 
@@ -23,6 +24,17 @@
 # include <cstdint>
 #else
 # include <stdint.h>
+#endif
+
+#if defined(DISTRHO_OS_WASM)
+# include <emscripten/emscripten.h>
+#elif defined(DISTRHO_OS_WINDOWS)
+# include <winsock2.h>
+# include <windows.h>
+#elif defined(HAVE_X11)
+# define Window X11Window
+# include <X11/Xresource.h>
+# undef Window
 #endif
 
 #if DISTRHO_UI_FILE_BROWSER && !defined(DISTRHO_OS_MAC)
@@ -49,35 +61,29 @@
 START_NAMESPACE_DISTRHO
 # include "../extra/FileBrowserDialogImpl.hpp"
 END_NAMESPACE_DISTRHO
+# define Window X11Window
 # include "../extra/FileBrowserDialogImpl.cpp"
+# undef Window
 #endif
 
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-# if defined(DISTRHO_OS_WINDOWS)
-#  include <winsock2.h>
-#  include <windows.h>
-# elif defined(HAVE_X11)
-#  include <X11/Xresource.h>
-# endif
-#else
-# include "src/TopLevelWidgetPrivateData.hpp"
-# include "src/WindowPrivateData.hpp"
+#if DISTRHO_UI_WEB_VIEW && !defined(DISTRHO_OS_MAC)
+# define DISTRHO_WEB_VIEW_HPP_INCLUDED
+# define WEB_VIEW_NAMESPACE DISTRHO_NAMESPACE
+# define WEB_VIEW_DISTRHO_NAMESPACE
+START_NAMESPACE_DISTRHO
+# include "../extra/WebViewImpl.hpp"
+END_NAMESPACE_DISTRHO
+# define Window X11Window
+# include "../extra/WebViewImpl.cpp"
+# undef Window
 #endif
 
+#include "src/TopLevelWidgetPrivateData.hpp"
+#include "src/WindowPrivateData.hpp"
 #include "DistrhoUIPrivateData.hpp"
 
 START_NAMESPACE_DISTRHO
 
-/* ------------------------------------------------------------------------------------------------------------
- * Static data, see DistrhoUIInternal.hpp */
-
-const char* g_nextBundlePath  = nullptr;
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-uintptr_t   g_nextWindowId    = 0;
-double      g_nextScaleFactor = 1.0;
-#endif
-
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 /* ------------------------------------------------------------------------------------------------------------
  * get global scale factor */
 
@@ -90,23 +96,25 @@ static double getDesktopScaleFactor(const uintptr_t parentWindowHandle)
     if (const char* const scale = getenv("DPF_SCALE_FACTOR"))
         return std::max(1.0, std::atof(scale));
 
-#if defined(DISTRHO_OS_WINDOWS)
+   #if defined(DISTRHO_OS_WASM)
+    return emscripten_get_device_pixel_ratio();
+   #elif defined(DISTRHO_OS_WINDOWS)
     if (const HMODULE Shcore = LoadLibraryA("Shcore.dll"))
     {
         typedef HRESULT(WINAPI* PFN_GetProcessDpiAwareness)(HANDLE, DWORD*);
         typedef HRESULT(WINAPI* PFN_GetScaleFactorForMonitor)(HMONITOR, DWORD*);
 
-# if defined(__GNUC__) && (__GNUC__ >= 9)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wcast-function-type"
-# endif
+      #if defined(__GNUC__) && (__GNUC__ >= 9)
+       #pragma GCC diagnostic push
+       #pragma GCC diagnostic ignored "-Wcast-function-type"
+      #endif
         const PFN_GetProcessDpiAwareness GetProcessDpiAwareness
             = (PFN_GetProcessDpiAwareness)GetProcAddress(Shcore, "GetProcessDpiAwareness");
         const PFN_GetScaleFactorForMonitor GetScaleFactorForMonitor
             = (PFN_GetScaleFactorForMonitor)GetProcAddress(Shcore, "GetScaleFactorForMonitor");
-# if defined(__GNUC__) && (__GNUC__ >= 9)
-#  pragma GCC diagnostic pop
-# endif
+      #if defined(__GNUC__) && (__GNUC__ >= 9)
+       #pragma GCC diagnostic pop
+      #endif
 
         DWORD dpiAware = 0;
         DWORD scaleFactor = 100;
@@ -115,14 +123,14 @@ static double getDesktopScaleFactor(const uintptr_t parentWindowHandle)
         {
             const HMONITOR hMon = parentWindowHandle != 0
                                 ? MonitorFromWindow((HWND)parentWindowHandle, MONITOR_DEFAULTTOPRIMARY)
-                                : MonitorFromPoint(POINT{0,0}, MONITOR_DEFAULTTOPRIMARY);
+                                : MonitorFromPoint(POINT(), MONITOR_DEFAULTTOPRIMARY);
             GetScaleFactorForMonitor(hMon, &scaleFactor);
         }
 
         FreeLibrary(Shcore);
         return static_cast<double>(scaleFactor) / 100.0;
     }
-#elif defined(HAVE_X11)
+   #elif defined(HAVE_X11)
     ::Display* const display = XOpenDisplay(nullptr);
     DISTRHO_SAFE_ASSERT_RETURN(display != nullptr, 1.0);
 
@@ -153,7 +161,7 @@ static double getDesktopScaleFactor(const uintptr_t parentWindowHandle)
 
     XCloseDisplay(display);
     return dpi / 96;
-#endif
+   #endif
 
     return 1.0;
 
@@ -162,50 +170,173 @@ static double getDesktopScaleFactor(const uintptr_t parentWindowHandle)
 }
 #endif // !DISTRHO_OS_MAC
 
-#endif
-
 /* ------------------------------------------------------------------------------------------------------------
  * UI::PrivateData special handling */
 
 UI::PrivateData* UI::PrivateData::s_nextPrivateData = nullptr;
 
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-ExternalWindow::PrivateData
-#else
-PluginWindow&
-#endif
-UI::PrivateData::createNextWindow(UI* const ui, const uint width, const uint height)
+PluginWindow& UI::PrivateData::createNextWindow(UI* const ui, uint width, uint height)
 {
-    UI::PrivateData* const pData = s_nextPrivateData;
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-    pData->window = new PluginWindow(ui, pData->app);
-    ExternalWindow::PrivateData ewData;
-    ewData.parentWindowHandle = pData->winId;
-    ewData.width = width;
-    ewData.height = height;
-    ewData.scaleFactor = pData->scaleFactor != 0.0 ? pData->scaleFactor : getDesktopScaleFactor(pData->winId);
-    ewData.title = DISTRHO_PLUGIN_NAME;
-    ewData.isStandalone = DISTRHO_UI_IS_STANDALONE;
-    return ewData;
-#else
-    pData->window = new PluginWindow(ui, pData->app, pData->winId, width, height, pData->scaleFactor);
+    UI::PrivateData* const uiData = s_nextPrivateData;
+    const double scaleFactor = d_isNotZero(uiData->scaleFactor) ? uiData->scaleFactor : getDesktopScaleFactor(uiData->winId);
 
-    // If there are no callbacks, this is most likely a temporary window, so ignore idle callbacks
-    if (pData->callbacksPtr == nullptr)
-        pData->window->setIgnoreIdleCallbacks();
+    if (d_isNotZero(scaleFactor) && d_isNotEqual(scaleFactor, 1.0))
+    {
+        width *= scaleFactor;
+        height *= scaleFactor;
+    }
 
-    return pData->window.getObject();
+    d_stdout("createNextWindow %u %u %f", width, height, scaleFactor);
+    uiData->window = new PluginWindow(ui, uiData->app, uiData->winId, width, height, scaleFactor);
+
+    if (uiData->callbacksPtr != nullptr)
+    {
+       #if DISTRHO_UI_USE_WEB_VIEW
+        String path;
+        if (uiData->bundlePath != nullptr)
+        {
+            path = getResourcePath(uiData->bundlePath);
+        }
+        else
+        {
+            path = getBinaryFilename();
+            path.truncate(path.rfind(DISTRHO_OS_SEP));
+            path += "/resources";
+        }
+
+        path.urlEncode();
+
+        // TODO convert win32 paths to web
+
+        WebViewOptions opts;
+        opts.initialJS = ""
+"editParameter = function(index, started){ postMessage('editparam ' + index + ' ' + (started ? '1' : '0')) };"
+"setParameterValue = function(index, value){ postMessage('setparam ' + index + ' ' + value) };"
+#if DISTRHO_PLUGIN_WANT_STATE
+"setState = function(key, value){ postMessage('setstate ' + key + ' ' + value) };"
+"requestStateFile = function(key){ postMessage('reqstatefile ' + key) };"
 #endif
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
+"sendNote = function(channel, note, velocity){ postMessage('sendnote ' + channel + ' ' + note + ' ' + velocity) };"
+#endif
+        ;
+        opts.callback = webViewMessageCallback;
+        opts.callbackPtr = uiData;
+        uiData->webview = webViewCreate("file://" + path + "/index.html",
+                                        uiData->winId != 0 ? uiData->winId : uiData->window->getNativeWindowHandle(),
+                                        width,
+                                        height,
+                                        scaleFactor,
+                                        opts);
+       #endif
+    }
+    // If there are no callbacks, this is most likely a temporary window, so ignore idle callbacks
+    else
+    {
+        uiData->window->setIgnoreIdleCallbacks();
+    }
+
+    return uiData->window.getObject();
 }
+
+#if DISTRHO_UI_USE_WEB_VIEW
+void UI::PrivateData::webViewMessageCallback(void* const arg, char* const msg)
+{
+    UI::PrivateData* const uiData = static_cast<UI::PrivateData*>(arg);
+
+    if (std::strncmp(msg, "setparam ", 9) == 0)
+    {
+        const char* const strindex = msg + 9;
+        char* strvalue = nullptr;
+        const ulong index = std::strtoul(strindex, &strvalue, 10);
+        DISTRHO_SAFE_ASSERT_RETURN(strvalue != nullptr && strindex != strvalue,);
+
+        float value;
+        {
+            const ScopedSafeLocale ssl;
+            value = std::atof(strvalue);
+        }
+        uiData->setParamCallback(index + uiData->parameterOffset, value);
+        return;
+    }
+
+    if (std::strncmp(msg, "editparam ", 10) == 0)
+    {
+        const char* const strindex = msg + 10;
+        char* strvalue = nullptr;
+        const ulong index = std::strtoul(strindex, &strvalue, 10);
+        DISTRHO_SAFE_ASSERT_RETURN(strvalue != nullptr && strindex != strvalue,);
+
+        const bool started = strvalue[0] != '0';
+        uiData->editParamCallback(index + uiData->parameterOffset, started);
+        return;
+    }
+
+   #if DISTRHO_PLUGIN_WANT_STATE
+    if (std::strncmp(msg, "setstate ", 9) == 0)
+    {
+        char* const key = msg + 9;
+        char* const sep = std::strchr(key, ' ');
+        DISTRHO_SAFE_ASSERT_RETURN(sep != nullptr,);
+        *sep = '\0';
+        char* const value = sep + 1;
+
+        uiData->setStateCallback(key, value);
+        return;
+    }
+
+    if (std::strncmp(msg, "reqstatefile ", 13) == 0)
+    {
+        const char* const key = msg + 13;
+        uiData->fileRequestCallback(key);
+        return;
+    }
+   #endif
+
+   #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
+    if (std::strncmp(msg, "sendnote ", 9) == 0)
+    {
+        const char* const strchannel = msg + 9;
+        char* strnote = nullptr;
+        char* strvelocity = nullptr;
+        char* end = nullptr;
+
+        const ulong channel = std::strtoul(strchannel, &strnote, 10);
+        DISTRHO_SAFE_ASSERT_RETURN(strnote != nullptr && strchannel != strnote,);
+
+        const ulong note = std::strtoul(strnote, &strvelocity, 10);
+        DISTRHO_SAFE_ASSERT_RETURN(strvelocity != nullptr && strchannel != strvelocity,);
+
+        const ulong velocity = std::strtoul(strvelocity, &end, 10);
+        DISTRHO_SAFE_ASSERT_RETURN(end != nullptr && strvelocity != end,);
+
+        uiData->sendNoteCallback(channel, note, velocity);
+        return;
+    }
+   #endif
+
+    d_stderr("UI received unknown message '%s'", msg);
+}
+#endif
 
 /* ------------------------------------------------------------------------------------------------------------
  * UI */
 
 UI::UI(const uint width, const uint height, const bool automaticallyScaleAndSetAsMinimumSize)
-    : UIWidget(UI::PrivateData::createNextWindow(this, width, height)),
+    : UIWidget(UI::PrivateData::createNextWindow(this,
+               // width
+              #ifdef DISTRHO_UI_DEFAULT_WIDTH
+               width == 0 ? DISTRHO_UI_DEFAULT_WIDTH :
+              #endif
+               width,
+               // height
+              #ifdef DISTRHO_UI_DEFAULT_HEIGHT
+               height == 0 ? DISTRHO_UI_DEFAULT_HEIGHT :
+              #endif
+               height
+               )),
       uiData(UI::PrivateData::s_nextPrivateData)
 {
-#if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
     if (width != 0 && height != 0)
     {
         Widget::setSize(width, height);
@@ -213,14 +344,20 @@ UI::UI(const uint width, const uint height, const bool automaticallyScaleAndSetA
         if (automaticallyScaleAndSetAsMinimumSize)
             setGeometryConstraints(width, height, true, true, true);
     }
-#else
-    // unused
-    (void)automaticallyScaleAndSetAsMinimumSize;
-#endif
+   #ifdef DISTRHO_UI_DEFAULT_WIDTH
+    else
+    {
+        Widget::setSize(DISTRHO_UI_DEFAULT_WIDTH, DISTRHO_UI_DEFAULT_HEIGHT);
+    }
+   #endif
 }
 
 UI::~UI()
 {
+   #if DISTRHO_UI_USE_WEB_VIEW
+    if (uiData->webview != nullptr)
+        webViewDestroy(uiData->webview);
+   #endif
 }
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -228,15 +365,11 @@ UI::~UI()
 
 bool UI::isResizable() const noexcept
 {
-#if DISTRHO_UI_USER_RESIZABLE
-# if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-    return true;
-# else
+   #if DISTRHO_UI_USER_RESIZABLE
     return uiData->window->isResizable();
-# endif
-#else
+   #else
     return false;
-#endif
+   #endif
 }
 
 uint UI::getBackgroundColor() const noexcept
@@ -307,33 +440,94 @@ void* UI::getPluginInstancePointer() const noexcept
 }
 #endif
 
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 /* ------------------------------------------------------------------------------------------------------------
- * External UI helpers (static calls) */
+ * DSP/Plugin Callbacks */
 
-const char* UI::getNextBundlePath() noexcept
+void UI::parameterChanged(const uint32_t index, const float value)
 {
-    return g_nextBundlePath;
+   #if DISTRHO_UI_USE_WEB_VIEW
+    if (uiData->webview != nullptr)
+    {
+        char msg[128];
+        {
+            const ScopedSafeLocale ssl;
+            std::snprintf(msg, sizeof(msg) - 1,
+                          "typeof(parameterChanged) === 'function' && parameterChanged(%u,%f)", index, value);
+        }
+        webViewEvaluateJS(uiData->webview, msg);
+    }
+   #else
+    // unused
+    (void)index;
+    (void)value;
+   #endif
 }
 
-double UI::getNextScaleFactor() noexcept
+#if DISTRHO_PLUGIN_WANT_PROGRAMS
+void UI::programLoaded(const uint32_t index)
 {
-    return g_nextScaleFactor;
+   #if DISTRHO_UI_USE_WEB_VIEW
+    if (uiData->webview != nullptr)
+    {
+        char msg[128];
+        std::snprintf(msg, sizeof(msg) - 1,
+                      "typeof(programLoaded) === 'function' && programLoaded(%u)", index);
+        webViewEvaluateJS(uiData->webview, msg);
+    }
+   #else
+    // unused
+    (void)index;
+   #endif
 }
+#endif
 
-# if DISTRHO_PLUGIN_HAS_EMBED_UI
-uintptr_t UI::getNextWindowId() noexcept
+#if DISTRHO_PLUGIN_WANT_STATE
+void UI::stateChanged(const char* const key, const char* const value)
 {
-    return g_nextWindowId;
+   #if DISTRHO_UI_USE_WEB_VIEW
+    if (uiData->webview != nullptr)
+    {
+        const size_t keylen = std::strlen(key);
+        const size_t valuelen = std::strlen(value);
+        const size_t msglen = keylen + valuelen + 60;
+        if (char* const msg = static_cast<char*>(std::malloc(msglen)))
+        {
+            // TODO escape \\'
+            std::snprintf(msg, msglen - 1,
+                          "typeof(stateChanged) === 'function' && stateChanged('%s','%s')", key, value);
+            msg[msglen - 1] = '\0';
+            webViewEvaluateJS(uiData->webview, msg);
+            std::free(msg);
+        }
+    }
+   #else
+    // unused
+    (void)key;
+    (void)value;
+   #endif
 }
-# endif
-#endif // DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+#endif
 
 /* ------------------------------------------------------------------------------------------------------------
  * DSP/Plugin Callbacks (optional) */
 
-void UI::sampleRateChanged(double)
+void UI::sampleRateChanged(const double sampleRate)
 {
+   #if DISTRHO_UI_USE_WEB_VIEW
+    if (uiData->webview != nullptr)
+    {
+        char msg[128];
+        {
+            const ScopedSafeLocale ssl;
+            std::snprintf(msg, sizeof(msg) - 1,
+                          "typeof(sampleRateChanged) === 'function' && sampleRateChanged(%f)", sampleRate);
+        }
+        webViewEvaluateJS(uiData->webview, msg);
+    }
+   #else
+    // unused
+    (void)sampleRate;
+   #endif
 }
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -343,7 +537,6 @@ void UI::uiScaleFactorChanged(double)
 {
 }
 
-#if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 std::vector<DGL_NAMESPACE::ClipboardDataOffer> UI::getClipboardDataOfferTypes()
 {
     return uiData->window->getClipboardDataOfferTypes();
@@ -367,12 +560,11 @@ void UI::uiFocus(bool, DGL_NAMESPACE::CrossingMode)
 {
 }
 
-void UI::uiReshape(uint, uint)
+void UI::uiReshape(const uint width, const uint height)
 {
     // NOTE this must be the same as Window::onReshape
-    pData->fallbackOnResize();
+    pData->fallbackOnResize(width, height);
 }
-#endif // !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 
 #if DISTRHO_UI_FILE_BROWSER
 void UI::uiFileBrowserSelected(const char*)
@@ -383,43 +575,34 @@ void UI::uiFileBrowserSelected(const char*)
 /* ------------------------------------------------------------------------------------------------------------
  * UI Resize Handling, internal */
 
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-void UI::sizeChanged(const uint width, const uint height)
-{
-    UIWidget::sizeChanged(width, height);
-
-    uiData->setSizeCallback(width, height);
-}
-#else
 void UI::onResize(const ResizeEvent& ev)
 {
     UIWidget::onResize(ev);
 
-#ifndef DISTRHO_PLUGIN_TARGET_VST3
+   #if ! DISTRHO_UI_USES_SIZE_REQUEST
     if (uiData->initializing)
         return;
 
     const uint width = ev.size.getWidth();
     const uint height = ev.size.getHeight();
     uiData->setSizeCallback(width, height);
-#endif
+   #endif
 }
 
-// NOTE: only used for VST3
+// NOTE: only used for CLAP and VST3
 void UI::requestSizeChange(const uint width, const uint height)
 {
-# ifdef DISTRHO_PLUGIN_TARGET_VST3
+   #if DISTRHO_UI_USES_SIZE_REQUEST
     if (uiData->initializing)
-        uiData->window->setSizeForVST3(width, height);
+        uiData->window->setSizeFromHost(width, height);
     else
         uiData->setSizeCallback(width, height);
-# else
+   #else
     // unused
     (void)width;
     (void)height;
-# endif
+   #endif
 }
-#endif
 
 // -----------------------------------------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -17,6 +17,7 @@
 #ifndef DISTRHO_UI_HPP_INCLUDED
 #define DISTRHO_UI_HPP_INCLUDED
 
+#include "DistrhoDetails.hpp"
 #include "extra/LeakDetector.hpp"
 #include "src/DistrhoPluginChecks.h"
 
@@ -30,11 +31,7 @@
 # include "Vulkan.hpp"
 #endif
 
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-# include "../dgl/Base.hpp"
-# include "extra/ExternalWindow.hpp"
-typedef DISTRHO_NAMESPACE::ExternalWindow UIWidget;
-#elif DISTRHO_UI_USE_CUSTOM
+#if DISTRHO_UI_USE_CUSTOM
 # include DISTRHO_UI_CUSTOM_INCLUDE_PATH
 typedef DISTRHO_UI_CUSTOM_WIDGET_TYPE UIWidget;
 #elif DISTRHO_UI_USE_CAIRO
@@ -51,6 +48,8 @@ typedef DGL_NAMESPACE::TopLevelWidget UIWidget;
 #if DISTRHO_UI_FILE_BROWSER
 # include "extra/FileBrowserDialog.hpp"
 #endif
+
+#include <vector>
 
 START_NAMESPACE_DISTRHO
 
@@ -186,15 +185,15 @@ public:
 #if DISTRHO_UI_FILE_BROWSER
    /**
       Open a file browser dialog with this window as transient parent.@n
-      A few options can be specified to setup the dialog.
+      A few options can be specified to setup the dialog.@n
+      The @a DISTRHO_NAMESPACE::FileBrowserOptions::className variable is automatically set in this call.
 
       If a path is selected, onFileSelected() will be called with the user chosen path.
       If the user cancels or does not pick a file, onFileSelected() will be called with nullptr as filename.
 
       This function does not block the event loop.
 
-      @note This is exactly the same API as provided by the Window class,
-            but redeclared here so that non-embed/DGL based UIs can still use file browser related functions.
+      @note This is exactly the same API as provided by the Window class, but redeclared here for convenience.
     */
     bool openFileBrowser(const DISTRHO_NAMESPACE::FileBrowserOptions& options = FileBrowserOptions());
 #endif
@@ -210,34 +209,6 @@ public:
     void* getPluginInstancePointer() const noexcept;
 #endif
 
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-   /* --------------------------------------------------------------------------------------------------------
-    * External UI helpers */
-
-   /**
-      Get the bundle path that will be used for the next UI.
-      @note: This function is only valid during createUI(),
-             it will return null when called from anywhere else.
-    */
-    static const char* getNextBundlePath() noexcept;
-
-   /**
-      Get the scale factor that will be used for the next UI.
-      @note: This function is only valid during createUI(),
-             it will return 1.0 when called from anywhere else.
-    */
-    static double getNextScaleFactor() noexcept;
-
-# if DISTRHO_PLUGIN_HAS_EMBED_UI
-   /**
-      Get the Window Id that will be used for the next created window.
-      @note: This function is only valid during createUI(),
-             it will return 0 when called from anywhere else.
-    */
-    static uintptr_t getNextWindowId() noexcept;
-# endif
-#endif
-
 protected:
    /* --------------------------------------------------------------------------------------------------------
     * DSP/Plugin Callbacks */
@@ -246,14 +217,14 @@ protected:
       A parameter has changed on the plugin side.@n
       This is called by the host to inform the UI about parameter changes.
     */
-    virtual void parameterChanged(uint32_t index, float value) = 0;
+    virtual void parameterChanged(uint32_t index, float value);
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
    /**
       A program has been loaded on the plugin side.@n
       This is called by the host to inform the UI about program changes.
     */
-    virtual void programLoaded(uint32_t index) = 0;
+    virtual void programLoaded(uint32_t index);
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
@@ -261,7 +232,7 @@ protected:
       A state has changed on the plugin side.@n
       This is called by the host to inform the UI about state changes.
     */
-    virtual void stateChanged(const char* key, const char* value) = 0;
+    virtual void stateChanged(const char* key, const char* value);
 #endif
 
    /* --------------------------------------------------------------------------------------------------------
@@ -293,7 +264,6 @@ protected:
     */
     virtual void uiScaleFactorChanged(double scaleFactor);
 
-#if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
    /**
       Get the types available for the data in a clipboard.
       Must only be called within the context of uiClipboardDataOffer.
@@ -330,7 +300,6 @@ protected:
       The most common exception is custom OpenGL setup, but only really needed for custom OpenGL drawing code.
     */
     virtual void uiReshape(uint width, uint height);
-#endif // !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 
 #if DISTRHO_UI_FILE_BROWSER
    /**
@@ -348,21 +317,12 @@ protected:
    /* --------------------------------------------------------------------------------------------------------
     * UI Resize Handling, internal */
 
-#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
-   /**
-      External Window resize function, called when the window is resized.
-      This is overriden here so the host knows when the UI is resized by you.
-      @see ExternalWindow::sizeChanged(uint,uint)
-    */
-    void sizeChanged(uint width, uint height) override;
-#else
    /**
       Widget resize function, called when the widget is resized.
       This is overriden here so the host knows when the UI is resized by you.
       @see Widget::onResize(const ResizeEvent&)
     */
     void onResize(const ResizeEvent& ev) override;
-#endif
 
     // -------------------------------------------------------------------------------------------------------
 
@@ -371,10 +331,8 @@ private:
     PrivateData* const uiData;
     friend class PluginWindow;
     friend class UIExporter;
-#if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
    /** @internal */
     void requestSizeChange(uint width, uint height) override;
-#endif
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UI)
 };

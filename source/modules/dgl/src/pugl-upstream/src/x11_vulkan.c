@@ -26,15 +26,24 @@ struct PuglVulkanLoaderImpl {
 };
 
 PuglVulkanLoader*
-puglNewVulkanLoader(PuglWorld* PUGL_UNUSED(world))
+puglNewVulkanLoader(PuglWorld*        PUGL_UNUSED(world),
+                    const char* const libraryName)
 {
+  const char* const filename  = libraryName ? libraryName : "libvulkan.so";
+  void* const       libvulkan = dlopen(filename, RTLD_LAZY);
+  if (!libvulkan) {
+    return NULL;
+  }
+
   PuglVulkanLoader* const loader =
     (PuglVulkanLoader*)calloc(1, sizeof(PuglVulkanLoader));
 
-  if (!loader || !(loader->libvulkan = dlopen("libvulkan.so", RTLD_LAZY))) {
-    free(loader);
+  if (!loader) {
+    dlclose(libvulkan);
     return NULL;
   }
+
+  loader->libvulkan = libvulkan;
 
   loader->vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)dlsym(
     loader->libvulkan, "vkGetInstanceProcAddr");

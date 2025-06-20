@@ -52,18 +52,19 @@ puglX11GlConfigure(PuglView* view)
 
   // clang-format off
   const int attrs[] = {
-    GLX_X_RENDERABLE,  True,
-    GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-    GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-    GLX_RENDER_TYPE,   GLX_RGBA_BIT,
-    GLX_SAMPLES,       puglX11GlHintValue(view->hints[PUGL_SAMPLES]),
-    GLX_RED_SIZE,      puglX11GlHintValue(view->hints[PUGL_RED_BITS]),
-    GLX_GREEN_SIZE,    puglX11GlHintValue(view->hints[PUGL_GREEN_BITS]),
-    GLX_BLUE_SIZE,     puglX11GlHintValue(view->hints[PUGL_BLUE_BITS]),
-    GLX_ALPHA_SIZE,    puglX11GlHintValue(view->hints[PUGL_ALPHA_BITS]),
-    GLX_DEPTH_SIZE,    puglX11GlHintValue(view->hints[PUGL_DEPTH_BITS]),
-    GLX_STENCIL_SIZE,  puglX11GlHintValue(view->hints[PUGL_STENCIL_BITS]),
-    GLX_DOUBLEBUFFER,  puglX11GlHintValue(view->hints[PUGL_DOUBLE_BUFFER]),
+    GLX_X_RENDERABLE,   True,
+    GLX_X_VISUAL_TYPE,  GLX_TRUE_COLOR,
+    GLX_DRAWABLE_TYPE,  GLX_WINDOW_BIT,
+    GLX_RENDER_TYPE,    GLX_RGBA_BIT,
+    GLX_SAMPLE_BUFFERS, puglX11GlHintValue(view->hints[PUGL_SAMPLE_BUFFERS]),
+    GLX_SAMPLES,        puglX11GlHintValue(view->hints[PUGL_SAMPLES]),
+    GLX_RED_SIZE,       puglX11GlHintValue(view->hints[PUGL_RED_BITS]),
+    GLX_GREEN_SIZE,     puglX11GlHintValue(view->hints[PUGL_GREEN_BITS]),
+    GLX_BLUE_SIZE,      puglX11GlHintValue(view->hints[PUGL_BLUE_BITS]),
+    GLX_ALPHA_SIZE,     puglX11GlHintValue(view->hints[PUGL_ALPHA_BITS]),
+    GLX_DEPTH_SIZE,     puglX11GlHintValue(view->hints[PUGL_DEPTH_BITS]),
+    GLX_STENCIL_SIZE,   puglX11GlHintValue(view->hints[PUGL_STENCIL_BITS]),
+    GLX_DOUBLEBUFFER,   puglX11GlHintValue(view->hints[PUGL_DOUBLE_BUFFER]),
     None
   };
   // clang-format on
@@ -89,6 +90,8 @@ puglX11GlConfigure(PuglView* view)
     puglX11GlGetAttrib(display, fbc[0], GLX_DEPTH_SIZE);
   view->hints[PUGL_STENCIL_BITS] =
     puglX11GlGetAttrib(display, fbc[0], GLX_STENCIL_SIZE);
+  view->hints[PUGL_SAMPLE_BUFFERS] =
+    puglX11GlGetAttrib(display, fbc[0], GLX_SAMPLE_BUFFERS);
   view->hints[PUGL_SAMPLES] = puglX11GlGetAttrib(display, fbc[0], GLX_SAMPLES);
   view->hints[PUGL_DOUBLE_BUFFER] =
     puglX11GlGetAttrib(display, fbc[0], GLX_DOUBLEBUFFER);
@@ -142,12 +145,14 @@ puglX11GlCreate(PuglView* view)
     view->hints[PUGL_CONTEXT_VERSION_MINOR],
 
     GLX_CONTEXT_FLAGS_ARB,
-    (view->hints[PUGL_USE_DEBUG_CONTEXT] ? GLX_CONTEXT_DEBUG_BIT_ARB : 0),
+    (view->hints[PUGL_CONTEXT_DEBUG] ? GLX_CONTEXT_DEBUG_BIT_ARB : 0),
 
     GLX_CONTEXT_PROFILE_MASK_ARB,
-    (view->hints[PUGL_USE_COMPAT_PROFILE]
-       ? GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB
-       : GLX_CONTEXT_CORE_PROFILE_BIT_ARB),
+    (view->hints[PUGL_CONTEXT_API] == PUGL_OPENGL_ES_API
+       ? GLX_CONTEXT_ES2_PROFILE_BIT_EXT
+       : (view->hints[PUGL_CONTEXT_PROFILE] == PUGL_OPENGL_COMPATIBILITY_PROFILE
+            ? GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB
+            : GLX_CONTEXT_CORE_PROFILE_BIT_ARB)),
     0};
 
   const char* const extensions =

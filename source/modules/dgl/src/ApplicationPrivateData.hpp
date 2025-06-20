@@ -63,6 +63,9 @@ struct Application::PrivateData {
     /** Whether the applicating is starting up, that is, no windows have been made visible yet. Defaults to true. */
     bool isStarting;
 
+    /** When true force all windows to be repainted on next idle. */
+    bool needsRepaint;
+
     /** Counter of visible windows, only used in standalone mode.
         If 0->1, application is starting. If 1->0, application is quitting/stopping. */
     uint visibleWindows;
@@ -95,6 +98,9 @@ struct Application::PrivateData {
 
     /** Run each idle callback without updating pugl world. */
     void triggerIdleCallbacks();
+
+    /** Trigger a repaint of all windows if @a needsRepaint is true. */
+    void repaintIfNeeeded();
 
     /** Set flag indicating application is quitting, and close all windows in reverse order of registration.
         For standalone mode only. */

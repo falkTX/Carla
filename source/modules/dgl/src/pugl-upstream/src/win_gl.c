@@ -89,6 +89,14 @@ puglWinGlGetProcs(void)
   return procs;
 }
 
+static void
+ensureHint(PuglView* const view, const PuglViewHint hint, const int value)
+{
+  if (view->hints[hint] == PUGL_DONT_CARE) {
+    view->hints[hint] = value;
+  }
+}
+
 static PuglStatus
 puglWinGlConfigure(PuglView* view)
 {
@@ -96,21 +104,12 @@ puglWinGlConfigure(PuglView* view)
 
   // Set attributes to default if they are unset
   // (There is no GLX_DONT_CARE equivalent on Windows)
-  if (view->hints[PUGL_DEPTH_BITS] == PUGL_DONT_CARE) {
-    view->hints[PUGL_DEPTH_BITS] = 0;
-  }
-  if (view->hints[PUGL_STENCIL_BITS] == PUGL_DONT_CARE) {
-    view->hints[PUGL_STENCIL_BITS] = 0;
-  }
-  if (view->hints[PUGL_SAMPLES] == PUGL_DONT_CARE) {
-    view->hints[PUGL_SAMPLES] = 1;
-  }
-  if (view->hints[PUGL_DOUBLE_BUFFER] == PUGL_DONT_CARE) {
-    view->hints[PUGL_DOUBLE_BUFFER] = 1;
-  }
-  if (view->hints[PUGL_SWAP_INTERVAL] == PUGL_DONT_CARE) {
-    view->hints[PUGL_SWAP_INTERVAL] = 1;
-  }
+  ensureHint(view, PUGL_DEPTH_BITS, 0);
+  ensureHint(view, PUGL_STENCIL_BITS, 0);
+  ensureHint(view, PUGL_SAMPLES, 0);
+  ensureHint(view, PUGL_SAMPLE_BUFFERS, view->hints[PUGL_SAMPLES] > 0);
+  ensureHint(view, PUGL_DOUBLE_BUFFER, 1);
+  ensureHint(view, PUGL_SWAP_INTERVAL, 1);
 
   // clang-format off
   const int pixelAttrs[] = {
@@ -119,7 +118,7 @@ puglWinGlConfigure(PuglView* view)
     WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
     WGL_DOUBLE_BUFFER_ARB,  view->hints[PUGL_DOUBLE_BUFFER],
     WGL_PIXEL_TYPE_ARB,     WGL_TYPE_RGBA_ARB,
-    WGL_SAMPLE_BUFFERS_ARB, view->hints[PUGL_SAMPLES] ? 1 : 0,
+    WGL_SAMPLE_BUFFERS_ARB, view->hints[PUGL_SAMPLE_BUFFERS],
     WGL_SAMPLES_ARB,        view->hints[PUGL_SAMPLES],
     WGL_RED_BITS_ARB,       view->hints[PUGL_RED_BITS],
     WGL_GREEN_BITS_ARB,     view->hints[PUGL_GREEN_BITS],
@@ -164,7 +163,7 @@ puglWinGlConfigure(PuglView* view)
     // Choose pixel format based on attributes
     UINT numFormats = 0;
     if (!surface->procs.wglChoosePixelFormat(
-          fakeWin.hdc, pixelAttrs, NULL, 1u, &impl->pfId, &numFormats)) {
+          fakeWin.hdc, pixelAttrs, NULL, 1U, &impl->pfId, &numFormats)) {
       return puglWinError(&fakeWin, PUGL_SET_FORMAT_FAILED);
     }
 
@@ -199,12 +198,12 @@ puglWinGlCreate(PuglView* view)
     view->hints[PUGL_CONTEXT_VERSION_MINOR],
 
     WGL_CONTEXT_FLAGS_ARB,
-    (view->hints[PUGL_USE_DEBUG_CONTEXT] ? WGL_CONTEXT_DEBUG_BIT_ARB : 0),
+    (view->hints[PUGL_CONTEXT_DEBUG] ? WGL_CONTEXT_DEBUG_BIT_ARB : 0),
 
     WGL_CONTEXT_PROFILE_MASK_ARB,
-    (view->hints[PUGL_USE_COMPAT_PROFILE]
-       ? WGL_CONTEXT_CORE_PROFILE_BIT_ARB
-       : WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB),
+    ((view->hints[PUGL_CONTEXT_PROFILE] == PUGL_OPENGL_COMPATIBILITY_PROFILE)
+       ? WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB
+       : WGL_CONTEXT_CORE_PROFILE_BIT_ARB),
 
     0};
 
@@ -262,27 +261,20 @@ puglWinGlEnter(PuglView* view, const PuglExposeEvent* expose)
     return PUGL_FAILURE;
   }
 
+  const PuglStatus st = puglWinEnter(view, expose);
   wglMakeCurrent(view->impl->hdc, surface->hglrc);
-
-  if (expose) {
-    PAINTSTRUCT ps;
-    BeginPaint(view->impl->hwnd, &ps);
-  }
-
-  return PUGL_SUCCESS;
+  return st;
 }
 
 static PuglStatus
 puglWinGlLeave(PuglView* view, const PuglExposeEvent* expose)
 {
   if (expose) {
-    PAINTSTRUCT ps;
-    EndPaint(view->impl->hwnd, &ps);
     SwapBuffers(view->impl->hdc);
   }
 
   wglMakeCurrent(NULL, NULL);
-  return PUGL_SUCCESS;
+  return puglWinLeave(view, expose);
 }
 
 PuglGlFunc
@@ -296,7 +288,7 @@ puglGetProcAddress(const char* name)
 
   return func
            ? func
-           : (PuglGlFunc)GetProcAddress(GetModuleHandle("opengl32.dll"), name);
+           : (PuglGlFunc)GetProcAddress(GetModuleHandleA("opengl32.dll"), name);
 }
 
 PuglStatus

@@ -21,7 +21,8 @@ struct PuglVulkanLoaderImpl {
 };
 
 PuglVulkanLoader*
-puglNewVulkanLoader(PuglWorld* PUGL_UNUSED(world))
+puglNewVulkanLoader(PuglWorld*        PUGL_UNUSED(world),
+                    const char* const libraryName)
 {
   PuglVulkanLoader* loader =
     (PuglVulkanLoader*)calloc(1, sizeof(PuglVulkanLoader));
@@ -29,7 +30,9 @@ puglNewVulkanLoader(PuglWorld* PUGL_UNUSED(world))
     return NULL;
   }
 
-  if (!(loader->libvulkan = LoadLibrary("vulkan-1.dll"))) {
+  const char* const filename = libraryName ? libraryName : "vulkan-1.dll";
+  if (!(loader->libvulkan =
+          LoadLibraryExA(filename, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS))) {
     free(loader);
     return NULL;
   }
@@ -65,7 +68,7 @@ puglGetDeviceProcAddrFunc(const PuglVulkanLoader* loader)
 }
 
 const PuglBackend*
-puglVulkanBackend()
+puglVulkanBackend(void)
 {
   static const PuglBackend backend = {puglWinConfigure,
                                       puglStubCreate,

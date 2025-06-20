@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -38,8 +38,28 @@ START_NAMESPACE_DISTRHO
 const char* getBinaryFilename();
 
 /**
+   Get an OS-specific directory intended to store persistent configuration data about the plugin.@n
+   Calling this function will ensure the dictory exists on the filesystem.@n
+   The returned path already includes DISTRHO_PLUGIN_NAME and final OS separator.
+*/
+const char* getConfigDir();
+
+/**
+   Get an OS-specific directory intended to store "documents" for the plugin.@n
+   Calling this function will ensure the dictory exists on the filesystem.@n
+   The returned path already includes DISTRHO_PLUGIN_NAME and final OS separator.
+*/
+const char* getDocumentsDir();
+
+/**
+   Get the user "home" directory.@n
+   This function is provided only for convenience, it should not be needed under normal circunstances.
+*/
+const char* getHomeDir();
+
+/**
    Get a string representation of the current plugin format we are building against.@n
-   This can be "JACK/Standalone", "LADSPA", "DSSI", "LV2", "VST2" or "VST3".@n
+   This can be "AudioUnit", "JACK/Standalone", "LADSPA", "DSSI", "LV2", "VST2" or "VST3" or "CLAP".@n
    This string is purely informational and must not be used to tweak plugin behaviour.
 
    @note DO NOT CHANGE PLUGIN BEHAVIOUR BASED ON PLUGIN FORMAT.
@@ -53,13 +73,15 @@ const char* getPluginFormatName() noexcept;
    Returns a path inside the bundle where the plugin is meant to store its resources in.@n
    This path varies between systems and plugin formats, like so:
 
+    - AU: <bundle>/Contents/Resources
+    - CLAP+VST2 macOS: <bundle>/Contents/Resources
+    - CLAP+VST2 non-macOS: <bundle>/resources (see note)
     - LV2: <bundle>/resources (can be stored anywhere inside the bundle really, DPF just uses this one)
-    - VST2 macOS: <bundle>/Contents/Resources
-    - VST2 non-macOS: <bundle>/resources (see note)
+    - VST3: <bundle>/Contents/Resources
 
    The other non-mentioned formats do not support bundles.@n
 
-   @note For VST2 on non-macOS systems, this assumes you have your plugin inside a dedicated directory
+   @note For CLAP and VST2 on non-macOS systems, this assumes you have your plugin inside a dedicated directory
          rather than only shipping with the binary (e.g. <myplugin.vst>/myplugin.dll)
 */
 const char* getResourcePath(const char* bundlePath) noexcept;

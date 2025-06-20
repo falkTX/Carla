@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -68,7 +68,41 @@ struct Color {
    /**
       Create a new color based on this one but with a different alpha value.
     */
-    Color withAlpha(float alpha) noexcept;
+    Color withAlpha(float alpha) const noexcept;
+
+   /**
+      Create a new color based on this one but with subtracted numeric value on all elements.
+      Value must be in [0..255] range.
+    */
+    Color minus(int value) const noexcept;
+
+   /**
+      Create a new color based on this one but with subtracted floating-point value on all elements.
+      Value must be in [0..1] range.
+    */
+    Color minus(float value) const noexcept;
+
+   /**
+      Create a new color based on this one but with added numeric value on all elements.
+      Value must be in [0..255] range.
+    */
+    Color plus(int value) const noexcept;
+
+   /**
+      Create a new color based on this one but with added floating-point value on all elements.
+      Value must be in [0..1] range.
+    */
+    Color plus(float value) const noexcept;
+
+   /**
+      Create a new color based on this one but colors inverted.
+    */
+    Color invert() const noexcept;
+
+   /**
+      Create a new color based on this one but in grayscale (using weighted average).
+    */
+    Color asGrayscale() const noexcept;
 
    /**
       Create a color specified by hue, saturation and lightness.

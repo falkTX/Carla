@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -18,6 +18,8 @@
 #define DGL_WIDGET_HPP_INCLUDED
 
 #include "Geometry.hpp"
+
+#include <list>
 
 START_NAMESPACE_DGL
 
@@ -62,7 +64,7 @@ public:
         uint mod;
         /** Event flags. @see EventFlag */
         uint flags;
-        /** Event timestamp (if any). */
+        /** Event timestamp in milliseconds (if any). */
         uint time;
 
         /** Constructor for default/null values */
@@ -331,15 +333,32 @@ public:
 
    /**
       Get the Id associated with this widget.
+      Returns 0 by default.
       @see setId
     */
     uint getId() const noexcept;
+
+   /**
+      Get the name associated with this widget.
+      This is complately optional, mostly useful for debugging purposes.
+      Returns an empty string by default.
+      @see setName
+    */
+    const char* getName() const noexcept;
 
    /**
       Set an Id to be associated with this widget.
       @see getId
     */
     void setId(uint id) noexcept;
+
+   /**
+      Set a name to be associated with this widget.
+      This is complately optional, only useful for debugging purposes.
+      @note name must not be null
+      @see getName
+    */
+    void setName(const char* name) noexcept;
 
    /**
       Get the application associated with this widget's window.
@@ -368,6 +387,11 @@ public:
     TopLevelWidget* getTopLevelWidget() const noexcept;
 
    /**
+      Get list of children (a subwidgets) that belong to this widget.
+    */
+    std::list<SubWidget*> getChildren() const noexcept;
+
+   /**
       Request repaint of this widget's area to the window this widget belongs to.
       On the raw Widget class this function does nothing.
     */
@@ -383,7 +407,7 @@ protected:
    /**
       A function called to draw the widget contents.
     */
-    virtual void onDisplay() = 0;
+    virtual void onDisplay() {};
 
    /**
       A function called when a key is pressed or released.
@@ -424,19 +448,24 @@ protected:
       A function called when a special key is pressed or released.
       DEPRECATED use onKeyboard or onCharacterInput
     */
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+   #if defined(_MSC_VER)
+    #pragma warning(push)
+    #pragma warning(disable:4996)
+   #elif defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+   #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+   #endif
     virtual bool onSpecial(const SpecialEvent&) { return false; }
-#if defined(__clang__)
-# pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
-# pragma GCC diagnostic pop
-#endif
+   #if defined(_MSC_VER)
+    #pragma warning(pop)
+   #elif defined(__clang__)
+    #pragma clang diagnostic pop
+   #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+    #pragma GCC diagnostic pop
+   #endif
 
 private:
     struct PrivateData;

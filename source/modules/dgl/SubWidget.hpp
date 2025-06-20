@@ -138,6 +138,12 @@ public:
     void repaint() noexcept override;
 
    /**
+      Pushes this widget to the "bottom" of the parent widget.
+      Makes the widget behave as if it was the first to be registered on the parent widget, thus being "on bottom".
+    */
+    virtual void toBottom();
+
+   /**
       Bring this widget to the "front" of the parent widget.
       Makes the widget behave as if it was the last to be registered on the parent widget, thus being "in front".
     */

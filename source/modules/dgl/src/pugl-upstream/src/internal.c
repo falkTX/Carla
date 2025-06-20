@@ -1,4 +1,4 @@
-// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// Copyright 2012-2023 David Robillard <d@drobilla.net>
 // SPDX-License-Identifier: ISC
 
 #include "internal.h"
@@ -11,6 +11,20 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+
+bool
+puglIsValidSize(const PuglViewSize size)
+{
+  return size.width && size.height;
+}
+
+void
+puglEnsureHint(PuglView* const view, const PuglViewHint hint, const int value)
+{
+  if (view->hints[hint] == PUGL_DONT_CARE) {
+    view->hints[hint] = value;
+  }
+}
 
 PuglStatus
 puglSetBlob(PuglBlob* const dest, const void* const data, const size_t len)
@@ -39,11 +53,18 @@ puglSetBlob(PuglBlob* const dest, const void* const data, const size_t len)
 void
 puglSetString(char** dest, const char* string)
 {
-  if (*dest != string) {
-    const size_t len = strlen(string);
+  if (*dest == string) {
+    return;
+  }
 
-    *dest = (char*)realloc(*dest, len + 1);
-    strncpy(*dest, string, len + 1);
+  const size_t len = string ? strlen(string) : 0U;
+
+  if (!len) {
+    free(*dest);
+    *dest = NULL;
+  } else {
+    *dest = (char*)realloc(*dest, len + 1U);
+    strncpy(*dest, string, len + 1U);
   }
 }
 
@@ -67,40 +88,90 @@ puglDecodeUTF8(const uint8_t* buf)
   }
 
   if (buf[0] < 0xE0) {
-    FAIL_IF((buf[1] & 0xC0u) != 0x80);
-    return ((uint32_t)buf[0] << 6u) + buf[1] - 0x3080u;
+    FAIL_IF((buf[1] & 0xC0U) != 0x80);
+    return ((uint32_t)buf[0] << 6U) + buf[1] - 0x3080U;
   }
 
   if (buf[0] < 0xF0) {
-    FAIL_IF((buf[1] & 0xC0u) != 0x80);
+    FAIL_IF((buf[1] & 0xC0U) != 0x80);
     FAIL_IF(buf[0] == 0xE0 && buf[1] < 0xA0);
-    FAIL_IF((buf[2] & 0xC0u) != 0x80);
-    return ((uint32_t)buf[0] << 12u) + //
-           ((uint32_t)buf[1] << 6u) +  //
-           ((uint32_t)buf[2] - 0xE2080u);
+    FAIL_IF((buf[2] & 0xC0U) != 0x80);
+    return ((uint32_t)buf[0] << 12U) + //
+           ((uint32_t)buf[1] << 6U) +  //
+           ((uint32_t)buf[2] - 0xE2080U);
   }
 
   if (buf[0] < 0xF5) {
-    FAIL_IF((buf[1] & 0xC0u) != 0x80);
+    FAIL_IF((buf[1] & 0xC0U) != 0x80);
     FAIL_IF(buf[0] == 0xF0 && buf[1] < 0x90);
     FAIL_IF(buf[0] == 0xF4 && buf[1] >= 0x90);
-    FAIL_IF((buf[2] & 0xC0u) != 0x80u);
-    FAIL_IF((buf[3] & 0xC0u) != 0x80u);
-    return (((uint32_t)buf[0] << 18u) + //
-            ((uint32_t)buf[1] << 12u) + //
-            ((uint32_t)buf[2] << 6u) +  //
-            ((uint32_t)buf[3] - 0x3C82080u));
+    FAIL_IF((buf[2] & 0xC0U) != 0x80U);
+    FAIL_IF((buf[3] & 0xC0U) != 0x80U);
+    return (((uint32_t)buf[0] << 18U) + //
+            ((uint32_t)buf[1] << 12U) + //
+            ((uint32_t)buf[2] << 6U) +  //
+            ((uint32_t)buf[3] - 0x3C82080U));
   }
 
   return 0xFFFD;
 }
 
+PuglMods
+puglFilterMods(const PuglMods state, const PuglKey key)
+{
+  switch (key) {
+  case PUGL_KEY_SHIFT_L:
+  case PUGL_KEY_SHIFT_R:
+    return state & ~(PuglMods)PUGL_MOD_SHIFT;
+  case PUGL_KEY_CTRL_L:
+  case PUGL_KEY_CTRL_R:
+    return state & ~(PuglMods)PUGL_MOD_CTRL;
+  case PUGL_KEY_ALT_L:
+  case PUGL_KEY_ALT_R:
+    return state & ~(PuglMods)PUGL_MOD_ALT;
+  case PUGL_KEY_SUPER_L:
+  case PUGL_KEY_SUPER_R:
+    return state & ~(PuglMods)PUGL_MOD_SUPER;
+  case PUGL_KEY_NUM_LOCK:
+    return state & ~(PuglMods)PUGL_MOD_NUM_LOCK;
+  case PUGL_KEY_SCROLL_LOCK:
+    return state & ~(PuglMods)PUGL_MOD_SCROLL_LOCK;
+  case PUGL_KEY_CAPS_LOCK:
+    return state & ~(PuglMods)PUGL_MOD_CAPS_LOCK;
+  default:
+    break;
+  }
+
+  return state;
+}
+
+PuglStatus
+puglPreRealize(PuglView* const view)
+{
+  // Ensure that a backend with at least a configure method has been set
+  if (!view->backend || !view->backend->configure) {
+    return PUGL_BAD_BACKEND;
+  }
+
+  // Ensure that the view has an event handler
+  if (!view->eventFunc) {
+    return PUGL_BAD_CONFIGURATION;
+  }
+
+  // Ensure that the default size is set to a valid size
+  if (!puglIsValidSize(view->sizeHints[PUGL_DEFAULT_SIZE])) {
+    return PUGL_BAD_CONFIGURATION;
+  }
+
+  return PUGL_SUCCESS;
+}
+
 PuglStatus
 puglDispatchSimpleEvent(PuglView* view, const PuglEventType type)
 {
-  assert(type == PUGL_CREATE || type == PUGL_DESTROY || type == PUGL_MAP ||
-         type == PUGL_UNMAP || type == PUGL_UPDATE || type == PUGL_CLOSE ||
-         type == PUGL_LOOP_ENTER || type == PUGL_LOOP_LEAVE);
+  assert(type == PUGL_REALIZE || type == PUGL_UNREALIZE ||
+         type == PUGL_UPDATE || type == PUGL_CLOSE || type == PUGL_LOOP_ENTER ||
+         type == PUGL_LOOP_LEAVE);
 
   const PuglEvent event = {{type, 0}};
   return puglDispatchEvent(view, &event);
@@ -118,26 +189,12 @@ puglConfigure(PuglView* view, const PuglEvent* event)
   PuglStatus st = PUGL_SUCCESS;
 
   assert(event->type == PUGL_CONFIGURE);
-
-  view->frame.x      = event->configure.x;
-  view->frame.y      = event->configure.y;
-  view->frame.width  = event->configure.width;
-  view->frame.height = event->configure.height;
-
   if (puglMustConfigure(view, &event->configure)) {
     st                  = view->eventFunc(view, event);
     view->lastConfigure = event->configure;
   }
 
   return st;
-}
-
-PuglStatus
-puglExpose(PuglView* view, const PuglEvent* event)
-{
-  return (event->expose.width > 0.0 && event->expose.height > 0.0)
-           ? view->eventFunc(view, event)
-           : PUGL_SUCCESS;
 }
 
 PuglStatus
@@ -149,13 +206,25 @@ puglDispatchEvent(PuglView* view, const PuglEvent* event)
   switch (event->type) {
   case PUGL_NOTHING:
     break;
-  case PUGL_CREATE:
-  case PUGL_DESTROY:
+
+  case PUGL_REALIZE:
+    assert(view->stage == PUGL_VIEW_STAGE_ALLOCATED);
     if (!(st0 = view->backend->enter(view, NULL))) {
       st0 = view->eventFunc(view, event);
       st1 = view->backend->leave(view, NULL);
     }
+    view->stage = PUGL_VIEW_STAGE_REALIZED;
     break;
+
+  case PUGL_UNREALIZE:
+    assert(view->stage >= PUGL_VIEW_STAGE_REALIZED);
+    if (!(st0 = view->backend->enter(view, NULL))) {
+      st0 = view->eventFunc(view, event);
+      st1 = view->backend->leave(view, NULL);
+    }
+    view->stage = PUGL_VIEW_STAGE_ALLOCATED;
+    break;
+
   case PUGL_CONFIGURE:
     if (puglMustConfigure(view, &event->configure)) {
       if (!(st0 = view->backend->enter(view, NULL))) {
@@ -163,25 +232,19 @@ puglDispatchEvent(PuglView* view, const PuglEvent* event)
         st1 = view->backend->leave(view, NULL);
       }
     }
-    break;
-  case PUGL_MAP:
-    if (!view->visible) {
-      view->visible = true;
-      st0           = view->eventFunc(view, event);
+    if (view->stage == PUGL_VIEW_STAGE_REALIZED) {
+      view->stage = PUGL_VIEW_STAGE_CONFIGURED;
     }
     break;
-  case PUGL_UNMAP:
-    if (view->visible) {
-      view->visible = false;
-      st0           = view->eventFunc(view, event);
-    }
-    break;
+
   case PUGL_EXPOSE:
+    assert(view->stage == PUGL_VIEW_STAGE_CONFIGURED);
     if (!(st0 = view->backend->enter(view, &event->expose))) {
-      st0 = puglExpose(view, event);
+      st0 = view->eventFunc(view, event);
       st1 = view->backend->leave(view, &event->expose);
     }
     break;
+
   default:
     st0 = view->eventFunc(view, event);
   }

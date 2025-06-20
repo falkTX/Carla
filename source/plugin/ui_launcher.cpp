@@ -41,7 +41,15 @@ class PluginWindow : public DGL_NAMESPACE::Window
 {
 public:
     explicit PluginWindow(PluginApplication& app, const uintptr_t winId)
-        : Window(app, winId, ui_launcher_res::carla_uiWidth, ui_launcher_res::carla_uiHeight, 0.0, false, false, false)
+        : Window(app,
+                 winId,
+                 ui_launcher_res::carla_uiWidth,
+                 ui_launcher_res::carla_uiHeight,
+                 0.0,
+                 false,
+                 false,
+                 false,
+                 false)
     {
         // this is called just before creating UI, ensuring proper context to it
         if (pData->view != nullptr && pData->initPost())

@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -54,6 +54,15 @@ public:
     }
 
    /**
+      Get a graphics context back again.
+      Called when a valid graphics context is needed outside the constructor.
+    */
+    void reinit()
+    {
+        sgc.reinit();
+    }
+
+   /**
       Overloaded functions to ensure they apply to the Window class.
     */
     bool isVisible() const noexcept { return Window::isVisible(); }
@@ -64,6 +73,7 @@ public:
     uint getHeight() const noexcept { return Window::getHeight(); }
     const Size<uint> getSize() const noexcept { return Window::getSize(); }
     void repaint() noexcept { Window::repaint(); }
+    void repaint(const Rectangle<uint>& rect) noexcept { Window::repaint(rect); }
     void setWidth(uint width) { Window::setWidth(width); }
     void setHeight(uint height) { Window::setHeight(height); }
     void setSize(uint width, uint height) { Window::setSize(width, height); }

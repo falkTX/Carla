@@ -211,7 +211,15 @@ private:                                         \
 #endif
 
 /* Useful macros */
-#define ARRAY_SIZE(ARRAY) sizeof(ARRAY)/sizeof(ARRAY[0])
+#define ARRAY_SIZE(ARRAY) (sizeof(ARRAY)/sizeof(ARRAY[0]))
+#define STRINGIFY2(s) #s
+#define STRINGIFY(s) STRINGIFY2(s)
+
+#ifdef DISTRHO_PROPER_CPP11_SUPPORT
+#define CPP_AGGREGATE_INIT(ClassName) ClassName
+#else
+#define CPP_AGGREGATE_INIT(ClassName) (ClassName)
+#endif
 
 /* Useful typedefs */
 typedef unsigned char uchar;
@@ -223,5 +231,6 @@ typedef unsigned long long int ulonglong;
 /* Deprecated macros */
 #define DISTRHO_DECLARE_NON_COPY_CLASS(ClassName) DISTRHO_DECLARE_NON_COPYABLE(ClassName)
 #define DISTRHO_DECLARE_NON_COPY_STRUCT(StructName) DISTRHO_DECLARE_NON_COPYABLE(StructName)
+#define DISTRHO_MACRO_AS_STRING(MACRO) STRINGIFY2(MACRO)
 
 #endif // DISTRHO_DEFINES_H_INCLUDED

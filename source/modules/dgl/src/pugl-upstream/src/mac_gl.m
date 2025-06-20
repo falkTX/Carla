@@ -11,6 +11,14 @@
 #  define NSOpenGLProfileVersion4_1Core NSOpenGLProfileVersion3_2Core
 #endif
 
+static void
+ensureHint(PuglView* const view, const PuglViewHint hint, const int value)
+{
+  if (view->hints[hint] == PUGL_DONT_CARE) {
+    view->hints[hint] = value;
+  }
+}
+
 @interface PuglOpenGLView : NSOpenGLView
 @end
 
@@ -21,7 +29,9 @@
 
 - (id)initWithFrame:(NSRect)frame
 {
-  const bool     compat  = puglview->hints[PUGL_USE_COMPAT_PROFILE];
+  const bool compat =
+    puglview->hints[PUGL_CONTEXT_PROFILE] == PUGL_OPENGL_COMPATIBILITY_PROFILE;
+
   const unsigned samples = (unsigned)puglview->hints[PUGL_SAMPLES];
   const int      major   = puglview->hints[PUGL_CONTEXT_VERSION_MAJOR];
   const unsigned profile =
@@ -31,21 +41,12 @@
 
   // Set attributes to default if they are unset
   // (There is no GLX_DONT_CARE equivalent on MacOS)
-  if (puglview->hints[PUGL_DEPTH_BITS] == PUGL_DONT_CARE) {
-    puglview->hints[PUGL_DEPTH_BITS] = 0;
-  }
-  if (puglview->hints[PUGL_STENCIL_BITS] == PUGL_DONT_CARE) {
-    puglview->hints[PUGL_STENCIL_BITS] = 0;
-  }
-  if (puglview->hints[PUGL_SAMPLES] == PUGL_DONT_CARE) {
-    puglview->hints[PUGL_SAMPLES] = 1;
-  }
-  if (puglview->hints[PUGL_DOUBLE_BUFFER] == PUGL_DONT_CARE) {
-    puglview->hints[PUGL_DOUBLE_BUFFER] = 1;
-  }
-  if (puglview->hints[PUGL_SWAP_INTERVAL] == PUGL_DONT_CARE) {
-    puglview->hints[PUGL_SWAP_INTERVAL] = 1;
-  }
+  ensureHint(puglview, PUGL_DEPTH_BITS, 0);
+  ensureHint(puglview, PUGL_STENCIL_BITS, 0);
+  ensureHint(puglview, PUGL_SAMPLES, 1);
+  ensureHint(puglview, PUGL_SAMPLE_BUFFERS, puglview->hints[PUGL_SAMPLES] > 0);
+  ensureHint(puglview, PUGL_DOUBLE_BUFFER, 1);
+  ensureHint(puglview, PUGL_SWAP_INTERVAL, 1);
 
   const unsigned colorSize = (unsigned)(puglview->hints[PUGL_RED_BITS] +
                                         puglview->hints[PUGL_BLUE_BITS] +
@@ -60,8 +61,8 @@
     NSOpenGLPFAColorSize,     colorSize,
     NSOpenGLPFADepthSize,     (unsigned)puglview->hints[PUGL_DEPTH_BITS],
     NSOpenGLPFAStencilSize,   (unsigned)puglview->hints[PUGL_STENCIL_BITS],
-    NSOpenGLPFAMultisample,   samples ? 1u : 0u,
-    NSOpenGLPFASampleBuffers, samples ? 1u : 0u,
+    NSOpenGLPFAMultisample,   samples ? 1U : 0U,
+    NSOpenGLPFASampleBuffers, samples ? 1U : 0U,
     NSOpenGLPFASamples,       samples,
     0};
   // clang-format on

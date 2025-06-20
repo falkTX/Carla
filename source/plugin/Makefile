@@ -33,6 +33,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
+BUILD_CXX_FLAGS += -I$(CWD)/modules/dgl/src/pugl-upstream/include
 BUILD_CXX_FLAGS += $(NATIVE_PLUGINS_FLAGS)
 
 BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)

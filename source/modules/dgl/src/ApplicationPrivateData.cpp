@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -23,31 +23,32 @@
 
 START_NAMESPACE_DGL
 
+typedef std::list<DGL_NAMESPACE::Window*>::iterator WindowListIterator;
 typedef std::list<DGL_NAMESPACE::Window*>::reverse_iterator WindowListReverseIterator;
 
 static d_ThreadHandle getCurrentThreadHandle() noexcept
 {
-#ifdef DISTRHO_OS_WINDOWS
+   #ifdef DISTRHO_OS_WINDOWS
     return GetCurrentThread();
-#else
+   #else
     return pthread_self();
-#endif
+   #endif
 }
 
 static bool isThisTheMainThread(const d_ThreadHandle mainThreadHandle) noexcept
 {
-#ifdef DISTRHO_OS_WINDOWS
+   #ifdef DISTRHO_OS_WINDOWS
     return GetCurrentThread() == mainThreadHandle; // IsGUIThread ?
-#else
+   #else
     return pthread_equal(getCurrentThreadHandle(), mainThreadHandle) != 0;
-#endif
+   #endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------
 
 const char* Application::getClassName() const noexcept
 {
-    return puglGetClassName(pData->world);
+    return puglGetWorldString(pData->world, PUGL_CLASS_NAME);
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -59,6 +60,7 @@ Application::PrivateData::PrivateData(const bool standalone)
       isQuitting(false),
       isQuittingInNextCycle(false),
       isStarting(true),
+      needsRepaint(false),
       visibleWindows(0),
       mainThreadHandle(getCurrentThreadHandle()),
       windows(),
@@ -66,10 +68,16 @@ Application::PrivateData::PrivateData(const bool standalone)
 {
     DISTRHO_SAFE_ASSERT_RETURN(world != nullptr,);
 
+  #ifdef DGL_USING_SDL
+    SDL_Init(SDL_INIT_EVENTS|SDL_INIT_TIMER|SDL_INIT_VIDEO);
+  #else
     puglSetWorldHandle(world, this);
-#ifndef __EMSCRIPTEN__
-    puglSetClassName(world, DISTRHO_MACRO_AS_STRING(DGL_NAMESPACE));
-#endif
+   #ifdef __EMSCRIPTEN__
+    puglSetWorldString(world, PUGL_CLASS_NAME, "canvas");
+   #else
+    puglSetWorldString(world, PUGL_CLASS_NAME, DISTRHO_MACRO_AS_STRING(DGL_NAMESPACE));
+   #endif
+  #endif
 }
 
 Application::PrivateData::~PrivateData()
@@ -80,8 +88,12 @@ Application::PrivateData::~PrivateData()
     windows.clear();
     idleCallbacks.clear();
 
+   #ifdef DGL_USING_SDL
+    SDL_Quit();
+   #else
     if (world != nullptr)
         puglFreeWorld(world);
+   #endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -134,6 +146,20 @@ void Application::PrivateData::triggerIdleCallbacks()
     }
 }
 
+void Application::PrivateData::repaintIfNeeeded()
+{
+    if (needsRepaint)
+    {
+        needsRepaint = false;
+
+        for (WindowListIterator it = windows.begin(), ite = windows.end(); it != ite; ++it)
+        {
+            DGL_NAMESPACE::Window* const window(*it);
+            window->repaint();
+        }
+    }
+}
+
 void Application::PrivateData::quit()
 {
     if (! isThisTheMainThread(mainThreadHandle))
@@ -147,28 +173,26 @@ void Application::PrivateData::quit()
 
     isQuitting = true;
 
-#ifndef DPF_TEST_APPLICATION_CPP
+   #ifndef DPF_TEST_APPLICATION_CPP
     for (WindowListReverseIterator rit = windows.rbegin(), rite = windows.rend(); rit != rite; ++rit)
     {
         DGL_NAMESPACE::Window* const window(*rit);
         window->close();
     }
-#endif
+   #endif
 }
 
 double Application::PrivateData::getTime() const
 {
-    DISTRHO_SAFE_ASSERT_RETURN(world != nullptr, 0.0);
-
-    return puglGetTime(world);
+    return world != nullptr ? puglGetTime(world) : 0.0;
 }
 
 void Application::PrivateData::setClassName(const char* const name)
 {
-    DISTRHO_SAFE_ASSERT_RETURN(world != nullptr,);
     DISTRHO_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
-    puglSetClassName(world, name);
+    if (world != nullptr)
+        puglSetWorldString(world, PUGL_CLASS_NAME, name);
 }
 
 // --------------------------------------------------------------------------------------------------------------------

@@ -202,8 +202,9 @@ public:
     GLenum getType() const noexcept { return GL_UNSIGNED_BYTE; }
 
 private:
-    GLuint textureId;
     bool setupCalled;
+    bool textureInit;
+    GLuint textureId;
 };
 
 // -----------------------------------------------------------------------

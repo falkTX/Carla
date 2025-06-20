@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -148,6 +148,11 @@ TopLevelWidget* Widget::getTopLevelWidget() const noexcept
     return pData->topLevelWidget;
 }
 
+std::list<SubWidget*> Widget::getChildren() const noexcept
+{
+    return pData->subWidgets;
+}
+
 void Widget::repaint() noexcept
 {
 }
@@ -157,9 +162,20 @@ uint Widget::getId() const noexcept
     return pData->id;
 }
 
+const char* Widget::getName() const noexcept
+{
+    return pData->name != nullptr ? pData->name : "";
+}
+
 void Widget::setId(uint id) noexcept
 {
     pData->id = id;
+}
+
+void Widget::setName(const char* const name) noexcept
+{
+    std::free(pData->name);
+    pData->name = strdup(name);
 }
 
 bool Widget::onKeyboard(const KeyboardEvent& ev)

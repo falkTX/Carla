@@ -138,6 +138,7 @@ public:
         virtual void imageKnobDragStarted(ImageBaseKnob* imageKnob) = 0;
         virtual void imageKnobDragFinished(ImageBaseKnob* imageKnob) = 0;
         virtual void imageKnobValueChanged(ImageBaseKnob* imageKnob, float value) = 0;
+        virtual void imageKnobDoubleClicked(ImageBaseKnob*) {};
     };
 
     explicit ImageBaseKnob(Widget* parentWidget, const ImageType& image, Orientation orientation = Vertical) noexcept;
@@ -192,6 +193,7 @@ public:
     void setEndPos(const Point<int>& endPos) noexcept;
     void setEndPos(int x, int y) noexcept;
 
+    void setCheckable(bool checkable) noexcept;
     void setInverted(bool inverted) noexcept;
     void setRange(float min, float max) noexcept;
     void setStep(float step) noexcept;

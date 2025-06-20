@@ -27,7 +27,7 @@ puglWinCairoCreateDrawContext(PuglView* view)
 
   surface->drawDc     = CreateCompatibleDC(impl->hdc);
   surface->drawBitmap = CreateCompatibleBitmap(
-    impl->hdc, (int)view->frame.width, (int)view->frame.height);
+    impl->hdc, (int)view->lastConfigure.width, (int)view->lastConfigure.height);
 
   DeleteObject(SelectObject(surface->drawDc, surface->drawBitmap));
 
@@ -108,8 +108,7 @@ puglWinCairoEnter(PuglView* view, const PuglExposeEvent* expose)
 
   if (expose && !(st = puglWinCairoCreateDrawContext(view)) &&
       !(st = puglWinCairoOpen(view))) {
-    PAINTSTRUCT ps;
-    BeginPaint(view->impl->hwnd, &ps);
+    st = puglWinEnter(view, expose);
   }
 
   return st;
@@ -126,8 +125,8 @@ puglWinCairoLeave(PuglView* view, const PuglExposeEvent* expose)
     BitBlt(impl->hdc,
            0,
            0,
-           (int)view->frame.width,
-           (int)view->frame.height,
+           (int)view->lastConfigure.width,
+           (int)view->lastConfigure.height,
            surface->drawDc,
            0,
            0,
@@ -135,12 +134,9 @@ puglWinCairoLeave(PuglView* view, const PuglExposeEvent* expose)
 
     puglWinCairoClose(view);
     puglWinCairoDestroyDrawContext(view);
-
-    PAINTSTRUCT ps;
-    EndPaint(view->impl->hwnd, &ps);
   }
 
-  return PUGL_SUCCESS;
+  return puglWinLeave(view, expose);
 }
 
 static void*
@@ -150,7 +146,7 @@ puglWinCairoGetContext(PuglView* view)
 }
 
 const PuglBackend*
-puglCairoBackend()
+puglCairoBackend(void)
 {
   static const PuglBackend backend = {puglWinCairoConfigure,
                                       puglStubCreate,

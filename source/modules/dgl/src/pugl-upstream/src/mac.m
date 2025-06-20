@@ -1,4 +1,4 @@
-// Copyright 2012-2022 David Robillard <d@drobilla.net>
+// Copyright 2012-2023 David Robillard <d@drobilla.net>
 // Copyright 2017 Hanspeter Portner <dev@open-music-kontrollers.ch>
 // SPDX-License-Identifier: ISC
 
@@ -15,6 +15,7 @@
 
 #include <mach/mach_time.h>
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #ifndef __MAC_10_10
@@ -91,12 +92,23 @@ utiForMimeType(const NSString* const mimeType)
 }
 
 static NSRect
-rectToScreen(NSScreen* screen, NSRect rect)
+rectToScreen(const NSScreen* screen, NSRect rect)
 {
   const double screenHeight = [screen frame].size.height;
 
   rect.origin.y = screenHeight - rect.origin.y - rect.size.height;
   return rect;
+}
+
+static NSRect
+rectFromScreen(const NSScreen* screen, NSRect rect)
+{
+  /* The math happens to work out to the same expression because this is just
+     an inversion of the Y axis based on the screen height.  This function is
+     preserved to make the code clearer and more future-proof since the use
+     cases are distinctly either a "from" or "to" conversion. */
+
+  return rectToScreen(screen, rect);
 }
 
 static NSScreen*
@@ -152,25 +164,58 @@ sizePoints(PuglView* view, const double width, const double height)
   return NSMakeSize(width / scaleFactor, height / scaleFactor);
 }
 
-static void
-updateViewRect(PuglView* view)
+static PuglViewStyleFlags
+getCurrentViewStyleFlags(PuglView* const view)
 {
-  NSWindow* const window = view->impl->window;
-  if (window) {
-    const NSRect screenFramePt = [[NSScreen mainScreen] frame];
-    const NSRect screenFramePx = nsRectFromPoints(view, screenFramePt);
-    const NSRect framePt       = [window frame];
-    const NSRect contentPt     = [window contentRectForFrameRect:framePt];
-    const NSRect contentPx     = nsRectFromPoints(view, contentPt);
-    const double screenHeight  = screenFramePx.size.height;
+  const bool isResizing = view->resizing;
 
-    view->frame.x = (PuglCoord)contentPx.origin.x;
-    view->frame.y =
-      (PuglCoord)(screenHeight - contentPx.origin.y - contentPx.size.height);
-
-    view->frame.width  = (PuglSpan)contentPx.size.width;
-    view->frame.height = (PuglSpan)contentPx.size.height;
+  if (!view->impl->window) {
+    return (isResizing ? PUGL_VIEW_STYLE_RESIZING : 0U);
   }
+
+  const NSWindowStyleMask styleMask = [view->impl->window styleMask];
+
+  const bool isFullScreen   = styleMask & NSWindowStyleMaskFullScreen;
+  const bool isMiniaturized = [view->impl->window isMiniaturized];
+  const bool isZoomed       = [view->impl->window isZoomed];
+  const bool isVisible      = [view->impl->window isVisible];
+
+  return (isVisible ? PUGL_VIEW_STYLE_MAPPED : 0U) |
+         (isFullScreen ? PUGL_VIEW_STYLE_FULLSCREEN : 0U) |
+         (isMiniaturized ? PUGL_VIEW_STYLE_HIDDEN : 0U) |
+         (isZoomed ? (PUGL_VIEW_STYLE_TALL | PUGL_VIEW_STYLE_WIDE) : 0U) |
+         (isResizing ? PUGL_VIEW_STYLE_RESIZING : 0U);
+}
+
+static PuglStatus
+dispatchCurrentChildViewConfiguration(PuglView* const view, bool drawViewResize)
+{
+  const NSRect framePt = [view->impl->wrapperView frame];
+  const NSRect framePx = nsRectFromPoints(view, framePt);
+
+  if (view->stage < PUGL_VIEW_STAGE_REALIZED) {
+    return PUGL_SUCCESS;
+  }
+
+  if (drawViewResize) {
+    const NSSize sizePt = [view->impl->drawView convertSizeFromBacking:framePx.size];
+    [view->impl->drawView setFrameSize:sizePt];
+  }
+
+  const PuglConfigureEvent ev = {
+    PUGL_CONFIGURE,
+    0,
+    (PuglCoord)framePx.origin.x,
+    (PuglCoord)framePx.origin.y,
+    (PuglSpan)framePx.size.width,
+    (PuglSpan)framePx.size.height,
+    getCurrentViewStyleFlags(view),
+  };
+
+  PuglEvent configureEvent;
+  configureEvent.configure = ev;
+
+  return puglDispatchEvent(view, &configureEvent);
 }
 
 @implementation PuglWindow {
@@ -194,11 +239,33 @@ updateViewRect(PuglView* view)
   return (PuglWindow*)result;
 }
 
-- (void)setPuglview:(PuglView*)view
+- (PuglStatus)dispatchCurrentConfiguration
 {
-  puglview = view;
+  if (puglview->stage < PUGL_VIEW_STAGE_REALIZED) {
+    return PUGL_SUCCESS;
+  }
 
-  [self setContentSize:sizePoints(view, view->frame.width, view->frame.height)];
+  const NSRect screenFramePt = [[NSScreen mainScreen] frame];
+  const NSRect screenFramePx = nsRectFromPoints(puglview, screenFramePt);
+  const NSRect framePt       = [self frame];
+  const NSRect contentPt     = [self contentRectForFrameRect:framePt];
+  const NSRect contentPx     = nsRectFromPoints(puglview, contentPt);
+  const double screenHeight  = screenFramePx.size.height;
+
+  const PuglConfigureEvent ev = {
+    PUGL_CONFIGURE,
+    0,
+    (PuglCoord)contentPx.origin.x,
+    (PuglCoord)(screenHeight - contentPx.origin.y - contentPx.size.height),
+    (PuglSpan)contentPx.size.width,
+    (PuglSpan)contentPx.size.height,
+    getCurrentViewStyleFlags(puglview),
+  };
+
+  PuglEvent configureEvent;
+  configureEvent.configure = ev;
+
+  return puglDispatchEvent(puglview, &configureEvent);
 }
 
 - (BOOL)canBecomeKeyWindow
@@ -213,27 +280,23 @@ updateViewRect(PuglView* view)
 
 - (void)setIsVisible:(BOOL)flag
 {
-  if (flag && !puglview->visible) {
-    const PuglConfigureEvent ev = {
-      PUGL_CONFIGURE,
-      0,
-      puglview->frame.x,
-      puglview->frame.y,
-      puglview->frame.width,
-      puglview->frame.height,
-    };
-
-    PuglEvent configureEvent;
-    configureEvent.configure = ev;
-    puglDispatchEvent(puglview, &configureEvent);
-    puglDispatchSimpleEvent(puglview, PUGL_MAP);
-  } else if (!flag && puglview->visible) {
-    puglDispatchSimpleEvent(puglview, PUGL_UNMAP);
-  }
-
-  puglview->visible = flag;
-
   [super setIsVisible:flag];
+
+  if (flag != (puglview->lastConfigure.style & PUGL_VIEW_STYLE_MAPPED)) {
+    [self dispatchCurrentConfiguration];
+  }
+}
+
+- (void)setIsZoomed:(BOOL)flag
+{
+  [super setIsZoomed:flag];
+
+  const bool wasZoomed = (puglview->lastConfigure.style &
+                          (PUGL_VIEW_STYLE_TALL | PUGL_VIEW_STYLE_WIDE));
+
+  if (flag != wasZoomed) {
+    [self dispatchCurrentConfiguration];
+  }
 }
 
 @end
@@ -256,20 +319,11 @@ updateViewRect(PuglView* view)
   const double scaleFactor = [[NSScreen mainScreen] backingScaleFactor];
 
   if (reshaped) {
-    updateViewRect(puglview);
-
-    const PuglConfigureEvent ev = {
-      PUGL_CONFIGURE,
-      0,
-      puglview->frame.x,
-      puglview->frame.y,
-      puglview->frame.width,
-      puglview->frame.height,
-    };
-
-    PuglEvent configureEvent;
-    configureEvent.configure = ev;
-    puglDispatchEvent(puglview, &configureEvent);
+    if (puglview->impl->window) {
+      [puglview->impl->window dispatchCurrentConfiguration];
+    } else {
+      dispatchCurrentChildViewConfiguration(puglview, true);
+    }
     reshaped = false;
   }
 
@@ -277,11 +331,14 @@ updateViewRect(PuglView* view)
     return;
   }
 
+  const double viewY = (double)puglview->lastConfigure.height -
+                       ((rect.origin.y + rect.size.height) * scaleFactor);
+
   const PuglExposeEvent ev = {
     PUGL_EXPOSE,
     0,
     (PuglCoord)(rect.origin.x * scaleFactor),
-    (PuglCoord)(rect.origin.y * scaleFactor),
+    (PuglCoord)viewY,
     (PuglSpan)(rect.size.width * scaleFactor),
     (PuglSpan)(rect.size.height * scaleFactor),
   };
@@ -295,7 +352,7 @@ updateViewRect(PuglView* view)
 {
   const PuglViewSize defaultSize = puglview->sizeHints[PUGL_DEFAULT_SIZE];
 
-  return (defaultSize.width && defaultSize.height)
+  return puglIsValidSize(defaultSize)
            ? sizePoints(puglview, defaultSize.width, defaultSize.height)
            : NSMakeSize(NSViewNoInstrinsicMetric, NSViewNoInstrinsicMetric);
 }
@@ -323,7 +380,8 @@ getModifiers(const NSEvent* const ev)
   return (((modifierFlags & NSShiftKeyMask) ? PUGL_MOD_SHIFT : 0) |
           ((modifierFlags & NSControlKeyMask) ? PUGL_MOD_CTRL : 0) |
           ((modifierFlags & NSAlternateKeyMask) ? PUGL_MOD_ALT : 0) |
-          ((modifierFlags & NSCommandKeyMask) ? PUGL_MOD_SUPER : 0));
+          ((modifierFlags & NSCommandKeyMask) ? PUGL_MOD_SUPER : 0) |
+          ((modifierFlags & (1U << 16U)) ? PUGL_MOD_CAPS_LOCK : 0));
 }
 
 static PuglKey
@@ -331,31 +389,12 @@ keySymToSpecial(const NSEvent* const ev)
 {
   NSString* chars = [ev charactersIgnoringModifiers];
   if ([chars length] == 1) {
-    switch ([chars characterAtIndex:0]) {
-    case NSF1FunctionKey:
-      return PUGL_KEY_F1;
-    case NSF2FunctionKey:
-      return PUGL_KEY_F2;
-    case NSF3FunctionKey:
-      return PUGL_KEY_F3;
-    case NSF4FunctionKey:
-      return PUGL_KEY_F4;
-    case NSF5FunctionKey:
-      return PUGL_KEY_F5;
-    case NSF6FunctionKey:
-      return PUGL_KEY_F6;
-    case NSF7FunctionKey:
-      return PUGL_KEY_F7;
-    case NSF8FunctionKey:
-      return PUGL_KEY_F8;
-    case NSF9FunctionKey:
-      return PUGL_KEY_F9;
-    case NSF10FunctionKey:
-      return PUGL_KEY_F10;
-    case NSF11FunctionKey:
-      return PUGL_KEY_F11;
-    case NSF12FunctionKey:
-      return PUGL_KEY_F12;
+    const unichar sym = [chars characterAtIndex:0];
+    if (sym >= NSF1FunctionKey && sym <= NSF12FunctionKey) {
+      return (PuglKey)(PUGL_KEY_F1 + (sym - NSF1FunctionKey));
+    }
+
+    switch (sym) {
     case NSDeleteCharacter:
       return PUGL_KEY_BACKSPACE;
     case NSDeleteFunctionKey:
@@ -391,6 +430,44 @@ keySymToSpecial(const NSEvent* const ev)
     }
     // SHIFT, CTRL, ALT, and SUPER are handled in [flagsChanged]
   }
+
+  switch ([ev keyCode]) {
+  case 0x41:
+    return PUGL_KEY_PAD_DECIMAL;
+  case 0x43:
+    return PUGL_KEY_PAD_MULTIPLY;
+  case 0x45:
+    return PUGL_KEY_PAD_ADD;
+  case 0x4B:
+    return PUGL_KEY_PAD_DIVIDE;
+  case 0x4C:
+    return PUGL_KEY_PAD_ENTER;
+  case 0x4E:
+    return PUGL_KEY_PAD_SUBTRACT;
+  case 0x51:
+    return PUGL_KEY_PAD_EQUAL;
+  case 0x52:
+    return PUGL_KEY_PAD_0;
+  case 0x53:
+    return PUGL_KEY_PAD_1;
+  case 0x54:
+    return PUGL_KEY_PAD_2;
+  case 0x55:
+    return PUGL_KEY_PAD_3;
+  case 0x56:
+    return PUGL_KEY_PAD_4;
+  case 0x57:
+    return PUGL_KEY_PAD_5;
+  case 0x58:
+    return PUGL_KEY_PAD_6;
+  case 0x59:
+    return PUGL_KEY_PAD_7;
+  case 0x5B:
+    return PUGL_KEY_PAD_8;
+  case 0x5C:
+    return PUGL_KEY_PAD_9;
+  }
+
   return (PuglKey)0;
 }
 
@@ -558,10 +635,16 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
 
 - (void)scrollWheel:(NSEvent*)event
 {
-  const NSPoint             wloc = [self eventLocation:event];
-  const NSPoint             rloc = [NSEvent mouseLocation];
-  const double              dx   = [event scrollingDeltaX];
-  const double              dy   = [event scrollingDeltaY];
+  const NSPoint wloc = [self eventLocation:event];
+  const NSPoint rloc = [NSEvent mouseLocation];
+
+  double dx = -[event scrollingDeltaX] / 2.0;
+  double dy = [event scrollingDeltaY] / 2.0;
+  if ([event hasPreciseScrollingDeltas]) {
+    dx /= 10.0;
+    dy /= 10.0;
+  }
+
   const PuglScrollDirection dir =
     ((dx == 0.0 && dy > 0.0)
        ? PUGL_SCROLL_UP
@@ -581,7 +664,7 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
     rloc.x,
     [[NSScreen mainScreen] frame].size.height - rloc.y,
     getModifiers(event),
-    [event hasPreciseScrollingDeltas] ? PUGL_SCROLL_SMOOTH : dir,
+    dir,
     dx,
     dy,
   };
@@ -612,7 +695,7 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
     wloc.y,
     rloc.x,
     [[NSScreen mainScreen] frame].size.height - rloc.y,
-    getModifiers(event),
+    puglFilterMods(getModifiers(event), spec),
     [event keyCode],
     (code != 0xFFFD) ? code : 0,
   };
@@ -643,7 +726,7 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
     wloc.y,
     rloc.x,
     [[NSScreen mainScreen] frame].size.height - rloc.y,
-    getModifiers(event),
+    puglFilterMods(getModifiers(event), spec),
     [event keyCode],
     (code != 0xFFFD) ? code : 0,
   };
@@ -769,39 +852,43 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
   }
 }
 
+static bool
+flagDiffers(const uint32_t lhs, const uint32_t rhs, const uint32_t mask)
+{
+  return (lhs & mask) != (rhs & mask);
+}
+
 - (void)flagsChanged:(NSEvent*)event
 {
   const uint32_t mods    = getModifiers(event);
-  PuglEventType  type    = PUGL_NOTHING;
   PuglKey        special = (PuglKey)0;
 
-  if ((mods & PUGL_MOD_SHIFT) != (puglview->impl->mods & PUGL_MOD_SHIFT)) {
-    type    = mods & PUGL_MOD_SHIFT ? PUGL_KEY_PRESS : PUGL_KEY_RELEASE;
-    special = PUGL_KEY_SHIFT;
-  } else if ((mods & PUGL_MOD_CTRL) != (puglview->impl->mods & PUGL_MOD_CTRL)) {
-    type    = mods & PUGL_MOD_CTRL ? PUGL_KEY_PRESS : PUGL_KEY_RELEASE;
-    special = PUGL_KEY_CTRL;
-  } else if ((mods & PUGL_MOD_ALT) != (puglview->impl->mods & PUGL_MOD_ALT)) {
-    type    = mods & PUGL_MOD_ALT ? PUGL_KEY_PRESS : PUGL_KEY_RELEASE;
-    special = PUGL_KEY_ALT;
-  } else if ((mods & PUGL_MOD_SUPER) !=
-             (puglview->impl->mods & PUGL_MOD_SUPER)) {
-    type    = mods & PUGL_MOD_SUPER ? PUGL_KEY_PRESS : PUGL_KEY_RELEASE;
-    special = PUGL_KEY_SUPER;
+  const uint16_t keyCode = [event keyCode];
+  if (flagDiffers(mods, puglview->impl->mods, PUGL_MOD_SHIFT)) {
+    special = (keyCode == 0x3C) ? PUGL_KEY_SHIFT_R : PUGL_KEY_SHIFT_L;
+  } else if (flagDiffers(mods, puglview->impl->mods, PUGL_MOD_CTRL)) {
+    special = (keyCode == 0x3E) ? PUGL_KEY_CTRL_R : PUGL_KEY_CTRL_L;
+  } else if (flagDiffers(mods, puglview->impl->mods, PUGL_MOD_ALT)) {
+    special = (keyCode == 0x3D) ? PUGL_KEY_ALT_R : PUGL_KEY_ALT_L;
+  } else if (flagDiffers(mods, puglview->impl->mods, PUGL_MOD_SUPER)) {
+    special = PUGL_KEY_SUPER_L; // Left and right command are identical
+  } else if (flagDiffers(mods, puglview->impl->mods, PUGL_MOD_CAPS_LOCK)) {
+    special = PUGL_KEY_CAPS_LOCK;
   }
 
   if (special != 0) {
-    const NSPoint wloc = [self eventLocation:event];
-    const NSPoint rloc = [NSEvent mouseLocation];
+    const NSPoint wloc    = [self eventLocation:event];
+    const NSPoint rloc    = [NSEvent mouseLocation];
+    const bool    release = [event type] == NSEventTypeKeyUp;
 
-    const PuglKeyEvent ev = {type,
+    const PuglKeyEvent ev = {release ? PUGL_KEY_RELEASE : PUGL_KEY_PRESS,
                              0,
                              [event timestamp],
                              wloc.x,
                              wloc.y,
                              rloc.x,
                              [[NSScreen mainScreen] frame].size.height - rloc.y,
-                             mods,
+                             puglFilterMods(mods, special),
                              [event keyCode],
                              special};
 
@@ -823,15 +910,15 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
   puglDispatchSimpleEvent(puglview, PUGL_LOOP_ENTER);
 }
 
+- (void)viewDidEndLiveResize
+{
+  puglDispatchSimpleEvent(puglview, PUGL_LOOP_LEAVE);
+}
+
 - (void)viewWillDraw
 {
   puglDispatchSimpleEvent(puglview, PUGL_UPDATE);
   [super viewWillDraw];
-}
-
-- (void)resizeTick
-{
-  puglPostRedisplay(puglview);
 }
 
 - (void)timerTick:(NSTimer*)userTimer
@@ -844,16 +931,13 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
   puglDispatchEvent(puglview, &timerEvent);
 }
 
-- (void)viewDidEndLiveResize
-{
-  puglDispatchSimpleEvent(puglview, PUGL_LOOP_LEAVE);
-}
-
 @end
 
 @interface PuglWindowDelegate : NSObject<NSWindowDelegate>
 
 - (instancetype)initWithPuglWindow:(PuglWindow*)window;
+- (void)beginLiveResize:(NSNotification*)notification;
+- (void)endLiveResize:(NSNotification*)notification;
 
 @end
 
@@ -870,6 +954,22 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
   return self;
 }
 
+- (void)beginLiveResize:(NSNotification*)notification
+{
+  (void)notification;
+
+  window->puglview->resizing = true;
+  [window dispatchCurrentConfiguration];
+}
+
+- (void)endLiveResize:(NSNotification*)notification
+{
+  (void)notification;
+
+  window->puglview->resizing = false;
+  [window dispatchCurrentConfiguration];
+}
+
 - (BOOL)windowShouldClose:(id)sender
 {
   (void)sender;
@@ -882,7 +982,7 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
 {
   (void)notification;
 
-  updateViewRect(window->puglview);
+  [window dispatchCurrentConfiguration];
 }
 
 - (void)windowDidBecomeKey:(NSNotification*)notification
@@ -903,6 +1003,56 @@ handleCrossing(PuglWrapperView* view, NSEvent* event, const PuglEventType type)
   puglDispatchEvent(window->puglview, &ev);
 }
 
+- (void)windowWillStartLiveResize:(NSNotification*)notification
+{
+  [self beginLiveResize:notification];
+}
+
+- (void)windowDidEndLiveResize:(NSNotification*)notification
+{
+  [self endLiveResize:notification];
+}
+
+- (void)windowWillMiniaturize:(NSNotification*)notification
+{
+  [self beginLiveResize:notification];
+}
+
+- (void)windowDidMiniaturize:(NSNotification*)notification
+{
+  [self endLiveResize:notification];
+}
+
+- (void)windowWillDeminiaturize:(NSNotification*)notification
+{
+  [self beginLiveResize:notification];
+}
+
+- (void)windowDidDeminiaturize:(NSNotification*)notification
+{
+  [self endLiveResize:notification];
+}
+
+- (void)windowWillEnterFullScreen:(NSNotification*)notification
+{
+  [self beginLiveResize:notification];
+}
+
+- (void)windowDidEnterFullScreen:(NSNotification*)notification
+{
+  [self endLiveResize:notification];
+}
+
+- (void)windowWillExitFullScreen:(NSNotification*)notification
+{
+  [self beginLiveResize:notification];
+}
+
+- (void)windowDidExitFullScreen:(NSNotification*)notification
+{
+  [self endLiveResize:notification];
+}
+
 @end
 
 PuglWorldInternals*
@@ -912,6 +1062,10 @@ puglInitWorldInternals(PuglWorldType type, PuglWorldFlags PUGL_UNUSED(flags))
     (PuglWorldInternals*)calloc(1, sizeof(PuglWorldInternals));
 
   impl->app = [NSApplication sharedApplication];
+
+  if (mach_timebase_info(&impl->timebaseInfo)) {
+    return NULL;
+  }
 
   if (type == PUGL_PROGRAM) {
     impl->autoreleasePool = [NSAutoreleasePool new];
@@ -968,7 +1122,7 @@ updateSizeHint(PuglView* const view, const PuglSizeHint hint)
 {
   const PuglSpan width  = view->sizeHints[hint].width;
   const PuglSpan height = view->sizeHints[hint].height;
-  if (!width || !height) {
+  if (!puglIsValidSize(view->sizeHints[hint])) {
     return PUGL_FAILURE;
   }
 
@@ -999,40 +1153,79 @@ updateSizeHint(PuglView* const view, const PuglSizeHint hint)
 static void
 updateSizeHints(PuglView* const view)
 {
-  for (unsigned i = 0u; i < PUGL_NUM_SIZE_HINTS; ++i) {
+  for (unsigned i = 0U; i < PUGL_NUM_SIZE_HINTS; ++i) {
     updateSizeHint(view, (PuglSizeHint)i);
   }
+}
+
+static PuglRect
+getInitialFrame(PuglView* const view)
+{
+  if (view->lastConfigure.type == PUGL_CONFIGURE) {
+    // Use the last configured frame
+    const PuglRect frame = {view->lastConfigure.x,
+                            view->lastConfigure.y,
+                            view->lastConfigure.width,
+                            view->lastConfigure.height};
+    return frame;
+  }
+
+  const int x = view->defaultX;
+  const int y = view->defaultY;
+  if (x >= INT16_MIN && x <= INT16_MAX && y >= INT16_MIN && y <= INT16_MAX) {
+    // Use the default position set with puglSetPosition while unrealized
+    const PuglRect frame = {(PuglCoord)x,
+                            (PuglCoord)y,
+                            view->sizeHints[PUGL_DEFAULT_SIZE].width,
+                            view->sizeHints[PUGL_DEFAULT_SIZE].height};
+    return frame;
+  }
+
+  // Get a bounding rect from the transient parent or the screen
+  const NSScreen* const screen = viewScreen(view);
+  const NSRect          boundsPt =
+    rectFromScreen(screen,
+                   view->transientParent
+                     ? [[(const NSView*)view->transientParent window] frame]
+                     : [screen frame]);
+
+  // Center the frame around the center of the bounding rectangle
+  const PuglViewSize defaultSize = view->sizeHints[PUGL_DEFAULT_SIZE];
+  const NSRect       boundsPx    = nsRectFromPoints(view, boundsPt);
+  const double       centerX     = boundsPx.origin.x + boundsPx.size.width / 2;
+  const double       centerY     = boundsPx.origin.y + boundsPx.size.height / 2;
+
+  const PuglRect frame = {(PuglCoord)(centerX - (defaultSize.width / 2U)),
+                          (PuglCoord)(centerY - (defaultSize.height / 2U)),
+                          view->sizeHints[PUGL_DEFAULT_SIZE].width,
+                          view->sizeHints[PUGL_DEFAULT_SIZE].height};
+  return frame;
 }
 
 PuglStatus
 puglRealize(PuglView* view)
 {
   PuglInternals* impl = view->impl;
+  PuglStatus     st   = PUGL_SUCCESS;
 
+  // Ensure that we're unrealized
   if (impl->wrapperView) {
     return PUGL_FAILURE;
   }
 
-  if (!view->backend || !view->backend->configure) {
-    return PUGL_BAD_BACKEND;
+  // Check that the basic required configuration has been done
+  if ((st = puglPreRealize(view))) {
+    return st;
   }
 
   const NSScreen* const screen      = [NSScreen mainScreen];
   const double          scaleFactor = [screen backingScaleFactor];
 
   // Getting depth from the display mode seems tedious, just set usual values
-  if (view->hints[PUGL_RED_BITS] == PUGL_DONT_CARE) {
-    view->hints[PUGL_RED_BITS] = 8;
-  }
-  if (view->hints[PUGL_BLUE_BITS] == PUGL_DONT_CARE) {
-    view->hints[PUGL_BLUE_BITS] = 8;
-  }
-  if (view->hints[PUGL_GREEN_BITS] == PUGL_DONT_CARE) {
-    view->hints[PUGL_GREEN_BITS] = 8;
-  }
-  if (view->hints[PUGL_ALPHA_BITS] == PUGL_DONT_CARE) {
-    view->hints[PUGL_ALPHA_BITS] = 8;
-  }
+  puglEnsureHint(view, PUGL_RED_BITS, 8);
+  puglEnsureHint(view, PUGL_GREEN_BITS, 8);
+  puglEnsureHint(view, PUGL_BLUE_BITS, 8);
+  puglEnsureHint(view, PUGL_ALPHA_BITS, 8);
 
   CGDirectDisplayID displayId = CGMainDisplayID();
   CGDisplayModeRef  mode      = CGDisplayCopyDisplayMode(displayId);
@@ -1054,25 +1247,11 @@ puglRealize(PuglView* view)
     CVDisplayLinkRelease(link);
   }
 
-  if (view->frame.width == 0.0 && view->frame.height == 0.0) {
-    const PuglViewSize defaultSize = view->sizeHints[PUGL_DEFAULT_SIZE];
-    if (!defaultSize.width || !defaultSize.height) {
-      return PUGL_BAD_CONFIGURATION;
-    }
+  // Get the initial frame to use from the defaults or last configuration
+  const PuglRect initialFrame = getInitialFrame(view);
 
-    const double screenWidthPx  = [screen frame].size.width * scaleFactor;
-    const double screenHeightPx = [screen frame].size.height * scaleFactor;
-
-    view->frame.width  = defaultSize.width;
-    view->frame.height = defaultSize.height;
-
-    if (view->impl->window) {
-      view->frame.x = (PuglCoord)((screenWidthPx - view->frame.width) / 2.0);
-      view->frame.y = (PuglCoord)((screenHeightPx - view->frame.height) / 2.0);
-    }
-  }
-
-  const NSRect framePx = rectToNsRect(view->frame);
+  // Convert frame to points
+  const NSRect framePx = rectToNsRect(initialFrame);
   const NSRect framePt = NSMakeRect(framePx.origin.x / scaleFactor,
                                     framePx.origin.y / scaleFactor,
                                     framePx.size.width / scaleFactor,
@@ -1098,8 +1277,7 @@ puglRealize(PuglView* view)
                                  NSLayoutRelationGreaterThanOrEqual,
                                  view->sizeHints[PUGL_MIN_SIZE].height)];
 
-  if (view->sizeHints[PUGL_MAX_SIZE].width &&
-      view->sizeHints[PUGL_MAX_SIZE].height) {
+  if (puglIsValidSize(view->sizeHints[PUGL_MAX_SIZE])) {
     [impl->wrapperView
       addConstraint:puglConstraint(impl->wrapperView,
                                    NSLayoutAttributeWidth,
@@ -1114,7 +1292,6 @@ puglRealize(PuglView* view)
   }
 
   // Create draw view to be rendered to
-  PuglStatus st = PUGL_SUCCESS;
   if ((st = view->backend->configure(view)) ||
       (st = view->backend->create(view))) {
     return st;
@@ -1142,12 +1319,16 @@ puglRealize(PuglView* view)
                 styleMask:style
                   backing:NSBackingStoreBuffered
                     defer:NO] retain];
-    [window setPuglview:view];
 
-    if (view->title) {
+    window->puglview = view;
+    impl->window     = window;
+    [window setContentSize:framePt.size];
+
+    const char* const title = view->strings[PUGL_WINDOW_TITLE];
+    if (title) {
       NSString* titleString =
-        [[NSString alloc] initWithBytes:view->title
-                                 length:strlen(view->title)
+        [[NSString alloc] initWithBytes:title
+                                 length:strlen(title)
                                encoding:NSUTF8StringEncoding];
 
       [window setTitle:titleString];
@@ -1156,10 +1337,10 @@ puglRealize(PuglView* view)
     ((NSWindow*)window).delegate =
       [[PuglWindowDelegate alloc] initWithPuglWindow:window];
 
-    impl->window = window;
-
+    // Set basic window hints and attributes
+    puglSetFrame(view, initialFrame);
+    puglSetTransientParent(view, view->transientParent);
     updateSizeHints(view);
-    puglSetFrame(view, view->frame);
 
     [window setContentView:impl->wrapperView];
     [view->world->impl->app activateIgnoringOtherApps:YES];
@@ -1170,13 +1351,47 @@ puglRealize(PuglView* view)
 
   [impl->wrapperView updateTrackingAreas];
 
-  puglDispatchSimpleEvent(view, PUGL_CREATE);
+  return puglDispatchSimpleEvent(view, PUGL_REALIZE);
+}
 
+PuglStatus
+puglUnrealize(PuglView* const view)
+{
+  PuglInternals* const impl = view->impl;
+  if (!impl || !impl->wrapperView) {
+    return PUGL_FAILURE;
+  }
+
+  puglDispatchSimpleEvent(view, PUGL_UNREALIZE);
+
+  if (view->backend) {
+    view->backend->destroy(view);
+  }
+
+  if (impl->wrapperView) {
+    [impl->wrapperView removeFromSuperview];
+  }
+
+  if (impl->window) {
+    [impl->window close];
+  }
+
+  if (impl->wrapperView) {
+    [impl->wrapperView release];
+    impl->wrapperView = NULL;
+  }
+
+  if (impl->window) {
+    [impl->window release];
+    impl->window = NULL;
+  }
+
+  memset(&view->lastConfigure, 0, sizeof(PuglConfigureEvent));
   return PUGL_SUCCESS;
 }
 
 PuglStatus
-puglShow(PuglView* view)
+puglShow(PuglView* view, const PuglShowCommand command)
 {
   if (!view->impl->wrapperView) {
     const PuglStatus st = puglRealize(view);
@@ -1185,10 +1400,21 @@ puglShow(PuglView* view)
     }
   }
 
-  if (![view->impl->window isVisible]) {
-    [view->impl->window setIsVisible:YES];
+  NSWindow* const window = [view->impl->wrapperView window];
+  if (![window isVisible]) {
+    [window setIsVisible:YES];
     [view->impl->drawView setNeedsDisplay:YES];
-    updateViewRect(view);
+  }
+
+  switch (command) {
+  case PUGL_SHOW_PASSIVE:
+    break;
+  case PUGL_SHOW_RAISE:
+    [window orderFront:view->impl->wrapperView];
+    break;
+  case PUGL_SHOW_FORCE_RAISE:
+    [window orderFrontRegardless];
+    break;
   }
 
   return PUGL_SUCCESS;
@@ -1251,11 +1477,69 @@ puglHasFocus(const PuglView* view)
           [[impl->wrapperView window] firstResponder] == impl->wrapperView);
 }
 
-PuglStatus
-puglRequestAttention(PuglView* view)
+static bool
+styleIsMaximized(const PuglViewStyleFlags flags)
 {
-  if (![view->impl->window isKeyWindow]) {
-    [view->world->impl->app requestUserAttention:NSInformationalRequest];
+  return (flags & PUGL_VIEW_STYLE_TALL) && (flags & PUGL_VIEW_STYLE_WIDE);
+}
+
+PuglStatus
+puglSetViewStyle(PuglView* const view, const PuglViewStyleFlags flags)
+{
+  NSWindow* const          window   = view->impl->window;
+  const PuglViewStyleFlags oldFlags = puglGetViewStyle(view);
+  if (!window) {
+    return PUGL_FAILURE;
+  }
+
+  for (uint32_t mask = 1U; mask <= PUGL_MAX_VIEW_STYLE_FLAG; mask <<= 1U) {
+    const bool oldValue = oldFlags & mask;
+    const bool newValue = flags & mask;
+    if (oldValue == newValue) {
+      continue;
+    }
+
+    switch (mask) {
+    case PUGL_VIEW_STYLE_MODAL:
+    case PUGL_VIEW_STYLE_TALL:
+    case PUGL_VIEW_STYLE_WIDE:
+      break;
+
+    case PUGL_VIEW_STYLE_HIDDEN:
+      if (newValue) {
+        [window miniaturize:window];
+      } else {
+        [window deminiaturize:window];
+      }
+      break;
+
+    case PUGL_VIEW_STYLE_FULLSCREEN:
+      if (newValue != ([window styleMask] & NSFullScreenWindowMask)) {
+        [window toggleFullScreen:nil];
+      }
+      break;
+
+    case PUGL_VIEW_STYLE_ABOVE:
+    case PUGL_VIEW_STYLE_BELOW:
+      break;
+
+    case PUGL_VIEW_STYLE_DEMANDING:
+      if (![window isKeyWindow]) {
+        [view->world->impl->app requestUserAttention:NSInformationalRequest];
+      }
+      break;
+
+    case PUGL_VIEW_STYLE_RESIZING:
+    case PUGL_VIEW_STYLE_MAPPED:
+      break;
+    }
+  }
+
+  // Handle maximization (MacOS doesn't have tall/wide styles)
+  const bool oldMaximized = styleIsMaximized(oldFlags);
+  const bool newMaximized = styleIsMaximized(flags);
+  if (oldMaximized != newMaximized) {
+    [window zoom:window];
   }
 
   return PUGL_SUCCESS;
@@ -1304,17 +1588,22 @@ puglSendEvent(PuglView* view, const PuglEvent* event)
 
     CFRunLoopObserverRef observer = CFRunLoopObserverCreateWithHandler(
       NULL,
-      kCFRunLoopAfterWaiting,
+      kCFRunLoopBeforeSources,
       false,
       0,
-      ^(CFRunLoopObserverRef, CFRunLoopActivity) {
+      ^(CFRunLoopObserverRef ref, CFRunLoopActivity activity) {
+        (void)ref;
+        (void)activity;
         puglDispatchEvent(view, &copiedEvent);
       });
 
     CFRunLoopAddObserver(CFRunLoopGetMain(), observer, kCFRunLoopCommonModes);
-
     CFRelease(observer);
+    return PUGL_SUCCESS;
+  }
 
+  if (event->type == PUGL_CLOSE) {
+    [view->impl->window close];
     return PUGL_SUCCESS;
   }
 
@@ -1333,7 +1622,7 @@ PuglStatus
 puglUpdate(PuglWorld* world, const double timeout)
 {
   @autoreleasepool {
-    if (world->impl->autoreleasePool != nil) {
+    if (world->type == PUGL_PROGRAM) {
       NSDate* date =
         ((timeout < 0) ? [NSDate distantFuture]
                        : [NSDate dateWithTimeIntervalSinceNow:timeout]);
@@ -1346,8 +1635,7 @@ puglUpdate(PuglWorld* world, const double timeout)
         [world->impl->app sendEvent:ev];
 
         if (timeout < 0) {
-          // Now that we've waited and got an event, set the date to now to avoid
-          // looping forever
+          // Now that we've got an event, mark the date to avoid looping forever
           date = [NSDate date];
         }
       }
@@ -1378,7 +1666,11 @@ puglProcessEvents(PuglView* view)
 double
 puglGetTime(const PuglWorld* world)
 {
-  return (mach_absolute_time() / 1e9) - world->startTime;
+  const struct mach_timebase_info base   = world->impl->timebaseInfo;
+  const double                    rate   = (1.0E9 / base.numer) * base.denom;
+  const double                    period = 1.0 / rate;
+
+  return (double)mach_absolute_time() * period;
 }
 
 PuglStatus
@@ -1391,7 +1683,11 @@ puglPostRedisplay(PuglView* view)
 PuglStatus
 puglPostRedisplayRect(PuglView* view, const PuglRect rect)
 {
-  const NSRect rectPx = rectToNsRect(rect);
+  const NSRect rectPx = {
+    {(double)rect.x,
+     (double)view->lastConfigure.height - (rect.y + rect.height)},
+    {(double)rect.width, (double)rect.height},
+  };
 
   [view->impl->drawView setNeedsDisplayInRect:nsRectToPoints(view, rectPx)];
 
@@ -1405,17 +1701,28 @@ puglGetNativeView(PuglView* view)
 }
 
 PuglStatus
-puglSetWindowTitle(PuglView* view, const char* title)
+puglViewStringChanged(PuglView* const      view,
+                      const PuglStringHint key,
+                      const char* const    value)
 {
-  puglSetString(&view->title, title);
+  if (!view->impl->window) {
+    return PUGL_SUCCESS;
+  }
 
-  if (view->impl->window) {
-    NSString* titleString =
-      [[NSString alloc] initWithBytes:title
-                               length:strlen(title)
-                             encoding:NSUTF8StringEncoding];
+  switch (key) {
+  case PUGL_CLASS_NAME:
+    return PUGL_UNSUPPORTED;
 
-    [view->impl->window setTitle:titleString];
+  case PUGL_WINDOW_TITLE:
+    if (view->impl->window) {
+      NSString* const titleString =
+        [[NSString alloc] initWithBytes:value
+                                 length:strlen(value)
+                               encoding:NSUTF8StringEncoding];
+
+      [view->impl->window setTitle:titleString];
+    }
+    break;
   }
 
   return PUGL_SUCCESS;
@@ -1434,8 +1741,14 @@ puglSetFrame(PuglView* view, const PuglRect frame)
   const NSRect         framePx = rectToNsRect(frame);
   const NSRect         framePt = nsRectToPoints(view, framePx);
 
-  // Update view frame to exactly the requested frame
-  view->frame = frame;
+  if (!impl->wrapperView) {
+    // Set defaults to be used when realized
+    view->defaultX                            = frame.x;
+    view->defaultY                            = frame.y;
+    view->sizeHints[PUGL_DEFAULT_SIZE].width  = (PuglSpan)frame.width;
+    view->sizeHints[PUGL_DEFAULT_SIZE].height = (PuglSpan)frame.height;
+    return PUGL_SUCCESS;
+  }
 
   if (impl->window) {
     const NSRect screenPt = rectToScreen(viewScreen(view), framePt);
@@ -1449,43 +1762,56 @@ puglSetFrame(PuglView* view, const PuglRect frame)
     const NSRect sizePt = [impl->drawView convertRectFromBacking:sizePx];
     [impl->wrapperView setFrame:sizePt];
     [impl->drawView setFrame:sizePt];
-  } else {
-    // Resize view
-    const NSRect sizePx = NSMakeRect(0, 0, frame.width, frame.height);
-    const NSRect sizePt = [impl->drawView convertRectFromBacking:sizePx];
-
-    [impl->wrapperView setFrame:framePt];
-    [impl->drawView setFrame:sizePt];
+    [impl->window dispatchCurrentConfiguration];
+    return PUGL_SUCCESS;
   }
 
-  return PUGL_SUCCESS;
+  // Resize view
+  const NSRect sizePx = NSMakeRect(0, 0, frame.width, frame.height);
+  const NSRect sizePt = [impl->drawView convertRectFromBacking:sizePx];
+
+  [impl->wrapperView setFrame:framePt];
+  [impl->drawView setFrame:sizePt];
+  return dispatchCurrentChildViewConfiguration(view, false);
 }
 
 PuglStatus
 puglSetPosition(PuglView* const view, const int x, const int y)
 {
-  if (x > INT16_MAX || y > INT16_MAX) {
+  if (x < INT16_MIN || x > INT16_MAX || y < INT16_MIN || y > INT16_MAX) {
     return PUGL_BAD_PARAMETER;
   }
 
-  const PuglRect frame = {
-    (PuglCoord)x, (PuglCoord)y, view->frame.height, view->frame.height};
-
   PuglInternals* const impl = view->impl;
+  if (!impl->wrapperView) {
+    // Set defaults to be used when realized
+    view->defaultX = x;
+    view->defaultY = y;
+    return PUGL_SUCCESS;
+  }
+
+  const PuglRect frame = {(PuglCoord)x,
+                          (PuglCoord)y,
+                          view->lastConfigure.width,
+                          view->lastConfigure.height};
+
   if (impl->window) {
+    // Adjust top-level window frame
     return puglSetFrame(view, frame);
   }
 
+  // Set wrapper view origin
   const NSRect framePx = rectToNsRect(frame);
   const NSRect framePt = nsRectToPoints(view, framePx);
   [impl->wrapperView setFrameOrigin:framePt.origin];
 
+  // Set draw view origin
   const NSRect drawPx = NSMakeRect(0, 0, frame.width, frame.height);
   const NSRect drawPt = [impl->drawView convertRectFromBacking:drawPx];
   [impl->drawView setFrameOrigin:drawPt.origin];
 
-  view->frame = frame;
-  return PUGL_SUCCESS;
+  // Dispatch new configuration
+  return dispatchCurrentChildViewConfiguration(view, false);
 }
 
 PuglStatus
@@ -1495,24 +1821,34 @@ puglSetSize(PuglView* const view, const unsigned width, const unsigned height)
     return PUGL_BAD_PARAMETER;
   }
 
-  const PuglRect frame = {
-    view->frame.x, view->frame.y, (PuglSpan)width, (PuglSpan)height};
-
   PuglInternals* const impl = view->impl;
+  if (!impl->wrapperView) {
+    // Set defaults to be used when realized
+    view->sizeHints[PUGL_DEFAULT_SIZE].width  = (PuglSpan)width;
+    view->sizeHints[PUGL_DEFAULT_SIZE].height = (PuglSpan)height;
+    return PUGL_SUCCESS;
+  }
+
   if (impl->window) {
+    // Adjust top-level window frame
+    PuglRect frame = puglGetFrame(view);
+    frame.width    = (PuglSpan)width;
+    frame.height   = (PuglSpan)height;
     return puglSetFrame(view, frame);
   }
 
-  const NSRect framePx = rectToNsRect(frame);
-  const NSRect framePt = nsRectToPoints(view, framePx);
-  [impl->wrapperView setFrameSize:framePt.size];
+  // Set wrapper view size
+  const double scaleFactor = [viewScreen(view) backingScaleFactor];
+  const CGSize frameSizePt = {width / scaleFactor, height / scaleFactor};
+  [impl->wrapperView setFrameSize:frameSizePt];
 
-  const NSRect drawPx = NSMakeRect(0, 0, frame.width, frame.height);
+  // Set draw view size
+  const NSRect drawPx = NSMakeRect(0, 0, width, height);
   const NSRect drawPt = [impl->drawView convertRectFromBacking:drawPx];
   [impl->drawView setFrameSize:drawPt.size];
 
-  view->frame = frame;
-  return PUGL_SUCCESS;
+  // Dispatch new configuration
+  return dispatchCurrentChildViewConfiguration(view, false);
 }
 
 PuglStatus
@@ -1534,9 +1870,13 @@ puglSetSizeHint(PuglView* const    view,
 PuglStatus
 puglSetTransientParent(PuglView* view, PuglNativeView parent)
 {
+  if (view->parent) {
+    return PUGL_FAILURE;
+  }
+
   view->transientParent = parent;
 
-  if (view->impl->window) {
+  if (parent && view->impl->window) {
     NSWindow* parentWindow = [(NSView*)parent window];
     if (parentWindow) {
       [parentWindow addChildWindow:view->impl->window ordered:NSWindowAbove];
@@ -1553,7 +1893,7 @@ puglPaste(PuglView* const view)
   const PuglDataOfferEvent offer = {
     PUGL_DATA_OFFER,
     0,
-    mach_absolute_time() / 1e9,
+    puglGetTime(view->world),
   };
 
   PuglEvent offerEvent;
@@ -1611,7 +1951,7 @@ puglAcceptOffer(PuglView* const                 view,
   wrapper->dragTypeIndex = typeIndex;
 
   const PuglDataEvent data = {
-    PUGL_DATA, 0u, mach_absolute_time() / 1e9, (uint32_t)typeIndex};
+    PUGL_DATA, 0U, puglGetTime(view->world), (uint32_t)typeIndex};
 
   PuglEvent dataEvent;
   dataEvent.data = data;
@@ -1650,10 +1990,21 @@ puglGetClipboard(PuglView* const view,
 }
 
 static NSCursor*
+extendedCursor(const SEL cursorSelector)
+{
+  if (cursorSelector && [NSCursor respondsToSelector:cursorSelector]) {
+    const id object = [NSCursor performSelector:cursorSelector];
+    if ([object isKindOfClass:[NSCursor class]]) {
+      return (NSCursor*)object;
+    }
+  }
+
+  return NULL;
+}
+
+static NSCursor*
 puglGetNsCursor(const PuglCursor cursor)
 {
-  SEL cursorSelector = nil;
-
   switch (cursor) {
   case PUGL_CURSOR_ARROW:
     return [NSCursor arrowCursor];
@@ -1669,19 +2020,12 @@ puglGetNsCursor(const PuglCursor cursor)
     return [NSCursor resizeLeftRightCursor];
   case PUGL_CURSOR_UP_DOWN:
     return [NSCursor resizeUpDownCursor];
-  case PUGL_CURSOR_DIAGONAL:
-    cursorSelector = @selector(_windowResizeNorthWestSouthEastCursor);
-    break;
-  case PUGL_CURSOR_ANTI_DIAGONAL:
-    cursorSelector = @selector(_windowResizeNorthEastSouthWestCursor);
-    break;
-  }
-
-  if (cursorSelector && [NSCursor respondsToSelector:cursorSelector])
-  {
-    const id object = [NSCursor performSelector:cursorSelector];
-    if ([object isKindOfClass:[NSCursor class]])
-      return (NSCursor*)object;
+  case PUGL_CURSOR_UP_LEFT_DOWN_RIGHT:
+    return extendedCursor(@selector(_windowResizeNorthWestSouthEastCursor));
+  case PUGL_CURSOR_UP_RIGHT_DOWN_LEFT:
+    return extendedCursor(@selector(_windowResizeNorthEastSouthWestCursor));
+  case PUGL_CURSOR_ALL_SCROLL:
+    return [NSCursor closedHandCursor];
   }
 
   return NULL;
