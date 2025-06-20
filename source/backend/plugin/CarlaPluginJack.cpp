@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
@@ -144,7 +144,7 @@ public:
         if (sessionManager == LIBJACK_SESSION_MANAGER_NSM)
         {
             for (int i=50; fOscServer == nullptr && --i>=0;)
-                carla_msleep(100);
+                d_msleep(100);
 
             ret += "export NSM_URL=";
             ret += lo_server_get_url(fOscServer);
@@ -399,7 +399,7 @@ protected:
             else
 #endif
             {
-                carla_msleep(50);
+                d_msleep(50);
             }
         }
 
@@ -1995,7 +1995,7 @@ private:
             if (pData->engine->isAboutToClose() || pData->engine->wasActionCanceled())
                 break;
 
-            carla_msleep(5);
+            d_msleep(5);
         }
 
         if (needsCancelableAction)

@@ -1,19 +1,5 @@
-/*
- * Carla Plugin, LADSPA/DSSI implementation
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngineUtils.hpp"
@@ -209,7 +195,7 @@ public:
         if (waitForOscGuiShow())
         {
             for (; fProcess->isRunning() && ! shouldThreadExit();)
-                carla_sleep(1);
+                d_msleep(100);
 
             // we only get here if UI was closed or thread asked to exit
             if (fProcess->isRunning() && shouldThreadExit())
@@ -274,7 +260,7 @@ private:
             }
 
             if (fProcess != nullptr && fProcess->isRunning() && ! shouldThreadExit())
-                carla_msleep(100);
+                d_msleep(100);
             else
                 return false;
         }

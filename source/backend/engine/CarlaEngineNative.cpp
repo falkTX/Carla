@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaDefines.h"
@@ -16,7 +16,6 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaBase64Utils.hpp"
 #include "CarlaBinaryUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaStateUtils.hpp"
@@ -25,6 +24,8 @@
 #include "CarlaHost.h"
 #include "CarlaNative.hpp"
 #include "CarlaNativePlugin.h"
+
+#include "distrho/extra/Base64.hpp"
 
 #include "water/files/File.h"
 #include "water/streams/MemoryOutputStream.h"
@@ -2248,7 +2249,8 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
 
         if (const CarlaPluginPtr plugin = fEngine->getPlugin(pluginId))
         {
-            std::vector<uint8_t> chunk(carla_getChunkFromBase64String(cdata));
+            std::vector<uint8_t> chunk;
+            d_getChunkFromBase64String_impl(chunk, cdata);
 #ifdef CARLA_PROPER_CPP11_SUPPORT
             plugin->setChunkData(chunk.data(), chunk.size());
 #else

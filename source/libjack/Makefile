@@ -22,7 +22,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_C_FLAGS   += -I$(CWD) -I$(CWD)/includes
-BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils
+BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 LINK_FLAGS      += -pthread
 ifeq ($(LINUX),true)
 LINK_FLAGS      += -lrt

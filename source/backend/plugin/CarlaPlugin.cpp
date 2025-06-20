@@ -1,11 +1,10 @@
-﻿// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+﻿// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaPluginUI.hpp"
@@ -13,6 +12,8 @@
 #include "CarlaStringList.hpp"
 
 #include <ctime>
+
+#include "distrho/extra/Base64.hpp"
 
 #include "water/files/File.h"
 #include "water/streams/MemoryOutputStream.h"
@@ -924,7 +925,8 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     if (stateSave.chunk != nullptr && (pData->options & PLUGIN_OPTION_USE_CHUNKS) != 0)
     {
-        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stateSave.chunk));
+        std::vector<uint8_t> chunk;
+        d_getChunkFromBase64String_impl(chunk, stateSave.chunk);
        #ifdef CARLA_PROPER_CPP11_SUPPORT
         setChunkData(chunk.data(), chunk.size());
        #else

@@ -1,36 +1,23 @@
-/*
- * Carla Plugin Bridge
- * Copyright (C) 2011-2024 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaBase64Utils.hpp"
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaScopeUtils.hpp"
 #include "CarlaShmUtils.hpp"
-#include "CarlaTimeUtils.hpp"
 #include "CarlaThread.hpp"
 
 #include "jackbridge/JackBridge.hpp"
 
 #include <ctime>
+
+#include "distrho/extra/Base64.hpp"
+#include "distrho/extra/Time.hpp"
 
 #include "water/files/File.h"
 #include "water/misc/Time.h"
@@ -386,7 +373,7 @@ protected:
         }
 
         for (; fProcess->isRunning() && ! shouldThreadExit();)
-            carla_sleep(1);
+            d_msleep(100);
 
         // we only get here if bridge crashed or thread asked to exit
         if (fProcess->isRunning() && shouldThreadExit())
@@ -690,10 +677,10 @@ public:
         if (fReceivingParamText.wasDataReceived(&success))
             return success;
 
-        const uint32_t timeoutEnd = carla_gettime_ms() + 500; // 500 ms
+        const uint32_t timeoutEnd = d_gettime_ms() + 500; // 500 ms
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
-        for (; carla_gettime_ms() < timeoutEnd && fBridgeThread.isThreadRunning();)
+        for (; d_gettime_ms() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             if (fReceivingParamText.wasDataReceived(&success))
                 return success;
@@ -701,7 +688,7 @@ public:
             if (needsEngineIdle)
                 pData->engine->idle();
 
-            carla_msleep(5);
+            d_msleep(5);
         }
 
         if (! fBridgeThread.isThreadRunning())
@@ -720,10 +707,10 @@ public:
             return;
 
         // TODO: only wait 1 minute for NI plugins
-        const uint32_t timeoutEnd = carla_gettime_ms() + 60*1000; // 60 secs, 1 minute
+        const uint32_t timeoutEnd = d_gettime_ms() + 60*1000; // 60 secs, 1 minute
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
-        for (; carla_gettime_ms() < timeoutEnd && fBridgeThread.isThreadRunning();)
+        for (; d_gettime_ms() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
@@ -733,7 +720,7 @@ public:
             if (fSaved)
                 break;
 
-            carla_msleep(20);
+            d_msleep(20);
         }
 
         if (! fBridgeThread.isThreadRunning())
@@ -1116,10 +1103,10 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        const uint32_t timeoutEnd = carla_gettime_ms() + 15*1000; // 15 secs
+        const uint32_t timeoutEnd = d_gettime_ms() + 15*1000; // 15 secs
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
-        for (; carla_gettime_ms() < timeoutEnd && fBridgeThread.isThreadRunning();)
+        for (; d_gettime_ms() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
@@ -1133,7 +1120,7 @@ public:
                 break;
             }
 
-            carla_msleep(20);
+            d_msleep(20);
         }
 
         return reinterpret_cast<void*>(fPendingEmbedCustomUI);
@@ -2594,7 +2581,7 @@ public:
                 const File chunkFile(realChunkFilePath.toRawUTF8());
                 CARLA_SAFE_ASSERT_BREAK(chunkFile.existsAsFile());
 
-                fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
+                d_getChunkFromBase64String_impl(fInfo.chunk, chunkFile.loadFileAsString().toRawUTF8());
                 chunkFile.deleteFile();
             }   break;
 
@@ -3204,7 +3191,7 @@ private:
             if (pData->engine->isAboutToClose() || pData->engine->wasActionCanceled())
                 break;
 
-            carla_msleep(5);
+            d_msleep(5);
         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH

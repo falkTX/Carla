@@ -1,24 +1,12 @@
-/*
- * Carla JACK API for external applications
- * Copyright (C) 2016-2022 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "libjack.hpp"
 
 #include "CarlaThread.hpp"
 #include "CarlaJuceUtils.hpp"
+
+#include "distrho/extra/Time.hpp"
 
 #include <signal.h>
 #include <sys/time.h>
@@ -28,13 +16,6 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // ---------------------------------------------------------------------------------------------------------------------
-
-static int64_t getCurrentTimeMilliseconds() noexcept
-{
-    struct timeval tv;
-    gettimeofday (&tv, nullptr);
-    return ((int64_t) tv.tv_sec) * 1000 + tv.tv_usec / 1000;
-}
 
 static int carla_interposed_callback(int, void*);
 
@@ -220,7 +201,7 @@ public:
             return nullptr;
 
         while (fNonRealtimeThread.isThreadRunning() && ! fIsReady)
-            carla_sleep(1);
+            d_msleep(100);
 
         return new JackClientState(fServer, name);
     }
@@ -456,7 +437,7 @@ bool CarlaJackAppClient::initSharedMemmory()
     fAudioTmpBuf = new float[fServer.bufferSize];
     carla_zeroFloats(fAudioTmpBuf, fServer.bufferSize);
 
-    fLastPingTime = getCurrentTimeMilliseconds();
+    fLastPingTime = d_gettime_ms();
     CARLA_SAFE_ASSERT(fLastPingTime > 0);
 
     {
@@ -1154,7 +1135,7 @@ bool CarlaJackAppClient::handleNonRtData()
 #endif
 
         if (opcode != kPluginBridgeNonRtClientNull && opcode != kPluginBridgeNonRtClientPingOnOff && fLastPingTime > 0)
-            fLastPingTime = getCurrentTimeMilliseconds();
+            fLastPingTime = d_gettime_ms();
 
         switch (opcode)
         {
@@ -1177,7 +1158,7 @@ bool CarlaJackAppClient::handleNonRtData()
         case kPluginBridgeNonRtClientPingOnOff: {
             const uint32_t onOff(fShmNonRtClientControl.readBool());
 
-            fLastPingTime = onOff ? getCurrentTimeMilliseconds() : -1;
+            fLastPingTime = onOff ? d_gettime_ms() : -1;
         }   break;
 
         case kPluginBridgeNonRtClientActivate:
@@ -1347,7 +1328,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
 
     fRealtimeThread.startThread(true);
 
-    fLastPingTime = getCurrentTimeMilliseconds();
+    fLastPingTime = d_gettime_ms();
     carla_stdout("Carla Jack Client Ready!");
 
     bool quitReceived = false,
@@ -1355,7 +1336,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
 
     for (; ! fNonRealtimeThread.shouldThreadExit();)
     {
-        carla_msleep(50);
+        d_msleep(50);
 
         try {
             quitReceived = handleNonRtData();
@@ -1365,7 +1346,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
             break;
 
         /*
-        if (fLastPingTime > 0 && getCurrentTimeMilliseconds() > fLastPingTime + 30000)
+        if (fLastPingTime > 0 && d_gettime_ms() > fLastPingTime + 30000)
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
 

@@ -1,6 +1,6 @@
 /*
  * JackBridge (Part 2, Semaphore + Shared memory and other misc functions)
- * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -19,10 +19,13 @@
 #ifdef JACKBRIDGE_DUMMY
 # include "CarlaUtils.hpp"
 #else
+# ifdef __WINE__
+#  define NOMINMAX
+#  include <winsock2.h>
+# endif
 # include "CarlaProcessUtils.hpp"
 # include "CarlaSemUtils.hpp"
 # include "CarlaShmUtils.hpp"
-# include "CarlaTimeUtils.hpp"
 # ifdef __WINE__
 #  include "utils/PipeClient.cpp"
 # endif
@@ -191,7 +194,7 @@ void jackbridge_discovery_pipe_destroy(void* pipe)
 
     for (int i=0; i < 100 && carla_pipe_client_is_running(pipe); ++i)
     {
-        carla_msleep(50);
+        d_msleep(50);
         carla_pipe_client_idle(pipe);
     }
 

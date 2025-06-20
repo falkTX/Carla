@@ -1,23 +1,10 @@
-/*
- * Carla Bridge utils
- * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaShmUtils.hpp"
-#include "CarlaTimeUtils.hpp"
+
+#include "distrho/extra/Sleep.hpp"
 
 // must be last
 #include "jackbridge/JackBridge.hpp"
@@ -436,7 +423,7 @@ void BridgeNonRtClientControl::waitIfDataIsReachingLimit() noexcept
             commitWrite();
             return;
         }
-        carla_msleep(20);
+        d_msleep(20);
     }
 
     carla_stderr("Server waitIfDataIsReachingLimit() reached and failed");
@@ -581,7 +568,7 @@ void BridgeNonRtServerControl::waitIfDataIsReachingLimit() noexcept
             commitWrite();
             return;
         }
-        carla_msleep(20);
+        d_msleep(20);
     }
 
     carla_stderr("Client waitIfDataIsReachingLimit() reached and failed");

@@ -10,18 +10,12 @@ include ../modules/Makefile.mk
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JACKBRIDGE_FLAGS) -I../backend
+BUILD_CXX_FLAGS += $(JACKBRIDGE_FLAGS) -I../backend -I../modules
 LINK_FLAGS      += $(JACKBRIDGE_LIBS)
 
 ifeq ($(JACKBRIDGE_DIRECT),true)
 BUILD_CXX_FLAGS += $(JACK_FLAGS) -DJACKBRIDGE_DIRECT
 LINK_FLAGS      += $(JACK_LIBS)
-endif
-
-ifneq ($(BUILDING_FOR_WINE),true)
-ifeq ($(WINDOWS),true)
-BUILD_CXX_FLAGS += -I../modules
-endif
 endif
 
 WINE_32BIT_FLAGS = $(32BIT_FLAGS) -fpermissive

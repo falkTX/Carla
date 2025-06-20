@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+﻿// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef BUILD_BRIDGE
@@ -16,14 +16,15 @@
 #include "CarlaEngineInit.hpp"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaBase64Utils.hpp"
 #include "CarlaBridgeUtils.hpp"
-#include "CarlaTimeUtils.hpp"
 #include "CarlaMIDI.h"
 
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>
 #endif
+
+#include "distrho/extra/Base64.hpp"
+#include "distrho/extra/Time.hpp"
 
 #include "water/files/File.h"
 #include "water/misc/Time.h"
@@ -368,7 +369,7 @@ public:
         if (wasFirstIdle)
         {
             fFirstIdle = false;
-            fLastPingTime = carla_gettime_ms();
+            fLastPingTime = d_gettime_ms();
 
             char bufStr[STR_MAX+1];
             carla_zeroChars(bufStr, STR_MAX+1);
@@ -643,7 +644,7 @@ public:
             fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
             carla_stdout("Carla Bridge Ready!");
-            fLastPingTime = carla_gettime_ms();
+            fLastPingTime = d_gettime_ms();
         }
 
         // send parameter outputs
@@ -672,7 +673,7 @@ public:
             handleNonRtData();
         } CARLA_SAFE_EXCEPTION("handleNonRtData");
 
-        if (fLastPingTime != UINT32_MAX && carla_gettime_ms() > fLastPingTime + 30000 && ! wasFirstIdle)
+        if (fLastPingTime != UINT32_MAX && d_gettime_ms() > fLastPingTime + 30000 && ! wasFirstIdle)
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
             signalThreadShouldExit();
@@ -811,7 +812,7 @@ public:
 
             if (opcode != kPluginBridgeNonRtClientNull &&
                 opcode != kPluginBridgeNonRtClientPingOnOff && fLastPingTime != UINT32_MAX)
-                fLastPingTime = carla_gettime_ms();
+                fLastPingTime = d_gettime_ms();
 
             switch (opcode)
             {
@@ -832,7 +833,7 @@ public:
             }   break;
 
             case kPluginBridgeNonRtClientPingOnOff:
-                fLastPingTime = fShmNonRtClientControl.readBool() ? carla_gettime_ms() : UINT32_MAX;
+                fLastPingTime = fShmNonRtClientControl.readBool() ? d_gettime_ms() : UINT32_MAX;
                 break;
 
             case kPluginBridgeNonRtClientActivate:
@@ -981,7 +982,8 @@ public:
                 chunkFile.deleteFile();
                 CARLA_SAFE_ASSERT_BREAK(chunkDataBase64.isNotEmpty());
 
-                std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkDataBase64.toRawUTF8()));
+                std::vector<uint8_t> chunk;
+                d_getChunkFromBase64String_impl(chunk, chunkDataBase64.toRawUTF8());
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
                 plugin->setChunkData(chunk.data(), chunk.size());

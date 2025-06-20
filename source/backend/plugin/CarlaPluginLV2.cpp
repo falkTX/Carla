@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 // testing macros
@@ -11,12 +11,13 @@
 #include "CarlaLv2Utils.hpp"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaBase64Utils.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaPluginUI.hpp"
 #include "CarlaScopeUtils.hpp"
 #include "Lv2AtomRingBuffer.hpp"
+
+#include "distrho/extra/Base64.hpp"
 
 #include "../modules/lilv/config/lilv_config.h"
 
@@ -1651,7 +1652,8 @@ public:
                 if (parameterId == UINT32_MAX)
                     break;
 
-                std::vector<uint8_t> chunk(carla_getChunkFromBase64String(value));
+                std::vector<uint8_t> chunk;
+                d_getChunkFromBase64String_impl(chunk, value);
                 CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0,);
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
@@ -6047,7 +6049,8 @@ public:
             fLastStateChunk = nullptr;
         }
 
-        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stringData));
+        std::vector<uint8_t> chunk;
+        d_getChunkFromBase64String_impl(chunk, stringData);
         CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, nullptr);
 
         fLastStateChunk = std::malloc(chunk.size());
@@ -8344,7 +8347,8 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(base64Size), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom, false, base64Size), true);
 
-        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(base64atom));
+        std::vector<uint8_t> chunk;
+        d_getChunkFromBase64String_impl(chunk, base64atom);
         CARLA_SAFE_ASSERT_UINT2_RETURN(chunk.size() >= sizeof(LV2_Atom), chunk.size(), sizeof(LV2_Atom), true);
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT

@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+﻿// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef BUILD_BRIDGE
@@ -12,7 +12,6 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaMainLoop.hpp"
-#include "CarlaTimeUtils.hpp"
 
 #include "CarlaMIDI.h"
 
@@ -37,6 +36,8 @@
 #ifdef HAVE_X11
 # include <X11/Xlib.h>
 #endif
+
+#include "distrho/extra/Sleep.hpp"
 
 #include "water/files/File.h"
 #include "water/misc/Time.h"
@@ -230,9 +231,9 @@ public:
             gIdle();
            #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
             // MacOS and Win32 have event-loops to run, so minimize sleep time
-            carla_msleep(1);
+            d_msleep(1);
            #else
-            carla_msleep(5);
+            d_msleep(5);
            #endif
             if (testing && timeToEnd - water::Time::currentTimeMillis() < 0)
                 break;

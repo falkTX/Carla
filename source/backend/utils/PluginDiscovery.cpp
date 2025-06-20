@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaUtils.h"
@@ -8,7 +8,8 @@
 #include "CarlaJuceUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaSha1Utils.hpp"
-#include "CarlaTimeUtils.hpp"
+
+#include "distrho/extra/Time.hpp"
 
 #include "water/files/File.h"
 #include "water/files/FileInputStream.h"
@@ -152,7 +153,7 @@ public:
             idlePipe();
 
             // automatically skip a plugin if 30s passes without a reply
-            const uint32_t timeNow = carla_gettime_ms();
+            const uint32_t timeNow = d_gettime_ms();
 
             if (timeNow - fLastMessageTime < 30000)
                 return true;
@@ -189,7 +190,7 @@ public:
 protected:
     bool msgReceived(const char* const msg) noexcept
     {
-        fLastMessageTime = carla_gettime_ms();
+        fLastMessageTime = d_gettime_ms();
 
         if (std::strcmp(msg, "warning") == 0 || std::strcmp(msg, "error") == 0)
         {
@@ -396,7 +397,7 @@ private:
         using water::File;
         using water::String;
 
-        fLastMessageTime = carla_gettime_ms();
+        fLastMessageTime = d_gettime_ms();
         fPluginsFoundInBinary = false;
         fNextSha1Sum.clear();
 

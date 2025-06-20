@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+﻿// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaEngineClient.hpp"
@@ -2747,7 +2747,7 @@ public:
                     if (groupId != 0)
                         break;
 
-                    carla_msleep(100);
+                    d_msleep(100);
                     callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
                 }
             }
@@ -4214,7 +4214,7 @@ private:
             if (fClient == nullptr)
                 break;
 
-            carla_msleep(200);
+            d_msleep(200);
         }
     }
 #endif //  BUILD_BRIDGE

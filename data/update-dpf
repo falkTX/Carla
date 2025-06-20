@@ -21,10 +21,13 @@ cp -v ${DPF_DIR}/distrho/src/*.cpp  ${CARLA_DIR}/source/modules/distrho/src/
 cp -v ${DPF_DIR}/distrho/src/*.h    ${CARLA_DIR}/source/modules/distrho/src/
 cp -v ${DPF_DIR}/distrho/src/*.hpp  ${CARLA_DIR}/source/modules/distrho/src/
 
+cp -v ${DPF_DIR}/distrho/extra/Base64.hpp           ${CARLA_DIR}/source/modules/distrho/extra/
 cp -v ${DPF_DIR}/distrho/extra/LeakDetector.hpp     ${CARLA_DIR}/source/modules/distrho/extra/
 cp -v ${DPF_DIR}/distrho/extra/ScopedPointer.hpp    ${CARLA_DIR}/source/modules/distrho/extra/
 cp -v ${DPF_DIR}/distrho/extra/ScopedSafeLocale.hpp ${CARLA_DIR}/source/modules/distrho/extra/
+cp -v ${DPF_DIR}/distrho/extra/Sleep.hpp            ${CARLA_DIR}/source/modules/distrho/extra/
 cp -v ${DPF_DIR}/distrho/extra/String.hpp           ${CARLA_DIR}/source/modules/distrho/extra/
+cp -v ${DPF_DIR}/distrho/extra/Time.hpp             ${CARLA_DIR}/source/modules/distrho/extra/
 
 cp -r -v ${DPF_DIR}/dgl/src/pugl-upstream/include ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/
 cp -r -v ${DPF_DIR}/dgl/src/pugl-upstream/src     ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/

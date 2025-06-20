@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaHostImpl.hpp"
@@ -289,7 +289,7 @@ protected:
                                        projectPath);
 
             for (; ! fReadyActionOpen;)
-                carla_msleep(10);
+                d_msleep(10);
         }
         else
         {
@@ -343,7 +343,7 @@ protected:
                                        0, 0, 0.0f, nullptr);
 
             for (; ! fReadyActionSave;)
-                carla_msleep(10);
+                d_msleep(10);
         }
         else
         {

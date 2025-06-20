@@ -1,24 +1,11 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the GPL.txt file
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaEngineGraph.hpp"
 #include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
-#include "CarlaTimeUtils.hpp"
+
+#include "distrho/extra/Time.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -227,9 +214,9 @@ protected:
         while (! shouldThreadExit())
         {
             if (delay > 0)
-                carla_sleep(static_cast<uint>(delay));
+                d_sleep(static_cast<uint>(delay));
 
-            oldTime = carla_gettime_us();
+            oldTime = d_gettime_us();
 
             const PendingRtEventsRunner prt(this, bufferSize, true);
 
@@ -239,7 +226,7 @@ protected:
 
             pData->graph.process(pData, audioIns, audioOuts, bufferSize);
 
-            newTime = carla_gettime_us();
+            newTime = d_gettime_us();
             CARLA_SAFE_ASSERT_CONTINUE(newTime >= oldTime);
 
             const int64_t remainingTime = cycleTime - (newTime - oldTime);
@@ -253,7 +240,7 @@ protected:
             else if (remainingTime >= 1000)
             {
                 CARLA_SAFE_ASSERT_CONTINUE(remainingTime < 1000000); // 1 sec
-                carla_msleep(static_cast<uint>(remainingTime / 1000));
+                d_msleep(static_cast<uint>(remainingTime / 1000));
             }
         }
 

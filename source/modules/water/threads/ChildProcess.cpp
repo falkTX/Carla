@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -38,6 +38,8 @@
 #endif
 
 #include "CarlaProcessUtils.hpp"
+
+#include "distrho/extra/Sleep.hpp"
 
 namespace water {
 
@@ -311,7 +313,7 @@ bool ChildProcess::waitForProcessToFinish (const int timeoutMs)
         if (! activeProcess->checkRunningAndUnsetPID())
             return true;
 
-        carla_msleep(5);
+        d_msleep(5);
     }
     while (timeoutMs < 0 || Time::getMillisecondCounter() < timeoutTime);
 

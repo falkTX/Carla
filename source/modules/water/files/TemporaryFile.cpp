@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2023 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -26,7 +26,7 @@
 #include "TemporaryFile.h"
 #include "../maths/Random.h"
 
-#include "CarlaTimeUtils.hpp"
+#include "distrho/extra/Sleep.hpp"
 
 namespace water {
 
@@ -93,7 +93,7 @@ bool TemporaryFile::overwriteTargetFileWithTemporary() const
             if (temporaryFile.replaceFileIn (targetFile))
                 return true;
 
-            carla_msleep (100);
+            d_msleep (100);
         }
     }
     else
@@ -114,7 +114,7 @@ bool TemporaryFile::deleteTemporaryFile() const
         if (temporaryFile.deleteFile())
             return true;
 
-        carla_msleep (50);
+        d_msleep (50);
     }
 
     return false;

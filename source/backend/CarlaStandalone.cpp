@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 // TODO:
@@ -11,8 +11,9 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaBase64Utils.hpp"
 #include "ThreadSafeFFTW.hpp"
+
+#include "distrho/extra/Base64.hpp"
 
 #include "water/files/File.h"
 
@@ -2218,7 +2219,8 @@ void carla_set_chunk_data(CarlaHostHandle handle, uint pluginId, const char* chu
     {
         CARLA_SAFE_ASSERT_RETURN(plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS,);
 
-        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkData));
+        std::vector<uint8_t> chunk;
+        d_getChunkFromBase64String_impl(chunk, chunkData);
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         plugin->setChunkData(chunk.data(), chunk.size());
 #else

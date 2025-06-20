@@ -22,7 +22,7 @@ endif
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -I$(CWD)/modules
+BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 LINK_FLAGS       += $(WATER_LIBS)
 
 ifneq ($(WASM),true)

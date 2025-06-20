@@ -179,7 +179,7 @@ LIBS_wine += $(MODULEDIR)/water.files.a
 
 WINE_LINK_FLAGS  = $(LINK_FLAGS)
 WINE_LINK_FLAGS += -L$(BINDIR) -lcarla_native-plugin
-WINE_LINK_FLAGS += -lstdc++ -lopengl32 -lgdi32 -ldl
+WINE_LINK_FLAGS += -lstdc++ -lopengl32 -lgdi32 -ldwmapi -ldl
 WINE_LINK_FLAGS += -Wl,-rpath,/usr/local/lib/carla
 WINE_LINK_FLAGS += -Wl,-rpath,/usr/lib/carla
 
