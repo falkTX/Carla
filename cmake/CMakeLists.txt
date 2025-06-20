@@ -546,6 +546,7 @@ target_compile_options(carla-water
 target_include_directories(carla-water
   PRIVATE
     ../source/includes
+    ../source/modules
     ../source/utils
 )
 
@@ -581,6 +582,7 @@ target_compile_options(carla-water-files
 target_include_directories(carla-water-files
   PRIVATE
     ../source/includes
+    ../source/modules
     ../source/utils
 )
 
