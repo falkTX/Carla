@@ -1466,25 +1466,6 @@ if(${CARLA_BUILD_FRAMEWORKS})
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/A/Headers/includes)
 
   install(FILES
-    ../source/utils/CarlaBackendUtils.hpp
-    ../source/utils/CarlaBase64Utils.hpp
-    ../source/utils/CarlaBinaryUtils.hpp
-    ../source/utils/CarlaBridgeDefines.hpp
-    ../source/utils/CarlaBridgeUtils.hpp
-    ../source/utils/CarlaMacUtils.hpp
-    ../source/utils/CarlaMathUtils.hpp
-    ../source/utils/CarlaMemUtils.hpp
-    ../source/utils/CarlaMutex.hpp
-    ../source/utils/CarlaRingBuffer.hpp
-    ../source/utils/CarlaProcessUtils.hpp
-    ../source/utils/CarlaRunner.hpp
-    ../source/utils/CarlaScopeUtils.hpp
-    ../source/utils/CarlaSemUtils.hpp
-    ../source/utils/CarlaSha1Utils.hpp
-    ../source/utils/CarlaShmUtils.hpp
-    ../source/utils/CarlaString.hpp
-    ../source/utils/CarlaThread.hpp
-    ../source/utils/CarlaTimeUtils.hpp
     ../source/utils/CarlaUtils.hpp
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/carla-utils.framework/Versions/A/Headers/utils)
 
@@ -1553,25 +1534,6 @@ set_property(TARGET carla-headers-includes
 
 set_property(TARGET carla-headers-utils
   PROPERTY PUBLIC_HEADER
-    ../source/utils/CarlaBackendUtils.hpp
-    ../source/utils/CarlaBase64Utils.hpp
-    ../source/utils/CarlaBinaryUtils.hpp
-    ../source/utils/CarlaBridgeDefines.hpp
-    ../source/utils/CarlaBridgeUtils.hpp
-    ../source/utils/CarlaMacUtils.hpp
-    ../source/utils/CarlaMathUtils.hpp
-    ../source/utils/CarlaMemUtils.hpp
-    ../source/utils/CarlaMutex.hpp
-    ../source/utils/CarlaRingBuffer.hpp
-    ../source/utils/CarlaProcessUtils.hpp
-    ../source/utils/CarlaRunner.hpp
-    ../source/utils/CarlaScopeUtils.hpp
-    ../source/utils/CarlaSemUtils.hpp
-    ../source/utils/CarlaSha1Utils.hpp
-    ../source/utils/CarlaShmUtils.hpp
-    ../source/utils/CarlaString.hpp
-    ../source/utils/CarlaThread.hpp
-    ../source/utils/CarlaTimeUtils.hpp
     ../source/utils/CarlaUtils.hpp
 )
 
