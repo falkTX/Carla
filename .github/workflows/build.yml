@@ -43,8 +43,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: macos-12
           - target: macos-13
+          - target: macos-14
+          - target: macos-15
     runs-on: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +60,7 @@ jobs:
         run: make -j $(sysctl -n hw.logicalcpu)
 
   wasm:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,7 +71,7 @@ jobs:
         with:
           path: |
             ~/emsdk
-          key: emsdk-v1
+          key: emsdk-v2
       - name: Set up dependencies
         run: |
           [ -d ~/emsdk ] || git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
