@@ -69,7 +69,6 @@ OBJS = $(CPP_FILES:%=$(OBJDIR)/%.o)
 RES = \
 	qt_config.py \
 	resources_rc.py \
-	$(BINDIR)/resources/modgui \
 	$(BINDIR)/resources/patchcanvas \
 	$(BINDIR)/resources/widgets \
 	$(BINDIR)/resources/bigmeter-ui \
@@ -80,7 +79,6 @@ RES = \
 	$(BINDIR)/resources/carla_backend_qt.py \
 	$(BINDIR)/resources/carla_host.py \
 	$(BINDIR)/resources/carla_host_control.py \
-	$(BINDIR)/resources/carla_modgui.py \
 	$(BINDIR)/resources/carla_settings.py \
 	$(BINDIR)/resources/carla_skin.py \
 	$(BINDIR)/resources/carla_shared.py \

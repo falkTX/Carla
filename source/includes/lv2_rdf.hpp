@@ -242,7 +242,6 @@ typedef uint32_t LV2_Property;
 #define LV2_UI_X11                       7
 #define LV2_UI_EXTERNAL                  8
 #define LV2_UI_OLD_EXTERNAL              9
-#define LV2_UI_MOD                       10
 
 #define LV2_IS_UI_GTK2(x)                ((x) == LV2_UI_GTK2)
 #define LV2_IS_UI_GTK3(x)                ((x) == LV2_UI_GTK3)
@@ -253,7 +252,6 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_UI_X11(x)                 ((x) == LV2_UI_X11)
 #define LV2_IS_UI_EXTERNAL(x)            ((x) == LV2_UI_EXTERNAL)
 #define LV2_IS_UI_OLD_EXTERNAL(x)        ((x) == LV2_UI_OLD_EXTERNAL)
-#define LV2_IS_UI_MOD(x)                 ((x) == LV2_UI_MOD)
 
 // Plugin Types
 #define LV2_PLUGIN_DELAY                 0x000001

@@ -104,7 +104,6 @@ typedef std::map<double,const LilvScalePoint*> LilvScalePointMap;
 #define NS_rdfs "http://www.w3.org/2000/01/rdf-schema#"
 #define NS_llmm "http://ll-plugins.nongnu.org/lv2/ext/midimap#"
 #define NS_devp "http://lv2plug.in/ns/dev/extportinfo#"
-#define NS_mod  "http://moddevices.com/ns/modgui#"
 
 #define LV2_MIDI_Map__CC      "http://ll-plugins.nongnu.org/lv2/namespace#CC"
 #define LV2_MIDI_Map__NRPN    "http://ll-plugins.nongnu.org/lv2/namespace#NRPN"
@@ -2914,15 +2913,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin UIs
     {
-#ifdef CARLA_OS_LINUX
-        const bool hasMODGui = lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr;
-#else
-        const bool hasMODGui = false;
-#endif
-
         Lilv::UIs lilvUIs(lilvPlugin.get_uis());
 
-        const uint numUIs = lilvUIs.size() + (hasMODGui ? 1 : 0);
+        const uint numUIs = lilvUIs.size();
 
         if (numUIs > 0)
         {
@@ -3117,29 +3110,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                     lilv_nodes_free(const_cast<LilvNodes*>(portNotifNodes.me));
                 }
-            }
-
-            for (; hasMODGui;)
-            {
-                CARLA_SAFE_ASSERT_BREAK(numUsed == numUIs-1);
-
-                LV2_RDF_UI* const rdfUI(&rdfDescriptor->UIs[numUsed++]);
-
-                // -------------------------------------------------------
-                // Set UI Type
-
-                rdfUI->Type = LV2_UI_MOD;
-
-                // -------------------------------------------------------
-                // Set UI Information
-
-                if (const char* const resDir = lilvPlugin.get_modgui_resources_directory().as_uri())
-                    rdfUI->URI = carla_strdup_free(lilv_file_uri_parse(resDir, nullptr));
-
-                if (rdfDescriptor->Bundle != nullptr)
-                    rdfUI->Bundle = carla_strdup(rdfDescriptor->Bundle);
-
-                break;
             }
 
             rdfDescriptor->UICount = numUsed;

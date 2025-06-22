@@ -428,7 +428,6 @@ ifeq ($(HAVE_FRONTEND),true)
 	install -d $(DESTDIR)$(DATADIR)/carla/resources/translations
 	install -d $(DESTDIR)$(DATADIR)/carla/common
 	install -d $(DESTDIR)$(DATADIR)/carla/dialogs
-	install -d $(DESTDIR)$(DATADIR)/carla/modgui
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
 	install -d $(DESTDIR)$(DATADIR)/carla/utils
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
@@ -563,14 +562,6 @@ ifeq ($(HAVE_LIBLO),true)
 		$(DESTDIR)$(BINDIR)/carla-control
 endif
 
-	# Install the real modgui bridge
-	install -m 755 \
-		data/carla-bridge-lv2-modgui \
-		$(DESTDIR)$(LIBDIR)/carla
-
-	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
-		$(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
-
 	# Install frontend
 	install -m 644 \
 		source/frontend/carla \
@@ -589,10 +580,6 @@ endif
 	install -m 644 \
 		source/frontend/dialogs/*.py \
 		$(DESTDIR)$(DATADIR)/carla/dialogs/
-
-	install -m 644 \
-		source/frontend/modgui/*.py \
-		$(DESTDIR)$(DATADIR)/carla/modgui/
 
 	install -m 644 \
 		source/frontend/patchcanvas/*.py \
@@ -672,7 +659,6 @@ endif
 	# Install resources (re-use python files)
 	$(LINK) ../common                      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../dialogs                     $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../modgui                      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../patchcanvas                 $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../utils                       $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../widgets                     $(DESTDIR)$(DATADIR)/carla/resources
@@ -779,16 +765,6 @@ ifeq ($(HAVE_FRONTEND),true)
 	# Link styles for vst plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
 	$(LINK) ../../carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
-endif
-endif
-
-	# -------------------------------------------------------------------------------------------------------------
-
-ifneq ($(HAVE_FRONTEND),true)
-	# Remove gui files for non-gui build
-	rm $(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
-ifeq ($(CAN_GENERATE_LV2_TTL),true)
-	rm $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/carla-bridge-lv2-modgui
 endif
 endif
 
