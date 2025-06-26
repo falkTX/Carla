@@ -1140,7 +1140,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeMidiBank:
-                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+                        if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
                         {
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventMidiBank);
                             fShmRtClientControl.writeUInt(event.time);
@@ -1151,7 +1151,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+                        if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
                         {
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventMidiProgram);
                             fShmRtClientControl.writeUInt(event.time);
