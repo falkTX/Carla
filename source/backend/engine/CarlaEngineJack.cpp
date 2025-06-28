@@ -41,7 +41,7 @@
 #include "jackbridge/JackBridge.hpp"
 
 #ifdef JACKBRIDGE_DIRECT
-# define JackPortIsControlVoltage 0x100
+# define JackPortIsCV 0x20
 #endif
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
@@ -83,7 +83,7 @@ struct CarlaJackPortHints {
         ph.isCV       = false;
         ph.isOSC      = false;
 
-        if (ph.isAudio && portFlags & JackPortIsControlVoltage)
+        if (ph.isAudio && portFlags & JackPortIsCV)
         {
             ph.isAudio = false;
             ph.isCV    = true;
@@ -991,7 +991,7 @@ public:
                 jackPort = jackbridge_port_register(fJackClient,
                                                     realName,
                                                     JACK_DEFAULT_AUDIO_TYPE,
-                                                    static_cast<uint64_t>(JackPortIsControlVoltage |
+                                                    static_cast<uint64_t>(JackPortIsCV |
                                                                           (isInput ? JackPortIsInput
                                                                                    : JackPortIsOutput)),
                                                     0);
