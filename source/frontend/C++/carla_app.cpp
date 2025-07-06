@@ -58,8 +58,8 @@ CarlaApplication::CarlaApplication(const QString appName, int& argc, char* argv[
         QApplication.addLibraryPath(CWD)
 
     // Needed for local wine build
-    if WINDOWS and CWD.endswith(("frontend", "resources")) and os.getenv("CXFREEZE") is None:
-        if kIs64bit:
+    if CARLA_OS_WIN and CWD.endswith(("frontend", "resources")) and os.getenv("CXFREEZE") is None:
+        if CARLA_OS_64BIT:
             path = "H:\\builds\\msys2-x86_64\\mingw64\\share\\qt5\\plugins"
         else:
             path = "H:\\builds\\msys2-i686\\mingw32\\share\\qt5\\plugins"

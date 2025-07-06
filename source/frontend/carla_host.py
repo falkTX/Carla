@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
@@ -218,7 +218,7 @@ class HostWindow(QMainWindow):
         self.fOscAddressTCP      = ""
         self.fOscAddressUDP      = ""
 
-        if MACOS:
+        if CARLA_OS_MAC:
             self.fMacClosingHelper = True
 
         # CancelableActionCallback Box
@@ -301,7 +301,7 @@ class HostWindow(QMainWindow):
         else:
             self.ui.act_engine_start.setEnabled(True)
 
-            if WINDOWS:
+            if CARLA_OS_WIN:
                 self.ui.tabWidget.removeTab(2)
 
         if self.host.isControl:
@@ -352,7 +352,7 @@ class HostWindow(QMainWindow):
             self.ui.menu_Canvas.menuAction().setVisible(False)
             self.ui.tw_miniCanvas.hide()
             self.ui.tabWidget.removeTab(1)
-            if WINDOWS:
+            if CARLA_OS_WIN:
                 self.ui.tabWidget.tabBar().hide()
 
         # ----------------------------------------------------------------------------------------------------
@@ -467,7 +467,7 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (special stuff for Mac OS)
 
-        if MACOS:
+        if CARLA_OS_MAC:
             self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
             self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
             self.ui.act_help_about.setMenuRole(QAction.AboutRole)
@@ -2029,7 +2029,7 @@ class HostWindow(QMainWindow):
                 folder = diskFolders[i]
                 self.ui.cb_disk.addItem(os.path.basename(folder), folder)
 
-            #if MACOS and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, bool):
+            #if CARLA_OS_MAC and not settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, bool):
             #    self.setUnifiedTitleAndToolBarOnMac(True)
 
             showMeters = settings.value("ShowMeters", True, bool)
@@ -2839,10 +2839,10 @@ class HostWindow(QMainWindow):
 
         # set our gui as parent for all plugins UIs
         if self.host.manageUIs and not self.host.isControl:
-            if MACOS:
+            if CARLA_OS_MAC:
                 nsViewPtr = int(self.winId())
                 winIdStr  = "%x" % gCarla.utils.cocoa_get_window(nsViewPtr)
-            elif WINDOWS or QApplication.platformName() == "xcb":
+            elif CARLA_OS_WIN or QApplication.platformName() == "xcb":
                 winIdStr = "%x" % int(self.winId())
             else:
                 winIdStr = "0"
@@ -3004,7 +3004,7 @@ class HostWindow(QMainWindow):
     #def paintEvent(self, event):
         #QMainWindow.paintEvent(self, event)
 
-        #if MACOS or not self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING]:
+        #if CARLA_OS_MAC or not self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING]:
             #return
 
         #painter = QPainter(self)
@@ -3040,7 +3040,7 @@ class HostWindow(QMainWindow):
 
         patchcanvas.handleAllPluginsRemoved()
 
-        if MACOS and self.fMacClosingHelper and not (self.host.isControl or self.host.isPlugin):
+        if CARLA_OS_MAC and self.fMacClosingHelper and not (self.host.isControl or self.host.isPlugin):
             self.fCustomStopAction = self.CUSTOM_ACTION_APP_CLOSE
             self.fMacClosingHelper = False
             event.ignore()
@@ -3350,7 +3350,7 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     # Print info
 
     if not (gCarla.nogui and isinstance(gCarla.nogui, int)):
-        print("Carla %s started, status:" % VERSION)
+        print("Carla %s started, status:" % CARLA_VERSION_STRING)
         print("  Python version: %s" % sys.version.split(" ",1)[0])
         print("  Qt version:     %s" % QT_VERSION_STR)
         print("  PyQt version:   %s" % PYQT_VERSION_STR)
@@ -3429,7 +3429,7 @@ def loadHostSettings(host):
     host.preferPluginBridges = settings.value(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, bool)
     host.preferUIBridges = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, bool)
     host.preventBadBehaviour = settings.value(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, bool)
-    host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, bool) and not WINDOWS
+    host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, bool) and not CARLA_OS_WIN
     host.showPluginBridges = settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES, bool)
     host.showWineBridges = settings.value(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES, bool)
     host.uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, int)

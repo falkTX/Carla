@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Carla Backend code
-# Copyright (C) 2011-2021 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -36,14 +22,27 @@ from ctypes import (
 # Imports (Custom)
 
 from common import (
-    kIs64bit, HAIKU, LINUX, MACOS, WINDOWS, VERSION
+    CARLA_OS_64BIT,
+    CARLA_OS_BSD,
+    CARLA_OS_GNU_HURD,
+    CARLA_OS_HAIKU,
+    CARLA_OS_LINUX,
+    CARLA_OS_MAC,
+    CARLA_OS_UNIX,
+    CARLA_OS_WASM,
+    CARLA_OS_WIN,
+    CARLA_OS_WIN32,
+    CARLA_OS_WIN64,
+    CARLA_VERSION_HEX,
+    CARLA_VERSION_STRING,
+    CARLA_VERSION_STRMIN,
 )
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Define custom types
 
 c_enum = c_int
-c_uintptr = c_uint64 if kIs64bit else c_uint32
+c_uintptr = c_uint64 if CARLA_OS_64BIT else c_uint32
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Convert a ctypes c_char_p into a python string
@@ -1513,10 +1512,14 @@ PyCarlaRuntimeEngineDriverDeviceInfo = {
 # ---------------------------------------------------------------------------------------------------------------------
 # Set BINARY_NATIVE
 
-if WINDOWS:
-    BINARY_NATIVE = BINARY_WIN64 if kIs64bit else BINARY_WIN32
+if CARLA_OS_WIN64:
+    BINARY_NATIVE = BINARY_WIN64
+elif CARLA_OS_WIN32:
+    BINARY_NATIVE = BINARY_WIN32
+elif CARLA_OS_64BIT:
+    BINARY_NATIVE = BINARY_POSIX64
 else:
-    BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
+    BINARY_NATIVE = BINARY_POSIX32
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Carla Host object (Meta)

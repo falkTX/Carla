@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-# Common Carla code
-# Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -25,40 +11,43 @@ from sys import platform, maxsize
 # ---------------------------------------------------------------------------------------------------------------------
 # Set Version
 
-VERSION = "2.6.0-alpha1"
-
-# ---------------------------------------------------------------------------------------------------------------------
-# 64bit check
-
-kIs64bit = bool(architecture()[0] == "64bit" and maxsize > 2**32)
+CARLA_VERSION_HEX    = 0x020591
+CARLA_VERSION_STRING = "2.6.0-alpha1"
+CARLA_VERSION_STRMIN = "2.6"
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Set Platform
 
+CARLA_OS_BSD = False
+CARLA_OS_GNU_HURD = False
+CARLA_OS_HAIKU = False
+CARLA_OS_LINUX = False
+CARLA_OS_MAC = False
+CARLA_OS_UNIX = False
+CARLA_OS_WASM = False
+CARLA_OS_WIN = False
+CARLA_OS_WIN32 = False
+CARLA_OS_WIN64 = False
+
 if platform == "darwin":
-    HAIKU   = False
-    LINUX   = False
-    MACOS   = True
-    WINDOWS = False
-elif "haiku" in platform:
-    HAIKU   = True
-    LINUX   = False
-    MACOS   = False
-    WINDOWS = False
-elif "linux" in platform:
-    HAIKU   = False
-    LINUX   = True
-    MACOS   = False
-    WINDOWS = False
-elif platform in ("win32", "win64", "cygwin"):
-    HAIKU   = False
-    LINUX   = False
-    MACOS   = False
-    WINDOWS = True
-else:
-    HAIKU   = False
-    LINUX   = False
-    MACOS   = False
-    WINDOWS = False
+    CARLA_OS_MAC = True
+elif platform == "haiku":
+    CARLA_OS_HAIKU = True
+elif platform == "linux":
+    CARLA_OS_LINUX = True
+elif platform == "win32":
+    CARLA_OS_WIN32 = True
+elif platform == "win64":
+    CARLA_OS_WIN64 = True
+
+if CARLA_OS_WIN32 and CARLA_OS_WIN64:
+    CARLA_OS_WIN = True
+elif CARLA_OS_BSD or CARLA_OS_GNU_HURD or CARLA_OS_LINUX or CARLA_OS_MAC:
+    CARLA_OS_UNIX = True
+
+# ---------------------------------------------------------------------------------------------------------------------
+# 64bit check
+
+CARLA_OS_64BIT = bool(architecture()[0] == "64bit" and maxsize > 2**32)
 
 # ---------------------------------------------------------------------------------------------------------------------

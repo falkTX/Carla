@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
@@ -47,8 +47,10 @@ import ui_carla_edit
 import ui_carla_parameter
 
 from carla_backend import (
-    MACOS, WINDOWS,
     BINARY_NATIVE,
+    CARLA_VERSION_STRING,
+    CARLA_OS_MAC,
+    CARLA_OS_WIN,
     PLUGIN_INTERNAL,
     PLUGIN_DSSI,
     PLUGIN_LV2,
@@ -92,7 +94,6 @@ from carla_backend import (
 
 from carla_shared import (
     MIDI_CC_LIST, MAX_MIDI_CC_LIST_ITEM,
-    VERSION,
     countDecimalPoints,
     fontMetricsHorizontalAdvance,
     setUpSignals,
@@ -100,7 +101,6 @@ from carla_shared import (
 )
 
 from carla_utils import getPluginTypeAsString
-#)
 
 from widgets.collapsablewidget import CollapsibleBox
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
@@ -132,8 +132,8 @@ class CarlaAboutW(QDialog):
         self.ui.l_about.setText(self.tr(""
                                         "<br>Version %s"
                                         "<br>Carla is a fully-featured audio plugin host%s.<br>"
-                                        "<br>Copyright (C) 2011-2022 falkTX<br>"
-                                        "" % (VERSION, extraInfo)))
+                                        "<br>Copyright (C) 2011-2025 falkTX<br>"
+                                        "" % (CARLA_VERSION_STRING, extraInfo)))
 
         if self.ui.about.palette().color(QPalette.Background).blackF() < 0.5:
             self.ui.l_icons.setPixmap(QPixmap(":/bitmaps/carla_about_black.png"))
@@ -216,7 +216,7 @@ class CarlaAboutW(QDialog):
         self.ui.l_vst2.setText(self.tr("About 85&#37; complete (missing vst bank/presets and some minor stuff)"))
         self.ui.l_vst3.setText(self.tr("About 66&#37; complete"))
 
-        if MACOS:
+        if CARLA_OS_MAC:
             self.ui.l_au.setText(self.tr("About 20&#37; complete"))
         else:
             self.ui.line_vst3.hide()
@@ -234,12 +234,12 @@ class CarlaAboutW(QDialog):
         flags  = self.windowFlags()
         flags &= ~Qt.WindowContextHelpButtonHint
 
-        if WINDOWS:
+        if CARLA_OS_WIN:
             flags |= Qt.MSWindowsFixedSizeDialogHint
 
         self.setWindowFlags(flags)
 
-        if MACOS:
+        if CARLA_OS_MAC:
             self.setWindowModality(Qt.WindowModal)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1281,7 +1281,7 @@ class PluginEdit(QDialog):
 
         QDialog.setVisible(self, yesNo)
 
-        if MACOS and yesNo:
+        if CARLA_OS_MAC and yesNo:
             parent = self.parent()
             if parent is None:
                 return

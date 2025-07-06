@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
@@ -18,6 +18,8 @@ from ctypes import CDLL, RTLD_GLOBAL
 
 from qt_compat import qt_config
 
+# pylint: disable=import-error
+
 if qt_config == 5:
     from PyQt5.QtCore import QT_VERSION, Qt, QCoreApplication, QLibraryInfo, QLocale, QTranslator
     from PyQt5.QtGui import QColor, QIcon, QPalette
@@ -27,17 +29,26 @@ elif qt_config == 6:
     from PyQt6.QtGui import QColor, QIcon, QPalette
     from PyQt6.QtWidgets import QApplication
 
+# pylint: enable=import-error
+# pylint: disable=possibly-used-before-assignment
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from carla_backend import kIs64bit, LINUX, MACOS, WINDOWS
+from carla_backend import (
+    CARLA_OS_64BIT,
+    CARLA_OS_LINUX,
+    CARLA_OS_MAC,
+    CARLA_OS_WIN,
+    CARLA_VERSION_STRING,
+)
 
 from carla_shared import (
     CARLA_KEY_MAIN_USE_PRO_THEME,
     CARLA_KEY_MAIN_PRO_THEME_COLOR,
     CARLA_DEFAULT_MAIN_USE_PRO_THEME,
     CARLA_DEFAULT_MAIN_PRO_THEME_COLOR,
-    CWD, VERSION,
+    CWD,
     getPaths,
     gCarla
 )
@@ -50,13 +61,13 @@ class CarlaApplication():
     def __init__(self, appName = "Carla2", libPrefix = None):
         pathBinaries, pathResources = getPaths(libPrefix)
 
-        # Needed for MacOS and Windows
-        if os.path.exists(CWD) and (MACOS or WINDOWS):
+        # Needed for macOS and Windows
+        if os.path.exists(CWD) and (CARLA_OS_MAC or CARLA_OS_WIN):
             QApplication.addLibraryPath(CWD)
 
         # Needed for local wine build
-        if WINDOWS and CWD.endswith(("frontend", "resources")) and os.getenv("CXFREEZE") is None:
-            if kIs64bit:
+        if CARLA_OS_WIN and CWD.endswith(("frontend", "resources")) and os.getenv("CXFREEZE") is None:
+            if CARLA_OS_64BIT:
                 path = "H:\\PawPawBuilds\\targets\\win64\\lib\\qt5\\plugins"
             else:
                 path = "H:\\PawPawBuilds\\targets\\win32\\lib\\qt5\\plugins"
@@ -94,7 +105,7 @@ class CarlaApplication():
 
         # base settings
         settings    = QSafeSettings("falkTX", appName)
-        useProTheme = MACOS or settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, bool)
+        useProTheme = CARLA_OS_MAC or settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, bool)
 
         if not useProTheme:
             self.createApp(appName)
@@ -111,7 +122,7 @@ class CarlaApplication():
 
         self.fApp.setStyle("carla" if stylesDir else "fusion")
 
-        if WINDOWS:
+        if CARLA_OS_WIN:
             carlastyle1 = os.path.join(pathBinaries, "styles", "carlastyle.dll")
             carlastyle2 = os.path.join(pathResources, "styles", "carlastyle.dll")
             carlastyle = carlastyle2 if os.path.exists(carlastyle2) else carlastyle1
@@ -123,14 +134,14 @@ class CarlaApplication():
         # set palette
         proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, str).lower()
 
-        if MACOS or proThemeColor == "black":
+        if CARLA_OS_MAC or proThemeColor == "black":
             self.createPaletteBlack()
 
         elif proThemeColor == "blue":
             self.createPaletteBlue()
 
     def createApp(self, appName):
-        if qt_config == 5 and LINUX:
+        if qt_config == 5 and CARLA_OS_LINUX:
             # AA_X11InitThreads is not available on old PyQt versions
             try:
                 attr = Qt.AA_X11InitThreads
@@ -142,17 +153,17 @@ class CarlaApplication():
                 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
                 QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
-        if MACOS:
+        if CARLA_OS_MAC:
             QApplication.setAttribute(Qt.AA_DontShowIconsInMenus)
 
         args = sys.argv[:]
 
-        if WINDOWS:
+        if CARLA_OS_WIN:
             args += ["-platform", "windows:fontengine=freetype"]
 
         self.fApp = QCoreApplication(args) if gCarla.nogui else QApplication(args)
         self.fApp.setApplicationName(appName)
-        self.fApp.setApplicationVersion(VERSION)
+        self.fApp.setApplicationVersion(CARLA_VERSION_STRING)
         self.fApp.setOrganizationName("falkTX")
 
         if self.fAppTranslator is not None:
@@ -306,3 +317,4 @@ class CarlaApplication():
         self.fApp.quit()
 
 # ------------------------------------------------------------------------------------------------------------
+# pylint: enable=possibly-used-before-assignment

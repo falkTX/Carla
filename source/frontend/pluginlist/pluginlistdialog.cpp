@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "pluginlistdialog.hpp"
@@ -908,7 +908,7 @@ PluginListDialog::PluginListDialog(QWidget* const parent, const HostSettings* co
 
 #if 0
     // NOTE: We Assume win32 carla build will not run win64 plugins
-    if (WINDOWS and not kIs64bit) or not host.showPluginBridges:
+    if (CARLA_OS_WIN and not CARLA_OS_64BIT) or not host.showPluginBridges:
         ui.ch_native.setChecked(True)
         ui.ch_native.setEnabled(False)
         ui.ch_native.setVisible(True)

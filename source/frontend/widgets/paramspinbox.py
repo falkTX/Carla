@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
@@ -24,7 +24,8 @@ elif qt_config == 6:
 
 import ui_inputdialog_value
 
-from carla_shared import countDecimalPoints, MACOS
+from carla_backend import CARLA_OS_MAC
+from carla_shared import countDecimalPoints
 
 # ------------------------------------------------------------------------------------------------------------
 # Get a fixed value within min/max bounds
@@ -59,7 +60,7 @@ class CustomInputDialog(QDialog):
         self.ui.doubleSpinBox.setPrefix(prefix)
         self.ui.doubleSpinBox.setSuffix(suffix)
 
-        if MACOS:
+        if CARLA_OS_MAC:
             self.setWindowModality(Qt.WindowModal)
 
         if not scalePoints:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ elif qt_config == 6:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
-from carla_backend import CUSTOM_DATA_TYPE_PROPERTY, MACOS
+from carla_backend import CARLA_OS_MAC, CUSTOM_DATA_TYPE_PROPERTY
 from carla_shared import gCarla, CustomMessageBox
 from carla_skin import createPluginSlot
 
@@ -259,7 +259,7 @@ class RackListWidget(QListWidget):
         if os.path.isdir(filename):
             #if os.path.exists(os.path.join(filename, "manifest.ttl")):
                 #return True
-            if MACOS and lfilename.endswith(".vst"):
+            if CARLA_OS_MAC and lfilename.endswith(".vst"):
                 return True
             if lfilename.endswith(".vst3") and ".vst3" in self.fSupportedExtensions:
                 return True

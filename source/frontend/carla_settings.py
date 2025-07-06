@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -21,7 +21,9 @@ import ui_carla_settings
 import ui_carla_settings_driver
 
 from carla_backend import (
-    LINUX, MACOS, WINDOWS,
+    CARLA_OS_LINUX,
+    CARLA_OS_MAC,
+    CARLA_OS_WIN,
     ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL,
     ENGINE_DRIVER_DEVICE_CAN_TRIPLE_BUFFER,
     ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE,
@@ -215,7 +217,7 @@ class DriverSettingsW(QDialog):
 
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
-        if MACOS:
+        if CARLA_OS_MAC:
             self.setWindowModality(Qt.WindowModal)
 
         # -------------------------------------------------------------------------------------------------------------
@@ -406,7 +408,7 @@ class RuntimeDriverSettingsW(QDialog):
         self.adjustSize()
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
-        if MACOS:
+        if CARLA_OS_MAC:
             self.setWindowModality(Qt.WindowModal)
 
         # -------------------------------------------------------------------------------------------------------------
@@ -533,11 +535,11 @@ class CarlaSettingsW(QDialog):
         for i in range(Theme.THEME_MAX):
             self.ui.cb_canvas_theme.addItem(getThemeName(i))
 
-        if MACOS:
+        if CARLA_OS_MAC:
             self.ui.group_main_theme.setEnabled(False)
             self.ui.group_main_theme.setVisible(False)
 
-        if WINDOWS or host.isControl:
+        if CARLA_OS_WIN or host.isControl:
             self.ui.ch_main_show_logs.setEnabled(False)
             self.ui.ch_main_show_logs.setVisible(False)
 
@@ -576,15 +578,15 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_page.hideRow(self.TAB_INDEX_OSC)
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
-        if not LINUX:
+        if not CARLA_OS_LINUX:
             self.ui.ch_exp_wine_bridges.setVisible(False)
             self.ui.ch_exp_prevent_bad_behaviour.setVisible(False)
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
-        if not MACOS:
+        if not CARLA_OS_MAC:
             self.ui.label_engine_ui_bridges_mac_note.setVisible(False)
 
-        if not (LINUX or MACOS):
+        if not (CARLA_OS_LINUX or CARLA_OS_MAC):
             self.ui.ch_exp_jack_apps.setVisible(False)
 
         # FIXME, not implemented yet
@@ -599,7 +601,7 @@ class CarlaSettingsW(QDialog):
 
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
-        if MACOS:
+        if CARLA_OS_MAC:
             self.setWindowModality(Qt.WindowModal)
 
         # -------------------------------------------------------------------------------------------------------------

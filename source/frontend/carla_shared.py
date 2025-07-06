@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # ------------------------------------------------------------------------------------------------------------
@@ -26,6 +26,8 @@ except:
 
 from qt_compat import qt_config
 
+# pylint: disable=import-error
+
 if qt_config == 5:
     # import changed in PyQt 5.15.8, so try both
     try:
@@ -42,18 +44,24 @@ elif qt_config == 6:
     from PyQt6.QtGui import QIcon
     from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
+# pylint: enable=import-error
+# pylint: disable=possibly-used-before-assignment
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 from carla_backend import (
+    CARLA_OS_64BIT,
+    CARLA_OS_HAIKU,
+    CARLA_OS_MAC,
+    CARLA_OS_WIN,
+    CARLA_VERSION_STRING,
     MAX_DEFAULT_PARAMETERS,
     ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,
     ENGINE_PROCESS_MODE_PATCHBAY,
     ENGINE_TRANSPORT_MODE_INTERNAL,
-    ENGINE_TRANSPORT_MODE_JACK
+    ENGINE_TRANSPORT_MODE_JACK,
 )
-
-from common import kIs64bit, HAIKU, LINUX, MACOS, WINDOWS, VERSION
 
 # ------------------------------------------------------------------------------------------------------------
 # Config
@@ -65,7 +73,7 @@ X_DATADIR_X = None
 # ------------------------------------------------------------------------------------------------------------
 # Platform specific stuff
 
-if WINDOWS:
+if CARLA_OS_WIN:
     WINDIR = os.getenv("WINDIR")
 
 # ------------------------------------------------------------------------------------------------------------
@@ -74,7 +82,7 @@ if WINDOWS:
 envTMP = os.getenv("TMP")
 
 if envTMP is None:
-    if WINDOWS:
+    if CARLA_OS_WIN:
         qWarning("TMP variable not set")
     TMP = QDir.tempPath()
 else:
@@ -92,7 +100,7 @@ del envTMP
 envHOME = os.getenv("HOME")
 
 if envHOME is None:
-    if not WINDOWS:
+    if not CARLA_OS_WIN:
         qWarning("HOME variable not set")
     HOME = QDir.toNativeSeparators(QDir.homePath())
 else:
@@ -111,9 +119,9 @@ envPATH = os.getenv("PATH")
 
 if envPATH is None:
     qWarning("PATH variable not set")
-    if MACOS:
+    if CARLA_OS_MAC:
         PATH = ("/opt/local/bin", "/usr/local/bin", "/usr/bin", "/bin")
-    elif WINDOWS:
+    elif CARLA_OS_WIN:
         PATH = (os.path.join(WINDIR, "system32"), WINDIR)
     else:
         PATH = ("/usr/local/bin", "/usr/bin", "/bin")
@@ -262,7 +270,7 @@ CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  = "Black"
 CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
 CARLA_DEFAULT_MAIN_CONFIRM_EXIT     = True
 CARLA_DEFAULT_MAIN_CLASSIC_SKIN     = False
-CARLA_DEFAULT_MAIN_SHOW_LOGS        = bool(not WINDOWS)
+CARLA_DEFAULT_MAIN_SHOW_LOGS        = bool(not CARLA_OS_WIN)
 CARLA_DEFAULT_MAIN_SYSTEM_ICONS     = False
 CARLA_DEFAULT_MAIN_EXPERIMENTAL     = False
 
@@ -296,11 +304,11 @@ CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 512
 CARLA_DEFAULT_AUDIO_SAMPLE_RATE     = 44100
 CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER   = False
 
-if HAIKU:
+if CARLA_OS_HAIKU:
     CARLA_DEFAULT_AUDIO_DRIVER = "SDL"
-elif MACOS:
+elif CARLA_OS_MAC:
     CARLA_DEFAULT_AUDIO_DRIVER = "CoreAudio"
-elif WINDOWS:
+elif CARLA_OS_WIN:
     CARLA_DEFAULT_AUDIO_DRIVER = "Windows Audio"
 elif os.path.exists("/usr/bin/jackd") or os.path.exists("/usr/bin/jackdbus") or os.path.exists("/usr/bin/pw-jack"):
     CARLA_DEFAULT_AUDIO_DRIVER = "JACK"
@@ -315,7 +323,7 @@ else:
     CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
 
 # OSC
-CARLA_DEFAULT_OSC_ENABLED = not (MACOS or WINDOWS)
+CARLA_DEFAULT_OSC_ENABLED = not (CARLA_OS_MAC or CARLA_OS_WIN)
 CARLA_DEFAULT_OSC_TCP_PORT_ENABLED = True
 CARLA_DEFAULT_OSC_TCP_PORT_NUMBER  = 22752
 CARLA_DEFAULT_OSC_TCP_PORT_RANDOM  = False
@@ -358,7 +366,7 @@ DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
 DEFAULT_JSFX_PATH   = ""
 
-if WINDOWS:
+if CARLA_OS_WIN:
     splitter = ";"
 
     APPDATA = os.getenv("APPDATA")
@@ -396,7 +404,7 @@ if WINDOWS:
     DEFAULT_JSFX_PATH    = APPDATA + "\\REAPER\\Effects"
     #DEFAULT_JSFX_PATH   += ";" + PROGRAMFILES + "\\REAPER\\InstallData\\Effects"
 
-    if kIs64bit:
+    if CARLA_OS_64BIT:
         DEFAULT_VST2_PATH  += ";" + COMMONPROGRAMFILES + "\\VST2"
 
     DEFAULT_VST3_PATH    = COMMONPROGRAMFILES + "\\VST3"
@@ -419,7 +427,7 @@ if WINDOWS:
         DEFAULT_VST3_PATH   += COMMONPROGRAMFILESx86 + "\\VST3"
         DEFAULT_CLAP_PATH   += COMMONPROGRAMFILESx86 + "\\CLAP"
 
-elif HAIKU:
+elif CARLA_OS_HAIKU:
     splitter = ":"
 
     DEFAULT_LADSPA_PATH  = HOME + "/.ladspa"
@@ -442,7 +450,7 @@ elif HAIKU:
     DEFAULT_CLAP_PATH    = HOME + "/.clap"
     DEFAULT_CLAP_PATH   += ":/system/add-ons/media/clapplugins"
 
-elif MACOS:
+elif CARLA_OS_MAC:
     splitter = ":"
 
     DEFAULT_LADSPA_PATH  = HOME + "/Library/Audio/Plug-Ins/LADSPA"
@@ -511,7 +519,7 @@ else:
     DEFAULT_JSFX_PATH    = CONFIG_HOME + "/REAPER/Effects"
     #DEFAULT_JSFX_PATH   += ":" + "/opt/REAPER/InstallData/Effects"
 
-if not WINDOWS:
+if not CARLA_OS_WIN:
     winePrefix = os.getenv("WINEPREFIX")
 
     if not winePrefix:
@@ -525,7 +533,7 @@ if not WINDOWS:
     DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3"
     DEFAULT_CLAP_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/CLAP"
 
-    if kIs64bit:
+    if CARLA_OS_64BIT:
         DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
         DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VSTPlugins"
         DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Steinberg/VstPlugins"
@@ -540,7 +548,7 @@ if not WINDOWS:
 
 readEnvVars = True
 
-if WINDOWS:
+if CARLA_OS_WIN:
     # Check if running Wine. If yes, ignore env vars
     # pylint: disable=import-error
     from winreg import ConnectRegistry, OpenKey, CloseKey, HKEY_CURRENT_USER
@@ -620,7 +628,7 @@ if os.path.isfile(CWD):
     if CWD.endswith("/lib"):
         CWD = CWD.rsplit("/lib",1)[0]
     CXFREEZE = True
-    if not WINDOWS:
+    if not CARLA_OS_WIN:
         os.environ['CARLA_MAGIC_FILE'] = os.path.join(CWD, "magic.mgc")
 else:
     CXFREEZE = False
@@ -628,9 +636,9 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Set DLL_EXTENSION
 
-if WINDOWS:
+if CARLA_OS_WIN:
     DLL_EXTENSION = "dll"
-elif MACOS:
+elif CARLA_OS_MAC:
     DLL_EXTENSION = "dylib"
 else:
     DLL_EXTENSION = "so"
@@ -708,7 +716,7 @@ def handleInitialCommandLineArguments(file):
         elif arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui"):
             gCarla.nogui = True
 
-        elif MACOS and arg.startswith("-psn_"):
+        elif CARLA_OS_MAC and arg.startswith("-psn_"):
             pass
 
         elif arg in ("-h", "--h", "-help", "--help"):
@@ -737,7 +745,7 @@ def handleInitialCommandLineArguments(file):
         elif arg in ("-v", "--v", "-version", "--version"):
             pathBinaries, pathResources = getPaths(libPrefix)
 
-            print("Using Carla version %s" % VERSION)
+            print("Using Carla version %s" % CARLA_VERSION_STRING)
             print("  Python version: %s" % sys.version.split(" ",1)[0])
             print("  Qt version:     %s" % QT_VERSION_STR)
             print("  PyQt version:   %s" % PYQT_VERSION_STR)
@@ -785,7 +793,7 @@ def getInitialProjectFile(skipExistCheck = False):
             continue
         if arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui", "--gdb"):
             continue
-        if MACOS and arg.startswith("-psn_"):
+        if CARLA_OS_MAC and arg.startswith("-psn_"):
             continue
         arg = os.path.expanduser(arg)
         if skipExistCheck or os.path.exists(arg):
@@ -914,7 +922,10 @@ def CustomMessageBox(parent, icon, title, text,
     msgBox.setInformativeText(extraText)
     msgBox.setStandardButtons(buttons)
     msgBox.setDefaultButton(defButton)
+    # pylint: disable=no-value-for-parameter
     return msgBox.exec_()
+    # pylint: enable=no-value-for-parameter
 # pylint: enable=too-many-arguments
 
 # ------------------------------------------------------------------------------------------------------------
+# pylint: enable=possibly-used-before-assignment
