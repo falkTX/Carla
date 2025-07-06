@@ -1,0 +1,50 @@
+name: pylint
+
+on: [push]
+
+jobs:
+  pyqt5:
+    runs-on: ubuntu-22.04
+    name: pyqt5
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install deps
+        run: |
+          sudo apt install -yqq pyqt5-dev-tools python3-pyqt5 python3-pyqt5.qtsvg python3-virtualenv
+          virtualenv carla-env
+          source carla-env/bin/activate
+          pip3 install pylint pyqt5
+      - name: Build frontend
+        run: |
+          make FRONTEND_TYPE=5 frontend -j $(nproc)
+      - name: Run pylint
+        run: |
+          virtualenv carla-env
+          source carla-env/bin/activate
+          pylint -E source/frontend/carla_app.py
+          pylint -E source/frontend/carla_backend.py
+          pylint -E source/frontend/carla_shared.py
+          pylint -E source/frontend/carla_utils.py
+
+  pyqt6:
+    runs-on: ubuntu-22.04
+    name: pyqt6
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install deps
+        run: |
+          sudo apt install -yqq pyqt6-dev-tools python3-pyqt6 python3-pyqt6.qtsvg python3-virtualenv
+          virtualenv carla-env
+          source carla-env/bin/activate
+          pip3 install pylint pyqt6
+      - name: Build frontend
+        run: |
+          make FRONTEND_TYPE=6 frontend -j $(nproc)
+      - name: Run pylint
+        run: |
+          virtualenv carla-env
+          source carla-env/bin/activate
+          pylint -E source/frontend/carla_app.py
+          pylint -E source/frontend/carla_backend.py
+          pylint -E source/frontend/carla_shared.py
+          pylint -E source/frontend/carla_utils.py
