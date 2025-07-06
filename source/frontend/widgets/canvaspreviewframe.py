@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -199,7 +199,11 @@ class CanvasPreviewFrame(QFrame):
             return
         if self.fMouseMode == self._MOUSE_MODE_SCALE:
             event.accept()
-            self._scaleViewRect(event.globalY())
+            if qt_config == 5:
+                y = event.globalY()
+            else:
+                y = event.globalPosition().y()
+            self._scaleViewRect(y)
             return
         QFrame.mouseMoveEvent(self, event)
 
@@ -384,24 +388,28 @@ class CanvasPreviewFrame(QFrame):
             self.setCursor(self.fZoomCursors[self._kCursorZoomIn if dy > 0 else self._kCursorZoomOut])
             self.fScene.zoom_wheel(dy)
 
+        # FIXME do not rely on this
         self.cursor().setPos(self.fMouseInitialZoomPos)
 
     def _updateMouseMode(self, event):
         if self.fMouseLeftDown and self.fMouseRightDown:
-            self.fMouseInitialZoomPos = event.globalPos()
+            if qt_config == 5:
+                self.fMouseInitialZoomPos = event.globalPos()
+            else:
+                self.fMouseInitialZoomPos = event.globalPosition().toPoint()
             self.setCursor(self.fZoomCursors[self._kCursorZoom])
             self.fMouseMode = self._MOUSE_MODE_SCALE
 
         elif self.fMouseLeftDown:
             self.setCursor(QCursor(Qt.SizeAllCursor))
             if self.fMouseMode == self._MOUSE_MODE_NONE:
-                if QT_VERSION >= 0x60000:
+                if qt_config == 5:
+                    x = event.x()
+                    y = event.y()
+                else:
                     pos = event.position()
                     x = pos.x()
                     y = pos.y()
-                else:
-                    x = event.x()
-                    y = event.y()
                 self._moveViewRect(x, y)
             self.fMouseMode = self._MOUSE_MODE_MOVE
 

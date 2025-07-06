@@ -120,18 +120,18 @@ class DraggableGraphicsView(QGraphicsView):
         if timestamp is None:
             return
 
-        if QT_VERSION >= 0x60000:
-            event = QMouseEvent(QEvent.MouseButtonPress,
-                                event.position(), event.scenePosition(), event.globalPosition(),
-                                Qt.LeftButton, Qt.LeftButton,
-                                Qt.NoModifier)
-        else:
+        if qt_config == 5:
             event = QMouseEvent(QEvent.MouseButtonPress,
                                 event.localPos(), event.windowPos(), event.screenPos(),
                                 Qt.LeftButton, Qt.LeftButton,
                                 Qt.NoModifier,
                                 Qt.MouseEventSynthesizedByApplication)
             event.setTimestamp(timestamp)
+        else:
+            event = QMouseEvent(QEvent.MouseButtonPress,
+                                event.position(), event.scenePosition(), event.globalPosition(),
+                                Qt.LeftButton, Qt.LeftButton,
+                                Qt.NoModifier)
 
         QGraphicsView.mousePressEvent(self, event)
 

@@ -10,7 +10,7 @@ from os import getenv
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
-from carla_host import VERSION
+from carla_backend import CARLA_VERSION_STRING
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -31,7 +31,7 @@ if SCRIPT_NAME in ("Carla", "Carla-Control"):
   boptions["custom_info_plist"] = "./data/macos/%s.plist" % SCRIPT_NAME
 
 setup(name = "Carla",
-      version = VERSION,
+      version = CARLA_VERSION_STRING,
       description = "Carla Plugin Host",
       options = {"build_exe": options, "bdist_mac": boptions},
       executables = [Executable("./source/frontend/%s" % SCRIPT_NAME)])

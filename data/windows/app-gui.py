@@ -9,7 +9,7 @@ from cx_Freeze import setup, Executable
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
-from carla_host import VERSION
+from carla_backend import CARLA_VERSION_STRING
 from os import getenv
 
 # ------------------------------------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ exe_options = {
 }
 
 setup(name = name,
-      version = VERSION,
+      version = CARLA_VERSION_STRING,
       description = description,
       options = {"build_exe": options},
       executables = [Executable(**exe_options)])

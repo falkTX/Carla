@@ -21,10 +21,10 @@ jobs:
         run: |
           virtualenv carla-env
           source carla-env/bin/activate
-          pylint -E source/frontend/carla_app.py
-          pylint -E source/frontend/carla_backend.py
-          pylint -E source/frontend/carla_shared.py
-          pylint -E source/frontend/carla_utils.py
+          pylint -E --extension-pkg-whitelist=PyQt5 source/frontend/carla_app.py
+          pylint -E --extension-pkg-whitelist=PyQt5 source/frontend/carla_backend.py
+          pylint -E --extension-pkg-whitelist=PyQt5 source/frontend/carla_shared.py
+          pylint -E --extension-pkg-whitelist=PyQt5 source/frontend/carla_utils.py
 
   pyqt6:
     runs-on: ubuntu-22.04
@@ -44,7 +44,7 @@ jobs:
         run: |
           virtualenv carla-env
           source carla-env/bin/activate
-          pylint -E source/frontend/carla_app.py
-          pylint -E source/frontend/carla_backend.py
-          pylint -E source/frontend/carla_shared.py
-          pylint -E source/frontend/carla_utils.py
+          pylint -E --extension-pkg-whitelist=PyQt6 source/frontend/carla_app.py
+          pylint -E --extension-pkg-whitelist=PyQt6 source/frontend/carla_backend.py
+          pylint -E --extension-pkg-whitelist=PyQt6 source/frontend/carla_shared.py
+          pylint -E --extension-pkg-whitelist=PyQt6 source/frontend/carla_utils.py

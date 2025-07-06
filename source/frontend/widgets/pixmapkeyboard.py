@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+# SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -408,7 +408,10 @@ class PixmapKeyboard(QWidget):
         if self.fPcKeybOffset == 0:
             actOctaveDown.setEnabled(False)
 
-        actSelected = menu.exec_(event.screenPos().toPoint())
+        if qt_config == 5:
+            actSelected = menu.exec_(event.screenPos().toPoint())
+        else:
+            actSelected = menu.exec_(event.globalPosition().toPoint())
 
         if not actSelected:
             return
