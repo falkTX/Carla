@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   pyqt5:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: pyqt5
     steps:
       - uses: actions/checkout@v3
@@ -27,7 +27,7 @@ jobs:
           pylint -E --extension-pkg-whitelist=PyQt5 source/frontend/carla_utils.py
 
   pyqt6:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: pyqt6
     steps:
       - uses: actions/checkout@v3
