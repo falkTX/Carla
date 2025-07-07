@@ -23,16 +23,28 @@ from carla_host import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (liblo)
 
-from liblo import (
-  Address,
-  AddressError,
-  ServerError,
-  Server,
-  make_method,
-  send as lo_send,
-  TCP as LO_TCP,
-  UDP as LO_UDP,
-)
+try:
+    from pyliblo3 import (
+      Address,
+      AddressError,
+      ServerError,
+      Server,
+      make_method,
+      send as lo_send,
+      TCP as LO_TCP,
+      UDP as LO_UDP,
+    )
+except ModuleNotFoundError:
+    from liblo import (
+      Address,
+      AddressError,
+      ServerError,
+      Server,
+      make_method,
+      send as lo_send,
+      TCP as LO_TCP,
+      UDP as LO_UDP,
+    )
 
 from random import random
 
