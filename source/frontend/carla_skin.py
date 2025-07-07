@@ -6,6 +6,7 @@
 # Imports (Global)
 
 from qt_compat import qt_config
+import math
 
 if qt_config == 5:
     from PyQt5.QtCore import Qt, QRectF, QLineF, QTimer
@@ -573,19 +574,20 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
                 paramData   = self.host.get_parameter_data(self.fPluginId, i)
                 paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
+                isBoolean   = (paramData['hints'] & PARAMETER_IS_BOOLEAN) != 0
                 isInteger   = (paramData['hints'] & PARAMETER_IS_INTEGER) != 0
 
                 if paramData['type'] != PARAMETER_INPUT:
                     continue
-                if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                    continue
+                # if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                #     continue
                 if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                     continue
                 if (paramData['hints'] & PARAMETER_USES_SCALEPOINTS) != 0 and not isInteger:
                     # NOTE: we assume integer scalepoints are continuous
                     continue
-                if isInteger and paramRanges['max']-paramRanges['min'] <= 3:
-                    continue
+                # if isInteger and paramRanges['max']-paramRanges['min'] <= 3:
+                #     continue
                 if paramInfo['name'].startswith("unused"):
                     continue
 
@@ -597,8 +599,26 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 widget.setMaximum(paramRanges['max'])
                 widget.hide()
 
-                if isInteger:
-                    widget.setPrecision(paramRanges['max']-paramRanges['min'], True)
+                delta = paramRanges['max']-paramRanges['min']
+                if delta <= 0:
+                    print("ERROR: Parameter "+str(i)+": Max and Min are same or wrong.")
+                    return
+
+                if isBoolean: # Mimic as [0 or 1] integer
+                    widget.setPrecision(1, True)
+
+                elif isInteger:
+                    while delta > 50:
+                        delta = int(math.ceil(delta / 2))
+                    widget.setPrecision(delta, True)
+
+                else:  # Floats are need to be more fine-step smoothed
+                    delta = paramRanges['max']-paramRanges['min']
+                    while delta > 500:
+                        delta = delta / 2.0
+                    while delta < 250:
+                        delta = delta * 2.0
+                    widget.setPrecision(math.ceil(delta), False)
 
                 setScalableDialStyle(widget, i, parameterCount, whiteLabels, self.fSkinStyle)
 
