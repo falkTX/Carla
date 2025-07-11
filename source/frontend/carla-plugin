@@ -5,6 +5,9 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+import platform
+LINUX = platform.system() == "Linux"
+
 from qt_compat import qt_config
 
 if qt_config == 5:
