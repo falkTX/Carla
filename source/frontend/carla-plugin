@@ -579,7 +579,7 @@ if __name__ == '__main__':
     except:
         winId = 0
 
-    usingEmbed = bool(LINUX and winId != 0)
+    usingEmbed = bool(CARLA_OS_LINUX and winId != 0)
 
     # -------------------------------------------------------------
     # Init host backend (part 1)
