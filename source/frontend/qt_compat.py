@@ -218,8 +218,14 @@ elif qt_config == 6:
 
     QMessageBox.exec_ = lambda mb: mb.exec()
 
+    QMessageBox.Cancel = QMessageBox.StandardButton.Cancel
     QMessageBox.No = QMessageBox.StandardButton.No
+    QMessageBox.Ok = QMessageBox.StandardButton.Ok
     QMessageBox.Yes = QMessageBox.StandardButton.Yes
+
+    QMessageBox.Critical = QMessageBox.Icon.Critical
+    QMessageBox.Information = QMessageBox.Icon.Information
+    QMessageBox.Warning = QMessageBox.Icon.Warning
 
     QPainter.CompositionMode_Difference = QPainter.CompositionMode.CompositionMode_Difference
     QPainter.CompositionMode_Multiply = QPainter.CompositionMode.CompositionMode_Multiply
