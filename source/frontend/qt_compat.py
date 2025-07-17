@@ -21,6 +21,7 @@ elif qt_config == 6:
         QDialog,
         QDialogButtonBox,
         QFileDialog,
+        QFrame,
         QGraphicsItem,
         QGraphicsScene,
         QGraphicsView,
@@ -29,6 +30,7 @@ elif qt_config == 6:
         QListWidgetItem,
         QMenu,
         QMessageBox,
+        QSizePolicy,
         QStyle,
     )
 
@@ -37,10 +39,15 @@ elif qt_config == 6:
 
     Qt.AA_DontShowIconsInMenus = Qt.ApplicationAttribute.AA_DontShowIconsInMenus
 
+    Qt.DownArrow = Qt.ArrowType.DownArrow
+    Qt.RightArrow = Qt.ArrowType.RightArrow
+
     Qt.IgnoreAspectRatio = Qt.AspectRatioMode.IgnoreAspectRatio
     Qt.KeepAspectRatio = Qt.AspectRatioMode.KeepAspectRatio
 
     Qt.NoBrush = Qt.BrushStyle.NoBrush
+
+    Qt.ToolButtonTextBesideIcon = Qt.ToolButtonStyle.ToolButtonTextBesideIcon
 
     Qt.Checked = Qt.CheckState.Checked
     Qt.Unchecked = Qt.CheckState.Unchecked
@@ -196,6 +203,12 @@ elif qt_config == 6:
     QFont.Bold = QFont.Weight.Bold
     QFont.Normal = QFont.Weight.Normal
 
+    QFrame.HLine = QFrame.Shape.HLine
+    QFrame.StyledPanel = QFrame.Shape.StyledPanel
+
+    QFrame.Raised = QFrame.Shadow.Raised
+    QFrame.Sunken = QFrame.Shadow.Sunken
+
     QGraphicsItem.ItemSelectedHasChanged = QGraphicsItem.GraphicsItemChange.ItemSelectedHasChanged
 
     QGraphicsItem.ItemIsFocusable = QGraphicsItem.GraphicsItemFlag.ItemIsFocusable
@@ -266,5 +279,8 @@ elif qt_config == 6:
     QPalette.WindowText = QPalette.ColorRole.WindowText
 
     QPalette.Background = QPalette.Window
+
+    QSizePolicy.Expanding = QSizePolicy.Policy.Expanding
+    QSizePolicy.Preferred = QSizePolicy.Policy.Preferred
 
     QStyle.State_Selected = QStyle.StateFlag.State_Selected
