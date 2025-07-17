@@ -25,6 +25,7 @@ elif qt_config == 6:
         QGraphicsScene,
         QGraphicsView,
         QHeaderView,
+        QLineEdit,
         QListWidgetItem,
         QMenu,
         QMessageBox,
@@ -211,6 +212,8 @@ elif qt_config == 6:
     QGraphicsView.MinimalViewportUpdate = QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate
 
     QHeaderView.Fixed = QHeaderView.ResizeMode.Fixed
+
+    QLineEdit.Normal = QLineEdit.EchoMode.Normal
 
     QListWidgetItem.UserType = QListWidgetItem.ItemType.UserType
 
