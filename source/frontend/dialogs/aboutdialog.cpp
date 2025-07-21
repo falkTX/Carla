@@ -3,26 +3,6 @@
 
 #include "aboutdialog.hpp"
 
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
-# pragma clang diagnostic ignored "-Wdeprecated-register"
-#elif defined(__GNUC__) && __GNUC__ >= 8
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wclass-memaccess"
-# pragma GCC diagnostic ignored "-Wdeprecated-copy"
-#endif
-
-// #include <QtCore/QFileInfo>
-// #include <QtCore/QVector>
-// #include <QtWidgets/QPushButton>
-
-#ifdef __clang__
-# pragma clang diagnostic pop
-#elif defined(__GNUC__) && __GNUC__ >= 8
-# pragma GCC diagnostic pop
-#endif
-
 #include "CarlaHost.h"
 
 // --------------------------------------------------------------------------------------------------------------------
