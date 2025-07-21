@@ -35,9 +35,9 @@ NON_STATIC_LINK_FLAGS = $(LINK_FLAGS)
 endif
 
 ifeq ($(WINDOWS),true)
-QT_LINK_FLAGS += -L$(BINDIR) $(BINDIR)/libcarla_utils.dll
+QT_LINK_FLAGS += -L$(BINDIR) $(BINDIR)/libcarla_standalone2.dll $(BINDIR)/libcarla_utils.dll
 else
-QT_LINK_FLAGS += -L$(BINDIR) -lcarla_utils
+QT_LINK_FLAGS += -L$(BINDIR) -lcarla_standalone2 -lcarla_utils
 endif
 
 ifeq ($(MACOS),true)
@@ -58,6 +58,7 @@ QMs = $(patsubst %,translations/carla_%.qm,$(I18N_LANGUAGES))
 
 CPP_FILES = \
 	carla_frontend.cpp \
+	dialogs/aboutdialog.cpp \
 	dialogs/jackappdialog.cpp \
 	pluginlist/pluginlistdialog.cpp
 
@@ -89,7 +90,6 @@ RES = \
 	$(BINDIR)/resources/notes-ui \
 	$(BINDIR)/resources/xycontroller-ui \
 	$(BINDIR)/resources/resources_rc.py \
-	$(BINDIR)/resources/ui_carla_about.py \
 	$(BINDIR)/resources/ui_carla_edit.py \
 	$(BINDIR)/resources/ui_carla_host.py \
 	$(BINDIR)/resources/ui_carla_osc_connect.py \
@@ -122,11 +122,8 @@ PLUGINLIST_UI_FILES = $(wildcard pluginlist/*.ui)
 UIs  = $(DIALOG_UI_FILES:dialogs/%.ui=dialogs/ui_%.h)
 UIs += $(PLUGINLIST_UI_FILES:pluginlist/%.ui=pluginlist/ui_%.h)
 
-UIs += $(DIALOG_UI_FILES:%.ui=%_ui.py)
-
 # old stuff, not yet converted
 UIs += \
-	ui_carla_about.py \
 	ui_carla_edit.py \
 	ui_carla_host.py \
 	ui_carla_osc_connect.py \

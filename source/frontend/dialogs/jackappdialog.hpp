@@ -1,21 +1,9 @@
-/*
- * Carla plugin host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
+
+#include "carla_frontend.h"
 
 #ifdef __clang__
 # pragma clang diagnostic push
@@ -27,7 +15,7 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include <QtWidgets/QDialog>
+#include "ui_jackappdialog.h"
 
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -42,8 +30,16 @@
 
 class JackAppDialog : public QDialog
 {
-    struct Self;
-    Self& self;
+    enum {
+        UI_SESSION_NONE,
+        UI_SESSION_LADISH,
+        UI_SESSION_NSM,
+    };
+
+    struct PrivateData;
+    PrivateData* const p;
+
+    Ui_JackAppDialog ui;
 
     // ----------------------------------------------------------------------------------------------------------------
 

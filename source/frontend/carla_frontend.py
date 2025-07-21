@@ -81,6 +81,9 @@ class CarlaFrontendLib():
     def __init__(self, filename):
         self.lib = cdll.LoadLibrary(filename)
 
+        self.lib.carla_frontend_createAndExecAboutDialog.argtypes = (c_void_p, c_void_p, c_bool, c_bool)
+        self.lib.carla_frontend_createAndExecAboutDialog.restype = None
+
         self.lib.carla_frontend_createAndExecJackAppDialog.argtypes = (c_void_p, c_char_p)
         self.lib.carla_frontend_createAndExecJackAppDialog.restype = POINTER(JackApplicationDialogResults)
 
@@ -98,9 +101,16 @@ class CarlaFrontendLib():
 
     # --------------------------------------------------------------------------------------------------------
 
+    def createAndExecAboutDialog(self, parent, hostHandle, isControl, isPlugin):
+        return structToDictOrNull(self.lib.carla_frontend_createAndExecAboutDialog(unwrapinstance(parent),
+                                                                                   hostHandle,
+                                                                                   isControl,
+                                                                                   isPlugin))
+
     def createAndExecJackAppDialog(self, parent, projectFilename):
-        return structToDictOrNull(self.lib.carla_frontend_createAndExecJackAppDialog(unwrapinstance(parent),
-                                                                                     projectFilename.encode("utf-8")))
+        return structToDictOrNull(
+            self.lib.carla_frontend_createAndExecJackAppDialog(unwrapinstance(parent),
+                                                               projectFilename.encode("utf-8")))
 
     def createPluginListDialog(self, parent, hostSettings):
         hostSettingsC = HostSettings()

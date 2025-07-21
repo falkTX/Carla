@@ -42,7 +42,6 @@ elif qt_config == 6:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-import ui_carla_about
 import ui_carla_edit
 import ui_carla_parameter
 
@@ -112,135 +111,6 @@ ICON_STATE_ON   = 3 # turns on, sets as wait
 ICON_STATE_WAIT = 2 # nothing, sets as off
 ICON_STATE_OFF  = 1 # turns off, sets as null
 ICON_STATE_NULL = 0 # nothing
-
-# ------------------------------------------------------------------------------------------------------------
-# Carla About dialog
-
-class CarlaAboutW(QDialog):
-    def __init__(self, parent, host):
-        QDialog.__init__(self, parent)
-        self.ui = ui_carla_about.Ui_CarlaAboutW()
-        self.ui.setupUi(self)
-
-        if host.isControl:
-            extraInfo = " - <b>%s</b>" % self.tr("OSC Bridge Version")
-        elif host.isPlugin:
-            extraInfo = " - <b>%s</b>" % self.tr("Plugin Version")
-        else:
-            extraInfo = ""
-
-        self.ui.l_about.setText(self.tr(""
-                                        "<br>Version %s"
-                                        "<br>Carla is a fully-featured audio plugin host%s.<br>"
-                                        "<br>Copyright (C) 2011-2025 falkTX<br>"
-                                        "" % (CARLA_VERSION_STRING, extraInfo)))
-
-        if self.ui.about.palette().color(QPalette.Background).blackF() < 0.5:
-            self.ui.l_icons.setPixmap(QPixmap(":/bitmaps/carla_about_black.png"))
-            self.ui.ico_example_edit.setPixmap(QPixmap(":/bitmaps/button_file-black.png"))
-            self.ui.ico_example_file.setPixmap(QPixmap(":/scalable/button_edit-black.svg"))
-            self.ui.ico_example_gui.setPixmap(QPixmap(":/bitmaps/button_gui-black.png"))
-
-        if host.isControl:
-            self.ui.l_extended.hide()
-            self.ui.tabWidget.removeTab(3)
-            self.ui.tabWidget.removeTab(2)
-
-        self.ui.l_extended.setText(gCarla.utils.get_complete_license_text())
-
-        if host.is_engine_running() and not host.isControl:
-            self.ui.le_osc_url_tcp.setText(host.get_host_osc_url_tcp())
-            self.ui.le_osc_url_udp.setText(host.get_host_osc_url_udp())
-        else:
-            self.ui.le_osc_url_tcp.setText(self.tr("(Engine not running)"))
-            self.ui.le_osc_url_udp.setText(self.tr("(Engine not running)"))
-
-        # pylint: disable=line-too-long
-        self.ui.l_osc_cmds.setText("<table>"
-                                   "<tr><td>" "/set_active"                 "&nbsp;</td><td>&lt;i-value&gt;</td></tr>"
-                                   "<tr><td>" "/set_drywet"                 "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
-                                   "<tr><td>" "/set_volume"                 "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
-                                   "<tr><td>" "/set_balance_left"           "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
-                                   "<tr><td>" "/set_balance_right"          "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
-                                   "<tr><td>" "/set_panning"                "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
-                                   "<tr><td>" "/set_parameter_value"        "&nbsp;</td><td>&lt;i-index&gt; &lt;f-value&gt;</td></tr>"
-                                   "<tr><td>" "/set_parameter_midi_cc"      "&nbsp;</td><td>&lt;i-index&gt; &lt;i-cc&gt;</td></tr>"
-                                   "<tr><td>" "/set_parameter_midi_channel" "&nbsp;</td><td>&lt;i-index&gt; &lt;i-channel&gt;</td></tr>"
-                                   "<tr><td>" "/set_program"                "&nbsp;</td><td>&lt;i-index&gt;</td></tr>"
-                                   "<tr><td>" "/set_midi_program"           "&nbsp;</td><td>&lt;i-index&gt;</td></tr>"
-                                   "<tr><td>" "/note_on"                    "&nbsp;</td><td>&lt;i-channel&gt; &lt;i-note&gt; &lt;i-velo&gt;</td></tr>"
-                                   "<tr><td>" "/note_off"                   "&nbsp;</td><td>&lt;i-channel&gt; &lt;i-note</td></tr>"
-                                   "</table>"
-                                  )
-
-        self.ui.l_example.setText("/Carla/2/set_parameter_value 5 1.0")
-        self.ui.l_example_help.setText("<i>(as in this example, \"2\" is the plugin number and \"5\" the parameter)</i>")
-        # pylint: enable=line-too-long
-
-        self.ui.l_ladspa.setText(self.tr("Everything! (Including LRDF)"))
-        self.ui.l_dssi.setText(self.tr("Everything! (Including CustomData/Chunks)"))
-        self.ui.l_lv2.setText(self.tr("About 110&#37; complete (using custom extensions)<br/>"
-                                      "Implemented Feature/Extensions:"
-                                      "<ul>"
-                                      "<li>http://lv2plug.in/ns/ext/atom</li>"
-                                      "<li>http://lv2plug.in/ns/ext/buf-size</li>"
-                                      "<li>http://lv2plug.in/ns/ext/data-access</li>"
-                                      #"<li>http://lv2plug.in/ns/ext/dynmanifest</li>"
-                                      "<li>http://lv2plug.in/ns/ext/event</li>"
-                                      "<li>http://lv2plug.in/ns/ext/instance-access</li>"
-                                      "<li>http://lv2plug.in/ns/ext/log</li>"
-                                      "<li>http://lv2plug.in/ns/ext/midi</li>"
-                                      #"<li>http://lv2plug.in/ns/ext/morph</li>"
-                                      "<li>http://lv2plug.in/ns/ext/options</li>"
-                                      "<li>http://lv2plug.in/ns/ext/parameters</li>"
-                                      #"<li>http://lv2plug.in/ns/ext/patch</li>"
-                                      "<li>http://lv2plug.in/ns/ext/port-props</li>"
-                                      "<li>http://lv2plug.in/ns/ext/presets</li>"
-                                      "<li>http://lv2plug.in/ns/ext/resize-port</li>"
-                                      "<li>http://lv2plug.in/ns/ext/state</li>"
-                                      "<li>http://lv2plug.in/ns/ext/time</li>"
-                                      "<li>http://lv2plug.in/ns/ext/uri-map</li>"
-                                      "<li>http://lv2plug.in/ns/ext/urid</li>"
-                                      "<li>http://lv2plug.in/ns/ext/worker</li>"
-                                      "<li>http://lv2plug.in/ns/extensions/ui</li>"
-                                      "<li>http://lv2plug.in/ns/extensions/units</li>"
-                                      "<li>http://home.gna.org/lv2dynparam/rtmempool/v1</li>"
-                                      "<li>http://kxstudio.sf.net/ns/lv2ext/external-ui</li>"
-                                      "<li>http://kxstudio.sf.net/ns/lv2ext/programs</li>"
-                                      "<li>http://kxstudio.sf.net/ns/lv2ext/props</li>"
-                                      "<li>http://kxstudio.sf.net/ns/lv2ext/rtmempool</li>"
-                                      "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
-                                      "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
-                                      "</ul>"))
-
-        self.ui.l_vst2.setText(self.tr("About 85&#37; complete (missing vst bank/presets and some minor stuff)"))
-        self.ui.l_vst3.setText(self.tr("About 66&#37; complete"))
-
-        if CARLA_OS_MAC:
-            self.ui.l_au.setText(self.tr("About 20&#37; complete"))
-        else:
-            self.ui.line_vst3.hide()
-            self.ui.l_au.hide()
-            self.ui.lid_au.hide()
-
-        # 3rd tab is usually longer than the 1st
-        # adjust appropriately
-        self.ui.tabWidget.setCurrentIndex(2)
-        self.adjustSize()
-        self.ui.tabWidget.setCurrentIndex(0)
-
-        self.setFixedSize(self.size())
-
-        flags  = self.windowFlags()
-        flags &= ~Qt.WindowContextHelpButtonHint
-
-        if CARLA_OS_WIN:
-            flags |= Qt.MSWindowsFixedSizeDialogHint
-
-        self.setWindowFlags(flags)
-
-        if CARLA_OS_MAC:
-            self.setWindowModality(Qt.WindowModal)
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Parameter
@@ -1851,9 +1721,6 @@ if __name__ == '__main__':
     _host.engine_init("JACK", "Carla-Widgets")
     _host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None, 0x0)
     _host.set_active(0, True)
-
-    gui1 = CarlaAboutW(None, _host)
-    gui1.show()
 
     gui2 = PluginEdit(None, _host, 0)
     gui2.testTimer()

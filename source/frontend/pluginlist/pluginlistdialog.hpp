@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
-#include "CarlaFrontend.h"
+#include "carla_frontend.h"
 
 #ifdef __clang__
 # pragma clang diagnostic push
@@ -15,7 +15,6 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 
-#include <QtWidgets/QDialog>
 #include "ui_pluginlistdialog.h"
 
 #ifdef __clang__
@@ -24,10 +23,35 @@
 # pragma GCC diagnostic pop
 #endif
 
-class QSafeSettings;
 typedef struct _CarlaPluginDiscoveryInfo CarlaPluginDiscoveryInfo;
 typedef struct _HostSettings HostSettings;
-struct PluginInfo;
+
+// --------------------------------------------------------------------------------------------------------------------
+
+// base details, nicely packed and POD-only so we can directly use as binary
+struct PluginInfoHeader {
+    uint16_t build;
+    uint16_t type;
+    uint32_t hints;
+    uint64_t uniqueId;
+    uint16_t audioIns;
+    uint16_t audioOuts;
+    uint16_t cvIns;
+    uint16_t cvOuts;
+    uint16_t midiIns;
+    uint16_t midiOuts;
+    uint16_t parameterIns;
+    uint16_t parameterOuts;
+};
+
+// full details, now with non-POD types
+struct PluginInfo : PluginInfoHeader {
+    QString category;
+    QString filename;
+    QString name;
+    QString label;
+    QString maker;
+};
 
 // --------------------------------------------------------------------------------------------------------------------
 // Plugin List Dialog

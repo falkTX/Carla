@@ -1531,6 +1531,7 @@ class CarlaHostMeta():
         self.isPlugin  = False
         self.isRemote  = False
         self.nsmOK     = False
+        self.handle    = None
 
         # settings
         self.processMode       = ENGINE_PROCESS_MODE_PATCHBAY

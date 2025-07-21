@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
@@ -9,6 +9,8 @@
 using CARLA_BACKEND_NAMESPACE::PluginType;
 extern "C" {
 #endif
+
+typedef struct _CarlaHostHandle* CarlaHostHandle;
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -49,17 +51,26 @@ typedef struct {
 
 #ifdef __cplusplus
 class PluginListDialog;
+class QWidget;
 #else
 struct PluginListDialog;
+struct QWidget;
 #endif
 
 // --------------------------------------------------------------------------------------------------------------------
 
+CARLA_PLUGIN_EXPORT void
+carla_frontend_createAndExecAboutDialog(QWidget* parent, CarlaHostHandle hostHandle, bool isControl, bool isPlugin);
+
+// --------------------------------------------------------------------------------------------------------------------
+
 CARLA_PLUGIN_EXPORT const JackAppDialogResults*
-carla_frontend_createAndExecJackAppDialog(void* parent, const char* projectFilename);
+carla_frontend_createAndExecJackAppDialog(QWidget* parent, const char* projectFilename);
+
+// --------------------------------------------------------------------------------------------------------------------
 
 CARLA_PLUGIN_EXPORT PluginListDialog*
-carla_frontend_createPluginListDialog(void* parent, const HostSettings* hostSettings);
+carla_frontend_createPluginListDialog(QWidget* parent, const HostSettings* hostSettings);
 
 CARLA_PLUGIN_EXPORT void
 carla_frontend_destroyPluginListDialog(PluginListDialog* dialog);

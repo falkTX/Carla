@@ -2215,7 +2215,10 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_aboutCarla(self):
-        CarlaAboutW(self.fParentOrSelf, self.host).exec_()
+        gCarla.felib.createAndExecAboutDialog(self.fParentOrSelf,
+                                              self.host.handle,
+                                              self.host.isControl,
+                                              self.host.isPlugin)
 
     @pyqtSlot()
     def slot_aboutQt(self):
