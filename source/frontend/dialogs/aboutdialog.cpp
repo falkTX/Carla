@@ -132,7 +132,7 @@ AboutDialog::AboutDialog(QWidget* const parent,
     Qt::WindowFlags flags = windowFlags();
     flags &= ~Qt::WindowContextHelpButtonHint;
 #ifdef CARLA_OS_WIN
-    flags |= ~Qt::MSWindowsFixedSizeDialogHint;
+    flags |= Qt::MSWindowsFixedSizeDialogHint;
 #endif
     setWindowFlags(flags);
 
