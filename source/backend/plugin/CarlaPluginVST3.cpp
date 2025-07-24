@@ -895,7 +895,12 @@ private:
 // --------------------------------------------------------------------------------------------------------------------
 
 struct carla_v3_output_event_list : v3_event_list_cpp {
+    v3_event* const events;
+    uint16_t numEvents;
+
     carla_v3_output_event_list()
+        : events(new v3_event[kPluginMaxMidiEvents]),
+          numEvents(0)
     {
         query_interface = v3_query_interface_static<v3_event_list_iid>;
         ref = v3_ref_static;
@@ -903,6 +908,11 @@ struct carla_v3_output_event_list : v3_event_list_cpp {
         list.get_event_count = get_event_count;
         list.get_event = get_event;
         list.add_event = add_event;
+    }
+
+    ~carla_v3_output_event_list()
+    {
+        delete[] events;
     }
 
 private:
@@ -920,10 +930,13 @@ private:
         return V3_NOT_IMPLEMENTED;
     }
 
-    static v3_result V3_API add_event(void*, v3_event*)
+    static v3_result V3_API add_event(void* const self, v3_event* const event)
     {
-        carla_debug("TODO %s", __PRETTY_FUNCTION__);
-        return V3_NOT_IMPLEMENTED;
+        carla_v3_output_event_list* const me = *static_cast<carla_v3_output_event_list**>(self);
+        if (me->numEvents >= kPluginMaxMidiEvents)
+            return V3_NOMEM;
+        std::memcpy(&me->events[me->numEvents++], event, sizeof(v3_event));
+        return V3_OK;
     }
 
     CARLA_DECLARE_NON_COPYABLE(carla_v3_output_event_list)
@@ -3016,15 +3029,6 @@ public:
 
         } // End of Plugin processing (no events)
 
-        // ------------------------------------------------------------------------------------------------------------
-        // MIDI Output
-
-        if (pData->event.portOut != nullptr)
-        {
-            // TODO
-
-        } // End of MIDI Output
-
         fFirstActive = false;
 
         // ------------------------------------------------------------------------------------------------------------
@@ -3132,6 +3136,67 @@ public:
         } CARLA_SAFE_EXCEPTION("process");
 
         // ------------------------------------------------------------------------------------------------------------
+        // Handle MIDI output
+
+        int32_t minPortOutOffset = 0;
+
+        if (fEvents.eventOutputs != nullptr)
+        {
+            uint8_t midiData[3], midiSize;
+
+            for (uint32_t i=0; i < fEvents.eventOutputs->numEvents; ++i)
+            {
+                v3_event& v3event(fEvents.eventOutputs->events[i]);
+
+                if (v3event.bus_index != 0)
+                    continue;
+
+                switch (v3event.type)
+                {
+                case V3_EVENT_NOTE_OFF:
+                    midiData[0] = MIDI_STATUS_NOTE_OFF | (v3event.note_off.channel & MIDI_CHANNEL_BIT);
+                    midiData[1] = v3event.note_off.pitch;
+                    midiData[2] = carla_fixedValue<uint8_t>(0,
+                                                            MAX_MIDI_VALUE - 1,
+                                                            v3event.note_off.velocity * MAX_MIDI_VALUE);
+                    midiSize = 3;
+                    break;
+                case V3_EVENT_NOTE_ON:
+                    midiData[0] = MIDI_STATUS_NOTE_ON | (v3event.note_on.channel & MIDI_CHANNEL_BIT);
+                    midiData[1] = v3event.note_on.pitch;
+                    midiData[2] = carla_fixedValue<uint8_t>(0,
+                                                            MAX_MIDI_VALUE - 1,
+                                                            v3event.note_on.velocity * MAX_MIDI_VALUE);
+                    midiSize = 3;
+                    break;
+                case V3_EVENT_POLY_PRESSURE:
+                    midiData[0] = MIDI_STATUS_POLYPHONIC_AFTERTOUCH | (v3event.poly_pressure.channel & MIDI_CHANNEL_BIT);
+                    midiData[1] = v3event.poly_pressure.pitch;
+                    midiData[2] = carla_fixedValue<uint8_t>(0,
+                                                            MAX_MIDI_VALUE - 1,
+                                                            v3event.poly_pressure.pressure * MAX_MIDI_VALUE);
+                    midiSize = 3;
+                    break;
+                case V3_EVENT_LEGACY_MIDI_CC_OUT:
+                    midiData[0] = MIDI_STATUS_CONTROL_CHANGE | (v3event.midi_cc_out.channel & MIDI_CHANNEL_BIT);
+                    midiData[1] = v3event.midi_cc_out.cc_number;
+                    midiData[2] = v3event.midi_cc_out.value;
+                    midiSize = 3;
+                    break;
+                default:
+                    continue;
+                }
+
+                if (! pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(v3event.sample_offset),
+                                                           midiSize,
+                                                           midiData))
+                    break;
+
+                minPortOutOffset = v3event.sample_offset;
+            }
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
         // Handle parameter outputs
 
         if (fEvents.paramOutputs != nullptr && fEvents.paramOutputs->numParametersUsed != 0)
@@ -3157,7 +3222,7 @@ public:
                         channel = pData->param.data[i].midiChannel;
                         param = static_cast<uint16_t>(pData->param.data[i].mappedControlIndex);
 
-                        pData->event.portOut->writeControlEvent(queue->offset,
+                        pData->event.portOut->writeControlEvent(std::max(minPortOutOffset, queue->offset),
                                                                 channel,
                                                                 kEngineControlEventTypeParameter,
                                                                 param,
@@ -4168,6 +4233,9 @@ private:
 
             if (eventInputs != nullptr)
                 eventInputs->numEvents = 0;
+
+            if (eventOutputs != nullptr)
+                eventOutputs->numEvents = 0;
         }
 
         void prepare()
