@@ -427,7 +427,6 @@ ifeq ($(HAVE_FRONTEND),true)
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
 	install -d $(DESTDIR)$(DATADIR)/carla/resources/translations
 	install -d $(DESTDIR)$(DATADIR)/carla/common
-	install -d $(DESTDIR)$(DATADIR)/carla/dialogs
 	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
 	install -d $(DESTDIR)$(DATADIR)/carla/utils
 	install -d $(DESTDIR)$(DATADIR)/carla/widgets
@@ -578,10 +577,6 @@ endif
 		$(DESTDIR)$(DATADIR)/carla/common/
 
 	install -m 644 \
-		source/frontend/dialogs/*.py \
-		$(DESTDIR)$(DATADIR)/carla/dialogs/
-
-	install -m 644 \
 		source/frontend/patchcanvas/*.py \
 		$(DESTDIR)$(DATADIR)/carla/patchcanvas/
 
@@ -658,7 +653,6 @@ endif
 
 	# Install resources (re-use python files)
 	$(LINK) ../common                      $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../dialogs                     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../patchcanvas                 $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../utils                       $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) ../widgets                     $(DESTDIR)$(DATADIR)/carla/resources
