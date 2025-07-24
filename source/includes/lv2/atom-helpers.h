@@ -54,6 +54,7 @@ struct _LV2_Atom_Buffer
 	uint32_t capacity;
 	uint32_t chunk_type;
 	uint32_t sequence_type;
+	uint32_t _alignment_padding;
 	LV2_Atom_Sequence atoms;
 
 } LV2_Atom_Buffer;
