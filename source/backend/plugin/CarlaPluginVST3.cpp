@@ -3187,7 +3187,7 @@ public:
                     continue;
                 }
 
-                if (! pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(v3event.sample_offset),
+                if (! pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(v3event.sample_offset) + timeOffset,
                                                            midiSize,
                                                            midiData))
                     break;
@@ -3222,7 +3222,7 @@ public:
                         channel = pData->param.data[i].midiChannel;
                         param = static_cast<uint16_t>(pData->param.data[i].mappedControlIndex);
 
-                        pData->event.portOut->writeControlEvent(std::max(minPortOutOffset, queue->offset),
+                        pData->event.portOut->writeControlEvent(std::max(minPortOutOffset, queue->offset) + timeOffset,
                                                                 channel,
                                                                 kEngineControlEventTypeParameter,
                                                                 param,
