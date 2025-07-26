@@ -3,13 +3,13 @@ name: release
 on: [push, pull_request]
 
 env:
-  CACHE_VERSION: 2
+  CACHE_VERSION: 3
   DEBIAN_FRONTEND: noninteractive
   HOMEBREW_NO_AUTO_UPDATE: 1
   HOMEBREW_NO_INSTALL_CLEANUP: 1
   PAWPAW_SKIP_LTO: 1
   PAWPAW_SKIP_TESTS: 1
-  PAWPAW_VERSION: ff037e1133f9f0a54579d7dca75f402ea9fec95d
+  PAWPAW_VERSION: 2606d0d436471b12902d60edd2aeb2390db44e62
 
 jobs:
   # macOS native universal build
