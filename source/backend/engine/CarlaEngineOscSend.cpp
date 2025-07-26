@@ -216,7 +216,7 @@ void CarlaEngineOsc::sendPluginProgramCount(const CarlaPluginPtr& plugin) const 
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     carla_stdout("CarlaEngineOsc::sendPluginDataCount(%p)", plugin.get());
 
-    char targetPath[std::strlen(fControlDataTCP.path)+7];
+    char targetPath[std::strlen(fControlDataTCP.path)+8];
     std::strcpy(targetPath, fControlDataTCP.path);
     std::strcat(targetPath, "/pcount");
     try_lo_send(fControlDataTCP.target, targetPath, "iii",

@@ -28,7 +28,7 @@ AboutDialog::AboutDialog(QWidget* const parent,
                            "<br>Copyright (C) 2011-2025 falkTX<br>"
                            "").arg(CARLA_VERSION_STRING).arg(extraInfo));
 
-    if (ui.about->palette().color(QPalette::Background).blackF() < 0.5)
+    if (ui.about->palette().color(QPalette::Window).blackF() < 0.5)
     {
         ui.l_icons->setPixmap(QPixmap(":/bitmaps/carla_about_black.png"));
         ui.ico_example_edit->setPixmap(QPixmap(":/bitmaps/button_file-black.png"));
