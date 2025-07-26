@@ -1230,7 +1230,6 @@ if(${CARLA_BUILD_FRAMEWORKS})
     ../source/backend/CarlaHost.h
     ../source/backend/CarlaEngine.hpp
     ../source/backend/CarlaPlugin.hpp
-    ../source/backend/CarlaPluginPtr.hpp
   )
 
   set_target_properties(carla-standalone
@@ -1521,7 +1520,6 @@ set_property(TARGET carla-headers-backend
     ../source/backend/CarlaUtils.h
     ../source/backend/CarlaEngine.hpp
     ../source/backend/CarlaPlugin.hpp
-    ../source/backend/CarlaPluginPtr.hpp
 )
 
 set_property(TARGET carla-headers-includes
