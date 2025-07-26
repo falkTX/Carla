@@ -514,7 +514,6 @@ endif
 		source/backend/CarlaUtils.h \
 		source/backend/CarlaEngine.hpp \
 		source/backend/CarlaPlugin.hpp \
-		source/backend/CarlaPluginPtr.hpp \
 		$(DESTDIR)$(INCLUDEDIR)/carla
 
 	install -m 644 \
