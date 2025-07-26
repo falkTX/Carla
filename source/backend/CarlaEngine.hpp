@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_ENGINE_HPP_INCLUDED
 #define CARLA_ENGINE_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-#include "CarlaPluginPtr.hpp"
+#include "CarlaPlugin.hpp"
 
 namespace water {
 class MemoryOutputStream;

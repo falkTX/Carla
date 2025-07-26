@@ -1,11 +1,12 @@
-﻿// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+﻿// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_PLUGIN_HPP_INCLUDED
 #define CARLA_PLUGIN_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-#include "CarlaPluginPtr.hpp"
+
+#include <memory>
 
 // -----------------------------------------------------------------------
 // Avoid including extra libs here
@@ -37,8 +38,11 @@ class CarlaEngineCVPort;
 class CarlaEngineEventPort;
 class CarlaEngineCVSourcePorts;
 class CarlaEngineBridge;
+class CarlaPlugin;
 struct CarlaStateSave;
 struct EngineEvent;
+
+typedef std::shared_ptr<CarlaPlugin> CarlaPluginPtr;
 
 // -----------------------------------------------------------------------
 
