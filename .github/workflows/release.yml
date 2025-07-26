@@ -3,7 +3,7 @@ name: release
 on: [push, pull_request]
 
 env:
-  CACHE_VERSION: 3
+  CACHE_VERSION: 4
   DEBIAN_FRONTEND: noninteractive
   HOMEBREW_NO_AUTO_UPDATE: 1
   HOMEBREW_NO_INSTALL_CLEANUP: 1
@@ -17,8 +17,6 @@ jobs:
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - name: Set up cache
         uses: actions/cache@v4
         with:
@@ -40,7 +38,7 @@ jobs:
         run: |
           source PawPaw/local.env macos-universal
           make features
-          make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS}
+          make NOOPT=true ${MAKE_ARGS}
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
@@ -62,36 +60,17 @@ jobs:
 
   # linux with win32 cross-compilation
   win32:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - name: Set up cache
         uses: actions/cache@v4
         with:
           path: |
             ~/PawPawBuilds
           key: win32-v${{ env.CACHE_VERSION }}
-      - name: Restore debian packages cache
-        run: |
-          if [ -d ~/PawPawBuilds/debs ] && [ "$(ls ~/PawPawBuilds/debs | wc -l)" -ne 0 ]; then \
-            sudo cp ~/PawPawBuilds/debs/*.deb /var/cache/apt/archives/; \
-          fi
-      - name: Fix GitHub's mess
-        run: |
-          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -yqq --allow-downgrades libc6:i386 libgcc-s1:i386 libstdc++6:i386
-      - name: Set up dependencies
-        run: |
-          sudo apt-get install -y build-essential curl cmake jq meson mingw-w64 gperf qttools5-dev qttools5-dev-tools xvfb \
-            binutils-mingw-w64-i686 g++-mingw-w64-i686 mingw-w64 wine-stable
-      - name: Cache debian packages
-        run: |
-          mkdir -p ~/PawPawBuilds/debs
-          sudo mv /var/cache/apt/archives/*.deb ~/PawPawBuilds/debs/
       - name: Bootstrap win32 cross-compiled
         shell: bash
         run: |
@@ -104,7 +83,7 @@ jobs:
         run: |
           source PawPaw/local.env win32
           make features
-          make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS}
+          make NOOPT=true ${MAKE_ARGS}
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
@@ -126,36 +105,17 @@ jobs:
 
   # linux with win64 cross-compilation
   win64:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - name: Set up cache
         uses: actions/cache@v4
         with:
           path: |
             ~/PawPawBuilds
           key: win64-v${{ env.CACHE_VERSION }}
-      - name: Restore debian packages cache
-        run: |
-          if [ -d ~/PawPawBuilds/debs ] && [ "$(ls ~/PawPawBuilds/debs | wc -l)" -ne 0 ]; then \
-            sudo cp ~/PawPawBuilds/debs/*.deb /var/cache/apt/archives/; \
-          fi
-      - name: Fix GitHub's mess
-        run: |
-          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -yqq --allow-downgrades libc6:i386 libgcc-s1:i386 libstdc++6:i386
-      - name: Set up dependencies
-        run: |
-          sudo apt-get install -y build-essential curl cmake jq meson mingw-w64 gperf qttools5-dev qttools5-dev-tools xvfb \
-            binutils-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64 wine-stable
-      - name: Cache debian packages
-        run: |
-          mkdir -p ~/PawPawBuilds/debs
-          sudo mv /var/cache/apt/archives/*.deb ~/PawPawBuilds/debs/
       - name: Bootstrap win64 cross-compiled
         shell: bash
         run: |
@@ -168,8 +128,8 @@ jobs:
         run: |
           source PawPaw/local.env win64
           make features
-          make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS}
-          make EXTERNAL_PLUGINS=false NOOPT=true ${MAKE_ARGS} win32r
+          make NOOPT=true ${MAKE_ARGS}
+          make NOOPT=true ${MAKE_ARGS} win32r
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
           make dist ${MAKE_ARGS} TESTING=true -j 1
