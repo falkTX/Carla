@@ -34,7 +34,6 @@
 
 using water::File;
 using water::MemoryBlock;
-using water::String;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -926,7 +925,7 @@ public:
                         CARLA_SAFE_ASSERT_BREAK(bigValueFilePathTry.text[0] != '\0');
                         if (! plugin->isEnabled()) break;
 
-                        String bigValueFilePath(bigValueFilePathTry.text);
+                        water::String bigValueFilePath(bigValueFilePathTry.text);
 
 #ifdef CARLA_OS_WIN
                         // check if running under Wine
@@ -967,7 +966,7 @@ public:
                 CARLA_SAFE_ASSERT_BREAK(chunkFilePathTry.text[0] != '\0');
                 if (! plugin->isEnabled()) break;
 
-                String chunkFilePath(chunkFilePathTry.text);
+                water::String chunkFilePath(chunkFilePathTry.text);
 
 #ifdef CARLA_OS_WIN
                 // check if running under Wine
@@ -978,7 +977,7 @@ public:
                 File chunkFile(chunkFilePath.toRawUTF8());
                 CARLA_SAFE_ASSERT_BREAK(chunkFile.existsAsFile());
 
-                String chunkDataBase64(chunkFile.loadFileAsString());
+                water::String chunkDataBase64(chunkFile.loadFileAsString());
                 chunkFile.deleteFile();
                 CARLA_SAFE_ASSERT_BREAK(chunkDataBase64.isNotEmpty());
 
@@ -1105,7 +1104,7 @@ public:
                         {
                             if (valueLen > maxLocalValueLen)
                             {
-                                String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
+                                water::String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
                                 filePath += CARLA_OS_SEP_STR ".CarlaCustomData_";
                                 filePath += fShmAudioPool.getFilenameSuffix();
@@ -1143,7 +1142,7 @@ public:
                         CarlaString dataBase64 = CarlaString::asBase64(data, dataSize);
                         CARLA_SAFE_ASSERT_BREAK(dataBase64.length() > 0);
 
-                        String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
+                        water::String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
                         filePath += CARLA_OS_SEP_STR ".CarlaChunk_";
                         filePath += fShmAudioPool.getFilenameSuffix();

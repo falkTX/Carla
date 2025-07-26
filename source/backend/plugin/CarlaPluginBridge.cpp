@@ -27,8 +27,6 @@
 
 using water::ChildProcess;
 using water::File;
-using water::String;
-using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -40,17 +38,17 @@ static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 // --------------------------------------------------------------------------------------------------------------------
 
 #ifndef CARLA_OS_WIN
-static String findWinePrefix(const String filename, const int recursionLimit = 10)
+static water::String findWinePrefix(const water::String filename, const int recursionLimit = 10)
 {
     if (recursionLimit == 0 || filename.length() < 5 || ! filename.contains("/"))
-        return "";
+        return {};
 
-    const String path(filename.upToLastOccurrenceOf("/", false, false));
+    const water::String path(filename.upToLastOccurrenceOf("/", false, false));
 
-    if (File(String(path + "/dosdevices").toRawUTF8()).isDirectory())
+    if (File(water::String(path + "/dosdevices").toRawUTF8()).isDirectory())
         return path;
 
-    return findWinePrefix(path, recursionLimit-1);
+    return findWinePrefix(path, recursionLimit - 1);
 }
 #endif
 
@@ -172,18 +170,18 @@ protected:
 
         const EngineOptions& options(kEngine->getOptions());
 
-        String filename(kPlugin->getFilename());
+        water::String filename(kPlugin->getFilename());
 
         if (filename.isEmpty())
             filename = "(none)";
 
-        StringArray arguments;
+        water::StringArray arguments;
 
        #ifndef CARLA_OS_WIN
         // start with "wine" if needed
         if (fBridgeBinary.endsWithIgnoreCase(".exe"))
         {
-            String wineCMD;
+            water::String wineCMD;
 
             if (options.wine.executable != nullptr && options.wine.executable[0] != '\0')
             {
@@ -191,7 +189,7 @@ protected:
 
                 if (fBridgeBinary.endsWithIgnoreCase("64.exe")
                     && options.wine.executable[0] == CARLA_OS_SEP
-                    && File(String(wineCMD + "64").toRawUTF8()).existsAsFile())
+                    && File(water::String(wineCMD + "64").toRawUTF8()).existsAsFile())
                     wineCMD += "64";
             }
             else
@@ -227,7 +225,7 @@ protected:
         arguments.add(fLabel);
 
         // uniqueId
-        arguments.add(String(static_cast<water::int64>(kPlugin->getUniqueId())));
+        arguments.add(water::String(static_cast<water::int64>(kPlugin->getUniqueId())));
 
         bool started;
 
@@ -412,10 +410,10 @@ private:
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
 
-    String fBinaryArchName;
-    String fBridgeBinary;
-    String fLabel;
-    String fShmIds;
+    water::String fBinaryArchName;
+    water::String fBridgeBinary;
+    water::String fLabel;
+    water::String fShmIds;
    #ifndef CARLA_OS_WIN
     CarlaString fWinePrefix;
    #endif
@@ -978,7 +976,7 @@ public:
             {
                 if (valueLen > maxLocalValueLen)
                 {
-                    String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
+                    water::String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
                     filePath += CARLA_OS_SEP_STR ".CarlaCustomData_";
                     filePath += fShmAudioPool.getFilenameSuffix();
@@ -1016,7 +1014,7 @@ public:
         CarlaString dataBase64(CarlaString::asBase64(data, dataSize));
         CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0,);
 
-        String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
+        water::String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
         filePath += CARLA_OS_SEP_STR ".CarlaChunk_";
         filePath += fShmAudioPool.getFilenameSuffix();
@@ -2518,13 +2516,13 @@ public:
                 {
                     const BridgeTextReader bigValueFilePath(fShmNonRtServerControl);
 
-                    String realBigValueFilePath(bigValueFilePath.text);
+                    water::String realBigValueFilePath(bigValueFilePath.text);
 
                    #ifndef CARLA_OS_WIN
                     // Using Wine, fix temp dir
                     if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
                     {
-                        const StringArray driveLetterSplit(StringArray::fromTokens(realBigValueFilePath, ":/", ""));
+                        const water::StringArray driveLetterSplit(water::StringArray::fromTokens(realBigValueFilePath, ":/", ""));
                         carla_stdout("big value save path BEFORE => '%s' | using wineprefix '%s'", realBigValueFilePath.toRawUTF8(), fWinePrefix.buffer());
 
                         realBigValueFilePath  = fWinePrefix.buffer();
@@ -2559,13 +2557,13 @@ public:
                 // chunkFilePath
                 const BridgeTextReader chunkFilePath(fShmNonRtServerControl);
 
-                String realChunkFilePath(chunkFilePath.text);
+                water::String realChunkFilePath(chunkFilePath.text);
 
                #ifndef CARLA_OS_WIN
                 // Using Wine, fix temp dir
                 if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
                 {
-                    const StringArray driveLetterSplit(StringArray::fromTokens(realChunkFilePath, ":/", ""));
+                    const water::StringArray driveLetterSplit(water::StringArray::fromTokens(realChunkFilePath, ":/", ""));
                     carla_stdout("chunk save path BEFORE => '%s' | using wineprefix '%s'", realChunkFilePath.toRawUTF8(), fWinePrefix.buffer());
 
                     realChunkFilePath  = fWinePrefix.buffer();
@@ -3227,7 +3225,7 @@ private:
             CarlaString dataBase64(CarlaString::asBase64(data, dataSize));
             CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0, true);
 
-            String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
+            water::String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
             filePath += CARLA_OS_SEP_STR ".CarlaChunk_";
             filePath += fShmAudioPool.getFilenameSuffix();

@@ -1,19 +1,5 @@
-/*
- * Carla SFZero Plugin
- * Copyright (C) 2018-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
@@ -35,7 +21,6 @@
 using water::AudioSampleBuffer;
 using water::File;
 using water::MidiMessage;
-using water::String;
 
 // -----------------------------------------------------------------------
 
@@ -713,7 +698,7 @@ public:
 
         // ---------------------------------------------------------------
 
-        const String basename(File(filename).getFileNameWithoutExtension());
+        const water::String basename(File(filename).getFileNameWithoutExtension());
 
         CarlaString label2(label != nullptr ? label : basename.toRawUTF8());
 

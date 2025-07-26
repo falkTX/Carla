@@ -1,19 +1,5 @@
-﻿/*
- * Carla FluidSynth Plugin
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+﻿// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
@@ -28,9 +14,6 @@
 #include <fluidsynth.h>
 
 #define FLUID_DEFAULT_POLYPHONY 64
-
-using water::String;
-using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -519,12 +502,12 @@ public:
         if (std::strcmp(key, "midiPrograms") != 0)
             return carla_stderr2("CarlaPluginFluidSynth::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
-        StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
+        water::StringArray midiProgramList(water::StringArray::fromTokens(value, ":", ""));
 
         if (midiProgramList.size() == MAX_MIDI_CHANNELS)
         {
             uint8_t channel = 0;
-            for (String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
+            for (water::String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
             {
                 const int index(it->getIntValue());
 

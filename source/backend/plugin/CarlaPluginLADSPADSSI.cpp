@@ -18,9 +18,6 @@
 using water::ChildProcess;
 #endif
 
-using water::String;
-using water::StringArray;
-
 #define CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare) \
     /* check argument count */                                                                  \
     if (argc != argcToCompare)                                                                  \
@@ -121,8 +118,8 @@ public:
             return;
         }
 
-        String name(kPlugin->getName());
-        String filename(kPlugin->getFilename());
+        water::String name(kPlugin->getName());
+        water::String filename(kPlugin->getFilename());
 
         if (name.isEmpty())
             name = "(none)";
@@ -130,13 +127,13 @@ public:
         if (filename.isEmpty())
             filename = "\"\"";
 
-        StringArray arguments;
+        water::StringArray arguments;
 
         // binary
         arguments.add(fBinary.buffer());
 
         // osc-url
-        arguments.add(String(kEngine->getOscServerPathUDP()) + String("/") + String(kPlugin->getId()));
+        arguments.add(String(kEngine->getOscServerPathUDP()) + water::String("/") + water::String(kPlugin->getId()));
 
         // filename
         arguments.add(filename);

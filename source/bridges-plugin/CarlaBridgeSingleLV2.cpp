@@ -1,19 +1,5 @@
-/*
- * Carla LV2 Single Plugin
- * Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef BUILD_BRIDGE
 # error This file should not be compiled if not building bridge
@@ -57,10 +43,10 @@ public:
             return;
 
         // xxxxx
-        CarlaString binaryDir(bundlePath);
+        String binaryDir(bundlePath);
         binaryDir += CARLA_OS_SEP_STR "bin" CARLA_OS_SEP_STR;
 
-        CarlaString resourceDir(bundlePath);
+        String resourceDir(bundlePath);
         resourceDir += CARLA_OS_SEP_STR "res" CARLA_OS_SEP_STR;
 
         pData->bufferSize = fBufferSize;
@@ -79,8 +65,8 @@ public:
         if (pData->options.binaryDir != nullptr)
             delete[] pData->options.binaryDir;
 
-        pData->options.binaryDir   = binaryDir.dup();
-        pData->options.resourceDir = resourceDir.dup();
+        pData->options.binaryDir   = carla_strdup(binaryDir);
+        pData->options.resourceDir = carla_strdup(resourceDir);
 
         setCallback(_engine_callback, this);
 
@@ -695,17 +681,17 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     if (index != 0)
         return nullptr;
 
-    static CarlaString ret;
+    static String ret;
 
     if (ret.isEmpty())
     {
         using namespace water;
         const File file(File::getSpecialLocation(File::currentExecutableFile).withFileExtension("ttl"));
 #ifdef CARLA_OS_WIN
-        ret = String("file:///" + file.getFullPathName()).toRawUTF8();
+        ret = water::String("file:///" + file.getFullPathName()).toRawUTF8();
         ret.replace('\\','/');
 #else
-        ret = String("file://" + file.getFullPathName()).toRawUTF8();
+        ret = water::String("file://" + file.getFullPathName()).toRawUTF8();
 #endif
     }
 
@@ -730,16 +716,16 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);
 
-    static CarlaString ret;
+    static String ret;
 
     {
         using namespace water;
         const File file(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("ext-ui"));
 #ifdef CARLA_OS_WIN
-        ret = String("file:///" + file.getFullPathName()).toRawUTF8();
+        ret = water::String("file:///" + file.getFullPathName()).toRawUTF8();
         ret.replace('\\','/');
 #else
-        ret = String("file://" + file.getFullPathName()).toRawUTF8();
+        ret = water::String("file://" + file.getFullPathName()).toRawUTF8();
 #endif
     }
 

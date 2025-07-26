@@ -38,7 +38,6 @@
 
 using water::File;
 using water::MemoryOutputStream;
-using water::String;
 using water::XmlDocument;
 using water::XmlElement;
 
@@ -1520,7 +1519,7 @@ protected:
             pData->runner.start();
 
         fOptionsForced = true;
-        const String state(data);
+        const water::String state(data);
         XmlDocument xml(state);
         loadProjectInternal(xml, true);
 

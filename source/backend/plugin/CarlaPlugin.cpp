@@ -24,7 +24,6 @@ using water::CharPointer_UTF8;
 using water::File;
 using water::MemoryOutputStream;
 using water::Result;
-using water::String;
 using water::XmlDocument;
 using water::XmlElement;
 
@@ -1126,8 +1125,8 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
             for (uint32_t i=1; i<midiIns; ++i)
             {
-                const String portIndexNum(portIndex++);
-                const String portIndexLabel(portIndex);
+                const water::String portIndexNum(portIndex++);
+                const water::String portIndexLabel(portIndex);
 
                 mainStream << "    lv2:port [\n";
                 mainStream << "        a lv2:InputPort, atom:AtomPort ;\n";
@@ -1152,8 +1151,8 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         for (uint32_t i=0; i<midiOuts; ++i)
         {
-            const String portIndexNum(portIndex++);
-            const String portIndexLabel(portIndex);
+            const water::String portIndexNum(portIndex++);
+            const water::String portIndexLabel(portIndex);
 
             mainStream << "    lv2:port [\n";
             mainStream << "        a lv2:InputPort, atom:AtomPort ;\n";
@@ -1180,8 +1179,8 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         for (uint32_t i=0; i<pData->audioIn.count; ++i)
         {
-            const String portIndexNum(portIndex++);
-            const String portIndexLabel(i+1);
+            const water::String portIndexNum(portIndex++);
+            const water::String portIndexLabel(i+1);
 
             mainStream << "    lv2:port [\n";
             mainStream << "        a lv2:InputPort, lv2:AudioPort ;\n";
@@ -1193,8 +1192,8 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         for (uint32_t i=0; i<pData->audioOut.count; ++i)
         {
-            const String portIndexNum(portIndex++);
-            const String portIndexLabel(i+1);
+            const water::String portIndexNum(portIndex++);
+            const water::String portIndexLabel(i+1);
 
             mainStream << "    lv2:port [\n";
             mainStream << "        a lv2:OutputPort, lv2:AudioPort ;\n";
@@ -1216,7 +1215,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             const ParameterData&   paramData(pData->param.data[i]);
             const ParameterRanges& paramRanges(pData->param.ranges[i]);
 
-            const String portIndexNum(portIndex++);
+            const water::String portIndexNum(portIndex++);
 
             mainStream << "    lv2:port [\n";
 

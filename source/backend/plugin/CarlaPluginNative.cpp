@@ -1,19 +1,5 @@
-/*
- * Carla Native Plugin
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
@@ -24,9 +10,6 @@
 
 #include "water/misc/Time.h"
 #include "water/text/StringArray.h"
-
-using water::String;
-using water::StringArray;
 
 // -----------------------------------------------------------------------
 // used in carla-base.cpp
@@ -819,12 +802,12 @@ public:
         }
         else if (std::strcmp(key, "midiPrograms") == 0 && fDescriptor->set_midi_program != nullptr)
         {
-            StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
+            water::StringArray midiProgramList(water::StringArray::fromTokens(value, ":", ""));
 
             if (midiProgramList.size() == MAX_MIDI_CHANNELS)
             {
                 uint8_t channel = 0;
-                for (String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
+                for (water::String *it=midiProgramList.begin(), *end=midiProgramList.end(); it != end; ++it)
                 {
                     const int index(it->getIntValue());
 

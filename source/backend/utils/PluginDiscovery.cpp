@@ -69,8 +69,8 @@ struct CarlaPluginDiscoveryOptions {
    #if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WIN)
     struct {
         bool autoPrefix;
-        CarlaString executable;
-        CarlaString fallbackPrefix;
+        String executable;
+        String fallbackPrefix;
     } wine;
    #endif
 
@@ -382,12 +382,12 @@ private:
     uint fBinaryIndex;
     const uint fBinaryCount;
     const std::vector<water::File> fBinaries;
-    const CarlaString fDiscoveryTool;
+    const String fDiscoveryTool;
 
     uint32_t fLastMessageTime;
 
     CarlaPluginDiscoveryInfo fNextInfo;
-    CarlaString fNextSha1Sum;
+    String fNextSha1Sum;
     char* fNextLabel;
     char* fNextMaker;
     char* fNextName;

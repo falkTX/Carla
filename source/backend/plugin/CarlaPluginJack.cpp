@@ -36,8 +36,6 @@
 
 using water::ChildProcess;
 using water::File;
-using water::String;
-using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -333,15 +331,15 @@ protected:
                 carla_stderr("CarlaPluginJackThread::run() - already running");
             }
 
-            String name(kPlugin->getName());
-            String filename(kPlugin->getFilename());
+            water::String name(kPlugin->getName());
+            water::String filename(kPlugin->getFilename());
 
             if (name.isEmpty())
                 name = "(none)";
 
             CARLA_SAFE_ASSERT_RETURN(filename.isNotEmpty(),);
 
-            StringArray arguments;
+            water::StringArray arguments;
 
             // binary
             arguments.addTokens(filename, true);

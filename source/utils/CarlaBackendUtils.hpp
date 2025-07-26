@@ -1,26 +1,14 @@
-/*
- * Carla Backend utils
- * Copyright (C) 2011-2024 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_BACKEND_UTILS_HPP_INCLUDED
 #define CARLA_BACKEND_UTILS_HPP_INCLUDED
 
 #include "CarlaBackend.h"
 #include "CarlaNative.h"
-#include "CarlaString.hpp"
+#include "CarlaUtils.hpp"
+
+#include "distrho/extra/String.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -613,7 +601,7 @@ BinaryType getBinaryTypeFromString(const char* const ctype) noexcept
     CARLA_SAFE_ASSERT_RETURN(ctype != nullptr && ctype[0] != '\0', BINARY_NONE);
     carla_debug("CarlaBackend::getBinaryTypeFromString(\"%s\")", ctype);
 
-    CarlaString stype(ctype);
+    String stype(ctype);
 
     if (stype.isEmpty())
         return BINARY_NONE;
@@ -758,7 +746,7 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
     CARLA_SAFE_ASSERT_RETURN(ctype != nullptr && ctype[0] != '\0', PLUGIN_NONE);
     carla_debug("CarlaBackend::getPluginTypeFromString(\"%s\")", ctype);
 
-    CarlaString stype(ctype);
+    String stype(ctype);
 
     if (stype.isEmpty())
         return PLUGIN_NONE;
@@ -808,7 +796,7 @@ PluginCategory getPluginCategoryFromName(const char* const name) noexcept
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', PLUGIN_CATEGORY_NONE);
     carla_debug("CarlaBackend::getPluginCategoryFromName(\"%s\")", name);
 
-    CarlaString sname(name);
+    String sname(name);
 
     if (sname.isEmpty())
         return PLUGIN_CATEGORY_NONE;

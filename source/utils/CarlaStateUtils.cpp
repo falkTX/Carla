@@ -1,19 +1,5 @@
-/*
- * Carla State utils
- * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaStateUtils.hpp"
 
@@ -27,7 +13,6 @@
 #include <string>
 
 using water::MemoryOutputStream;
-using water::String;
 using water::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -35,7 +20,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // getNewLineSplittedString
 
-static void getNewLineSplittedString(MemoryOutputStream& stream, const String& string)
+static void getNewLineSplittedString(MemoryOutputStream& stream, const water::String& string)
 {
     static const int kLineWidth = 120;
 
@@ -109,7 +94,7 @@ static const char* xmlSafeStringCharDup(const char* const cstring, const bool to
 }
 */
 
-static const char* xmlSafeStringCharDup(const String& string, const bool toXml)
+static const char* xmlSafeStringCharDup(const water::String& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toRawUTF8());
 }
@@ -292,7 +277,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 
     for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
     {
-        const String& tagName(elem->getTagName());
+        const water::String& tagName(elem->getTagName());
 
         // ---------------------------------------------------------------
         // Info
@@ -301,8 +286,8 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
         {
             for (XmlElement* xmlInfo = elem->getFirstChildElement(); xmlInfo != nullptr; xmlInfo = xmlInfo->getNextElement())
             {
-                const String& tag(xmlInfo->getTagName());
-                const String  text(xmlInfo->getAllSubText().trim());
+                const water::String& tag(xmlInfo->getTagName());
+                const water::String  text(xmlInfo->getAllSubText().trim());
 
                 /**/ if (tag == "Type")
                     type = xmlSafeStringCharDup(text, false);
@@ -324,8 +309,8 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
         {
             for (XmlElement* xmlData = elem->getFirstChildElement(); xmlData != nullptr; xmlData = xmlData->getNextElement())
             {
-                const String& tag(xmlData->getTagName());
-                const String  text(xmlData->getAllSubText().trim());
+                const water::String& tag(xmlData->getTagName());
+                const water::String  text(xmlData->getAllSubText().trim());
 
                 // -------------------------------------------------------
                 // Internal Data
@@ -414,8 +399,8 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 
                     for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
                     {
-                        const String& pTag(xmlSubData->getTagName());
-                        const String  pText(xmlSubData->getAllSubText().trim());
+                        const water::String& pTag(xmlSubData->getTagName());
+                        const water::String  pText(xmlSubData->getAllSubText().trim());
 
                         /**/ if (pTag == "Index")
                         {
@@ -487,7 +472,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                     // find type first
                     for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
                     {
-                        const String& cTag(xmlSubData->getTagName());
+                        const water::String& cTag(xmlSubData->getTagName());
 
                         if (cTag != "Type")
                             continue;
@@ -506,8 +491,8 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                     // now fill in key and value, knowing what the type is
                     for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
                     {
-                        const String& cTag(xmlSubData->getTagName());
-                        String cText(xmlSubData->getAllSubText());
+                        const water::String& cTag(xmlSubData->getTagName());
+                        water::String cText(xmlSubData->getAllSubText());
 
                         /**/ if (cTag == "Key")
                         {
@@ -563,7 +548,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         MemoryOutputStream infoXml;
 
         infoXml << "  <Info>\n";
-        infoXml << "   <Type>" << String(type != nullptr ? type : "") << "</Type>\n";
+        infoXml << "   <Type>" << water::String(type != nullptr ? type : "") << "</Type>\n";
         infoXml << "   <Name>" << xmlSafeString(name, true) << "</Name>\n";
 
         switch (pluginType)
@@ -633,22 +618,22 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         dataXml << "   <Active>" << (active ? "Yes" : "No") << "</Active>\n";
 
         if (carla_isNotEqual(dryWet, 1.0f))
-            dataXml << "   <DryWet>"        << String(dryWet, 7)       << "</DryWet>\n";
+            dataXml << "   <DryWet>"        << water::String(dryWet, 7)       << "</DryWet>\n";
         if (carla_isNotEqual(volume, 1.0f))
-            dataXml << "   <Volume>"        << String(volume, 7)       << "</Volume>\n";
+            dataXml << "   <Volume>"        << water::String(volume, 7)       << "</Volume>\n";
         if (carla_isNotEqual(balanceLeft, -1.0f))
-            dataXml << "   <Balance-Left>"  << String(balanceLeft, 7)  << "</Balance-Left>\n";
+            dataXml << "   <Balance-Left>"  << water::String(balanceLeft, 7)  << "</Balance-Left>\n";
         if (carla_isNotEqual(balanceRight, 1.0f))
-            dataXml << "   <Balance-Right>" << String(balanceRight, 7) << "</Balance-Right>\n";
+            dataXml << "   <Balance-Right>" << water::String(balanceRight, 7) << "</Balance-Right>\n";
         if (carla_isNotEqual(panning, 0.0f))
-            dataXml << "   <Panning>"       << String(panning, 7)      << "</Panning>\n";
+            dataXml << "   <Panning>"       << water::String(panning, 7)      << "</Panning>\n";
 
         if (ctrlChannel < 0)
             dataXml << "   <ControlChannel>N</ControlChannel>\n";
         else
             dataXml << "   <ControlChannel>" << int(ctrlChannel+1) << "</ControlChannel>\n";
 
-        dataXml << "   <Options>0x" << String::toHexString(static_cast<int>(options)) << "</Options>\n";
+        dataXml << "   <Options>0x" << water::String::toHexString(static_cast<int>(options)) << "</Options>\n";
 
         content << dataXml;
     }
@@ -663,7 +648,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
 
         parameterXml << "\n";
         parameterXml << "   <Parameter>\n";
-        parameterXml << "    <Index>" << String(stateParameter->index)             << "</Index>\n";
+        parameterXml << "    <Index>" << water::String(stateParameter->index)             << "</Index>\n";
         parameterXml << "    <Name>"  << xmlSafeString(stateParameter->name, true) << "</Name>\n";
 
         if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
@@ -682,8 +667,8 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
 
             if (stateParameter->mappedRangeValid)
             {
-                parameterXml << "    <MappedMinimum>" << String(stateParameter->mappedMinimum, 15) << "</MappedMinimum>\n";
-                parameterXml << "    <MappedMaximum>" << String(stateParameter->mappedMaximum, 15) << "</MappedMaximum>\n";
+                parameterXml << "    <MappedMinimum>" << water::String(stateParameter->mappedMinimum, 15) << "</MappedMinimum>\n";
+                parameterXml << "    <MappedMaximum>" << water::String(stateParameter->mappedMaximum, 15) << "</MappedMaximum>\n";
             }
 
             // backwards compatibility for older carla versions
@@ -693,7 +678,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
        #endif
 
         if (! stateParameter->dummy)
-            parameterXml << "    <Value>" << String(stateParameter->value, 15) << "</Value>\n";
+            parameterXml << "    <Value>" << water::String(stateParameter->value, 15) << "</Value>\n";
 
         parameterXml << "   </Parameter>\n";
 
@@ -703,7 +688,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
     if (currentProgramIndex >= 0 && currentProgramName != nullptr && currentProgramName[0] != '\0')
     {
         // ignore 'default' program
-        if (currentProgramIndex > 0 || ! String(currentProgramName).equalsIgnoreCase("default"))
+        if (currentProgramIndex > 0 || ! water::String(currentProgramName).equalsIgnoreCase("default"))
         {
             MemoryOutputStream programXml;
 

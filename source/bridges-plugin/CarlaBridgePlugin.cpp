@@ -52,7 +52,6 @@ using CARLA_BACKEND_NAMESPACE::runMainLoopOnce;
 
 using water::CharPointer_UTF8;
 using water::File;
-using water::String;
 
 // -------------------------------------------------------------------------
 
@@ -113,7 +112,7 @@ static void initSignalHandler()
 // -------------------------------------------------------------------------
 
 static CarlaHostHandle gHostHandle;
-static CarlaString gProjectFilename;
+static String gProjectFilename;
 
 static void gIdle()
 {
@@ -419,7 +418,7 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Set client name
 
-    CarlaString clientName;
+    String clientName;
 
     if (name != nullptr)
     {
@@ -431,7 +430,7 @@ int main(int argc, char* argv[])
         CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0', 1);
 
         // LV2 URI is not usable as client name, create a usable name from URI
-        CarlaString label2(label);
+        String label2(label);
 
         // truncate until last valid char
         for (std::size_t i=label2.length()-1; i != 0; --i)
@@ -545,7 +544,7 @@ int main(int argc, char* argv[])
             {
                 if (sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &sparam) < 0)
                 {
-                    CarlaString error(std::strerror(errno));
+                    String error(std::strerror(errno));
                     carla_stderr("Failed to set high priority, error %i: %s", errno, error.buffer());
                 }
             }

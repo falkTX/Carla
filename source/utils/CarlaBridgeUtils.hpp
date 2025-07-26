@@ -1,19 +1,5 @@
-/*
- * Carla Bridge utils
- * Copyright (C) 2013-2023 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_BRIDGE_UTILS_HPP_INCLUDED
 #define CARLA_BRIDGE_UTILS_HPP_INCLUDED
@@ -21,7 +7,8 @@
 #include "CarlaBridgeDefines.hpp"
 #include "CarlaMutex.hpp"
 #include "CarlaRingBuffer.hpp"
-#include "CarlaString.hpp"
+
+#include "distrho/extra/String.hpp"
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -243,7 +230,7 @@ struct BridgeNonRtServerData {
 struct CARLA_API BridgeAudioPool {
     float* data;
     std::size_t dataSize;
-    CarlaString filename;
+    String filename;
     char shm[64];
     bool isServer;
 
@@ -265,7 +252,7 @@ struct CARLA_API BridgeAudioPool {
 
 struct CARLA_API BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
     BridgeRtClientData* data;
-    CarlaString filename;
+    String filename;
     bool needsSemDestroy; // client only
     char shm[64];
     bool isServer;
@@ -305,7 +292,7 @@ struct CARLA_API BridgeRtClientControl : public CarlaRingBufferControl<SmallStac
 
 struct CARLA_API BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> {
     BridgeNonRtClientData* data;
-    CarlaString filename;
+    String filename;
     CarlaMutex mutex;
     char shm[64];
     bool isServer;
@@ -334,7 +321,7 @@ struct CARLA_API BridgeNonRtClientControl : public CarlaRingBufferControl<BigSta
 
 struct CARLA_API BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer> {
     BridgeNonRtServerData* data;
-    CarlaString filename;
+    String filename;
     CarlaMutex mutex;
     char shm[64];
     bool isServer;
