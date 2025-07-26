@@ -82,65 +82,122 @@ const char* getBinaryFilename()
     return filename;
 }
 
-const char* getConfigDir()
+const char* getPluginFormatName() noexcept
+{
+#if defined(DISTRHO_PLUGIN_TARGET_AU)
+    return "AudioUnit";
+#elif defined(DISTRHO_PLUGIN_TARGET_CARLA)
+    return "Carla";
+#elif defined(DISTRHO_PLUGIN_TARGET_JACK)
+   #if defined(DISTRHO_OS_WASM)
+    return "Wasm/Standalone";
+   #elif defined(HAVE_JACK)
+    return "JACK/Standalone";
+   #else
+    return "Standalone";
+   #endif
+#elif defined(DISTRHO_PLUGIN_TARGET_LADSPA)
+    return "LADSPA";
+#elif defined(DISTRHO_PLUGIN_TARGET_DSSI)
+    return "DSSI";
+#elif defined(DISTRHO_PLUGIN_TARGET_LV2)
+    return "LV2";
+#elif defined(DISTRHO_PLUGIN_TARGET_VST2)
+    return "VST2";
+#elif defined(DISTRHO_PLUGIN_TARGET_VST3)
+    return "VST3";
+#elif defined(DISTRHO_PLUGIN_TARGET_CLAP)
+    return "CLAP";
+#elif defined(DISTRHO_PLUGIN_TARGET_STATIC) && defined(DISTRHO_PLUGIN_TARGET_STATIC_NAME)
+    return DISTRHO_PLUGIN_TARGET_STATIC_NAME;
+#else
+    return "Unknown";
+#endif
+}
+
+#ifndef DISTRHO_OS_WINDOWS
+static inline
+void _createDirIfNeeded(const char* const dir)
+{
+    if (access(dir, F_OK) != 0)
+        mkdir(dir, 0755);
+}
+#endif
+
+static const char* _getDocumentsDir();
+static const char* _getDocumentsDirForPlugin();
+static const char* _getHomeDir();
+
+static const char* _getConfigDir()
 {
    #if defined(DISTRHO_OS_MAC) || defined(DISTRHO_OS_WASM) || defined(DISTRHO_OS_WINDOWS)
-    return getDocumentsDir();
+    return _getDocumentsDir();
    #else
     static String dir;
 
     if (dir.isEmpty())
     {
         if (const char* const xdgEnv = getenv("XDG_CONFIG_HOME"))
+        {
             dir = xdgEnv;
+
+            if (dir.isNotEmpty() && ! dir.endsWith('/'))
+                dir += "/";
+        }
 
         if (dir.isEmpty())
         {
-            dir  = getHomeDir();
-            dir += "/.config";
+            dir = _getHomeDir();
+            dir += ".config/";
         }
 
-        // ensure main config dir exists
-        if (access(dir, F_OK) != 0)
-            mkdir(dir, 0755);
-
-        // and also our custom subdir
-        dir += "/" DISTRHO_PLUGIN_NAME "/";
-        if (access(dir, F_OK) != 0)
-            mkdir(dir, 0755);
+        _createDirIfNeeded(dir);
     }
 
     return dir;
    #endif
 }
 
-const char* getDocumentsDir()
+static const char* _getConfigDirForPlugin()
+{
+   #if defined(DISTRHO_OS_MAC) || defined(DISTRHO_OS_WASM) || defined(DISTRHO_OS_WINDOWS)
+    return _getDocumentsDirForPlugin();
+   #else
+    static String dir;
+
+    if (dir.isEmpty())
+    {
+        dir = _getConfigDir();
+        dir += DISTRHO_PLUGIN_NAME DISTRHO_OS_SEP_STR;
+        _createDirIfNeeded(dir);
+    }
+
+    return dir;
+   #endif
+}
+
+static const char* _getDocumentsDir()
 {
     static String dir;
 
     if (dir.isEmpty())
     {
        #if defined(DISTRHO_OS_MAC)
-        dir  = getHomeDir();
-        dir += "/Documents/" DISTRHO_PLUGIN_NAME "/";
+        dir = _getHomeDir();
+        dir += "Documents/";
        #elif defined(DISTRHO_OS_WASM)
-        dir  = getHomeDir();
-        dir += "/";
+        dir = _getHomeDir();
        #elif defined(DISTRHO_OS_WINDOWS)
         WCHAR wpath[MAX_PATH];
         if (SHGetFolderPathW(nullptr, CSIDL_MYDOCUMENTS, nullptr, SHGFP_TYPE_CURRENT, wpath) == S_OK)
         {
             CHAR apath[MAX_PATH];
             if (WideCharToMultiByte(CP_UTF8, 0, wpath, -1, apath, MAX_PATH, nullptr, nullptr) != 0)
-            {
                 dir = apath;
-                dir += "\\" DISTRHO_PLUGIN_NAME "\\";
-                wcscat(wpath, L"\\" DISTRHO_PLUGIN_NAME "\\");
-            }
         }
        #else
-        String xdgDirsConfigPath(getConfigDir());
-        xdgDirsConfigPath += "/user-dirs.dirs";
+        String xdgDirsConfigPath(_getConfigDir());
+        xdgDirsConfigPath += "user-dirs.dirs";
 
         if (FILE* const f = std::fopen(xdgDirsConfigPath, "r"))
         {
@@ -178,17 +235,13 @@ const char* getDocumentsDir()
 
                                 if (sdir.startsWith("$HOME"))
                                 {
-                                    dir  = getHomeDir();
-                                    dir += sdir.buffer() + 5;
+                                    dir = _getHomeDir();
+                                    dir += sdir.buffer() + 6;
                                 }
                                 else
                                 {
                                     dir = sdir;
                                 }
-
-                                // ensure main config dir exists
-                                if (access(dir, F_OK) != 0)
-                                    mkdir(dir, 0755);
                             }
                         }
 
@@ -202,28 +255,46 @@ const char* getDocumentsDir()
 
         // ${XDG_CONFIG_HOME}/user-dirs.dirs does not exist or has bad data
         if (dir.isEmpty())
-        {
-            dir  = getDocumentsDir();
-            dir += DISTRHO_PLUGIN_NAME "/";
-        }
+            dir = _getDocumentsDir();
+
+        _createDirIfNeeded(dir);
        #endif
 
-        // ensure our custom subdir exists
-        if (dir.isNotEmpty())
-        {
-           #ifdef DISTRHO_OS_WINDOWS
-            _wmkdir(wpath);
-           #else
-            if (access(dir, F_OK) != 0)
-                mkdir(dir, 0755);
-           #endif
-        }
+        if (dir.isNotEmpty() && ! dir.endsWith(DISTRHO_OS_SEP))
+            dir += DISTRHO_OS_SEP_STR;
     }
 
     return dir;
 }
 
-const char* getHomeDir()
+static const char* _getDocumentsDirForPlugin()
+{
+    static String dir;
+
+    if (dir.isEmpty())
+    {
+       #ifdef DISTRHO_OS_WINDOWS
+        WCHAR wpath[MAX_PATH];
+        if (SHGetFolderPathW(nullptr, CSIDL_MYDOCUMENTS, nullptr, SHGFP_TYPE_CURRENT, wpath) == S_OK)
+        {
+            wcscat(wpath, L"\\" DISTRHO_PLUGIN_NAME "\\");
+            _wmkdir(wpath);
+
+            CHAR apath[MAX_PATH];
+            if (WideCharToMultiByte(CP_UTF8, 0, wpath, -1, apath, MAX_PATH, nullptr, nullptr) != 0)
+                dir = apath;
+        }
+       #else
+        dir = _getDocumentsDir();
+        dir += DISTRHO_PLUGIN_NAME DISTRHO_OS_SEP_STR;
+        _createDirIfNeeded(dir);
+       #endif
+    }
+
+    return dir;
+}
+
+static const char* _getHomeDir()
 {
     static String dir;
 
@@ -245,45 +316,32 @@ const char* getHomeDir()
             if (struct passwd* const pwd = getpwuid(getuid()))
                 dir = pwd->pw_dir;
 
-        if (dir.isNotEmpty() && ! dir.endsWith('/'))
-            dir += "/";
+        _createDirIfNeeded(dir);
        #endif
+
+        if (dir.isNotEmpty() && ! dir.endsWith(DISTRHO_OS_SEP))
+            dir += DISTRHO_OS_SEP_STR;
     }
 
     return dir;
 }
 
-const char* getPluginFormatName() noexcept
+const char* getSpecialDir(const SpecialDir dir)
 {
-#if defined(DISTRHO_PLUGIN_TARGET_AU)
-    return "AudioUnit";
-#elif defined(DISTRHO_PLUGIN_TARGET_CARLA)
-    return "Carla";
-#elif defined(DISTRHO_PLUGIN_TARGET_JACK)
-   #if defined(DISTRHO_OS_WASM)
-    return "Wasm/Standalone";
-   #elif defined(HAVE_JACK)
-    return "JACK/Standalone";
-   #else
-    return "Standalone";
-   #endif
-#elif defined(DISTRHO_PLUGIN_TARGET_LADSPA)
-    return "LADSPA";
-#elif defined(DISTRHO_PLUGIN_TARGET_DSSI)
-    return "DSSI";
-#elif defined(DISTRHO_PLUGIN_TARGET_LV2)
-    return "LV2";
-#elif defined(DISTRHO_PLUGIN_TARGET_VST2)
-    return "VST2";
-#elif defined(DISTRHO_PLUGIN_TARGET_VST3)
-    return "VST3";
-#elif defined(DISTRHO_PLUGIN_TARGET_CLAP)
-    return "CLAP";
-#elif defined(DISTRHO_PLUGIN_TARGET_STATIC) && defined(DISTRHO_PLUGIN_TARGET_STATIC_NAME)
-    return DISTRHO_PLUGIN_TARGET_STATIC_NAME;
-#else
-    return "Unknown";
-#endif
+    switch (dir)
+    {
+    case kSpecialDirHome:
+        return _getHomeDir();
+    case kSpecialDirConfig:
+        return _getConfigDir();
+    case kSpecialDirConfigForPlugin:
+        return _getConfigDirForPlugin();
+    case kSpecialDirDocuments:
+        return _getDocumentsDir();
+    case kSpecialDirDocumentsForPlugin:
+        return _getDocumentsDirForPlugin();
+    }
+    return nullptr;
 }
 
 const char* getResourcePath(const char* const bundlePath) noexcept

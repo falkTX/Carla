@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -1030,13 +1030,14 @@ public:
         }
 
         // we have some data ourselves, reallocate to add the new stuff
-        char* const newBuf = static_cast<char*>(std::realloc(fBuffer, fBufferLen + strBufLen + 1));
+        char* const newBuf = static_cast<char*>(std::realloc(fBufferAlloc ? fBuffer : nullptr, fBufferLen + strBufLen + 1));
         DISTRHO_SAFE_ASSERT_RETURN(newBuf != nullptr, *this);
 
         std::memcpy(newBuf + fBufferLen, strBuf, strBufLen + 1);
 
         fBuffer = newBuf;
         fBufferLen += strBufLen;
+        fBufferAlloc = true;
 
         return *this;
     }

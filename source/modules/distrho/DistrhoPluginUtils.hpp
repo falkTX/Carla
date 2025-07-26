@@ -38,33 +38,36 @@ START_NAMESPACE_DISTRHO
 const char* getBinaryFilename();
 
 /**
-   Get an OS-specific directory intended to store persistent configuration data about the plugin.@n
-   Calling this function will ensure the dictory exists on the filesystem.@n
-   The returned path already includes DISTRHO_PLUGIN_NAME and final OS separator.
-*/
-const char* getConfigDir();
-
-/**
-   Get an OS-specific directory intended to store "documents" for the plugin.@n
-   Calling this function will ensure the dictory exists on the filesystem.@n
-   The returned path already includes DISTRHO_PLUGIN_NAME and final OS separator.
-*/
-const char* getDocumentsDir();
-
-/**
-   Get the user "home" directory.@n
-   This function is provided only for convenience, it should not be needed under normal circunstances.
-*/
-const char* getHomeDir();
-
-/**
    Get a string representation of the current plugin format we are building against.@n
-   This can be "AudioUnit", "JACK/Standalone", "LADSPA", "DSSI", "LV2", "VST2" or "VST3" or "CLAP".@n
+   This can be "AudioUnit", "JACK/Standalone", "LADSPA", "DSSI", "LV2", "VST2", "VST3" or "CLAP".@n
    This string is purely informational and must not be used to tweak plugin behaviour.
 
    @note DO NOT CHANGE PLUGIN BEHAVIOUR BASED ON PLUGIN FORMAT.
 */
 const char* getPluginFormatName() noexcept;
+
+/**
+   List of supported OS-specific directories to be used for getSpecialDir.
+*/
+enum SpecialDir {
+    /** The user "home" directory */
+    kSpecialDirHome,
+    /** Directory intended to store persistent configuration data (in general) */
+    kSpecialDirConfig,
+    /** Directory intended to store persistent configuration data for the current plugin */
+    kSpecialDirConfigForPlugin,
+    /** Directory intended to store "documents" (in general) */
+    kSpecialDirDocuments,
+    /** Directory intended to store "documents" for the current plugin */
+    kSpecialDirDocumentsForPlugin,
+};
+
+/**
+   Get an OS-specific directory.@n
+   Calling this function will ensure the dictory exists on the filesystem.@n
+   The returned path always includes a final OS separator.
+*/
+const char* getSpecialDir(SpecialDir dir);
 
 /**
    Get the path to where resources are stored within the plugin bundle.@n
@@ -82,7 +85,13 @@ const char* getPluginFormatName() noexcept;
    The other non-mentioned formats do not support bundles.@n
 
    @note For CLAP and VST2 on non-macOS systems, this assumes you have your plugin inside a dedicated directory
-         rather than only shipping with the binary (e.g. <myplugin.vst>/myplugin.dll)
+         rather than only shipping with the binary, like so:
+         @code
+         + myplugin.vst/
+           - myplugin.dll
+           + resources/
+             - image1.png
+        @endcode
 */
 const char* getResourcePath(const char* bundlePath) noexcept;
 
