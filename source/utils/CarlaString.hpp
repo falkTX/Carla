@@ -788,13 +788,14 @@ public:
         }
 
         // we have some data ourselves, reallocate to add the new stuff
-        char* const newBuf = (char*)realloc(fBuffer, fBufferLen + strBufLen + 1);
+        char* const newBuf = (char*)realloc(fBufferAlloc ? fBuffer : nullptr, fBufferLen + strBufLen + 1);
         CARLA_SAFE_ASSERT_RETURN(newBuf != nullptr, *this);
 
         std::memcpy(newBuf + fBufferLen, strBuf, strBufLen + 1);
 
         fBuffer = newBuf;
         fBufferLen += strBufLen;
+        fBufferAlloc = true;
 
         return *this;
     }
