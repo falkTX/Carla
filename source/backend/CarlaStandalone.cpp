@@ -14,6 +14,7 @@
 #include "ThreadSafeFFTW.hpp"
 
 #include "distrho/extra/Base64.hpp"
+#include "distrho/extra/ScopedPointer.hpp"
 
 #include "water/files/File.h"
 
@@ -456,10 +457,10 @@ bool carla_engine_init_bridge(CarlaHostHandle handle,
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->isStandalone, "Must be a standalone host handle", false);
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(handle->engine == nullptr, "Engine is already initialized", false);
 
-    CarlaScopedPointer<CarlaEngine> engine(CB::EngineInit::newBridge(audioBaseName,
-                                                                     rtClientBaseName,
-                                                                     nonRtClientBaseName,
-                                                                     nonRtServerBaseName));
+    ScopedPointer<CarlaEngine> engine(CB::EngineInit::newBridge(audioBaseName,
+                                                                rtClientBaseName,
+                                                                nonRtClientBaseName,
+                                                                nonRtServerBaseName));
 
     CARLA_SAFE_ASSERT_WITH_LAST_ERROR_RETURN(engine != nullptr, "The selected audio driver is not available", false);
 
@@ -1726,7 +1727,7 @@ const char* carla_get_custom_data_value(CarlaHostHandle handle, uint pluginId, c
         if (count == 0)
             return gNullCharPtr;
 
-        static CarlaString customDataValue;
+        static String customDataValue;
 
         for (uint32_t i=0; i<count; ++i)
         {
@@ -1757,9 +1758,9 @@ const char* carla_get_chunk_data(CarlaHostHandle handle, uint pluginId)
         const std::size_t dataSize(plugin->getChunkData(&data));
         CARLA_SAFE_ASSERT_RETURN(data != nullptr && dataSize > 0, gNullCharPtr);
 
-        static CarlaString chunkData;
+        static String chunkData;
 
-        chunkData = CarlaString::asBase64(data, static_cast<std::size_t>(dataSize));
+        chunkData = String::asBase64(data, static_cast<std::size_t>(dataSize));
         return chunkData.buffer();
     }
 

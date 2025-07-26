@@ -56,9 +56,9 @@ static water::String findWinePrefix(const water::String filename, const int recu
 
 struct BridgeParamInfo {
     float value;
-    CarlaString name;
-    CarlaString symbol;
-    CarlaString unit;
+    String name;
+    String symbol;
+    String unit;
 
     BridgeParamInfo() noexcept
         : value(0.0f),
@@ -395,9 +395,9 @@ protected:
             {
                 carla_stderr("CarlaPluginBridgeThread::run() - bridge crashed");
 
-                CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
-                                        "Saving now will lose its current settings.\n"
-                                        "Please remove this plugin, and not rely on it from this point.");
+                String errorString("Plugin '" + String(kPlugin->getName()) + "' has crashed!\n"
+                                   "Saving now will lose its current settings.\n"
+                                   "Please remove this plugin, and not rely on it from this point.");
                 kEngine->callback(true, true,
                                   ENGINE_CALLBACK_ERROR, kPlugin->getId(), 0, 0, 0, 0.0f, errorString);
             }
@@ -415,10 +415,10 @@ private:
     water::String fLabel;
     water::String fShmIds;
    #ifndef CARLA_OS_WIN
-    CarlaString fWinePrefix;
+    String fWinePrefix;
    #endif
 
-    CarlaScopedPointer<ChildProcess> fProcess;
+    ScopedPointer<ChildProcess> fProcess;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginBridgeThread)
 };
@@ -1011,7 +1011,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
-        CarlaString dataBase64(CarlaString::asBase64(data, dataSize));
+        String dataBase64(String::asBase64(data, dataSize));
         CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0,);
 
         water::String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
@@ -1204,7 +1204,7 @@ public:
             needsCtrlOut = true;
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
-        CarlaString portName;
+        String portName;
 
         // Audio Ins
         for (uint32_t j=0; j < fInfo.aIns; ++j)
@@ -1224,7 +1224,7 @@ public:
             else if (fInfo.aIns > 1)
             {
                 portName += "input_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "input";
@@ -1253,7 +1253,7 @@ public:
             else if (fInfo.aOuts > 1)
             {
                 portName += "output_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "output";
@@ -1284,7 +1284,7 @@ public:
             else if (fInfo.cvIns > 1)
             {
                 portName += "cv_input_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "cv_input";
@@ -1313,7 +1313,7 @@ public:
             else if (fInfo.cvOuts > 1)
             {
                 portName += "cv_output_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "cv_output";
@@ -2897,7 +2897,7 @@ private:
     uint fProcWaitTime;
     uint64_t fPendingEmbedCustomUI;
 
-    CarlaString             fBridgeBinary;
+    String fBridgeBinary;
     CarlaPluginBridgeThread fBridgeThread;
 
     BridgeAudioPool          fShmAudioPool;
@@ -2906,7 +2906,7 @@ private:
     BridgeNonRtServerControl fShmNonRtServerControl;
 
    #ifndef CARLA_OS_WIN
-    CarlaString fWinePrefix;
+    String fWinePrefix;
    #endif
 
     class ReceivingParamText {
@@ -2974,10 +2974,10 @@ private:
         uint32_t mIns, mOuts;
         PluginCategory category;
         uint optionsAvailable;
-        CarlaString name;
-        CarlaString label;
-        CarlaString maker;
-        CarlaString copyright;
+        String name;
+        String label;
+        String maker;
+        String copyright;
         const char** aInNames;
         const char** aOutNames;
         const char** cvInNames;
@@ -3222,7 +3222,7 @@ private:
 #else
             void* data = &fInfo.chunk.front();
 #endif
-            CarlaString dataBase64(CarlaString::asBase64(data, dataSize));
+            String dataBase64(String::asBase64(data, dataSize));
             CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0, true);
 
             water::String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
@@ -3248,7 +3248,7 @@ private:
 
     void _setUiTitleFromName()
     {
-        CarlaString uiName(pData->name);
+        String uiName(pData->name);
         uiName += " (GUI)";
 
         const uint32_t size = static_cast<uint32_t>(uiName.length());

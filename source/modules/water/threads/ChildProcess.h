@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -28,7 +28,7 @@
 
 #include "../text/StringArray.h"
 
-#include "CarlaScopeUtils.hpp"
+#include "distrho/extra/ScopedPointer.hpp"
 
 namespace water {
 
@@ -103,7 +103,7 @@ public:
 private:
     //==============================================================================
     class ActiveProcess;
-    CarlaScopedPointer<ActiveProcess> activeProcess;
+    ScopedPointer<ActiveProcess> activeProcess;
 
     CARLA_DECLARE_NON_COPYABLE (ChildProcess)
 };

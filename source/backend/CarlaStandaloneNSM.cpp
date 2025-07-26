@@ -14,7 +14,6 @@
 #define NSM_CLIENT_FEATURES ":switch:optional-gui:"
 
 #include "CarlaOscUtils.hpp"
-#include "CarlaString.hpp"
 
 #include "water/files/File.h"
 
@@ -471,7 +470,7 @@ protected:
                 const CarlaPluginInfo* const pluginInfo(carla_get_plugin_info(i));
                 CARLA_SAFE_ASSERT_CONTINUE(pluginInfo != nullptr);
 
-                /*const*/ CarlaString pluginNameId(fClientNameId + "/" + CarlaString(pluginInfo->name).replace('/','_') + "/");
+                /*const*/ String pluginNameId(fClientNameId + "/" + String(pluginInfo->name).replace('/','_') + "/");
 
                 for (uint32_t j=0, paramCount = carla_get_parameter_count(i); j < paramCount; ++j)
                 {
@@ -493,8 +492,8 @@ protected:
                     if (paramData->hints & CB::PARAMETER_IS_READ_ONLY)
                         continue;
 
-                    const char* const dir         = paramData->type == CB::PARAMETER_INPUT ? "in" : "out";
-                    const CarlaString paramNameId = pluginNameId + CarlaString(paramInfo->name).replace('/','_');
+                    const char* const dir = paramData->type == CB::PARAMETER_INPUT ? "in" : "out";
+                    const String paramNameId = pluginNameId + String(paramInfo->name).replace('/','_');
 
                     const float defNorm = paramRanges->getNormalizedValue(paramRanges->def);
 
@@ -530,8 +529,8 @@ private:
     lo_server_thread fServerThread;
     char*            fServerURL;
 
-    CarlaString fClientNameId;
-    CarlaString fProjectPath;
+    String fClientNameId;
+    String fProjectPath;
 
     bool fHasBroadcast;
     bool fHasOptionalGui;

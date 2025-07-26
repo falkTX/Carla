@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /* TODO list
@@ -9,6 +9,7 @@
 #include "CarlaEngine.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaVst3Utils.hpp"
 
 #include "CarlaPluginUI.hpp"
@@ -1633,7 +1634,7 @@ public:
 
         if (yesNo)
         {
-            CarlaString uiTitle;
+            String uiTitle;
 
             if (pData->uiTitle.isNotEmpty())
             {
@@ -1671,7 +1672,7 @@ public:
                 fUI.window->setTitle(uiTitle.buffer());
 
                #ifndef CARLA_OS_MAC
-                if (carla_isNotZero(opts.uiScale))
+                if (d_isNotZero(opts.uiScale))
                 {
                     // TODO inform plugin of what UI scale we use
                 }
@@ -1775,7 +1776,7 @@ public:
        #ifndef CARLA_OS_MAC
         const EngineOptions& opts(pData->engine->getOptions());
 
-        if (carla_isNotZero(opts.uiScale))
+        if (d_isNotZero(opts.uiScale))
         {
             // TODO
         }
@@ -2073,7 +2074,7 @@ public:
 
         const EngineProcessMode processMode = pData->engine->getProccessMode();
         const uint portNameSize = pData->engine->getMaxPortNameSize();
-        CarlaString portName;
+        String portName;
 
         // Audio Ins
         for (uint32_t j=0; j < aIns; ++j)
@@ -2089,7 +2090,7 @@ public:
             if (aIns > 1)
             {
                 portName += "input_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "input";
@@ -2115,7 +2116,7 @@ public:
             if (aOuts > 1)
             {
                 portName += "output_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "output";
@@ -2141,7 +2142,7 @@ public:
             if (cvIns > 1)
             {
                 portName += "cv_input_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "cv_input";
@@ -2167,7 +2168,7 @@ public:
             if (cvOuts > 1)
             {
                 portName += "cv_output_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "cv_output";

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
@@ -369,7 +369,7 @@ public:
         if (fUI.window == nullptr || pData->uiTitle.isNotEmpty())
             return;
 
-        CarlaString uiTitle(pData->name);
+        String uiTitle(pData->name);
         uiTitle += " (GUI)";
         fUI.window->setTitle(uiTitle.buffer());
     }
@@ -501,7 +501,7 @@ public:
 
         if (yesNo)
         {
-            CarlaString uiTitle;
+            String uiTitle;
 
             if (pData->uiTitle.isNotEmpty())
             {
@@ -733,7 +733,7 @@ public:
 
         const EngineProcessMode processMode = pData->engine->getProccessMode();
         const uint portNameSize = pData->engine->getMaxPortNameSize();
-        CarlaString portName;
+        String portName;
 
         // Audio Ins
         for (uint32_t j=0; j < aIns; ++j)
@@ -749,7 +749,7 @@ public:
             if (aIns > 1)
             {
                 portName += "input_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "input";
@@ -774,7 +774,7 @@ public:
             if (aOuts > 1)
             {
                 portName += "output_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "output";
@@ -2465,7 +2465,7 @@ public:
         VST_Function vstFn;
 
 #ifdef CARLA_OS_MAC
-        CarlaString filenameCheck(filename);
+        String filenameCheck(filename);
         filenameCheck.toLower();
 
         if (filenameCheck.endsWith(".vst") || filenameCheck.endsWith(".vst/"))

@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaEngineGraph.hpp"
 #include "CarlaEngineInternal.hpp"
@@ -28,8 +14,6 @@ using water::jmax;
 using water::jmin;
 using water::AudioProcessor;
 using water::MidiBuffer;
-using water::String;
-using water::StringArray;
 
 #define MAX_GRAPH_AUDIO_IO 64U
 #define MAX_GRAPH_CV_IO 32U
@@ -442,7 +426,7 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
                           0, 0.0f,
                           strBuf);
 
-        const CarlaString groupNameIn(strBuf);
+        const String groupNameIn(strBuf);
 
         for (LinkedList<PortNameToId>::Itenerator it = audioPorts.ins.begin2(); it.valid(); it.next())
         {
@@ -474,7 +458,7 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
                           0, 0.0f,
                           strBuf);
 
-        const CarlaString groupNameOut(strBuf);
+        const String groupNameOut(strBuf);
 
         for (LinkedList<PortNameToId>::Itenerator it = audioPorts.outs.begin2(); it.valid(); it.next())
         {
@@ -503,7 +487,7 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
                           0, 0.0f,
                           "Readable MIDI ports");
 
-        const CarlaString groupNamePlus("Readable MIDI ports:");
+        const String groupNamePlus("Readable MIDI ports:");
 
         for (LinkedList<PortNameToId>::Itenerator it = midiPorts.ins.begin2(); it.valid(); it.next())
         {
@@ -532,7 +516,7 @@ void ExternalGraph::refresh(const bool sendHost, const bool sendOSC, const char*
                           0, 0.0f,
                           "Writable MIDI ports");
 
-        const CarlaString groupNamePlus("Writable MIDI ports:");
+        const String groupNamePlus("Writable MIDI ports:");
 
         for (LinkedList<PortNameToId>::Itenerator it = midiPorts.outs.begin2(); it.valid(); it.next())
         {
@@ -1271,53 +1255,53 @@ bool adjustPatchbayPortIdForWater(AudioProcessor::ChannelType& channelType, uint
 }
 
 static inline
-const String getProcessorFullPortName(AudioProcessor* const proc, const uint32_t portId)
+const water::String getProcessorFullPortName(AudioProcessor* const proc, const uint32_t portId)
 {
-    CARLA_SAFE_ASSERT_RETURN(proc != nullptr, String());
-    CARLA_SAFE_ASSERT_RETURN(portId >= kAudioInputPortOffset, String());
-    CARLA_SAFE_ASSERT_RETURN(portId < kMaxPortOffset, String());
+    CARLA_SAFE_ASSERT_RETURN(proc != nullptr, {});
+    CARLA_SAFE_ASSERT_RETURN(portId >= kAudioInputPortOffset, {});
+    CARLA_SAFE_ASSERT_RETURN(portId < kMaxPortOffset, {});
 
-    String fullPortName(proc->getName());
+    water::String fullPortName(proc->getName());
 
     /**/ if (portId >= kMidiOutputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeMIDI) > 0, String());
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeMIDI) > 0, {});
         fullPortName += ":" + proc->getOutputChannelName(AudioProcessor::ChannelTypeMIDI,
                                                          portId-kMidiOutputPortOffset);
     }
     else if (portId >= kMidiInputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeMIDI) > 0, String());
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeMIDI) > 0, {});
         fullPortName += ":" + proc->getInputChannelName(AudioProcessor::ChannelTypeMIDI,
                                                         portId-kMidiInputPortOffset);
     }
     else if (portId >= kCVOutputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV) > 0, String());
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeCV) > 0, {});
         fullPortName += ":" + proc->getOutputChannelName(AudioProcessor::ChannelTypeCV,
                                                          portId-kCVOutputPortOffset);
     }
     else if (portId >= kCVInputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV) > 0, String());
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeCV) > 0, {});
         fullPortName += ":" + proc->getInputChannelName(AudioProcessor::ChannelTypeCV,
                                                         portId-kCVInputPortOffset);
     }
     else if (portId >= kAudioOutputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeAudio) > 0, String());
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels(AudioProcessor::ChannelTypeAudio) > 0, {});
         fullPortName += ":" + proc->getOutputChannelName(AudioProcessor::ChannelTypeAudio,
                                                          portId-kAudioOutputPortOffset);
     }
     else if (portId >= kAudioInputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeAudio) > 0, String());
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels(AudioProcessor::ChannelTypeAudio) > 0, {});
         fullPortName += ":" + proc->getInputChannelName(AudioProcessor::ChannelTypeAudio,
                                                         portId-kAudioInputPortOffset);
     }
     else
     {
-        return String();
+        return {};
     }
 
     return fullPortName;
@@ -1539,10 +1523,10 @@ public:
 
     // -------------------------------------------------------------------
 
-    const String getName() const override
+    const water::String getName() const override
     {
         const CarlaPluginPtr plugin = fPlugin;
-        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, String());
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, {});
 
         return plugin->getName();
     }
@@ -1652,10 +1636,10 @@ public:
         plugin->unlock();
     }
 
-    const String getInputChannelName(ChannelType t, uint i) const override
+    const water::String getInputChannelName(ChannelType t, uint i) const override
     {
         const CarlaPluginPtr plugin = fPlugin;
-        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, String());
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, {});
 
         CarlaEngineClient* const client = plugin->getEngineClient();
 
@@ -1669,13 +1653,13 @@ public:
             return client->getEventPortName(true, i);
         }
 
-        return String();
+        return {};
     }
 
-    const String getOutputChannelName(ChannelType t, uint i) const override
+    const water::String getOutputChannelName(ChannelType t, uint i) const override
     {
         const CarlaPluginPtr plugin = fPlugin;
-        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, String());
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, {});
 
         CarlaEngineClient* const client(plugin->getEngineClient());
 
@@ -1689,7 +1673,7 @@ public:
             return client->getEventPortName(false, i);
         }
 
-        return String();
+        return {};
     }
 
     void prepareToPlay(double, int) override {}
@@ -1729,23 +1713,23 @@ public:
           inputNames(),
           outputNames() {}
 
-    const String getInputChannelName (ChannelType, uint _index) const override
+    const water::String getInputChannelName (ChannelType, uint _index) const override
     {
         const int index = static_cast<int>(_index); // FIXME
         if (index < inputNames.size())
             return inputNames[index];
-        return String("Playback ") + String(index+1);
+        return water::String("Playback ") + String(index+1);
     }
 
-    const String getOutputChannelName (ChannelType, uint _index) const override
+    const water::String getOutputChannelName (ChannelType, uint _index) const override
     {
         const int index = static_cast<int>(_index); // FIXME
         if (index < outputNames.size())
             return outputNames[index];
-        return String("Capture ") + String(index+1);
+        return water::String("Capture ") + String(index+1);
     }
 
-    void setNames(const bool setInputNames, const StringArray& names)
+    void setNames(const bool setInputNames, const water::StringArray& names)
     {
         if (setInputNames)
             inputNames = names;
@@ -1754,8 +1738,8 @@ public:
     }
 
 private:
-    StringArray inputNames;
-    StringArray outputNames;
+    water::StringArray inputNames;
+    water::StringArray outputNames;
 };
 
 PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
@@ -1795,7 +1779,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
 
-    StringArray channelNames;
+    water::StringArray channelNames;
 
     switch (numAudioIns)
     {
@@ -2378,10 +2362,10 @@ const char* const* PatchbayGraph::getConnections(const bool external) const
         AudioProcessor* const procB(nodeB->getProcessor());
         CARLA_SAFE_ASSERT_CONTINUE(procB != nullptr);
 
-        String fullPortNameA(getProcessorFullPortName(procA, connectionToId.portA));
+        water::String fullPortNameA(getProcessorFullPortName(procA, connectionToId.portA));
         CARLA_SAFE_ASSERT_CONTINUE(fullPortNameA.isNotEmpty());
 
-        String fullPortNameB(getProcessorFullPortName(procB, connectionToId.portB));
+        water::String fullPortNameB(getProcessorFullPortName(procB, connectionToId.portB));
         CARLA_SAFE_ASSERT_CONTINUE(fullPortNameB.isNotEmpty());
 
         connList.append(fullPortNameA.toRawUTF8());
@@ -2512,8 +2496,8 @@ bool PatchbayGraph::getGroupAndPortIdFromFullName(const bool external, const cha
     if (external)
         return extGraph.getGroupAndPortIdFromFullName(fullPortName, groupId, portId);
 
-    String groupName(String(fullPortName).upToFirstOccurrenceOf(":", false, false));
-    String portName(String(fullPortName).fromFirstOccurrenceOf(":", false, false));
+    water::String groupName(water::String(fullPortName).upToFirstOccurrenceOf(":", false, false));
+    water::String portName(water::String(fullPortName).fromFirstOccurrenceOf(":", false, false));
 
     for (int i=0, count=graph.getNumNodes(); i<count; ++i)
     {

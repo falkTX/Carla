@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaPluginInternal.hpp"
@@ -248,7 +248,7 @@ public:
         bool needsCtrlIn, needsCtrlOut, hasMidiIn, hasMidiOut;
         needsCtrlIn = needsCtrlOut = hasMidiIn = hasMidiOut = false;
 
-        CarlaString portName;
+        String portName;
         const uint portNameSize = pData->engine->getMaxPortNameSize();
 
         UInt32 outDataSize;
@@ -400,7 +400,7 @@ public:
             if (audioIns > 1)
             {
                 portName += "input_";
-                portName += CarlaString(i + 1);
+                portName += String(i + 1);
             }
             else
                 portName += "input";
@@ -425,7 +425,7 @@ public:
             if (audioOuts > 1)
             {
                 portName += "output_";
-                portName += CarlaString(i + 1);
+                portName += String(i + 1);
             }
             else
                 portName += "output";
@@ -1037,9 +1037,9 @@ private:
     BundleLoader fBundleLoader;
     AudioComponentPlugInInterface* fInterface;
     AudioBufferList* fAudioBufferData;
-    CarlaString fName;
-    CarlaString fLabel;
-    CarlaString fMaker;
+    String fName;
+    String fLabel;
+    String fMaker;
 
     struct Functions {
         InitializeFn initialize;

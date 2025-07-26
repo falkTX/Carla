@@ -1,25 +1,12 @@
-/*
- * Carla External UI
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_EXTERNAL_UI_HPP_INCLUDED
 #define CARLA_EXTERNAL_UI_HPP_INCLUDED
 
 #include "CarlaPipeUtils.hpp"
-#include "CarlaString.hpp"
+
+#include "distrho/extra/String.hpp"
 
 // -----------------------------------------------------------------------
 
@@ -61,7 +48,7 @@ public:
     void setData(const char* const filename, const double sampleRate, const char* const uiTitle) noexcept
     {
         fFilename = filename;
-        fArg1     = CarlaString(sampleRate);
+        fArg1     = String(sampleRate);
         fArg2     = uiTitle;
     }
 
@@ -92,10 +79,10 @@ protected:
     }
 
 private:
-    CarlaString fFilename;
-    CarlaString fArg1;
-    CarlaString fArg2;
-    UiState     fUiState;
+    String fFilename;
+    String fArg1;
+    String fArg2;
+    UiState fUiState;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaExternalUI)
 };

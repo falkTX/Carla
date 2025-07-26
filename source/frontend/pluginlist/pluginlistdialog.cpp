@@ -32,7 +32,7 @@
 #include "CarlaJuceUtils.hpp"
 #include "CarlaUtils.h"
 
-#include "CarlaString.hpp"
+#include "distrho/extra/ScopedPointer.hpp"
 
 #include <cstdlib>
 
@@ -647,7 +647,7 @@ struct PluginListDialog::PrivateData {
         bool useWineBridges = false;
         CarlaPluginDiscoveryHandle handle = nullptr;
         QCarlaString tool;
-        CarlaScopedPointer<PluginRefreshDialog> dialog;
+        ScopedPointer<PluginRefreshDialog> dialog;
         Discovery()
         {
             restart();

@@ -1,8 +1,7 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaUtils.h"
-#include "CarlaString.hpp"
 
 #if defined(HAVE_FLUIDSYNTH) && !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
 # include <fluidsynth.h>
@@ -26,6 +25,7 @@
 # pragma GCC diagnostic pop
 #endif
 
+#include "distrho/extra/String.hpp"
 #include "water/files/File.h"
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -34,7 +34,7 @@ const char* carla_get_complete_license_text()
 {
     carla_debug("carla_get_complete_license_text()");
 
-    static CarlaString retText;
+    static String retText;
 
     if (retText.isEmpty())
     {
@@ -196,7 +196,7 @@ const char* carla_get_library_filename()
 {
     carla_debug("carla_get_library_filename()");
 
-    static CarlaString ret;
+    static String ret;
 
     if (ret.isEmpty())
     {
@@ -211,7 +211,7 @@ const char* carla_get_library_folder()
 {
     carla_debug("carla_get_library_folder()");
 
-    static CarlaString ret;
+    static String ret;
 
     if (ret.isEmpty())
     {

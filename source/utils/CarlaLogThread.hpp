@@ -5,7 +5,6 @@
 #define CARLA_LOG_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-#include "CarlaString.hpp"
 #include "CarlaThread.hpp"
 
 #include <fcntl.h>

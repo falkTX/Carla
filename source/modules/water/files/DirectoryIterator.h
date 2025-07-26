@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -29,7 +29,7 @@
 #include "File.h"
 #include "../text/StringArray.h"
 
-#include "CarlaScopeUtils.hpp"
+#include "distrho/extra/ScopedPointer.hpp"
 
 namespace water {
 
@@ -123,7 +123,7 @@ private:
 
     private:
         friend class DirectoryIterator;
-        CarlaScopedPointer<Pimpl> pimpl;
+        ScopedPointer<Pimpl> pimpl;
 
         CARLA_DECLARE_NON_COPYABLE (NativeIterator)
     };
@@ -136,7 +136,7 @@ private:
     const int whatToLookFor;
     const bool isRecursive;
     bool hasBeenAdvanced;
-    CarlaScopedPointer<DirectoryIterator> subIterator;
+    ScopedPointer<DirectoryIterator> subIterator;
     File currentFile;
 
     static StringArray parseWildcards (const String& pattern);

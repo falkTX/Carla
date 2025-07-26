@@ -400,7 +400,7 @@ private:
     SDL_AudioDeviceID fDeviceId;
 
     // current device name
-    CarlaString fDeviceName;
+    String fDeviceName;
 
     // deinterleaved buffers
     uint fAudioOutCount;

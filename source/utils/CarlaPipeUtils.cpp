@@ -3,10 +3,11 @@
 
 #include "CarlaPipeUtils.hpp"
 #include "CarlaProcessUtils.hpp"
-#include "CarlaString.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaMIDI.h"
 
 #include "distrho/extra/Sleep.hpp"
+#include "distrho/extra/String.hpp"
 #include "distrho/extra/Time.hpp"
 
 // needed for atom-util
@@ -328,14 +329,14 @@ bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
     case 0: { // child process
         execvp(argv[0], const_cast<char* const*>(argv));
 
-        CarlaString error(std::strerror(errno));
+        String error(std::strerror(errno));
         carla_stderr2("exec failed: %s", error.buffer());
 
         _exit(1); // this is not noexcept safe but doesn't matter anyway
     }   break;
 
     case -1: { // error
-        CarlaString error(std::strerror(errno));
+        String error(std::strerror(errno));
         carla_stderr2("vfork() failed: %s", error.buffer());
     }   break;
     }
@@ -401,7 +402,7 @@ bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, void* const pr
 #ifdef CARLA_OS_WIN
                 carla_stderr("waitForClientFirstMessage() - read failed");
 #else
-                CarlaString error(std::strerror(errno));
+                String error(std::strerror(errno));
                 carla_stderr("waitForClientFirstMessage() - read failed: %s", error.buffer());
 #endif
             }
@@ -496,7 +497,7 @@ bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds, boo
             }
             else
             {
-                CarlaString error(std::strerror(errno));
+                String error(std::strerror(errno));
                 carla_stderr("waitForChildToStop() - waitpid failed: %s", error.buffer());
                 return false;
             }
@@ -552,7 +553,7 @@ void waitForChildToStopOrKillIt(pid_t& pid, const uint32_t timeOutMilliseconds) 
         }
         else
         {
-            CarlaString error(std::strerror(errno));
+            String error(std::strerror(errno));
             carla_stderr("waitForChildToStopOrKillIt() - kill failed: %s", error.buffer());
         }
     }
@@ -594,8 +595,8 @@ struct CarlaPipeCommon::PrivateData {
     CarlaMutex writeLock;
 
     // temporary buffers for _readline()
-    mutable char        tmpBuf[0xffff];
-    mutable CarlaString tmpStr;
+    mutable char   tmpBuf[0xffff];
+    mutable String tmpStr;
 
     PrivateData() noexcept
 #ifdef CARLA_OS_WIN
@@ -816,7 +817,7 @@ bool CarlaPipeCommon::readNextLineAsFloat(float& value) const noexcept
     if (const char* const msg = _readlineblock(false))
     {
         {
-            const CarlaScopedLocale csl;
+            const ScopedSafeLocale ssl;
             value = static_cast<float>(std::atof(msg));
         }
         return true;
@@ -832,7 +833,7 @@ bool CarlaPipeCommon::readNextLineAsDouble(double& value) const noexcept
     if (const char* const msg = _readlineblock(false))
     {
         {
-            const CarlaScopedLocale csl;
+            const ScopedSafeLocale ssl;
             value = std::atof(msg);
         }
         return true;
@@ -1001,7 +1002,7 @@ bool CarlaPipeCommon::writeControlMessage(const uint32_t index, const float valu
         return false;
 
     {
-        const CarlaScopedLocale csl;
+        const ScopedSafeLocale ssl;
         std::snprintf(tmpBuf, 0xfe, "%.12g\n", static_cast<double>(value));
     }
 
@@ -1156,7 +1157,7 @@ bool CarlaPipeCommon::writeLv2AtomMessage(const uint32_t index, const LV2_Atom* 
     tmpBuf[0xfe] = '\0';
 
     const uint32_t atomTotalSize(lv2_atom_total_size(atom));
-    CarlaString base64atom(CarlaString::asBase64(atom, atomTotalSize));
+    String base64atom(String::asBase64(atom, atomTotalSize));
 
     const CarlaMutexLocker cml(pData->writeLock);
 
@@ -1200,7 +1201,7 @@ bool CarlaPipeCommon::writeLv2ParameterMessage(const char* const uri, const floa
         return false;
 
     {
-        const CarlaScopedLocale csl;
+        const ScopedSafeLocale ssl;
         std::snprintf(tmpBuf, 0xfe, "%.12g\n", static_cast<double>(value));
     }
 
@@ -1328,7 +1329,7 @@ const char* CarlaPipeCommon::_readline(const bool allocReturn, const uint16_t si
             if (allocReturn)
             {
                 pData->tmpStr = pData->tmpBuf;
-                return pData->tmpStr.releaseBufferPointer();
+                return pData->tmpStr.getAndReleaseBuffer();
             }
 
             return pData->tmpBuf;
@@ -1358,7 +1359,7 @@ const char* CarlaPipeCommon::_readline(const bool allocReturn, const uint16_t si
     if (! allocReturn && ! tooBig)
         return pData->tmpBuf;
 
-    return allocReturn ? pData->tmpStr.releaseBufferPointer() : pData->tmpStr.buffer();
+    return allocReturn ? pData->tmpStr.getAndReleaseBuffer() : pData->tmpStr.buffer();
 }
 
 const char* CarlaPipeCommon::_readlineblock(const bool allocReturn,

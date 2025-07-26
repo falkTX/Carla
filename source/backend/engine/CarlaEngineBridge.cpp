@@ -1139,7 +1139,7 @@ public:
                     {
                         CARLA_SAFE_ASSERT_BREAK(data != nullptr);
 
-                        CarlaString dataBase64 = CarlaString::asBase64(data, dataSize);
+                        String dataBase64 = String::asBase64(data, dataSize);
                         CARLA_SAFE_ASSERT_BREAK(dataBase64.length() > 0);
 
                         water::String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
@@ -1665,10 +1665,10 @@ private:
     BridgeNonRtClientControl fShmNonRtClientControl;
     BridgeNonRtServerControl fShmNonRtServerControl;
 
-    CarlaString fBaseNameAudioPool;
-    CarlaString fBaseNameRtClientControl;
-    CarlaString fBaseNameNonRtClientControl;
-    CarlaString fBaseNameNonRtServerControl;
+    String fBaseNameAudioPool;
+    String fBaseNameRtClientControl;
+    String fBaseNameNonRtClientControl;
+    String fBaseNameNonRtServerControl;
 
     bool fClosingDown;
     bool fIsOffline;

@@ -1,19 +1,5 @@
-/*
- * Carla Native Plugins
- * Copyright (C) 2013-2022 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-base.cpp"
@@ -21,8 +7,8 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
-#include "CarlaString.hpp"
 
+#include "distrho/extra/String.hpp"
 #include "water/files/File.h"
 
 static const char* const kPathForCarlaFiles = "carlafiles";
@@ -566,7 +552,7 @@ public:
         if (newpath == nullptr)
             return cleanupLastProjectPath();
 
-        fLastProjectPath = CarlaString(water::File(newpath).getParentDirectory().getFullPathName().toRawUTF8());
+        fLastProjectPath = String(water::File(newpath).getParentDirectory().getFullPathName().toRawUTF8());
 
         if (freePath != nullptr && freePath->free_path != nullptr)
             freePath->free_path(freePath->handle, newpath);
@@ -765,7 +751,7 @@ public:
                 float value;
 
                 {
-                    const CarlaScopedLocale csl;
+                    const ScopedSafeLocale ssl;
                     value = static_cast<float>(std::atof(msgSplit+1));
                 }
 
@@ -1169,8 +1155,8 @@ private:
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
 
-    CarlaString fLastProjectPath;
-    CarlaString fLoadedFile;
+    String fLastProjectPath;
+    String fLoadedFile;
     PreviewData fPreviewData;
     volatile bool fNeedsNotifyFileChanged;
     volatile int fPluginNeedsIdle;
@@ -1525,7 +1511,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     const NativePluginDescriptor* const pluginDesc(plm.descs.getAt(index, nullptr));
     CARLA_SAFE_ASSERT_RETURN(pluginDesc != nullptr, nullptr);
 
-    CarlaString tmpURI;
+    String tmpURI;
     tmpURI  = "http://kxstudio.sf.net/carla/plugins/";
     tmpURI += pluginDesc->label;
 

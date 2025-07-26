@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2024 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -714,7 +714,7 @@ File File::withFileExtension (const char* const newExtension) const
 //==============================================================================
 FileInputStream* File::createInputStream() const
 {
-    CarlaScopedPointer<FileInputStream> fin (new FileInputStream (*this));
+    ScopedPointer<FileInputStream> fin (new FileInputStream (*this));
 
     if (fin->openedOk())
         return fin.release();
@@ -724,7 +724,7 @@ FileInputStream* File::createInputStream() const
 
 FileOutputStream* File::createOutputStream (const size_t bufferSize) const
 {
-    CarlaScopedPointer<FileOutputStream> out (new FileOutputStream (*this, bufferSize));
+    ScopedPointer<FileOutputStream> out (new FileOutputStream (*this, bufferSize));
 
     return out->failedToOpen() ? nullptr
                                : out.release();

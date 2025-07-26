@@ -1,19 +1,5 @@
-/*
- * Carla Native Plugins
- * Copyright (C) 2013-2019 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-base.cpp"
@@ -36,8 +22,7 @@
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
-#include "CarlaString.hpp"
-
+#include "distrho/extra/String.hpp"
 #include "water/files/File.h"
 #include "water/text/StringArray.h"
 
@@ -51,18 +36,14 @@
 # define PLUGIN_EXT ".so"
 #endif
 
-using water::String;
-using water::StringArray;
-using water::water_uchar;
-
 // -----------------------------------------------------------------------
 // Converts a parameter name to an LV2 compatible symbol
 
-static StringArray gUsedSymbols;
+static water::StringArray gUsedSymbols;
 
-static const String nameToSymbol(const String& name, const uint32_t portIndex)
+static const water::String nameToSymbol(const water::String& name, const uint32_t portIndex)
 {
-    String symbol, trimmedName = name.trim().toLowerCase();
+    water::String symbol, trimmedName = name.trim().toLowerCase();
 
     if (trimmedName.isEmpty())
     {
@@ -76,7 +57,7 @@ static const String nameToSymbol(const String& name, const uint32_t portIndex)
 
         for (int i=0; i < trimmedName.length(); ++i)
         {
-            const water_uchar c = trimmedName[i];
+            const water::water_uchar c = trimmedName[i];
 
             if (std::isalpha(static_cast<int>(c)) || std::isdigit(static_cast<int>(c)))
                 symbol += c;
@@ -89,13 +70,13 @@ static const String nameToSymbol(const String& name, const uint32_t portIndex)
     if (gUsedSymbols.contains(symbol))
     {
         int offset = 2;
-        String offsetStr = "_2";
+        water::String offsetStr = "_2";
         symbol += offsetStr;
 
         while (gUsedSymbols.contains(symbol))
         {
             offset += 1;
-            String newOffsetStr = "_" + String(offset);
+            water::String newOffsetStr = "_" + water::String(offset);
             symbol = symbol.replace(offsetStr, newOffsetStr);
             offsetStr = newOffsetStr;
         }
@@ -110,7 +91,7 @@ static const String nameToSymbol(const String& name, const uint32_t portIndex)
 
 static void writeManifestFile(PluginListManager& plm, const uint32_t microVersion, const uint32_t minorVersion)
 {
-    String text;
+    water::String text;
 
     // -------------------------------------------------------------------
     // Header
@@ -240,11 +221,11 @@ static intptr_t host_dispatcher(NativeHostHandle, NativeHostDispatcherOpcode, in
 static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
                             const uint32_t microVersion, const uint32_t minorVersion)
 {
-    const String pluginLabel(pluginDesc->label);
-    const String pluginFile("carla.lv2/" + pluginLabel + ".ttl");
+    const water::String pluginLabel(pluginDesc->label);
+    const water::String pluginFile("carla.lv2/" + pluginLabel + ".ttl");
 
     uint32_t portIndex = 0;
-    String text;
+    water::String text;
 
     gUsedSymbols.clear();
 
@@ -675,8 +656,8 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
     for (uint32_t i=0; i < paramCount; ++i)
     {
         const NativeParameter* paramInfo(pluginDesc->get_parameter_info(pluginHandle, i));
-        const String           paramName(paramInfo->name != nullptr ? paramInfo->name : "");
-        const String           paramUnit(paramInfo->unit != nullptr ? paramInfo->unit : "");
+        const water::String paramName(paramInfo->name != nullptr ? paramInfo->name : "");
+        const water::String paramUnit(paramInfo->unit != nullptr ? paramInfo->unit : "");
 
         CARLA_SAFE_ASSERT_RETURN(paramInfo != nullptr,)
 
@@ -688,19 +669,19 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
         else
             text += "        a lv2:InputPort, lv2:ControlPort ;\n";
 
-        text += "        lv2:index " + String(portIndex++) + " ;\n";
+        text += "        lv2:index " + water::String(portIndex++) + " ;\n";
         text += "        lv2:symbol \"" + nameToSymbol(paramName, i) + "\" ;\n";
 
         if (paramName.isNotEmpty())
             text += "        lv2:name \"" + paramName + "\" ;\n";
         else
-            text += "        lv2:name \"Port " + String(i+1) + "\" ;\n";
+            text += "        lv2:name \"Port " + water::String(i+1) + "\" ;\n";
 
         if ((paramInfo->hints & NATIVE_PARAMETER_IS_OUTPUT) == 0)
-            text += "        lv2:default " + String::formatted("%f", static_cast<double>(paramInfo->ranges.def)) + " ;\n";
+            text += "        lv2:default " + water::String::formatted("%f", static_cast<double>(paramInfo->ranges.def)) + " ;\n";
 
-        text += "        lv2:minimum " + String::formatted("%f", static_cast<double>(paramInfo->ranges.min)) + " ;\n";
-        text += "        lv2:maximum " + String::formatted("%f", static_cast<double>(paramInfo->ranges.max)) + " ;\n";
+        text += "        lv2:minimum " + water::String::formatted("%f", static_cast<double>(paramInfo->ranges.min)) + " ;\n";
+        text += "        lv2:maximum " + water::String::formatted("%f", static_cast<double>(paramInfo->ranges.max)) + " ;\n";
 
         if ((paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMATABLE) == 0)
             text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
@@ -726,8 +707,8 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
             else
                 text += "                       [ ";
 
-            text += "rdfs:label \"" + String(scalePoint->label) + "\" ;\n";
-            text += "                         rdf:value  " + String::formatted("%f", static_cast<double>(scalePoint->value)) + " ";
+            text += "rdfs:label \"" + water::String(scalePoint->label) + "\" ;\n";
+            text += "                         rdf:value  " + water::String::formatted("%f", static_cast<double>(scalePoint->value)) + " ";
 
             if (j+1 == paramInfo->scalePointCount)
                 text += "] ;\n";
@@ -764,7 +745,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
 
     text += "    lv2:microVersion " + String(microVersion) + " ;\n";
     text += "    lv2:minorVersion " + String(minorVersion) + " ;\n";
-    text += "    lv2:symbol \"" + CarlaString(pluginDesc->label).toBasic() + "\" .\n";
+    text += "    lv2:symbol \"" + String(pluginDesc->label).toBasic() + "\" .\n";
 
 #if 0
     // -------------------------------------------------------------------
@@ -777,7 +758,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc,
             const String presetsFile("carla.lv2/" + pluginLabel + "-presets.ttl");
             std::fstream presetsStream(presetsFile.toRawUTF8(), std::ios::out);
 
-            String presetId, presetText;
+            water::String presetId, presetText;
 
             presetText += "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n";
             presetText += "@prefix pset: <http://lv2plug.in/ns/ext/presets#> .\n";

@@ -534,7 +534,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
     };
 
     CarlaPluginPtr plugin;
-    CarlaString bridgeBinary(pData->options.binaryDir);
+    String bridgeBinary(pData->options.binaryDir);
 
     if (bridgeBinary.isNotEmpty())
     {
@@ -1130,19 +1130,19 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("CarlaEngine::getUniquePluginName(\"%s\")", name);
 
-    CarlaString sname;
+    String sname;
     sname = name;
 
     if (sname.isEmpty())
     {
         sname = "(No name)";
-        return sname.dup();
+        return carla_strdup(sname);
     }
 
     const std::size_t maxNameSize(carla_minConstrained<uint>(getMaxClientNameSize(), 0xff, 6U) - 6); // 6 = strlen(" (10)") + 1
 
     if (maxNameSize == 0 || ! isRunning())
-        return sname.dup();
+        return carla_strdup(sname);
 
     sname.truncate(maxNameSize);
     sname.replace(':', '.'); // ':' is used in JACK1 to split client/port names
@@ -1207,7 +1207,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
         sname += " (2)";
     }
 
-    return sname.dup();
+    return carla_strdup(sname);
 }
 
 // -----------------------------------------------------------------------
@@ -1222,8 +1222,8 @@ bool CarlaEngine::loadFile(const char* const filename)
     File file(filename);
     CARLA_SAFE_ASSERT_RETURN_ERR(file.exists(), "Requested file does not exist or is not a readable");
 
-    CarlaString baseName(file.getFileNameWithoutExtension().toRawUTF8());
-    CarlaString extension(file.getFileExtension().replace(".","").toLowerCase().toRawUTF8());
+    String baseName(file.getFileNameWithoutExtension().toRawUTF8());
+    String extension(file.getFileExtension().replace(".","").toLowerCase().toRawUTF8());
 
     const uint curPluginId(pData->nextPluginId < pData->curPluginCount ? pData->nextPluginId : pData->curPluginCount);
 
@@ -1330,7 +1330,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     if (extension == "xmz" || extension == "xiz")
     {
 #ifdef HAVE_ZYN_DEPS
-        CarlaString nicerName("Zyn - ");
+        String nicerName("Zyn - ");
 
         const std::size_t sep(baseName.find('-')+1);
 
@@ -2109,7 +2109,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 
         if (value != 0)
         {
-            CarlaString interposerPath(CarlaString(pData->options.binaryDir) + "/libcarla_interposer-safe.so");
+            String interposerPath(String(pData->options.binaryDir) + "/libcarla_interposer-safe.so");
             ::setenv("LD_PRELOAD", interposerPath.buffer(), 1);
         }
         else
@@ -2655,7 +2655,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
 {
     carla_debug("CarlaEngine::loadProjectInternal(%p, %s) - START", &xmlDoc, bool2str(alwaysLoadConnections));
 
-    CarlaScopedPointer<XmlElement> xmlElement(xmlDoc.getDocumentElement(true));
+    ScopedPointer<XmlElement> xmlElement(xmlDoc.getDocumentElement(true));
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to parse project file");
 
     const water::String& xmlType(xmlElement->getTagName());
@@ -3012,7 +3012,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             switch (ptype)
             {
             case PLUGIN_SF2:
-                if (CarlaString(stateSave.label).endsWith(" (16 outs)"))
+                if (String(stateSave.label).endsWith(" (16 outs)"))
                     extraStuff = kTrue;
                 // fall through
             case PLUGIN_LADSPA:

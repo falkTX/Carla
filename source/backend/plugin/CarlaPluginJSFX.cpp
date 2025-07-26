@@ -1,19 +1,6 @@
-/*
- * Carla JSFX Plugin
- * Copyright (C) 2021-2024 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2021 Jean Pierre Cimalando
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 // TODO(jsfx) graphics section
 
@@ -35,8 +22,6 @@
 
 using water::CharPointer_UTF8;
 using water::File;
-using water::String;
-using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -332,7 +317,7 @@ public:
         }
 
         const uint portNameSize = pData->engine->getMaxPortNameSize();
-        CarlaString portName;
+        String portName;
 
         // Audio Ins
         for (uint32_t j = 0; j < aIns; ++j)
@@ -353,7 +338,7 @@ public:
             else if (aIns > 1)
             {
                 portName += "input_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "input";
@@ -383,7 +368,7 @@ public:
             else if (aOuts > 1)
             {
                 portName += "output_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "output";
@@ -414,13 +399,13 @@ public:
 
             // only use values as integer if we have a proper range
             const bool isEnum = ysfx_slider_is_enum(fEffect, rindex) &&
-                                carla_isZero(min) &&
+                                d_isZero(min) &&
                                 max >= 0.0f &&
-                                carla_isEqual(max + 1.0f, static_cast<float>(ysfx_slider_get_enum_names(fEffect, rindex, nullptr, 0)));
+                                d_isEqual(max + 1.0f, static_cast<float>(ysfx_slider_get_enum_names(fEffect, rindex, nullptr, 0)));
 
             // NOTE: in case of incomplete slider specification without <min,max,step>;
             //  these are usually output-only sliders.
-            if (carla_isEqual(min, max))
+            if (d_isEqual(min, max))
             {
                 // replace with a dummy range
                 min = 0.0f;
@@ -929,10 +914,10 @@ public:
         fUnit = CarlaJsfxUnit();
 
         {
-            StringArray splitPaths;
+            water::StringArray splitPaths;
 
             if (const char* paths = pData->engine->getOptions().pathJSFX)
-                splitPaths = StringArray::fromTokens(CharPointer_UTF8(paths), CARLA_OS_SPLIT_STR, "");
+                splitPaths = water::StringArray::fromTokens(CharPointer_UTF8(paths), CARLA_OS_SPLIT_STR, "");
 
             File file;
             if (filename && filename[0] != '\0')
@@ -977,8 +962,8 @@ public:
         ysfx_config_u config(ysfx_config_new());
         CARLA_SAFE_ASSERT_RETURN(config != nullptr, false);
 
-        const CarlaString rootPath = fUnit.getRootPath();
-        const CarlaString filePath = fUnit.getFilePath();
+        const String rootPath = fUnit.getRootPath();
+        const String filePath = fUnit.getFilePath();
 
         ysfx_register_builtin_audio_formats(config.get());
         ysfx_set_import_root(config.get(), rootPath);
@@ -1021,7 +1006,7 @@ public:
             pData->name = carla_strdup(ysfx_get_name(fEffect));
         }
 
-        pData->filename = filePath.dup();
+        pData->filename = carla_strdup(filePath);
 
         // ---------------------------------------------------------------
         // register client

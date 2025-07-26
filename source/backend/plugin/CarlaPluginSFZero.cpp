@@ -214,7 +214,7 @@ public:
         pData->param.createNew(1, false);
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
-        CarlaString portName;
+        String portName;
 
         // ---------------------------------------
         // Audio Outputs
@@ -700,9 +700,9 @@ public:
 
         const water::String basename(File(filename).getFileNameWithoutExtension());
 
-        CarlaString label2(label != nullptr ? label : basename.toRawUTF8());
+        String label2(label != nullptr ? label : basename.toRawUTF8());
 
-        fLabel    = label2.dup();
+        fLabel    = carla_strdup(label2);
         fRealName = carla_strdup(basename.toRawUTF8());
 
         pData->filename = carla_strdup(filename);

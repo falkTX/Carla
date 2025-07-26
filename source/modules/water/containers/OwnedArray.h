@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -28,7 +28,7 @@
 
 #include "ArrayAllocationBase.h"
 
-#include "CarlaScopeUtils.hpp"
+#include "distrho/extra/ScopedPointer.hpp"
 
 namespace water {
 
@@ -372,7 +372,7 @@ public:
     {
         if (indexToChange >= 0)
         {
-            CarlaScopedPointer<ObjectClass> toDelete;
+            ScopedPointer<ObjectClass> toDelete;
 
             {
                 if (indexToChange < numUsed)
@@ -536,7 +536,7 @@ public:
     */
     void remove (const size_t indexToRemove, bool deleteObject = true)
     {
-        CarlaScopedPointer<ObjectClass> toDelete;
+        ScopedPointer<ObjectClass> toDelete;
 
         if (indexToRemove < numUsed)
         {

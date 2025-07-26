@@ -632,7 +632,7 @@ public:
         pData->param.createNew(params, false);
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
-        CarlaString portName;
+        String portName;
 
         // ---------------------------------------
         // Audio Outputs
@@ -654,7 +654,7 @@ public:
                 if ((i+2)/2 < 9)
                     portName += "0";
 
-                portName += CarlaString((i+2)/2);
+                portName += String((i+2)/2);
 
                 if (i % 2 == 0)
                     portName += "L";
@@ -1702,12 +1702,12 @@ public:
         // ---------------------------------------------------------------
         // get info
 
-        CarlaString label2(label);
+        String label2(label);
 
         if (kUse16Outs && ! label2.endsWith(" (16 outs)"))
             label2 += " (16 outs)";
 
-        fLabel          = label2.dup();
+        fLabel          = carla_strdup(label2);
         pData->filename = carla_strdup(filename);
 
         if (name != nullptr && name[0] != '\0')

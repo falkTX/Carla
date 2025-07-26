@@ -546,7 +546,7 @@ public:
     {
         char sampleRateStr[32];
         {
-            const CarlaScopedLocale csl;
+            const ScopedSafeLocale ssl;
             std::snprintf(sampleRateStr, 31, "%.12g", kEngine->getSampleRate());
         }
         sampleRateStr[31] = '\0';
@@ -583,10 +583,10 @@ private:
     CarlaEngine*    const kEngine;
     CarlaPluginLV2* const kPlugin;
 
-    CarlaString fFilename;
-    CarlaString fPluginURI;
-    CarlaString fUiURI;
-    UiState     fUiState;
+    String fFilename;
+    String fPluginURI;
+    String fUiURI;
+    UiState fUiState;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeServerLV2)
 };
@@ -1477,7 +1477,7 @@ public:
 
     void setWindowTitle(const char* const title) noexcept
     {
-        CarlaString uiTitle;
+        String uiTitle;
 
         if (title != nullptr)
         {
@@ -1490,7 +1490,7 @@ public:
         }
 
         std::free(const_cast<char*>(fLv2Options.windowTitle));
-        fLv2Options.windowTitle = uiTitle.releaseBufferPointer();
+        fLv2Options.windowTitle = uiTitle.getAndReleaseBuffer();
 
         fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
         fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].value = fLv2Options.windowTitle;
@@ -1845,7 +1845,7 @@ public:
                     tmpBuf[0xfe] = '\0';
 
                     const CarlaMutexLocker cml(fPipeServer.getPipeLock());
-                    const CarlaScopedLocale csl;
+                    const ScopedSafeLocale ssl;
 
                     // write URI mappings
                     uint32_t u = 0;
@@ -2544,7 +2544,7 @@ public:
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
-        CarlaString portName;
+        String portName;
         uint32_t iCtrl = 0;
 
         for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCvIn=0, iCvOut=0, iEvIn=0, iEvOut=0; i < portCount; ++i)
@@ -5361,7 +5361,7 @@ public:
 
     const char* getUiBridgeBinary(const LV2_Property type) const
     {
-        CarlaString bridgeBinary(pData->engine->getOptions().binaryDir);
+        String bridgeBinary(pData->engine->getOptions().binaryDir);
 
         if (bridgeBinary.isEmpty())
             return nullptr;
@@ -5406,7 +5406,7 @@ public:
         if (! File(bridgeBinary.buffer()).existsAsFile())
             return nullptr;
 
-        return bridgeBinary.dupSafe();
+        return carla_strdup_safe(bridgeBinary);
     }
 
     // -------------------------------------------------------------------
@@ -5833,7 +5833,7 @@ public:
             return nullptr;
         }
 
-        CarlaString basedir(pData->engine->getName());
+        String basedir(pData->engine->getName());
 
         if (temporary)
             basedir += ".tmp";
@@ -5896,7 +5896,7 @@ public:
             return File();
         }
 
-        CarlaString basedir(pData->engine->getName());
+        String basedir(pData->engine->getName());
 
         if (temporary)
             basedir += ".tmp";
@@ -5968,7 +5968,7 @@ public:
                 if (type == kUridAtomString || type == kUridAtomPath)
                     cData.value = carla_strdup((const char*)value);
                 else
-                    cData.value = CarlaString::asBase64(value, size).dup();
+                    cData.value = carla_strdup(String::asBase64(value, size));
 
                 return LV2_STATE_SUCCESS;
             }
@@ -5982,7 +5982,7 @@ public:
         if (type == kUridAtomString || type == kUridAtomPath)
             newData.value = carla_strdup((const char*)value);
         else
-            newData.value = CarlaString::asBase64(value, size).dup();
+            newData.value = carla_strdup(String::asBase64(value, size));
 
         pData->custom.append(newData);
 
@@ -6657,7 +6657,7 @@ public:
             }
             else if (feature.Required && ! is_lv2_feature_supported(feature.URI))
             {
-                CarlaString msg("Plugin wants a feature that is not supported:\n");
+                String msg("Plugin wants a feature that is not supported:\n");
                 msg += feature.URI;
 
                 canContinue = false;
@@ -7175,7 +7175,7 @@ public:
             {
                 carla_stdout("Will use UI-Bridge for '%s', binary: \"%s\"", pData->name, bridgeBinary);
 
-                CarlaString uiTitle;
+                String uiTitle;
 
                 if (pData->uiTitle.isNotEmpty())
                 {
@@ -7187,7 +7187,7 @@ public:
                     uiTitle += " (GUI)";
                 }
 
-                fLv2Options.windowTitle = uiTitle.releaseBufferPointer();
+                fLv2Options.windowTitle = uiTitle.getAndReleaseBuffer();
 
                 fUI.type = UI::TYPE_BRIDGE;
                 fPipeServer.setData(bridgeBinary, fRdfDescriptor->URI, fUI.rdfDescriptor->URI);
@@ -7321,7 +7321,7 @@ public:
         // initialize ui data
 
         {
-            CarlaString uiTitle;
+            String uiTitle;
 
             if (pData->uiTitle.isNotEmpty())
             {
@@ -7333,7 +7333,7 @@ public:
                 uiTitle += " (GUI)";
             }
 
-            fLv2Options.windowTitle = uiTitle.releaseBufferPointer();
+            fLv2Options.windowTitle = uiTitle.getAndReleaseBuffer();
         }
 
         fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
@@ -7557,7 +7557,7 @@ private:
     EngineTimeInfo fLastTimeInfo;
 
     // if plugin provides path parameter, use it as fake "gui"
-    CarlaString fFilePathURI;
+    String fFilePathURI;
 
     struct Extensions {
         const LV2_Options_Interface* options;
@@ -8428,7 +8428,7 @@ CarlaPluginPtr CarlaPlugin::newLV2(const Initializer& init)
    #ifndef CARLA_OS_WASM
     if (needsArchBridge != nullptr)
     {
-        CarlaString bridgeBinary(init.engine->getOptions().binaryDir);
+        String bridgeBinary(init.engine->getOptions().binaryDir);
         bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native";
 
         return CarlaPlugin::newBridge(init, BINARY_NATIVE, PLUGIN_LV2, needsArchBridge, bridgeBinary);

@@ -25,7 +25,6 @@
 #include "qsafesettings.hpp"
 
 #include "CarlaLibJackHints.h"
-#include "CarlaString.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 // Jack Application Dialog

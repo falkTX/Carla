@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -121,7 +121,7 @@ XmlElement* XmlDocument::getDocumentElement (const bool onlyReadOuterDocumentEle
 {
     if (originalText.isEmpty() && inputSource != nullptr)
     {
-        CarlaScopedPointer<InputStream> in (inputSource->createInputStream());
+        ScopedPointer<InputStream> in (inputSource->createInputStream());
 
         if (in != nullptr)
         {
@@ -160,7 +160,7 @@ String XmlDocument::getFileContents (const String& filename) const
 {
     if (inputSource != nullptr)
     {
-        const CarlaScopedPointer<InputStream> in (inputSource->createInputStreamFor (filename.trim().unquoted()));
+        const ScopedPointer<InputStream> in (inputSource->createInputStreamFor (filename.trim().unquoted()));
 
         if (in != nullptr)
             return in->readEntireStreamAsString();
@@ -206,7 +206,7 @@ XmlElement* XmlDocument::parseDocumentElement (CharPointer_UTF8 textToParse,
     {
         lastError.clear();
 
-        CarlaScopedPointer<XmlElement> result (readNextElement (! onlyReadOuterDocumentElement));
+        ScopedPointer<XmlElement> result (readNextElement (! onlyReadOuterDocumentElement));
 
         if (! errorOccurred)
             return result.release();

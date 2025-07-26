@@ -1,30 +1,14 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2020 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaEngineClient.hpp"
 #include "CarlaEngineUtils.hpp"
-
-#include "CarlaString.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-static void _getUniquePortName(CarlaString& sname, const CarlaStringList& list)
+static void _getUniquePortName(String& sname, const CarlaStringList& list)
 {
     for (CarlaStringList::Itenerator it = list.begin2(); it.valid(); it.next())
     {
@@ -144,7 +128,7 @@ const char* CarlaEngineClient::ProtectedData::getUniquePortName(const char* cons
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
 
-    CarlaString sname;
+    String sname;
     sname = name;
 
     _getUniquePortName(sname, audioInList);
@@ -154,7 +138,7 @@ const char* CarlaEngineClient::ProtectedData::getUniquePortName(const char* cons
     _getUniquePortName(sname, eventInList);
     _getUniquePortName(sname, eventOutList);
 
-    return sname.dup();
+    return carla_strdup(sname);
 }
 
 void CarlaEngineClient::ProtectedData::clearPorts()

@@ -769,13 +769,13 @@ public:
                           EngineInternalGraph& egraph,
                           CarlaRecursiveMutex& rmutex,
                           const CarlaPluginPtr plugin,
-                          const CarlaString& mainClientName,
+                          const String& mainClientName,
                           jack_client_t* const jackClient)
         : CarlaEngineClientForSubclassing(engine, egraph, plugin),
 #else
     CarlaEngineJackClient(const CarlaEngine& engine,
                           CarlaRecursiveMutex& rmutex,
-                          const CarlaString& mainClientName,
+                          const String& mainClientName,
                           jack_client_t* const jackClient)
         : CarlaEngineClientForSubclassing(engine),
 #endif
@@ -1108,23 +1108,23 @@ public:
     }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
-    bool renameInSingleClient(const CarlaString& newClientName)
+    bool renameInSingleClient(const String& newClientName)
     {
-        const CarlaString clientNamePrefix(newClientName + ":");
+        const String clientNamePrefix(newClientName + ":");
 
         return _renamePorts(fAudioPorts, clientNamePrefix) &&
                _renamePorts(fCVPorts,    clientNamePrefix) &&
                _renamePorts(fEventPorts, clientNamePrefix);
     }
 
-    void closeForRename(jack_client_t* const newClient, const CarlaString& newClientName) noexcept
+    void closeForRename(jack_client_t* const newClient, const String& newClientName) noexcept
     {
         if (fJackClient != nullptr)
         {
             if (isActive())
             {
                 {
-                    const CarlaString clientNamePrefix(newClientName + ":");
+                    const String clientNamePrefix(newClientName + ":");
 
                     // store current client connections
                     const CarlaMutexLocker cml(fPreRenameMutex);
@@ -1203,13 +1203,13 @@ private:
 
     CarlaMutex      fPreRenameMutex;
     CarlaStringList fPreRenameConnections;
-    CarlaString     fPreRenamePluginId;
-    CarlaString     fPreRenamePluginIcon;
+    String fPreRenamePluginId;
+    String fPreRenamePluginIcon;
 
-    CarlaScopedPointer<CarlaPluginPtr> fReservedPluginPtr;
+    ScopedPointer<CarlaPluginPtr> fReservedPluginPtr;
 
     template<typename T>
-    bool _renamePorts(const LinkedList<T*>& t, const CarlaString& clientNamePrefix)
+    bool _renamePorts(const LinkedList<T*>& t, const String& clientNamePrefix)
     {
         for (typename LinkedList<T*>::Itenerator it = t.begin2(); it.valid(); it.next())
         {
@@ -1225,7 +1225,7 @@ private:
 
             shortPortName += oldClientNameSep-shortPortName + 1;
 
-            const CarlaString newPortName(clientNamePrefix + shortPortName);
+            const String newPortName(clientNamePrefix + shortPortName);
 
             if (! jackbridge_port_rename(fJackClient, port->fJackPort, newPortName))
                 return false;
@@ -1235,7 +1235,7 @@ private:
     }
 
     template<typename T>
-    void _savePortsConnections(const LinkedList<T*>& t, const CarlaString& clientNamePrefix)
+    void _savePortsConnections(const LinkedList<T*>& t, const String& clientNamePrefix)
     {
         for (typename LinkedList<T*>::Itenerator it = t.begin2(); it.valid(); it.next())
         {
@@ -1246,7 +1246,7 @@ private:
             const char* const shortPortName(jackbridge_port_short_name(port->fJackPort));
             CARLA_SAFE_ASSERT_CONTINUE(shortPortName != nullptr && shortPortName[0] != '\0');
 
-            const CarlaString portName(clientNamePrefix + shortPortName);
+            const String portName(clientNamePrefix + shortPortName);
 
             if (const char** const connections = jackbridge_port_get_all_connections(fJackClient, port->fJackPort))
             {
@@ -1311,7 +1311,7 @@ private:
 #endif // BUILD_BRIDGE_ALTERNATIVE_ARCH
 
     CarlaRecursiveMutex& fThreadSafeMetadataMutex;
-    const CarlaString& fMainClientName;
+    const String& fMainClientName;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackClient)
 };
@@ -1424,7 +1424,7 @@ public:
         fExternalPatchbayHost = true;
         fExternalPatchbayOsc  = true;
 
-        CarlaString truncatedClientName;
+        String truncatedClientName;
 
         if (fClient == nullptr && clientName != nullptr)
         {
@@ -1559,8 +1559,8 @@ public:
 
 # ifdef HAVE_LIBLO
         {
-            const CarlaString& tcp(pData->osc.getServerPathTCP());
-            const CarlaString& udp(pData->osc.getServerPathUDP());
+            const String& tcp(pData->osc.getServerPathTCP());
+            const String& udp(pData->osc.getServerPathUDP());
 
             if (tcp.isNotEmpty() || udp.isNotEmpty())
             {
@@ -2126,7 +2126,7 @@ public:
             saveStatePtr = &saveState;
         }
 
-        CarlaString uniqueName;
+        String uniqueName;
 
         try {
             const char* const tmpName = getUniquePluginName(newName);
@@ -3233,7 +3233,7 @@ protected:
                                             const CarlaJackPortHints& jackPortHints)
     {
         bool groupFound;
-        CarlaString groupName(portName);
+        String groupName(portName);
         groupName.truncate(groupName.rfind(shortPortName, &groupFound)-1);
         CARLA_SAFE_ASSERT_RETURN(groupFound,);
 
@@ -3463,7 +3463,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(newFullName != nullptr && newFullName[0] != '\0',);
 
         bool found;
-        CarlaString groupName(newFullName);
+        String groupName(newFullName);
         groupName.truncate(groupName.rfind(newShortName, &found)-1);
         CARLA_SAFE_ASSERT_RETURN(found,);
 
@@ -3571,7 +3571,7 @@ private:
     bool fExternalPatchbayOsc;
     bool fFreewheel;
 
-    CarlaString fClientName;
+    String fClientName;
     CarlaRecursiveMutex fThreadSafeMetadataMutex;
 
     // -------------------------------------------------------------------
@@ -3579,7 +3579,7 @@ private:
 #ifdef BUILD_BRIDGE
     bool fIsRunning;
 #else
-    CarlaString fClientNamePrefix;
+    String fClientNamePrefix;
 
     enum RackPorts {
         kRackPortAudioIn1  = 0,
@@ -3798,7 +3798,7 @@ private:
                     uint groupId = 0;
 
                     bool found;
-                    CarlaString groupName(fullPortName);
+                    String groupName(fullPortName);
                     groupName.truncate(groupName.rfind(shortPortName, &found)-1);
 
                     CARLA_SAFE_ASSERT_CONTINUE(found);

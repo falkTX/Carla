@@ -124,12 +124,12 @@ public:
     char* getEnvVarsToExport()
     {
         const EngineOptions& options(kEngine->getOptions());
-        CarlaString binaryDir(options.binaryDir);
+        String binaryDir(options.binaryDir);
        #ifdef HAVE_LIBLO
         const int sessionManager = fSetupLabel[4U] - '0';
        #endif
 
-        CarlaString ret;
+        String ret;
        #ifdef CARLA_OS_MAC
         ret += "export DYLD_LIBRARY_PATH=" + binaryDir + "/jack\n";
         ret += "export DYLD_INSERT_LIBRARIES=" + binaryDir + "/libcarla_interposer-jack-x11.dylib\n";
@@ -151,12 +151,12 @@ public:
        #endif
 
         if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
-            ret += "export CARLA_FRONTEND_WIN_ID=" + CarlaString(options.frontendWinId) + "\n";
+            ret += "export CARLA_FRONTEND_WIN_ID=" + String(options.frontendWinId) + "\n";
 
         ret += "export CARLA_LIBJACK_SETUP=" + fSetupLabel + "\n";
         ret += "export CARLA_SHM_IDS=" + fShmIds + "\n";
 
-        return ret.releaseBufferPointer();
+        return ret.getAndReleaseBuffer();
     }
 
 protected:
@@ -350,11 +350,11 @@ protected:
             std::snprintf(winIdStr, STR_MAX, P_UINTPTR, options.frontendWinId);
             winIdStr[STR_MAX] = '\0';
 
-            const CarlaString libjackdir(CarlaString(options.binaryDir) + "/jack");
+            const String libjackdir(String(options.binaryDir) + "/jack");
            #ifdef CARLA_OS_MAC
-            const CarlaString ldpreload(CarlaString(options.binaryDir) + "/libcarla_interposer-jack-x11.dylib");
+            const String ldpreload(String(options.binaryDir) + "/libcarla_interposer-jack-x11.dylib");
            #else
-            const CarlaString ldpreload(CarlaString(options.binaryDir) + "/libcarla_interposer-jack-x11.so");
+            const String ldpreload(String(options.binaryDir) + "/libcarla_interposer-jack-x11.so");
            #endif
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
@@ -435,7 +435,7 @@ protected:
                 {
                     carla_stderr("CarlaPluginJackThread::run() - application crashed");
 
-                    CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
+                    String errorString("Plugin '" + String(kPlugin->getName()) + "' has crashed!\n"
                                             "Saving now will lose its current settings.\n"
                                             "Please remove this plugin, and not rely on it from this point.");
                     kEngine->callback(true, true,
@@ -455,8 +455,8 @@ private:
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
 
-    CarlaString fShmIds;
-    CarlaString fSetupLabel;
+    String fShmIds;
+    String fSetupLabel;
 
 #ifdef HAVE_LIBLO
     lo_address fOscClientAddress;
@@ -464,10 +464,10 @@ private:
     bool fHasOptionalGui;
 
     struct ProjectData {
-        CarlaString appName;
-        CarlaString path;
-        CarlaString display;
-        CarlaString clientName;
+        String appName;
+        String path;
+        String display;
+        String clientName;
 
         ProjectData()
             : appName(),
@@ -483,7 +483,7 @@ private:
             CARLA_SAFE_ASSERT_RETURN(uniqueCodeID != nullptr && uniqueCodeID[0] != '\0', false);
             CARLA_SAFE_ASSERT_RETURN(appName.isNotEmpty(), false);
 
-            CarlaString child(pluginName);
+            String child(pluginName);
             child += ".";
             child += uniqueCodeID;
 
@@ -500,7 +500,7 @@ private:
     } fProject;
 #endif
 
-    CarlaScopedPointer<ChildProcess> fProcess;
+    ScopedPointer<ChildProcess> fProcess;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJackThread)
 };
@@ -847,7 +847,7 @@ public:
             needsCtrlOut = true;
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
-        CarlaString portName;
+        String portName;
 
         // Audio Ins
         for (uint8_t j=0; j < fInfo.aIns; ++j)
@@ -863,7 +863,7 @@ public:
             if (fInfo.aIns > 1)
             {
                 portName += "audio_in_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
             {
@@ -890,7 +890,7 @@ public:
             if (fInfo.aOuts > 1)
             {
                 portName += "audio_out_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
             {
@@ -1807,7 +1807,7 @@ private:
     struct Info {
         uint8_t aIns, aOuts;
         uint8_t mIns, mOuts;
-        CarlaString setupLabel;
+        String setupLabel;
         std::vector<uint8_t> chunk;
 
         Info()
@@ -1870,7 +1870,7 @@ private:
         char code[6];
         code[5] = '\0';
 
-        CarlaString child;
+        String child;
 
         for (;;)
         {
@@ -1949,21 +1949,21 @@ private:
         const bool needsCancelableAction = ! pData->engine->isLoadingProject();
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
-        CarlaString actionName;
+        String actionName;
 
         if (needsCancelableAction)
         {
             if (fSetupHints & LIBJACK_FLAG_EXTERNAL_START)
             {
                 const EngineOptions& options(pData->engine->getOptions());
-                CarlaString binaryDir(options.binaryDir);
+                String binaryDir(options.binaryDir);
 
                 char* const hwVars = fBridgeThread.getEnvVarsToExport();
 
                 actionName  = "Waiting for external JACK application start, please use the following environment variables:\n";
                 actionName += hwVars;
 
-                delete[] hwVars;
+                std::free(hwVars);
             }
             else
             {

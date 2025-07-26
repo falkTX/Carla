@@ -5,9 +5,9 @@
 #define CARLA_THREAD_HPP_INCLUDED
 
 #include "CarlaMutex.hpp"
-#include "CarlaString.hpp"
 #include "CarlaProcessUtils.hpp"
 #include "distrho/extra/Sleep.hpp"
+#include "distrho/extra/String.hpp"
 
 #ifdef CARLA_OS_WASM
 # error Threads do not work under wasm!
@@ -213,7 +213,7 @@ public:
      * Returns the name of the thread.
      * This is the name that gets set in the constructor.
      */
-    const CarlaString& getThreadName() const noexcept
+    const String& getThreadName() const noexcept
     {
         return fName;
     }
@@ -249,7 +249,7 @@ public:
 private:
     CarlaMutex         fLock;       // Thread lock
     CarlaSignal        fSignal;     // Thread start wait signal
-    const CarlaString  fName;       // Thread name
+    const String       fName;       // Thread name
     volatile pthread_t fHandle;     // Handle for this thread
     volatile bool      fShouldExit; // true if thread should exit
 

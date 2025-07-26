@@ -698,7 +698,7 @@ public:
 
     void setWindowTitle(const char* const title) noexcept
     {
-        CarlaString uiName;
+        String uiName;
 
         if (title != nullptr)
         {
@@ -711,7 +711,7 @@ public:
         }
 
         std::free(const_cast<char*>(fHost.uiName));
-        fHost.uiName = uiName.releaseBufferPointer();
+        fHost.uiName = uiName.getAndReleaseBuffer();
 
         if (fDescriptor->dispatcher != nullptr && fIsUiVisible)
         {
@@ -1143,7 +1143,7 @@ public:
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
-        CarlaString portName;
+        String portName;
 
         // Audio Ins
         for (j=0; j < aIns; ++j)
@@ -1163,7 +1163,7 @@ public:
             else if (aIns > 1 && ! forcedStereoIn)
             {
                 portName += "input_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "input";
@@ -1200,7 +1200,7 @@ public:
             else if (aOuts > 1 && ! forcedStereoOut)
             {
                 portName += "output_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "output";
@@ -1237,7 +1237,7 @@ public:
             else if (cvIns > 1)
             {
                 portName += "cv_input_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "cv_input";
@@ -1279,7 +1279,7 @@ public:
             else if (cvOuts > 1)
             {
                 portName += "cv_output_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
             }
             else
                 portName += "cv_output";
@@ -1317,7 +1317,7 @@ public:
                 }
 
                 portName += "midi-in_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
                 portName.truncate(portNameSize);
 
                 fMidiIn.ports[j]   = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, j);
@@ -1341,7 +1341,7 @@ public:
                 }
 
                 portName += "midi-out_";
-                portName += CarlaString(j+1);
+                portName += String(j+1);
                 portName.truncate(portNameSize);
 
                 fMidiOut.ports[j]   = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, j);
@@ -2950,7 +2950,7 @@ public:
         {
             CARLA_ASSERT(fHost.uiName == nullptr);
 
-            CarlaString uiName;
+            String uiName;
 
             if (pData->uiTitle.isNotEmpty())
             {
@@ -2962,7 +2962,7 @@ public:
                 uiName += " (GUI)";
             }
 
-            fHost.uiName = uiName.releaseBufferPointer();
+            fHost.uiName = uiName.getAndReleaseBuffer();
         }
 
         // ---------------------------------------------------------------
@@ -3068,8 +3068,8 @@ private:
     bool fInlineDisplayNeedsRedraw;
     int64_t fInlineDisplayLastRedrawTime;
 
-    CarlaString fLastProjectFilename;
-    CarlaString fLastProjectFolder;
+    String fLastProjectFilename;
+    String fLastProjectFolder;
 
     float**         fAudioAndCvInBuffers;
     float**         fAudioAndCvOutBuffers;

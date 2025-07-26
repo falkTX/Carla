@@ -9,10 +9,9 @@
 
 #include "SFZCommon.h"
 
+#include "distrho/extra/ScopedPointer.hpp"
 #include "water/buffers/AudioSampleBuffer.h"
 #include "water/files/File.h"
-
-#include "CarlaScopeUtils.hpp"
 
 namespace sfzero
 {
@@ -42,7 +41,7 @@ public:
 
 private:
   water::File file_;
-  CarlaScopedPointer<water::AudioSampleBuffer> buffer_;
+  ScopedPointer<water::AudioSampleBuffer> buffer_;
   double sampleRate_;
   water::uint64 sampleLength_, loopStart_, loopEnd_;
 

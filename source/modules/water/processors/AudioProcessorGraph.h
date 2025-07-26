@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2015 ROLI Ltd.
-   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the GNU
    General Public License as published by the Free Software Foundation;
@@ -112,7 +112,7 @@ public:
         //==============================================================================
         friend class AudioProcessorGraph;
 
-        const CarlaScopedPointer<AudioProcessor> processor;
+        const ScopedPointer<AudioProcessor> processor;
         bool isPrepared;
 
         Node (uint32 nodeId, AudioProcessor*) noexcept;
@@ -405,7 +405,7 @@ private:
 
     friend class AudioGraphIOProcessor;
     struct AudioProcessorGraphBufferHelpers;
-    CarlaScopedPointer<AudioProcessorGraphBufferHelpers> audioAndCVBuffers;
+    ScopedPointer<AudioProcessorGraphBufferHelpers> audioAndCVBuffers;
 
     MidiBuffer* currentMidiInputBuffer;
     MidiBuffer currentMidiOutputBuffer;

@@ -9,10 +9,11 @@
 #ifdef HAVE_LIBLO
 
 #include "CarlaBackend.h"
-#include "CarlaJuceUtils.hpp"
 #include "CarlaPlugin.hpp"
+#include "CarlaJuceUtils.hpp"
 #include "CarlaOscUtils.hpp"
-#include "CarlaString.hpp"
+
+#include "distrho/extra/String.hpp"
 
 #define CARLA_ENGINE_OSC_HANDLE_ARGS const CarlaPluginPtr& plugin, \
   const int argc, const lo_arg* const* const argv, const char* const types
@@ -56,12 +57,12 @@ public:
 
     // -------------------------------------------------------------------
 
-    const CarlaString& getServerPathTCP() const noexcept
+    const String& getServerPathTCP() const noexcept
     {
         return fServerPathTCP;
     }
 
-    const CarlaString& getServerPathUDP() const noexcept
+    const String& getServerPathUDP() const noexcept
     {
         return fServerPathUDP;
     }
@@ -113,11 +114,11 @@ private:
     CarlaOscData fControlDataTCP;
     CarlaOscData fControlDataUDP;
 
-    CarlaString  fName;
-    CarlaString  fServerPathTCP;
-    CarlaString  fServerPathUDP;
-    lo_server    fServerTCP;
-    lo_server    fServerUDP;
+    String    fName;
+    String    fServerPathTCP;
+    String    fServerPathUDP;
+    lo_server fServerTCP;
+    lo_server fServerUDP;
 
     // -------------------------------------------------------------------
 

@@ -106,7 +106,7 @@ void CarlaEngineCVPort::setRange(const float min, const float max) noexcept
     carla_zeroChars(strBufMax, STR_MAX);
 
     {
-        const CarlaScopedLocale csl;
+        const ScopedSafeLocale ssl;
         std::snprintf(strBufMin, STR_MAX-1, "%.12g", static_cast<double>(min));
         std::snprintf(strBufMax, STR_MAX-1, "%.12g", static_cast<double>(max));
     }

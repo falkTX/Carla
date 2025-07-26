@@ -214,6 +214,11 @@ plugin-wine:
 else
 plugin-wine: $(MODULEDIR)/dgl.wine.a
 	@$(MAKE) -C source/plugin wine
+ifeq ($(CPU_X86_64),true)
+	@$(MAKE) plugin-wine AR=x86_64-w64-mingw32-ar CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++
+else ifeq ($(CPU_I386),true)
+	@$(MAKE) plugin-wine AR=i686-w64-mingw32-ar CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++
+endif
 endif
 
 rest: libs

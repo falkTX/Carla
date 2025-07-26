@@ -7,6 +7,7 @@
 #include "CarlaBinaryUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaPipeUtils.hpp"
+#include "CarlaScopeUtils.hpp"
 #include "CarlaSha1Utils.hpp"
 
 #include "distrho/extra/Time.hpp"

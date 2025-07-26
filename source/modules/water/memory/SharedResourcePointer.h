@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2019 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -29,7 +29,7 @@
 #include "ReferenceCountedObject.h"
 #include "../threads/SpinLock.h"
 
-#include "CarlaScopeUtils.hpp"
+#include "distrho/extra/ScopedPointer.hpp"
 
 namespace water {
 
@@ -144,7 +144,7 @@ private:
     struct SharedObjectHolder  : public ReferenceCountedObject
     {
         SpinLock lock;
-        CarlaScopedPointer<SharedObjectType> sharedInstance;
+        ScopedPointer<SharedObjectType> sharedInstance;
         int refCount;
     };
 

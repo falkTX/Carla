@@ -20,13 +20,15 @@
 
 #include "CarlaHost.h"
 #include "CarlaUtils.h"
+
 #include "CarlaEngine.hpp"
+#include "CarlaUtils.hpp"
 
 #if !(defined(BUILD_BRIDGE) || defined(CARLA_OS_WASM))
 # define CARLA_CAN_USE_LOG_THREAD
 # include "CarlaLogThread.hpp"
 #else
-# include "CarlaString.hpp"
+# include "distrho/extra/String.hpp"
 #endif
 
 namespace CB = CARLA_BACKEND_NAMESPACE;
@@ -64,7 +66,7 @@ struct CarlaHostStandalone : CarlaHostHandleImpl {
     bool           logThreadEnabled;
 #endif
 
-    CarlaString lastError;
+    String lastError;
 
     CarlaHostStandalone() noexcept
         : CarlaHostHandleImpl(),

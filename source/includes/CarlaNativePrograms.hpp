@@ -1,19 +1,5 @@
-/*
- * Carla Native Plugin API (C++)
- * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_NATIVE_PROGRAMS_HPP_INCLUDED
 #define CARLA_NATIVE_PROGRAMS_HPP_INCLUDED
@@ -23,14 +9,14 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMutex.hpp"
 
+#include "distrho/extra/String.hpp"
+
 #include "water/files/File.h"
 #include "water/memory/SharedResourcePointer.h"
 #include "water/text/StringArray.h"
 
 using water::File;
 using water::SharedResourcePointer;
-using water::String;
-using water::StringArray;
 
 /*!
  * @defgroup CarlaNativeAPI Carla Native API
@@ -48,7 +34,7 @@ enum FileType {
 
 template <FileType fileType>
 struct NativePluginPresetManager {
-    StringArray filenames;
+    water::StringArray filenames;
 
     NativePluginPresetManager(const char* const paths, const char* const wildcard)
         : filenames()
@@ -58,9 +44,9 @@ struct NativePluginPresetManager {
         if (paths == nullptr || paths[0] == '\0' || wildcard[0] == '\0')
             return;
 
-        const StringArray splitPaths(StringArray::fromTokens(paths, CARLA_OS_SPLIT_STR, ""));
+        const water::StringArray splitPaths(water::StringArray::fromTokens(paths, CARLA_OS_SPLIT_STR, ""));
 
-        for (String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
+        for (water::String *it = splitPaths.begin(), *end = splitPaths.end(); it != end; ++it)
         {
             std::vector<File> results;
 
@@ -126,11 +112,11 @@ protected:
         const NativePluginPresetManagerType& pm(kPrograms.get());
         CARLA_SAFE_ASSERT_RETURN(index < pm.filenames.size(), nullptr);
 
-        fRetMidiProgramName = File(pm.filenames.strings.getUnchecked(index).toRawUTF8()).getFileNameWithoutExtension();
+        fRetMidiProgramName = File(pm.filenames.strings.getUnchecked(index).toRawUTF8()).getFileNameWithoutExtension().toRawUTF8();
 
         fRetMidiProgram.bank = 0;
         fRetMidiProgram.program = uindex;
-        fRetMidiProgram.name = fRetMidiProgramName.toRawUTF8();
+        fRetMidiProgram.name = fRetMidiProgramName;
 
         return &fRetMidiProgram;
     }

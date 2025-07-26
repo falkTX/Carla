@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaBackendUtils.hpp"
@@ -15,6 +15,8 @@
 #include "CarlaVst2Utils.hpp"
 #include "CarlaVst3Utils.hpp"
 #include "CarlaClapUtils.hpp"
+
+#include "distrho/extra/ScopedPointer.hpp"
 
 #ifndef BUILDING_CARLA_FOR_WINE
 # include "CarlaPipeUtils.cpp"
@@ -152,7 +154,7 @@ public:
 };
 #endif
 
-CarlaScopedPointer<DiscoveryPipe> gPipe;
+ScopedPointer<DiscoveryPipe> gPipe;
 
 // --------------------------------------------------------------------------------------------------------------------
 // Don't print ELF/EXE related errors since discovery can find multi-architecture binaries
@@ -799,7 +801,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
     Lilv::Node bundleNode(lv2World.new_file_uri(nullptr, bundle));
     CARLA_SAFE_ASSERT_RETURN(bundleNode.is_uri(),);
 
-    CarlaString sBundle(bundleNode.as_uri());
+    String sBundle(bundleNode.as_uri());
 
     if (! sBundle.endsWith("/"))
         sBundle += "/";
@@ -833,7 +835,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
         const char* const URI = it.getValue(nullptr);
         CARLA_SAFE_ASSERT_CONTINUE(URI != nullptr);
 
-        CarlaScopedPointer<const LV2_RDF_Descriptor> rdfDescriptor(lv2_rdf_new(URI, false));
+        ScopedPointer<const LV2_RDF_Descriptor> rdfDescriptor(lv2_rdf_new(URI, false));
 
         if (rdfDescriptor == nullptr || rdfDescriptor->URI == nullptr)
         {
@@ -1155,9 +1157,9 @@ static bool do_vst2_check(lib_t& libHandle, const char* const filename, const bo
     gVstCurrentUniqueId =  effect->uniqueID;
 
     char strBuf[STR_MAX+1];
-    CarlaString cName;
-    CarlaString cProduct;
-    CarlaString cVendor;
+    String cName;
+    String cProduct;
+    String cVendor;
     PluginCategory category;
     LinkedList<intptr_t> uniqueIds;
 
@@ -2739,8 +2741,8 @@ static void do_fluidsynth_check(const char* const filename, const PluginType typ
         delete_fluid_settings(f_settings);
     }
 
-    CarlaString name(file.getFileNameWithoutExtension().toRawUTF8());
-    CarlaString label(name);
+    String name(file.getFileNameWithoutExtension().toRawUTF8());
+    String label(name);
 
     // 2 channels
     DISCOVERY_OUT("init", "------------");
@@ -2852,7 +2854,7 @@ int main(int argc, const char* argv[])
     const char* const filename = argv[2];
     const PluginType  type     = getPluginTypeFromString(stype);
 
-    CarlaString filenameCheck(filename);
+    String filenameCheck(filename);
     filenameCheck.toLower();
 
     bool openLib;

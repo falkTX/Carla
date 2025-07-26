@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2018-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2018-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -29,7 +29,7 @@
 #include "Array.h"
 #include "../text/String.h"
 
-#include "CarlaScopeUtils.hpp"
+#include "distrho/extra/ScopedPointer.hpp"
 
 namespace water {
 
@@ -141,7 +141,7 @@ public:
 
             while (h != nullptr)
             {
-                const CarlaScopedPointer<HashEntry> deleter (h);
+                const ScopedPointer<HashEntry> deleter (h);
                 h = h->nextEntry;
             }
 
@@ -231,7 +231,7 @@ public:
         {
             if (entry->key == keyToRemove)
             {
-                const CarlaScopedPointer<HashEntry> deleter (entry);
+                const ScopedPointer<HashEntry> deleter (entry);
 
                 entry = entry->nextEntry;
 
@@ -262,7 +262,7 @@ public:
             {
                 if (entry->value == valueToRemove)
                 {
-                    const CarlaScopedPointer<HashEntry> deleter (entry);
+                    const ScopedPointer<HashEntry> deleter (entry);
 
                     entry = entry->nextEntry;
 

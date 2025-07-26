@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2011-2024 Filipe Coelho <falktx@falktx.com>
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaEngineGraph.hpp"
@@ -861,7 +861,7 @@ protected:
             return CarlaEngine::connectExternalGraphPort(connectionType, portId, portName);
 
         case kExternalGraphConnectionMidiInput: {
-            CarlaString newRtMidiPortName;
+            String newRtMidiPortName;
             newRtMidiPortName += getName();
             newRtMidiPortName += ":";
             newRtMidiPortName += portName;
@@ -913,7 +913,7 @@ protected:
         }   break;
 
         case kExternalGraphConnectionMidiOutput: {
-            CarlaString newRtMidiPortName;
+            String newRtMidiPortName;
             newRtMidiPortName += getName();
             newRtMidiPortName += ":";
             newRtMidiPortName += portName;
@@ -1037,7 +1037,7 @@ private:
     uint64_t fLastEventTime;
 
     // current device name
-    CarlaString fDeviceName;
+    String fDeviceName;
 
     // temp buffer for interleaved audio
     float* fAudioIntBufIn;

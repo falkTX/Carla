@@ -9,7 +9,7 @@
 #ifndef CARLA_OS_WASM
 # include "CarlaThread.hpp"
 #else
-# include "CarlaString.hpp"
+# include "distrho/extra/String.hpp"
 # include <emscripten/html5.h>
 #endif
 
@@ -140,7 +140,7 @@ public:
      * Returns the name of the runner.
      * This is the name that gets set in the constructor.
      */
-    const CarlaString& getRunnerName() const noexcept
+    const String& getRunnerName() const noexcept
     {
        #ifndef CARLA_OS_WASM
         return fRunnerThread.getThreadName();
@@ -194,7 +194,7 @@ private:
 
     uint fTimeInterval;
 #else
-    const CarlaString fRunnerName;
+    const String fRunnerName;
     long fIntervalId;
 
     void _runEntryPoint() noexcept

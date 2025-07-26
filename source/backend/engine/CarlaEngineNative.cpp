@@ -424,7 +424,7 @@ protected:
                 carla_zeroChars(tmpBuf, STR_MAX+1);
 
                 {
-                    const CarlaScopedLocale csl;
+                    const ScopedSafeLocale ssl;
                     std::snprintf(tmpBuf, STR_MAX, "%.12g\n", newSampleRate);
                 }
 
@@ -527,7 +527,7 @@ protected:
         carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
-        const CarlaScopedLocale csl;
+        const ScopedSafeLocale ssl;
 
         const uint pluginId(plugin->getId());
 
@@ -786,7 +786,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
 
         {
-            const CarlaScopedLocale csl;
+            const ScopedSafeLocale ssl;
             std::snprintf(tmpBuf, STR_MAX, "%.12g\n", static_cast<double>(valuef));
         }
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
@@ -826,7 +826,7 @@ protected:
 
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage("sample-rate\n"),);
         {
-            const CarlaScopedLocale csl;
+            const ScopedSafeLocale ssl;
             std::snprintf(tmpBuf, STR_MAX, "%.12g\n", pData->sampleRate);
         }
         CARLA_SAFE_ASSERT_RETURN(fUiServer.writeMessage(tmpBuf),);
@@ -1233,7 +1233,7 @@ protected:
                 return;
             }
 
-            CarlaString path(pHost->resourceDir);
+            String path(pHost->resourceDir);
 
             if (kIsPatchbay)
                 path += CARLA_OS_SEP_STR "carla-plugin-patchbay";
@@ -1404,7 +1404,7 @@ protected:
         carla_zeroChars(tmpBuf, STR_MAX+1);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
-        const CarlaScopedLocale csl;
+        const ScopedSafeLocale ssl;
         const EngineTimeInfo& timeInfo(pData->timeInfo);
 
         // ------------------------------------------------------------------------------------------------------------
@@ -1719,7 +1719,7 @@ private:
     float fLastScaleFactor;
 
     float fParameters[kNumInParams+kNumOutParams];
-    CarlaString fLastProjectFolder;
+    String fLastProjectFolder;
     CarlaMutex fPluginDeleterMutex;
 
     bool fOptionsForced;

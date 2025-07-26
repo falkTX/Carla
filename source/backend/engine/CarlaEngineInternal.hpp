@@ -1,19 +1,5 @@
-/*
- * Carla Plugin Host
- * Copyright (C) 2011-2022 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef CARLA_ENGINE_INTERNAL_HPP_INCLUDED
 #define CARLA_ENGINE_INTERNAL_HPP_INCLUDED
@@ -284,8 +270,8 @@ struct CarlaEngine::ProtectedData {
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool loadingProject;
     bool ignoreClientPrefix; // backwards compat only
-    CarlaString currentProjectFilename;
-    CarlaString currentProjectFolder;
+    String currentProjectFilename;
+    String currentProjectFolder;
 #endif
 
     uint32_t bufferSize;
@@ -297,9 +283,9 @@ struct CarlaEngine::ProtectedData {
     uint maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
     uint nextPluginId;    // invalid if == maxPluginNumber
 
-    CarlaMutex     envMutex;
-    CarlaString    lastError;
-    CarlaString    name;
+    CarlaMutex envMutex;
+    String lastError;
+    String name;
     EngineOptions  options;
     EngineTimeInfo timeInfo;
 

@@ -159,12 +159,12 @@ public:
             winIdStr[STR_MAX] = '\0';
 
             // for LD_PRELOAD
-            CarlaString ldPreloadValue;
+            String ldPreloadValue;
 
             if (winId != 0)
             {
                 std::snprintf(winIdStr, STR_MAX, P_UINTPTR, winId);
-                ldPreloadValue = (CarlaString(kEngine->getOptions().binaryDir)
+                ldPreloadValue = (String(kEngine->getOptions().binaryDir)
                                + "/libcarla_interposer-x11.so");
             }
             else
@@ -234,12 +234,12 @@ private:
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
 
-    CarlaString fBinary;
-    CarlaString fLabel;
-    CarlaString fUiTitle;
+    String fBinary;
+    String fLabel;
+    String fUiTitle;
 
     const CarlaOscData& fOscData;
-    CarlaScopedPointer<ChildProcess> fProcess;
+    ScopedPointer<ChildProcess> fProcess;
 
     bool waitForOscGuiShow()
     {
@@ -973,7 +973,7 @@ public:
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
-        CarlaString portName;
+        String portName;
 
         for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCtrl=0; i < portCount; ++i)
         {
@@ -1002,7 +1002,7 @@ public:
                         if (aIns > 1)
                         {
                             portName += "audio-in_";
-                            portName += CarlaString(iAudioIn+1);
+                            portName += String(iAudioIn+1);
                         }
                         else
                             portName += "audio-in";
@@ -1012,7 +1012,7 @@ public:
                         if (aOuts > 1)
                         {
                             portName += "audio-out_";
-                            portName += CarlaString(iAudioOut+1);
+                            portName += String(iAudioOut+1);
                         }
                         else
                             portName += "audio-out";
@@ -2879,7 +2879,7 @@ public:
         // ---------------------------------------------------------------
         // check for fixed buffer size requirement
 
-        fNeedsFixedBuffers = CarlaString(filename).contains("dssi-vst", true);
+        fNeedsFixedBuffers = String(filename).contains("dssi-vst", true);
 
         if (fNeedsFixedBuffers && ! pData->engine->usesConstantBufferSize())
         {
@@ -2980,7 +2980,7 @@ public:
             {
                 fUiFilename = guiFilename;
 
-                CarlaString uiTitle;
+                String uiTitle;
 
                 if (pData->uiTitle.isNotEmpty())
                 {
