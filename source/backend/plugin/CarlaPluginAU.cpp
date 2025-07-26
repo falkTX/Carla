@@ -8,6 +8,7 @@
 # include "CarlaBackendUtils.hpp"
 # include "CarlaPluginUI.hpp"
 # include "CarlaMacUtils.hpp"
+# include "CarlaMathUtils.hpp"
 # include <AudioToolbox/AudioUnit.h>
 # include <Foundation/Foundation.h>
 #endif
@@ -496,7 +497,7 @@ public:
                     if (min > max)
                         max = min;
 
-                    if (carla_isEqual(min, max))
+                    if (d_isEqual(min, max))
                     {
                         carla_stderr2("WARNING - Broken plugin parameter '%s': max == min", info.name);
                         max = min + 0.1f;
