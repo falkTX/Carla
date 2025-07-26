@@ -74,6 +74,8 @@ jobs:
       - name: Bootstrap win32 cross-compiled
         shell: bash
         run: |
+          apt-get update -qq
+          apt-get install -yqq git
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
           ./PawPaw/.github/workflows/bootstrap-deps.sh win32
@@ -119,6 +121,8 @@ jobs:
       - name: Bootstrap win64 cross-compiled
         shell: bash
         run: |
+          apt-get update -qq
+          apt-get install -yqq git
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
           ./PawPaw/.github/workflows/bootstrap-deps.sh win64
