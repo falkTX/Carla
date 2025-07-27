@@ -1405,6 +1405,12 @@ public:
         if (aOuts >= 2 && aOuts % 2 == 0)
             pData->hints |= PLUGIN_CAN_BALANCE;
 
+        if (aOuts >= 2)
+            pData->hints |= PLUGIN_CAN_PANNING;
+
+        if (aOuts >= 3)
+            pData->hints |= PLUGIN_CAN_FORTH;
+
         // native plugin hints
         if (fDescriptor->hints & NATIVE_PLUGIN_IS_RTSAFE)
             pData->hints |= PLUGIN_IS_RTSAFE;
@@ -2369,7 +2375,7 @@ public:
             float bufValue;
             float* const oldBufLeft = pData->postProc.extraBuffer;
 
-            for (; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
@@ -2380,7 +2386,11 @@ public:
                         fAudioAndCvOutBuffers[i][k] = (fAudioAndCvOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
+            }
 
+            // Do not join this loop with loop above.
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            {
                 // Balance
                 if (doBalance)
                 {
@@ -2412,10 +2422,51 @@ public:
                     }
                 }
 
+                // Panning and Front-Rear ("Forth").
+                // Only decrease of levels, but never increase, unlike 'L, R'.
+                // Note: no any pan/forth processing for Mono.
+
+                uint32_t q     = pData->audioOut.count;
+                float    pan   = pData->postProc.panning;
+                float    forth = pData->postProc.forth;
+                float    vol   = pData->postProc.volume;
+
+                // Pan: Stereo, 3 ch (extra rear/bass), or Quadro.
+                if ((pan != 0.0) and ((q == 2) || (q == 3) || (q == 4)))
+                {
+                    // left channel(s) reduce when pan to right
+                    if ((pan > 0) && ((i == 0) || ((i == 2) && (q == 4))))
+                    {
+                        vol = vol * (1.0 - pan);
+                    }
+
+                    // right channel(s) reduce when pan to left
+                    else if ((pan < 0) && ((i == 1) || (i == 3)))
+                    {
+                        vol = vol * (1.0 + pan);
+                    }
+                }
+
+                // Front-Rear: 3 ch (extra rear/bass), or Quadro.
+                if ((forth != 0.0) and ((q == 3) || (q == 4)))
+                {
+                    // rear channel(s) reduce when moving forth to front
+                    if ((forth > 0) && ((i == 2) || (i == 3)))
+                    {
+                        vol = vol * (1.0 - forth);
+                    }
+
+                    // front channels reduce when moving back to rear
+                    else if ((forth < 0) && ((i == 0) || (i == 1)))
+                    {
+                        vol = vol * (1.0 + forth);
+                    }
+                }
+
                 // Volume (and buffer copy)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        audioOut[i][k+timeOffset] = fAudioAndCvOutBuffers[i][k] * pData->postProc.volume;
+                        audioOut[i][k+timeOffset] = fAudioAndCvOutBuffers[i][k] * vol;
                 }
             }
 

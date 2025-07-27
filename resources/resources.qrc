@@ -3,9 +3,15 @@
         <file>16x16/carla.png</file>
         <file>16x16/carla-control.png</file>
 
+        <file>16x16/add-from-favorites.svgz</file>
+        <file>16x16/add-jack.svgz</file>
         <file>16x16/application-exit.svgz</file>
         <file>16x16/arrow-right.svgz</file>
+        <file>16x16/audio-volume-medium.svgz</file>
+        <file>16x16/audio-volume-muted.svgz</file>
+        <file>16x16/balance.svgz</file>
         <file>16x16/bookmarks.svgz</file>
+        <file>16x16/compact.svgz</file>
         <file>16x16/configure.svgz</file>
         <file>16x16/dialog-cancel.svgz</file>
         <file>16x16/dialog-error.svgz</file>
@@ -16,9 +22,11 @@
         <file>16x16/document-open.svgz</file>
         <file>16x16/document-save.svgz</file>
         <file>16x16/document-save-as.svgz</file>
+        <file>16x16/dry.svgz</file>
         <file>16x16/edit-clear.svgz</file>
         <file>16x16/edit-delete.svgz</file>
         <file>16x16/edit-rename.svgz</file>
+        <file>16x16/emblem-favorite.svgz</file>
         <file>16x16/list-add.svgz</file>
         <file>16x16/list-remove.svgz</file>
         <file>16x16/media-playback-pause.svgz</file>
@@ -27,8 +35,14 @@
         <file>16x16/media-seek-backward.svgz</file>
         <file>16x16/media-seek-forward.svgz</file>
         <file>16x16/network-connect.svgz</file>
+        <file>16x16/restore.svgz</file>
+        <file>16x16/skin.svgz</file>
+        <file>16x16/system-shutdown.svgz</file>
+        <file>16x16/system-turnon.svgz</file>
         <file>16x16/view-refresh.svgz</file>
+        <file>16x16/view-refresh-purple.svgz</file>
         <file>16x16/view-sort-ascending.svgz</file>
+        <file>16x16/wet.svgz</file>
         <file>16x16/window-close.svgz</file>
         <file>16x16/zoom-fit-best.svgz</file>
         <file>16x16/zoom-in.svgz</file>

@@ -32,6 +32,8 @@ elif qt_config == 6:
         QMessageBox,
         QSizePolicy,
         QStyle,
+        QToolButton,
+        QToolBar,
     )
 
     Qt.AlignCenter = Qt.AlignmentFlag.AlignCenter
@@ -60,8 +62,15 @@ elif qt_config == 6:
     Qt.CrossCursor = Qt.CursorShape.CrossCursor
     Qt.OpenHandCursor = Qt.CursorShape.OpenHandCursor
     Qt.PointingHandCursor = Qt.CursorShape.PointingHandCursor
+    Qt.RightArrow = Qt.ArrowType.RightArrow
+    Qt.DownArrow = Qt.ArrowType.DownArrow
     Qt.SizeAllCursor = Qt.CursorShape.SizeAllCursor
     Qt.SizeHorCursor = Qt.CursorShape.SizeHorCursor
+
+    Qt.TextSelectableByMouse = Qt.TextInteractionFlag.TextSelectableByMouse
+
+    Qt.ToolButtonIconOnly = Qt.ToolButtonStyle.ToolButtonIconOnly
+    Qt.ToolButtonTextBesideIcon = Qt.ToolButtonStyle.ToolButtonTextBesideIcon
 
     Qt.black = Qt.GlobalColor.black
     Qt.blue = Qt.GlobalColor.blue
@@ -116,6 +125,13 @@ elif qt_config == 6:
     Qt.Key_X = Qt.Key.Key_X
     Qt.Key_Y = Qt.Key.Key_Y
     Qt.Key_Z = Qt.Key.Key_Z
+    Qt.Key_Space = Qt.Key.Key_Space
+    Qt.Key_Enter = Qt.Key.Key_Enter
+    Qt.Key_Return = Qt.Key.Key_Return
+    Qt.Key_PageUp = Qt.Key.Key_PageUp
+    Qt.Key_PageDown = Qt.Key.Key_PageDown
+    Qt.Key_Home = Qt.Key.Key_Home
+    Qt.Key_End = Qt.Key.Key_End
 
     Qt.AltModifier = Qt.KeyboardModifier.AltModifier
     Qt.ControlModifier = Qt.KeyboardModifier.ControlModifier
@@ -140,8 +156,10 @@ elif qt_config == 6:
     Qt.Horizontal = Qt.Orientation.Horizontal
 
     Qt.FlatCap = Qt.PenCapStyle.FlatCap
+    Qt.RoundCap = Qt.PenCapStyle.RoundCap
 
     Qt.MiterJoin = Qt.PenJoinStyle.MiterJoin
+    Qt.RoundJoin = Qt.PenJoinStyle.RoundJoin
 
     Qt.DashLine = Qt.PenStyle.DashLine
     Qt.NoPen = Qt.PenStyle.NoPen
@@ -181,6 +199,7 @@ elif qt_config == 6:
 
     QDialog.exec_ = lambda d: d.exec()
 
+    QDialogButtonBox.Ok = QDialogButtonBox.StandardButton.Ok
     QDialogButtonBox.Reset = QDialogButtonBox.StandardButton.Reset
 
     QEvent.EnabledChange = QEvent.Type.EnabledChange
@@ -225,6 +244,7 @@ elif qt_config == 6:
     QGraphicsView.MinimalViewportUpdate = QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate
 
     QHeaderView.Fixed = QHeaderView.ResizeMode.Fixed
+    QHeaderView.ResizeToContents = QHeaderView.ResizeMode.ResizeToContents
 
     QLineEdit.Normal = QLineEdit.EchoMode.Normal
 

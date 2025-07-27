@@ -189,6 +189,7 @@ class CarlaHostOSC(CarlaHostQtPlugin):
                         "set_balance_left",
                         "set_balance_right",
                         "set_panning",
+                        "set_forth",
                         #"set_ctrl_channel",
                         "set_parameter_value",
                         "set_parameter_midi_channel",
@@ -426,17 +427,18 @@ class CarlaControlServerTCP(Server):
         pluginId, index, type_, key, value = args
         self.host._set_customData(pluginId, index, { 'type': type_, 'key': key, 'value': value })
 
-    @make_method('/ctrl/iparams', 'ifffffff')
+    @make_method('/ctrl/iparams', 'iffffffff')
     def carla_iparams(self, path, args):
         if DEBUG: print(path, args)
         self.fReceivedMsgs = True
-        pluginId, active, drywet, volume, balLeft, balRight, pan, ctrlChan = args
+        pluginId, active, drywet, volume, balLeft, balRight, pan, ctrlChan, forth = args
         self.host._set_internalValue(pluginId, PARAMETER_ACTIVE, active)
         self.host._set_internalValue(pluginId, PARAMETER_DRYWET, drywet)
         self.host._set_internalValue(pluginId, PARAMETER_VOLUME, volume)
         self.host._set_internalValue(pluginId, PARAMETER_BALANCE_LEFT, balLeft)
         self.host._set_internalValue(pluginId, PARAMETER_BALANCE_RIGHT, balRight)
         self.host._set_internalValue(pluginId, PARAMETER_PANNING, pan)
+        self.host._set_internalValue(pluginId, PARAMETER_FORTH, forth)
         self.host._set_internalValue(pluginId, PARAMETER_CTRL_CHANNEL, ctrlChan)
 
     @make_method('/ctrl/resp', 'is')

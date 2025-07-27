@@ -185,6 +185,7 @@ CarlaStateSave::CarlaStateSave() noexcept
       balanceLeft(-1.0f),
       balanceRight(1.0f),
       panning(0.0f),
+      forth(0.0f),
       ctrlChannel(-1),
      #endif
       currentProgramIndex(-1),
@@ -243,6 +244,7 @@ void CarlaStateSave::clear() noexcept
     balanceLeft  = -1.0f;
     balanceRight = 1.0f;
     panning      = 0.0f;
+    forth        = 0.0f;
     ctrlChannel  = -1;
    #endif
 
@@ -345,6 +347,10 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 else if (tag == "Panning")
                 {
                     panning = carla_fixedValue(-1.0f, 1.0f, text.getFloatValue());
+                }
+                else if (tag == "Forth")
+                {
+                    forth = carla_fixedValue(-1.0f, 1.0f, text.getFloatValue());
                 }
                 else if (tag == "ControlChannel")
                 {
@@ -627,6 +633,8 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
             dataXml << "   <Balance-Right>" << water::String(balanceRight, 7) << "</Balance-Right>\n";
         if (carla_isNotEqual(panning, 0.0f))
             dataXml << "   <Panning>"       << water::String(panning, 7)      << "</Panning>\n";
+        if (carla_isNotEqual(forth, 0.0f))
+            dataXml << "   <Forth>"       << water::String(forth, 7)      << "</Forth>\n";
 
         if (ctrlChannel < 0)
             dataXml << "   <ControlChannel>N</ControlChannel>\n";

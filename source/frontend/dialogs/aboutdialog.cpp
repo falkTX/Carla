@@ -61,6 +61,7 @@ AboutDialog::AboutDialog(QWidget* const parent,
                            "<tr><td>" "/set_volume"                 "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
                            "<tr><td>" "/set_balance_left"           "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
                            "<tr><td>" "/set_balance_right"          "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
+                           "<tr><td>" "/set_forth"                  "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
                            "<tr><td>" "/set_panning"                "&nbsp;</td><td>&lt;f-value&gt;</td></tr>"
                            "<tr><td>" "/set_parameter_value"        "&nbsp;</td><td>&lt;i-index&gt; &lt;f-value&gt;</td></tr>"
                            "<tr><td>" "/set_parameter_midi_cc"      "&nbsp;</td><td>&lt;i-index&gt; &lt;i-cc&gt;</td></tr>"

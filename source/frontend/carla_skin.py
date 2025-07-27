@@ -6,15 +6,19 @@
 # Imports (Global)
 
 from qt_compat import qt_config
+import math
+import random
+import operator
+from operator import itemgetter
 
 if qt_config == 5:
     from PyQt5.QtCore import Qt, QRectF, QLineF, QTimer
     from PyQt5.QtGui import QColor, QFont, QFontDatabase, QPainter, QPainterPath, QPen
-    from PyQt5.QtWidgets import QColorDialog, QFrame, QLineEdit, QPushButton
+    from PyQt5.QtWidgets import QColorDialog, QFrame, QLineEdit, QPushButton, QComboBox, QSizePolicy
 elif qt_config == 6:
     from PyQt6.QtCore import Qt, QRectF, QLineF, QTimer
     from PyQt6.QtGui import QColor, QFont, QFontDatabase, QPainter, QPainterPath, QPen
-    from PyQt6.QtWidgets import QColorDialog, QFrame, QLineEdit, QPushButton
+    from PyQt6.QtWidgets import QColorDialog, QFrame, QLineEdit, QPushButton, QComboBox, QSizePolicy
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -29,7 +33,6 @@ from carla_backend import *
 from carla_shared import *
 from carla_widgets import *
 from widgets.digitalpeakmeter import DigitalPeakMeter
-from widgets.paramspinbox import CustomInputDialog
 from widgets.scalabledial import ScalableDial
 
 # ------------------------------------------------------------------------------------------------------------
@@ -126,7 +129,7 @@ def getParameterShortName(paramName):
 # Get RGB colors for a plugin category
 
 def getColorFromCategory(category):
-    r = 40
+    r = 39
     g = 40
     b = 40
 
@@ -152,45 +155,35 @@ def getColorFromCategory(category):
     return (r, g, b)
 
 # ------------------------------------------------------------------------------------------------------------
-#
 
-def setScalableDialStyle(widget, parameterId, parameterCount, whiteLabels, skinStyle):
-    if skinStyle.startswith("calf"):
-        widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        widget.setImage(7)
+skinList = [
+        "default",
+        "3bandeq",
+        "rncbc",
+        "calf_black",
+        "calf_blue",
+        "classic",
+        "openav-old",
+        "openav",
+        "zynfx",
+        "presets",
+        "mpresets",
+        "tube",
+    ]
 
-    elif skinStyle.startswith("openav"):
-        widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        if parameterId == PARAMETER_DRYWET:
-            widget.setImage(13)
-        elif parameterId == PARAMETER_VOLUME:
-            widget.setImage(12)
-        else:
-            widget.setImage(11)
+skinListTweakable = [
+        "default",
+        "calf",
+        "openav",
+        "zynfx",
+        "tube",
+    ]
 
-    else:
-        if parameterId == PARAMETER_DRYWET:
-            widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_CARLA_WET)
-
-        elif parameterId == PARAMETER_VOLUME:
-            widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_CARLA_VOL)
-
-        else:
-            _r = 255 - int((float(parameterId)/float(parameterCount))*200.0)
-            _g =  55 + int((float(parameterId)/float(parameterCount))*200.0)
-            _b = 0 #(r-40)*4
-            widget.setCustomPaintColor(QColor(_r, _g, _b))
-            widget.setCustomPaintMode(ScalableDial.CUSTOM_PAINT_MODE_COLOR)
-
-        if whiteLabels:
-            colorEnabled  = QColor("#BBB")
-            colorDisabled = QColor("#555")
-        else:
-            colorEnabled  = QColor("#111")
-            colorDisabled = QColor("#AAA")
-
-        widget.setLabelColor(colorEnabled, colorDisabled)
-        widget.setImage(3)
+def arrayIndex(array, value):
+    for index, item in enumerate(array):
+       if item.startswith(value):
+            return index
+    return 0
 
 # ------------------------------------------------------------------------------------------------------------
 # Abstract plugin slot
@@ -235,6 +228,16 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.fAdjustViewableKnobCountScheduled = False
 
+        # load fresh skin tweaks
+        self.fTweaks = {}
+        loadTweaks(self)
+
+        # take panel color hue & sat to make "follow panel" paint
+        color = QColor(skinColor[0], skinColor[1], skinColor[2])
+        hue = color.hueF() % 1.0
+        sat = color.saturationF()
+        self.fColorHint = int(hue * 100) + int(sat * 100) / 100.0  # 50.80: 50% hue, 80% sat
+
         # used during testing
         self.fIdleTimerId = 0
 
@@ -268,6 +271,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.w_knobs_left  = None
         self.w_knobs_right = None
         self.spacer_knobs  = None
+
+        self.slowTimer = 0
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -348,7 +353,30 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.fEditDialog is not None and self.fPluginId == pluginId:
             self.customUiStateChanged(state)
 
+    # @pyqtSlot(int, int, int)
+    # def slot_handleParameterKnobVisible(self, pluginId, index, value):
+    #     if self.fEditDialog is not None and self.fPluginId == pluginId:
+    #         self.setKnobVisible(index, value)
+
+    # @pyqtSlot(bool)
+    # def slot_knobVisible(self, value):
+    #     self.host.set_drywet(self.fPluginId, value)
+    #     self.setParameterValue(PARAMETER_DRYWET, value, True)
+
+    @pyqtSlot(float)
+    def slot_dryWetChanged(self, value):
+        self.host.set_drywet(self.fPluginId, value)
+        self.setParameterValue(PARAMETER_DRYWET, value, True)
+
+    @pyqtSlot(float)
+    def slot_volumeChanged(self, value):
+        self.host.set_volume(self.fPluginId, value)
+        self.setParameterValue(PARAMETER_VOLUME, value, True)
+
     # ------------------------------------------------------------------
+
+    def tweak(self, skinName, tweakName, default):
+        return self.fTweaks.get(skinName + tweakName, self.fTweaks.get(tweakName, default))
 
     def ready(self):
         self.fIsActive = bool(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
@@ -481,6 +509,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_RNCBC)
             elif self.fSkinStyle.startswith("openav") or self.fSkinStyle == "zynfx":
                 self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
+            elif self.fSkinStyle == "tube":
+                self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_TUBE)
+                self.peak_in.setMeterLinesEnabled(False)
 
             if self.fPeaksInputCount == 0 and not isinstance(self, PluginSlot_Classic):
                 self.peak_in.hide()
@@ -496,6 +527,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_RNCBC)
             elif self.fSkinStyle.startswith("openav") or self.fSkinStyle == "zynfx":
                 self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
+            elif self.fSkinStyle == "tube":
+                self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_TUBE)
+                self.peak_out.setMeterLinesEnabled(False)
 
             if self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Classic):
                 self.peak_out.hide()
@@ -530,7 +564,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 styleSheet2  = "background-image: url(:/bitmaps/background_%s.png);" % self.fSkinStyle
             else:
                 styleSheet2  = "background-color: rgb(200, 200, 200);"
-                styleSheet2 += "background-image: url(:/bitmaps/background_noise1.png);"
+                if self.fSkinStyle not in ("classic"):
+                    styleSheet2 += "background-image: url(:/bitmaps/background_noise1.png);"
 
                 if not self.fDarkStyle:
                     colorEnabled  = "#111"
@@ -551,11 +586,62 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         styleSheet += """
             QComboBox#cb_presets,
+            QComboBox#cb_presets0,
+            QComboBox#cb_presets1,
             QLabel#label_audio_in,
             QLabel#label_audio_out,
             QLabel#label_midi { font-size: 10px; }
         """
         self.setStyleSheet(styleSheet)
+
+        # -------------------------------------------------------------
+        # Wet and Vol knobs on compacted slot
+
+        # If "long" style not in "shorts" list, it will be matched to 0 ("default").
+        skinNum = arrayIndex(skinListTweakable, self.fSkinStyle[: 3])
+        skinName = skinListTweakable [skinNum]
+
+        wetVolOnCompact = self.tweak(skinName, 'WetVolOnCompact', 0)
+        showDisabled    = self.tweak(skinName, 'ShowDisabled',    0)
+        showOutputs     = self.tweak(skinName, 'ShowOutputs',     0)
+        shortenLabels   = self.tweak(skinName, 'ShortenLabels',   1)
+        btn3state       = self.tweak(skinName, 'Button3Pos',      1)
+
+        if isinstance(self, PluginSlot_Compact):
+            if self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET or showDisabled:
+
+
+                self.dial0 = ScalableDial(self, PARAMETER_DRYWET, 100, 1.0, 0.0, 1.0, "Dry/Wet", ScalableDial.CUSTOM_PAINT_MODE_CARLA_WET_MINI, -1, "%",  self.fSkinStyle, whiteLabels, self.fTweaks)
+                self.dial0.setObjectName("dial0")
+                self.ui.horizontalLayout_2.insertWidget(6, self.dial0)
+
+                if wetVolOnCompact:
+                    self.dial0.setEnabled(bool(self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET))
+                    self.dial0.dragStateChanged.connect(self.slot_parameterDragStateChanged)
+                    self.dial0.realValueChanged.connect(self.slot_dryWetChanged)
+                    self.dial0.customContextMenuRequested.connect(self.slot_knobCustomMenu)
+                    self.dial0.blockSignals(True)
+                    self.dial0.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_DRYWET))
+                    self.dial0.blockSignals(False)
+                else:
+                    self.dial0.hide()
+
+            if self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME or showDisabled:
+                # self.dial1 = ScalableDial(self.ui.dial1, PARAMETER_VOLUME, 254, 1.0, 0.0, 1.27, "Volume", ScalableDial.CUSTOM_PAINT_MODE_CARLA_VOL_MINI, 0, "%",  self.fSkinStyle, whiteLabels, self.fTweaks)
+                self.dial1 = ScalableDial(self, PARAMETER_VOLUME, 127, 1.0, 0.0, 1.27, "Volume", ScalableDial.CUSTOM_PAINT_MODE_CARLA_VOL_MINI, -1, "%",  self.fSkinStyle, whiteLabels, self.fTweaks)
+                self.dial1.setObjectName("dial1")
+                self.ui.horizontalLayout_2.insertWidget(6, self.dial1)
+
+                if wetVolOnCompact:
+                    self.dial1.setEnabled(bool(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME))
+                    self.dial1.dragStateChanged.connect(self.slot_parameterDragStateChanged)
+                    self.dial1.realValueChanged.connect(self.slot_volumeChanged)
+                    self.dial1.customContextMenuRequested.connect(self.slot_knobCustomMenu)
+                    self.dial1.blockSignals(True)
+                    self.dial1.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_VOLUME))
+                    self.dial1.blockSignals(False)
+                else:
+                    self.dial1.hide()
 
         # -------------------------------------------------------------
         # Set-up parameters
@@ -565,6 +651,11 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
             index = 0
             layout = self.w_knobs_left.layout()
+
+            # Rainbow paint, default is deep red -> green. Span can be negative.
+            hueFrom = self.tweak(skinName, 'ColorFrom', -0.03)
+            hueSpan = self.tweak(skinName, 'ColorSpan', 0.4)
+
             for i in range(parameterCount):
                 # 50 should be enough for everybody, right?
                 if index >= 50:
@@ -573,64 +664,153 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
                 paramData   = self.host.get_parameter_data(self.fPluginId, i)
                 paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-                isInteger   = (paramData['hints'] & PARAMETER_IS_INTEGER) != 0
+                default     = self.host.get_default_parameter_value(self.fPluginId, i)
+                minimum     = paramRanges['min']
+                maximum     = paramRanges['max']
+                isEnabled   = (paramData['hints'] & PARAMETER_IS_ENABLED) != 0
+                isOutput    = (paramData['type'] != PARAMETER_INPUT)
+                isBoolean   = (paramData['hints'] & PARAMETER_IS_BOOLEAN) != 0
+                isInteger   = ((paramData['hints'] & PARAMETER_IS_INTEGER) != 0) or isBoolean
 
-                if paramData['type'] != PARAMETER_INPUT:
-                    continue
-                if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                    continue
-                if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                    continue
-                if (paramData['hints'] & PARAMETER_USES_SCALEPOINTS) != 0 and not isInteger:
-                    # NOTE: we assume integer scalepoints are continuous
-                    continue
-                if isInteger and paramRanges['max']-paramRanges['min'] <= 3:
-                    continue
                 if paramInfo['name'].startswith("unused"):
+                    print("Carla: INFO: Parameter "+str(i)+" is Unused, so skipped.")
                     continue
 
-                paramName = getParameterShortName(paramInfo['name'])
+                if not isEnabled:
+                    print("Carla: INFO: Parameter "+str(i)+" is Disabled.")
+                    if not showDisabled:
+                        continue
 
-                widget = ScalableDial(self, i)
-                widget.setLabel(paramName)
-                widget.setMinimum(paramRanges['min'])
-                widget.setMaximum(paramRanges['max'])
+                delta = maximum - minimum
+                if delta <= 0:
+                    print("Carla: ERROR: Parameter "+str(i)+": Min, Max are same or wrong.")
+                    return
+
+                # NOTE: Booleans are mimic as isInteger with range [0 or 1].
+                if btn3state:
+                    isButton = (isInteger and (minimum == 0) and (maximum in (1, 2)))
+                else:
+                    isButton = (isInteger and (minimum == 0) and (maximum == 1))
+
+                vuMeter = 0
+                precision = 1
+                if isOutput:
+                    if not showOutputs:
+                        continue
+                    vuMeter = ((minimum == 0) and ((maximum == 1) or (maximum == 100)))\
+                        or (minimum == -maximum) # from -N to N, is it good to use VU ?
+                else:
+                    # Integers have somewhat more coarse step
+                    if isInteger:
+                        while delta > 50:
+                            delta = int(math.ceil(delta / 2))
+                        precision = delta
+
+                    # Floats are finer-step smoothed
+                    else:
+                        # Pretty steps for most common values, like 1-2-5-10 scales,
+                        # still not in its final form.
+                        while delta > 200:
+                            # Mantissa is near 2.5
+                            is25 = int(abs((log10(delta) % 1) - log10(2.5)) < 0.001)
+                            delta = delta / (2.0 + is25 * 0.5)
+
+                        while delta < 100:
+                            # Mantissa is near 2.0
+                            is25 = int(abs((log10(delta) % 1) - log10(2.0)) < 0.001)
+                            delta = delta * (2.0 + is25 * 0.5)
+
+                        precision = math.ceil(delta)
+
+                if precision <= 0:   # suddenly...
+                    print("Carla: ERROR: Parameter "+str(i)+": Precision "+str(precision)+" is wrong!")
+                    return
+
+                if shortenLabels:
+                    label = getParameterShortName(paramInfo['name'])
+                else:
+                    label = paramInfo['name']
+
+                widget = ScalableDial(self, i,
+                                precision,
+                                default,
+                                minimum,
+                                maximum,
+                                label,
+                                skinNum * 16,
+                                self.fColorHint,
+                                paramInfo['unit'],
+                                self.fSkinStyle,
+                                whiteLabels,
+                                self.fTweaks,
+                                isInteger,
+                                isButton,
+                                isOutput,
+                                vuMeter,
+                                1 )   # isVisible Experiment (index % 2)
+
+                widget.setEnabled(isEnabled)
+
                 widget.hide()
 
-                if isInteger:
-                    widget.setPrecision(paramRanges['max']-paramRanges['min'], True)
+                scalePoints = []
+                prefix = ""
+                suffix = ""
+                # NOTE: Issue #1983
+                # if ((paramData['hints'] & PARAMETER_USES_SCALEPOINTS) != 0):
+                count = paramInfo['scalePointCount']
+                if count:
+                    for j in range(count):
+                        scalePoints.append(self.host.get_parameter_scalepoint_info(self.fPluginId, i, j))
 
-                setScalableDialStyle(widget, i, parameterCount, whiteLabels, self.fSkinStyle)
+                    prefix, suffix = getPrefixSuffix(paramInfo['unit'])
+                    widget.setScalePPS(sorted(scalePoints, key=operator.itemgetter("value")), prefix, suffix)
 
                 index += 1
                 self.fParameterList.append([i, widget])
                 layout.addWidget(widget)
 
-        if self.w_knobs_right is not None and (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) != 0:
-            widget = ScalableDial(self, PARAMETER_DRYWET)
-            widget.setLabel("Dry/Wet")
-            widget.setMinimum(0.0)
-            widget.setMaximum(1.0)
-            setScalableDialStyle(widget, PARAMETER_DRYWET, 0, whiteLabels, self.fSkinStyle)
+            for i in range(index):
+                widget = layout.itemAt(i).widget()
+                if widget is not None:
+                    coef = i/(index-1) if index > 1 else 0.5 # 0.5 = Midrange
+                    hue = (hueFrom + coef * hueSpan) % 1.0
+                    widget.setCustomPaintColor(QColor.fromHslF(hue, 1, 0.5, 1))
 
-            self.fParameterList.append([PARAMETER_DRYWET, widget])
-            self.w_knobs_right.layout().addWidget(widget)
 
-        if self.w_knobs_right is not None and (self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME) != 0:
-            widget = ScalableDial(self, PARAMETER_VOLUME)
-            widget.setLabel("Volume")
-            widget.setMinimum(0.0)
-            widget.setMaximum(1.27)
-            setScalableDialStyle(widget, PARAMETER_VOLUME, 0, whiteLabels, self.fSkinStyle)
+        if self.w_knobs_right is not None:
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) != 0:
+                widget = ScalableDial(self, PARAMETER_DRYWET, 100, 1.0, 0.0, 1.0, "Dry/Wet", skinNum * 16 + ScalableDial.CUSTOM_PAINT_MODE_CARLA_WET, -1, "%", self.fSkinStyle, whiteLabels, self.fTweaks)
 
-            self.fParameterList.append([PARAMETER_VOLUME, widget])
-            self.w_knobs_right.layout().addWidget(widget)
+                self.fParameterList.append([PARAMETER_DRYWET, widget])
+                self.w_knobs_right.layout().addWidget(widget)
+
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME) != 0:
+                widget = ScalableDial(self, PARAMETER_VOLUME, 127, 1.0, 0.0, 1.27, "Volume", skinNum * 16 + ScalableDial.CUSTOM_PAINT_MODE_CARLA_VOL, -1, "%", self.fSkinStyle, whiteLabels, self.fTweaks)
+
+                self.fParameterList.append([PARAMETER_VOLUME, widget])
+                self.w_knobs_right.layout().addWidget(widget)
+
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_PANNING) != 0:
+                if widget.getTweak('ShowPan', 0):
+                    widget = ScalableDial(self, PARAMETER_PANNING, 100, 0.0, -1.0, 1.0, "Pan", skinNum * 16 + ScalableDial.CUSTOM_PAINT_MODE_CARLA_PAN, -1, "%", self.fSkinStyle, whiteLabels, self.fTweaks)
+
+                    self.fParameterList.append([PARAMETER_PANNING, widget])
+                    self.w_knobs_right.layout().addWidget(widget)
+
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_FORTH) != 0:
+                if widget.getTweak('ShowForth', 0):
+                    widget = ScalableDial(self, PARAMETER_FORTH, 100, 0.0, -1.0, 1.0, "Forth", skinNum * 16 + ScalableDial.CUSTOM_PAINT_MODE_CARLA_FORTH, -1, "%", self.fSkinStyle, whiteLabels, self.fTweaks)
+
+                    self.fParameterList.append([PARAMETER_FORTH, widget])
+                    self.w_knobs_right.layout().addWidget(widget)
+
 
         for paramIndex, paramWidget in self.fParameterList:
-            paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)
-            paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
-            paramWidget.dragStateChanged.connect(self.slot_parameterDragStateChanged)
-            paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
+            if not paramWidget.fIsOutput:
+                paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
+                paramWidget.dragStateChanged.connect(self.slot_parameterDragStateChanged)
+                paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
             paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
             paramWidget.blockSignals(False)
@@ -721,9 +901,14 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_PANNING) == 0: return
             self.host.set_panning(self.fPluginId, value)
 
+        elif parameterId == PARAMETER_FORTH:
+            if (self.fPluginInfo['hints'] & PLUGIN_CAN_FORTH) == 0: return
+            self.host.set_forth(self.fPluginId, value)
+
         elif parameterId == PARAMETER_CTRL_CHANNEL:
             self.host.set_ctrl_channel(self.fPluginId, value)
 
+        self.setParameterValue(parameterId, value, True)
         self.fEditDialog.setParameterValue(parameterId, value)
 
     # -----------------------------------------------------------------
@@ -891,19 +1076,34 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 paramWidget.setVisible(hints & PLUGIN_CAN_DRYWET)
             elif paramIndex == PARAMETER_VOLUME:
                 paramWidget.setVisible(hints & PLUGIN_CAN_VOLUME)
+        # jpka: FIXME i add it, but can't trigger it for test, so disable to prevent possible crashes. Maybe it don't needed.
+        # self.dial0.setVisible(hints & PLUGIN_CAN_DRYWET)
+        # self.dial1.setVisible(hints & PLUGIN_CAN_VOLUME)
+        # print("self.dial0.setVisible(hints & PLUGIN_CAN_DRYWET)")
 
         if self.b_gui is not None:
             self.b_gui.setEnabled(bool(hints & PLUGIN_HAS_CUSTOM_UI))
 
+    # NOTE: self.fParameterList is empty when compacted.
     def editDialogParameterValueChanged(self, pluginId, parameterId, value):
         for paramIndex, paramWidget in self.fParameterList:
-            if paramIndex != parameterId:
+            if (paramIndex != parameterId) or paramWidget.fIsOutput:
                 continue
 
             paramWidget.blockSignals(True)
             paramWidget.setValue(value)
             paramWidget.blockSignals(False)
             break
+
+        if isinstance(self, PluginSlot_Compact):
+            if (parameterId == PARAMETER_DRYWET) and (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET):
+                self.dial0.blockSignals(True)
+                self.dial0.setValue(value)
+                self.dial0.blockSignals(False)
+            if (parameterId == PARAMETER_VOLUME) and (self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME):
+                self.dial1.blockSignals(True)
+                self.dial1.setValue(value)
+                self.dial1.blockSignals(False)
 
     def editDialogProgramChanged(self, pluginId, index):
         if self.cb_presets is None:
@@ -997,6 +1197,23 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.fEditDialog.idleSlow()
 
+        # 7-seg displays are pretty effective, but added frame skip will make it even better.
+        self.slowTimer = (self.slowTimer + 1) % 2  # Half the FPS, win some CPU.
+
+        # NOTE: self.fParameterList is empty when compacted.
+        for paramIndex, paramWidget in self.fParameterList:
+            if not paramWidget.fIsOutput:
+                continue
+            # VU displays are CPU effective, make it run faster than 7-seg displays.
+            # if (self.slowTimer > 0) and (not paramWidget.fIsVuOutput):
+            if (self.slowTimer > 0):
+                continue
+
+            paramWidget.blockSignals(True) # TODO Is it required for output?
+            value = self.host.get_current_parameter_value(self.fPluginId, paramIndex)
+            paramWidget.setValue(value, False)
+            paramWidget.blockSignals(False)
+
     # -----------------------------------------------------------------
 
     def drawOutline(self, painter):
@@ -1023,7 +1240,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     def updateParameterValues(self):
         for paramIndex, paramWidget in self.fParameterList:
-            if paramIndex < 0:
+            if paramIndex < 0: # DryWet and Volume
+                continue
+            if paramWidget.fIsOutput:
                 continue
 
             paramWidget.blockSignals(True)
@@ -1044,8 +1263,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Expand/Minimize and Tweaks
 
         actCompact = menu.addAction(self.tr("Expand") if isinstance(self, PluginSlot_Compact) else self.tr("Minimize"))
-        actColor   = menu.addAction(self.tr("Change Color..."))
-        actSkin    = menu.addAction(self.tr("Change Skin..."))
+        actColor       = menu.addAction(self.tr("Change Color..."))
+        actColorRandom = menu.addAction(self.tr("Random Color"))
+        actSkin        = menu.addAction(self.tr("Change Skin..."))
         menu.addSeparator()
 
         # -------------------------------------------------------------
@@ -1157,28 +1377,17 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             colorStr = "%i;%i;%i" % color
             gCarla.gui.changePluginColor(self.fPluginId, color, colorStr)
 
-        elif actSel == actSkin:
-            skinList = [
-                "default",
-                "3bandeq",
-                "rncbc",
-                "calf_black",
-                "calf_blue",
-                "classic",
-                "openav-old",
-                "openav",
-                "zynfx",
-                "presets",
-                "mpresets",
-            ]
-            try:
-                index = skinList.index(self.fSkinStyle)
-            except:
-                index = 0
+        elif actSel == actColorRandom:
+            hue = QColor(self.fSkinColor[0], self.fSkinColor[1], self.fSkinColor[2]).hueF()
+            color    = QColor.fromHslF((hue + random.random()*0.5 + 0.25) % 1.0, 0.25, 0.125, 1).getRgb()[0:3]
+            colorStr = "%i;%i;%i" % color
+            gCarla.gui.changePluginColor(self.fPluginId, color, colorStr)
 
+        elif actSel == actSkin:
             skin = QInputDialog.getItem(self, self.tr("Change Skin"),
                                               self.tr("Change Skin to:"),
-                                              skinList, index, False)
+                                              skinList, arrayIndex(skinList, self.fSkinStyle), False)
+
             if not all(skin):
                 return
             gCarla.gui.changePluginSkin(self.fPluginId, skin[0])
@@ -1287,97 +1496,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     @pyqtSlot()
     def slot_knobCustomMenu(self):
-        sender  = self.sender()
-        index   = sender.fIndex
-        minimum = sender.fMinimum
-        maximum = sender.fMaximum
-        current = sender.fRealValue
-        label   = sender.fLabel
-
-        if index in (PARAMETER_NULL, PARAMETER_CTRL_CHANNEL) or index <= PARAMETER_MAX:
-            return
-        elif index in (PARAMETER_DRYWET, PARAMETER_VOLUME):
-            default = 1.0
-        elif index == PARAMETER_BALANCE_LEFT:
-            default = -1.0
-        elif index == PARAMETER_BALANCE_RIGHT:
-            default = 1.0
-        elif index == PARAMETER_PANNING:
-            default = 0.0
-        else:
-            default = self.host.get_default_parameter_value(self.fPluginId, index)
-
-        if index < PARAMETER_NULL:
-            # show in integer percentage
-            textReset = self.tr("Reset (%i%%)"          % round(default*100.0))
-            textMinim = self.tr("Set to Minimum (%i%%)" % round(minimum*100.0))
-            textMaxim = self.tr("Set to Maximum (%i%%)" % round(maximum*100.0))
-        else:
-            # show in full float value
-            textReset = self.tr("Reset (%f)"          % default)
-            textMinim = self.tr("Set to Minimum (%f)" % minimum)
-            textMaxim = self.tr("Set to Maximum (%f)" % maximum)
-
-        menu = QMenu(self)
-        actReset = menu.addAction(textReset)
-        menu.addSeparator()
-        actMinimum = menu.addAction(textMinim)
-        actCenter  = menu.addAction(self.tr("Set to Center"))
-        actMaximum = menu.addAction(textMaxim)
-        menu.addSeparator()
-        actSet = menu.addAction(self.tr("Set value..."))
-
-        if index > PARAMETER_NULL or index not in (PARAMETER_BALANCE_LEFT, PARAMETER_BALANCE_RIGHT, PARAMETER_PANNING):
-            menu.removeAction(actCenter)
-
-        actSelected = menu.exec_(QCursor.pos())
-
-        if actSelected == actSet:
-            if index < PARAMETER_NULL:
-                value, ok = QInputDialog.getInt(self, self.tr("Set value"), label, round(current*100), round(minimum*100), round(maximum*100), 1)
-
-                if not ok:
-                    return
-
-                value = float(value)/100.0
-
-            else:
-                paramInfo   = self.host.get_parameter_info(self.fPluginId, index)
-                paramRanges = self.host.get_parameter_ranges(self.fPluginId, index)
-                scalePoints = []
-
-                for i in range(paramInfo['scalePointCount']):
-                    scalePoints.append(self.host.get_parameter_scalepoint_info(self.fPluginId, index, i))
-
-                prefix = ""
-                suffix = paramInfo['unit'].strip()
-
-                if suffix == "(coef)":
-                    prefix = "* "
-                    suffix = ""
-                else:
-                    suffix = " " + suffix
-
-                dialog = CustomInputDialog(self, label, current, minimum, maximum,
-                                                 paramRanges['step'], paramRanges['stepSmall'], scalePoints, prefix, suffix)
-
-                if not dialog.exec_():
-                    return
-
-                value = dialog.returnValue()
-
-        elif actSelected == actMinimum:
-            value = minimum
-        elif actSelected == actMaximum:
-            value = maximum
-        elif actSelected == actReset:
-            value = default
-        elif actSelected == actCenter:
-            value = 0.0
-        else:
-            return
-
-        sender.setValue(value, True)
+        PluginEdit.slot_knobCustomMenu(self)
 
     # -----------------------------------------------------------------
 
@@ -1439,9 +1558,23 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if index < 0:
                 break
 
-            curWidth += widget.width() + 4
+            if not widget.getIsVisible():
+                continue
 
-            if curWidth + widget.width() * 2 + 8 < maxWidth:
+            curWidth += widget.width() + RACK_KNOB_GAP
+
+            if self.fTweaks.get('MoreSpace', 0):
+                if self.w_knobs_right is None: # calf
+                    limit = curWidth
+                else:
+                    if QT_VERSION < 0x60000:
+                        limit = curWidth + self.w_knobs_right.getContentsMargins()[0] + 8
+                    else:
+                        limit = curWidth + 4 + 8
+            else:
+                limit = curWidth + 56 + 8
+
+            if limit < maxWidth:
                 #if not widget.isVisible():
                 widget.show()
                 continue
@@ -1719,6 +1852,12 @@ class PluginSlot_Compact(AbstractPluginSlot):
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
 
+        if self.fTweaks.get('ShowProgramsOnCompact', 0):
+            insertProgramList(self, self.ui.layout_peaks, 0)
+
+        if self.fTweaks.get('ShowMidiProgramsOnCompact', 0):
+            insertMidiProgramList(self, self.ui.layout_peaks, 0)
+
         self.ready()
 
     # -----------------------------------------------------------------
@@ -1756,11 +1895,24 @@ class PluginSlot_Default(AbstractPluginSlot):
         self.w_knobs_right = self.ui.w_knobs_right
         self.spacer_knobs  = self.ui.layout_bottom.itemAt(1).spacerItem()
 
+        if self.fTweaks.get('MoreSpace', 0):
+            self.ui.layout_bottom.setContentsMargins(0, 4, 0, 0)
+
+        if self.fTweaks.get('ShowPrograms', 0):
+            # insertProgramList(self, self.ui.layout_top, 6)
+            insertProgramList(self, self.ui.layout_peaks, 0)
+
+        if self.fTweaks.get('ShowMidiPrograms', 0):
+            # insertMidiProgramList(self, self.ui.layout_top, 6)
+            insertMidiProgramList(self, self.ui.layout_peaks, 0)
+
         self.ready()
 
     # -----------------------------------------------------------------
 
     def getFixedHeight(self):
+        if self.fSkinStyle == "tube":
+            return 98
         return 80
 
     # -----------------------------------------------------------------
@@ -1839,12 +1991,16 @@ class PluginSlot_Presets(AbstractPluginSlot):
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
 
-        if skinStyle == "zynfx":
+        # if skinStyle == "zynfx": # TODO jpka: TEST ing zynfx as normal tweakable skin
+        if False:
             self.setupZynFxParams()
         else:
             self.w_knobs_left  = self.ui.w_knobs_left
             self.w_knobs_right = self.ui.w_knobs_right
             self.spacer_knobs  = self.ui.layout_bottom.itemAt(1).spacerItem()
+
+        if self.fTweaks.get('MoreSpace', 0):
+            self.ui.layout_bottom.setContentsMargins(0, 4, 0, 0)
 
         self.ready()
 
@@ -1855,6 +2011,8 @@ class PluginSlot_Presets(AbstractPluginSlot):
 
         # -------------------------------------------------------------
 
+    # it works only for internal zyn builds, which are disabled by default
+    # (?) not for just manual "zynfx" skin selection
     def setupZynFxParams(self):
         parameterCount = min(self.host.get_parameter_count(self.fPluginId), 8)
 
@@ -2001,6 +2159,46 @@ class PluginSlot_Presets(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
+def insertProgramList(self, layout, index):
+    count = self.host.get_program_count(self.fPluginId)
+    if count:
+        cb = QComboBox(None)
+        cb.setObjectName("cb_presets0") # use this stylesheet
+
+        for i in range(count):
+            string = self.host.get_program_name(self.fPluginId, i)
+
+            if len(string) == 0:
+                print("Carla: WARNING: Program List have zero length item.")
+                return
+
+            cb.addItem(string)
+
+        layout.insertWidget(index, cb)
+        cb.setCurrentIndex(self.host.get_current_program_index(self.fPluginId))
+        cb.currentIndexChanged.connect(self.slot_programChanged)
+
+def insertMidiProgramList(self, layout, index):
+    count = self.host.get_midi_program_count(self.fPluginId)
+    if count:
+        cb = QComboBox(None)
+        cb.setObjectName("cb_presets1") # use this stylesheet
+
+        for i in range(count):
+            string = self.host.get_midi_program_data(self.fPluginId, i)['name']
+
+            if len(string) == 0:
+                print("Carla: WARNING: MIDI Program List have zero length item.")
+                return
+
+            cb.addItem(string)
+
+        layout.insertWidget(index, cb)
+        cb.setCurrentIndex(self.host.get_current_midi_program_index(self.fPluginId))
+        cb.currentIndexChanged.connect(self.slot_midiProgramChanged)
+
+# ------------------------------------------------------------------------------------------------------------
+
 def getColorAndSkinStyle(host, pluginId):
     pluginInfo  = host.get_plugin_info(pluginId)
     pluginName  = host.get_real_plugin_name(pluginId)
@@ -2018,9 +2216,9 @@ def getColorAndSkinStyle(host, pluginId):
 
     # Samplers
     if pluginInfo['type'] == PLUGIN_SF2:
-        return (colorCategory, "sf2")
+        return (colorCategory, "mpresets")
     if pluginInfo['type'] == PLUGIN_SFZ:
-        return (colorCategory, "sfz")
+        return (colorCategory, "mpresets")
 
     # Calf
     if pluginName.split(" ", 1)[0].lower() == "calf":
@@ -2032,6 +2230,10 @@ def getColorAndSkinStyle(host, pluginId):
     if pluginMaker == "OpenAV":
         return (colorNone, "openav")
 
+    # Tube
+    if "tube" in pluginLabel:
+        return (colorCategory, "tube")
+
     # ZynFX
     if pluginInfo['type'] == PLUGIN_INTERNAL:
         if pluginLabel.startswith("zyn") and pluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
@@ -2042,7 +2244,8 @@ def getColorAndSkinStyle(host, pluginId):
             return (colorNone, "zynfx")
 
     if pluginInfo['type'] == PLUGIN_LV2:
-        if pluginLabel.startswith("http://kxstudio.sf.net/carla/plugins/zyn") and pluginName != "ZynAddSubFX":
+        # if pluginLabel.startswith("http://kxstudio.sf.net/carla/plugins/zyn") and pluginName != "ZynAddSubFX":
+        if pluginLabel.startswith("http://kxstudio.sf.net/carla/plugins/zyn") and pluginName != "ZynAddSubFX" or "zyn" in pluginLabel: # jpka: TEST ing zynfx as normal tweakable skin
             return (colorNone, "zynfx")
 
     # Presets

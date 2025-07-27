@@ -710,6 +710,7 @@ CarlaPlugin::ProtectedData::PostProc::PostProc() noexcept
       balanceLeft(-1.0f),
       balanceRight(1.0f),
       panning(0.0f),
+      forth(0.0f),
       extraBuffer(nullptr) {}
 #endif
 
