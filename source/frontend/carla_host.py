@@ -110,7 +110,10 @@ from widgets.pixmapkeyboard import PixmapKeyboardHArea
 # Try Import OpenGL
 
 try:
-    from PyQt5.QtOpenGL import QGLWidget
+    if qt_config == 5:
+        from PyQt5.QtOpenGL import QGLWidget
+    elif qt_config == 6:
+        from PyQt6.QtOpenGL import QGLWidget
     hasGL = True
 except:
     hasGL = False
