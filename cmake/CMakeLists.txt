@@ -459,6 +459,7 @@ target_sources(carla-native-plugins
     ../source/native-plugins/bypass.c
     ../source/native-plugins/cv-to-audio.c
     ../source/native-plugins/lfo.c
+    ../source/native-plugins/quadpanner.c
     ../source/native-plugins/midi-channel-filter.c
     ../source/native-plugins/midi-channel-ab.c
     ../source/native-plugins/midi-channelize.c
