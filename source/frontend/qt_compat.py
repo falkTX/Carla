@@ -278,6 +278,7 @@ elif qt_config == 6:
     QPalette.Window = QPalette.ColorRole.Window
     QPalette.WindowText = QPalette.ColorRole.WindowText
 
+    # TODO remove this QPalette.Background is deprecated already in Qt5
     QPalette.Background = QPalette.Window
 
     QSizePolicy.Expanding = QSizePolicy.Policy.Expanding
