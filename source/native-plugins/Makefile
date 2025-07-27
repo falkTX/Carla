@@ -40,6 +40,7 @@ OBJS = \
 	$(OBJDIR)/bypass.c.o \
 	$(OBJDIR)/cv-to-audio.c.o \
 	$(OBJDIR)/lfo.c.o \
+	$(OBJDIR)/quadpanner.c.o \
 	$(OBJDIR)/midi-channel-filter.c.o \
 	$(OBJDIR)/midi-channel-ab.c.o \
 	$(OBJDIR)/midi-channelize.c.o \
