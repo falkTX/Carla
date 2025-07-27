@@ -1563,7 +1563,7 @@ public:
                 float    vol   = pData->postProc.volume;
 
                 // Pan: Stereo only.
-                if ((pan != 0.0) and (q == 2))
+                if ((pan != 0.0) && (q == 2))
                 {
                     // left channel(s) reduce when pan to right
                     if ((pan > 0) && (i == 0))

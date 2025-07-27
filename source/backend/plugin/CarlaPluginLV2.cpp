@@ -4725,7 +4725,7 @@ public:
                 float    vol   = pData->postProc.volume;
 
                 // Pan: Stereo, 3 ch (extra rear/bass), or Quadro.
-                if ((pan != 0.0) and ((q == 2) || (q == 3) || (q == 4)))
+                if ((pan != 0.0) && ((q == 2) || (q == 3) || (q == 4)))
                 {
                     // left channel(s) reduce when pan to right
                     if ((pan > 0) && ((i == 0) || ((i == 2) && (q == 4))))
@@ -4741,7 +4741,7 @@ public:
                 }
 
                 // Front-Rear: 3 ch (extra rear/bass), or Quadro.
-                if ((forth != 0.0) and ((q == 3) || (q == 4)))
+                if ((forth != 0.0) && ((q == 3) || (q == 4)))
                 {
                     // rear channel(s) reduce when moving forth to front
                     if ((forth > 0) && ((i == 2) || (i == 3)))
