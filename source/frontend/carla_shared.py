@@ -9,7 +9,6 @@ import os
 import sys
 
 from math import fmod, log10
-import numpy as np
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Signal)
@@ -965,7 +964,13 @@ def getPrefixSuffix(unit):
 # ------------------------------------------------------------------------------------------------------------
 
 def strLim(value, digits = 5):
-    result = np.format_float_positional(value, trim='-', fractional=False, precision=digits)
+    # np.format_float_positional(value, trim='-', fractional=False, precision=digits)
+    result = "%.5f" % value
+    if "." in result:
+        result = result.strip("0")
+        if result[-1] == ".":
+            result = result.removesuffix(".")
+
     if len(result) > 9:
         return '{:.3e}'.format(value)
     else:
