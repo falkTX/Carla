@@ -75,7 +75,7 @@ jobs:
         shell: bash
         run: |
           apt-get update -qq
-          apt-get install -yqq git unzip
+          apt-get install -yqq git unzip zip
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
           ./PawPaw/.github/workflows/bootstrap-deps.sh win32
@@ -122,7 +122,7 @@ jobs:
         shell: bash
         run: |
           apt-get update -qq
-          apt-get install -yqq git unzip
+          apt-get install -yqq git unzip zip
           git clone https://github.com/DISTRHO/PawPaw.git
           git -C PawPaw checkout ${{ env.PAWPAW_VERSION }}
           ./PawPaw/.github/workflows/bootstrap-deps.sh win64
