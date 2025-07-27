@@ -1,19 +1,5 @@
-/*
- * Carla Native Plugins
- * Copyright (C) 2012-2019 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 /* This plugin code is based on MOD Devices' midi-to-cv-mono by Bram Giesen and Jarno Verheesen
  */
@@ -385,9 +371,6 @@ static const NativePluginDescriptor midi2cvDesc = {
     .set_midi_program    = NULL,
     .set_custom_data     = NULL,
 
-    .get_buffer_port_name = midi2cv_get_buffer_port_name,
-    .get_buffer_port_range = midi2cv_get_buffer_port_range,
-
     .ui_show = NULL,
     .ui_idle = NULL,
 
@@ -404,7 +387,10 @@ static const NativePluginDescriptor midi2cvDesc = {
 
     .dispatcher = NULL,
 
-    .render_inline_display = NULL
+    .render_inline_display = NULL,
+
+    .get_buffer_port_name = midi2cv_get_buffer_port_name,
+    .get_buffer_port_range = midi2cv_get_buffer_port_range,
 };
 
 // -----------------------------------------------------------------------

@@ -1,19 +1,5 @@
-/*
- * Carla Native Plugins
- * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaDefines.h"
 #include "CarlaNative.h"
@@ -25,6 +11,7 @@ extern void carla_register_native_plugin_audiogain(void);
 extern void carla_register_native_plugin_bypass(void);
 extern void carla_register_native_plugin_cv2audio(void);
 extern void carla_register_native_plugin_lfo(void);
+extern void carla_register_native_plugin_quadpanner(void);
 extern void carla_register_native_plugin_midi2cv(void);
 extern void carla_register_native_plugin_midichanab(void);
 extern void carla_register_native_plugin_midichanfilter(void);
@@ -38,15 +25,15 @@ extern void carla_register_native_plugin_miditranspose(void);
 // Audio file
 extern void carla_register_native_plugin_audiofile(void);
 
-// MIDI file and sequencer
+// MIDI file
 extern void carla_register_native_plugin_midifile(void);
-extern void carla_register_native_plugin_midipattern(void);
 
 // Carla
 extern void carla_register_native_plugin_carla(void);
 
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
+extern void carla_register_native_plugin_midipattern(void);
 extern void carla_register_native_plugin_notes(void);
 extern void carla_register_native_plugin_xycontroller(void);
 
@@ -65,6 +52,7 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_cv2audio();
     carla_register_native_plugin_lfo();
+    carla_register_native_plugin_quadpanner();
     carla_register_native_plugin_midi2cv();
     carla_register_native_plugin_midichanab();
     carla_register_native_plugin_midichannelize();

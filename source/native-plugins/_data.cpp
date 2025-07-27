@@ -1,19 +1,5 @@
-/*
- * Carla Native Plugins
- * Copyright (C) 2012-2020 Filipe Coelho <falktx@falktx.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
- */
+// SPDX-FileCopyrightText: 2011-2025 Filipe Coelho <falktx@falktx.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "CarlaNative.h"
 #include "CarlaMIDI.h"
@@ -118,6 +104,22 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* paramOuts */ 1,
     /* name      */ "LFO",
     /* label     */ "lfo",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS_WITHOUTCV
+},
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
+    /* audioIns  */ 4,
+    /* audioOuts */ 4,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 2,
+    /* paramOuts */ 0,
+    /* name      */ "Quad-Panner",
+    /* label     */ "quadpanner",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS_WITHOUTCV
