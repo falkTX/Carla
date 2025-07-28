@@ -511,6 +511,27 @@
               </property>
              </spacer>
             </item>
+            <item row="2" column="0" colspan="3">
+             <layout class="QHBoxLayout" name="horizontalLayout_28">
+              <item>
+               <widget class="QLabel" name="label_main_skin_tweaks_1">
+                <property name="toolTip">
+                 <string>Example: 'Tweak' is for all skins; extra 'skinnameTweak' overrides it for that skin only.</string>
+                </property>
+                <property name="text">
+                 <string>Skin tweaks:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="le_main_skin_tweaks">
+                <property name="toolTip">
+                 <string>Example: 'Tweak' is for all skins; extra 'skinnameTweak' overrides it for that skin only.</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
            </layout>
           </widget>
          </item>

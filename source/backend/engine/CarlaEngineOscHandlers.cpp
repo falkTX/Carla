@@ -179,6 +179,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
         return handleMsgSetBalanceRight(plugin, argc, argv, types);
     if (std::strcmp(method, "set_panning") == 0)
         return handleMsgSetPanning(plugin, argc, argv, types);
+    if (std::strcmp(method, "set_forth") == 0)
+        return handleMsgSetForth(plugin, argc, argv, types);
     if (std::strcmp(method, "set_ctrl_channel") == 0)
         return 0; //handleMsgSetControlChannel(plugin, argc, argv, types); // TODO
     if (std::strcmp(method, "set_parameter_value") == 0)
@@ -675,6 +677,17 @@ int CarlaEngineOsc::handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS)
     const float value = argv[0]->f;
 
     plugin->setPanning(value, false, true);
+    return 0;
+}
+
+int CarlaEngineOsc::handleMsgSetForth(CARLA_ENGINE_OSC_HANDLE_ARGS)
+{
+    carla_debug("CarlaEngineOsc::handleMsgSetForth()");
+    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
+
+    const float value = argv[0]->f;
+
+    plugin->setForth(value, false, true);
     return 0;
 }
 

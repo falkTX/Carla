@@ -33,7 +33,7 @@ class QToolButtonWithMouseTracking(QToolButton):
         QToolButton.leaveEvent(self, event)
 
 class CollapsibleBox(QFrame):
-    def __init__(self, title, parent):
+    def __init__(self, title, parent, startsExpanded = True):
         QFrame.__init__(self, parent)
 
         self.setFrameShape(QFrame.StyledPanel)
@@ -42,10 +42,10 @@ class CollapsibleBox(QFrame):
         self.toggle_button = QToolButtonWithMouseTracking(self)
         self.toggle_button.setText(title)
         self.toggle_button.setCheckable(True)
-        self.toggle_button.setChecked(True)
+        self.toggle_button.setChecked(startsExpanded)
         self.toggle_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.toggle_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.toggle_button.setArrowType(Qt.DownArrow)
+        # self.toggle_button.setArrowType(Qt.DownArrow) # Not deleted, just moved
         self.toggle_button.toggled.connect(self.toolButtonPressed)
 
         self.content_area   = QWidget(self)
@@ -58,6 +58,8 @@ class CollapsibleBox(QFrame):
         lay.setSpacing(1)
         lay.addWidget(self.toggle_button)
         lay.addWidget(self.content_area)
+
+        self.toolButtonPressed(startsExpanded)  # Set initial state
 
     @pyqtSlot(bool)
     def toolButtonPressed(self, toggled):

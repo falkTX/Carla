@@ -54,6 +54,7 @@ if qt_config == 5:
         QListWidgetItem,
         QGraphicsView,
         QMainWindow,
+        QToolButton,
     )
 
 elif qt_config == 6:
@@ -86,6 +87,7 @@ elif qt_config == 6:
         QListWidgetItem,
         QGraphicsView,
         QMainWindow,
+        QToolButton,
     )
 
 # ------------------------------------------------------------------------------------------------------------
@@ -101,6 +103,7 @@ from carla_shared import *
 from carla_settings import *
 from carla_utils import *
 from carla_widgets import *
+from carla_skin import *
 
 from patchcanvas import patchcanvas
 from widgets.digitalpeakmeter import DigitalPeakMeter
@@ -221,6 +224,8 @@ class HostWindow(QMainWindow):
         self.fOscAddressTCP      = ""
         self.fOscAddressUDP      = ""
 
+        self.slowTimer = 0
+
         if CARLA_OS_MAC:
             self.fMacClosingHelper = True
 
@@ -270,6 +275,8 @@ class HostWindow(QMainWindow):
 
         self.fWithCanvas = withCanvas
 
+        self.fTweaks = {}
+
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff (logs)
 
@@ -293,6 +300,7 @@ class HostWindow(QMainWindow):
             if self.host.isControl:
                 self.ui.act_file_new.setVisible(False)
                 self.ui.act_file_open.setVisible(False)
+                self.ui.act_file_reload.setVisible(False)
                 self.ui.act_file_save_as.setVisible(False)
                 self.ui.tabUtils.removeTab(0)
             else:
@@ -319,10 +327,12 @@ class HostWindow(QMainWindow):
             self.ui.act_file_new.setEnabled(False)
 
         self.ui.act_file_open.setEnabled(False)
+        self.ui.act_file_reload.setEnabled(False)
         self.ui.act_file_save.setEnabled(False)
         self.ui.act_file_save_as.setEnabled(False)
         self.ui.act_engine_stop.setEnabled(False)
-        self.ui.act_plugin_remove_all.setEnabled(False)
+        # self.ui.act_plugin_remove_all.setEnabled(False)
+        self.setMenuMacrosEnabled(False)
 
         self.ui.act_canvas_show_internal.setChecked(False)
         self.ui.act_canvas_show_internal.setVisible(False)
@@ -503,6 +513,7 @@ class HostWindow(QMainWindow):
             self.ui.act_file_refresh.setIcon(getIcon('view-refresh', 16, 'svgz'))
             self.ui.act_file_new.setIcon(getIcon('document-new', 16, 'svgz'))
             self.ui.act_file_open.setIcon(getIcon('document-open', 16, 'svgz'))
+            self.ui.act_file_reload.setIcon(getIcon('view-refresh-purple', 16, 'svgz'))
             self.ui.act_file_save.setIcon(getIcon('document-save', 16, 'svgz'))
             self.ui.act_file_save_as.setIcon(getIcon('document-save-as', 16, 'svgz'))
             self.ui.act_file_quit.setIcon(getIcon('application-exit', 16, 'svgz'))
@@ -511,8 +522,18 @@ class HostWindow(QMainWindow):
             self.ui.act_engine_panic.setIcon(getIcon('dialog-warning', 16, 'svgz'))
             self.ui.act_engine_config.setIcon(getIcon('configure', 16, 'svgz'))
             self.ui.act_plugin_add.setIcon(getIcon('list-add', 16, 'svgz'))
-            self.ui.act_plugin_add_jack.setIcon(getIcon('list-add', 16, 'svgz'))
+            self.ui.act_plugin_add_jack.setIcon(getIcon('add-jack', 16, 'svgz'))
             self.ui.act_plugin_remove_all.setIcon(getIcon('edit-delete', 16, 'svgz'))
+            self.ui.act_plugins_enable.setIcon(getIcon('system-turnon', 16, 'svgz'))
+            self.ui.act_plugins_disable.setIcon(getIcon('system-shutdown', 16, 'svgz'))
+            self.ui.act_plugins_bypass.setIcon(getIcon('dry', 16, 'svgz'))
+            self.ui.act_plugins_wet100.setIcon(getIcon('wet', 16, 'svgz'))
+            self.ui.act_plugins_mute.setIcon(getIcon('audio-volume-muted', 16, 'svgz'))
+            self.ui.act_plugins_volume100.setIcon(getIcon('audio-volume-medium', 16, 'svgz'))
+            self.ui.act_plugins_center.setIcon(getIcon('balance', 16, 'svgz'))
+            self.ui.act_plugins_change_skin.setIcon(getIcon('skin', 16, 'svgz'))
+            self.ui.act_plugins_compact.setIcon(getIcon('compact', 16, 'svgz'))
+            self.ui.act_plugins_expand.setIcon(getIcon('restore', 16, 'svgz'))
             self.ui.act_canvas_arrange.setIcon(getIcon('view-sort-ascending', 16, 'svgz'))
             self.ui.act_canvas_refresh.setIcon(getIcon('view-refresh', 16, 'svgz'))
             self.ui.act_canvas_zoom_fit.setIcon(getIcon('zoom-fit-best', 16, 'svgz'))
@@ -534,6 +555,7 @@ class HostWindow(QMainWindow):
 
         self.ui.act_file_new.triggered.connect(self.slot_fileNew)
         self.ui.act_file_open.triggered.connect(self.slot_fileOpen)
+        self.ui.act_file_reload.triggered.connect(self.slot_fileReload)
         self.ui.act_file_save.triggered.connect(self.slot_fileSave)
         self.ui.act_file_save_as.triggered.connect(self.slot_fileSaveAs)
 
@@ -553,10 +575,12 @@ class HostWindow(QMainWindow):
         self.ui.act_plugins_wet100.triggered.connect(self.slot_pluginsWet100)
         self.ui.act_plugins_bypass.triggered.connect(self.slot_pluginsBypass)
         self.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
+        self.ui.act_plugins_change_skin.triggered.connect(self.slot_pluginsChangeSkin)
         self.ui.act_plugins_compact.triggered.connect(self.slot_pluginsCompact)
         self.ui.act_plugins_expand.triggered.connect(self.slot_pluginsExpand)
 
         self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
+        self.ui.act_settings_show_toolbar_text.toggled.connect(self.slot_showToolbarText)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
         self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
         self.ui.act_settings_show_side_panel.toggled.connect(self.slot_showSidePanel)
@@ -738,7 +762,7 @@ class HostWindow(QMainWindow):
         self.host.set_custom_data(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaColor", colorStr)
         pitem.recreateWidget(newColor = color)
 
-    def changePluginSkin(self, pluginId, skin):
+    def changePluginSkin(self, pluginId, skin, color = None):
         if pluginId > self.fPluginCount:
             return
 
@@ -748,7 +772,9 @@ class HostWindow(QMainWindow):
             return
 
         self.host.set_custom_data(pluginId, CUSTOM_DATA_TYPE_PROPERTY, "CarlaSkin", skin)
-        if skin not in ("default","rncbc","presets","mpresets"):
+        if color is not None:
+            pitem.recreateWidget(newSkin = skin, newColor = color)
+        elif skin not in ("default","rncbc","presets","mpresets"):
             pitem.recreateWidget(newSkin = skin, newColor = (255,255,255))
         else:
             pitem.recreateWidget(newSkin = skin)
@@ -934,6 +960,16 @@ class HostWindow(QMainWindow):
             self.fProjectFilename = filename
             self.loadProjectNow()
             self.fProjectFilename = filenameOld
+
+        if self.fTweaks.get('ShowReload', 0):
+            self.ui.act_file_reload.setEnabled(True)
+            self.ui.act_file_reload.setVisible(True)
+
+    @pyqtSlot()
+    def slot_fileReload(self):
+        if not (self.fProjectFilename == ""):
+            self.pluginRemoveAll()
+            self.loadProjectNow()
 
     @pyqtSlot()
     def slot_fileSave(self, saveAs=False):
@@ -1177,6 +1213,7 @@ class HostWindow(QMainWindow):
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(False)
+            self.ui.act_file_reload.setEnabled(False)
             self.ui.act_file_save_as.setEnabled(False)
 
     @pyqtSlot(int, str)
@@ -1226,7 +1263,8 @@ class HostWindow(QMainWindow):
     # Plugins
 
     def removeAllPlugins(self):
-        self.ui.act_plugin_remove_all.setEnabled(False)
+        # self.ui.act_plugin_remove_all.setEnabled(False)
+        self.setMenuMacrosEnabled(False)
         patchcanvas.handleAllPluginsRemoved()
 
         while self.ui.listWidget.takeItem(0):
@@ -1343,6 +1381,12 @@ class HostWindow(QMainWindow):
                 act = fmenu.addAction(p['name'])
                 act.setData(p)
                 act.triggered.connect(self.slot_favoritePluginAdd)
+
+            if self.fSavedSettings[CARLA_KEY_MAIN_SYSTEM_ICONS]:
+                fmenu.setIcon(getIcon('add-from-favorites', 16, 'svgz'))
+            else:
+                fmenu.setIcon(QIcon(":/16x16/add-from-favorites.svgz"))
+
             menu.addMenu(fmenu)
 
         menu.addAction(self.ui.act_plugin_remove_all)
@@ -1359,6 +1403,7 @@ class HostWindow(QMainWindow):
         menu.addSeparator()
         menu.addAction(self.ui.act_plugins_center)
         menu.addSeparator()
+        menu.addAction(self.ui.act_plugins_change_skin)
         menu.addAction(self.ui.act_plugins_compact)
         menu.addAction(self.ui.act_plugins_expand)
 
@@ -1454,7 +1499,7 @@ class HostWindow(QMainWindow):
             if pitem is None:
                 break
 
-            pitem.getWidget().setInternalParameter(PLUGIN_CAN_VOLUME, 1.0)
+            pitem.getWidget().setInternalParameter(PARAMETER_VOLUME, 1.0)
 
     @pyqtSlot()
     def slot_pluginsMute(self):
@@ -1465,7 +1510,7 @@ class HostWindow(QMainWindow):
             if pitem is None:
                 break
 
-            pitem.getWidget().setInternalParameter(PLUGIN_CAN_VOLUME, 0.0)
+            pitem.getWidget().setInternalParameter(PARAMETER_VOLUME, 0.0)
 
     @pyqtSlot()
     def slot_pluginsWet100(self):
@@ -1476,7 +1521,7 @@ class HostWindow(QMainWindow):
             if pitem is None:
                 break
 
-            pitem.getWidget().setInternalParameter(PLUGIN_CAN_DRYWET, 1.0)
+            pitem.getWidget().setInternalParameter(PARAMETER_DRYWET, 1.0)
 
     @pyqtSlot()
     def slot_pluginsBypass(self):
@@ -1487,7 +1532,7 @@ class HostWindow(QMainWindow):
             if pitem is None:
                 break
 
-            pitem.getWidget().setInternalParameter(PLUGIN_CAN_DRYWET, 0.0)
+            pitem.getWidget().setInternalParameter(PARAMETER_DRYWET, 0.0)
 
     @pyqtSlot()
     def slot_pluginsCenter(self):
@@ -1501,6 +1546,39 @@ class HostWindow(QMainWindow):
             pitem.getWidget().setInternalParameter(PARAMETER_BALANCE_LEFT, -1.0)
             pitem.getWidget().setInternalParameter(PARAMETER_BALANCE_RIGHT, 1.0)
             pitem.getWidget().setInternalParameter(PARAMETER_PANNING, 0.0)
+            pitem.getWidget().setInternalParameter(PARAMETER_FORTH, 0.0)
+
+    @pyqtSlot()
+    def slot_pluginsChangeSkin(self):
+        skin = QInputDialog.getItem(self, self.tr("Change Skin"), self.tr("Change Skin to:"), skinList, 0, False)
+        if not all(skin):
+            return
+
+        if skin[0][:4] in ("calf", "clas", "zynf"): # These are non-colorable
+            for pluginId in range(self.fPluginCount):
+                gCarla.gui.changePluginSkin(pluginId, skin[0])
+            return
+
+        reColor = QInputDialog.getItem(self, self.tr("Change Color"), self.tr("Change Color mode:"), ['Follow Rules / As Is', 'Random'], 0, False)
+        if not all(reColor):
+            return
+
+        color = None
+        if skin[0].startswith("3ba"): # These are dark tinted, need enlight.
+            color = (254,255,255) # If not random
+            luma = 0.5
+            sat = 0.5
+        elif skin[0].startswith("ope"): # These are dark tinted, need enlight.
+            luma = 0.5
+            sat = 1.0
+        else:
+            luma = 0.125
+            sat = 0.25
+
+        for pluginId in range(self.fPluginCount):
+            if reColor[0][:2] == 'Ra':
+                color = QColor.fromHslF(random.random(), sat, luma, 1).getRgb()[0:3]
+            gCarla.gui.changePluginSkin(pluginId, skin[0], color)
 
     @pyqtSlot()
     def slot_pluginsCompact(self):
@@ -1531,10 +1609,23 @@ class HostWindow(QMainWindow):
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
 
-        self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
+        self.setMenuMacrosEnabled(self.fPluginCount > 0)
 
         if pluginType == PLUGIN_LV2:
             self.fHasLoadedLv2Plugins = True
+
+    def setMenuMacrosEnabled(self, enabled):
+        self.ui.act_plugin_remove_all.setEnabled(enabled)
+        self.ui.act_plugins_enable.setEnabled(enabled)
+        self.ui.act_plugins_disable.setEnabled(enabled)
+        self.ui.act_plugins_volume100.setEnabled(enabled)
+        self.ui.act_plugins_mute.setEnabled(enabled)
+        self.ui.act_plugins_wet100.setEnabled(enabled)
+        self.ui.act_plugins_bypass.setEnabled(enabled)
+        self.ui.act_plugins_center.setEnabled(enabled)
+        self.ui.act_plugins_change_skin.setEnabled(enabled)
+        self.ui.act_plugins_compact.setEnabled(enabled)
+        self.ui.act_plugins_expand.setEnabled(enabled)
 
     @pyqtSlot(int)
     def slot_handlePluginRemovedCallback(self, pluginId):
@@ -1558,7 +1649,8 @@ class HostWindow(QMainWindow):
             del pitem
 
         if self.fPluginCount == 0:
-            self.ui.act_plugin_remove_all.setEnabled(False)
+            # self.ui.act_plugin_remove_all.setEnabled(False)
+            self.setMenuMacrosEnabled(False)
             if self.fCurrentlyRemovingAllPlugins:
                 self.fCurrentlyRemovingAllPlugins = False
                 self.projectLoadingFinished(False)
@@ -1569,7 +1661,9 @@ class HostWindow(QMainWindow):
             pitem = self.fPluginList[i]
             pitem.setPluginId(i)
 
-        self.ui.act_plugin_remove_all.setEnabled(True)
+        # self.ui.act_plugin_remove_all.setEnabled(True)
+        self.setMenuMacrosEnabled(True)
+
 
     # --------------------------------------------------------------------------------------------------------
     # Canvas
@@ -1975,6 +2069,7 @@ class HostWindow(QMainWindow):
 
         settings.setValue("Geometry", self.saveGeometry())
         settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
+        settings.setValue("ShowToolbarText", self.ui.act_settings_show_toolbar_text.isChecked())
         settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
 
         diskFolders = []
@@ -2009,9 +2104,22 @@ class HostWindow(QMainWindow):
 
             showToolbar = settings.value("ShowToolbar", True, bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+            self.ui.act_settings_show_toolbar_text.setEnabled(showToolbar)
             self.ui.toolBar.blockSignals(True)
             self.ui.toolBar.setEnabled(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
+            self.ui.toolBar.blockSignals(False)
+
+            showToolbarText = settings.value("ShowToolbarText", True, bool)
+            self.ui.act_settings_show_toolbar_text.setChecked(showToolbarText)
+            self.ui.toolBar.blockSignals(True)
+
+            for btn in self.ui.toolBar.findChildren(QToolButton):
+                if showToolbarText:
+                    btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+                else:
+                    btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
+
             self.ui.toolBar.blockSignals(False)
 
             #if settings.contains("SplitterState"):
@@ -2066,6 +2174,7 @@ class HostWindow(QMainWindow):
             CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    int),
             CARLA_KEY_MAIN_SYSTEM_ICONS:        settings.value(CARLA_KEY_MAIN_SYSTEM_ICONS,        CARLA_DEFAULT_MAIN_SYSTEM_ICONS,        bool),
             CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        bool),
+            CARLA_KEY_MAIN_SKIN_TWEAKS:         settings.value(CARLA_KEY_MAIN_SKIN_TWEAKS,         CARLA_DEFAULT_MAIN_SKIN_TWEAKS,         str),
             CARLA_KEY_CANVAS_THEME:             settings.value(CARLA_KEY_CANVAS_THEME,             CARLA_DEFAULT_CANVAS_THEME,             str),
             CARLA_KEY_CANVAS_SIZE:              settings.value(CARLA_KEY_CANVAS_SIZE,              CARLA_DEFAULT_CANVAS_SIZE,              str),
             CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS:  settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,  CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS,  bool),
@@ -2182,6 +2291,19 @@ class HostWindow(QMainWindow):
         self.ui.toolBar.blockSignals(True)
         self.ui.toolBar.setEnabled(yesNo)
         self.ui.toolBar.setVisible(yesNo)
+        self.ui.act_settings_show_toolbar_text.setEnabled(yesNo)
+        self.ui.toolBar.blockSignals(False)
+
+    @pyqtSlot(bool)
+    def slot_showToolbarText(self, yesNo):
+        self.ui.toolBar.blockSignals(True)
+
+        for btn in self.ui.toolBar.findChildren(QToolButton):
+            if yesNo:
+                btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            else:
+                btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
+
         self.ui.toolBar.blockSignals(False)
 
     @pyqtSlot(bool)
@@ -2623,6 +2745,8 @@ class HostWindow(QMainWindow):
         self.ui.toolBar.setEnabled(visible)
         self.ui.toolBar.blockSignals(False)
         self.ui.act_settings_show_toolbar.setChecked(visible)
+        self.ui.act_settings_show_toolbar_text.setEnabled(visible)
+
 
     @pyqtSlot(int)
     def slot_tabChanged(self, index):
@@ -2889,7 +3013,6 @@ class HostWindow(QMainWindow):
 
     def idleFast(self):
         self.host.engine_idle()
-        self.refreshTransport()
 
         if self.fPluginCount == 0 or self.fCurrentlyRemovingAllPlugins:
             return
@@ -2922,6 +3045,10 @@ class HostWindow(QMainWindow):
     def idleSlow(self):
         self.getAndRefreshRuntimeInfo()
 
+        self.slowTimer = (self.slowTimer + 1) % 4
+        if (self.slowTimer == 0):
+            self.refreshTransport() # This one is CPU hungry. Ticket #1934
+
         if self.fPluginCount == 0 or self.fCurrentlyRemovingAllPlugins:
             return
 
@@ -2949,6 +3076,13 @@ class HostWindow(QMainWindow):
         QMainWindow.changeEvent(self, event)
 
     def updateStyle(self):
+        loadTweaks(self)
+
+        if self.fTweaks.get('MoreSpace', 0):
+            self.ui.pad_left.hide()
+            self.ui.pad_right.hide()
+            return
+
         # Rack padding images setup
         rack_imgL = QImage(":/bitmaps/rack_padding_left.png")
         rack_imgR = QImage(":/bitmaps/rack_padding_right.png")

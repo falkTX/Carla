@@ -392,6 +392,8 @@ float CarlaPlugin::getInternalParameterValue(const int32_t parameterId) const no
         return pData->postProc.balanceRight;
     case PARAMETER_PANNING:
         return pData->postProc.panning;
+    case PARAMETER_FORTH:
+        return pData->postProc.forth;
     };
 #endif
     CARLA_SAFE_ASSERT_RETURN(parameterId >= 0, 0.0f);
@@ -540,6 +542,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     pData->stateSave.balanceLeft  = pData->postProc.balanceLeft;
     pData->stateSave.balanceRight = pData->postProc.balanceRight;
     pData->stateSave.panning      = pData->postProc.panning;
+    pData->stateSave.forth        = pData->postProc.forth;
     pData->stateSave.ctrlChannel  = pData->ctrlChannel;
    #endif
 
@@ -953,6 +956,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     setBalanceLeft(stateSave.balanceLeft, true, true);
     setBalanceRight(stateSave.balanceRight, true, true);
     setPanning(stateSave.panning, true, true);
+    setForth(stateSave.forth, true, true);
     setCtrlChannel(stateSave.ctrlChannel, true, true);
     setActive(stateSave.active, true, true);
 
@@ -1550,6 +1554,31 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
                             nullptr);
 }
 
+void CarlaPlugin::setForth(const float value, const bool sendOsc, const bool sendCallback) noexcept
+{
+    if (pData->engineBridged) {
+        CARLA_SAFE_ASSERT_RETURN(!sendOsc && !sendCallback,);
+    } else {
+        CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
+    }
+    CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
+
+    const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
+
+    if (carla_isEqual(pData->postProc.forth, fixedValue))
+        return;
+
+    pData->postProc.forth = fixedValue;
+
+    pData->engine->callback(sendCallback, sendOsc,
+                            ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                            pData->id,
+                            PARAMETER_FORTH,
+                            0, 0,
+                            fixedValue,
+                            nullptr);
+}
+
 void CarlaPlugin::setDryWetRT(const float value, const bool sendCallbackLater) noexcept
 {
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
@@ -1613,6 +1642,19 @@ void CarlaPlugin::setPanningRT(const float value, const bool sendCallbackLater) 
 
     pData->postProc.panning = fixedValue;
     pData->postponeParameterChangeRtEvent(sendCallbackLater, PARAMETER_PANNING, fixedValue);
+}
+
+void CarlaPlugin::setForthRT(const float value, const bool sendCallbackLater) noexcept
+{
+    CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
+
+    const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
+
+    if (carla_isEqual(pData->postProc.forth, fixedValue))
+        return;
+
+    pData->postProc.forth = fixedValue;
+    pData->postponeParameterChangeRtEvent(sendCallbackLater, PARAMETER_FORTH, fixedValue);
 }
 #endif // ! BUILD_BRIDGE_ALTERNATIVE_ARCH
 
@@ -1695,6 +1737,8 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
         return setBalanceRight(value, sendOsc, sendCallback);
     case PARAMETER_PANNING:
         return setPanning(value, sendOsc, sendCallback);
+    case PARAMETER_FORTH:
+        return setForth(value, sendOsc, sendCallback);
     }
 #endif
     CARLA_SAFE_ASSERT_RETURN(rindex >= 0,);

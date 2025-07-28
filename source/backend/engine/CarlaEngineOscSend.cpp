@@ -287,18 +287,18 @@ void CarlaEngineOsc::sendPluginInternalParameterValues(const CarlaPluginPtr& plu
     carla_debug("CarlaEngineOsc::sendPluginInternalParameterValues(%p)", plugin.get());
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    static_assert(PARAMETER_ACTIVE == -2 && PARAMETER_MAX == -9, "Incorrect data");
+    static_assert(PARAMETER_ACTIVE == -2 && PARAMETER_MAX == -10, "Incorrect data");
 #endif
 
-    double iparams[7];
+    double iparams[8];
 
-    for (int32_t i = 0; i < 7; ++i)
+    for (int32_t i = 0; i < 8; ++i)
         iparams[i] = plugin->getInternalParameterValue(PARAMETER_ACTIVE - i);
 
     char targetPath[std::strlen(fControlDataTCP.path)+9];
     std::strcpy(targetPath, fControlDataTCP.path);
     std::strcat(targetPath, "/iparams");
-    try_lo_send(fControlDataTCP.target, targetPath, "ifffffff",
+    try_lo_send(fControlDataTCP.target, targetPath, "iffffffff",
                 static_cast<int32_t>(plugin->getId()),
                 iparams[0], // PARAMETER_ACTIVE
                 iparams[1], // PARAMETER_DRYWET
@@ -306,7 +306,8 @@ void CarlaEngineOsc::sendPluginInternalParameterValues(const CarlaPluginPtr& plu
                 iparams[3], // PARAMETER_BALANCE_LEFT
                 iparams[4], // PARAMETER_BALANCE_RIGHT
                 iparams[5], // PARAMETER_PANNING
-                iparams[6]  // PARAMETER_CTRL_CHANNEL
+                iparams[6], // PARAMETER_CTRL_CHANNEL
+                iparams[7]  // PARAMETER_FORTH
                );
 }
 

@@ -47,6 +47,7 @@ from carla_backend import (
 from carla_shared import (
     CARLA_KEY_MAIN_PROJECT_FOLDER,
     CARLA_KEY_MAIN_USE_PRO_THEME,
+    CARLA_KEY_MAIN_SKIN_TWEAKS,
     CARLA_KEY_MAIN_PRO_THEME_COLOR,
     CARLA_KEY_MAIN_REFRESH_INTERVAL,
     CARLA_KEY_MAIN_CONFIRM_EXIT,
@@ -115,6 +116,7 @@ from carla_shared import (
     CARLA_DEFAULT_MAIN_CLASSIC_SKIN,
     CARLA_DEFAULT_MAIN_SHOW_LOGS,
     CARLA_DEFAULT_MAIN_SYSTEM_ICONS,
+    CARLA_DEFAULT_MAIN_SKIN_TWEAKS,
     #CARLA_DEFAULT_MAIN_EXPERIMENTAL,
     CARLA_DEFAULT_CANVAS_THEME,
     CARLA_DEFAULT_CANVAS_SIZE,
@@ -705,6 +707,9 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_main_theme_color.findText(settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR,
                                                                 CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, str)))
 
+        self.ui.le_main_skin_tweaks.setText(
+            settings.value(CARLA_KEY_MAIN_SKIN_TWEAKS, CARLA_DEFAULT_MAIN_SKIN_TWEAKS, str))
+
         self.ui.sb_main_refresh_interval.setValue(
             settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL, CARLA_DEFAULT_MAIN_REFRESH_INTERVAL, int))
 
@@ -995,6 +1000,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_MAIN_CONFIRM_EXIT,     self.ui.ch_main_confirm_exit.isChecked())
         settings.setValue(CARLA_KEY_MAIN_CLASSIC_SKIN,     self.ui.cb_main_classic_skin_default.isChecked())
         settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    self.ui.ch_main_theme_pro.isChecked())
+        settings.setValue(CARLA_KEY_MAIN_SKIN_TWEAKS,      self.ui.le_main_skin_tweaks.text())
         settings.setValue(CARLA_KEY_MAIN_PRO_THEME_COLOR,  self.ui.cb_main_theme_color.currentText())
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
         settings.setValue(CARLA_KEY_MAIN_SYSTEM_ICONS,     self.ui.ch_main_system_icons.isChecked())
@@ -1193,6 +1199,7 @@ class CarlaSettingsW(QDialog):
                                                  self.ui.group_main_theme.isEnabled())
             self.ui.cb_main_theme_color.setCurrentIndex(
                 self.ui.cb_main_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
+            self.ui.le_main_skin_tweaks.setText(CARLA_DEFAULT_MAIN_SKIN_TWEAKS)
             self.ui.sb_main_refresh_interval.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
             self.ui.ch_main_confirm_exit.setChecked(CARLA_DEFAULT_MAIN_CONFIRM_EXIT)
             self.ui.cb_main_classic_skin_default(CARLA_DEFAULT_MAIN_CLASSIC_SKIN)

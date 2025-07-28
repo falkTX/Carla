@@ -379,6 +379,7 @@ struct CarlaPlugin::ProtectedData {
         float balanceLeft;
         float balanceRight;
         float panning;
+        float forth;
         float* extraBuffer;
 
         PostProc() noexcept;

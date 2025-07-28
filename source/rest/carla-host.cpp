@@ -994,6 +994,20 @@ void handle_carla_set_panning(const std::shared_ptr<Session> session)
     session->close(OK);
 }
 
+void handle_carla_set_forth(const std::shared_ptr<Session> session)
+{
+    const std::shared_ptr<const Request> request = session->get_request();
+
+    const int pluginId = std::atoi(request->get_query_parameter("pluginId").c_str());
+    CARLA_SAFE_ASSERT_RETURN(pluginId >= 0,)
+
+    const double value = std::atof(request->get_query_parameter("value").c_str());
+    CARLA_SAFE_ASSERT_RETURN(value >= -1.0 && value <= 1.0,)
+
+    carla_set_forth(pluginId, value);
+    session->close(OK);
+}
+
 void handle_carla_set_ctrl_channel(const std::shared_ptr<Session> session)
 {
     const std::shared_ptr<const Request> request = session->get_request();
