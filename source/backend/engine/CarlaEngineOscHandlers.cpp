@@ -87,7 +87,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
     {
         bytesAfterName = fName.length();
 
-        if (std::strlen(path) <= bytesAfterName || std::strncmp(path+1, fName, bytesAfterName) != 0)
+        if (std::strlen(path) <= bytesAfterName || std::strncmp(path+1, fName, bytesAfterName) != 0 ||
+            path[bytesAfterName+1] != '/')
         {
             carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'",
                         path, fName.buffer());
