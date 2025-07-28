@@ -1634,7 +1634,7 @@
   <action name="act_plugins_change_skin">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/skin.svgz</normaloff>:/16x16/skin.svgz</iconset>
+     <normaloff>:/16x16/style.svgz</normaloff>:/16x16/style.svgz</iconset>
    </property>
    <property name="text">
     <string>Change &amp;Skin...</string>
