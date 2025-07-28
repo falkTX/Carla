@@ -87,7 +87,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
     {
         bytesAfterName = fName.length();
 
-        if (std::strlen(path) <= bytesAfterName || std::strncmp(path+1, fName, bytesAfterName) != 0)
+        if (std::strlen(path) <= bytesAfterName || std::strncmp(path+1, fName, bytesAfterName) != 0 ||
+            path[bytesAfterName+1] != '/')
         {
             carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'",
                         path, fName.buffer());
@@ -99,63 +100,65 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
 
     // Get plugin id from path, "/carla/23/method" -> 23
     uint pluginId = 0;
-    std::size_t offset;
 
-    if (! std::isdigit(path[bytesAfterName+1]))
+    const char* const pluginPath = &path[bytesAfterName+1];
+    std::size_t pluginLen;
+    if (const char* const slash = std::strchr(pluginPath, '/'))
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - invalid message '%s'", path);
-        return 1;
-    }
-
-    if (std::isdigit(path[bytesAfterName+2]))
-    {
-        if (std::isdigit(path[bytesAfterName+4]))
-        {
-            carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")",
-                          path+bytesAfterName);
-            return 1;
-        }
-        else if (std::isdigit(path[bytesAfterName+3]))
-        {
-            // 3 digits, /xyz/method
-            offset    = 5;
-            pluginId += uint(path[bytesAfterName+1]-'0')*100;
-            pluginId += uint(path[bytesAfterName+2]-'0')*10;
-            pluginId += uint(path[bytesAfterName+3]-'0');
-        }
-        else
-        {
-            // 2 digits, /xy/method
-            offset    = 4;
-            pluginId += uint(path[bytesAfterName+1]-'0')*10;
-            pluginId += uint(path[bytesAfterName+2]-'0');
-        }
+        pluginLen = slash - pluginPath;
     }
     else
     {
-        // single digit, /x/method
-        offset    = 3;
-        pluginId += uint(path[bytesAfterName+1]-'0');
+        carla_stderr("CarlaEngineOsc::handleMessage() - message '%s' is invalid", path);
+        return 1;
     }
 
-    if (pluginId > fEngine->getCurrentPluginCount())
+    CarlaPluginPtr plugin = nullptr;
+    bool isNumeric = true;
+    for (std::size_t i = 0; i < pluginLen; i++) {
+        if (! std::isdigit(pluginPath[i]))
+        {
+            isNumeric = false;
+            break;
+        }
+    }
+    if (pluginLen <= 4 && isNumeric)
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
-        return 0;
-    }
+        pluginId = atoi(pluginPath);
 
-    // Get plugin
-    const CarlaPluginPtr plugin = fEngine->getPluginUnchecked(pluginId);
+        if (pluginId > fEngine->getCurrentPluginCount())
+        {
+            carla_stderr("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
+            return 0;
+        }
+
+        // Get plugin
+        plugin = fEngine->getPluginUnchecked(pluginId);
+
+    }
+    else
+    {
+        for (pluginId = 0; pluginId < fEngine->getCurrentPluginCount(); pluginId++)
+        {
+            plugin = fEngine->getPluginUnchecked(pluginId);
+
+            if (strlen(plugin->getName()) == pluginLen && !strncmp(plugin->getName(), pluginPath, pluginLen)) {
+                break;
+            }
+
+            plugin = nullptr;
+        }
+    }
 
     if (plugin == nullptr || plugin->getId() != pluginId)
     {
-        carla_stderr("CarlaEngineOsc::handleMessage() - invalid plugin id '%i', probably has been removed (path: '%s')", pluginId, path);
+        carla_stderr("CarlaEngineOsc::handleMessage() - plugin not found, probably has been removed (path: '%s')", path);
         return 0;
     }
 
     // Get method from path, "/Carla/i/method" -> "method"
     char method[48];
-    std::strncpy(method, path + (bytesAfterName + offset), 47);
+    std::strncpy(method, &pluginPath[pluginLen + 1], 47);
     method[47] = '\0';
 
     if (method[0] == '\0')
