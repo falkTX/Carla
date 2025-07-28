@@ -72,7 +72,8 @@ AboutDialog::AboutDialog(QWidget* const parent,
                            "</table>");
 
     ui.l_example->setText("/Carla/2/set_parameter_value 5 1.0");
-    ui.l_example_help->setText("<i>(as in this example, \"2\" is the plugin number and \"5\" the parameter)</i>");
+    ui.l_example_help->setText("<i>(In this example, \"2\" is the plugin number and \"5\" the parameter.<br>"
+                              "Plugins can also be referenced by their name.)</i>");
 
     ui.l_ladspa->setText(tr("Everything! (Including LRDF)"));
     ui.l_dssi->setText(tr("Everything! (Including CustomData/Chunks)"));

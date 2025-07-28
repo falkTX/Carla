@@ -142,7 +142,6 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path,
         {
             plugin = fEngine->getPluginUnchecked(pluginId);
 
-            carla_stderr("%s %s %d\n", plugin->getName(), pluginPath, pluginLen);
             if (strlen(plugin->getName()) == pluginLen && !strncmp(plugin->getName(), pluginPath, pluginLen)) {
                 break;
             }
