@@ -8,7 +8,7 @@ jobs:
       matrix:
         target: [linux-x86_64]
         # linux-arm64, linux-armhf, linux-i686, linux-riscv64
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         target: [macos-intel, macos-universal]
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
         with:
