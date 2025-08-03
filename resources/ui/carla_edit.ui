@@ -108,17 +108,17 @@
              </spacer>
             </item>
             <item>
-             <widget class="ScalableDial" name="dial_drywet">
+             <widget class="QWidget" name="dial_drywet">
               <property name="minimumSize">
                <size>
-                <width>34</width>
-                <height>34</height>
+                <width>32</width>
+                <height>48</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
-                <width>34</width>
-                <height>34</height>
+                <width>32</width>
+                <height>48</height>
                </size>
               </property>
               <property name="contextMenuPolicy">
@@ -130,17 +130,17 @@
              </widget>
             </item>
             <item>
-             <widget class="ScalableDial" name="dial_vol">
+             <widget class="QWidget" name="dial_vol">
               <property name="minimumSize">
                <size>
-                <width>34</width>
-                <height>34</height>
+                <width>32</width>
+                <height>48</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
-                <width>34</width>
-                <height>34</height>
+                <width>32</width>
+                <height>48</height>
                </size>
               </property>
               <property name="contextMenuPolicy">
@@ -152,148 +152,92 @@
              </widget>
             </item>
             <item>
-             <widget class="QStackedWidget" name="stackedWidget">
-              <property name="maximumSize">
+              <widget class="QWidget" name="dial_b_left">
+              <property name="minimumSize">
                <size>
-                <width>16777215</width>
-                <height>42</height>
+                <width>26</width>
+                <height>40</height>
                </size>
               </property>
-              <property name="lineWidth">
-               <number>0</number>
+              <property name="maximumSize">
+               <size>
+                <width>26</width>
+                <height>40</height>
+               </size>
               </property>
-              <property name="currentIndex">
-               <number>0</number>
+              <property name="contextMenuPolicy">
+               <enum>Qt::CustomContextMenu</enum>
               </property>
-              <widget class="QWidget" name="page_bal">
-               <layout class="QHBoxLayout" name="horizontalLayout_6">
-                <property name="spacing">
-                 <number>0</number>
-                </property>
-                <property name="leftMargin">
-                 <number>0</number>
-                </property>
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <property name="rightMargin">
-                 <number>0</number>
-                </property>
-                <property name="bottomMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="ScalableDial" name="dial_b_left">
-                  <property name="minimumSize">
-                   <size>
-                    <width>26</width>
-                    <height>26</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>26</width>
-                    <height>26</height>
-                   </size>
-                  </property>
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="statusTip">
-                   <string>Balance Left (0%)</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="ScalableDial" name="dial_b_right">
-                  <property name="minimumSize">
-                   <size>
-                    <width>26</width>
-                    <height>26</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>26</width>
-                    <height>26</height>
-                   </size>
-                  </property>
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="statusTip">
-                   <string>Balance Right (0%)</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="page_pan">
-               <layout class="QHBoxLayout" name="horizontalLayout_7">
-                <property name="spacing">
-                 <number>0</number>
-                </property>
-                <property name="leftMargin">
-                 <number>0</number>
-                </property>
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <property name="rightMargin">
-                 <number>0</number>
-                </property>
-                <property name="bottomMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="ScalableDial" name="dial_pan">
-                  <property name="minimumSize">
-                   <size>
-                    <width>26</width>
-                    <height>26</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>26</width>
-                    <height>26</height>
-                   </size>
-                  </property>
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="statusTip">
-                   <string>Balance Right (0%)</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
+              <property name="statusTip">
+               <string>Balance Left (0%)</string>
+              </property>
              </widget>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_2">
-              <property name="spacing">
-               <number>0</number>
+              <widget class="QWidget" name="dial_b_right">
+              <property name="minimumSize">
+               <size>
+                <width>26</width>
+                <height>40</height>
+               </size>
               </property>
-              <item>
-               <widget class="QRadioButton" name="rb_balance">
-                <property name="text">
-                 <string>Use Balance</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QRadioButton" name="rb_pan">
-                <property name="text">
-                 <string>Use Panning</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
+              <property name="maximumSize">
+               <size>
+                <width>26</width>
+                <height>40</height>
+               </size>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::CustomContextMenu</enum>
+              </property>
+              <property name="statusTip">
+               <string>Balance Right (0%)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+              <widget class="QWidget" name="dial_pan">
+              <property name="minimumSize">
+               <size>
+                <width>32</width>
+                <height>48</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>32</width>
+                <height>48</height>
+               </size>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::CustomContextMenu</enum>
+              </property>
+              <property name="statusTip">
+               <string>Left-Right (0%)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+              <widget class="QWidget" name="dial_forth">
+              <property name="minimumSize">
+               <size>
+                <width>32</width>
+                <height>48</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>32</width>
+                <height>48</height>
+               </size>
+              </property>
+              <property name="contextMenuPolicy">
+               <enum>Qt::CustomContextMenu</enum>
+              </property>
+              <property name="statusTip">
+               <string>Front-Rear (0%)</string>
+              </property>
+             </widget>
             </item>
             <item>
              <spacer name="horizontalSpacer_4">
@@ -309,6 +253,21 @@
              </spacer>
             </item>
            </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_ctrl_channel_2">
+            <property name="font">
+             <font>
+              <italic>true</italic>
+             </font>
+            </property>
+            <property name="text">
+             <string>&#9888; L, R are special mixing type.</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -876,13 +835,6 @@ Plugin Name
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>ScalableDial</class>
-   <extends>QDial</extends>
-   <header>widgets/scalabledial.h</header>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
  </resources>

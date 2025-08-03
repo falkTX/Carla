@@ -14,7 +14,7 @@ from qt_compat import qt_config
 
 if qt_config == 5:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray
-    from PyQt5.QtGui import QCursor, QIcon, QPalette, QPixmap
+    from PyQt5.QtGui import QCursor, QIcon, QPalette, QPixmap, QFont
     from PyQt5.QtWidgets import (
         QDialog,
         QFileDialog,
@@ -24,10 +24,18 @@ if qt_config == 5:
         QScrollArea,
         QVBoxLayout,
         QWidget,
+        QGraphicsScene,
+        QGraphicsTextItem,
+        QGraphicsView,
+        QTableWidget,
+        QTableWidgetItem,
+        QHeaderView,
+        QLabel,
+        QSizePolicy,
     )
 elif qt_config == 6:
     from PyQt6.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray
-    from PyQt6.QtGui import QCursor, QIcon, QPalette, QPixmap
+    from PyQt6.QtGui import QCursor, QIcon, QPalette, QPixmap, QFont
     from PyQt6.QtWidgets import (
         QDialog,
         QFileDialog,
@@ -37,6 +45,14 @@ elif qt_config == 6:
         QScrollArea,
         QVBoxLayout,
         QWidget,
+        QGraphicsScene,
+        QGraphicsTextItem,
+        QGraphicsView,
+        QTableWidget,
+        QTableWidgetItem,
+        QHeaderView,
+        QLabel,
+        QSizePolicy,
     )
 
 # ------------------------------------------------------------------------------------------------------------
@@ -72,6 +88,7 @@ from carla_backend import (
     PLUGIN_OPTION_SEND_ALL_SOUND_OFF,
     PLUGIN_OPTION_SEND_PROGRAM_CHANGES,
     PLUGIN_OPTION_SKIP_SENDING_NOTES,
+    PARAMETER_NULL,
     PARAMETER_DRYWET,
     PARAMETER_VOLUME,
     PARAMETER_BALANCE_LEFT,
@@ -84,6 +101,7 @@ from carla_backend import (
     PARAMETER_USES_SCALEPOINTS,
     PARAMETER_USES_CUSTOM_TEXT,
     PARAMETER_CAN_BE_CV_CONTROLLED,
+    parameterHintsText,
     PARAMETER_INPUT, PARAMETER_OUTPUT,
     CONTROL_INDEX_NONE,
     CONTROL_INDEX_MIDI_PITCHBEND,
@@ -94,6 +112,7 @@ from carla_backend import (
 from carla_shared import (
     MIDI_CC_LIST, MAX_MIDI_CC_LIST_ITEM,
     countDecimalPoints,
+    strLim,
     fontMetricsHorizontalAdvance,
     setUpSignals,
     gCarla
@@ -103,6 +122,8 @@ from carla_utils import getPluginTypeAsString
 
 from widgets.collapsablewidget import CollapsibleBox
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
+from widgets.paramspinbox import CustomInputDialog, ParamSpinBox
+from widgets.scalabledial import ScalableDial
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla GUI defines
@@ -119,6 +140,7 @@ class PluginParameter(QWidget):
     mappedControlChanged = pyqtSignal(int, int)
     mappedRangeChanged   = pyqtSignal(int, float, float)
     midiChannelChanged   = pyqtSignal(int, int)
+    knobVisibilityChanged = pyqtSignal(int, int)
     valueChanged         = pyqtSignal(int, float)
 
     def __init__(self, parent, host, pInfo, pluginId, tabIndex):
@@ -141,6 +163,7 @@ class PluginParameter(QWidget):
         self.fParameterId   = pInfo['index']
         self.fPluginId      = pluginId
         self.fTabIndex      = tabIndex
+        self.fKnobVisible   = True
 
         # -------------------------------------------------------------
         # Set-up GUI
@@ -157,6 +180,7 @@ class PluginParameter(QWidget):
         self.ui.widget.setStep(pInfo['step'])
         self.ui.widget.setStepSmall(pInfo['stepSmall'])
         self.ui.widget.setStepLarge(pInfo['stepLarge'])
+        # NOTE: Issue #1983
         self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
         if pInfo['comment']:
@@ -536,39 +560,21 @@ class PluginEdit(QDialog):
         labelPluginFont.setWeight(75)
         self.ui.label_plugin.setFont(labelPluginFont)
 
-        self.ui.dial_drywet.setCustomPaintMode(self.ui.dial_drywet.CUSTOM_PAINT_MODE_CARLA_WET)
-        self.ui.dial_drywet.setImage(3)
-        self.ui.dial_drywet.setLabel("Dry/Wet")
-        self.ui.dial_drywet.setMinimum(0.0)
-        self.ui.dial_drywet.setMaximum(1.0)
+        pluginHints = self.host.get_plugin_info(self.fPluginId)['hints']
+
+        self.ui.dial_drywet = ScalableDial(self.ui.dial_drywet, PARAMETER_DRYWET, 100, 1.0, 0.0, 1.0, "Dry/Wet", ScalableDial.CUSTOM_PAINT_MODE_CARLA_WET)
         self.ui.dial_drywet.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_DRYWET))
 
-        self.ui.dial_vol.setCustomPaintMode(self.ui.dial_vol.CUSTOM_PAINT_MODE_CARLA_VOL)
-        self.ui.dial_vol.setImage(3)
-        self.ui.dial_vol.setLabel("Volume")
-        self.ui.dial_vol.setMinimum(0.0)
-        self.ui.dial_vol.setMaximum(1.27)
+        self.ui.dial_vol = ScalableDial(self.ui.dial_vol, PARAMETER_VOLUME, 127, 1.0, 0.0, 1.27, "Volume", ScalableDial.CUSTOM_PAINT_MODE_CARLA_VOL)
         self.ui.dial_vol.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_VOLUME))
 
-        self.ui.dial_b_left.setCustomPaintMode(self.ui.dial_b_left.CUSTOM_PAINT_MODE_CARLA_L)
-        self.ui.dial_b_left.setImage(4)
-        self.ui.dial_b_left.setLabel("L")
-        self.ui.dial_b_left.setMinimum(-1.0)
-        self.ui.dial_b_left.setMaximum(1.0)
+        self.ui.dial_b_left = ScalableDial(self.ui.dial_b_left, PARAMETER_BALANCE_LEFT, 100, -1.0, -1.0, 1.0, "L", ScalableDial.CUSTOM_PAINT_MODE_CARLA_L)
         self.ui.dial_b_left.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_BALANCE_LEFT))
 
-        self.ui.dial_b_right.setCustomPaintMode(self.ui.dial_b_right.CUSTOM_PAINT_MODE_CARLA_R)
-        self.ui.dial_b_right.setImage(4)
-        self.ui.dial_b_right.setLabel("R")
-        self.ui.dial_b_right.setMinimum(-1.0)
-        self.ui.dial_b_right.setMaximum(1.0)
+        self.ui.dial_b_right = ScalableDial(self.ui.dial_b_right, PARAMETER_BALANCE_RIGHT, 100, 1.0, -1.0, 1.0, "R", ScalableDial.CUSTOM_PAINT_MODE_CARLA_R)
         self.ui.dial_b_right.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_BALANCE_RIGHT))
 
-        self.ui.dial_pan.setCustomPaintMode(self.ui.dial_b_right.CUSTOM_PAINT_MODE_CARLA_PAN)
-        self.ui.dial_pan.setImage(4)
-        self.ui.dial_pan.setLabel("Pan")
-        self.ui.dial_pan.setMinimum(-1.0)
-        self.ui.dial_pan.setMaximum(1.0)
+        self.ui.dial_pan = ScalableDial(self.ui.dial_pan, PARAMETER_PANNING, 100, 0, -1.0, 1.0, "Pan", ScalableDial.CUSTOM_PAINT_MODE_CARLA_PAN)
         self.ui.dial_pan.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_PANNING))
 
         self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
@@ -582,10 +588,10 @@ class PluginEdit(QDialog):
         self.ui.scrollArea.setVisible(False)
 
         # todo
-        self.ui.rb_balance.setEnabled(False)
-        self.ui.rb_balance.setVisible(False)
-        self.ui.rb_pan.setEnabled(False)
-        self.ui.rb_pan.setVisible(False)
+        # self.ui.rb_balance.setEnabled(False)
+        # self.ui.rb_balance.setVisible(False)
+        # self.ui.rb_pan.setEnabled(False)
+        # self.ui.rb_pan.setVisible(False)
 
         flags  = self.windowFlags()
         flags &= ~Qt.WindowContextHelpButtonHint
@@ -901,7 +907,6 @@ class PluginEdit(QDialog):
                 break
 
             paramData = self.host.get_parameter_data(self.fPluginId, i)
-
             if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
                 unusedParameters += 1
                 continue
@@ -973,6 +978,12 @@ class PluginEdit(QDialog):
         # Create parameter tabs + widgets
         self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
         self._createParameterWidgets(PARAMETER_OUTPUT, paramOutputListFull, self.tr("Outputs"))
+
+        # Create full parameter list table tab
+        self._createParameterXrayTab(self.tr("XRay"))
+
+        # Create experimental description tab WORKINPROGRESS NOTE discussions/1967, pull/1961
+        self._createDescriptionTab(self.tr("Description"))
 
         # Restore tab state
         if tabIndex < self.ui.tabWidget.count():
@@ -1474,68 +1485,66 @@ class PluginEdit(QDialog):
 
     @pyqtSlot()
     def slot_knobCustomMenu(self):
-        sender   = self.sender()
-        knobName = sender.objectName()
+        # jpka: NOTE now Edit knobs are also know their constraints, so it's worth to set values as normal ones.
+        sender  = self.sender()
+        index   = sender.fIndex
+        minimum = sender.fMinimum
+        maximum = sender.fMaximum
+        current = sender.fRealValue
+        label   = sender.fLabel
+        default = sender.fDefault
+        unit    = sender.fUnit
+        step = stepSmall = 1.0
 
-        if knobName == "dial_drywet":
-            minimum = 0.0
-            maximum = 1.0
-            default = 1.0
-            label   = "Dry/Wet"
-        elif knobName == "dial_vol":
-            minimum = 0.0
-            maximum = 1.27
-            default = 1.0
-            label   = "Volume"
-        elif knobName == "dial_b_left":
-            minimum = -1.0
-            maximum = 1.0
-            default = -1.0
-            label   = "Balance-Left"
-        elif knobName == "dial_b_right":
-            minimum = -1.0
-            maximum = 1.0
-            default = 1.0
-            label   = "Balance-Right"
-        elif knobName == "dial_pan":
-            minimum = -1.0
-            maximum = 1.0
-            default = 0.0
-            label   = "Panning"
+        if index < PARAMETER_NULL:
+            percent = 100.0
         else:
-            minimum = 0.0
-            maximum = 1.0
-            default = 0.5
-            label   = "Unknown"
+            percent = 1
+
+        textReset = self.tr("Reset (" + strLim(default * percent) + unit + ")\tR,  Middle click")
+        textMinim = self.tr("Set to Minimum (" + strLim(minimum * percent) + unit + ")\t0")
+        textMaxim = self.tr("Set to Maximum (" + strLim(maximum * percent) + unit + ")\tEnd")
+
+        if sender.fIsButton:
+            editHotKey = "E"
+        else:
+            editHotKey = "Enter,  Double click"
 
         menu = QMenu(self)
-        actReset = menu.addAction(self.tr("Reset (%i%%)" % (default*100)))
+        actReset = menu.addAction(textReset)
         menu.addSeparator()
-        actMinimum = menu.addAction(self.tr("Set to Minimum (%i%%)" % (minimum*100)))
-        actCenter  = menu.addAction(self.tr("Set to Center"))
-        actMaximum = menu.addAction(self.tr("Set to Maximum (%i%%)" % (maximum*100)))
+        actMinimum = menu.addAction(textMinim)
+        actCenter  = menu.addAction(self.tr("Set to Center\t5"))
+        actMaximum = menu.addAction(textMaxim)
         menu.addSeparator()
-        actSet = menu.addAction(self.tr("Set value..."))
+        actSet = menu.addAction(self.tr("Set value...\t" + editHotKey))
 
-        if label not in ("Balance-Left", "Balance-Right", "Panning"):
+        if index > PARAMETER_NULL or index not in (PARAMETER_BALANCE_LEFT, PARAMETER_BALANCE_RIGHT, PARAMETER_PANNING):
             menu.removeAction(actCenter)
 
         actSelected = menu.exec_(QCursor.pos())
 
         if actSelected == actSet:
-            current   = minimum + (maximum-minimum)*(float(sender.value())/10000)
-            value, ok = QInputDialog.getInt(self,
-                                            self.tr("Set value"),
-                                            label,
-                                            round(current*100.0),
-                                            round(minimum*100.0),
-                                            round(maximum*100.0),
-                                            1)
-            if ok:
-                value = float(value)/100.0
+            paramInfo   = self.host.get_parameter_info(self.fPluginId, index)
+            paramRanges = self.host.get_parameter_ranges(self.fPluginId, index)
+            scalePoints = []
 
-            if not ok:
+            for i in range(paramInfo['scalePointCount']):
+                scalePoints.append(self.host.get_parameter_scalepoint_info(self.fPluginId, index, i))
+
+            if sender.fIsInteger:
+                step = max(1, int((maximum - minimum)/100))
+                stepSmall = max(1, int(step/10))
+            else:
+                step = paramRanges['step'] * percent
+                stepSmall = paramRanges['stepSmall'] * percent
+
+            dialog = CustomInputDialog(self, label, current * percent, minimum * percent, maximum * percent, step, stepSmall, scalePoints, "", "", unit)
+
+            if not dialog.exec_():
                 return
+
+            value = dialog.returnValue() / percent
 
         elif actSelected == actMinimum:
             value = minimum
@@ -1605,13 +1614,15 @@ class PluginEdit(QDialog):
             scrollAreaLayout = QVBoxLayout(scrollAreaWidget)
             scrollAreaLayout.setSpacing(3)
 
+            expandBox = (len(paramList) < 50)
+
             for paramInfo in paramList:
                 groupName = paramInfo['groupName']
                 if groupName:
                     groupSymbol, groupName = groupName.split(":",1)
                     groupLayout, groupWidget = groupWidgets.get(groupSymbol, (None, None))
                     if groupLayout is None:
-                        groupWidget = CollapsibleBox(groupName, scrollAreaWidget)
+                        groupWidget = CollapsibleBox(groupName, scrollAreaWidget, expandBox)
                         groupLayout = groupWidget.getContentLayout()
                         groupWidget.setPalette(palette2)
                         scrollAreaLayout.addWidget(groupWidget)
@@ -1675,6 +1686,140 @@ class PluginEdit(QDialog):
             paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
             paramWidget.blockSignals(False)
+
+    #------------------------------------------------------------------
+
+    # NOTE To speed things up, displayed data is not realtime. Reopen project to expose last changes.
+    def _createParameterXrayTab(self, tabName):
+        # How simple would be fit a value into cell? Yet to be as fast as we can.
+        def strFit(value):
+            if isinstance(value, str):
+                return value
+            # For 'carla-control', but anyway scalePoints are not work. #1984
+            elif isinstance(value, list):
+                return str(value)           # It's []
+            elif abs(value) >= 1E8:
+                return '{:.3e}'.format(value)
+            elif value == int(value): # Zero falls here
+                return str(int(value))
+            else:
+                return strLim(value)
+
+        def strLineWrap(string, cut):
+            result = ''
+            while len(string) > cut:          # FIXME  Optimize me!
+                result += string[:cut] + '\n'
+                string = string[cut:]
+            result += string
+            return result
+
+        def addCell(section, name, string, toolTip = ''):
+            if x == table.columnCount():
+                table.insertColumn(x)
+                # jpka: FIXME Here we need vertical text. But impossible, no working examples.
+                # Only untested https://stackoverflow.com/questions/52162125/
+                nameWrapped = section + '\n' + strLineWrap(name, 6)
+                table.setHorizontalHeaderItem(x, QTableWidgetItem(nameWrapped))
+                table.horizontalHeader().setSectionResizeMode(x, QHeaderView.ResizeToContents)
+
+            if y == table.rowCount():
+                table.insertRow(y)
+                table.verticalHeader().setSectionResizeMode(y, QHeaderView.ResizeToContents)
+
+            item = QTableWidgetItem(string)
+            if toolTip:
+                item.setToolTip(toolTip)
+            table.setItem(y, x, item)
+            return
+
+        table = QTableWidget(self)
+        table.setObjectName("table")
+        table.setRowCount(1)
+        # table.setToolTipDuration(2000)
+
+        parameterCount = self.host.get_parameter_count(self.fPluginId)
+        if parameterCount <= 0:
+            return
+
+        y = 0
+        for i in range(parameterCount):
+            x = 0
+            param = self.host.get_parameter_data(self.fPluginId, i)
+            for name in param:
+                value = param[name]
+                if (name == 'type') and (value in (1, 2,)):
+                    addCell('Data', name, str(value) + (' in',' out')[value - 1])
+                elif (name == 'hints'):
+                    # toolTip = '<body>' + bin(value)[2:]
+                    hints = ''
+                    for bit in range(len(parameterHintsText)):
+                        if (value & int(2**(bit-1))):
+                            hint = parameterHintsText[bit-1]
+                            # toolTip += '<br>' + hint
+                            hints += ', ' + hint
+                    addCell('Data', name, str(value)) # , toolTip + '</body>')
+                    x += 1
+                    addCell('Hints', '', hints[2:])
+                else:
+                    addCell('Data', name, strFit(value))
+                x += 1
+
+            param = self.host.get_parameter_ranges(self.fPluginId, i)
+            for name in param:
+                addCell('Ranges', name, strFit(param[name]))
+                x += 1
+
+            param = self.host.get_parameter_info(self.fPluginId, i)
+            for name in param:
+                addCell('Info', name, strFit(param[name]))
+                x += 1
+
+            strScalePoints = ''
+            for j in range(param['scalePointCount']):
+                scalePointInfo = self.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
+                strScalePoints += (strFit(scalePointInfo['value']) + ':' + scalePointInfo['label'] + ',')
+
+            if strScalePoints:
+                addCell('Scalepoint_info', 'Scale Points', strLineWrap(strScalePoints[:len(strScalePoints)-1], 80))
+                x += 1
+
+            y += 1
+
+        self.ui.tabWidget.addTab(table, tabName)
+        # self.ui.tabWidget.setToolTipDuration(2000)
+
+    #------------------------------------------------------------------
+
+    def _createDescriptionTab(self, tabPageName):
+# jpka: To be filled from 'rdfs:comment'
+        strDescr = "To be filled from rdfs:comment"
+
+        realPluginName = self.host.get_real_plugin_name(self.fPluginId)
+        labelURI = self.fPluginInfo['label']
+
+        strLoadState = ""
+        programCount = self.host.get_program_count(self.fPluginId)
+        if programCount > 0:
+            strLoadState = '<div style="letter-spacing:1px"><br>'\
+                '<b>Note: </b>This plugin collected some presets for you.<br>'\
+                'Use <i>Edit</i> tab, then <i>Load State</i> button.</div>'
+
+        scene = QGraphicsScene(self)
+        text = QGraphicsTextItem("",None)
+        text.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        text.setTextWidth(600);
+#        text.setFont(QFont("Arial, 16"))    # NOTE: All Qt sizes are in Pt; real px~=4/3Pt.
+        text.setHtml('<body>\
+            <h1>' + realPluginName + '</h1><br>'\
+            '<a href=' + labelURI + '>' + labelURI + '</a><br><br>'\
+            '<div style="line-height:1.5;">' + strDescr + '</div>' +\
+            strLoadState +\
+            '<body>');
+
+        scene.addItem(text)
+        view = QGraphicsView(scene, self)
+
+        self.ui.tabWidget.addTab(view, tabPageName)
 
     #------------------------------------------------------------------
 

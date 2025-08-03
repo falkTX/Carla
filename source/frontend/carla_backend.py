@@ -295,6 +295,16 @@ PARAMETER_CAN_BE_CV_CONTROLLED = 0x800
 # @note only valid for parameter inputs.
 PARAMETER_IS_NOT_SAVED = 0x1000
 
+# Human readable labels for 24 decoded bits (currently for XRay tab of Edit dialog).
+# Are some hints can exceed 2^24 ?
+parameterHintsText = (
+    "IS_BOOLEAN", "IS_INTEGER", "IS_LOGARITHMIC", "n/a",
+    "IS_ENABLED", "IS_AUTOMATABLE", "IS_READ_ONLY", "n/a",
+    "USES_SAMPLERATE", "USES_SCALEPOINTS", "USES_CUSTOM_TEXT", "CAN_BE_CV_CONTROLLED",
+    "IS_NOT_SAVED", "n/a", "n/a", "n/a",
+    "n/a", "n/a", "n/a", "n/a",
+    "n/a", "n/a", "n/a", "n/a", )
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Mapped Parameter Flags
 # Various flags for parameter mappings.

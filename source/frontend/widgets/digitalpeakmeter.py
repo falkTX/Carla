@@ -35,6 +35,7 @@ class DigitalPeakMeter(QWidget):
     STYLE_OPENAV  = 2
     STYLE_RNCBC   = 3
     STYLE_CALF    = 4
+    STYLE_TUBE    = 5
 
     # -----------------------------------------------------------------------------------------------------------------
 
@@ -153,7 +154,7 @@ class DigitalPeakMeter(QWidget):
         if self.fMeterStyle == style:
             return
 
-        if style not in (self.STYLE_DEFAULT, self.STYLE_OPENAV, self.STYLE_RNCBC, self.STYLE_CALF):
+        if style not in (self.STYLE_DEFAULT, self.STYLE_OPENAV, self.STYLE_RNCBC, self.STYLE_CALF, self.STYLE_TUBE):
             qCritical(f"DigitalPeakMeter::setMeterStyle({style}) - invalid style")
             return
 
@@ -163,7 +164,7 @@ class DigitalPeakMeter(QWidget):
             self.fMeterBackground = QColor("#1A1A1A")
         elif style == self.STYLE_RNCBC:
             self.fMeterBackground = QColor("#070707")
-        elif style == self.STYLE_CALF:
+        elif style in (self.STYLE_CALF, self.STYLE_TUBE):
             self.fMeterBackground = QColor("#000")
 
         if style == self.STYLE_CALF:
@@ -215,22 +216,35 @@ class DigitalPeakMeter(QWidget):
 
         i = meter - 1
 
+        if level < 0.001:
+            level = 0.0
+        elif level > 0.999:
+            level = 1.0
+
         if self.fSmoothMultiplier > 0 and not forced:
             level = (
                 (self.fLastChannelData[i] * float(self.fSmoothMultiplier) + level)
                 / float(self.fSmoothMultiplier + 1)
             )
 
-        if level < 0.001:
-            level = 0.0
-        elif level > 0.999:
-            level = 1.0
+        self.fLastChannelData[i] = level
+
+        # Discretize scale: for 10 points, first will lit at 5%,
+        # then 15%, and last at 95% of normalized value.
+        # We also win some CPU when not redraw at small changes.
+        if (self.fMeterStyle == self.STYLE_TUBE) and (level > 0.0) and (level < 1.0):
+            points = 20
+
+            # Transform to Sq Root domain: our meters have Sqrt dynamic compression;
+            # Discretize:
+            level = int(sqrt(level) * points + 0.5) / points
+
+            # Transform back from Square Root domain:
+            level = level * level
 
         if self.fChannelData[i] != level:
             self.fChannelData[i] = level
             self.update()
-
-        self.fLastChannelData[i] = level
 
     # -----------------------------------------------------------------------------------------------------------------
 
@@ -283,6 +297,14 @@ class DigitalPeakMeter(QWidget):
         elif self.fMeterStyle in (self.STYLE_OPENAV, self.STYLE_CALF):
             self.fMeterGradient.setColorAt(0.0, self.fMeterColorBase)
             self.fMeterGradient.setColorAt(1.0, self.fMeterColorBase)
+
+        elif self.fMeterStyle == self.STYLE_TUBE:
+            color = QColor.fromHslF(0.9, 1, 0.6, 1) # Tuneon filled w/ neon + agron
+            points = 20
+            for i in range(points + 1):
+                self.fMeterGradient.setColorAt(((i-0.3)/points % 1.0), color)
+                self.fMeterGradient.setColorAt(( i     /points      ), Qt.black)
+                self.fMeterGradient.setColorAt(((i+0.3)/points % 1.0), color)
 
         self.updateGrandientFinalStop()
 
@@ -359,6 +381,13 @@ class DigitalPeakMeter(QWidget):
             del colorTrans
             meterPad  += 2
             meterSize -= 2
+
+        elif self.fMeterStyle == self.STYLE_TUBE:
+            painter.setPen(QPen(Qt.NoPen))
+            painter.setBrush(self.fMeterGradient)
+            meterPos  += 3
+            meterPad  += 6
+            meterSize -= 6
 
         else:
             painter.setPen(QPen(self.fMeterBackground, 0))

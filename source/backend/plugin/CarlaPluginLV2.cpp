@@ -3338,6 +3338,9 @@ public:
         if (aOuts >= 2 && aOuts % 2 == 0)
             pData->hints |= PLUGIN_CAN_BALANCE;
 
+        if (aOuts >= 2)
+            pData->hints |= PLUGIN_CAN_PANNING;
+
         // extra plugin hints
         pData->extraHints = 0x0;
 
@@ -4673,7 +4676,11 @@ public:
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
+            }
 
+            // Do not join this loop with loop above.
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+            {
                 // Balance
                 if (doBalance)
                 {
@@ -4705,10 +4712,34 @@ public:
                     }
                 }
 
+                // Panning
+                // Only decrease of levels, but never increase, unlike 'L, R'.
+                // Note: no pan processing for Mono.
+
+                uint32_t q     = pData->audioOut.count;
+                float    pan   = pData->postProc.panning;
+                float    vol   = pData->postProc.volume;
+
+                // Pan: Stereo, 3 ch (extra rear/bass), or Quadro.
+                if ((pan != 0.0) && ((q == 2) || (q == 3) || (q == 4)))
+                {
+                    // left channel(s) reduce when pan to right
+                    if ((pan > 0) && ((i == 0) || ((i == 2) && (q == 4))))
+                    {
+                        vol = vol * (1.0 - pan);
+                    }
+
+                    // right channel(s) reduce when pan to left
+                    else if ((pan < 0) && ((i == 1) || (i == 3)))
+                    {
+                        vol = vol * (1.0 + pan);
+                    }
+                }
+
                 // Volume (and buffer copy)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
+                        audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k] * vol;
                 }
             }
         } // End of Post-processing

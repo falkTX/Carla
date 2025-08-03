@@ -13,11 +13,11 @@ import os
 from qt_compat import qt_config
 
 if qt_config == 5:
-    from PyQt5.QtCore import Qt, QSize, QRect, QEvent
+    from PyQt5.QtCore import QT_VERSION, Qt, QSize, QRect, QEvent
     from PyQt5.QtGui import QColor, QPainter, QPixmap
     from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem, QMessageBox
 elif qt_config == 6:
-    from PyQt6.QtCore import Qt, QSize, QRect, QEvent
+    from PyQt6.QtCore import QT_VERSION, Qt, QSize, QRect, QEvent, QPoint   # QPoint is for Qt6 only.
     from PyQt6.QtGui import QColor, QPainter, QPixmap
     from PyQt6.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem, QMessageBox
 
@@ -291,7 +291,10 @@ class RackListWidget(QListWidget):
 
         event.acceptProposedAction()
 
-        tryItem = self.itemAt(event.pos())
+        if QT_VERSION < 0x60000:
+            tryItem = self.itemAt(event.pos())
+        else:
+            tryItem = self.itemAt(QPoint(int(event.position().x()), int(event.position().y())))
 
         if tryItem is not None:
             self.setCurrentRow(tryItem.getPluginId())
@@ -318,7 +321,10 @@ class RackListWidget(QListWidget):
         if not urls:
             return
 
-        tryItem = self.itemAt(event.pos())
+        if QT_VERSION < 0x60000:
+            tryItem = self.itemAt(event.pos())
+        else:
+            tryItem = self.itemAt(QPoint(int(event.position().x()), int(event.position().y())))
 
         if tryItem is not None:
             pluginId = tryItem.getPluginId()
