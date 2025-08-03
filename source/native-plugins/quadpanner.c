@@ -8,7 +8,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-// -----------------------------------------------------------------------
+/**
+ * FrontLeft, FrontRight, RearLeft, and RearRight speakers: room corners or car doors-like located.
+ * Here is each of L-R, F-R controls attenuates two channels but not one.
+ *
+ * If L-R is +0.1 and F-R is -0.2 then:
+ *  FrontLeft channel is *= (0.9 * 1.0),
+ *  FrontRight           *= (1.0 * 1.0),
+ *  RearLeft             *= (0.9 * 0.8),
+ *  and RearRight        *= (1.0 * 0.8).
+ */
+
+// --------------------------------------------------------------------------------------------------------------------
 
 typedef struct {
     float a0, b1, z1;
@@ -24,7 +35,7 @@ void set_filter_sample_rate(Filter* const filter, const float sampleRate)
     filter->z1 = 0.0f;
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 typedef enum {
     PARAM_LEFT_RIGHT = 0,
@@ -37,7 +48,7 @@ typedef struct {
     float params[PARAM_COUNT];
 } QuadPannerHandle;
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 static NativePluginHandle quadpanner_instantiate(const NativeHostDescriptor* host)
 {
@@ -135,35 +146,36 @@ static void quadpanner_process(NativePluginHandle handle,
                                float** inBuffer, float** outBuffer, uint32_t frames,
                                const NativeMidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    float v1, v2, tmp;
+    float v1, v2, v3, v4, tmp; // FrontLeft, FrontRight, RearLeft, and RearRight
 
     // left/right
     if ((tmp = handlePtr->params[PARAM_LEFT_RIGHT]) < 0.f)
     {
-        v1 = 1.f;
-        v2 = 1.f - tmp * -0.01f;
+        v1 = v3 = 1.f;
+        v2 = v4 = 1.f - tmp * -0.01f;
     }
     else
     {
-        v1 = 1.f - tmp * 0.01f;
-        v2 = 1.f;
+        v1 = v3 = 1.f - tmp * 0.01f;
+        v2 = v4 = 1.f;
     }
-    handle_audio_buffers(inBuffer[0], outBuffer[0], &handlePtr->lowpass[0], v1, frames);
-    handle_audio_buffers(inBuffer[1], outBuffer[1], &handlePtr->lowpass[1], v2, frames);
 
     // front/rear
-    if ((tmp = handlePtr->params[PARAM_FRONT_REAR]) < 0.f)
+    if ((tmp = handlePtr->params[PARAM_FRONT_REAR] * 0.01f) < 0.f)
     {
-        v1 = 1.f;
-        v2 = 1.f - tmp * -0.01f;
+        v3 *= 1.f - -tmp;
+        v4 *= 1.f - -tmp;
     }
     else
     {
-        v1 = 1.f - tmp * 0.01f;
-        v2 = 1.f;
+        v1 *= 1.f - tmp;
+        v2 *= 1.f - tmp;
     }
-    handle_audio_buffers(inBuffer[2], outBuffer[2], &handlePtr->lowpass[2], v1, frames);
-    handle_audio_buffers(inBuffer[3], outBuffer[3], &handlePtr->lowpass[3], v2, frames);
+
+    handle_audio_buffers(inBuffer[0], outBuffer[0], &handlePtr->lowpass[0], v1, frames);
+    handle_audio_buffers(inBuffer[1], outBuffer[1], &handlePtr->lowpass[1], v2, frames);
+    handle_audio_buffers(inBuffer[2], outBuffer[2], &handlePtr->lowpass[2], v3, frames);
+    handle_audio_buffers(inBuffer[3], outBuffer[3], &handlePtr->lowpass[3], v4, frames);
 
     return;
 
@@ -176,12 +188,12 @@ static intptr_t quadpanner_dispatcher(NativePluginHandle handle, NativePluginDis
 {
     switch (opcode)
     {
-    case NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
-        for (unsigned i = 0; i < PARAM_COUNT * 2; ++i)
-            set_filter_sample_rate(&handlePtr->lowpass[i], opt);
+        case NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+            for (unsigned i = 0; i < PARAM_COUNT * 2; ++i)
+                set_filter_sample_rate(&handlePtr->lowpass[i], opt);
         break;
-    default:
-        break;
+        default:
+            break;
     }
 
     return 0;
@@ -195,16 +207,16 @@ static intptr_t quadpanner_dispatcher(NativePluginHandle handle, NativePluginDis
 static const char* quadpanner_get_buffer_port_name(NativePluginHandle handle, uint32_t index, bool isOutput)
 {
     static const char* const kInNames[4] = {
-        "In-Left",
-        "In-Right",
-        "In-Front",
-        "In-Rear",
+        "In-FrontLeft",
+        "In-FrontRight",
+        "In-RearLeft",
+        "In-RearRight",
     };
     static const char* const kOutNames[4] = {
-        "Out-Left",
-        "Out-Right",
-        "Out-Front",
-        "Out-Rear",
+        "Out-FrontLeft",
+        "Out-FrontRight",
+        "Out-RearLeft",
+        "Out-RearRight",
     };
 
     return isOutput ? kOutNames[index] : kInNames[index];
@@ -213,7 +225,7 @@ static const char* quadpanner_get_buffer_port_name(NativePluginHandle handle, ui
     (void)handle;
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 static const NativePluginDescriptor quadpannerDesc = {
     .category  = NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -268,7 +280,7 @@ static const NativePluginDescriptor quadpannerDesc = {
     .get_buffer_port_range = NULL,
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 void carla_register_native_plugin_quadpanner(void);
 
@@ -277,4 +289,4 @@ void carla_register_native_plugin_quadpanner(void)
     carla_register_native_plugin(&quadpannerDesc);
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
