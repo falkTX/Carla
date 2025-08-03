@@ -137,7 +137,6 @@ private:
     int handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS);
-    int handleMsgSetForth(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetParameterMappedControlIndex(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgSetParameterMappedRange(CARLA_ENGINE_OSC_HANDLE_ARGS);

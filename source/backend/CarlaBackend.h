@@ -210,11 +210,6 @@ static constexpr const uint PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN = 0x2000;
  */
 static constexpr const uint PLUGIN_NEEDS_MAIN_THREAD_IDLE = 0x4000;
 
-/*!
- * Plugin can use internal Front-Rear balance for Quadro (or > 2 channels in General).
- */
-static constexpr const uint PLUGIN_CAN_FORTH = 0x8000;
-
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -838,19 +833,12 @@ typedef enum {
      * Range -1...15 (-1 = off).
      */
     PARAMETER_CTRL_CHANNEL = -8,
-
-    /*!
-     * Experimental Front-Rear parameter for Quadro (or > 2 channels in General).
-     * Range -1.0...1.0; default is 0.0.
-     */
-    PARAMETER_FORTH = -9,
-
 #endif
 
     /*!
      * Max value, defined only for convenience.
      */
-    PARAMETER_MAX = -10
+    PARAMETER_MAX = -9
 
 } InternalParameterIndex;
 

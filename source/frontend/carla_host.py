@@ -1546,7 +1546,6 @@ class HostWindow(QMainWindow):
             pitem.getWidget().setInternalParameter(PARAMETER_BALANCE_LEFT, -1.0)
             pitem.getWidget().setInternalParameter(PARAMETER_BALANCE_RIGHT, 1.0)
             pitem.getWidget().setInternalParameter(PARAMETER_PANNING, 0.0)
-            pitem.getWidget().setInternalParameter(PARAMETER_FORTH, 0.0)
 
     @pyqtSlot()
     def slot_pluginsChangeSkin(self):

@@ -2091,14 +2091,6 @@ void carla_set_panning(CarlaHostHandle handle, uint pluginId, float value)
         plugin->setPanning(value, true, false);
 }
 
-void carla_set_forth(CarlaHostHandle handle, uint pluginId, float value)
-{
-    CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);
-
-    if (const CarlaPluginPtr plugin = handle->engine->getPlugin(pluginId))
-        plugin->setForth(value, true, false);
-}
-
 void carla_set_ctrl_channel(CarlaHostHandle handle, uint pluginId, int8_t channel)
 {
     CARLA_SAFE_ASSERT_RETURN(handle->engine != nullptr,);

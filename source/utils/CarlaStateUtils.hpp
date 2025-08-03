@@ -69,7 +69,6 @@ struct CarlaStateSave {
     float  balanceLeft;
     float  balanceRight;
     float  panning;
-    float  forth;
     int8_t ctrlChannel;
    #endif
 

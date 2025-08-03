@@ -967,13 +967,6 @@ CARLA_API_EXPORT void carla_set_balance_right(CarlaHostHandle handle, uint plugi
 CARLA_API_EXPORT void carla_set_panning(CarlaHostHandle handle, uint pluginId, float value);
 
 /*!
- * Change a plugin's internal experimental front-rear (forth) value.
- * @param pluginId Plugin
- * @param value    New value
- */
-CARLA_API_EXPORT void carla_set_forth(CarlaHostHandle handle, uint pluginId, float value);
-
-/*!
  * Change a plugin's internal control channel.
  * @param pluginId Plugin
  * @param channel  New channel

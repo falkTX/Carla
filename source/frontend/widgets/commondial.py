@@ -20,7 +20,7 @@ elif qt_config == 6:
 
 from carla_shared import strLim
 from widgets.paramspinbox import CustomInputDialog
-from carla_backend import PARAMETER_NULL, PARAMETER_DRYWET, PARAMETER_VOLUME, PARAMETER_BALANCE_LEFT, PARAMETER_BALANCE_RIGHT, PARAMETER_PANNING, PARAMETER_FORTH
+from carla_backend import PARAMETER_NULL, PARAMETER_DRYWET, PARAMETER_VOLUME, PARAMETER_BALANCE_LEFT, PARAMETER_BALANCE_RIGHT, PARAMETER_PANNING
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Widget Class
@@ -289,7 +289,7 @@ class CommonDial(QWidget):
 
 
     def mouseDoubleClickEvent(self, event):
-        if self.knobPusheable and self.fIndex in (PARAMETER_DRYWET, PARAMETER_VOLUME, PARAMETER_PANNING, PARAMETER_FORTH): # -3, -4, -7, -9
+        if self.knobPusheable and self.fIndex in (PARAMETER_DRYWET, PARAMETER_VOLUME, PARAMETER_PANNING): # -3, -4, -7
             return # Mutex with special Single Click
 
         if event.button() == Qt.LeftButton:
@@ -336,7 +336,7 @@ class CommonDial(QWidget):
 
     # NOTE: fLastLabel state managed @ scalabledial
     def knobPush(self):
-        if self.knobPusheable and self.fIndex in (PARAMETER_DRYWET, PARAMETER_VOLUME, PARAMETER_PANNING, PARAMETER_FORTH): # -3, -4, -7, -9
+        if self.knobPusheable and self.fIndex in (PARAMETER_DRYWET, PARAMETER_VOLUME, PARAMETER_PANNING): # -3, -4, -7
 
             if self.fLastLabel == "":   # push value
                 self.fLastValue = self.fRealValue
@@ -549,8 +549,6 @@ class CommonDial(QWidget):
                     tip = "MUTE"
                 elif self.fRealValue == 0 and self.fIndex == PARAMETER_PANNING:
                     tip = "Center"
-                elif self.fRealValue == 0 and self.fIndex == PARAMETER_FORTH:
-                    tip = "Midway"
                 else:
                     if self.fIndex < PARAMETER_NULL:
                         percent = 100.0

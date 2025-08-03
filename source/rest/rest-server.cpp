@@ -407,7 +407,6 @@ int main(int, const char**)
     make_resource(service, "/set_balance_left", handle_carla_set_balance_left);
     make_resource(service, "/set_balance_right", handle_carla_set_balance_right);
     make_resource(service, "/set_panning", handle_carla_set_panning);
-    make_resource(service, "/set_forth", handle_carla_set_forth);
     make_resource(service, "/set_ctrl_channel", handle_carla_set_ctrl_channel);
     make_resource(service, "/set_option", handle_carla_set_option);
 

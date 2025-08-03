@@ -798,14 +798,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                     self.fParameterList.append([PARAMETER_PANNING, widget])
                     self.w_knobs_right.layout().addWidget(widget)
 
-            if (self.fPluginInfo['hints'] & PLUGIN_CAN_FORTH) != 0:
-                if widget.getTweak('ShowForth', 0):
-                    widget = ScalableDial(self, PARAMETER_FORTH, 100, 0.0, -1.0, 1.0, "Forth", skinNum * 16 + ScalableDial.CUSTOM_PAINT_MODE_CARLA_FORTH, -1, "%", self.fSkinStyle, whiteLabels, self.fTweaks)
-
-                    self.fParameterList.append([PARAMETER_FORTH, widget])
-                    self.w_knobs_right.layout().addWidget(widget)
-
-
         for paramIndex, paramWidget in self.fParameterList:
             if not paramWidget.fIsOutput:
                 paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
@@ -900,10 +892,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         elif parameterId == PARAMETER_PANNING:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_PANNING) == 0: return
             self.host.set_panning(self.fPluginId, value)
-
-        elif parameterId == PARAMETER_FORTH:
-            if (self.fPluginInfo['hints'] & PLUGIN_CAN_FORTH) == 0: return
-            self.host.set_forth(self.fPluginId, value)
 
         elif parameterId == PARAMETER_CTRL_CHANNEL:
             self.host.set_ctrl_channel(self.fPluginId, value)

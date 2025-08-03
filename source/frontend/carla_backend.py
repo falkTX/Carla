@@ -207,9 +207,6 @@ PLUGIN_USES_MULTI_PROGS = 0x400
 # Plugin can make use of inline display API.
 PLUGIN_HAS_INLINE_DISPLAY = 0x800
 
-# Plugin can use internal control of Front-Rear balance for Quadro (or > 2 channels in General).
-PLUGIN_CAN_FORTH = 0x8000
-
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Options
 # Various plugin options.
@@ -556,12 +553,8 @@ PARAMETER_PANNING = -7
 # Range -1...15 (-1 = off).
 PARAMETER_CTRL_CHANNEL = -8
 
-# Experimental Front-Rear (Forth) parameter.
-# Range -1.0...1.0; default is 0.0.
-PARAMETER_FORTH = -9
-
 # Max value, defined only for convenience.
-PARAMETER_MAX = -10
+PARAMETER_MAX = -9
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Special Mapped Control Index
@@ -2119,13 +2112,6 @@ class CarlaHostMeta():
     def set_panning(self, pluginId, value):
         raise NotImplementedError
 
-    # Change a plugin's internal front-rear (forth) value.
-    # @param pluginId Plugin
-    # @param value    New value
-    @abstractmethod
-    def set_forth(self, pluginId, value):
-        raise NotImplementedError
-
     # Change a plugin's internal control channel.
     # @param pluginId Plugin
     # @param channel  New channel
@@ -2544,9 +2530,6 @@ class CarlaHostNull(CarlaHostMeta):
     def set_panning(self, pluginId, value):
         return
 
-    def set_forth(self, pluginId, value):
-        return
-
     def set_ctrl_channel(self, pluginId, channel):
         return
 
@@ -2868,9 +2851,6 @@ class CarlaHostDLL(CarlaHostMeta):
 
         self.lib.carla_set_panning.argtypes = (c_void_p, c_uint, c_float)
         self.lib.carla_set_panning.restype = None
-
-        self.lib.carla_set_forth.argtypes = (c_void_p, c_uint, c_float)
-        self.lib.carla_set_forth.restype = None
 
         self.lib.carla_set_ctrl_channel.argtypes = (c_void_p, c_uint, c_int8)
         self.lib.carla_set_ctrl_channel.restype = None
@@ -3213,9 +3193,6 @@ class CarlaHostDLL(CarlaHostMeta):
     def set_panning(self, pluginId, value):
         self.lib.carla_set_panning(self.handle, pluginId, value)
 
-    def set_forth(self, pluginId, value):
-        self.lib.carla_set_forth(self.handle, pluginId, value)
-
     def set_ctrl_channel(self, pluginId, channel):
         self.lib.carla_set_ctrl_channel(self.handle, pluginId, channel)
 
@@ -3296,7 +3273,7 @@ class PluginStoreInfo():
     def clear(self):
         self.pluginInfo     = PyCarlaPluginInfo.copy()
         self.pluginRealName = ""
-        self.internalValues = [0.0, 1.0, 1.0, -1.0, 1.0, 0.0, -1.0, 0.0]
+        self.internalValues = [0.0, 1.0, 1.0, -1.0, 1.0, 0.0, -1.0]
         self.audioCountInfo = PyCarlaPortCountInfo.copy()
         self.midiCountInfo  = PyCarlaPortCountInfo.copy()
         self.parameterCount = 0
@@ -3622,10 +3599,6 @@ class CarlaHostPlugin(CarlaHostMeta):
     def set_panning(self, pluginId, value):
         self.sendMsg(["set_panning", pluginId, value])
         self.fPluginsInfo[pluginId].internalValues[5] = value
-
-    def set_forth(self, pluginId, value):
-        self.sendMsg(["set_forth", pluginId, value])
-        self.fPluginsInfo[pluginId].internalValues[7] = value
 
     def set_ctrl_channel(self, pluginId, channel):
         self.sendMsg(["set_ctrl_channel", pluginId, channel])

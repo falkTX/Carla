@@ -1273,9 +1273,6 @@ public:
 
         if (aOuts >= 2)
             pData->hints |= PLUGIN_CAN_PANNING;
-
-        if (aOuts >= 3)
-            pData->hints |= PLUGIN_CAN_FORTH;
        #endif
 
         // extra plugin hints
@@ -2124,13 +2121,12 @@ public:
                     }
                 }
 
-                // Panning and Front-Rear ("Forth").
+                // Panning
                 // Only decrease of levels, but never increase, unlike 'L, R'.
-                // Note: no any pan/forth processing for Mono.
+                // Note: no pan processing for Mono.
 
                 uint32_t q     = pData->audioOut.count;
                 float    pan   = pData->postProc.panning;
-                float    forth = pData->postProc.forth;
                 float    vol   = pData->postProc.volume;
 
                 // Pan: Stereo, 3 ch (extra rear/bass), or Quadro.
@@ -2146,22 +2142,6 @@ public:
                     else if ((pan < 0) && ((i == 1) || (i == 3)))
                     {
                         vol = vol * (1.0 + pan);
-                    }
-                }
-
-                // Front-Rear: 3 ch (extra rear/bass), or Quadro.
-                if ((forth != 0.0) && ((q == 3) || (q == 4)))
-                {
-                    // rear channel(s) reduce when moving forth to front
-                    if ((forth > 0) && ((i == 2) || (i == 3)))
-                    {
-                        vol = vol * (1.0 - forth);
-                    }
-
-                    // front channels reduce when moving back to rear
-                    else if ((forth < 0) && ((i == 0) || (i == 1)))
-                    {
-                        vol = vol * (1.0 + forth);
                     }
                 }
 

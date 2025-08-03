@@ -196,8 +196,6 @@ const char* InternalParameterIndex2Str(const InternalParameterIndex index) noexc
         return "PARAMETER_BALANCE_RIGHT";
     case PARAMETER_PANNING:
         return "PARAMETER_PANNING";
-    case PARAMETER_FORTH:
-        return "PARAMETER_FORTH";
     case PARAMETER_CTRL_CHANNEL:
         return "PARAMETER_CTRL_CHANNEL";
 #endif

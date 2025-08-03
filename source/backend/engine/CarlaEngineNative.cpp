@@ -2115,17 +2115,6 @@ bool CarlaEngineNativeUI::msgReceived(const char* const msg) noexcept
         if (const CarlaPluginPtr plugin = fEngine->getPlugin(pluginId))
             plugin->setPanning(value, true, false);
     }
-    else if (std::strcmp(msg, "set_forth") == 0)
-    {
-        uint32_t pluginId;
-        float value;
-
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
-        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
-
-        if (const CarlaPluginPtr plugin = fEngine->getPlugin(pluginId))
-            plugin->setForth(value, true, false);
-    }
     else if (std::strcmp(msg, "set_ctrl_channel") == 0)
     {
         uint32_t pluginId;

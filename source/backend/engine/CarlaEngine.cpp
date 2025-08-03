@@ -2921,7 +2921,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                         plugin->setBalanceLeft(stateSave.balanceLeft, true, true);
                         plugin->setBalanceRight(stateSave.balanceRight, true, true);
                         plugin->setPanning(stateSave.panning, true, true);
-                        plugin->setForth(stateSave.forth, true, true);
                         plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
                         plugin->setActive(stateSave.active, true, true);
                         plugin->setEnabled(true);
@@ -2977,7 +2976,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                         plugin->setBalanceLeft(stateSave.balanceLeft, true, true);
                         plugin->setBalanceRight(stateSave.balanceRight, true, true);
                         plugin->setPanning(stateSave.panning, true, true);
-                        plugin->setForth(stateSave.forth, true, true);
                         plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
                         plugin->setActive(stateSave.active, true, true);
                         plugin->setEnabled(true);

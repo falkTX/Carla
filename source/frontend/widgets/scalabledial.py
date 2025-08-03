@@ -28,7 +28,6 @@ from carla_backend import (
     PARAMETER_BALANCE_LEFT,
     PARAMETER_BALANCE_RIGHT,
     PARAMETER_PANNING,
-    PARAMETER_FORTH,
     PARAMETER_MAX )
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -306,7 +305,7 @@ class ScalableDial(CommonDial):
 
         haveLed = self.getTweak('WetVolPushLed', 1) and self.fCustomPaintMode in (1, 2, 5, 6, 9, 10,)
 
-        if self.fIndex in (PARAMETER_DRYWET, PARAMETER_VOLUME, PARAMETER_PANNING, PARAMETER_FORTH): # -3, -4, -7, -9
+        if self.fIndex in (PARAMETER_DRYWET, PARAMETER_VOLUME, PARAMETER_PANNING): # -3, -4, -7
             if knobMuted:
                 if self.fIndex == PARAMETER_DRYWET:
                     self.pushLabel("Thru")

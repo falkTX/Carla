@@ -76,7 +76,6 @@ from carla_backend import (
     PLUGIN_CAN_VOLUME,
     PLUGIN_CAN_BALANCE,
     PLUGIN_CAN_PANNING,
-    PLUGIN_CAN_FORTH,
     PLUGIN_CATEGORY_SYNTH,
     PLUGIN_OPTION_FIXED_BUFFERS,
     PLUGIN_OPTION_FORCE_STEREO,
@@ -95,7 +94,6 @@ from carla_backend import (
     PARAMETER_BALANCE_LEFT,
     PARAMETER_BALANCE_RIGHT,
     PARAMETER_PANNING,
-    PARAMETER_FORTH,
     PARAMETER_CTRL_CHANNEL,
     PARAMETER_IS_ENABLED,
     PARAMETER_IS_AUTOMATABLE,
@@ -579,9 +577,6 @@ class PluginEdit(QDialog):
         self.ui.dial_pan = ScalableDial(self.ui.dial_pan, PARAMETER_PANNING, 100, 0, -1.0, 1.0, "Pan", ScalableDial.CUSTOM_PAINT_MODE_CARLA_PAN)
         self.ui.dial_pan.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_PANNING))
 
-        self.ui.dial_forth = ScalableDial(self.ui.dial_forth, PARAMETER_FORTH, 100, 0, -1.0, 1.0, "Forth", ScalableDial.CUSTOM_PAINT_MODE_CARLA_FORTH)
-        self.ui.dial_forth.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_FORTH))
-
         self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
 
         self.ui.scrollArea = PixmapKeyboardHArea(self)
@@ -628,7 +623,6 @@ class PluginEdit(QDialog):
         self.ui.dial_b_left.realValueChanged.connect(self.slot_balanceLeftChanged)
         self.ui.dial_b_right.realValueChanged.connect(self.slot_balanceRightChanged)
         self.ui.dial_pan.realValueChanged.connect(self.slot_panChanged)
-        self.ui.dial_forth.realValueChanged.connect(self.slot_forthChanged)
         self.ui.sb_ctrl_channel.valueChanged.connect(self.slot_ctrlChannelChanged)
 
         self.ui.dial_drywet.customContextMenuRequested.connect(self.slot_knobCustomMenu)
@@ -763,10 +757,6 @@ class PluginEdit(QDialog):
         self.ui.dial_pan.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_PANNING))
         self.ui.dial_pan.blockSignals(False)
 
-        self.ui.dial_forth.blockSignals(True)
-        self.ui.dial_forth.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_FORTH))
-        self.ui.dial_forth.blockSignals(False)
-
         self.fControlChannel = round(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_CTRL_CHANNEL))
         self.ui.sb_ctrl_channel.blockSignals(True)
         self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
@@ -836,7 +826,6 @@ class PluginEdit(QDialog):
         self.ui.dial_b_left.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
         self.ui.dial_pan.setEnabled(pluginHints & PLUGIN_CAN_PANNING)
-        self.ui.dial_forth.setEnabled(pluginHints & PLUGIN_CAN_FORTH)
 
         optsAvailable = self.fPluginInfo['optionsAvailable']
         optsEnabled = self.fPluginInfo['optionsEnabled']
@@ -1219,11 +1208,6 @@ class PluginEdit(QDialog):
                 self.ui.dial_pan.setValue(value)
                 self.ui.dial_pan.blockSignals(False)
 
-            elif index == PARAMETER_FORTH:
-                self.ui.dial_forth.blockSignals(True)
-                self.ui.dial_forth.setValue(value)
-                self.ui.dial_forth.blockSignals(False)
-
             elif index == PARAMETER_CTRL_CHANNEL:
                 self.fControlChannel = round(value)
                 self.ui.sb_ctrl_channel.blockSignals(True)
@@ -1423,13 +1407,6 @@ class PluginEdit(QDialog):
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_PANNING, value)
 
-    @pyqtSlot(float)
-    def slot_forthChanged(self, value):
-        self.host.set_forth(self.fPluginId, value)
-
-        if self.fParent is not None:
-            self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_FORTH, value)
-
     @pyqtSlot(int)
     def slot_ctrlChannelChanged(self, value):
         self.fControlChannel = value-1
@@ -1542,7 +1519,7 @@ class PluginEdit(QDialog):
         menu.addSeparator()
         actSet = menu.addAction(self.tr("Set value...\t" + editHotKey))
 
-        if index > PARAMETER_NULL or index not in (PARAMETER_BALANCE_LEFT, PARAMETER_BALANCE_RIGHT, PARAMETER_PANNING, PARAMETER_FORTH):
+        if index > PARAMETER_NULL or index not in (PARAMETER_BALANCE_LEFT, PARAMETER_BALANCE_RIGHT, PARAMETER_PANNING):
             menu.removeAction(actCenter)
 
         actSelected = menu.exec_(QCursor.pos())

@@ -468,12 +468,6 @@ class CarlaHostQtWeb(CarlaHostQtNull):
             'value': value,
         })
 
-    def set_forth(self, pluginId, value):
-        requests.get("{}/set_forth".format(self.baseurl), params={
-            'pluginId': pluginId,
-            'value': value,
-        })
-
     def set_ctrl_channel(self, pluginId, channel):
         requests.get("{}/set_ctrl_channel".format(self.baseurl), params={
             'pluginId': pluginId,

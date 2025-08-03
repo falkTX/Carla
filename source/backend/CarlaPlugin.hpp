@@ -543,15 +543,6 @@ public:
     void setPanning(float value, bool sendOsc, bool sendCallback) noexcept;
 
     /*!
-     * Set the plugin's output forth (front-rear) value to @a value.
-     * @a value must be between -1.0 and 1.0.
-     *
-     * @param sendOsc Send message change over OSC
-     * @param sendCallback Send message change to registered callback
-     */
-    void setForth(float value, bool sendOsc, bool sendCallback) noexcept;
-
-    /*!
      * Overloaded functions, to be called from within RT context only.
      */
     void setDryWetRT(float value, bool sendCallbackLater) noexcept;
@@ -559,7 +550,6 @@ public:
     void setBalanceLeftRT(float value, bool sendCallbackLater) noexcept;
     void setBalanceRightRT(float value, bool sendCallbackLater) noexcept;
     void setPanningRT(float value, bool sendCallbackLater) noexcept;
-    void setForthRT(float value, bool sendCallbackLater) noexcept;
 #endif // ! BUILD_BRIDGE_ALTERNATIVE_ARCH
 
     /*!
