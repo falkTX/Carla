@@ -38,6 +38,8 @@
 # define CARLA_OS_WIN32
 #elif defined(__APPLE__)
 # define CARLA_OS_MAC
+#elif defined(__CYGWIN__)
+# define CARLA_OS_CYGWIN
 #elif defined(__HAIKU__)
 # define CARLA_OS_HAIKU
 #elif defined(__linux__) || defined(__linux)
@@ -54,7 +56,7 @@
 
 #if defined(CARLA_OS_WIN32) || defined(CARLA_OS_WIN64)
 # define CARLA_OS_WIN
-#elif defined(CARLA_OS_BSD) || defined(CARLA_OS_GNU_HURD) || defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC)
+#elif defined(CARLA_OS_BSD) || defined(CARLA_OS_GNU_HURD) || defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC) || defined(CARLA_OS_CYGWIN)
 # define CARLA_OS_UNIX
 #endif
 
