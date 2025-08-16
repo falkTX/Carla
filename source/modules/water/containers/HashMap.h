@@ -29,7 +29,7 @@
 #include "Array.h"
 #include "../text/String.h"
 
-#include "extra/ScopedPointer.hpp"
+#include <memory>
 
 namespace water {
 
@@ -141,7 +141,7 @@ public:
 
             while (h != nullptr)
             {
-                const ScopedPointer<HashEntry> deleter (h);
+                const std::unique_ptr<HashEntry> deleter (h);
                 h = h->nextEntry;
             }
 
@@ -262,7 +262,7 @@ public:
             {
                 if (entry->value == valueToRemove)
                 {
-                    const ScopedPointer<HashEntry> deleter (entry);
+                    const std::unique_ptr<HashEntry> deleter (entry);
 
                     entry = entry->nextEntry;
 

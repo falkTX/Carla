@@ -330,7 +330,7 @@ uint32 ChildProcess::getPID() const noexcept
 #ifdef CARLA_OS_WIN
 bool ChildProcess::start (const String& command, Type)
 {
-    activeProcess = new ActiveProcess (command);
+    activeProcess.reset(new ActiveProcess (command));
 
     if (! activeProcess->ok)
         activeProcess = nullptr;
@@ -370,7 +370,7 @@ bool ChildProcess::start (const StringArray& args, const Type type)
     if (args.size() == 0)
         return false;
 
-    activeProcess = new ActiveProcess (args, type);
+    activeProcess.reset(new ActiveProcess (args, type));
 
     if (activeProcess->childPID == 0)
         activeProcess = nullptr;

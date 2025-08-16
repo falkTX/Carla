@@ -28,7 +28,7 @@
 
 #include "ArrayAllocationBase.h"
 
-#include "extra/ScopedPointer.hpp"
+#include <memory>
 
 namespace water {
 
@@ -372,7 +372,7 @@ public:
     {
         if (indexToChange >= 0)
         {
-            ScopedPointer<ObjectClass> toDelete;
+            std::unique_ptr<ObjectClass> toDelete;
 
             {
                 if (indexToChange < numUsed)
@@ -536,14 +536,14 @@ public:
     */
     void remove (const size_t indexToRemove, bool deleteObject = true)
     {
-        ScopedPointer<ObjectClass> toDelete;
+        std::unique_ptr<ObjectClass> toDelete;
 
         if (indexToRemove < numUsed)
         {
             ObjectClass** const e = data.elements + indexToRemove;
 
             if (deleteObject)
-                toDelete = *e;
+                toDelete.reset(*e);
 
             --numUsed;
             const size_t numToShift = numUsed - indexToRemove;

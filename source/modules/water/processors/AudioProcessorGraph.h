@@ -69,7 +69,7 @@ public:
         const uint32 nodeId;
 
         /** The actual processor object that this node represents. */
-        AudioProcessor* getProcessor() const noexcept           { return processor; }
+        AudioProcessor* getProcessor() const noexcept { return processor.get(); }
 
         /** Custom properties for Carla usage. */
         struct Properties {
@@ -112,7 +112,7 @@ public:
         //==============================================================================
         friend class AudioProcessorGraph;
 
-        const ScopedPointer<AudioProcessor> processor;
+        const std::unique_ptr<AudioProcessor> processor;
         bool isPrepared;
 
         Node (uint32 nodeId, AudioProcessor*) noexcept;
@@ -405,7 +405,7 @@ private:
 
     friend class AudioGraphIOProcessor;
     struct AudioProcessorGraphBufferHelpers;
-    ScopedPointer<AudioProcessorGraphBufferHelpers> audioAndCVBuffers;
+    std::unique_ptr<AudioProcessorGraphBufferHelpers> audioAndCVBuffers;
 
     MidiBuffer* currentMidiInputBuffer;
     MidiBuffer currentMidiOutputBuffer;

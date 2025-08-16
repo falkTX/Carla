@@ -29,7 +29,7 @@
 #include "File.h"
 #include "../text/StringArray.h"
 
-#include "extra/ScopedPointer.hpp"
+#include <memory>
 
 namespace water {
 
@@ -123,7 +123,7 @@ private:
 
     private:
         friend class DirectoryIterator;
-        ScopedPointer<Pimpl> pimpl;
+        std::unique_ptr<Pimpl> pimpl;
 
         CARLA_DECLARE_NON_COPYABLE (NativeIterator)
     };
@@ -136,7 +136,7 @@ private:
     const int whatToLookFor;
     const bool isRecursive;
     bool hasBeenAdvanced;
-    ScopedPointer<DirectoryIterator> subIterator;
+    std::unique_ptr<DirectoryIterator> subIterator;
     File currentFile;
 
     static StringArray parseWildcards (const String& pattern);

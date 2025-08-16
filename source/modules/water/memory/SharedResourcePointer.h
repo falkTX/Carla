@@ -29,7 +29,7 @@
 #include "ReferenceCountedObject.h"
 #include "../threads/SpinLock.h"
 
-#include "extra/ScopedPointer.hpp"
+#include <memory>
 
 namespace water {
 
@@ -123,7 +123,7 @@ public:
         const SpinLock::ScopedLockType sl (holder.lock);
 
         if (--(holder.refCount) == 0)
-            holder.sharedInstance = nullptr;
+            holder.sharedInstance.reset();
     }
 
     /** Returns the shared object. */
@@ -144,7 +144,7 @@ private:
     struct SharedObjectHolder  : public ReferenceCountedObject
     {
         SpinLock lock;
-        ScopedPointer<SharedObjectType> sharedInstance;
+        std::unique_ptr<SharedObjectType> sharedInstance;
         int refCount;
     };
 
@@ -162,9 +162,9 @@ private:
         const SpinLock::ScopedLockType sl (holder.lock);
 
         if (++(holder.refCount) == 1)
-            holder.sharedInstance = new SharedObjectType();
+            holder.sharedInstance.reset(new SharedObjectType());
 
-        sharedObject = holder.sharedInstance;
+        sharedObject = holder.sharedInstance.get();
     }
 
     void initialise_v2(const char* const v1, const char* const v2)
@@ -173,9 +173,9 @@ private:
         const SpinLock::ScopedLockType sl (holder.lock);
 
         if (++(holder.refCount) == 1)
-            holder.sharedInstance = new SharedObjectType(v1, v2);
+            holder.sharedInstance.reset(new SharedObjectType(v1, v2));
 
-        sharedObject = holder.sharedInstance;
+        sharedObject = holder.sharedInstance.get();
     }
 
     // There's no need to assign to a SharedResourcePointer because every

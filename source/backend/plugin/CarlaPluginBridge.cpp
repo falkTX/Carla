@@ -17,6 +17,7 @@
 #include <ctime>
 
 #include "extra/Base64.hpp"
+#include "extra/ScopedPointer.hpp"
 #include "extra/Time.hpp"
 
 #include "water/files/File.h"

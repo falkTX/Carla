@@ -28,7 +28,7 @@
 
 #include "../text/StringArray.h"
 
-#include "extra/ScopedPointer.hpp"
+#include <memory>
 
 namespace water {
 
@@ -103,7 +103,7 @@ public:
 private:
     //==============================================================================
     class ActiveProcess;
-    ScopedPointer<ActiveProcess> activeProcess;
+    std::unique_ptr<ActiveProcess> activeProcess;
 
     CARLA_DECLARE_NON_COPYABLE (ChildProcess)
 };
