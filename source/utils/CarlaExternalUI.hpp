@@ -6,7 +6,7 @@
 
 #include "CarlaPipeUtils.hpp"
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 
 // -----------------------------------------------------------------------
 

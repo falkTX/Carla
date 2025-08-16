@@ -16,7 +16,7 @@
 #include "CarlaVst3Utils.hpp"
 #include "CarlaClapUtils.hpp"
 
-#include "distrho/extra/ScopedPointer.hpp"
+#include "extra/ScopedPointer.hpp"
 
 #ifndef BUILDING_CARLA_FOR_WINE
 # include "CarlaPipeUtils.cpp"

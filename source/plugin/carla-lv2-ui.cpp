@@ -8,7 +8,7 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaPipeUtils.hpp"
 
-#include "distrho/extra/ScopedSafeLocale.hpp"
+#include "extra/ScopedSafeLocale.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 

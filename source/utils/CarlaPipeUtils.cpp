@@ -6,9 +6,9 @@
 #include "CarlaScopeUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "distrho/extra/Sleep.hpp"
-#include "distrho/extra/String.hpp"
-#include "distrho/extra/Time.hpp"
+#include "extra/Sleep.hpp"
+#include "extra/String.hpp"
+#include "extra/Time.hpp"
 
 // needed for atom-util
 #ifndef nullptr

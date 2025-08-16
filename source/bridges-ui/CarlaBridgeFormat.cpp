@@ -8,8 +8,8 @@
 
 #include "CarlaMIDI.h"
 
-#include "distrho/extra/Base64.hpp"
-#include "distrho/extra/Sleep.hpp"
+#include "extra/Base64.hpp"
+#include "extra/Sleep.hpp"
 
 // needed for atom-util
 #ifndef nullptr

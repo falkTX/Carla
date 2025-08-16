@@ -9,7 +9,7 @@
 #include "CarlaLibUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 
 #include "lv2/atom.h"
 #include "lv2/urid.h"

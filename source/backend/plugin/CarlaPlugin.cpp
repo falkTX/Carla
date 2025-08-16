@@ -13,8 +13,8 @@
 
 #include <ctime>
 
-#include "distrho/extra/Base64.hpp"
-#include "distrho/extra/ScopedPointer.hpp"
+#include "extra/Base64.hpp"
+#include "extra/ScopedPointer.hpp"
 
 #include "water/files/File.h"
 #include "water/streams/MemoryOutputStream.h"

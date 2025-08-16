@@ -28,7 +28,7 @@
 
 #include "ArrayAllocationBase.h"
 
-#include "distrho/extra/ScopedPointer.hpp"
+#include "extra/ScopedPointer.hpp"
 
 namespace water {
 

@@ -17,7 +17,7 @@
 #include "CarlaScopeUtils.hpp"
 #include "Lv2AtomRingBuffer.hpp"
 
-#include "distrho/extra/Base64.hpp"
+#include "extra/Base64.hpp"
 
 #include "../modules/lilv/config/lilv_config.h"
 

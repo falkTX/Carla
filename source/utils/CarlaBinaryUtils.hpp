@@ -6,7 +6,7 @@
 
 #include "CarlaBackend.h"
 
-#include "distrho/extra/ScopedPointer.hpp"
+#include "extra/ScopedPointer.hpp"
 
 #if defined(BUILDING_CARLA)
 # include "water/files/FileInputStream.h"

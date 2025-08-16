@@ -39,7 +39,7 @@
 
 #include "CarlaProcessUtils.hpp"
 
-#include "distrho/extra/Sleep.hpp"
+#include "extra/Sleep.hpp"
 
 namespace water {
 

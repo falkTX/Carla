@@ -182,8 +182,11 @@ BASE_FLAGS += -DDGL_NAMESPACE=CarlaDGL
 endif
 endif
 
-ifneq ($(USING_CUSTOM_DPF),true)
+ifeq ($(USING_CUSTOM_DPF),true)
+BASE_FLAGS += -I$(CUSTOM_DPF_PATH)/distrho
+else
 BASE_FLAGS += -DDGL_NO_SHARED_RESOURCES
+BASE_FLAGS += -I$(CWD)/modules/distrho
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)

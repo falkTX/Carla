@@ -9,7 +9,7 @@
 
 #include "SFZCommon.h"
 
-#include "distrho/extra/ScopedPointer.hpp"
+#include "extra/ScopedPointer.hpp"
 #include "water/buffers/AudioSampleBuffer.h"
 #include "water/files/File.h"
 

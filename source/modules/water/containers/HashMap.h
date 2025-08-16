@@ -29,7 +29,7 @@
 #include "Array.h"
 #include "../text/String.h"
 
-#include "distrho/extra/ScopedPointer.hpp"
+#include "extra/ScopedPointer.hpp"
 
 namespace water {
 

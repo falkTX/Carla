@@ -6,8 +6,8 @@
 
 #include "CarlaMutex.hpp"
 #include "CarlaProcessUtils.hpp"
-#include "distrho/extra/Sleep.hpp"
-#include "distrho/extra/String.hpp"
+#include "extra/Sleep.hpp"
+#include "extra/String.hpp"
 
 #ifdef CARLA_OS_WASM
 # error Threads do not work under wasm!

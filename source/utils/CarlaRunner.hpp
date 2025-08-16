@@ -9,7 +9,7 @@
 #ifndef CARLA_OS_WASM
 # include "CarlaThread.hpp"
 #else
-# include "distrho/extra/String.hpp"
+# include "extra/String.hpp"
 # include <emscripten/html5.h>
 #endif
 

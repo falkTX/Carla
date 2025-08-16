@@ -12,7 +12,7 @@
 # include "CarlaMacUtils.hpp"
 #endif
 
-#include "distrho/extra/Sleep.hpp"
+#include "extra/Sleep.hpp"
 
 #if defined(HAVE_X11) && defined(BRIDGE_X11)
 # include <X11/Xlib.h>

@@ -29,7 +29,7 @@
 #include "ReferenceCountedObject.h"
 #include "../threads/SpinLock.h"
 
-#include "distrho/extra/ScopedPointer.hpp"
+#include "extra/ScopedPointer.hpp"
 
 namespace water {
 

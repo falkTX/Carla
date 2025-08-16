@@ -13,7 +13,7 @@
 #include "CarlaJuceUtils.hpp"
 #include "CarlaOscUtils.hpp"
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 
 #define CARLA_ENGINE_OSC_HANDLE_ARGS const CarlaPluginPtr& plugin, \
   const int argc, const lo_arg* const* const argv, const char* const types

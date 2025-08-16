@@ -10,7 +10,7 @@
 #include "CarlaScopeUtils.hpp"
 #include "CarlaSha1Utils.hpp"
 
-#include "distrho/extra/Time.hpp"
+#include "extra/Time.hpp"
 
 #include "water/files/File.h"
 #include "water/files/FileInputStream.h"

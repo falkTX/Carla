@@ -9,7 +9,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMutex.hpp"
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 
 #include "water/files/File.h"
 #include "water/memory/SharedResourcePointer.h"
