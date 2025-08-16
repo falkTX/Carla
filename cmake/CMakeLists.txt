@@ -184,6 +184,11 @@ function(set_common_target_properties TARGET)
       $<$<BOOL:${MSVC}>:/wd4273>
   )
 
+  target_include_directories(${TARGET}
+    PRIVATE
+      ../source/modules/distrho
+  )
+
   target_link_options(${TARGET}
     PRIVATE
       $<$<C_COMPILER_ID:GNU>:-Wl,--no-undefined>

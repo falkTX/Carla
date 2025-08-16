@@ -12,6 +12,7 @@
 #include "CarlaMIDI.h"
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
+#include "extra/ScopedPointer.hpp"
 
 #include "jackey.h"
 
