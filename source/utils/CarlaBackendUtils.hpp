@@ -601,6 +601,8 @@ BinaryType getBinaryTypeFromString(const char* const ctype) noexcept
     CARLA_SAFE_ASSERT_RETURN(ctype != nullptr && ctype[0] != '\0', BINARY_NONE);
     carla_debug("CarlaBackend::getBinaryTypeFromString(\"%s\")", ctype);
 
+    using DISTRHO_NAMESPACE::String;
+
     String stype(ctype);
 
     if (stype.isEmpty())
@@ -746,6 +748,8 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
     CARLA_SAFE_ASSERT_RETURN(ctype != nullptr && ctype[0] != '\0', PLUGIN_NONE);
     carla_debug("CarlaBackend::getPluginTypeFromString(\"%s\")", ctype);
 
+    using DISTRHO_NAMESPACE::String;
+
     String stype(ctype);
 
     if (stype.isEmpty())
@@ -795,6 +799,8 @@ PluginCategory getPluginCategoryFromName(const char* const name) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', PLUGIN_CATEGORY_NONE);
     carla_debug("CarlaBackend::getPluginCategoryFromName(\"%s\")", name);
+
+    using DISTRHO_NAMESPACE::String;
 
     String sname(name);
 

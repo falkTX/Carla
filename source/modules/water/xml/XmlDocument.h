@@ -158,7 +158,7 @@ private:
     String lastError, dtdText;
     StringArray tokenisedDTD;
     bool needToLoadDTD, ignoreEmptyTextElements;
-    ScopedPointer<FileInputSource> inputSource;
+    DISTRHO_NAMESPACE::ScopedPointer<FileInputSource> inputSource;
 
     XmlElement* parseDocumentElement (CharPointer_UTF8, bool outer);
     void setLastError (const String&, bool carryOn);
