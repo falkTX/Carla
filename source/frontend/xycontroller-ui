@@ -10,17 +10,21 @@ from qt_compat import qt_config
 if qt_config == 5:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, QT_VERSION, Qt, QPointF, QRectF, QSize, QTimer
     from PyQt5.QtGui import QColor, QPainter, QPen
-    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent, QMainWindow
+    from PyQt5.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent, QMainWindow, QApplication
 elif qt_config == 6:
     from PyQt6.QtCore import pyqtSignal, pyqtSlot, QT_VERSION, Qt, QPointF, QRectF, QSize, QTimer
     from PyQt6.QtGui import QColor, QPainter, QPen
-    from PyQt6.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent, QMainWindow
+    from PyQt6.QtWidgets import QGraphicsScene, QGraphicsSceneMouseEvent, QMainWindow, QApplication
+
+import ctypes
+from time import sleep
 
 # -----------------------------------------------------------------------
 # Imports (Custom)
 
 from carla_shared import *
 from carla_utils import *
+from widgets.scalabledial import ScalableDial
 
 import ui_xycontroller
 
@@ -32,15 +36,21 @@ from externalui import ExternalUI
 from widgets.paramspinbox import ParamSpinBox
 
 # ------------------------------------------------------------------------------------------------------------
-
-XYCONTROLLER_PARAMETER_X = 0
-XYCONTROLLER_PARAMETER_Y = 1
+XYCONTROLLER_PARAMETER_SMOOTH   = 0
+XYCONTROLLER_PARAMETER_LINEAR   = 1
+XYCONTROLLER_PARAMETER_SPEED    = 2
+XYCONTROLLER_PARAMETER_REVERSEY = 3
+XYCONTROLLER_PARAMETER_X        = 4
+XYCONTROLLER_PARAMETER_Y        = 5
+XYCONTROLLER_PARAMETER_OUT_X    = 6
+XYCONTROLLER_PARAMETER_OUT_Y    = 7
 
 # ------------------------------------------------------------------------------------------------------------
 
 class XYGraphicsScene(QGraphicsScene):
     # signals
     cursorMoved = pyqtSignal(float,float)
+    knobsUpdate = pyqtSignal(float,float)
 
     def __init__(self, parent):
         QGraphicsScene.__init__(self, parent)
@@ -52,8 +62,19 @@ class XYGraphicsScene(QGraphicsScene):
         self.m_channels  = []
         self.m_mouseLock = False
         self.m_smooth    = False
+        self.m_linear    = False
+        self.m_speed     = 8.0    # 1.0 to 100.0
+        self.m_rSmooth   = False  # Using right button
         self.m_smooth_x  = 0.0
         self.m_smooth_y  = 0.0
+
+        self.reverseY    = 1.0    # -1.0 when reversed
+
+        self.xpPrev      = 0.0
+        self.ypPrev      = 0.0
+
+        self.time:     ctypes.c_uint64 = 0 # I sure just int is quite enough here, but...
+        self.prevTime: ctypes.c_uint64 = 0
 
         self.setBackgroundBrush(Qt.black)
 
@@ -87,31 +108,31 @@ class XYGraphicsScene(QGraphicsScene):
         self.m_lineV.setX(posX)
 
         if forward:
-            value = posX / (self.p_size.x() + self.p_size.width());
+            value = posX / (self.p_size.x() + self.p_size.width())
             self.sendMIDI(value, None)
         else:
-            self.m_smooth_x = posX;
+            self.m_smooth_x = posX
 
     def setPosY(self, y: float, forward: bool = True):
         if self.m_mouseLock:
-            return;
+            return
 
-        posY = y * (self.p_size.y() + self.p_size.height())
+        posY = y * (self.p_size.y() + self.p_size.height()) * self.reverseY
         self.m_cursor.setPos(self.m_cursor.x(), posY)
         self.m_lineH.setY(posY)
 
         if forward:
-            value = posY / (self.p_size.y() + self.p_size.height())
+            value = posY / (self.p_size.y() + self.p_size.height()) * self.reverseY
             self.sendMIDI(None, value)
         else:
             self.m_smooth_y = posY
 
-    def setSmooth(self, smooth: bool):
-        self.m_smooth = smooth
-
     def setSmoothValues(self, x: float, y: float):
-        self.m_smooth_x = x * (self.p_size.x() + self.p_size.width());
-        self.m_smooth_y = y * (self.p_size.y() + self.p_size.height());
+        self.m_smooth_x = x * (self.p_size.x() + self.p_size.width())
+        self.m_smooth_y = y * (self.p_size.y() + self.p_size.height()) * self.reverseY
+
+    def setReverseY(self, rev: bool):
+        self.reverseY = 1 - (int(rev) * 2)  # 1.0 or -1.0
 
     # -------------------------------------------------------------------
 
@@ -119,82 +140,132 @@ class XYGraphicsScene(QGraphicsScene):
         self.p_size.setRect(-(float(size.width())/2),
                             -(float(size.height())/2),
                             size.width(),
-                            size.height());
+                            size.height())
 
-    def updateSmooth(self):
-        if not self.m_smooth:
+    def updatePos(self, pos: QPointF, filterSame: bool = False, knobsOnly: bool = False):
+        xp = pos.x() / (self.p_size.x() + self.p_size.width())
+        yp = pos.y() / (self.p_size.y() + self.p_size.height()) * self.reverseY
+        if knobsOnly:
+            self.knobsUpdate.emit(xp * 100, yp * 100)
             return
 
-        if self.m_cursor.x() == self.m_smooth_x and self.m_cursor.y() == self.m_smooth_y:
+        self.m_cursor.setPos(pos)
+        self.m_lineH.setY(pos.y())
+        self.m_lineV.setX(pos.x())
+
+        # Set 0.05% precision, yet exact final value settling, esp. zero
+        xp = round(xp * 1000) / 1000
+        yp = round(yp * 1000) / 1000
+
+        self.sendMIDI(xp, yp, filterSame)
+        self.cursorMoved.emit(xp, yp)
+
+    def updateSmooth(self, time):
+        if not (self.m_smooth or self.m_rSmooth):
+            return
+
+        dx = self.m_smooth_x - self.m_cursor.x()
+        dy = self.m_smooth_y - self.m_cursor.y()
+
+        if dx == dy == 0:
             return
 
         same = 0
-        if abs(self.m_cursor.x() - self.m_smooth_x) <= 0.0005:
+        if abs(dx) <= 0.0005:
             self.m_smooth_x = self.m_cursor.x()
             same += 1
 
-        if abs(self.m_cursor.y() - self.m_smooth_y) <= 0.0005:
+        if abs(dy) <= 0.0005:
             self.m_smooth_y = self.m_cursor.y()
             same += 1
 
         if same == 2:
             return
 
-        newX = float(self.m_smooth_x + self.m_cursor.x()*7) / 8
-        newY = float(self.m_smooth_y + self.m_cursor.y()*7) / 8
+        speed = self.m_speed
+
+        mod = QApplication.keyboardModifiers()
+        if (mod & Qt.ControlModifier):
+            speed /= 2
+        elif (mod & Qt.ShiftModifier):
+            speed *= 2
+
+        if self.m_linear:
+            newX = self.m_cursor.x() + max(min(dx / speed, 1), -1) * speed
+            newY = self.m_cursor.y() + max(min(dy / speed, 1), -1) * speed
+        else:
+            precision = 64 / speed
+            newX = float(self.m_smooth_x + self.m_cursor.x()*(precision-1)) / precision
+            newY = float(self.m_smooth_y + self.m_cursor.y()*(precision-1)) / precision
+
         pos  = QPointF(newX, newY)
 
-        self.m_cursor.setPos(pos)
-        self.m_lineH.setY(pos.y())
-        self.m_lineV.setX(pos.x())
+        self.updatePos(pos, ((time - self.prevTime) == 1)) # Continuous calls or Not
 
-        xp = pos.x() / (self.p_size.x() + self.p_size.width())
-        yp = pos.y() / (self.p_size.y() + self.p_size.height())
-
-        self.sendMIDI(xp, yp)
-        self.cursorMoved.emit(xp, yp)
+        self.prevTime = time
 
     # -------------------------------------------------------------------
 
-    def handleMousePos(self, pos: QPointF):
+    def handleMousePos(self, event):
+
+        if (event.buttons() & Qt.MiddleButton):
+            pos = QPointF(0, 0)
+        else:
+            pos = QPointF(event.scenePos())
+
         if not self.p_size.contains(pos):
             if pos.x() < self.p_size.x():
                 pos.setX(self.p_size.x())
             elif pos.x() > (self.p_size.x() + self.p_size.width()):
-                pos.setX(self.p_size.x() + self.p_size.width());
+                pos.setX(self.p_size.x() + self.p_size.width())
 
             if pos.y() < self.p_size.y():
                 pos.setY(self.p_size.y())
             elif pos.y() > (self.p_size.y() + self.p_size.height()):
                 pos.setY(self.p_size.y() + self.p_size.height())
 
+        self.updatePos(pos, knobsOnly=True)
+
         self.m_smooth_x = pos.x()
         self.m_smooth_y = pos.y()
 
-        if not self.m_smooth:
-            self.m_cursor.setPos(pos)
-            self.m_lineH.setY(pos.y())
-            self.m_lineV.setX(pos.x())
+        self.m_rSmooth = event.buttons() & Qt.RightButton
 
-            xp = pos.x() / (self.p_size.x() + self.p_size.width());
-            yp = pos.y() / (self.p_size.y() + self.p_size.height());
+        # When not smooth, update each time;
+        # (commented-out part) When smooth, update (re-send same) if click position is same (when smoothing not sends anything). (To match non-smoothed behaviour)
+        if (not (self.m_smooth or self.m_rSmooth)): # or (abs(self.m_cursor.x() - self.m_smooth_x) <= 0.0005 and abs(self.m_cursor.y() - self.m_smooth_y) <= 0.0005):
+            self.updatePos(pos)
 
-            self.sendMIDI(xp, yp)
-            self.cursorMoved.emit(xp, yp)
-
-    def sendMIDI(self, xp, yp):
+    def sendMIDI(self, xp, yp, filterSame = False):
         rate = float(0xff) / 4
-        msgd = ["cc2" if xp is not None and yp is not None else "cc"]
+        prefix = []
+        msgd = []
 
         if xp is not None:
-            msgd.append(self.cc_x)
-            msgd.append(int(xp * rate + rate))
+            value = int(xp * rate + rate)
+            if not (filterSame and (value == self.xpPrev)):
+                prefix = ["cc"]
+
+                msgd.append(self.cc_x)
+                msgd.append(value)
+
+            self.xpPrev = value
 
         if yp is not None:
-            msgd.append(self.cc_y)
-            msgd.append(int(yp * rate + rate))
+            value = int(yp * rate + rate)
+            if not (filterSame and (value == self.ypPrev)):
+                if prefix == []:
+                    prefix = ["cc"]
+                else:
+                    prefix = ["cc2"]
 
-        self.rparent.send(msgd)
+                msgd.append(self.cc_y)
+                msgd.append(value)
+
+            self.ypPrev = value
+
+        if not (prefix == []):
+            self.rparent.send(prefix + msgd)
 
     # -------------------------------------------------------------------
 
@@ -206,13 +277,13 @@ class XYGraphicsScene(QGraphicsScene):
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
         self.m_mouseLock = True
-        self.handleMousePos(event.scenePos())
+        self.handleMousePos(event)
         self.rparent.setCursor(Qt.CrossCursor)
-        QGraphicsScene.mousePressEvent(self, event);
+        QGraphicsScene.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
-        self.handleMousePos(event.scenePos())
-        QGraphicsScene.mouseMoveEvent(self, event);
+        self.handleMousePos(event)
+        QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         self.m_mouseLock = False
@@ -231,15 +302,22 @@ class XYControllerUI(ExternalUI, QMainWindow):
 
         self.fSaveSizeNowChecker = -1
 
+        self.isXActual = False
+        self.isYActual = False
+
         # ---------------------------------------------------------------
         # Set-up GUI stuff
 
         self.scene = XYGraphicsScene(self)
 
-        self.ui.dial_x.setImage(2)
-        self.ui.dial_y.setImage(2)
-        self.ui.dial_x.setLabel("X")
-        self.ui.dial_y.setLabel("Y")
+        # Now knobs are QWidgets, not QDials.
+        self.ui.dial_x = ScalableDial(self.ui.dial_x, 0, 400, 0, -100, 100, "X", 64, -1, "%", "tube", 1, {})
+        self.ui.dial_y = ScalableDial(self.ui.dial_y, 1, 400, 0, -100, 100, "Y", 64, -1, "%", "tube", 1, {})
+
+        # These are outputs (7-seg displays).
+        self.ui.dial_out_x = ScalableDial(self.ui.dial_out_x, 2, 400, 0, -100, 100, "Out X", 64, -1, "%", "tube", 1, {'Auto7segWidth':1, }, isOutput=True)
+        self.ui.dial_out_y = ScalableDial(self.ui.dial_out_y, 3, 400, 0, -100, 100, "Out Y", 64, -1, "%", "tube", 1, {'Auto7segWidth':1, }, isOutput=True)
+
         self.ui.keyboard.setOctaves(10)
 
         self.ui.graphicsView.setScene(self.scene)
@@ -262,6 +340,7 @@ class XYControllerUI(ExternalUI, QMainWindow):
         # Connect actions to functions
 
         self.scene.cursorMoved.connect(self.slot_sceneCursorMoved)
+        self.scene.knobsUpdate.connect(self.slot_setKnobs)
 
         self.ui.keyboard.noteOn.connect(self.slot_noteOn)
         self.ui.keyboard.noteOff.connect(self.slot_noteOff)
@@ -270,6 +349,7 @@ class XYControllerUI(ExternalUI, QMainWindow):
 
         self.ui.dial_x.realValueChanged.connect(self.slot_knobValueChangedX)
         self.ui.dial_y.realValueChanged.connect(self.slot_knobValueChangedY)
+
 
         if QT_VERSION >= 0x60000:
             self.ui.cb_control_x.currentTextChanged.connect(self.slot_checkCC_X)
@@ -308,16 +388,22 @@ class XYControllerUI(ExternalUI, QMainWindow):
 
     # -------------------------------------------------------------------
 
+    def setSmooth(self, smooth: bool):
+        self.scene.m_smooth = smooth
+
+        x = self.ui.dial_x.rvalue() / 100
+        y = self.ui.dial_y.rvalue() / 100
+        if smooth:
+            self.scene.setSmoothValues(x, y)
+        else:
+            self.scene.setPosX(x, True)
+            self.scene.setPosY(y, True)
+            self.slot_sceneCursorMoved(x, y)
+
     @pyqtSlot()
     def slot_updateScreen(self):
         self.ui.graphicsView.centerOn(0, 0)
         self.scene.updateSize(self.ui.graphicsView.size())
-
-        dial_x = self.ui.dial_x.rvalue()
-        dial_y = self.ui.dial_y.rvalue()
-        self.scene.setPosX(dial_x / 100, False)
-        self.scene.setPosY(dial_y / 100, False)
-        self.scene.setSmoothValues(dial_x / 100, dial_y / 100)
 
     @pyqtSlot(int)
     def slot_noteOn(self, note):
@@ -328,16 +414,34 @@ class XYControllerUI(ExternalUI, QMainWindow):
         self.send(["note", False, note])
 
     @pyqtSlot(float)
-    def slot_knobValueChangedX(self, x: float):
-        self.sendControl(XYCONTROLLER_PARAMETER_X, x)
-        self.scene.setPosX(x / 100, True)
-        self.scene.setSmoothValues(x / 100, self.ui.dial_y.rvalue() / 100)
+    def slot_knobValueChangedX(self, x:float, external:bool=False, firstRun:bool=False):
+        if not external:
+            self.sendControl(XYCONTROLLER_PARAMETER_X, x)
+        else:
+            self.ui.dial_x.setValue(x, False)
+
+        if (not self.scene.m_smooth) or firstRun:
+            self.sendControl(XYCONTROLLER_PARAMETER_OUT_X, x)
+            self.ui.dial_out_x.setValue(x, False)
+            self.scene.setPosX(x / 100, True)
+
+        else:
+            self.scene.setSmoothValues(x / 100, self.ui.dial_y.rvalue() / 100)
 
     @pyqtSlot(float)
-    def slot_knobValueChangedY(self, y: float):
-        self.sendControl(XYCONTROLLER_PARAMETER_Y, y)
-        self.scene.setPosY(y / 100, True)
-        self.scene.setSmoothValues(self.ui.dial_x.rvalue() / 100, y / 100)
+    def slot_knobValueChangedY(self, y:float, external:bool=False, firstRun:bool=False):
+        if not external:
+            self.sendControl(XYCONTROLLER_PARAMETER_Y, y)
+        else:
+            self.ui.dial_y.setValue(y, False)
+
+        if (not self.scene.m_smooth) or firstRun:
+            self.sendControl(XYCONTROLLER_PARAMETER_OUT_Y, y)
+            self.ui.dial_out_y.setValue(y, False)
+            self.scene.setPosY(y / 100, True)
+
+        else:
+            self.scene.setSmoothValues(self.ui.dial_x.rvalue() / 100, y / 100)
 
     @pyqtSlot(str)
     def slot_checkCC_X(self, text: str):
@@ -422,20 +526,16 @@ class XYControllerUI(ExternalUI, QMainWindow):
 
     @pyqtSlot(bool)
     def slot_setSmooth(self, smooth):
-        self.scene.setSmooth(smooth)
+        self.setSmooth(smooth)
         self.sendConfigure("smooth", "yes" if smooth else "no")
-
-        if smooth:
-            dial_x = self.ui.dial_x.rvalue()
-            dial_y = self.ui.dial_y.rvalue()
-            self.scene.setSmoothValues(dial_x / 100, dial_y / 100)
+        self.sendControl(XYCONTROLLER_PARAMETER_SMOOTH, int(smooth))
 
     @pyqtSlot(float, float)
     def slot_sceneCursorMoved(self, xp: float, yp: float):
-        self.ui.dial_x.setValue(xp * 100, False)
-        self.ui.dial_y.setValue(yp * 100, False)
-        self.sendControl(XYCONTROLLER_PARAMETER_X, xp * 100)
-        self.sendControl(XYCONTROLLER_PARAMETER_Y, yp * 100)
+        self.ui.dial_out_x.setValue(xp * 100, False)
+        self.ui.dial_out_y.setValue(yp * 100, False)
+        self.sendControl(XYCONTROLLER_PARAMETER_OUT_X, xp * 100)
+        self.sendControl(XYCONTROLLER_PARAMETER_OUT_Y, yp * 100)
 
     @pyqtSlot(bool)
     def slot_showKeyboard(self, yesno):
@@ -443,21 +543,47 @@ class XYControllerUI(ExternalUI, QMainWindow):
         self.sendConfigure("show-midi-keyboard", "yes" if yesno else "no")
         QTimer.singleShot(0, self.slot_updateScreen)
 
+    @pyqtSlot(float, float)
+    def slot_setKnobs(self, x, y):
+        self.ui.dial_x.setValue(x, False)
+        self.ui.dial_y.setValue(y, False)
+        self.sendControl(XYCONTROLLER_PARAMETER_X, x)
+        self.sendControl(XYCONTROLLER_PARAMETER_Y, y)
+
     # -------------------------------------------------------------------
     # DSP Callbacks
 
+    # NOTE It called continuously with params 6, 7 (outs, not used here), is this good?
     def dspParameterChanged(self, index: int, value: float):
-        if index == XYCONTROLLER_PARAMETER_X:
-            self.ui.dial_x.setValue(value, False)
-            self.scene.setPosX(value / 100, False)
+        if index == XYCONTROLLER_PARAMETER_SMOOTH:
+            self.ui.cb_smooth.blockSignals(True)
+            self.ui.cb_smooth.setChecked(bool(value))
+            self.ui.cb_smooth.blockSignals(False)
+            self.setSmooth(bool(value))
+
+        elif index == XYCONTROLLER_PARAMETER_LINEAR:
+            self.scene.m_linear = bool(value)
+
+        elif index == XYCONTROLLER_PARAMETER_SPEED:
+            self.scene.m_speed = value
+
+        elif index == XYCONTROLLER_PARAMETER_REVERSEY:
+            self.scene.setReverseY(bool(value))
+
+        elif index == XYCONTROLLER_PARAMETER_X:
+            self.slot_knobValueChangedX(value, True, not self.isXActual)
+            self.isXActual = True
+
         elif index == XYCONTROLLER_PARAMETER_Y:
-            self.ui.dial_y.setValue(value, False)
-            self.scene.setPosY(value / 100, False)
+            self.slot_knobValueChangedY(value, True, not self.isYActual)
+            if self.isXActual and not self.isYActual:
+                # Run it once, BUT when both X & Y are received (they can be shuffled).
+                self.scene.setSmoothValues(self.ui.dial_x.rvalue() / 100, self.ui.dial_y.rvalue() / 100)
+                self.isYActual = True
+
         else:
             return
 
-        self.scene.setSmoothValues(self.ui.dial_x.rvalue() / 100,
-                                   self.ui.dial_y.rvalue() / 100)
 
     def dspStateChanged(self, key: str, value: str):
         if key == "guiWidth":
@@ -480,15 +606,7 @@ class XYControllerUI(ExternalUI, QMainWindow):
 
         elif key == "smooth":
             smooth = (value == "yes")
-            self.ui.cb_smooth.blockSignals(True)
-            self.ui.cb_smooth.setChecked(smooth)
-            self.ui.cb_smooth.blockSignals(False)
-            self.scene.setSmooth(smooth)
-
-            if smooth:
-                dial_x = self.ui.dial_x.rvalue()
-                dial_y = self.ui.dial_y.rvalue()
-                self.scene.setSmoothValues(dial_x / 100, dial_y / 100)
+            self.setSmooth(bool(smooth))
 
         elif key == "show-midi-keyboard":
             show = (value == "yes")
@@ -587,9 +705,10 @@ class XYControllerUI(ExternalUI, QMainWindow):
         QMainWindow.resizeEvent(self, event)
 
     def timerEvent(self, event):
+        self.scene.time += 1
         if event.timerId() == self.fIdleTimer:
             self.idleExternalUI()
-            self.scene.updateSmooth()
+            self.scene.updateSmooth(self.scene.time)
 
             if self.fSaveSizeNowChecker == 11:
                 self.sendConfigure("guiWidth", str(self.width()))

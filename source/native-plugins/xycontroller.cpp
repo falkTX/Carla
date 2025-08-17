@@ -29,6 +29,10 @@ class XYControllerPlugin : public NativePluginAndUiClass
 {
 public:
     enum Parameters {
+        kParamSmooth,
+        kParamLinear,
+        kParamSpeed,
+        kParamReverseY,
         kParamInX,
         kParamInY,
         kParamOutX,
@@ -44,6 +48,7 @@ public:
           mqueueRT()
     {
         carla_zeroStruct(params);
+        params[kParamSpeed] = 8.0f;
         carla_zeroStruct(channels);
         channels[0] = true;
     }
@@ -92,6 +97,56 @@ protected:
             hints |= NATIVE_PARAMETER_IS_OUTPUT;
             param.name = "Out Y";
             break;
+
+        case kParamSpeed:
+            param.name = "Speed";
+            param.unit = "px";
+            param.ranges.def = 8.0f;
+            param.ranges.min = 1.0f;
+            break;
+        }
+
+        if (param.name == nullptr)
+        {
+            hints |= NATIVE_PARAMETER_IS_INTEGER | NATIVE_PARAMETER_USES_SCALEPOINTS;
+            param.unit = nullptr;
+            param.ranges.min = 0;
+            param.ranges.max = 1;
+            param.scalePointCount = 2;
+
+            switch (index)
+            {
+            case kParamSmooth:
+                param.name = "Smooth";
+                {
+                    static const NativeParameterScalePoint scalePoints[2] = {
+                        { "Thru", 0 },
+                        { "Smooth", 1 }
+                    };
+                    param.scalePoints = scalePoints;
+                }
+                break;
+            case kParamLinear:
+                param.name = "Linear";
+                {
+                    static const NativeParameterScalePoint scalePoints[2] = {
+                        { "Log", 0 },
+                        { "Linear", 1 }
+                    };
+                    param.scalePoints = scalePoints;
+                }
+                break;
+            case kParamReverseY:
+                param.name = "Rev Y";
+                {
+                    static const NativeParameterScalePoint scalePoints[2] = {
+                        { "Top to Bottom", 0 },
+                        { "Bottom to Top", 1 }
+                    };
+                    param.scalePoints = scalePoints;
+                }
+                break;
+            }
         }
 
         param.hints = static_cast<NativeParameterHints>(hints);
@@ -113,8 +168,14 @@ protected:
     {
         switch (index)
         {
+        case kParamSmooth:
+        case kParamLinear:
+        case kParamSpeed:
+        case kParamReverseY:
         case kParamInX:
         case kParamInY:
+        case kParamOutX:
+        case kParamOutY:
             params[index] = value;
             break;
         }
@@ -147,8 +208,8 @@ protected:
     void process(const float* const*, float**, const uint32_t,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
-        params[kParamOutX] = params[kParamInX];
-        params[kParamOutY] = params[kParamInY];
+        // params[kParamOutX] = params[kParamInX];
+        // params[kParamOutY] = params[kParamInY];
 
         if (mqueue.isNotEmpty() && mqueueRT.tryToCopyDataFrom(mqueue))
         {
@@ -266,7 +327,7 @@ static const NativePluginDescriptor notesDesc = {
     /* audioOuts */ 0,
     /* midiIns   */ 1,
     /* midiOuts  */ 1,
-    /* paramIns  */ 2,
+    /* paramIns  */ 6,
     /* paramOuts */ 2,
     /* name      */ "XY Controller",
     /* label     */ "xycontroller",

@@ -947,7 +947,7 @@ public:
         pData->hints |= PLUGIN_USES_MULTI_PROGS;
 
         if (! kUse16Outs)
-            pData->hints |= PLUGIN_CAN_BALANCE;
+            pData->hints |= PLUGIN_CAN_BALANCE | PLUGIN_CAN_PANNING;
 
         // extra plugin hints
         pData->extraHints  = 0x0;
@@ -1521,7 +1521,7 @@ public:
 
         {
             // note - balance not possible with kUse16Outs, so we can safely skip fAudioOutBuffers
-            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && (carla_isNotEqual(pData->postProc.volume, 1.0f) || carla_isNotEqual(pData->postProc.panning, 0.0f));
             const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
 
             float* const oldBufLeft = pData->postProc.extraBuffer;
@@ -1554,16 +1554,40 @@ public:
                     }
                 }
 
+                // Panning
+                // Only decrease of levels, but never increase, unlike 'L, R'.
+                // Note: no any pan processing for Mono.
+
+                uint32_t q     = pData->audioOut.count;
+                float    pan   = pData->postProc.panning;
+                float    vol   = pData->postProc.volume;
+
+                // Pan: Stereo only.
+                if ((pan != 0.0) && (q == 2))
+                {
+                    // left channel(s) reduce when pan to right
+                    if ((pan > 0) && (i == 0))
+                    {
+                        vol = vol * (1.0 - pan);
+                    }
+
+                    // right channel(s) reduce when pan to left
+                    else if ((pan < 0) && (i == 1))
+                    {
+                        vol = vol * (1.0 + pan);
+                    }
+                }
+
                 // Volume
                 if (kUse16Outs)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k] * pData->postProc.volume;
+                        outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k] * vol;
                 }
                 else if (doVolume)
                 {
                     for (uint32_t k=0; k < frames; ++k)
-                        outBuffer[i][k+timeOffset] *= pData->postProc.volume;
+                        outBuffer[i][k+timeOffset] *= vol;
                 }
             }
 

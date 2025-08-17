@@ -474,6 +474,7 @@
     <addaction name="act_file_refresh"/>
     <addaction name="act_file_new"/>
     <addaction name="act_file_open"/>
+    <addaction name="act_file_reload"/>
     <addaction name="act_file_save"/>
     <addaction name="act_file_save_as"/>
     <addaction name="separator"/>
@@ -508,6 +509,7 @@
      <addaction name="separator"/>
      <addaction name="act_plugins_center"/>
      <addaction name="separator"/>
+     <addaction name="act_plugins_change_skin"/>
      <addaction name="act_plugins_compact"/>
      <addaction name="act_plugins_expand"/>
     </widget>
@@ -548,6 +550,7 @@
      <string>&amp;Settings</string>
     </property>
     <addaction name="act_settings_show_toolbar"/>
+    <addaction name="act_settings_show_toolbar_text"/>
     <addaction name="act_settings_show_meters"/>
     <addaction name="act_settings_show_keyboard"/>
     <addaction name="act_settings_show_side_panel"/>
@@ -589,6 +592,7 @@
    </attribute>
    <addaction name="act_file_new"/>
    <addaction name="act_file_open"/>
+   <addaction name="act_file_reload"/>
    <addaction name="act_file_save"/>
    <addaction name="act_file_save_as"/>
    <addaction name="act_file_connect"/>
@@ -600,6 +604,17 @@
    <addaction name="act_engine_panic"/>
    <addaction name="separator"/>
    <addaction name="act_settings_configure"/>
+   <addaction name="separator"/>
+   <addaction name="act_plugins_enable"/>
+   <addaction name="act_plugins_disable"/>
+   <addaction name="act_plugins_bypass"/>
+   <addaction name="act_plugins_wet100"/>
+   <addaction name="act_plugins_mute"/>
+   <addaction name="act_plugins_volume100"/>
+   <addaction name="act_plugins_center"/>
+   <addaction name="act_plugins_change_skin"/>
+   <addaction name="act_plugins_compact"/>
+   <addaction name="act_plugins_expand"/>
   </widget>
   <widget class="QDockWidget" name="dockWidget">
    <property name="sizePolicy">
@@ -1111,6 +1126,30 @@
     <enum>QAction::NoRole</enum>
    </property>
   </action>
+  <action name="act_file_reload">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/view-refresh-purple.svgz</normaloff>:/16x16/view-refresh-purple.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Reload (!)</string>
+   </property>
+   <property name="iconText">
+    <string>Reload (!)</string>
+   </property>
+   <property name="toolTip">
+    <string>Reload file. CAUTION, non-saved changes will be LOST!</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+R</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
   <action name="act_file_save">
    <property name="icon">
     <iconset resource="../resources.qrc">
@@ -1220,6 +1259,10 @@
    </property>
   </action>
   <action name="act_plugins_enable">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/system-turnon.svgz</normaloff>:/16x16/system-turnon.svgz</iconset>
+   </property>
    <property name="text">
     <string>Enable</string>
    </property>
@@ -1228,6 +1271,10 @@
    </property>
   </action>
   <action name="act_plugins_disable">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/system-shutdown.svgz</normaloff>:/16x16/system-shutdown.svgz</iconset>
+   </property>
    <property name="text">
     <string>Disable</string>
    </property>
@@ -1236,6 +1283,10 @@
    </property>
   </action>
   <action name="act_plugins_bypass">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/dry.svgz</normaloff>:/16x16/dry.svgz</iconset>
+   </property>
    <property name="text">
     <string>0% Wet (Bypass)</string>
    </property>
@@ -1244,6 +1295,10 @@
    </property>
   </action>
   <action name="act_plugins_wet100">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/wet.svgz</normaloff>:/16x16/wet.svgz</iconset>
+   </property>
    <property name="text">
     <string>100% Wet</string>
    </property>
@@ -1252,6 +1307,10 @@
    </property>
   </action>
   <action name="act_plugins_mute">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/audio-volume-muted.svgz</normaloff>:/16x16/audio-volume-muted.svgz</iconset>
+   </property>
    <property name="text">
     <string>0% Volume (Mute)</string>
    </property>
@@ -1260,6 +1319,10 @@
    </property>
   </action>
   <action name="act_plugins_volume100">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/audio-volume-medium.svgz</normaloff>:/16x16/audio-volume-medium.svgz</iconset>
+   </property>
    <property name="text">
     <string>100% Volume</string>
    </property>
@@ -1268,6 +1331,10 @@
    </property>
   </action>
   <action name="act_plugins_center">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/balance.svgz</normaloff>:/16x16/balance.svgz</iconset>
+   </property>
    <property name="text">
     <string>Center Balance</string>
    </property>
@@ -1435,6 +1502,17 @@
     <enum>QAction::NoRole</enum>
    </property>
   </action>
+  <action name="act_settings_show_toolbar_text">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Toolbar Text</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
   <action name="act_settings_configure">
    <property name="icon">
     <iconset resource="../resources.qrc">
@@ -1553,7 +1631,23 @@
     <enum>QAction::NoRole</enum>
    </property>
   </action>
+  <action name="act_plugins_change_skin">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/style.svgz</normaloff>:/16x16/style.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Change &amp;Skin...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
   <action name="act_plugins_compact">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/compact.svgz</normaloff>:/16x16/compact.svgz</iconset>
+   </property>
    <property name="text">
     <string>Compact Slots</string>
    </property>
@@ -1562,6 +1656,10 @@
    </property>
   </action>
   <action name="act_plugins_expand">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/restore.svgz</normaloff>:/16x16/restore.svgz</iconset>
+   </property>
    <property name="text">
     <string>Expand Slots</string>
    </property>
@@ -1597,7 +1695,7 @@
   <action name="act_plugin_add_jack">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/list-add.svgz</normaloff>:/16x16/list-add.svgz</iconset>
+     <normaloff>:/16x16/add-jack.svgz</normaloff>:/16x16/add-jack.svgz</iconset>
    </property>
    <property name="text">
     <string>Add &amp;JACK Application...</string>
