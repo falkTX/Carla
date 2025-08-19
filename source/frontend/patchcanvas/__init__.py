@@ -137,6 +137,9 @@ class Canvas(object):
         self.initial_pos = QPointF(0, 0)
         self.size_rect = QRectF()
 
+        self.pending_group_joins = set()
+        self.pending_position_changes = {}
+
     def callback(self, action, value1, value2, value_str):
         print("Canvas::callback({}, {}, {}, {})".format(action, value1, value2, value_str))
 

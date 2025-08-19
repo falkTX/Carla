@@ -393,6 +393,17 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
 
     canvas.group_list.append(group_dict)
 
+    # Callbacks can arrive out of order, so we might have pending events.
+    if group_id in canvas.pending_group_joins:
+        joinGroup(group_id)
+        canvas.pending_group_joins.remove(group_id)
+
+    if group_id in canvas.pending_position_changes:
+        position_change = canvas.pending_position_changes[group_id]
+        setGroupPosFull(*position_change)
+        del canvas.pending_position_changes[group_id]
+
+
     if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
         CanvasItemFX(group_box, True, False)
     else:
@@ -595,6 +606,7 @@ def joinGroup(group_id):
     # FIXME
     if not (item and s_item):
         qCritical("PatchCanvas::joinGroup(%i) - unable to find groups to join" % group_id)
+        canvas.pending_group_joins.add(group_id)
         return
 
     port_list_ids = list(item.getPortList())
@@ -748,6 +760,7 @@ def setGroupPosFull(group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group
 
     qCritical("PatchCanvas::setGroupPos(%i, %i, %i, %i, %i) - unable to find group to reposition" % (
               group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group_pos_y_i))
+    canvas.pending_position_changes[group_id] = (group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group_pos_y_i)
 
 # ------------------------------------------------------------------------------------------------------------
 
