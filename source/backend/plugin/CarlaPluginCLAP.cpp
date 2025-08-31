@@ -1811,6 +1811,8 @@ public:
                 pData->hints |= PLUGIN_HAS_CUSTOM_UI;
                 pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
                 pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
+                if (guiExt->can_resize(fPlugin))
+                    pData->hints |= PLUGIN_HAS_CUSTOM_RESIZABLE_UI;
             }
             else if (guiExt->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, true))
             {

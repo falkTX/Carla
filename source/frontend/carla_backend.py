@@ -207,6 +207,21 @@ PLUGIN_USES_MULTI_PROGS = 0x400
 # Plugin can make use of inline display API.
 PLUGIN_HAS_INLINE_DISPLAY = 0x800
 
+# Plugin has its own custom UI which can be embed into another Window.
+# @see carla_embed_custom_ui()
+# @note This is very experimental and subject to change at this point
+PLUGIN_HAS_CUSTOM_EMBED_UI = 0x1000
+
+# Plugin custom UI is a fake one that simply invokes an open file browser dialog.
+PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN = 0x2000
+
+# Plugin needs all idle events in the main thread.
+# @note Not possible on all engine implementations.
+PLUGIN_NEEDS_MAIN_THREAD_IDLE = 0x4000
+
+# Plugin has its own custom UI which is user resizable.
+PLUGIN_HAS_CUSTOM_RESIZABLE_UI = 0x8000
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Plugin Options
 # Various plugin options.

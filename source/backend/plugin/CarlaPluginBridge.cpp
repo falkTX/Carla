@@ -2193,7 +2193,7 @@ public:
                 if (fBridgeVersion < 9 || fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
                #endif
                 {
-                    pData->hints &= ~PLUGIN_HAS_CUSTOM_EMBED_UI;
+                    pData->hints &= ~(PLUGIN_HAS_CUSTOM_EMBED_UI|PLUGIN_HAS_CUSTOM_RESIZABLE_UI);
                 }
 
                 fInfo.category = static_cast<PluginCategory>(category);
