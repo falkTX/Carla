@@ -3287,6 +3287,7 @@ class PluginStoreInfo():
         self.parameterData   = []
         self.parameterRanges = []
         self.parameterValues = []
+        self.parameterScalePoints = []
         self.programCount   = 0
         self.programCurrent = -1
         self.programNames   = []
@@ -3499,7 +3500,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).parameterInfo[parameterId]
 
     def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
-        return PyCarlaScalePointInfo
+        return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).parameterScalePoints[parameterId][scalePointId]
 
     def get_parameter_data(self, pluginId, parameterId):
         return self.fPluginsInfo.get(pluginId, self.fFallbackPluginInfo).parameterData[parameterId]
@@ -3780,6 +3781,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         plugin.parameterData  = []
         plugin.parameterRanges = []
         plugin.parameterValues = []
+        plugin.parameterScalePoints = []
 
         # add placeholders
         for _ in range(count):
@@ -3787,6 +3789,26 @@ class CarlaHostPlugin(CarlaHostMeta):
             plugin.parameterData.append(PyParameterData.copy())
             plugin.parameterRanges.append(PyParameterRanges.copy())
             plugin.parameterValues.append(0.0)
+            plugin.parameterScalePoints.append([])
+
+    def _set_parameterScalePoint(self, pluginId, param, point, value, label):
+        plugin = self.fPluginsInfo.get(pluginId, None)
+        if plugin is None:
+            print("_set_parameterScalePointCount failed for", pluginId)
+            return
+
+        if param < 0 or param >= plugin.parameterCount:
+            print("_set_parameterScalePointCount failed for parameter", param)
+            return
+
+        if point < 0 or point >= plugin.parameterInfo[param]["scalePointCount"]:
+            print("_set_parameterScalePointCount failed for scale point", point)
+            return
+
+        plugin.parameterScalePoints[param][point] = {
+            "value": value,
+            "label": label,
+        }
 
     def _set_programCount(self, pluginId, count):
         plugin = self.fPluginsInfo.get(pluginId, None)
@@ -3824,6 +3846,11 @@ class CarlaHostPlugin(CarlaHostMeta):
             plugin.parameterInfo[paramIndex] = info
         else:
             print("_set_parameterInfo failed for", pluginId, "and index", paramIndex)
+
+        # add placeholders
+        plugin.parameterScalePoints[paramIndex] = []
+        for _ in range(info["scalePointCount"]):
+            plugin.parameterScalePoints[paramIndex].append({})
 
     def _set_parameterData(self, pluginId, paramIndex, data):
         plugin = self.fPluginsInfo.get(pluginId, None)
