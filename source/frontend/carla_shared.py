@@ -8,7 +8,7 @@
 import os
 import sys
 
-from math import fmod
+from math import fmod, log10
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Signal)
@@ -62,6 +62,9 @@ from carla_backend import (
     ENGINE_TRANSPORT_MODE_INTERNAL,
     ENGINE_TRANSPORT_MODE_JACK,
 )
+
+from utils import QSafeSettings
+import ast
 
 # ------------------------------------------------------------------------------------------------------------
 # Config
@@ -184,6 +187,7 @@ CANVAS_EYECANDY_SMALL     = 1
 CARLA_KEY_MAIN_PROJECT_FOLDER   = "Main/ProjectFolder"   # str
 CARLA_KEY_MAIN_USE_PRO_THEME    = "Main/UseProTheme"     # bool
 CARLA_KEY_MAIN_PRO_THEME_COLOR  = "Main/ProThemeColor"   # str
+CARLA_KEY_MAIN_SKIN_TWEAKS      = "Main/SkinTweaks"      # str
 CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
 CARLA_KEY_MAIN_CONFIRM_EXIT     = "Main/ConfirmExit"     # bool
 CARLA_KEY_MAIN_CLASSIC_SKIN     = "Main/ClassicSkin"     # bool
@@ -273,6 +277,7 @@ CARLA_DEFAULT_MAIN_CLASSIC_SKIN     = False
 CARLA_DEFAULT_MAIN_SHOW_LOGS        = bool(not CARLA_OS_WIN)
 CARLA_DEFAULT_MAIN_SYSTEM_ICONS     = False
 CARLA_DEFAULT_MAIN_EXPERIMENTAL     = False
+CARLA_DEFAULT_MAIN_SKIN_TWEAKS      = "'ShowPan':0, 'ShowForth':0, 'WetVolPush':0, 'WetVolPushLed':1, 'Tooltips':0, 'MoreSpace':0, 'WetVolOnCompact':0, 'SymmetricArc':1, 'GapAuto':0, 'ColorFollow':0, 'ShortenLabels':1, 'ButtonHaveLed':1, 'ColoredNeon':1, 'HighContrast':0, 'ShowDisabled':0, 'ShowOutputs':1, 'ShowButtons':1, 'Button3Pos':1, 'TwoLineLabels':0, 'GapMin':0, 'GapMax':100, 'ColorFrom':-0.1, 'ColorSpan':0.4, 'Auto7segSize':0, 'Auto7segWidth':1, 'ShowReload':0, 'ShowPrograms':0, 'ShowMidiPrograms':0, 'ShowProgramsOnCompact':0, 'ShowMidiProgramsOnCompact':0, "
 
 # Canvas
 CARLA_DEFAULT_CANVAS_THEME             = "Modern Dark"
@@ -647,18 +652,22 @@ else:
 # Find decimal points for a parameter, using step and stepSmall
 
 def countDecimalPoints(step, stepSmall):
-    if stepSmall >= 1.0:
+    if (stepSmall >= 1.0) or (step <= 0) or (stepSmall <= 0):
         return 0
     if step >= 1.0:
         return 2
 
-    count = 0
-    value = fmod(abs(step), 1)
-    while 0.0001 < value < 0.999 and count < 6:
-        value = fmod(value*10, 1)
-        count += 1
+# OLD
+    # count = 0
+    # value = fmod(abs(step), 1)
+    # while 0.0001 < value < 0.999 and count < 6:
+    #     value = fmod(value*10, 1)
+    #     count += 1
+    #
+    # return count
 
-    return count
+# NEW: Looks like better handling of small values.
+    return -int(log10(stepSmall)) + 2
 
 # ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)
@@ -926,6 +935,51 @@ def CustomMessageBox(parent, icon, title, text,
     return msgBox.exec_()
     # pylint: enable=no-value-for-parameter
 # pylint: enable=too-many-arguments
+
+# ------------------------------------------------------------------------------------------------------------
+# Tweaks, in form of 'Parameter':Value or 'skinnameParameter':Value, are holds both per-rack and per-plugin fine-tuning values (tweaks).
+
+def loadTweaks(self):
+    settings = QSafeSettings("falkTX", "Carla2")
+    skinTweaks = settings.value(CARLA_KEY_MAIN_SKIN_TWEAKS, CARLA_DEFAULT_MAIN_SKIN_TWEAKS, str)
+    try:
+        self.fTweaks = ast.literal_eval('{' + skinTweaks + '}')
+    except ValueError as e:
+        print("ERROR while parse `" + skinTweaks + "` :", e)
+
+# ------------------------------------------------------------------------------------------------------------
+
+def getPrefixSuffix(unit):
+    prefix = ""
+    suffix = unit.strip()
+
+    if suffix == "(coef)":
+        prefix = "* "
+        suffix = ""
+    else:
+        suffix = " " + suffix
+
+    return prefix, suffix
+
+# ------------------------------------------------------------------------------------------------------------
+
+def strLim(value, digits = 5):
+    # np.format_float_positional(value, trim='-', fractional=False, precision=digits)
+    result = "%.5f" % value
+    if "." in result:
+        result = result.strip("0")
+        if result[-1] == ".":
+            result = result.removesuffix(".")
+
+    if len(result) > 9:
+        return '{:.3e}'.format(value)
+    else:
+        return result
+
+# ------------------------------------------------------------------------------------------------------------
+# Geometry
+
+RACK_KNOB_GAP = 5
 
 # ------------------------------------------------------------------------------------------------------------
 # pylint: enable=possibly-used-before-assignment

@@ -25,7 +25,7 @@ elif qt_config == 6:
 import ui_inputdialog_value
 
 from carla_backend import CARLA_OS_MAC
-from carla_shared import countDecimalPoints
+from carla_shared import countDecimalPoints, getPrefixSuffix, strLim
 
 # ------------------------------------------------------------------------------------------------------------
 # Get a fixed value within min/max bounds
@@ -46,13 +46,21 @@ def geFixedValue(name, value, minimum, maximum):
 # Custom InputDialog with Scale Points support
 
 class CustomInputDialog(QDialog):
-    def __init__(self, parent, label, current, minimum, maximum, step, stepSmall, scalePoints, prefix, suffix):
+    def __init__(self, parent, label, current, minimum, maximum, step, stepSmall, scalePoints, prefix, suffix, unit=""):
         QDialog.__init__(self, parent)
         self.ui = ui_inputdialog_value.Ui_Dialog()
         self.ui.setupUi(self)
 
-        decimals = countDecimalPoints(step, stepSmall)
-        self.ui.label.setText(label)
+        if not (unit == ""):
+            prefix, suffix = getPrefixSuffix(unit)
+
+        if unit == "%":
+            decimals = 1
+        else:
+            decimals = countDecimalPoints(step, stepSmall)
+
+        # self.ui.label.setText(label + "  [" + strRound(self, minimum, decimals) + "..." + strRound(self, maximum, decimals) + "]")
+        self.ui.label.setText(label + "  [" + strLim(minimum) + "..." + strLim(maximum) + "]")
         self.ui.doubleSpinBox.setDecimals(decimals)
         self.ui.doubleSpinBox.setRange(minimum, maximum)
         self.ui.doubleSpinBox.setSingleStep(step)
@@ -361,14 +369,7 @@ class ParamSpinBox(QAbstractSpinBox):
             self.fStepLarge = value
 
     def setLabel(self, label):
-        prefix = ""
-        suffix = label.strip()
-
-        if suffix == "(coef)":
-            prefix = "* "
-            suffix = ""
-        else:
-            suffix = " " + suffix
+        prefix, suffix = getPrefixSuffix(label)
 
         self.fLabelPrefix = prefix
         self.fLabelSuffix = suffix
@@ -533,16 +534,16 @@ class ParamSpinBox(QAbstractSpinBox):
                 pass
 
         menu      = QMenu(self)
-        actReset  = menu.addAction(self.tr("Reset (%f)" % self.fDefault))
+        actReset  = menu.addAction(self.tr("Reset (" + strLim(self.fDefault) + ")"))
         actRandom = menu.addAction(self.tr("Random"))
         menu.addSeparator()
-        actCopy   = menu.addAction(self.tr("Copy (%f)" % self.fValue))
+        actCopy   = menu.addAction(self.tr("Copy (" + strLim(self.fValue) + ")"))
 
         if pasteValue is None:
             actPaste = menu.addAction(self.tr("Paste"))
             actPaste.setEnabled(False)
         else:
-            actPaste = menu.addAction(self.tr("Paste (%f)" % pasteValue))
+            actPaste = menu.addAction(self.tr("Paste (" + strLim(pasteValue) + ")"))
 
         menu.addSeparator()
 
