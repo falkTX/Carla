@@ -27,6 +27,7 @@ misrepresented as being the original software.
  * todo: handle multi-byte (make WideStr support UTF-16)
  */
 
+#include <stddef.h>
 #include "wdltypes.h"
 
 #ifndef WDL_WCHAR
