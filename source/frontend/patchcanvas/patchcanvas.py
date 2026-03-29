@@ -131,11 +131,16 @@ class CanvasObject(QObject):
     @pyqtSlot()
     def PortContextMenuDisconnect(self):
         try:
-            connectionId = int(self.sender().data())
+            connection_ids = self.sender().data()
+            if isinstance(connection_ids, (list, tuple)):
+                connection_ids = [int(conn_id) for conn_id in connection_ids]
+            else:
+                connection_ids = [int(connection_ids)]
         except:
             return
 
-        CanvasCallback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
+        for connection_id in connection_ids:
+            CanvasCallback(ACTION_PORTS_DISCONNECT, connection_id, 0, "")
 
     @pyqtSlot(int, bool, int, int)
     def boxPositionChanged(self, groupId, split, x, y):

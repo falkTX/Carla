@@ -497,10 +497,31 @@ class CanvasBox(QGraphicsObject):
                     conn_list_ids.append(tmp_conn_id)
 
         if len(conn_list) > 0:
+            groups = {}
             for conn_id, group_id, port_id in conn_list:
+                groups.setdefault(group_id, []).append(conn_id)
                 act_x_disc = discMenu.addAction(CanvasGetFullPortName(group_id, port_id))
                 act_x_disc.setData(conn_id)
                 act_x_disc.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
+
+            # menu entries for disconnecting multiple connections to the same group
+            separator_added = False
+            for group_id, conn_ids in groups.items():
+                if len(conn_ids) < 2:
+                    continue
+                for group in canvas.group_list:
+                    if group.group_id == group_id:
+                        group_name = group.group_name
+                        break
+                else:
+                    qCritical("Couldn't find group for group id {}".format(group_id))
+                    continue
+                if not separator_added:
+                    discMenu.addSeparator()
+                    separator_added = True
+                act_x_disc_multi = discMenu.addAction("{} (all {} ports)".format(group_name, len(conn_ids)))
+                act_x_disc_multi.setData(conn_ids)
+                act_x_disc_multi.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
         else:
             act_x_disc = discMenu.addAction("No connections")
             act_x_disc.setEnabled(False)
