@@ -317,6 +317,17 @@ class CarlaMiniW(ExternalUI, HostWindow):
             }
             self.host._set_parameterRanges(pluginId, paramId, paramRanges)
 
+        elif msg.startswith("PARAMETER_SCALEPOINT_COUNT_"):
+            pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_SCALEPOINT_COUNT_", "").split(":")]
+            scalePointCount = int(self.readlineblock())
+            self.host._set_parameterScalePointCount(pluginId, paramId, scalePointCount)
+
+        elif msg.startswith("PARAMETER_SCALEPOINT_"):
+            pluginId, param, point = [int(i) for i in msg.replace("PARAMETER_SCALEPOINT_", "").split(":")]
+            value = float(self.readlineblock())
+            label = self.readlineblock()
+            self.host._set_parameterScalePoint(pluginId, param, point, value, label)
+
         elif msg.startswith("PROGRAM_COUNT_"):
             pluginId, count, current = [int(i) for i in msg.replace("PROGRAM_COUNT_", "").split(":")]
             self.host._set_programCount(pluginId, count)
