@@ -526,10 +526,10 @@ private:
 
            #ifndef CARLA_OS_WIN
             if (helperTool.isNotEmpty())
-                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all", -1, 2000);
+                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all");
             else
            #endif
-                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all", -1, 2000);
+                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), ":all");
         }
         else
         {
@@ -552,10 +552,10 @@ private:
 
            #ifndef CARLA_OS_WIN
             if (helperTool.isNotEmpty())
-                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8(), -1, 2000);
+                startPipeServer(helperTool.toRawUTF8(), fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
             else
            #endif
-                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8(), -1, 2000);
+                startPipeServer(fDiscoveryTool, getPluginTypeAsString(fPluginType), filename.toRawUTF8());
         }
     }
 
