@@ -2059,6 +2059,8 @@ class HostWindow(QMainWindow):
 
         audioDriverPrefix = CARLA_KEY_ENGINE_DRIVER_PREFIX + audioDriver
 
+        settings2 = QSafeSettings("falkTX", "Carla2")
+
         self.fSavedSettings = {
             CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      str),
             CARLA_KEY_MAIN_CONFIRM_EXIT:        settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT,        CARLA_DEFAULT_MAIN_CONFIRM_EXIT,        bool),
@@ -2082,56 +2084,54 @@ class HostWindow(QMainWindow):
 
             # engine
             CARLA_KEY_ENGINE_AUDIO_DRIVER: audioDriver,
-            CARLA_KEY_ENGINE_AUDIO_DEVICE: settings.value(audioDriverPrefix+"/Device", "", str),
-            CARLA_KEY_ENGINE_BUFFER_SIZE: settings.value(audioDriverPrefix+"/BufferSize", CARLA_DEFAULT_AUDIO_BUFFER_SIZE, int),
-            CARLA_KEY_ENGINE_SAMPLE_RATE: settings.value(audioDriverPrefix+"/SampleRate", CARLA_DEFAULT_AUDIO_SAMPLE_RATE, int),
-            CARLA_KEY_ENGINE_TRIPLE_BUFFER: settings.value(audioDriverPrefix+"/TripleBuffer", CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, bool),
+            CARLA_KEY_ENGINE_AUDIO_DEVICE: settings2.value(audioDriverPrefix+"/Device", "", str),
+            CARLA_KEY_ENGINE_BUFFER_SIZE: settings2.value(audioDriverPrefix+"/BufferSize", CARLA_DEFAULT_AUDIO_BUFFER_SIZE, int),
+            CARLA_KEY_ENGINE_SAMPLE_RATE: settings2.value(audioDriverPrefix+"/SampleRate", CARLA_DEFAULT_AUDIO_SAMPLE_RATE, int),
+            CARLA_KEY_ENGINE_TRIPLE_BUFFER: settings2.value(audioDriverPrefix+"/TripleBuffer", CARLA_DEFAULT_AUDIO_TRIPLE_BUFFER, bool),
 
             # file paths
-            CARLA_KEY_PATHS_AUDIO: splitter.join(settings.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO, list)),
-            CARLA_KEY_PATHS_MIDI: splitter.join(settings.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI, list)),
+            CARLA_KEY_PATHS_AUDIO: splitter.join(settings2.value(CARLA_KEY_PATHS_AUDIO, CARLA_DEFAULT_FILE_PATH_AUDIO, list)),
+            CARLA_KEY_PATHS_MIDI: splitter.join(settings2.value(CARLA_KEY_PATHS_MIDI,  CARLA_DEFAULT_FILE_PATH_MIDI, list)),
 
             # plugin paths
-            CARLA_KEY_PATHS_LADSPA: splitter.join(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH, list)),
-            CARLA_KEY_PATHS_DSSI: splitter.join(settings.value(CARLA_KEY_PATHS_DSSI, CARLA_DEFAULT_DSSI_PATH, list)),
-            CARLA_KEY_PATHS_LV2: splitter.join(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH, list)),
-            CARLA_KEY_PATHS_VST2: splitter.join(settings.value(CARLA_KEY_PATHS_VST2, CARLA_DEFAULT_VST2_PATH, list)),
-            CARLA_KEY_PATHS_VST3: splitter.join(settings.value(CARLA_KEY_PATHS_VST3, CARLA_DEFAULT_VST3_PATH, list)),
-            CARLA_KEY_PATHS_SF2: splitter.join(settings.value(CARLA_KEY_PATHS_SF2, CARLA_DEFAULT_SF2_PATH, list)),
-            CARLA_KEY_PATHS_SFZ: splitter.join(settings.value(CARLA_KEY_PATHS_SFZ, CARLA_DEFAULT_SFZ_PATH, list)),
-            CARLA_KEY_PATHS_JSFX: splitter.join(settings.value(CARLA_KEY_PATHS_JSFX, CARLA_DEFAULT_JSFX_PATH, list)),
-            CARLA_KEY_PATHS_CLAP: splitter.join(settings.value(CARLA_KEY_PATHS_CLAP, CARLA_DEFAULT_CLAP_PATH, list)),
+            CARLA_KEY_PATHS_LADSPA: splitter.join(settings2.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH, list)),
+            CARLA_KEY_PATHS_DSSI: splitter.join(settings2.value(CARLA_KEY_PATHS_DSSI, CARLA_DEFAULT_DSSI_PATH, list)),
+            CARLA_KEY_PATHS_LV2: splitter.join(settings2.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH, list)),
+            CARLA_KEY_PATHS_VST2: splitter.join(settings2.value(CARLA_KEY_PATHS_VST2, CARLA_DEFAULT_VST2_PATH, list)),
+            CARLA_KEY_PATHS_VST3: splitter.join(settings2.value(CARLA_KEY_PATHS_VST3, CARLA_DEFAULT_VST3_PATH, list)),
+            CARLA_KEY_PATHS_SF2: splitter.join(settings2.value(CARLA_KEY_PATHS_SF2, CARLA_DEFAULT_SF2_PATH, list)),
+            CARLA_KEY_PATHS_SFZ: splitter.join(settings2.value(CARLA_KEY_PATHS_SFZ, CARLA_DEFAULT_SFZ_PATH, list)),
+            CARLA_KEY_PATHS_JSFX: splitter.join(settings2.value(CARLA_KEY_PATHS_JSFX, CARLA_DEFAULT_JSFX_PATH, list)),
+            CARLA_KEY_PATHS_CLAP: splitter.join(settings2.value(CARLA_KEY_PATHS_CLAP, CARLA_DEFAULT_CLAP_PATH, list)),
 
             # osc
-            CARLA_KEY_OSC_ENABLED: settings.value(CARLA_KEY_OSC_ENABLED, CARLA_DEFAULT_OSC_ENABLED, bool),
-            CARLA_KEY_OSC_TCP_PORT_ENABLED: settings.value(CARLA_KEY_OSC_TCP_PORT_ENABLED, CARLA_DEFAULT_OSC_TCP_PORT_ENABLED, bool),
-            CARLA_KEY_OSC_TCP_PORT_RANDOM: settings.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, bool),
-            CARLA_KEY_OSC_TCP_PORT_NUMBER: settings.value(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, int),
-            CARLA_KEY_OSC_UDP_PORT_ENABLED: settings.value(CARLA_KEY_OSC_UDP_PORT_ENABLED, CARLA_DEFAULT_OSC_UDP_PORT_ENABLED, bool),
-            CARLA_KEY_OSC_UDP_PORT_RANDOM: settings.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, bool),
-            CARLA_KEY_OSC_UDP_PORT_NUMBER: settings.value(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, int),
+            CARLA_KEY_OSC_ENABLED: settings2.value(CARLA_KEY_OSC_ENABLED, CARLA_DEFAULT_OSC_ENABLED, bool),
+            CARLA_KEY_OSC_TCP_PORT_ENABLED: settings2.value(CARLA_KEY_OSC_TCP_PORT_ENABLED, CARLA_DEFAULT_OSC_TCP_PORT_ENABLED, bool),
+            CARLA_KEY_OSC_TCP_PORT_RANDOM: settings2.value(CARLA_KEY_OSC_TCP_PORT_RANDOM, CARLA_DEFAULT_OSC_TCP_PORT_RANDOM, bool),
+            CARLA_KEY_OSC_TCP_PORT_NUMBER: settings2.value(CARLA_KEY_OSC_TCP_PORT_NUMBER, CARLA_DEFAULT_OSC_TCP_PORT_NUMBER, int),
+            CARLA_KEY_OSC_UDP_PORT_ENABLED: settings2.value(CARLA_KEY_OSC_UDP_PORT_ENABLED, CARLA_DEFAULT_OSC_UDP_PORT_ENABLED, bool),
+            CARLA_KEY_OSC_UDP_PORT_RANDOM: settings2.value(CARLA_KEY_OSC_UDP_PORT_RANDOM, CARLA_DEFAULT_OSC_UDP_PORT_RANDOM, bool),
+            CARLA_KEY_OSC_UDP_PORT_NUMBER: settings2.value(CARLA_KEY_OSC_UDP_PORT_NUMBER, CARLA_DEFAULT_OSC_UDP_PORT_NUMBER, int),
 
             # wine
-            CARLA_KEY_WINE_EXECUTABLE: settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, str),
-            CARLA_KEY_WINE_AUTO_PREFIX: settings.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, bool),
-            CARLA_KEY_WINE_FALLBACK_PREFIX: settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, str),
-            CARLA_KEY_WINE_RT_PRIO_ENABLED: settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED, CARLA_DEFAULT_WINE_RT_PRIO_ENABLED, bool),
-            CARLA_KEY_WINE_BASE_RT_PRIO: settings.value(CARLA_KEY_WINE_BASE_RT_PRIO, CARLA_DEFAULT_WINE_BASE_RT_PRIO, int),
-            CARLA_KEY_WINE_SERVER_RT_PRIO: settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO, int),
+            CARLA_KEY_WINE_EXECUTABLE: settings2.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, str),
+            CARLA_KEY_WINE_AUTO_PREFIX: settings2.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, bool),
+            CARLA_KEY_WINE_FALLBACK_PREFIX: settings2.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, str),
+            CARLA_KEY_WINE_RT_PRIO_ENABLED: settings2.value(CARLA_KEY_WINE_RT_PRIO_ENABLED, CARLA_DEFAULT_WINE_RT_PRIO_ENABLED, bool),
+            CARLA_KEY_WINE_BASE_RT_PRIO: settings2.value(CARLA_KEY_WINE_BASE_RT_PRIO, CARLA_DEFAULT_WINE_BASE_RT_PRIO, int),
+            CARLA_KEY_WINE_SERVER_RT_PRIO: settings2.value(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO, int),
 
             # experimental switches
             CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES:
-                settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES, bool),
+                settings2.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES, bool),
             CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES:
-                settings.value(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES, bool),
+                settings2.value(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES, bool),
         }
 
         if not self.host.isControl:
             self.fSavedSettings[CARLA_KEY_CANVAS_INLINE_DISPLAYS] = settings.value(CARLA_KEY_CANVAS_INLINE_DISPLAYS, CARLA_DEFAULT_CANVAS_INLINE_DISPLAYS, bool)
         else:
             self.fSavedSettings[CARLA_KEY_CANVAS_INLINE_DISPLAYS] = False
-
-        settings2 = QSafeSettings("falkTX", "Carla2")
 
         if self.host.experimental:
             visible = settings2.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS, CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, bool)
