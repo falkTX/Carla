@@ -271,7 +271,7 @@ class CarlaHostOSC(CarlaHostQtPlugin):
 
 class CarlaControlServerTCP(Server):
     def __init__(self, host):
-        Server.__init__(self, proto=LO_TCP)
+        Server.__init__(self, port=22753, proto=LO_TCP)
 
         if False:
             host = CarlaHostOSC()
