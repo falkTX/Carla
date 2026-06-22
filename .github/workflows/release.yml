@@ -3,20 +3,20 @@ name: release
 on: [push, pull_request]
 
 env:
-  CACHE_VERSION: 5
+  CACHE_VERSION: 7
   DEBIAN_FRONTEND: noninteractive
   HOMEBREW_NO_AUTO_UPDATE: 1
   HOMEBREW_NO_INSTALL_CLEANUP: 1
   PAWPAW_SKIP_LTO: 1
   PAWPAW_SKIP_TESTS: 1
-  PAWPAW_VERSION: 2606d0d436471b12902d60edd2aeb2390db44e62
+  PAWPAW_VERSION: 6ff87c77cf680ab1b18ca36b79e9e09732d34fc3
 
 jobs:
   # macOS native universal build
   macos_universal:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up cache
         uses: actions/cache@v4
         with:
@@ -64,7 +64,7 @@ jobs:
     container:
       image: ubuntu:22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up cache
         uses: actions/cache@v4
         with:
@@ -111,7 +111,7 @@ jobs:
     container:
       image: ubuntu:22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up cache
         uses: actions/cache@v4
         with:

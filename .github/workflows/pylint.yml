@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-24.04
     name: pyqt5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Install deps
         run: |
           sudo apt install -yqq pyqt5-dev-tools python3-pyqt5 python3-pyqt5.qtsvg python3-virtualenv
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-24.04
     name: pyqt6
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Install deps
         run: |
           sudo apt install -yqq pyqt6-dev-tools python3-pyqt6 python3-pyqt6.qtsvg python3-virtualenv

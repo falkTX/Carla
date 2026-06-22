@@ -13,16 +13,17 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: debian:11
           - target: debian:12
+          - target: debian:13
           - target: ubuntu:20.04
           - target: ubuntu:22.04
           - target: ubuntu:24.04
+          - target: ubuntu:26.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Set up dependencies
         run: |
           dpkg --add-architecture i386
@@ -43,16 +44,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: macos-14
           - target: macos-15
+          - target: macos-16
     runs-on: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Set up dependencies
         run: |
-          brew install fluid-synth liblo libmagic libsndfile pkg-config pyqt@5 qt@5 sdl2
+          brew install fluid-synth liblo libmagic libsndfile pkg-config pyqt@6 qt@6 sdl2
       - name: make features
         run: make features
       - name: make
@@ -61,7 +62,7 @@ jobs:
   wasm:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Set up cache

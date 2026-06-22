@@ -10,15 +10,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - container: debian:11
           - container: debian:12
+          - container: debian:13
           - container: ubuntu:22.04
           - container: ubuntu:24.04
+          # - container: ubuntu:26.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up dependencies
         run: |
           apt-get update -qq
@@ -43,7 +44,7 @@ jobs:
           - frameworks: OFF
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up dependencies
         run: |
           brew install cmake fluid-synth liblo libmagic libsndfile pkg-config
@@ -67,15 +68,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - container: debian:11
           - container: debian:12
+          - container: debian:13
           - container: ubuntu:22.04
           - container: ubuntu:24.04
+          # - container: ubuntu:26.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up dependencies
         run: |
           dpkg --add-architecture i386
@@ -104,15 +106,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - container: debian:11
           - container: debian:12
+          - container: debian:13
           - container: ubuntu:22.04
           - container: ubuntu:24.04
+          # - container: ubuntu:26.04
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up dependencies
         run: |
           dpkg --add-architecture i386
@@ -140,7 +143,7 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: configure
         run: cmake -S cmake -B build
       - name: build
