@@ -2278,9 +2278,14 @@ public:
                         }
                         else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
                         {
+                            // forward the same Bank Select CC (MSB or LSB) that was originally
+                            // received, instead of only ever sending MSB; see
+                            // EngineControlEvent::midiValue
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
-                            midiData[1] = MIDI_CONTROL_BANK_SELECT;
+                            midiData[1] = (ctrlEvent.midiValue == MIDI_CONTROL_BANK_SELECT__LSB)
+                                        ? MIDI_CONTROL_BANK_SELECT__LSB
+                                        : MIDI_CONTROL_BANK_SELECT;
                             midiData[2] = uint8_t(ctrlEvent.param);
 
                             fInputEvents.addSimpleMidiEvent(true, 0, eventTime, midiData);

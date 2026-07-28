@@ -1144,6 +1144,12 @@ public:
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventMidiBank);
                             fShmRtClientControl.writeUInt(event.time);
                             fShmRtClientControl.writeByte(event.channel);
+                            // which Bank Select CC (MSB or LSB) this originally was; see
+                            // EngineControlEvent::midiValue. libjack.cpp needs this since it
+                            // reconstructs a raw MIDI CC and has no other source for it.
+                            fShmRtClientControl.writeByte(uint8_t(event.ctrl.midiValue == MIDI_CONTROL_BANK_SELECT__LSB
+                                                                 ? MIDI_CONTROL_BANK_SELECT__LSB
+                                                                 : MIDI_CONTROL_BANK_SELECT));
                             fShmRtClientControl.writeUShort(event.ctrl.param);
                             fShmRtClientControl.commitWrite();
                         }

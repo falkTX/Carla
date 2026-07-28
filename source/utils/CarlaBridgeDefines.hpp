@@ -44,7 +44,7 @@ enum PluginBridgeRtClientOpcode {
     kPluginBridgeRtClientSetSampleRate,           // double
     kPluginBridgeRtClientSetOnline,               // bool
     kPluginBridgeRtClientControlEventParameter,   // uint/frame, byte/chan, ushort, float
-    kPluginBridgeRtClientControlEventMidiBank,    // uint/frame, byte/chan, ushort
+    kPluginBridgeRtClientControlEventMidiBank,    // uint/frame, byte/chan, byte/midiCtrl, ushort
     kPluginBridgeRtClientControlEventMidiProgram, // uint/frame, byte/chan, ushort
     kPluginBridgeRtClientControlEventAllSoundOff, // uint/frame, byte/chan
     kPluginBridgeRtClientControlEventAllNotesOff, // uint/frame, byte/chan

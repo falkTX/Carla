@@ -56,7 +56,8 @@ uint8_t EngineControlEvent::convertToMidiData(const uint8_t channel, uint8_t dat
 
     case kEngineControlEventTypeMidiBank:
         data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
-        data[1] = MIDI_CONTROL_BANK_SELECT;
+        data[1] = (midiValue == MIDI_CONTROL_BANK_SELECT__LSB) ? MIDI_CONTROL_BANK_SELECT__LSB
+                                                                : MIDI_CONTROL_BANK_SELECT;
         data[2] = uint8_t(carla_fixedValue<uint16_t>(0, MAX_MIDI_VALUE-1, param));
         return 3;
 
@@ -113,7 +114,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
 
             ctrl.type            = kEngineControlEventTypeMidiBank;
             ctrl.param           = midiBank;
-            ctrl.midiValue       = -1;
+            ctrl.midiValue       = int8_t(midiControl); // MIDI_CONTROL_BANK_SELECT or __LSB, see EngineControlEvent::midiValue
             ctrl.normalizedValue = 0.0f;
             ctrl.handled         = true;
         }

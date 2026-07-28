@@ -686,20 +686,19 @@ public:
                     case kEngineControlEventTypeMidiBank:
                         if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
                         {
+                            // forward the same Bank Select CC (MSB or LSB) that was originally
+                            // received, instead of always sending MSB=0 then a bogus LSB (the
+                            // previous code read ctrlEvent.normalizedValue, which is always 0.0f
+                            // for this event type, so both bytes ended up 0); see
+                            // EngineControlEvent::midiValue
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
-                            midiData[1] = MIDI_CONTROL_BANK_SELECT;
-                            midiData[2] = 0;
+                            midiData[1] = (ctrlEvent.midiValue == MIDI_CONTROL_BANK_SELECT__LSB)
+                                        ? MIDI_CONTROL_BANK_SELECT__LSB
+                                        : MIDI_CONTROL_BANK_SELECT;
+                            midiData[2] = uint8_t(ctrlEvent.param);
 
                             ysfx_midi_event_t yevent;
-                            yevent.bus = 0;
-                            yevent.offset = event.time;
-                            yevent.size = 3;
-                            yevent.data = midiData;
-                            ysfx_send_midi(fEffect, &yevent);
-
-                            midiData[1] = MIDI_CONTROL_BANK_SELECT__LSB;
-                            midiData[2] = uint8_t(ctrlEvent.normalizedValue*127.0f);
                             yevent.bus = 0;
                             yevent.offset = event.time;
                             yevent.size = 3;

@@ -164,6 +164,12 @@ struct CARLA_API EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
     int8_t   midiValue;          //!< Raw midi value, >= 0 if applicable, -1 otherwise.
+                                  //!< For kEngineControlEventTypeMidiBank, instead holds the
+                                  //!< originating MIDI Bank Select controller number
+                                  //!< (MIDI_CONTROL_BANK_SELECT for MSB or
+                                  //!< MIDI_CONTROL_BANK_SELECT__LSB for LSB), so that code
+                                  //!< forwarding this event to a plugin can reconstruct the
+                                  //!< exact same CC it originally received instead of guessing.
     float    normalizedValue;    //!< Parameter value, normalized to 0.0f<->1.0f.
     bool     handled;            //!< Indicates that event was handled/received at least once.
 
