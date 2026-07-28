@@ -2851,7 +2851,26 @@ public:
                     const EngineMidiEvent& midiEvent(event.midi);
 
                     if (midiEvent.size > 3)
+                    {
+                        // System Exclusive (or other >3-byte raw MIDI); forward it as a VST3 Data
+                        // event instead of silently dropping it, so external SysEx-based editors
+                        // keep working when routed live through a VST3 plugin.
+                        if (fEvents.eventInputs->numEvents < kPluginMaxMidiEvents)
+                        {
+                            const uint8_t* const midiData = midiEvent.size > EngineMidiEvent::kDataSize
+                                                           ? midiEvent.dataExt
+                                                           : midiEvent.data;
+
+                            v3_event& v3event(fEvents.eventInputs->events[fEvents.eventInputs->numEvents++]);
+                            carla_zeroStruct(v3event);
+
+                            v3event.type       = V3_EVENT_DATA;
+                            v3event.data.type  = V3_DATA_MIDI_SYS_EX;
+                            v3event.data.size  = midiEvent.size;
+                            v3event.data.bytes = midiData;
+                        }
                         continue;
+                    }
 #ifdef CARLA_PROPER_CPP11_SUPPORT
                     static_assert(3 <= EngineMidiEvent::kDataSize, "Incorrect data");
 #endif
