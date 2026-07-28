@@ -733,12 +733,12 @@ bool CarlaJackAppClient::handleRtData()
         case kPluginBridgeRtClientMidiEvent: {
             const uint32_t time = fShmRtClientControl.readUInt();
             const uint8_t  port = fShmRtClientControl.readByte();
-            const uint8_t  size = fShmRtClientControl.readByte();
+            const uint16_t size = fShmRtClientControl.readUShort();
             CARLA_SAFE_ASSERT_BREAK(size > 0);
 
             if (port >= fServer.numMidiIns || size > JackMidiPortBufferBase::kMaxEventSize || ! fRealtimeThreadMutex.tryLock())
             {
-                for (uint8_t i=0; i<size; ++i)
+                for (uint16_t i=0; i<size; ++i)
                     fShmRtClientControl.readByte();
                 break;
             }
@@ -755,7 +755,7 @@ bool CarlaJackAppClient::handleRtData()
                 ev.buffer = midiPortBuf.bufferPool + midiPortBuf.bufferPoolPos;
                 midiPortBuf.bufferPoolPos += size;
 
-                for (uint8_t i=0; i<size; ++i)
+                for (uint16_t i=0; i<size; ++i)
                     ev.buffer[i] = fShmRtClientControl.readByte();
             }
 
