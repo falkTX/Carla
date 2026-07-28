@@ -1045,7 +1045,7 @@ public:
                     fShmRtClientControl.writeOpcode(kPluginBridgeRtClientMidiEvent);
                     fShmRtClientControl.writeUInt(0); // time
                     fShmRtClientControl.writeByte(0); // port
-                    fShmRtClientControl.writeByte(3); // size
+                    fShmRtClientControl.writeUShort(3); // size
                     fShmRtClientControl.writeByte(data1);
                     fShmRtClientControl.writeByte(data2);
                     fShmRtClientControl.writeByte(data3);
@@ -1131,7 +1131,7 @@ public:
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientMidiEvent);
                             fShmRtClientControl.writeUInt(event.time);
                             fShmRtClientControl.writeByte(0); // port
-                            fShmRtClientControl.writeByte(3); // size
+                            fShmRtClientControl.writeUShort(3); // size
                             fShmRtClientControl.writeByte(uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT)));
                             fShmRtClientControl.writeByte(uint8_t(ctrlEvent.param));
                             fShmRtClientControl.writeByte(uint8_t(ctrlEvent.normalizedValue*127.0f + 0.5f));
@@ -1194,7 +1194,7 @@ public:
                 case kEngineEventTypeMidi: {
                     const EngineMidiEvent& midiEvent(event.midi);
 
-                    if (midiEvent.size == 0 || midiEvent.size >= MAX_MIDI_VALUE)
+                    if (midiEvent.size == 0 || midiEvent.size > CARLA_PLUGIN_BRIDGE_MAX_MIDI_EVENT_SIZE)
                         continue;
 
                     const uint8_t* const midiData(midiEvent.size > EngineMidiEvent::kDataSize ? midiEvent.dataExt : midiEvent.data);
@@ -1219,11 +1219,11 @@ public:
                     fShmRtClientControl.writeOpcode(kPluginBridgeRtClientMidiEvent);
                     fShmRtClientControl.writeUInt(event.time);
                     fShmRtClientControl.writeByte(midiEvent.port);
-                    fShmRtClientControl.writeByte(midiEvent.size);
+                    fShmRtClientControl.writeUShort(midiEvent.size);
 
                     fShmRtClientControl.writeByte(uint8_t(midiData[0] | (event.channel & MIDI_CHANNEL_BIT)));
 
-                    for (uint8_t j=1; j < midiEvent.size; ++j)
+                    for (uint16_t j=1; j < midiEvent.size; ++j)
                         fShmRtClientControl.writeByte(midiData[j]);
 
                     fShmRtClientControl.commitWrite();

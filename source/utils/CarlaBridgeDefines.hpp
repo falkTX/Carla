@@ -24,7 +24,11 @@
 #define CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM 6
 
 // current API version, bumped when something is added
-#define CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT 10
+#define CARLA_PLUGIN_BRIDGE_API_VERSION_CURRENT 11
+
+// maximum size in bytes of a single raw MIDI event (e.g. a SysEx dump) sent over
+// kPluginBridgeRtClientMidiEvent; matches JackMidiPortBufferBase::kMaxEventSize
+#define CARLA_PLUGIN_BRIDGE_MAX_MIDI_EVENT_SIZE 4096
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -48,7 +52,7 @@ enum PluginBridgeRtClientOpcode {
     kPluginBridgeRtClientControlEventMidiProgram, // uint/frame, byte/chan, ushort
     kPluginBridgeRtClientControlEventAllSoundOff, // uint/frame, byte/chan
     kPluginBridgeRtClientControlEventAllNotesOff, // uint/frame, byte/chan
-    kPluginBridgeRtClientMidiEvent,               // uint/frame, byte/port, byte/size, byte[]/data
+    kPluginBridgeRtClientMidiEvent,               // uint/frame, byte/port, ushort/size, byte[]/data
     kPluginBridgeRtClientProcess,                 // uint/frames
     kPluginBridgeRtClientQuit
 };

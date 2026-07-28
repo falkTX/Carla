@@ -134,7 +134,8 @@ public:
           fIsOffline(false),
           fFirstIdle(true),
           fBridgeVersion(0),
-          fLastPingTime(UINT32_MAX)
+          fLastPingTime(UINT32_MAX),
+          fMidiInDataPoolPos(0)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
     }
@@ -1422,42 +1423,27 @@ protected:
                 case kPluginBridgeRtClientMidiEvent: {
                     const uint32_t time(fShmRtClientControl.readUInt());
                     const uint8_t  port(fShmRtClientControl.readByte());
-                    const uint8_t  size(fShmRtClientControl.readByte());
+                    const uint16_t size(fShmRtClientControl.readUShort());
                     CARLA_SAFE_ASSERT_BREAK(size > 0);
 
-                    // FIXME variable-size stack
-                    uint8_t data[4];
-
+                    if (size <= EngineMidiEvent::kDataSize)
                     {
-                        uint8_t i=0;
-                        for (; i<size && i<4; ++i)
+                        uint8_t data[EngineMidiEvent::kDataSize];
+
+                        for (uint16_t i=0; i<size; ++i)
                             data[i] = fShmRtClientControl.readByte();
-                        for (; i<size; ++i)
-                            fShmRtClientControl.readByte();
-                    }
 
-                    if (size > 4)
-                        continue;
-
-                    if (EngineEvent* const event = getNextFreeInputEvent())
-                    {
-                        event->type    = kEngineEventTypeMidi;
-                        event->time    = time;
-                        event->channel = MIDI_GET_CHANNEL_FROM_DATA(data);
-
-                        event->midi.port = port;
-                        event->midi.size = size;
-
-                        if (size > EngineMidiEvent::kDataSize)
+                        if (EngineEvent* const event = getNextFreeInputEvent())
                         {
-                            event->midi.dataExt = data;
-                            std::memset(event->midi.data, 0, sizeof(uint8_t)*EngineMidiEvent::kDataSize);
-                        }
-                        else
-                        {
+                            event->type    = kEngineEventTypeMidi;
+                            event->time    = time;
+                            event->channel = MIDI_GET_CHANNEL_FROM_DATA(data);
+
+                            event->midi.port = port;
+                            event->midi.size = size;
                             event->midi.data[0] = MIDI_GET_STATUS_FROM_DATA(data);
 
-                            uint8_t i=1;
+                            uint16_t i=1;
                             for (; i < size; ++i)
                                 event->midi.data[i] = data[i];
                             for (; i < EngineMidiEvent::kDataSize; ++i)
@@ -1465,6 +1451,34 @@ protected:
 
                             event->midi.dataExt = nullptr;
                         }
+                    }
+                    else if (fMidiInDataPoolPos + size <= sizeof(fMidiInDataPool))
+                    {
+                        // Backed by fMidiInDataPool (reset once per cycle above), which stays
+                        // valid until plugin->process() consumes these events later this cycle.
+                        uint8_t* const data = fMidiInDataPool + fMidiInDataPoolPos;
+                        fMidiInDataPoolPos += size;
+
+                        for (uint16_t i=0; i<size; ++i)
+                            data[i] = fShmRtClientControl.readByte();
+
+                        if (EngineEvent* const event = getNextFreeInputEvent())
+                        {
+                            event->type    = kEngineEventTypeMidi;
+                            event->time    = time;
+                            event->channel = MIDI_GET_CHANNEL_FROM_DATA(data);
+
+                            event->midi.port    = port;
+                            event->midi.size    = size;
+                            event->midi.dataExt = data;
+                            std::memset(event->midi.data, 0, sizeof(uint8_t)*EngineMidiEvent::kDataSize);
+                        }
+                    }
+                    else
+                    {
+                        // pool exhausted for this cycle, drop this event
+                        for (uint16_t i=0; i<size; ++i)
+                            fShmRtClientControl.readByte();
                     }
                     break;
                 }
@@ -1532,6 +1546,8 @@ protected:
 
                     if (pData->events.in[0].type != kEngineEventTypeNull)
                         carla_zeroStructs(pData->events.in, kMaxEngineEventInternalCount);
+
+                    fMidiInDataPoolPos = 0;
 
                     if (pData->events.out[0].type != kEngineEventTypeNull)
                     {
@@ -1675,6 +1691,13 @@ private:
     bool fFirstIdle;
     uint32_t fBridgeVersion;
     uint32_t fLastPingTime;
+
+    // Backing storage for incoming MIDI events bigger than EngineMidiEvent::kDataSize
+    // (e.g. SysEx), since EngineMidiEvent::dataExt needs a pointer that stays valid
+    // until the queued events are consumed by plugin->process() later this same cycle.
+    // Reset once per cycle, alongside pData->events.in.
+    uint8_t fMidiInDataPool[CARLA_PLUGIN_BRIDGE_MAX_MIDI_EVENT_SIZE * 4];
+    std::size_t fMidiInDataPoolPos;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineBridge)
 };

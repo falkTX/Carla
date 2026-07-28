@@ -64,9 +64,9 @@ struct JackClientState;
 struct JackServerState;
 
 struct JackMidiPortBufferBase {
-    static const uint8_t kMaxEventSize   = 128;
-    static const size_t  kMaxEventCount  = 512;
-    static const size_t  kBufferPoolSize = kMaxEventCount*8;
+    static const uint16_t kMaxEventSize   = CARLA_PLUGIN_BRIDGE_MAX_MIDI_EVENT_SIZE;
+    static const size_t   kMaxEventCount  = 512;
+    static const size_t   kBufferPoolSize = kMaxEventCount*8 + kMaxEventSize;
 
     bool isInput;
     bool isDummy;
