@@ -478,7 +478,7 @@ public:
         if (! test)
             return kFallbackJackEngineEvent;
 
-        CARLA_SAFE_ASSERT_RETURN(jackEvent.size < 0xFF /* uint8_t max */, kFallbackJackEngineEvent);
+        CARLA_SAFE_ASSERT_RETURN(jackEvent.size <= 0xFFFF /* uint16_t max, see EngineMidiEvent::size */, kFallbackJackEngineEvent);
 
         uint8_t port;
 
@@ -493,7 +493,7 @@ public:
         }
 
         fRetEvent.time = jackEvent.time;
-        fRetEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer, port);
+        fRetEvent.fillFromMidiData(static_cast<uint16_t>(jackEvent.size), jackEvent.buffer, port);
 
         return fRetEvent;
     }
@@ -3036,12 +3036,12 @@ protected:
                     if (! jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex))
                         continue;
 
-                    CARLA_SAFE_ASSERT_CONTINUE(jackEvent.size < 0xFF /* uint8_t max */);
+                    CARLA_SAFE_ASSERT_CONTINUE(jackEvent.size <= 0xFFFF /* uint16_t max, see EngineMidiEvent::size */);
 
                     EngineEvent& engineEvent(pData->events.in[engineEventIndex++]);
 
                     engineEvent.time = jackEvent.time;
-                    engineEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer, 0);
+                    engineEvent.fillFromMidiData(static_cast<uint16_t>(jackEvent.size), jackEvent.buffer, 0);
 
                     if (engineEventIndex >= kMaxEngineEventInternalCount)
                         break;
