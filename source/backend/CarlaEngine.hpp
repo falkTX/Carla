@@ -180,8 +180,8 @@ struct CARLA_API EngineControlEvent {
 struct CARLA_API EngineMidiEvent {
     static const uint8_t kDataSize = 4; //!< Size of internal data
 
-    uint8_t port; //!< Port offset (usually 0)
-    uint8_t size; //!< Number of bytes used
+    uint8_t  port; //!< Port offset (usually 0)
+    uint16_t size; //!< Number of bytes used (SysEx dumps can exceed 255 bytes)
 
     /*!
      * MIDI data, without channel bit.
@@ -210,7 +210,7 @@ struct CARLA_API EngineEvent {
     /*!
      * Fill this event from MIDI data.
      */
-    void fillFromMidiData(uint8_t size, const uint8_t* data, uint8_t midiPortOffset) noexcept;
+    void fillFromMidiData(uint16_t size, const uint8_t* data, uint8_t midiPortOffset) noexcept;
 };
 
 // -----------------------------------------------------------------------
