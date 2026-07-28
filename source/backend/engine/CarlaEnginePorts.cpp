@@ -274,7 +274,7 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
                 event.type                 = kEngineEventTypeControl;
                 event.ctrl.type            = kEngineControlEventTypeMidiBank;
                 event.ctrl.param           = data[2];
-                event.ctrl.midiValue       = -1;
+                event.ctrl.midiValue       = int8_t(data[1]); // MIDI_CONTROL_BANK_SELECT or __LSB, see EngineControlEvent::midiValue
                 event.ctrl.normalizedValue = 0.0f;
                 event.ctrl.handled         = true;
                 return true;

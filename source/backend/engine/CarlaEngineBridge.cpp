@@ -1350,6 +1350,7 @@ protected:
                 case kPluginBridgeRtClientControlEventMidiBank: {
                     const uint32_t time(fShmRtClientControl.readUInt());
                     const uint8_t  channel(fShmRtClientControl.readByte());
+                    const uint8_t  midiCtrl(fShmRtClientControl.readByte()); // MIDI_CONTROL_BANK_SELECT or __LSB
                     const uint16_t index(fShmRtClientControl.readUShort());
 
                     if (EngineEvent* const event = getNextFreeInputEvent())
@@ -1359,7 +1360,7 @@ protected:
                         event->channel              = channel;
                         event->ctrl.type            = kEngineControlEventTypeMidiBank;
                         event->ctrl.param           = index;
-                        event->ctrl.midiValue       = -1;
+                        event->ctrl.midiValue       = int8_t(midiCtrl); // see EngineControlEvent::midiValue
                         event->ctrl.normalizedValue = 0.0f;
                         event->ctrl.handled         = true;
                     }

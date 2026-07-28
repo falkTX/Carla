@@ -1612,27 +1612,25 @@ public:
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventMidiBank);
                             fShmRtClientControl.writeUInt(event.time);
                             fShmRtClientControl.writeByte(event.channel);
+                            fShmRtClientControl.writeByte(uint8_t(event.ctrl.midiValue == MIDI_CONTROL_BANK_SELECT__LSB
+                                                                 ? MIDI_CONTROL_BANK_SELECT__LSB
+                                                                 : MIDI_CONTROL_BANK_SELECT));
                             fShmRtClientControl.writeUShort(event.ctrl.param);
                             fShmRtClientControl.commitWrite();
                         }
                         else if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
                         {
-                            // VST2's that use banks usually require both a MSB bank message and a LSB bank message. The MSB bank message can just be 0
+                            // forward the same Bank Select CC (MSB or LSB) that was originally
+                            // received, instead of hardcoding MSB=0 and always sending a
+                            // synthesized pair; see EngineControlEvent::midiValue
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientMidiEvent);
                             fShmRtClientControl.writeUInt(event.time);
                             fShmRtClientControl.writeByte(0); // port
                             fShmRtClientControl.writeByte(3); // size
                             fShmRtClientControl.writeByte(uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT)));
-                            fShmRtClientControl.writeByte(MIDI_CONTROL_BANK_SELECT);
-                            fShmRtClientControl.writeByte(0);
-                            fShmRtClientControl.commitWrite();
-
-                            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientMidiEvent);
-                            fShmRtClientControl.writeUInt(event.time);
-                            fShmRtClientControl.writeByte(0); // port
-                            fShmRtClientControl.writeByte(3); // size
-                            fShmRtClientControl.writeByte(uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT)));
-                            fShmRtClientControl.writeByte(MIDI_CONTROL_BANK_SELECT__LSB);
+                            fShmRtClientControl.writeByte(event.ctrl.midiValue == MIDI_CONTROL_BANK_SELECT__LSB
+                                                         ? MIDI_CONTROL_BANK_SELECT__LSB
+                                                         : MIDI_CONTROL_BANK_SELECT);
                             fShmRtClientControl.writeByte(uint8_t(event.ctrl.param));
                             fShmRtClientControl.commitWrite();
                         }
