@@ -47,6 +47,10 @@ struct v3_event_data {
 	const uint8_t* bytes;
 };
 
+enum v3_event_data_type {
+	V3_DATA_MIDI_SYS_EX = 0
+};
+
 struct v3_event_poly_pressure {
 	int16_t channel;
 	int16_t pitch;
