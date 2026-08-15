@@ -32,10 +32,15 @@ namespace water {
 
 namespace MidiFileHelpers
 {
-    static bool parseMidiHeader (const uint8* &data, short& timeFormat, short& fileType, short& numberOfTracks) noexcept
+    static bool parseMidiHeader (const uint8* &data, size_t& remaining,
+                                 short& timeFormat, short& fileType, short& numberOfTracks) noexcept
     {
+        if (remaining < 4)
+            return false;
+
         unsigned int ch = ByteOrder::bigEndianInt (data);
         data += 4;
+        remaining -= 4;
 
         if (ch != ByteOrder::bigEndianInt ("MThd"))
         {
@@ -45,8 +50,12 @@ namespace MidiFileHelpers
             {
                 for (int i = 0; i < 8; ++i)
                 {
+                    if (remaining < 4)
+                        return false;
+
                     ch = ByteOrder::bigEndianInt (data);
                     data += 4;
+                    remaining -= 4;
 
                     if (ch == ByteOrder::bigEndianInt ("MThd"))
                     {
@@ -60,6 +69,9 @@ namespace MidiFileHelpers
                 return false;
         }
 
+        if (remaining < 10)
+            return false;
+
         unsigned int bytesRemaining = ByteOrder::bigEndianInt (data);
         data += 4;
         fileType = (short) ByteOrder::bigEndianShort (data);
@@ -68,8 +80,21 @@ namespace MidiFileHelpers
         data += 2;
         timeFormat = (short) ByteOrder::bigEndianShort (data);
         data += 2;
+        remaining -= 10;
+
+        // The header chunk length counts the six bytes just read and is read
+        // from the file, so it can be smaller than six (which would wrap the
+        // subtraction) or larger than the whole file.
+        if (bytesRemaining < 6)
+            return false;
+
         bytesRemaining -= 6;
+
+        if (bytesRemaining > remaining)
+            return false;
+
         data += bytesRemaining;
+        remaining -= bytesRemaining;
 
         return true;
     }
@@ -259,26 +284,27 @@ bool MidiFile::readFrom (InputStream& sourceStream)
         const uint8* d = static_cast<const uint8*> (data.getData());
         short fileType, expectedTracks;
 
-        if (size > 16 && MidiFileHelpers::parseMidiHeader (d, timeFormat, fileType, expectedTracks))
+        if (size > 16 && MidiFileHelpers::parseMidiHeader (d, size, timeFormat, fileType, expectedTracks))
         {
-            size -= (size_t) (d - static_cast<const uint8*> (data.getData()));
-
             int track = 0;
 
-            while (size > 0 && track < expectedTracks)
+            while (size >= 8 && track < expectedTracks)
             {
                 const int chunkType = (int) ByteOrder::bigEndianInt (d);
                 d += 4;
                 const int chunkSize = (int) ByteOrder::bigEndianInt (d);
                 d += 4;
+                size -= 8;
 
-                if (chunkSize <= 0)
+                // The chunk length is read from the file, so it may be
+                // negative or run past the end of what was actually read.
+                if (chunkSize <= 0 || (size_t) chunkSize > size)
                     break;
 
                 if (chunkType == (int) ByteOrder::bigEndianInt ("MTrk"))
                     readNextTrack (d, chunkSize);
 
-                size -= (size_t) chunkSize + 8;
+                size -= (size_t) chunkSize;
                 d += chunkSize;
                 ++track;
             }
