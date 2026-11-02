@@ -4444,7 +4444,10 @@ private:
         CARLA_SAFE_ASSERT_RETURN(pluginPtr != nullptr, 0);
 
         CarlaPluginPtr plugin = *pluginPtr;
-        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        // CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, 0); // See #2084
+        if (! plugin->isEnabled())
+            return 0;
 
         CarlaEngineJack* const engine((CarlaEngineJack*)plugin->getEngine());
         CARLA_SAFE_ASSERT_RETURN(engine != nullptr, 0);
@@ -4465,7 +4468,10 @@ private:
         CARLA_SAFE_ASSERT_RETURN(pluginPtr != nullptr, 0);
 
         CarlaPluginPtr plugin = *pluginPtr;
-        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        // CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, 0);
+        if (! plugin->isEnabled())
+            return 0;
 
         CarlaEngineJackClient* const engineClient((CarlaEngineJackClient*)plugin->getEngineClient());
         CARLA_SAFE_ASSERT_RETURN(engineClient != nullptr, 0);
@@ -4482,7 +4488,10 @@ private:
         CARLA_SAFE_ASSERT_RETURN(pluginPtr != nullptr, 0);
 
         CarlaPluginPtr plugin = *pluginPtr;
-        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        // CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, 0);
+        if (! plugin->isEnabled())
+            return 0;
 
         CarlaEngineJackClient* const engineClient((CarlaEngineJackClient*)plugin->getEngineClient());
         CARLA_SAFE_ASSERT_RETURN(engineClient != nullptr, 0);

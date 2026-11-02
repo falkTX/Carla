@@ -250,6 +250,34 @@ class ScalableDial(CommonDial):
     def grayGradBrush(self, painter, X, Y, a, b, gradPairs, alpha = 1.0):
         painter.setBrush(self.grayGrad(painter, X, Y, a, b, gradPairs, alpha))
 
+    # Neon lamp: pushbutton, or just light
+    def drawNeonLamp(self, painter, X, Y, W, S, S1, r1, r2, r3, normValue, coloredNeon):
+        def squareBorder(w, dw=0):
+            return QRectF(X-W-w-dw, Y-W-w, (W+w+dw)*2, (W+w)*2)
+
+        # bakelite button cap or lamp holder
+        self.grayGradPen(painter, X, Y, -45, -1)
+        self.grayGradBrush(painter, X-10, -40, 120, -2, {0.2, 50.2, 51.00, 100.00})
+        painter.drawRoundedRect(squareBorder(r1), 3, 3)
+
+        # neon lamp
+        if (normValue > 0):
+            grad = QRadialGradient(X, Y, r2)
+            for i in ({0.6, 20.6, 70.4, 100.0}):
+                if coloredNeon:
+                    grad.setColorAt(int(i)/100.0, QColor.fromHslF((0.05 - normValue) % 1.0, S, (i % 1.0), 1))
+                else:
+                    grad.setColorAt(int(i)/100.0, QColor.fromHslF(0.05, S1, (i % 1.0) * normValue, 1))
+
+            painter.setPen(QPen(Qt.NoPen))
+            painter.setBrush(grad)
+            painter.drawRoundedRect(squareBorder(r3), 1.5, 1.5)
+
+        # glass over neon lamp
+        self.grayGradPen(painter, X, Y, 135, -1)
+        self.grayGradBrush(painter, X-10, -40, 124, -2, {0.9, 50.9, 51.4, 100.4}, 0.25)
+        painter.drawRoundedRect(squareBorder(r3), 1.5, 1.5)
+
 
     # Replace Qt draw over substrate bitmap or svg to
     # all-in-one widget generated from stratch using Qt only,
@@ -520,28 +548,7 @@ class ScalableDial(CommonDial):
             painter.drawRoundedRect(squareBorder(-2, 4), 3, 3)
 
         elif skin == 4: # tube
-            # bakelite cap
-            self.grayGradPen(painter, X, Y, -45, -1)
-            self.grayGradBrush(painter, X-10, -40, 120, -2, {0.2, 50.2, 51.00, 100.00})
-            painter.drawRoundedRect(squareBorder(W*0.2), 3, 3)
-
-            # neon lamp
-            if (normValue > 0):
-                grad = QRadialGradient(X, Y, 10)
-                for i in ({0.6, 20.6, 70.4, 100.0}):
-                    if coloredNeon:
-                        grad.setColorAt(int(i)/100.0, QColor.fromHslF((0.05 - normValue) % 1.0, S, (i % 1.0), 1))
-                    else:
-                        grad.setColorAt(int(i)/100.0, QColor.fromHslF(0.05, S, (i % 1.0) * normValue, 1))
-
-                painter.setPen(QPen(Qt.NoPen))
-                painter.setBrush(grad)
-                painter.drawRoundedRect(squareBorder(-W*0.4), 1.5, 1.5)
-
-            # glass over neon lamp
-            self.grayGradPen(painter, X, Y, 135, -1)
-            self.grayGradBrush(painter, X-10, -40, 124, -2, {0.9, 50.9, 51.4, 100.4}, 0.25)
-            painter.drawRoundedRect(squareBorder(-W*0.4), 1.5, 1.5)
+            self.drawNeonLamp(painter, X, Y, W, S, S, W*0.2, 10, -W*0.4, normValue, coloredNeon)
 
         # draw active lights
         if skin == 0:  # internal
@@ -708,28 +715,20 @@ class ScalableDial(CommonDial):
         value = self.fRealValue
         hue = self.fHueA
 
-        # if self.fIsButton: # TODO make it separate paintLED
-        if (self.fIsInteger and (self.fMinimum == 0) and (self.fMaximum == 1)): # TODO
+        # TODO move it to 'carla_skin.py' to win some CPU.
+        coloredNeon = self.getTweak('ColoredNeon', 1) # But worse when HighContrast.
+        led3state   = self.getTweak('Led3Pos', 1)
+
+        # TODO make it separate self.fIsLed / paintLED, save the CPU!
+        if led3state:
+            isLed = (self.fIsInteger and (self.fMinimum == 0) and (self.fMaximum in (1, 2)))
+        else:
+            isLed = (self.fIsInteger and (self.fMinimum == 0) and (self.fMaximum == 1))
+
+        if (isLed): # TODO
             # Neon lamp
             if (self.fCustomPaintMode == 64): # tube
-                # bakelite lamp holder
-                self.grayGradPen(painter, X, Y, -45, -1)
-                self.grayGradBrush(painter, X-10, -40, 120, -2, {0.2, 50.2, 51.00, 100.00})
-                painter.drawRoundedRect(squareBorder(-W*0.45), 3, 3)
-
-                # neon lamp
-                if (normValue > 0):
-                    grad = QRadialGradient(X, Y, 13)
-                    for i in ({0.6, 20.6, 70.4, 100.0}):
-                        grad.setColorAt(int(i)/100.0, QColor.fromHslF(0.05, 1.0, (i % 1.0) * normValue, 1))
-                    painter.setPen(QPen(Qt.NoPen))
-                    painter.setBrush(grad)
-                    painter.drawRoundedRect(squareBorder(-W*0.6), 1.5, 1.5)
-
-                # glass over neon lamp
-                self.grayGradPen(painter, X, Y, 135, -1)
-                self.grayGradBrush(painter, X-10, -40, 124, -2, {0.9, 50.9, 51.4, 100.4}, 0.25)
-                painter.drawRoundedRect(squareBorder(-W*0.6), 1.5, 1.5)
+                self.drawNeonLamp(painter, X, Y, W, S, 1.0, -W*0.45, 13, -W*0.6, normValue, coloredNeon)
                 return
 
             painter.setPen(QPen(QColor.fromHslF(0, 0, 0.3-0.15*normValue+E, 1), 1.5))
