@@ -632,8 +632,8 @@ class ScalableDial(CommonDial):
                  "OTRZP]",                      # .
                  "KYNZNOTOVPVTTUNU",            # p
                  "KYNXNOTOVRVX",                # n
-                 "KYNZOZPYPO RPVQWTWUVUO RUVVW",# u, micro
-                 "KYNXNOPORPRX RROUOVPVX",      # m
+                 "JZNZOZPYPO RPVSWUWVVVO RVVXW",# u, micro
+                 "I[LXLOPORPRX RROVOXPXX",      # m
                  "KYNNNX RVPNTVX",              # k
                  "KYNXNLRRVLVX",                # M
                  "KYRRVRVVTXPXNVNNPLTLVN",      # G
