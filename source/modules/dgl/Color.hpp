@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -114,6 +114,17 @@ struct Color {
       Create a color from a HTML string like "#333" or "#112233".
     */
     static Color fromHTML(const char* rgb, float alpha = 1.0f) noexcept;
+
+   /**
+      Create a color from a RGB unsigned integer.
+      Basically doing:
+      ```
+      uint8_t red   = (color >> 24) & 0xff;
+      uint8_t green = (color >> 16) & 0xff;
+      uint8_t blue  = (color >>  8) & 0xff;
+      ```
+    */
+    static Color fromRGB(uint color, float alpha = 1.0f) noexcept;
 
    /**
       Linearly interpolate this color against another.

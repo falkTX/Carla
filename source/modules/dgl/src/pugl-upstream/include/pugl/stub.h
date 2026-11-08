@@ -4,15 +4,15 @@
 #ifndef PUGL_STUB_H
 #define PUGL_STUB_H
 
-#include "pugl/attributes.h"
-#include "pugl/pugl.h"
+#include <pugl/attributes.h>
+#include <pugl/pugl.h>
 
 PUGL_BEGIN_DECLS
 
 /**
    @defgroup pugl_stub Stub
    Native graphics support.
-   @ingroup pugl
+   @ingroup pugl_backend
    @{
 */
 
@@ -22,8 +22,7 @@ PUGL_BEGIN_DECLS
    This backend just creates a simple native window without setting up any
    portable graphics API.
 */
-PUGL_CONST_API
-const PuglBackend*
+PUGL_CONST_API const PuglBackend*
 puglStubBackend(void);
 
 /**

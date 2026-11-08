@@ -185,7 +185,7 @@ class CommonDial(QWidget):
         elif (not self.fIsOutput) and value >= self.fMaximum:
             self.fRealValue = self.fMaximum
 
-        elif self.fIsInteger or (abs(value - int(value)) < 1e-8): # tiny "notch"
+        elif self.fIsInteger:  # or (abs(value - int(value)) < 1e-8): # tiny "notch"
             self.fRealValue = round(value)
 
         else:

@@ -8,7 +8,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 #include "water/files/File.h"
 
 static const char* const kPathForCarlaFiles = "carlafiles";

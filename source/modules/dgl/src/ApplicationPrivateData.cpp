@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -53,13 +53,14 @@ const char* Application::getClassName() const noexcept
 
 // --------------------------------------------------------------------------------------------------------------------
 
-Application::PrivateData::PrivateData(const bool standalone)
+Application::PrivateData::PrivateData(const bool standalone, const Type type)
     : world(puglNewWorld(standalone ? PUGL_PROGRAM : PUGL_MODULE,
-                         standalone ? PUGL_WORLD_THREADS : 0x0)),
+                         (standalone ? PUGL_WORLD_THREADS : 0))),
+      isModern(false),
       isStandalone(standalone),
+      isStarting(true),
       isQuitting(false),
       isQuittingInNextCycle(false),
-      isStarting(true),
       needsRepaint(false),
       visibleWindows(0),
       mainThreadHandle(getCurrentThreadHandle()),
@@ -68,16 +69,11 @@ Application::PrivateData::PrivateData(const bool standalone)
 {
     DISTRHO_SAFE_ASSERT_RETURN(world != nullptr,);
 
-  #ifdef DGL_USING_SDL
-    SDL_Init(SDL_INIT_EVENTS|SDL_INIT_TIMER|SDL_INIT_VIDEO);
-  #else
-    puglSetWorldHandle(world, this);
    #ifdef __EMSCRIPTEN__
     puglSetWorldString(world, PUGL_CLASS_NAME, "canvas");
    #else
     puglSetWorldString(world, PUGL_CLASS_NAME, DISTRHO_MACRO_AS_STRING(DGL_NAMESPACE));
    #endif
-  #endif
 }
 
 Application::PrivateData::~PrivateData()
@@ -88,12 +84,8 @@ Application::PrivateData::~PrivateData()
     windows.clear();
     idleCallbacks.clear();
 
-   #ifdef DGL_USING_SDL
-    SDL_Quit();
-   #else
     if (world != nullptr)
         puglFreeWorld(world);
-   #endif
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -173,13 +165,11 @@ void Application::PrivateData::quit()
 
     isQuitting = true;
 
-   #ifndef DPF_TEST_APPLICATION_CPP
     for (WindowListReverseIterator rit = windows.rbegin(), rite = windows.rend(); rit != rite; ++rit)
     {
         DGL_NAMESPACE::Window* const window(*rit);
         window->close();
     }
-   #endif
 }
 
 double Application::PrivateData::getTime() const

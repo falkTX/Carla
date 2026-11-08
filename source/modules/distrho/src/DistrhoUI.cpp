@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2026 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -180,7 +180,7 @@ PluginWindow& UI::PrivateData::createNextWindow(UI* const ui, uint width, uint h
     UI::PrivateData* const uiData = s_nextPrivateData;
     const double scaleFactor = d_isNotZero(uiData->scaleFactor) ? uiData->scaleFactor : getDesktopScaleFactor(uiData->winId);
 
-    if (d_isNotZero(scaleFactor) && d_isNotEqual(scaleFactor, 1.0))
+    if (d_isNotEqual(scaleFactor, 1.0))
     {
         width *= scaleFactor;
         height *= scaleFactor;
@@ -322,6 +322,35 @@ void UI::PrivateData::webViewMessageCallback(void* const arg, char* const msg)
 /* ------------------------------------------------------------------------------------------------------------
  * UI */
 
+UI::UI(const uint width, const uint height, const InternalScalingMode internalScalingMode)
+    : UIWidget(UI::PrivateData::createNextWindow(this,
+               // width
+              #ifdef DISTRHO_UI_DEFAULT_WIDTH
+               width == 0 ? DISTRHO_UI_DEFAULT_WIDTH :
+              #endif
+               width,
+               // height
+              #ifdef DISTRHO_UI_DEFAULT_HEIGHT
+               height == 0 ? DISTRHO_UI_DEFAULT_HEIGHT :
+              #endif
+               height
+               )),
+      uiData(UI::PrivateData::s_nextPrivateData)
+{
+    if (width != 0 && height != 0)
+    {
+        if (internalScalingMode == kInternalScalingMatchingHost)
+        {
+            d_stdout("enableInternalScalingWithSize %u %u", width, height);
+            getWindow().enableInternalScalingWithSize(width, height, true);
+            return;
+        }
+    }
+
+    Widget::setSize(getWindow().getSize());
+}
+
+#if DGL_ALLOW_DEPRECATED_METHODS
 UI::UI(const uint width, const uint height, const bool automaticallyScaleAndSetAsMinimumSize)
     : UIWidget(UI::PrivateData::createNextWindow(this,
                // width
@@ -342,7 +371,26 @@ UI::UI(const uint width, const uint height, const bool automaticallyScaleAndSetA
         Widget::setSize(width, height);
 
         if (automaticallyScaleAndSetAsMinimumSize)
-            setGeometryConstraints(width, height, true, true, true);
+        {
+           #if defined(_MSC_VER)
+            #pragma warning(push)
+            #pragma warning(disable:4996)
+           #elif defined(__clang__)
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+           #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+           #endif
+            setGeometryConstraints(width, height, true, true, false);
+           #if defined(_MSC_VER)
+            #pragma warning(pop)
+           #elif defined(__clang__)
+            #pragma clang diagnostic pop
+           #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+            #pragma GCC diagnostic pop
+           #endif
+        }
     }
    #ifdef DISTRHO_UI_DEFAULT_WIDTH
     else
@@ -351,6 +399,7 @@ UI::UI(const uint width, const uint height, const bool automaticallyScaleAndSetA
     }
    #endif
 }
+#endif
 
 UI::~UI()
 {
@@ -560,11 +609,11 @@ void UI::uiFocus(bool, DGL_NAMESPACE::CrossingMode)
 {
 }
 
-void UI::uiReshape(const uint width, const uint height)
+#if DGL_ALLOW_DEPRECATED_METHODS
+void UI::uiReshape(uint, uint)
 {
-    // NOTE this must be the same as Window::onReshape
-    pData->fallbackOnResize(width, height);
 }
+#endif
 
 #if DISTRHO_UI_FILE_BROWSER
 void UI::uiFileBrowserSelected(const char*)

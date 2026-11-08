@@ -28,7 +28,7 @@
 # define CARLA_CAN_USE_LOG_THREAD
 # include "CarlaLogThread.hpp"
 #else
-# include "distrho/extra/String.hpp"
+# include "extra/String.hpp"
 #endif
 
 namespace CB = CARLA_BACKEND_NAMESPACE;

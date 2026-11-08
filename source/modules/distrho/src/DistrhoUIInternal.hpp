@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -21,18 +21,18 @@
 
 START_NAMESPACE_DISTRHO
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // UI exporter class
 
 class UIExporter
 {
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // UI Widget and its private data
 
     UI* ui;
     UI::PrivateData* uiData;
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
 public:
     UIExporter(void* const callbacksPtr,
@@ -47,11 +47,12 @@ public:
                const char* const bundlePath = nullptr,
                void* const dspPtr = nullptr,
                const double scaleFactor = 0.0,
+               const DGL_NAMESPACE::Application::Type appType = DGL_NAMESPACE::Application::kTypeAuto,
                const uint32_t bgColor = 0,
                const uint32_t fgColor = 0xffffffff,
                const char* const appClassName = nullptr)
         : ui(nullptr),
-          uiData(new UI::PrivateData(appClassName))
+          uiData(new UI::PrivateData(appClassName, appType))
     {
         uiData->sampleRate = sampleRate;
         uiData->bundlePath = bundlePath != nullptr ? strdup(bundlePath) : nullptr;

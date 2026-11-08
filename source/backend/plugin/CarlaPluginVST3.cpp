@@ -2319,6 +2319,8 @@ public:
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
             pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
+            if (v3_cpp_obj(fV3.view)->can_resize(fV3.view) == V3_TRUE)
+                pData->hints |= PLUGIN_HAS_CUSTOM_RESIZABLE_UI;
         }
        #endif
 

@@ -2249,14 +2249,19 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 
     pData->time.updateAudioValues(newBufferSize, pData->sampleRate);
 
-    for (uint i=0; i < pData->curPluginCount; ++i)
+#ifndef BUILD_BRIDGE
+    if (pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+#endif
     {
-        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
+        for (uint i=0; i < pData->curPluginCount; ++i)
         {
-            if (plugin->isEnabled() && plugin->tryLock(true))
+            if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
             {
-                plugin->bufferSizeChanged(newBufferSize);
-                plugin->unlock();
+                if (plugin->isEnabled() && plugin->tryLock(true))
+                {
+                    plugin->bufferSizeChanged(newBufferSize);
+                    plugin->unlock();
+                }
             }
         }
     }
@@ -2278,14 +2283,19 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 
     pData->time.updateAudioValues(pData->bufferSize, newSampleRate);
 
-    for (uint i=0; i < pData->curPluginCount; ++i)
+#ifndef BUILD_BRIDGE
+    if (pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+#endif
     {
-        if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
+        for (uint i=0; i < pData->curPluginCount; ++i)
         {
-            if (plugin->isEnabled() && plugin->tryLock(true))
+            if (const CarlaPluginPtr plugin = pData->plugins[i].plugin)
             {
-                plugin->sampleRateChanged(newSampleRate);
-                plugin->unlock();
+                if (plugin->isEnabled() && plugin->tryLock(true))
+                {
+                    plugin->sampleRateChanged(newSampleRate);
+                    plugin->unlock();
+                }
             }
         }
     }

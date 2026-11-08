@@ -5,8 +5,8 @@
 #include "types.h"
 #include "x11.h"
 
-#include "pugl/cairo.h"
-#include "pugl/pugl.h"
+#include <pugl/cairo.h>
+#include <pugl/pugl.h>
 
 #include <cairo-xlib.h>
 #include <cairo.h>
@@ -19,10 +19,10 @@ typedef struct {
   cairo_t*         cr;
 } PuglX11CairoSurface;
 
-static PuglViewSize
+static PuglArea
 puglX11CairoGetViewSize(const PuglView* const view)
 {
-  PuglViewSize size = {0U, 0U};
+  PuglArea size = {0U, 0U};
 
   if (view->lastConfigure.type == PUGL_CONFIGURE) {
     // Use the size of the last configured frame
@@ -97,11 +97,11 @@ puglX11CairoEnter(PuglView* view, const PuglExposeEvent* expose)
   PuglStatus                 st      = PUGL_SUCCESS;
 
   if (expose) {
-    const PuglViewSize viewSize      = puglX11CairoGetViewSize(view);
-    const PuglSpan     right         = (PuglSpan)(expose->x + expose->width);
-    const PuglSpan     bottom        = (PuglSpan)(expose->y + expose->height);
-    const PuglSpan     surfaceWidth  = MAX(right, viewSize.width);
-    const PuglSpan     surfaceHeight = MAX(bottom, viewSize.height);
+    const PuglArea viewSize      = puglX11CairoGetViewSize(view);
+    const PuglSpan right         = (PuglSpan)(expose->x + expose->width);
+    const PuglSpan bottom        = (PuglSpan)(expose->y + expose->height);
+    const PuglSpan surfaceWidth  = MAX(right, viewSize.width);
+    const PuglSpan surfaceHeight = MAX(bottom, viewSize.height);
     if (!(st = puglX11CairoOpen(view, surfaceWidth, surfaceHeight))) {
       surface->cr = cairo_create(surface->front);
       if (cairo_status(surface->cr)) {

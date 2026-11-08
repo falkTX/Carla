@@ -53,6 +53,12 @@
 
 #ifdef DISTRHO_OS_MAC
 # ifdef DGL_USE_OPENGL3
+// NOTE GLES with macOS is not supported
+#  ifdef DGL_USE_GLES
+#   undef DGL_USE_GLES
+#   undef DGL_USE_GLES2
+#   undef DGL_USE_GLES3
+#  endif
 #  include <OpenGL/gl3.h>
 #  include <OpenGL/gl3ext.h>
 # else

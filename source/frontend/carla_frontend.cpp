@@ -25,7 +25,7 @@ void carla_frontend_createAndExecAboutDialog(QWidget* const parent,
 // jackappdialog
 
 #include "dialogs/jackappdialog.hpp"
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 
 const JackAppDialogResults*
 carla_frontend_createAndExecJackAppDialog(QWidget* const parent, const char* const projectFilename)

@@ -108,13 +108,6 @@ struct ButtonEventHandler::PrivateData {
         if (! enabledInput)
             return false;
 
-        // keep pressed
-        if (button != -1)
-        {
-            lastMotionPos = ev.pos;
-            return true;
-        }
-
         bool ret = false;
 
         if (widget->contains(ev.pos))
@@ -143,7 +136,7 @@ struct ButtonEventHandler::PrivateData {
         }
 
         lastMotionPos = ev.pos;
-        return ret;
+        return ret || button != -1;
     }
 
     void setActive(const bool active2, const bool sendCallback) noexcept

@@ -6,7 +6,7 @@
 #include "CarlaThread.hpp"
 #include "CarlaJuceUtils.hpp"
 
-#include "distrho/extra/Time.hpp"
+#include "extra/Time.hpp"
 
 #include <signal.h>
 #include <sys/time.h>

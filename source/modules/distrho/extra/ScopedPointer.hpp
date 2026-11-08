@@ -173,6 +173,11 @@ public:
     ObjectType* operator->() const noexcept { return object; }
 
     //==============================================================================
+    /** Removes the current object from this ScopedPointer and deletes it.
+    */
+    void reset() noexcept                   { ObjectType* const o = object; object = nullptr; delete o; }
+
+    //==============================================================================
     /** Removes the current object from this ScopedPointer without deleting it.
         This will return the current object, and set the ScopedPointer to a null pointer.
     */

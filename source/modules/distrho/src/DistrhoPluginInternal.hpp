@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2024 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2026 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -352,8 +352,43 @@ public:
         }
 #endif // DISTRHO_PLUGIN_NUM_INPUTS+DISTRHO_PLUGIN_NUM_OUTPUTS > 0
 
+       #ifdef DPF_RUNTIME_TESTING
+        uint32_t parameterDesignationBypass = UINT32_MAX;
+        uint32_t parameterDesignationReset = UINT32_MAX;
+       #endif
+
         for (uint32_t i=0, count=fData->parameterCount; i < count; ++i)
+        {
             fPlugin->initParameter(i, fData->parameters[i]);
+
+           #ifdef DPF_RUNTIME_TESTING
+            switch (fData->parameters[i].designation)
+            {
+            case kParameterDesignationNull:
+                break;
+            case kParameterDesignationBypass:
+                if (parameterDesignationBypass != UINT32_MAX)
+                {
+                    d_stderr2("DPF warning: Bypass parameter designation used more than once");
+                    abort();
+                }
+                parameterDesignationBypass = i;
+                break;
+            case kParameterDesignationReset:
+                if (parameterDesignationReset != UINT32_MAX)
+                {
+                    d_stderr2("DPF warning: Reset parameter designation used more than once");
+                    abort();
+                }
+                parameterDesignationReset = i;
+                break;
+            default:
+                d_stderr2("DPF warning: Invalid parameter designation %d (for index %u)", fData->parameters[i].designation, i);
+                abort();
+                break;
+            }
+           #endif
+        }
 
         {
             std::set<uint32_t> portGroupIndices;

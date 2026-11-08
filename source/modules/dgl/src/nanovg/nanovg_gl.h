@@ -173,7 +173,7 @@ struct GLNVGtexture {
 	int width, height;
 	int type;
 	int flags;
-#if defined NANOVG_GLES2
+#if defined(NANOVG_GLES2) || defined(NANOVG_GLES3)
 	unsigned char* data;
 #endif
 };
@@ -813,10 +813,10 @@ static int glnvg__renderCreateTexture(void* uptr, int type, int w, int h, int im
 	switch (type)
 	{
 	case NVG_TEXTURE_BGR:
-#if NANOVG_GLES2
-		// GLES2 cannot handle GL_BGR, do local conversion to GL_RGB
+#if defined(NANOVG_GLES2) || defined(NANOVG_GLES3)
+		// GLES cannot handle GL_BGR, do local conversion to GL_RGB
 		tex->data = (uint8_t*)malloc(sizeof(uint8_t) * 3 * w * h);
-		for (uint32_t i=0; i<w*h; ++i)
+		for (int i = 0; i < w * h; ++i)
 		{
 			tex->data[i*3+0] = data[i*3+2];
 			tex->data[i*3+1] = data[i*3+1];
@@ -829,34 +829,34 @@ static int glnvg__renderCreateTexture(void* uptr, int type, int w, int h, int im
 #endif
 		break;
 	case NVG_TEXTURE_BGRA:
-#if NANOVG_GLES2
-		// GLES2 cannot handle GL_BGRA, do local conversion to GL_RGBA
+#if defined(NANOVG_GLES2) || defined(NANOVG_GLES3)
+		// GLES cannot handle GL_BGRA, do local conversion to GL_RGBA
 		tex->data = (uint8_t*)malloc(sizeof(uint8_t) * 4 * w * h);
-		for (uint32_t i=0; i<w*h; ++i)
+		for (int i = 0; i < w * h; ++i)
 		{
-			tex->data[i*3+0] = data[i*3+3];
-			tex->data[i*3+1] = data[i*3+2];
-			tex->data[i*3+2] = data[i*3+1];
-			tex->data[i*3+3] = data[i*3+0];
+			tex->data[i*4+0] = data[i*4+2];
+			tex->data[i*4+1] = data[i*4+1];
+			tex->data[i*4+2] = data[i*4+0];
+			tex->data[i*4+3] = data[i*4+3];
 		}
 		data = tex->data;
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 #else
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
 #endif
 		break;
 	case NVG_TEXTURE_RGB:
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		break;
 	case NVG_TEXTURE_RGBA:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		break;
 	default:
-#if defined(NANOVG_GLES2) || defined (NANOVG_GL2)
+#if defined(NANOVG_GL2) || defined(NANOVG_GLES2)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
-#elif defined(NANOVG_GLES3)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, data);
 #else
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, data);
 #endif
 		break;
@@ -960,19 +960,23 @@ static int glnvg__renderUpdateTexture(void* uptr, int image, int x, int y, int w
 	switch (tex->type)
 	{
 	case NVG_TEXTURE_BGR:
+#if !(defined(NANOVG_GLES2) || defined(NANOVG_GLES3))
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x,y, w,h, GL_BGR, GL_UNSIGNED_BYTE, data);
 		break;
-	case NVG_TEXTURE_BGRA:
-		glTexSubImage2D(GL_TEXTURE_2D, 0, x,y, w,h, GL_BGRA, GL_UNSIGNED_BYTE, data);
-		break;
+#endif
 	case NVG_TEXTURE_RGB:
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x,y, w,h, GL_RGB, GL_UNSIGNED_BYTE, data);
 		break;
+	case NVG_TEXTURE_BGRA:
+#if !(defined(NANOVG_GLES2) || defined(NANOVG_GLES3))
+		glTexSubImage2D(GL_TEXTURE_2D, 0, x,y, w,h, GL_BGRA, GL_UNSIGNED_BYTE, data);
+		break;
+#endif
 	case NVG_TEXTURE_RGBA:
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x,y, w,h, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		break;
 	default:
-#if defined(NANOVG_GLES2) || defined(NANOVG_GL2)
+#if defined(NANOVG_GL2) || defined(NANOVG_GLES2)
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x,y, w,h, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
 #else
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x,y, w,h, GL_RED, GL_UNSIGNED_BYTE, data);

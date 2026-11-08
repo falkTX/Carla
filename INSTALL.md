@@ -27,7 +27,7 @@ $ make install PREFIX=/usr DESTDIR=./test-dir
 
 There are no required build dependencies. The default build is probably not what you want though.
 
-If you want the frontend (which is likely), you will need PyQt5 (python3 version).
+If you want the frontend (which is likely), you will need PyQt5 or PyQt6 (python3 version).
 
 You likely will also want:
 
@@ -63,11 +63,18 @@ $ make features
 To find out which dependencies are missing.
 
 
-Under Debian based systems, you can use this command to install everything:
+Under Debian based systems, you can use this command to install everything with Qt5 packages:
 ```
 sudo apt install python3-pyqt5.qtsvg python3-rdflib pyqt5-dev-tools \
   libmagic-dev liblo-dev libasound2-dev libpulse-dev libx11-dev libxcursor-dev libxext-dev \
   qtbase5-dev libfluidsynth-dev
+```
+
+Under Debian based systems, you can alternatively install everything with Qt6 packages:
+```
+sudo apt install python3-pyqt6.qtsvg python3-rdflib pyqt6-dev-tools \
+  libmagic-dev liblo-dev libasound2-dev libpulse-dev libx11-dev libxcursor-dev libxext-dev \
+  qt6-base-dev libfluidsynth-dev
 ```
 
 Under Fedora, you can use the following command instead:

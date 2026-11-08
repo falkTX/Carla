@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -240,6 +240,14 @@ Color Color::fromHTML(const char* rgb, const float alpha) noexcept
     }
 
     return Color(r, g, b, alpha);
+}
+
+Color Color::fromRGB(const uint color, const float alpha) noexcept
+{
+    return Color(static_cast<int>(color >> 24) & 0xff,
+                 static_cast<int>(color >> 16) & 0xff,
+                 static_cast<int>(color >>  8) & 0xff,
+                 alpha);
 }
 
 void Color::interpolate(const Color& other, float u) noexcept

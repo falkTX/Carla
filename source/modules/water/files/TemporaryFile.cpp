@@ -26,7 +26,7 @@
 #include "TemporaryFile.h"
 #include "../maths/Random.h"
 
-#include "distrho/extra/Sleep.hpp"
+#include "extra/Sleep.hpp"
 
 namespace water {
 

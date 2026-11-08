@@ -34,10 +34,22 @@ else
 NON_STATIC_LINK_FLAGS = $(LINK_FLAGS)
 endif
 
+ifeq ($(STATIC_PLUGIN_TARGET),true)
+
+ifeq ($(WINDOWS),true)
+QT_LINK_FLAGS += -L$(BINDIR) $(BINDIR)/libcarla_utils.dll
+else
+QT_LINK_FLAGS += -L$(BINDIR) -lcarla_utils
+endif
+
+else
+
 ifeq ($(WINDOWS),true)
 QT_LINK_FLAGS += -L$(BINDIR) $(BINDIR)/libcarla_standalone2.dll $(BINDIR)/libcarla_utils.dll
 else
 QT_LINK_FLAGS += -L$(BINDIR) -lcarla_standalone2 -lcarla_utils
+endif
+
 endif
 
 ifeq ($(MACOS),true)

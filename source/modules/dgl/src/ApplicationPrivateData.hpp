@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -51,17 +51,20 @@ struct Application::PrivateData {
     /** Pugl world instance. */
     PuglWorld* const world;
 
+    /** Whether the applicating uses modern backend, otherwise classic. */
+    const bool isModern;
+
     /** Whether the application is running as standalone, otherwise it is part of a plugin. */
     const bool isStandalone;
+
+    /** Whether the applicating is starting up, that is, no windows have been made visible yet. Defaults to true. */
+    bool isStarting;
 
     /** Whether the applicating is about to quit, or already stopped. Defaults to false. */
     bool isQuitting;
 
     /** Helper for safely close everything from main thread. */
     bool isQuittingInNextCycle;
-
-    /** Whether the applicating is starting up, that is, no windows have been made visible yet. Defaults to true. */
-    bool isStarting;
 
     /** When true force all windows to be repainted on next idle. */
     bool needsRepaint;
@@ -80,7 +83,7 @@ struct Application::PrivateData {
     std::list<DGL_NAMESPACE::IdleCallback*> idleCallbacks;
 
     /** Constructor and destructor */
-    explicit PrivateData(bool standalone);
+    explicit PrivateData(bool standalone, Type type);
     ~PrivateData();
 
     /** Flag one window as shown, which increments @a visibleWindows.

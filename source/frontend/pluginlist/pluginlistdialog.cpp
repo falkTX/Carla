@@ -32,7 +32,7 @@
 #include "CarlaJuceUtils.hpp"
 #include "CarlaUtils.h"
 
-#include "distrho/extra/ScopedPointer.hpp"
+#include "extra/ScopedPointer.hpp"
 
 #include <cstdlib>
 

@@ -4,13 +4,11 @@
 // Common implementations of public API functions in the core library
 
 #include "internal.h"
-
 #include "platform.h"
 #include "types.h"
 
-#include "pugl/pugl.h"
+#include <pugl/pugl.h>
 
-#include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -27,6 +25,7 @@ puglStrerror(const PuglStatus status)
   case PUGL_BAD_BACKEND:           return "Invalid or missing backend";
   case PUGL_BAD_CONFIGURATION:     return "Invalid view configuration";
   case PUGL_BAD_PARAMETER:         return "Invalid parameter";
+  case PUGL_BAD_CALL:              return "Invalid call";
   case PUGL_BACKEND_FAILED:        return "Backend initialisation failed";
   case PUGL_REGISTRATION_FAILED:   return "Class registration failed";
   case PUGL_REALIZE_FAILED:        return "View creation failed";
@@ -44,15 +43,14 @@ PuglWorld*
 puglNewWorld(PuglWorldType type, PuglWorldFlags flags)
 {
   PuglWorld* world = (PuglWorld*)calloc(1, sizeof(PuglWorld));
-  if (!world || !(world->impl = puglInitWorldInternals(type, flags))) {
+  if (!world || !(world->impl = puglInitWorldInternals(type, flags)) ||
+      puglSetString(&world->strings[PUGL_CLASS_NAME], "Pugl")) {
     free(world);
     return NULL;
   }
 
   world->startTime = puglGetTime(world);
   world->type      = type;
-
-  puglSetString(&world->strings[PUGL_CLASS_NAME], "Pugl");
 
   return world;
 }
@@ -71,12 +69,12 @@ puglFreeWorld(PuglWorld* const world)
 }
 
 void
-puglSetWorldHandle(PuglWorld* world, PuglWorldHandle handle)
+puglSetWorldHandle(PuglWorld* const world, void* const handle)
 {
   world->handle = handle;
 }
 
-PuglWorldHandle
+void*
 puglGetWorldHandle(PuglWorld* world)
 {
   return world->handle;
@@ -91,8 +89,7 @@ puglSetWorldString(PuglWorld* const     world,
     return PUGL_BAD_PARAMETER;
   }
 
-  puglSetString(&world->strings[key], value);
-  return PUGL_SUCCESS;
+  return puglSetString(&world->strings[key], value);
 }
 
 const char*
@@ -106,27 +103,37 @@ puglGetWorldString(const PuglWorld* const world, const PuglStringHint key)
 }
 
 static void
-puglSetDefaultHints(PuglHints hints)
+puglSetDefaultHints(PuglView* const view)
 {
-  hints[PUGL_CONTEXT_API]           = PUGL_OPENGL_API;
-  hints[PUGL_CONTEXT_VERSION_MAJOR] = 2;
-  hints[PUGL_CONTEXT_VERSION_MINOR] = 0;
-  hints[PUGL_CONTEXT_PROFILE]       = PUGL_OPENGL_CORE_PROFILE;
-  hints[PUGL_CONTEXT_DEBUG]         = PUGL_FALSE;
-  hints[PUGL_RED_BITS]              = 8;
-  hints[PUGL_GREEN_BITS]            = 8;
-  hints[PUGL_BLUE_BITS]             = 8;
-  hints[PUGL_ALPHA_BITS]            = 8;
-  hints[PUGL_DEPTH_BITS]            = 0;
-  hints[PUGL_STENCIL_BITS]          = 0;
-  hints[PUGL_SAMPLE_BUFFERS]        = PUGL_DONT_CARE;
-  hints[PUGL_SAMPLES]               = 0;
-  hints[PUGL_DOUBLE_BUFFER]         = PUGL_TRUE;
-  hints[PUGL_SWAP_INTERVAL]         = PUGL_DONT_CARE;
-  hints[PUGL_RESIZABLE]             = PUGL_FALSE;
-  hints[PUGL_IGNORE_KEY_REPEAT]     = PUGL_FALSE;
-  hints[PUGL_REFRESH_RATE]          = PUGL_DONT_CARE;
-  hints[PUGL_VIEW_TYPE]             = PUGL_DONT_CARE;
+  view->hints[PUGL_CONTEXT_API]           = PUGL_OPENGL_API;
+  view->hints[PUGL_CONTEXT_VERSION_MAJOR] = 2;
+  view->hints[PUGL_CONTEXT_VERSION_MINOR] = 0;
+  view->hints[PUGL_CONTEXT_PROFILE]       = PUGL_OPENGL_CORE_PROFILE;
+  view->hints[PUGL_CONTEXT_DEBUG]         = PUGL_FALSE;
+  view->hints[PUGL_RED_BITS]              = 8;
+  view->hints[PUGL_GREEN_BITS]            = 8;
+  view->hints[PUGL_BLUE_BITS]             = 8;
+  view->hints[PUGL_ALPHA_BITS]            = 8;
+  view->hints[PUGL_DEPTH_BITS]            = 0;
+  view->hints[PUGL_STENCIL_BITS]          = 0;
+  view->hints[PUGL_SAMPLE_BUFFERS]        = PUGL_DONT_CARE;
+  view->hints[PUGL_SAMPLES]               = 0;
+  view->hints[PUGL_DOUBLE_BUFFER]         = PUGL_TRUE;
+  view->hints[PUGL_SWAP_INTERVAL]         = PUGL_DONT_CARE;
+  view->hints[PUGL_RESIZABLE]             = PUGL_FALSE;
+  view->hints[PUGL_IGNORE_KEY_REPEAT]     = PUGL_FALSE;
+  view->hints[PUGL_REFRESH_RATE]          = PUGL_DONT_CARE;
+  view->hints[PUGL_VIEW_TYPE]             = PUGL_DONT_CARE;
+
+  for (unsigned i = 0U; i < PUGL_NUM_POSITION_HINTS; ++i) {
+    view->positionHints[i].x = INT16_MIN;
+    view->positionHints[i].y = INT16_MIN;
+  }
+
+  for (unsigned i = 0U; i < PUGL_NUM_SIZE_HINTS; ++i) {
+    view->sizeHints[i].width  = 0U;
+    view->sizeHints[i].height = 0U;
+  }
 }
 
 PuglView*
@@ -138,13 +145,8 @@ puglNewView(PuglWorld* const world)
     return NULL;
   }
 
-  view->world                           = world;
-  view->sizeHints[PUGL_MIN_SIZE].width  = 1;
-  view->sizeHints[PUGL_MIN_SIZE].height = 1;
-  view->defaultX                        = INT_MIN;
-  view->defaultY                        = INT_MIN;
-
-  puglSetDefaultHints(view->hints);
+  view->world = world;
+  puglSetDefaultHints(view);
 
   // Enlarge world view list
   const size_t     newNumViews = world->numViews + 1U;
@@ -198,12 +200,12 @@ puglGetWorld(PuglView* view)
 }
 
 void
-puglSetHandle(PuglView* view, PuglHandle handle)
+puglSetHandle(PuglView* const view, void* const handle)
 {
   view->handle = handle;
 }
 
-PuglHandle
+void*
 puglGetHandle(PuglView* view)
 {
   return view->handle;
@@ -273,8 +275,8 @@ puglSetViewString(PuglView* const      view,
     return PUGL_BAD_PARAMETER;
   }
 
-  puglSetString(&view->strings[key], value);
-  return puglViewStringChanged(view, key, view->strings[key]);
+  const PuglStatus st = puglSetString(&view->strings[key], value);
+  return st ? st : puglApplyViewString(view, key, view->strings[key]);
 }
 
 const char*
@@ -287,43 +289,84 @@ puglGetViewString(const PuglView* const view, const PuglStringHint key)
   return view->strings[key];
 }
 
-PuglRect
-puglGetFrame(const PuglView* view)
+PuglPoint
+puglGetPositionHint(const PuglView* const view, const PuglPositionHint hint)
 {
-  if (view->lastConfigure.type == PUGL_CONFIGURE) {
-    // Return the last configured frame
-    const PuglRect frame = {view->lastConfigure.x,
-                            view->lastConfigure.y,
-                            view->lastConfigure.width,
-                            view->lastConfigure.height};
-    return frame;
+  if (hint == PUGL_CURRENT_POSITION) {
+    PuglPoint pos = {0, 0};
+    if (view->lastConfigure.type == PUGL_CONFIGURE) {
+      pos.x = view->lastConfigure.x;
+      pos.y = view->lastConfigure.y;
+    } else {
+      const PuglPoint defaultPos = view->positionHints[PUGL_DEFAULT_POSITION];
+      if (puglIsValidPosition(defaultPos.x, defaultPos.y)) {
+        pos.x = defaultPos.x;
+        pos.y = defaultPos.y;
+      }
+    }
+    return pos;
   }
 
-  // Get the default position if set, or fallback to (0, 0)
-  int x = view->defaultX;
-  int y = view->defaultY;
-  if (x < INT16_MIN || x > INT16_MAX || y < INT16_MIN || y > INT16_MAX) {
-    x = 0;
-    y = 0;
-  }
-
-  // Return the default frame, sanitized if necessary
-  const PuglRect frame = {(PuglCoord)x,
-                          (PuglCoord)y,
-                          view->sizeHints[PUGL_DEFAULT_SIZE].width,
-                          view->sizeHints[PUGL_DEFAULT_SIZE].height};
-  return frame;
+  return view->positionHints[hint];
 }
 
 PuglStatus
-puglSetParentWindow(PuglView* view, PuglNativeView parent)
+puglSetPositionHint(PuglView* const        view,
+                    const PuglPositionHint hint,
+                    const int              x,
+                    const int              y)
+{
+  if (view->world->state == PUGL_WORLD_EXPOSING) {
+    return PUGL_BAD_CALL;
+  }
+
+  if (x <= INT16_MIN || x > INT16_MAX || y <= INT16_MIN || y > INT16_MAX) {
+    return PUGL_BAD_PARAMETER;
+  }
+
+  view->positionHints[hint].x = (PuglCoord)x;
+  view->positionHints[hint].y = (PuglCoord)y;
+
+  return (hint != PUGL_CURRENT_POSITION) ? PUGL_SUCCESS
+         : puglGetNativeView(view)       ? puglSetWindowPosition(view, x, y)
+                                         : PUGL_FAILURE;
+}
+
+PuglArea
+puglGetSizeHint(const PuglView* const view, const PuglSizeHint hint)
+{
+  if (hint == PUGL_CURRENT_SIZE && view->lastConfigure.type == PUGL_CONFIGURE) {
+    const PuglArea area = {view->lastConfigure.width,
+                           view->lastConfigure.height};
+    return area;
+  }
+
+  return view->sizeHints[hint];
+}
+
+PuglStatus
+puglSetParent(PuglView* view, PuglNativeView parent)
 {
   view->parent = parent;
   return PUGL_SUCCESS;
 }
 
+PuglStatus
+puglSetSizeHint(PuglView* const    view,
+                const PuglSizeHint hint,
+                const unsigned     width,
+                const unsigned     height)
+{
+  const PuglStatus st = puglStoreSizeHint(view, hint, width, height);
+
+  return st                            ? st
+         : (hint != PUGL_CURRENT_SIZE) ? puglApplySizeHint(view, hint)
+         : puglGetNativeView(view)     ? puglSetWindowSize(view, width, height)
+                                       : PUGL_FAILURE;
+}
+
 PuglNativeView
-puglGetParentWindow(const PuglView* const view)
+puglGetParent(const PuglView* const view)
 {
   return view->parent;
 }

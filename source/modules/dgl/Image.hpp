@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -17,17 +17,21 @@
 #ifndef DGL_IMAGE_HPP_INCLUDED
 #define DGL_IMAGE_HPP_INCLUDED
 
-#ifdef DGL_CAIRO
-#include "Cairo.hpp"
+#if defined(DGL_CAIRO)
+# include "Cairo.hpp"
+#elif defined(DGL_OPENGL)
+# include "OpenGL.hpp"
+#elif defined(DGL_VULKAN)
+# include "Vulkan.hpp"
 #else
-#include "OpenGL.hpp"
+# include "Base.hpp"
 #endif
 
 START_NAMESPACE_DGL
 
-#ifdef DGL_CAIRO
+#if defined(DGL_CAIRO)
 typedef CairoImage Image;
-#else
+#elif defined(DGL_OPENGL)
 typedef OpenGLImage Image;
 #endif
 

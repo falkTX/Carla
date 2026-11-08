@@ -3,7 +3,7 @@ name: release
 on: [push, pull_request]
 
 env:
-  CACHE_VERSION: 4
+  CACHE_VERSION: 5
   DEBIAN_FRONTEND: noninteractive
   HOMEBREW_NO_AUTO_UPDATE: 1
   HOMEBREW_NO_INSTALL_CLEANUP: 1
@@ -14,7 +14,7 @@ env:
 jobs:
   # macOS native universal build
   macos_universal:
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
       - name: Set up cache

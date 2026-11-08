@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2026 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -45,7 +45,11 @@ struct Window::PrivateData : IdleCallback {
     PuglView* view;
 
     /** Reserved space for graphics context. */
-    mutable uint8_t graphicsContext[sizeof(void*)];
+    mutable uint8_t graphicsContext[sizeof(int) * 9];
+    void createContextIfNeeded();
+    void destroyContext();
+    void startContext();
+    void endContext();
 
     /** The top-level widgets associated with this Window. */
     std::list<TopLevelWidget*> topLevelWidgets;
@@ -72,10 +76,7 @@ struct Window::PrivateData : IdleCallback {
     /** Automatic scaling to apply on widgets, implemented internally. */
     bool autoScaling;
     double autoScaleFactor;
-
-    /** Pugl geometry constraints access. */
-    uint minWidth, minHeight;
-    bool keepAspectRatio;
+    uint baseWidth, baseHeight;
 
     /** Whether to ignore idle callback requests, useful for temporary windows. */
     bool ignoreIdleCallbacks;

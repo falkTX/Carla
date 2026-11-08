@@ -22,6 +22,7 @@
 # warning No liblo support, NSM (session state) will not be available
 #endif
 
+#include "extra/ScopedPointer.hpp"
 #include "water/files/File.h"
 #include "water/misc/Time.h"
 #include "water/text/StringArray.h"

@@ -119,8 +119,10 @@ const char* getPluginFormatName() noexcept
 static inline
 void _createDirIfNeeded(const char* const dir)
 {
-    if (access(dir, F_OK) != 0)
-        mkdir(dir, 0755);
+    try {
+        if (access(dir, F_OK) != 0)
+            mkdir(dir, 0755);
+    } DISTRHO_SAFE_EXCEPTION("createDirIfNeeded");
 }
 #endif
 
@@ -255,7 +257,10 @@ static const char* _getDocumentsDir()
 
         // ${XDG_CONFIG_HOME}/user-dirs.dirs does not exist or has bad data
         if (dir.isEmpty())
-            dir = _getDocumentsDir();
+        {
+            dir = _getHomeDir();
+            dir += "Documents/";
+        }
 
         _createDirIfNeeded(dir);
        #endif

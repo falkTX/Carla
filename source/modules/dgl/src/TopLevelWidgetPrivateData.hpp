@@ -38,7 +38,6 @@ struct TopLevelWidget::PrivateData {
     bool mouseEvent(const MouseEvent& ev);
     bool motionEvent(const MotionEvent& ev);
     bool scrollEvent(const ScrollEvent& ev);
-    void fallbackOnResize(uint width, uint height);
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
 };

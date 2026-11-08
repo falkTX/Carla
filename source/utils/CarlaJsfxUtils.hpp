@@ -7,7 +7,7 @@
 
 #include "CarlaBackend.h"
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 #include "water/files/File.h"
 
 #ifdef YSFX_API

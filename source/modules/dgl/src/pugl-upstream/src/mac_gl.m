@@ -5,7 +5,7 @@
 #include "mac.h"
 #include "stub.h"
 
-#include "pugl/gl.h"
+#include <pugl/gl.h>
 
 #ifndef __MAC_10_10
 #  define NSOpenGLProfileVersion4_1Core NSOpenGLProfileVersion3_2Core

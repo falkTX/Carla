@@ -49,6 +49,10 @@
 # error DGL_FILE_BROWSER_DISABLED has been replaced by DGL_USE_FILE_BROWSER (opt-in vs opt-out)
 #endif
 
+#ifndef DGL_ALLOW_DEPRECATED_METHODS
+# define DGL_ALLOW_DEPRECATED_METHODS 1
+#endif
+
 // --------------------------------------------------------------------------------------------------------------------
 // Define namespace
 

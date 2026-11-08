@@ -5,7 +5,7 @@
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from math import cos, floor, pi, sin
+from math import pi, sin, cos, floor, log10
 import ast
 
 from qt_compat import qt_config
@@ -249,6 +249,34 @@ class ScalableDial(CommonDial):
 
     def grayGradBrush(self, painter, X, Y, a, b, gradPairs, alpha = 1.0):
         painter.setBrush(self.grayGrad(painter, X, Y, a, b, gradPairs, alpha))
+
+    # Neon lamp: pushbutton, or just light
+    def drawNeonLamp(self, painter, X, Y, W, S, S1, r1, r2, r3, normValue, coloredNeon):
+        def squareBorder(w, dw=0):
+            return QRectF(X-W-w-dw, Y-W-w, (W+w+dw)*2, (W+w)*2)
+
+        # bakelite button cap or lamp holder
+        self.grayGradPen(painter, X, Y, -45, -1)
+        self.grayGradBrush(painter, X-10, -40, 120, -2, {0.2, 50.2, 51.00, 100.00})
+        painter.drawRoundedRect(squareBorder(r1), 3, 3)
+
+        # neon lamp
+        if (normValue > 0):
+            grad = QRadialGradient(X, Y, r2)
+            for i in ({0.6, 20.6, 70.4, 100.0}):
+                if coloredNeon:
+                    grad.setColorAt(int(i)/100.0, QColor.fromHslF((0.05 - normValue) % 1.0, S, (i % 1.0), 1))
+                else:
+                    grad.setColorAt(int(i)/100.0, QColor.fromHslF(0.05, S1, (i % 1.0) * normValue, 1))
+
+            painter.setPen(QPen(Qt.NoPen))
+            painter.setBrush(grad)
+            painter.drawRoundedRect(squareBorder(r3), 1.5, 1.5)
+
+        # glass over neon lamp
+        self.grayGradPen(painter, X, Y, 135, -1)
+        self.grayGradBrush(painter, X-10, -40, 124, -2, {0.9, 50.9, 51.4, 100.4}, 0.25)
+        painter.drawRoundedRect(squareBorder(r3), 1.5, 1.5)
 
 
     # Replace Qt draw over substrate bitmap or svg to
@@ -520,28 +548,7 @@ class ScalableDial(CommonDial):
             painter.drawRoundedRect(squareBorder(-2, 4), 3, 3)
 
         elif skin == 4: # tube
-            # bakelite cap
-            self.grayGradPen(painter, X, Y, -45, -1)
-            self.grayGradBrush(painter, X-10, -40, 120, -2, {0.2, 50.2, 51.00, 100.00})
-            painter.drawRoundedRect(squareBorder(W*0.2), 3, 3)
-
-            # neon lamp
-            if (normValue > 0):
-                grad = QRadialGradient(X, Y, 10)
-                for i in ({0.6, 20.6, 70.4, 100.0}):
-                    if coloredNeon:
-                        grad.setColorAt(int(i)/100.0, QColor.fromHslF((0.05 - normValue) % 1.0, S, (i % 1.0), 1))
-                    else:
-                        grad.setColorAt(int(i)/100.0, QColor.fromHslF(0.05, S, (i % 1.0) * normValue, 1))
-
-                painter.setPen(QPen(Qt.NoPen))
-                painter.setBrush(grad)
-                painter.drawRoundedRect(squareBorder(-W*0.4), 1.5, 1.5)
-
-            # glass over neon lamp
-            self.grayGradPen(painter, X, Y, 135, -1)
-            self.grayGradBrush(painter, X-10, -40, 124, -2, {0.9, 50.9, 51.4, 100.4}, 0.25)
-            painter.drawRoundedRect(squareBorder(-W*0.4), 1.5, 1.5)
+            self.drawNeonLamp(painter, X, Y, W, S, S, W*0.2, 10, -W*0.4, normValue, coloredNeon)
 
         # draw active lights
         if skin == 0:  # internal
@@ -623,8 +630,16 @@ class ScalableDial(CommonDial):
                  "KYNZVZVJNJNRVR",              # 9
                  "KYNRVR",                      # -
                  "OTRZP]",                      # .
+                 "KYNZNOTOVPVTTUNU",            # p
+                 "KYNXNOTOVRVX",                # n
+                 "JZNZOZPYPO RPVSWUWVVVO RVVXW",# u, micro
+                 "I[LXLOPORPRX RROVOXPXX",      # m
                  "KYNNNX RVPNTVX",              # k
-                 "KYNXNLRRVLVX"     ]           # M
+                 "KYNXNLRRVLVX",                # M
+                 "KYRRVRVVTXPXNVNNPLTLVN",      # G
+                 "KYNLVL RRLRX",                # T
+                 "KYULORUX",                    # <
+                 "KYOLUROX"]                    # >
 
             def plotHersheyChar(painter, X, Y, c, fontSize, aspectRatio, skew, justGetWidth):
                 lm = (ord(h[c][0]) - ord('R')) * fontSize * aspectRatio
@@ -653,7 +668,7 @@ class ScalableDial(CommonDial):
 
             def plotDecodedChar(painter, X, Y, st, fontSize, aspectRatio, skew, justGetWidth):
                 for i in range(len(st)):
-                    digit = "0123456789-.kM".find(st[i])
+                    digit = "0123456789-.pnumkMGT<>".find(st[i])
                     if digit < 0:
                         print("ERROR: Illegal char at " + str(i) + " in " + st)
                     else:
@@ -663,12 +678,6 @@ class ScalableDial(CommonDial):
             widthPx = plotDecodedChar(painter, 0, Y, st, fontSize, aspectRatio, skew, 1)
             plotDecodedChar(painter, X-widthPx/2, Y, st, fontSize, aspectRatio, skew, 0)
             return
-
-        def strLimDigits(x):
-            s = str(x)
-            ret = lambda x: float(x) if '.' in s else int(x)
-            return str(ret(s[:max(s.find('.'), 4+1)].strip('.')))
-#            return str(ret(s[:max(s.find('.'), num+1 + ('-' in s))].strip('.')))
 
         def plotNixie(n):
             painter.setPen(QPen(QColor.fromHslF(0.05, S, L, 1), 2.5, cap=Qt.RoundCap))
@@ -706,28 +715,20 @@ class ScalableDial(CommonDial):
         value = self.fRealValue
         hue = self.fHueA
 
-        # if self.fIsButton: # TODO make it separate paintLED
-        if (self.fIsInteger and (self.fMinimum == 0) and (self.fMaximum == 1)): # TODO
+        # TODO move it to 'carla_skin.py' to win some CPU.
+        coloredNeon = self.getTweak('ColoredNeon', 1) # But worse when HighContrast.
+        led3state   = self.getTweak('Led3Pos', 1)
+
+        # TODO make it separate self.fIsLed / paintLED, save the CPU!
+        if led3state:
+            isLed = (self.fIsInteger and (self.fMinimum == 0) and (self.fMaximum in (1, 2)))
+        else:
+            isLed = (self.fIsInteger and (self.fMinimum == 0) and (self.fMaximum == 1))
+
+        if (isLed): # TODO
             # Neon lamp
             if (self.fCustomPaintMode == 64): # tube
-                # bakelite lamp holder
-                self.grayGradPen(painter, X, Y, -45, -1)
-                self.grayGradBrush(painter, X-10, -40, 120, -2, {0.2, 50.2, 51.00, 100.00})
-                painter.drawRoundedRect(squareBorder(-W*0.45), 3, 3)
-
-                # neon lamp
-                if (normValue > 0):
-                    grad = QRadialGradient(X, Y, 13)
-                    for i in ({0.6, 20.6, 70.4, 100.0}):
-                        grad.setColorAt(int(i)/100.0, QColor.fromHslF(0.05, 1.0, (i % 1.0) * normValue, 1))
-                    painter.setPen(QPen(Qt.NoPen))
-                    painter.setBrush(grad)
-                    painter.drawRoundedRect(squareBorder(-W*0.6), 1.5, 1.5)
-
-                # glass over neon lamp
-                self.grayGradPen(painter, X, Y, 135, -1)
-                self.grayGradBrush(painter, X-10, -40, 124, -2, {0.9, 50.9, 51.4, 100.4}, 0.25)
-                painter.drawRoundedRect(squareBorder(-W*0.6), 1.5, 1.5)
+                self.drawNeonLamp(painter, X, Y, W, S, 1.0, -W*0.45, 13, -W*0.6, normValue, coloredNeon)
                 return
 
             painter.setPen(QPen(QColor.fromHslF(0, 0, 0.3-0.15*normValue+E, 1), 1.5))
@@ -758,18 +759,30 @@ class ScalableDial(CommonDial):
 
         # Will it be analog display, or digital 7-segment scale?
         if not self.fIsVuOutput:
-            unit = ""
-            if abs(value) >= 10000.0:
-                value = value / 1000.0
-                unit = "k"
-            if abs(value) >= 10000.0:
-                value = value / 1000.0
-                unit = "M"
-            # Remove trailing decimal zero and decimal point also.
-            if (value % 1.0) == 0:
-                value = int(value)
+            valueStr = '0'
 
-            valueStr = strLimDigits(value) + unit
+            if value != 0:
+                signStr = ''
+                mantissa = exponent = 0
+
+                if (value < 0):
+                    signStr = '-'
+                    value = abs(value)
+
+                if (value < 1e-12):
+                    valueStr = '<1p' if signStr == '' else '>-1p'
+                elif (value >= 1e15):
+                    valueStr = '>999T' if signStr == '' else '<-999T'
+                else:
+                    exponent = floor(log10(value) / 3.0)
+                    mantissa = value / (10 ** (exponent * 3.0))
+                    # Remove trailing decimal zero and decimal point also.
+                    if (mantissa % 1.0) == 0:
+                        mantissa = int(mantissa)
+
+                    units = ['p','n','u','m','','k','M','G','T'];
+                    valueStr = signStr + str(mantissa)[:5] + units[exponent + 4]
+
             valueLen = len(valueStr)
             if valueLen == 0:
                 print("Zero length string from " + str(self.fRealValue) + " value.")
@@ -829,6 +842,8 @@ class ScalableDial(CommonDial):
 
             lineWidth = fntSize + 0.5                      # Work in progress here. NOTE
 
+        symmetrical = (self.fMinimum == -self.fMaximum)
+
         # substrate
         if substrate:
             substratePen = QPen(QColor.fromHslF(0, 0, 0.4+E, 1), 0.5)
@@ -837,7 +852,10 @@ class ScalableDial(CommonDial):
                     self.grayGradPen(painter, X, Y, 135, -1)
                     self.grayGradBrush(painter, X-10, -80, 200, -2, {0.2, 50.2, 51.00, 100.00})
                     painter.drawRoundedRect(squareBorder(-W*0.4, W*0.3), 3, 3)
-
+                elif symmetrical:
+                    self.grayGradPen(painter, X, Y, -45, -1, width=1.5)
+                    self.grayGradBrush(painter, X-10, -20, 83, -2, {0.2, 50.2, 51.00, 100.00})
+                    painter.drawEllipse(squareBorder(-W*0.2))
             else:
                 if self.fCustomPaintMode == 16:  # calf
                     if self.fIsVuOutput:
@@ -856,7 +874,7 @@ class ScalableDial(CommonDial):
                 for i in range(0, 10+1):
                     if normValue > ((i+0.5)/11):
                         painter.drawLine(QPointF(X-15+i*3, Y-R/2), QPointF(X-15+i*3, Y+R/2))
-            elif self.fCustomPaintMode == 64:  # tube        # Work in progress here. NOTE
+            elif self.fCustomPaintMode == 64 and not symmetrical: # tube   # Work in progress. NOTE
                 # Draw Cat eye.
                 chamfer = 1.5 # It is best when 1.5 at normal zoom, and 1.0 for >2x HiDpi
 

@@ -167,6 +167,7 @@ elif qt_config == 6:
 
     Qt.SmoothTransformation = Qt.TransformationMode.SmoothTransformation
 
+    Qt.WA_LayoutUsesWidgetRect = Qt.WidgetAttribute.WA_LayoutUsesWidgetRect
     Qt.WA_OpaquePaintEvent = Qt.WidgetAttribute.WA_OpaquePaintEvent
 
     Qt.WindowModal = Qt.WindowModality.WindowModal

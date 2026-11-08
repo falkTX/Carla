@@ -25,7 +25,7 @@
 #include "CarlaNative.hpp"
 #include "CarlaNativePlugin.h"
 
-#include "distrho/extra/Base64.hpp"
+#include "extra/Base64.hpp"
 
 #include "water/files/File.h"
 #include "water/streams/MemoryOutputStream.h"

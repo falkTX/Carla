@@ -70,7 +70,7 @@ XmlElement* XmlDocument::parse (const String& xmlData)
 
 void XmlDocument::setInputSource (FileInputSource* const newSource) noexcept
 {
-    inputSource = newSource;
+    inputSource.reset(newSource);
 }
 
 void XmlDocument::setEmptyTextElementsIgnored (const bool shouldBeIgnored) noexcept
@@ -121,7 +121,7 @@ XmlElement* XmlDocument::getDocumentElement (const bool onlyReadOuterDocumentEle
 {
     if (originalText.isEmpty() && inputSource != nullptr)
     {
-        ScopedPointer<InputStream> in (inputSource->createInputStream());
+        std::unique_ptr<InputStream> in (inputSource->createInputStream());
 
         if (in != nullptr)
         {
@@ -160,7 +160,7 @@ String XmlDocument::getFileContents (const String& filename) const
 {
     if (inputSource != nullptr)
     {
-        const ScopedPointer<InputStream> in (inputSource->createInputStreamFor (filename.trim().unquoted()));
+        std::unique_ptr<InputStream> in (inputSource->createInputStreamFor (filename.trim().unquoted()));
 
         if (in != nullptr)
             return in->readEntireStreamAsString();
@@ -206,7 +206,7 @@ XmlElement* XmlDocument::parseDocumentElement (CharPointer_UTF8 textToParse,
     {
         lastError.clear();
 
-        ScopedPointer<XmlElement> result (readNextElement (! onlyReadOuterDocumentElement));
+        std::unique_ptr<XmlElement> result (readNextElement (! onlyReadOuterDocumentElement));
 
         if (! errorOccurred)
             return result.release();

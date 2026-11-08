@@ -99,8 +99,8 @@ bool DirectoryIterator::next (bool* const isDirResult, int64* const fileSize, bo
                 if (isDirectory)
                 {
                     if (isRecursive)
-                        subIterator = new DirectoryIterator (File::createFileWithoutCheckingPath (path + filename),
-                                                             true, wildCard, whatToLookFor);
+                        subIterator.reset(new DirectoryIterator (File::createFileWithoutCheckingPath (path + filename),
+                                                                 true, wildCard, whatToLookFor));
 
                     matches = (whatToLookFor & File::findDirectories) != 0;
                 }
