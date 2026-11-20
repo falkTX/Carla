@@ -318,18 +318,19 @@ class ScalableDial(CommonDial):
         def gray(luma):
             return QColor.fromHslF(0, 0, luma, 1)
 
+        symmetrical = (self.fMinimum == -self.fMaximum)
 
         # Knob light arc "base" (starting) value/angle.
         if self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_CARLA_L:
             refValue = 0
         elif self.fCustomPaintMode == self.CUSTOM_PAINT_MODE_CARLA_R:
             refValue = 1
-        elif (self.fMinimum == -self.fMaximum) and (skin == 0):
+        elif symmetrical and (skin == 0):
             refValue = 0.5
         else:
             refValue = 0
 
-        knobMuted = (self.knobPusheable and (normValue == refValue))
+        knobMuted = (self.knobPusheable and (normValue == (0.5 if symmetrical else refValue)))
 
         haveLed = self.getTweak('WetVolPushLed', 1) and self.fCustomPaintMode in (1, 2, 5, 6, 9, 10,)
 
@@ -841,8 +842,6 @@ class ScalableDial(CommonDial):
                 fntAspect = 1.0 - (valueLen-1) * 0.2
 
             lineWidth = fntSize + 0.5                      # Work in progress here. NOTE
-
-        symmetrical = (self.fMinimum == -self.fMaximum)
 
         # substrate
         if substrate:
