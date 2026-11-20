@@ -843,6 +843,8 @@ class ScalableDial(CommonDial):
 
             lineWidth = fntSize + 0.5                      # Work in progress here. NOTE
 
+        symmetrical = (self.fMinimum == -self.fMaximum)
+
         # substrate
         if substrate:
             substratePen = QPen(QColor.fromHslF(0, 0, 0.4+E, 1), 0.5)
