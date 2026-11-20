@@ -14,6 +14,7 @@
 # include "CarlaOscUtils.hpp"
 # include "CarlaScopeUtils.hpp"
 # include "CarlaThread.hpp"
+# include "extra/ScopedPointer.hpp"
 # include "water/threads/ChildProcess.h"
 using water::ChildProcess;
 #endif

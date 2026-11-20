@@ -25,7 +25,7 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 #include "water/files/File.h"
 
 // -------------------------------------------------------------------------------------------------------------------

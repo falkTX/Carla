@@ -8,7 +8,7 @@
 #include "CarlaMutex.hpp"
 #include "CarlaRingBuffer.hpp"
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 
 // -------------------------------------------------------------------------------------------------------------------
 

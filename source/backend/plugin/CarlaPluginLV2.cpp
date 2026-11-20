@@ -17,7 +17,7 @@
 #include "CarlaScopeUtils.hpp"
 #include "Lv2AtomRingBuffer.hpp"
 
-#include "distrho/extra/Base64.hpp"
+#include "extra/Base64.hpp"
 
 #include "../modules/lilv/config/lilv_config.h"
 
@@ -3315,7 +3315,18 @@ public:
                 case LV2_UI_OLD_EXTERNAL:
                     break;
                 default:
-                    pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
+                    pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI|PLUGIN_HAS_CUSTOM_RESIZABLE_UI;
+                    for (uint32_t i = 0; i < fUI.rdfDescriptor->ExtensionCount; ++i)
+                    {
+                        const char* const extension = fUI.rdfDescriptor->Extensions[i];
+                        CARLA_SAFE_ASSERT_CONTINUE(extension != nullptr);
+
+                        if (std::strcmp(extension, LV2_UI__noUserResize) == 0)
+                        {
+                            pData->hints &= ~PLUGIN_HAS_CUSTOM_RESIZABLE_UI;
+                            break;
+                        }
+                    }
                     break;
                 }
             }

@@ -5,7 +5,7 @@
 #include "CarlaEngineInit.hpp"
 #include "CarlaEngineInternal.hpp"
 
-#include "distrho/extra/Time.hpp"
+#include "extra/Time.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 

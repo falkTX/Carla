@@ -262,15 +262,26 @@ static const CarlaCachedPluginInfo* get_cached_plugin_lv2(Lv2WorldClass& lv2Worl
                 if (false)
                #endif
                 {
-                    info.hints |= CB::PLUGIN_HAS_CUSTOM_EMBED_UI;
+                    info.hints |= CB::PLUGIN_HAS_CUSTOM_EMBED_UI|CB::PLUGIN_HAS_CUSTOM_RESIZABLE_UI;
+
+                    Lilv::Nodes lilvSupportedFeatureNodes(lilvUI.get_supported_features());
+                    LILV_FOREACH(nodes, it, lilvSupportedFeatureNodes)
+                    {
+                        Lilv::Node lilvFeatureNode(lilvSupportedFeatureNodes.get(it));
+                        const char* const featureURI(lilvFeatureNode.as_uri());
+                        CARLA_SAFE_ASSERT_CONTINUE(featureURI != nullptr);
+
+                        if (std::strcmp(featureURI, LV2_UI__noUserResize) == 0)
+                        {
+                            info.hints &= ~CB::PLUGIN_HAS_CUSTOM_RESIZABLE_UI;
+                            break;
+                        }
+                    }
+                    lilv_nodes_free(const_cast<LilvNodes*>(lilvSupportedFeatureNodes.me));
                     break;
                 }
             }
         }
-#ifdef CARLA_OS_LINUX
-        else if (lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr)
-            info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
-#endif
 
         lilv_nodes_free(const_cast<LilvNodes*>(lilvUIs.me));
     }

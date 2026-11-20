@@ -32,6 +32,7 @@ OBJS = \
 	$(OBJDIR)/ImageBaseWidgets.cpp.o \
 	$(OBJDIR)/NanoVG.cpp.o \
 	$(OBJDIR)/OpenGL.cpp.o \
+	$(OBJDIR)/OpenGL2.cpp.o \
 	$(OBJDIR)/SubWidget.cpp.o \
 	$(OBJDIR)/SubWidgetPrivateData.cpp.o \
 	$(OBJDIR)/TopLevelWidget.cpp.o \
@@ -51,6 +52,7 @@ OBJS_wine = \
 	$(OBJDIR)/ImageBase.cpp-wine.o \
 	$(OBJDIR)/ImageBaseWidgets.cpp-wine.o \
 	$(OBJDIR)/OpenGL.cpp-wine.o \
+	$(OBJDIR)/OpenGL2.cpp-wine.o \
 	$(OBJDIR)/SubWidget.cpp-wine.o \
 	$(OBJDIR)/SubWidgetPrivateData.cpp-wine.o \
 	$(OBJDIR)/TopLevelWidget.cpp-wine.o \

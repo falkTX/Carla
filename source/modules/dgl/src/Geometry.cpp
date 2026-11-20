@@ -23,6 +23,8 @@
 
 #include "../Geometry.hpp"
 
+#define DGL_GEOMETRY_CPP_INCLUDED
+
 #include <cmath>
 
 START_NAMESPACE_DGL

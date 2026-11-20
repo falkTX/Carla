@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -360,25 +360,23 @@ public:
     */
     bool isNotNull() const noexcept;
 
-#ifndef DPF_TEST_POINT_CPP
    /**
       Draw this line using the provided graphics context, optionally specifying line width.
     */
     void draw(const GraphicsContext& context, T width = 1);
-#endif
 
     Line<T>& operator=(const Line<T>& line) noexcept;
     bool operator==(const Line<T>& line) const noexcept;
     bool operator!=(const Line<T>& line) const noexcept;
 
-#ifndef DPF_TEST_POINT_CPP
+   #if DGL_ALLOW_DEPRECATED_METHODS
    /**
       Draw this line using the current OpenGL state.@n
       DEPRECATED Please use draw(const GraphicsContext&) instead.
     */
     DISTRHO_DEPRECATED_BY("draw(const GraphicsContext&)")
     void draw();
-#endif
+   #endif
 
 private:
     Point<T> posStart, posEnd;
@@ -489,7 +487,7 @@ public:
     bool operator==(const Circle<T>& cir) const noexcept;
     bool operator!=(const Circle<T>& cir) const noexcept;
 
-#ifndef DPF_TEST_POINT_CPP
+   #if DGL_ALLOW_DEPRECATED_METHODS
    /**
       Draw this circle using the current OpenGL state.@n
       DEPRECATED Please use draw(const GraphicsContext&) instead.
@@ -503,7 +501,7 @@ public:
     */
     DISTRHO_DEPRECATED_BY("drawOutline(const GraphicsContext&)")
     void drawOutline();
-#endif
+   #endif
 
 private:
     Point<T> fPos;
@@ -582,7 +580,7 @@ public:
     bool operator==(const Triangle<T>& tri) const noexcept;
     bool operator!=(const Triangle<T>& tri) const noexcept;
 
-#ifndef DPF_TEST_POINT_CPP
+   #if DGL_ALLOW_DEPRECATED_METHODS
    /**
       Draw this triangle using the current OpenGL state.@n
       DEPRECATED Please use draw(const GraphicsContext&) instead.
@@ -596,7 +594,7 @@ public:
     */
     DISTRHO_DEPRECATED_BY("drawOutline(const GraphicsContext&)")
     void drawOutline();
-#endif
+   #endif
 
 private:
     Point<T> pos1, pos2, pos3;
@@ -813,6 +811,7 @@ public:
     bool operator==(const Rectangle<T>& size) const noexcept;
     bool operator!=(const Rectangle<T>& size) const noexcept;
 
+   #if DGL_ALLOW_DEPRECATED_METHODS
    /**
       Draw this rectangle using the current OpenGL state.@n
       DEPRECATED Please use draw(const GraphicsContext&) instead.
@@ -826,6 +825,7 @@ public:
     */
     DISTRHO_DEPRECATED_BY("drawOutline(const GraphicsContext&)")
     void drawOutline();
+   #endif
 
 private:
     Point<T> pos;

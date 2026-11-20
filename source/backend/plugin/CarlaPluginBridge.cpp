@@ -16,8 +16,9 @@
 
 #include <ctime>
 
-#include "distrho/extra/Base64.hpp"
-#include "distrho/extra/Time.hpp"
+#include "extra/Base64.hpp"
+#include "extra/ScopedPointer.hpp"
+#include "extra/Time.hpp"
 
 #include "water/files/File.h"
 #include "water/misc/Time.h"
@@ -2192,7 +2193,7 @@ public:
                 if (fBridgeVersion < 9 || fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
                #endif
                 {
-                    pData->hints &= ~PLUGIN_HAS_CUSTOM_EMBED_UI;
+                    pData->hints &= ~(PLUGIN_HAS_CUSTOM_EMBED_UI|PLUGIN_HAS_CUSTOM_RESIZABLE_UI);
                 }
 
                 fInfo.category = static_cast<PluginCategory>(category);

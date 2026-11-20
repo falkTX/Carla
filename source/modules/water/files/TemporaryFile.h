@@ -3,7 +3,7 @@
 
    This file is part of the Water library.
    Copyright (c) 2016 ROLI Ltd.
-   Copyright (C) 2017-2022 Filipe Coelho <falktx@falktx.com>
+   Copyright (C) 2017-2025 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license/
@@ -26,7 +26,6 @@
 #ifndef WATER_TEMPORARYFILE_H_INCLUDED
 #define WATER_TEMPORARYFILE_H_INCLUDED
 
-#include "TemporaryFile.h"
 #include "File.h"
 
 namespace water {
@@ -49,7 +48,7 @@ namespace water {
         TemporaryFile temp (myTargetFile);
 
         // create a stream to the temporary file, and write some data to it...
-        ScopedPointer<FileOutputStream> out (temp.getFile().createOutputStream());
+        std::unique_ptr<FileOutputStream> out (temp.getFile().createOutputStream());
 
         if (out != nullptr)
         {

@@ -98,8 +98,8 @@ static void app_idle(void* const app)
 }
 #endif
 
-Application::Application(const bool isStandalone)
-    : pData(new PrivateData(isStandalone))
+Application::Application(const bool isStandalone, const Type type)
+    : pData(new PrivateData(isStandalone, type))
 {
     // build config sentinels
    #ifdef DPF_DEBUG
@@ -126,7 +126,7 @@ Application::Application(const bool isStandalone)
 }
 
 Application::Application(int argc, char* argv[])
-    : pData(new PrivateData(true))
+    : pData(new PrivateData(true, kTypeAuto))
 {
    #if defined(HAVE_X11) && defined(DISTRHO_OS_LINUX) && defined(DGL_USE_WEB_VIEW)
     if (argc >= 2 && std::strcmp(argv[1], "dpf-ld-linux-webview") == 0)
@@ -211,6 +211,11 @@ bool Application::isStandalone() const noexcept
 double Application::getTime() const
 {
     return pData->getTime();
+}
+
+Application::Type Application::getType() const noexcept
+{
+    return pData->isModern ? kTypeModern : kTypeClassic;
 }
 
 void Application::addIdleCallback(IdleCallback* const callback)

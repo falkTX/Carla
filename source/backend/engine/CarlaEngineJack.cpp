@@ -12,6 +12,7 @@
 #include "CarlaMIDI.h"
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
+#include "extra/ScopedPointer.hpp"
 
 #include "jackey.h"
 
@@ -837,9 +838,27 @@ public:
         {
             CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr && ! isActive(),);
 
+#ifndef BUILD_BRIDGE
+            // When JACK is activated, some callbacks will be called synchronously.
+            // These callbacks must not re-lock the plugin, or else they would
+            // deadlock. Set a flag to tell them to elide locking, since we are
+            // already in a safe context (no other thread can lock the plugin).
+            fActivating = true;
+#endif
             try {
                 jackbridge_activate(fJackClient);
             } catch(...) {}
+#ifndef BUILD_BRIDGE
+            // Release the activation flag. From this point onwards non-RT callbacks
+            // will lock the plugin. Since one such callback could have been called
+            // twice, with the second instance not blocking after activate and
+            // concurrently executing, we lock the callback lock before doing this.
+            fCallbackLock.lock();
+            fActivating = false;
+            fCallbackLock.unlock();
+            // After this point, no callbacks will be running nor able to run until
+            // the plugin mutex is released in CarlaPlugin::setEnabled().
+#endif
         }
 
         CarlaEngineClient::activate();
@@ -1190,9 +1209,31 @@ public:
     }
 #endif
 
+#ifndef BUILD_BRIDGE
+    void maybeLockPlugin(CarlaPluginPtr plugin)
+    {
+        fCallbackLock.lock();
+        if (!fActivating)
+            plugin->tryLock(true);
+    }
+
+    void maybeUnlockPlugin(CarlaPluginPtr plugin)
+    {
+        if (!fActivating)
+            plugin->unlock();
+
+        fCallbackLock.unlock();
+    }
+#endif
+
 private:
     jack_client_t* fJackClient;
     const bool     fUseClient;
+
+#ifndef BUILD_BRIDGE
+    CarlaMutex     fCallbackLock;
+    bool           fActivating;
+#endif
 
     LinkedList<CarlaEngineJackAudioPort*> fAudioPorts;
     LinkedList<CarlaEngineJackCVPort*>    fCVPorts;
@@ -2004,10 +2045,8 @@ public:
 
 #ifndef BUILD_BRIDGE
             pluginReserve = new CarlaPluginPtr(plugin);
-            /*
-            jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback_plugin, pluginReserve);
-            jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback_plugin, pluginReserve);
-            */
+            jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback_plugin, pluginReserve);
+            jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback_plugin, pluginReserve);
             // jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, pluginReserve);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, pluginReserve);
             jackbridge_on_shutdown(client, carla_jack_shutdown_callback_plugin, pluginReserve);
@@ -4405,7 +4444,10 @@ private:
         CARLA_SAFE_ASSERT_RETURN(pluginPtr != nullptr, 0);
 
         CarlaPluginPtr plugin = *pluginPtr;
-        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        // CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, 0); // See #2084
+        if (! plugin->isEnabled())
+            return 0;
 
         CarlaEngineJack* const engine((CarlaEngineJack*)plugin->getEngine());
         CARLA_SAFE_ASSERT_RETURN(engine != nullptr, 0);
@@ -4420,25 +4462,45 @@ private:
         return 0;
     }
 
-    /*
     static int JACKBRIDGE_API carla_jack_bufsize_callback_plugin(jack_nframes_t nframes, void* arg)
     {
-        CarlaPlugin* const plugin((CarlaPlugin*)arg);
-        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr && plugin->isEnabled(), 0);
+        CarlaPluginPtr* const pluginPtr = static_cast<CarlaPluginPtr*>(arg);
+        CARLA_SAFE_ASSERT_RETURN(pluginPtr != nullptr, 0);
 
+        CarlaPluginPtr plugin = *pluginPtr;
+        // CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, 0);
+        if (! plugin->isEnabled())
+            return 0;
+
+        CarlaEngineJackClient* const engineClient((CarlaEngineJackClient*)plugin->getEngineClient());
+        CARLA_SAFE_ASSERT_RETURN(engineClient != nullptr, 0);
+
+        engineClient->maybeLockPlugin(plugin);
         plugin->bufferSizeChanged(nframes);
+        engineClient->maybeUnlockPlugin(plugin);
         return 1;
     }
 
     static int JACKBRIDGE_API carla_jack_srate_callback_plugin(jack_nframes_t nframes, void* arg)
     {
-        CarlaPlugin* const plugin((CarlaPlugin*)arg);
-        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr && plugin->isEnabled(), 0);
+        CarlaPluginPtr* const pluginPtr = static_cast<CarlaPluginPtr*>(arg);
+        CARLA_SAFE_ASSERT_RETURN(pluginPtr != nullptr, 0);
 
+        CarlaPluginPtr plugin = *pluginPtr;
+        // CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr && plugin->isEnabled(), 0);
+        CARLA_SAFE_ASSERT_RETURN(plugin.get() != nullptr, 0);
+        if (! plugin->isEnabled())
+            return 0;
+
+        CarlaEngineJackClient* const engineClient((CarlaEngineJackClient*)plugin->getEngineClient());
+        CARLA_SAFE_ASSERT_RETURN(engineClient != nullptr, 0);
+
+        engineClient->maybeLockPlugin(plugin);
         plugin->sampleRateChanged(nframes);
+        engineClient->maybeUnlockPlugin(plugin);
         return 1;
     }
-    */
 
     static void JACKBRIDGE_API carla_jack_latency_callback_plugin(jack_latency_callback_mode_t /*mode*/, void* /*arg*/)
     {

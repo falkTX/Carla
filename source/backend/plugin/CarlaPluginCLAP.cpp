@@ -671,6 +671,10 @@ struct carla_clap_output_events : clap_output_events_t, CarlaPluginClapEventData
         case CLAP_EVENT_MIDI:
             e.midi = *static_cast<const clap_event_midi_t*>(static_cast<const void*>(event));
             break;
+        case CLAP_EVENT_PARAM_GESTURE_BEGIN:
+        case CLAP_EVENT_PARAM_GESTURE_END:
+            // TODO for now be nice to the plugins that require this
+            return true;
         default:
             return false;
         }
@@ -1811,6 +1815,8 @@ public:
                 pData->hints |= PLUGIN_HAS_CUSTOM_UI;
                 pData->hints |= PLUGIN_HAS_CUSTOM_EMBED_UI;
                 pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
+                if (guiExt->can_resize(fPlugin))
+                    pData->hints |= PLUGIN_HAS_CUSTOM_RESIZABLE_UI;
             }
             else if (guiExt->is_api_supported(fPlugin, CLAP_WINDOW_API_NATIVE, true))
             {

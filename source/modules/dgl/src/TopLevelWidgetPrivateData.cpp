@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2026 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -17,7 +17,6 @@
 #include "TopLevelWidgetPrivateData.hpp"
 #include "WidgetPrivateData.hpp"
 #include "WindowPrivateData.hpp"
-#include "pugl.hpp"
 
 START_NAMESPACE_DGL
 
@@ -133,11 +132,6 @@ bool TopLevelWidget::PrivateData::scrollEvent(const ScrollEvent& ev)
 
     // propagate event to all subwidgets recursively
     return selfw->pData->giveScrollEventForSubWidgets(rev);
-}
-
-void TopLevelWidget::PrivateData::fallbackOnResize(const uint width, const uint height)
-{
-    puglFallbackOnResize(window.pData->view, width, height);
 }
 
 // -----------------------------------------------------------------------

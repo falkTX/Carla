@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2022 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2026 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -84,9 +84,34 @@ public:
     Application& getApp() const noexcept { return Window::getApp(); }
     const GraphicsContext& getGraphicsContext() const noexcept { return Window::getGraphicsContext(); }
     double getScaleFactor() const noexcept { return Window::getScaleFactor(); }
-    void setGeometryConstraints(uint minimumWidth, uint minimumHeight,
-                                bool keepAspectRatio = false, bool automaticallyScale = false)
-    { Window::setGeometryConstraints(minimumWidth, minimumHeight, keepAspectRatio, automaticallyScale); }
+
+    void setGeometryConstraints(uint minimumWidth, uint minimumHeight, bool keepAspectRatio = false)
+    { Window::setGeometryConstraints(minimumWidth, minimumHeight, keepAspectRatio); }
+
+   #if DGL_ALLOW_DEPRECATED_METHODS
+    DISTRHO_DEPRECATED_BY("setGeometryConstraints(uint, uint, bool)")
+    void setGeometryConstraints(uint minimumWidth, uint minimumHeight, bool keepAspectRatio, bool automaticallyScale)
+    {
+       #if defined(_MSC_VER)
+        #pragma warning(push)
+        #pragma warning(disable:4996)
+       #elif defined(__clang__)
+        #pragma clang diagnostic push
+        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+       #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+       #endif
+        Window::setGeometryConstraints(minimumWidth, minimumHeight, keepAspectRatio, automaticallyScale, false);
+       #if defined(_MSC_VER)
+        #pragma warning(pop)
+       #elif defined(__clang__)
+        #pragma clang diagnostic pop
+       #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+        #pragma GCC diagnostic pop
+       #endif
+    }
+   #endif
 
 private:
     ScopedGraphicsContext sgc;

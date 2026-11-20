@@ -11,7 +11,7 @@
 #include "platform.h"
 #include "types.h"
 
-#include "pugl/pugl.h"
+#include <pugl/pugl.h>
 
 #include <X11/X.h>
 #include <X11/Xatom.h>
@@ -19,6 +19,7 @@
 #include <X11/Xresource.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#include <sys/time.h>
 
 #ifndef USE_XRANDR
 #  if __has_include(<X11/extensions/Xrandr.h>)
@@ -70,12 +71,10 @@
 
 #ifdef __cplusplus
 #  define PUGL_INIT_STRUCT \
-    {}
-#else
-#  define PUGL_INIT_STRUCT \
     {                      \
-      0                    \
     }
+#else
+#  define PUGL_INIT_STRUCT {0}
 #endif
 
 enum WmClientStateMessageAction {
@@ -397,7 +396,7 @@ findView(PuglWorld* const world, const Window window)
 }
 
 static PuglStatus
-updateSizeHints(const PuglView* const view)
+puglUpdateSizeHints(PuglView* const view)
 {
   if (!view->impl->win) {
     return PUGL_SUCCESS;
@@ -407,40 +406,44 @@ updateSizeHints(const PuglView* const view)
   XSizeHints sizeHints = PUGL_INIT_STRUCT;
 
   if (!view->hints[PUGL_RESIZABLE]) {
-    const PuglRect frame  = puglGetFrame(view);
+    PuglArea size = puglGetSizeHint(view, PUGL_CURRENT_SIZE);
+    if (!puglIsValidSize(size.width, size.height)) {
+      size = puglGetSizeHint(view, PUGL_DEFAULT_SIZE);
+    }
+
     sizeHints.flags       = PBaseSize | PMinSize | PMaxSize;
-    sizeHints.base_width  = (int)frame.width;
-    sizeHints.base_height = (int)frame.height;
-    sizeHints.min_width   = (int)frame.width;
-    sizeHints.min_height  = (int)frame.height;
-    sizeHints.max_width   = (int)frame.width;
-    sizeHints.max_height  = (int)frame.height;
+    sizeHints.base_width  = size.width;
+    sizeHints.base_height = size.height;
+    sizeHints.min_width   = size.width;
+    sizeHints.min_height  = size.height;
+    sizeHints.max_width   = size.width;
+    sizeHints.max_height  = size.height;
   } else {
     // Avoid setting PBaseSize for top level views to avoid window manager bugs
-    const PuglViewSize defaultSize = view->sizeHints[PUGL_DEFAULT_SIZE];
-    if (puglIsValidSize(defaultSize) && view->parent) {
+    const PuglArea defaultSize = view->sizeHints[PUGL_DEFAULT_SIZE];
+    if (puglIsValidArea(defaultSize) && view->parent) {
       sizeHints.flags |= PBaseSize;
       sizeHints.base_width  = defaultSize.width;
       sizeHints.base_height = defaultSize.height;
     }
 
-    const PuglViewSize minSize = view->sizeHints[PUGL_MIN_SIZE];
-    if (puglIsValidSize(minSize)) {
+    const PuglArea minSize = view->sizeHints[PUGL_MIN_SIZE];
+    if (puglIsValidArea(minSize)) {
       sizeHints.flags |= PMinSize;
       sizeHints.min_width  = minSize.width;
       sizeHints.min_height = minSize.height;
     }
 
-    const PuglViewSize maxSize = view->sizeHints[PUGL_MAX_SIZE];
-    if (puglIsValidSize(maxSize)) {
+    const PuglArea maxSize = view->sizeHints[PUGL_MAX_SIZE];
+    if (puglIsValidArea(maxSize)) {
       sizeHints.flags |= PMaxSize;
       sizeHints.max_width  = maxSize.width;
       sizeHints.max_height = maxSize.height;
     }
 
-    const PuglViewSize minAspect = view->sizeHints[PUGL_MIN_ASPECT];
-    const PuglViewSize maxAspect = view->sizeHints[PUGL_MAX_ASPECT];
-    if (puglIsValidSize(minAspect) && puglIsValidSize(maxAspect)) {
+    const PuglArea minAspect = view->sizeHints[PUGL_MIN_ASPECT];
+    const PuglArea maxAspect = view->sizeHints[PUGL_MAX_ASPECT];
+    if (puglIsValidArea(minAspect) && puglIsValidArea(maxAspect)) {
       sizeHints.flags |= PAspect;
       sizeHints.min_aspect.x = minAspect.width;
       sizeHints.min_aspect.y = minAspect.height;
@@ -448,8 +451,8 @@ updateSizeHints(const PuglView* const view)
       sizeHints.max_aspect.y = maxAspect.height;
     }
 
-    const PuglViewSize fixedAspect = view->sizeHints[PUGL_FIXED_ASPECT];
-    if (puglIsValidSize(fixedAspect)) {
+    const PuglArea fixedAspect = view->sizeHints[PUGL_FIXED_ASPECT];
+    if (puglIsValidArea(fixedAspect)) {
       sizeHints.flags |= PAspect;
       sizeHints.min_aspect.x = fixedAspect.width;
       sizeHints.min_aspect.y = fixedAspect.height;
@@ -460,6 +463,13 @@ updateSizeHints(const PuglView* const view)
 
   XSetWMNormalHints(display, view->impl->win, &sizeHints);
   return PUGL_SUCCESS;
+}
+
+PuglStatus
+puglApplySizeHint(PuglView* const view, const PuglSizeHint PUGL_UNUSED(hint))
+{
+  // No fine-grained updates, hints are always recalculated together
+  return puglUpdateSizeHints(view);
 }
 
 #if USE_XCURSOR
@@ -513,48 +523,21 @@ clearX11Clipboard(PuglX11Clipboard* const board)
   board->data.len            = 0;
 }
 
-static PuglRect
-getInitialFrame(PuglView* const view)
+PuglPoint
+puglGetAncestorCenter(const PuglView* const view)
 {
-  if (view->lastConfigure.type == PUGL_CONFIGURE) {
-    // Use the last configured frame
-    const PuglRect frame = {view->lastConfigure.x,
-                            view->lastConfigure.y,
-                            view->lastConfigure.width,
-                            view->lastConfigure.height};
-    return frame;
-  }
+  Display* const    display       = view->world->impl->display;
+  const int         screen        = view->impl->screen;
+  XWindowAttributes ancestorAttrs = PUGL_INIT_STRUCT;
+  XGetWindowAttributes(display,
+                       view->transientParent ? (Window)view->transientParent
+                                             : RootWindow(display, screen),
+                       &ancestorAttrs);
 
-  const PuglSpan defaultWidth  = view->sizeHints[PUGL_DEFAULT_SIZE].width;
-  const PuglSpan defaultHeight = view->sizeHints[PUGL_DEFAULT_SIZE].height;
-  const int      x             = view->defaultX;
-  const int      y             = view->defaultY;
-  if (x >= INT16_MIN && x <= INT16_MAX && y >= INT16_MIN && y <= INT16_MAX) {
-    // Use the default position set with puglSetPosition while unrealized
-    const PuglRect frame = {
-      (PuglCoord)x, (PuglCoord)y, defaultWidth, defaultHeight};
-    return frame;
-  }
-
-  // Get the best "parentish" window to position the window in
-  Display* const display = view->world->impl->display;
-  const Window   parent =
-    (view->parent            ? (Window)view->parent
-     : view->transientParent ? (Window)view->transientParent
-                             : RootWindow(display, view->impl->screen));
-
-  // Get the position/size of the parent as bounds for the new window
-  XWindowAttributes parentAttrs = PUGL_INIT_STRUCT;
-  XGetWindowAttributes(display, parent, &parentAttrs);
-
-  // Center the frame within the parent bounds
-  const int      centerX = parentAttrs.x + parentAttrs.width / 2;
-  const int      centerY = parentAttrs.y + parentAttrs.height / 2;
-  const PuglRect frame   = {(PuglCoord)(centerX - (defaultWidth / 2)),
-                            (PuglCoord)(centerY - (defaultHeight / 2)),
-                            defaultWidth,
-                            defaultHeight};
-  return frame;
+  const PuglPoint center = {
+    (PuglCoord)(ancestorAttrs.x + (ancestorAttrs.width / 2)),
+    (PuglCoord)(ancestorAttrs.y + (ancestorAttrs.height / 2))};
+  return center;
 }
 
 PuglStatus
@@ -609,16 +592,17 @@ puglRealize(PuglView* const view)
   attr.event_mask |= StructureNotifyMask;
   attr.event_mask |= VisibilityChangeMask;
 
-  // Calculate the initial window rectangle
-  const PuglRect initialFrame = getInitialFrame(view);
+  // Calculate the initial window frame
+  const PuglArea  initialSize = puglGetInitialSize(view);
+  const PuglPoint initialPos  = puglGetInitialPosition(view, initialSize);
 
   // Create the window
   impl->win = XCreateWindow(display,
                             parent,
-                            initialFrame.x,
-                            initialFrame.y,
-                            initialFrame.width,
-                            initialFrame.height,
+                            initialPos.x,
+                            initialPos.y,
+                            initialSize.width,
+                            initialSize.height,
                             0,
                             impl->vi->depth,
                             InputOutput,
@@ -650,7 +634,7 @@ puglRealize(PuglView* const view)
   if (XRRQueryExtension(display, &ignored, &ignored)) {
     // Set refresh rate hint to the real refresh rate
     XRRScreenConfiguration* conf         = XRRGetScreenInfo(display, parent);
-    short                   current_rate = XRRConfigCurrentRate(conf);
+    const short             current_rate = XRRConfigCurrentRate(conf);
 
     view->hints[PUGL_REFRESH_RATE] = current_rate;
     XRRFreeScreenConfigInfo(conf);
@@ -658,12 +642,13 @@ puglRealize(PuglView* const view)
 #endif
 
   // Set basic window hints and attributes
-  char* const className = world->strings[PUGL_CLASS_NAME];
-  XClassHint  classHint = {className, className};
+  XClassHint classHint = {world->strings[PUGL_APPLICATION_NAME],
+                          world->strings[PUGL_CLASS_NAME]};
   XSetClassHint(display, impl->win, &classHint);
-  puglSetViewString(view, PUGL_WINDOW_TITLE, view->strings[PUGL_WINDOW_TITLE]);
+  puglApplyViewString(
+    view, PUGL_WINDOW_TITLE, view->strings[PUGL_WINDOW_TITLE]);
   puglSetTransientParent(view, view->transientParent);
-  updateSizeHints(view);
+  puglUpdateSizeHints(view);
 
   // Set PID and hostname so the window manager can access our process
   char       hostname[256] = PUGL_INIT_STRUCT;
@@ -746,34 +731,29 @@ puglUnrealize(PuglView* const view)
   impl->vi = NULL;
 
   memset(&view->lastConfigure, 0, sizeof(PuglConfigureEvent));
-  memset(&view->impl->pendingConfigure, 0, sizeof(PuglEvent));
   memset(&view->impl->pendingExpose, 0, sizeof(PuglEvent));
-
-  if (impl->mapped) {
-    view->impl->pendingConfigure.configure.style |= PUGL_VIEW_STYLE_MAPPED;
-  }
-
   return PUGL_SUCCESS;
 }
 
 PuglStatus
 puglShow(PuglView* const view, const PuglShowCommand command)
 {
-  PuglStatus st = view->impl->win ? PUGL_SUCCESS : puglRealize(view);
+  PuglInternals* impl = view->impl;
+  PuglStatus     st   = impl->win ? PUGL_SUCCESS : puglRealize(view);
 
   if (!st) {
     switch (command) {
     case PUGL_SHOW_PASSIVE:
-      XMapWindow(view->world->impl->display, view->impl->win);
+      XMapWindow(view->world->impl->display, impl->win);
       break;
     case PUGL_SHOW_RAISE:
     case PUGL_SHOW_FORCE_RAISE:
-      XMapRaised(view->world->impl->display, view->impl->win);
+      XMapRaised(view->world->impl->display, impl->win);
       break;
     }
 
     if (view->stage == PUGL_VIEW_STAGE_CONFIGURED) {
-      st = puglPostRedisplay(view);
+      st = puglObscureView(view);
     }
   }
 
@@ -783,6 +763,10 @@ puglShow(PuglView* const view, const PuglShowCommand command)
 PuglStatus
 puglHide(PuglView* const view)
 {
+  if (view->world->state == PUGL_WORLD_EXPOSING) {
+    return PUGL_BAD_CALL;
+  }
+
   XUnmapWindow(view->world->impl->display, view->impl->win);
   return PUGL_SUCCESS;
 }
@@ -817,13 +801,13 @@ keyInRange(const KeySym  xSym,
            const PuglKey puglMin)
 {
   return (xSym >= xMin && xSym <= xMax) ? (PuglKey)(puglMin + (xSym - xMin))
-                                        : (PuglKey)0;
+                                        : PUGL_KEY_NONE;
 }
 
 static PuglKey
 keySymToSpecial(const KeySym sym)
 {
-  PuglKey key = (PuglKey)0;
+  PuglKey key = PUGL_KEY_NONE;
   if ((key = keyInRange(sym, XK_F1, XK_F12, PUGL_KEY_F1)) ||
       (key = keyInRange(sym, XK_Page_Up, XK_End, PUGL_KEY_PAGE_UP)) ||
       (key = keyInRange(sym, XK_Home, XK_Down, PUGL_KEY_HOME)) ||
@@ -856,7 +840,7 @@ keySymToSpecial(const KeySym sym)
   }
   // clang-format on
 
-  return (PuglKey)0;
+  return PUGL_KEY_NONE;
 }
 
 static int
@@ -897,7 +881,8 @@ translateKey(PuglView* const view, XEvent* const xevent, PuglEvent* const event)
     event->key.key = (PuglKey)puglDecodeUTF8((const uint8_t*)ustr);
   }
 
-  if (xevent->type == KeyPress && !filter && !special && view->impl->xic) {
+  if (xevent->type == KeyPress && !filter && (!special || ufound > 0) &&
+      view->impl->xic) {
     // Lookup shifted key for possible text event
     xevent->xkey.state = state;
 
@@ -1028,7 +1013,7 @@ translateClientMessage(PuglView* const view, XClientMessageEvent message)
 {
   Display* const            display = view->world->impl->display;
   const PuglX11Atoms* const atoms   = &view->world->impl->atoms;
-  PuglEvent                 event   = {{PUGL_NOTHING, 0}};
+  PuglEvent                 event   = {{PUGL_NOTHING, 0U}};
 
   if (message.message_type == atoms->WM_PROTOCOLS) {
     const Atom protocol = (Atom)message.data.l[0];
@@ -1083,6 +1068,7 @@ getCurrentViewStyleFlags(PuglView* const view)
         state |= PUGL_VIEW_STYLE_DEMANDING;
       }
     }
+    XFree(hints);
   }
 
   if (view->impl->mapped) {
@@ -1101,17 +1087,19 @@ getCurrentConfiguration(PuglView* const view)
   XWindowAttributes attrs;
   XGetWindowAttributes(display, view->impl->win, &attrs);
 
-  // Get window position relative to the root window
+  // Get window position (relative to the root window if not a child)
   Window ignoredChild = 0;
-  int    rootX        = 0;
-  int    rootY        = 0;
-  XTranslateCoordinates(
-    display, view->impl->win, attrs.root, 0, 0, &rootX, &rootY, &ignoredChild);
+  int    x            = attrs.x;
+  int    y            = attrs.y;
+  if (!view->parent) {
+    XTranslateCoordinates(
+      display, view->impl->win, attrs.root, 0, 0, &x, &y, &ignoredChild);
+  }
 
   // Build a configure event based on the current window configuration
-  PuglEvent configureEvent        = {{PUGL_CONFIGURE, 0}};
-  configureEvent.configure.x      = (PuglCoord)rootX;
-  configureEvent.configure.y      = (PuglCoord)rootY;
+  PuglEvent configureEvent        = {{PUGL_CONFIGURE, 0U}};
+  configureEvent.configure.x      = (PuglCoord)x;
+  configureEvent.configure.y      = (PuglCoord)y;
   configureEvent.configure.width  = (PuglSpan)attrs.width;
   configureEvent.configure.height = (PuglSpan)attrs.height;
   configureEvent.configure.style  = getCurrentViewStyleFlags(view);
@@ -1120,27 +1108,11 @@ getCurrentConfiguration(PuglView* const view)
 }
 
 static PuglEvent
-makeConfigureEvent(PuglView* const view)
-{
-  PuglEvent event = view->impl->pendingConfigure;
-
-  if (event.type != PUGL_CONFIGURE) {
-    event = getCurrentConfiguration(view);
-  } else if (view->impl->mapped) {
-    event.configure.style |= PUGL_VIEW_STYLE_MAPPED;
-  } else {
-    event.configure.style &= ~(PuglViewStyleFlags)PUGL_VIEW_STYLE_MAPPED;
-  }
-
-  return event;
-}
-
-static PuglEvent
 translatePropertyNotify(PuglView* const view, XPropertyEvent message)
 {
   const PuglInternals* const impl  = view->impl;
   const PuglX11Atoms* const  atoms = &view->world->impl->atoms;
-  PuglEvent                  event = {{PUGL_NOTHING, 0}};
+  PuglEvent                  event = {{PUGL_NOTHING, 0U}};
 
   if (message.atom == atoms->NET_WM_STATE) {
     // Get all the current states set in the window hints
@@ -1151,8 +1123,7 @@ translatePropertyNotify(PuglView* const view, XPropertyEvent message)
     }
 
     // Make a configure event based on the current configuration to update
-    event                 = makeConfigureEvent(view);
-    event.configure.style = getCurrentViewStyleFlags(view); // FIXME: necessary?
+    event = getCurrentConfiguration(view);
 
     XFree(hints);
   } else if (message.atom == atoms->NET_FRAME_EXTENTS) {
@@ -1190,7 +1161,7 @@ translatePropertyNotify(PuglView* const view, XPropertyEvent message)
 static PuglEvent
 translateEvent(PuglView* const view, XEvent xevent)
 {
-  PuglEvent event = {{PUGL_NOTHING, 0}};
+  PuglEvent event = {{PUGL_NOTHING, 0U}};
   event.any.flags = xevent.xany.send_event ? PUGL_IS_SEND_EVENT : 0;
 
   switch (xevent.type) {
@@ -1201,18 +1172,21 @@ translateEvent(PuglView* const view, XEvent xevent)
     event = translatePropertyNotify(view, xevent.xproperty);
     break;
   case VisibilityNotify:
-    event = makeConfigureEvent(view);
+    event = getCurrentConfiguration(view);
     break;
   case MapNotify:
     view->impl->mapped = true;
-    event              = makeConfigureEvent(view);
+    event              = getCurrentConfiguration(view);
     break;
   case UnmapNotify:
     view->impl->mapped = false;
-    event              = makeConfigureEvent(view);
+    event              = getCurrentConfiguration(view);
+    break;
+  case DestroyNotify:
+    view->impl->win = None;
     break;
   case ConfigureNotify:
-    event                  = makeConfigureEvent(view);
+    event                  = getCurrentConfiguration(view);
     event.configure.width  = (PuglSpan)xevent.xconfigure.width;
     event.configure.height = (PuglSpan)xevent.xconfigure.height;
     if (view->parent) {
@@ -1384,7 +1358,7 @@ puglStartTimer(PuglView* const view, const uintptr_t id, const double timeout)
 #if USE_XSYNC
   if (view->world->impl->syncSupported) {
     XSyncValue value;
-    XSyncIntToValue(&value, (int)floor(timeout * 1000.0));
+    XSyncIntToValue(&value, (int)(timeout * 1000.0));
 
     PuglWorldInternals*  w       = view->world->impl;
     Display* const       display = w->display;
@@ -1454,47 +1428,39 @@ puglStopTimer(PuglView* const view, const uintptr_t id)
   return PUGL_FAILURE;
 }
 
-static XEvent
-eventToX(PuglView* const view, const PuglEvent* const event)
+static PuglStatus
+eventToX(PuglView* const view, const PuglEvent* const event, XEvent* const out)
 {
-  XEvent xev          = PUGL_INIT_STRUCT;
-  xev.xany.send_event = True;
+  memset(out, 0, sizeof(XEvent));
+  out->xany.serial     = 0;
+  out->xany.send_event = True;
+  out->xany.display    = view->world->impl->display;
+  out->xany.window     = view->impl->win;
 
-  switch (event->type) {
-  case PUGL_EXPOSE: {
-    const double x = floor(event->expose.x);
-    const double y = floor(event->expose.y);
-    const double w = ceil(event->expose.x + event->expose.width) - x;
-    const double h = ceil(event->expose.y + event->expose.height) - y;
+  if (event->type == PUGL_EXPOSE) {
+    const double x = event->expose.x;
+    const double y = event->expose.y;
+    const double w = event->expose.x + event->expose.width - x;
+    const double h = event->expose.y + event->expose.height - y;
 
-    xev.xexpose.type    = Expose;
-    xev.xexpose.serial  = 0;
-    xev.xexpose.display = view->world->impl->display;
-    xev.xexpose.window  = view->impl->win;
-    xev.xexpose.x       = (int)x;
-    xev.xexpose.y       = (int)y;
-    xev.xexpose.width   = (int)w;
-    xev.xexpose.height  = (int)h;
-    break;
+    out->xexpose.type   = Expose;
+    out->xexpose.x      = (int)x;
+    out->xexpose.y      = (int)y;
+    out->xexpose.width  = (int)w;
+    out->xexpose.height = (int)h;
+    return PUGL_SUCCESS;
   }
 
-  case PUGL_CLIENT:
-    xev.xclient.type         = ClientMessage;
-    xev.xclient.serial       = 0;
-    xev.xclient.send_event   = True;
-    xev.xclient.display      = view->world->impl->display;
-    xev.xclient.window       = view->impl->win;
-    xev.xclient.message_type = view->world->impl->atoms.PUGL_CLIENT_MSG;
-    xev.xclient.format       = 32;
-    xev.xclient.data.l[0]    = (long)event->client.data1;
-    xev.xclient.data.l[1]    = (long)event->client.data2;
-    break;
-
-  default:
-    break;
+  if (event->type == PUGL_CLIENT) {
+    out->xclient.type         = ClientMessage;
+    out->xclient.message_type = view->world->impl->atoms.PUGL_CLIENT_MSG;
+    out->xclient.format       = 32;
+    out->xclient.data.l[0]    = (long)event->client.data1;
+    out->xclient.data.l[1]    = (long)event->client.data2;
+    return PUGL_SUCCESS;
   }
 
-  return xev;
+  return PUGL_FAILURE;
 }
 
 PuglStatus
@@ -1503,7 +1469,7 @@ puglSendEvent(PuglView* const view, const PuglEvent* const event)
   PuglInternals* const impl    = view->impl;
   Display* const       display = view->world->impl->display;
   XEvent               xev     = PUGL_INIT_STRUCT;
-  if (!impl->win) {
+  if (!impl->win || view->world->state == PUGL_WORLD_EXPOSING) {
     return PUGL_FAILURE;
   }
 
@@ -1526,29 +1492,18 @@ puglSendEvent(PuglView* const view, const PuglEvent* const event)
                  &xev));
   }
 
-  xev = eventToX(view, event);
-  if (xev.type) {
+  if (!eventToX(view, event, &xev)) {
     return puglX11Status(XSendEvent(display, impl->win, False, 0, &xev));
   }
 
   return PUGL_UNSUPPORTED;
 }
 
-#ifndef PUGL_DISABLE_DEPRECATED
-PuglStatus
-puglWaitForEvent(PuglView* const view)
-{
-  XEvent xevent;
-  XPeekEvent(view->world->impl->display, &xevent);
-  return PUGL_SUCCESS;
-}
-#endif
-
 static void
 mergeExposeEvents(PuglExposeEvent* const dst, const PuglExposeEvent* const src)
 {
   if (!dst->type) {
-    if (src->width > 0.0 && src->height > 0.0) {
+    if (src->width && src->height) {
       *dst = *src;
     }
   } else {
@@ -1612,7 +1567,7 @@ handleSelectionNotify(const PuglWorld* const       world,
   Display* const          display   = view->world->impl->display;
   const Atom              selection = event->selection;
   PuglX11Clipboard* const board     = getX11SelectionClipboard(view, selection);
-  PuglEvent               puglEvent = {{PUGL_NOTHING, 0}};
+  PuglEvent               puglEvent = {{PUGL_NOTHING, 0U}};
 
   if (event->target == atoms->TARGETS) {
     // Notification of available datatypes
@@ -1622,7 +1577,7 @@ handleSelectionNotify(const PuglWorld* const       world,
           view, event->requestor, event->property, &numFormats, &formats) &&
         !setClipboardFormats(view, board, numFormats, formats)) {
       const PuglDataOfferEvent offer = {
-        PUGL_DATA_OFFER, 0, (double)event->time / 1e3};
+        PUGL_DATA_OFFER, 0U, (double)event->time / 1e3};
 
       puglEvent.offer            = offer;
       board->acceptedFormatIndex = UINT32_MAX;
@@ -1699,48 +1654,35 @@ handleSelectionRequest(const PuglWorld* const              world,
 }
 
 /// Flush pending configure and expose events for all views
-PUGL_WARN_UNUSED_RESULT
-static PuglStatus
+PUGL_WARN_UNUSED_RESULT static PuglStatus
 flushExposures(PuglWorld* const world)
 {
   PuglStatus st0 = PUGL_SUCCESS;
   PuglStatus st1 = PUGL_SUCCESS;
-  PuglStatus st2 = PUGL_SUCCESS;
 
+  // Send update events so the application can trigger redraws
   for (size_t i = 0; i < world->numViews; ++i) {
-    PuglView* const view = world->views[i];
-
-    // Send update event so the application can trigger redraws
-    if (puglGetVisible(view)) {
-      puglDispatchSimpleEvent(view, PUGL_UPDATE);
-    }
-
-    // Copy and reset pending events (in case their handlers write new ones)
-    const PuglEvent configure = view->impl->pendingConfigure;
-    const PuglEvent expose    = view->impl->pendingExpose;
-
-    view->impl->pendingConfigure.type = PUGL_NOTHING;
-    view->impl->pendingExpose.type    = PUGL_NOTHING;
-
-    if (expose.type || configure.type) {
-      const PuglExposeEvent* const exposeEvent =
-        expose.type ? &expose.expose : NULL;
-
-      if (!(st0 = view->backend->enter(view, exposeEvent))) {
-        if (configure.type) {
-          st0 = puglConfigure(view, &configure);
-        }
-
-        if (expose.type) {
-          st1 = view->eventFunc(view, &expose);
-        }
-      }
-
-      st2 = view->backend->leave(view, exposeEvent);
+    if (puglGetVisible(world->views[i])) {
+      puglDispatchSimpleEvent(world->views[i], PUGL_UPDATE);
     }
   }
 
-  return st0 ? st0 : st1 ? st1 : st2;
+  // Expose any dirty views
+  world->state = PUGL_WORLD_EXPOSING;
+  for (size_t i = 0; i < world->numViews; ++i) {
+    PuglView* const view = world->views[i];
+
+    if (puglGetVisible(view)) {
+      const PuglEvent expose = view->impl->pendingExpose;
+      if (expose.type && !(st0 = view->backend->enter(view, &expose.expose))) {
+        st0 = view->eventFunc(view, &expose);
+        st1 = view->backend->leave(view, &expose.expose);
+        view->impl->pendingExpose.type = PUGL_NOTHING;
+      }
+    }
+  }
+
+  return st0 ? st0 : st1;
 }
 
 static bool
@@ -1753,7 +1695,7 @@ handleTimerEvent(PuglWorld* const world, const XEvent xevent)
 
     for (size_t i = 0; i < world->impl->numTimers; ++i) {
       if (world->impl->timers[i].alarm == notify->alarm) {
-        PuglEvent event = {{PUGL_TIMER, 0}};
+        PuglEvent event = {{PUGL_TIMER, 0U}};
         event.timer.id  = world->impl->timers[i].id;
         puglDispatchEvent(world->impl->timers[i].view, &event);
       }
@@ -1821,10 +1763,6 @@ dispatchX11Events(PuglWorld* const world)
     const PuglEvent event = translateEvent(view, xevent);
 
     switch (event.type) {
-    case PUGL_CONFIGURE:
-      // Update configure event to be dispatched after loop
-      view->impl->pendingConfigure = event;
-      break;
     case PUGL_EXPOSE:
       // Expand expose event to be dispatched after loop
       mergeExposeEvents(&view->impl->pendingExpose.expose, &event.expose);
@@ -1851,26 +1789,24 @@ dispatchX11Events(PuglWorld* const world)
   return st;
 }
 
-#ifndef PUGL_DISABLE_DEPRECATED
-PuglStatus
-puglProcessEvents(PuglView* const view)
-{
-  return puglUpdate(view->world, 0.0);
-}
-#endif
-
 PuglStatus
 puglUpdate(PuglWorld* const world, const double timeout)
 {
-  const double startTime = puglGetTime(world);
-  PuglStatus   st0       = PUGL_SUCCESS;
-  PuglStatus   st1       = PUGL_SUCCESS;
+  const double         startTime  = puglGetTime(world);
+  const PuglWorldState startState = world->state;
+  PuglStatus           st0        = PUGL_SUCCESS;
+  PuglStatus           st1        = PUGL_SUCCESS;
 
-  world->impl->dispatchingEvents = true;
+  if (startState == PUGL_WORLD_IDLE) {
+    world->state = PUGL_WORLD_UPDATING;
+  } else if (startState != PUGL_WORLD_RECURSING) {
+    return PUGL_BAD_CALL;
+  }
 
   if (timeout < 0.0) {
-    st0 = pollX11Socket(world, timeout);
-    st0 = st0 ? st0 : dispatchX11Events(world);
+    if (!(st0 = pollX11Socket(world, timeout))) {
+      st0 = dispatchX11Events(world);
+    }
   } else if (timeout <= 0.001) {
     st0 = dispatchX11Events(world);
   } else {
@@ -1885,10 +1821,8 @@ puglUpdate(PuglWorld* const world, const double timeout)
     }
   }
 
-  st1 = flushExposures(world);
-
-  world->impl->dispatchingEvents = false;
-
+  st1          = flushExposures(world);
+  world->state = startState;
   return st0 ? st0 : st1;
 }
 
@@ -1896,50 +1830,64 @@ double
 puglGetTime(const PuglWorld* const world)
 {
   struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
+  if (clock_gettime(CLOCK_MONOTONIC, &ts)) {
+    return 0.0;
+  }
+
   return ((double)ts.tv_sec + (double)ts.tv_nsec / 1000000000.0) -
          world->startTime;
 }
 
 PuglStatus
-puglPostRedisplay(PuglView* const view)
+puglObscureView(PuglView* const view)
 {
-  PuglRect rect = puglGetFrame(view);
-  rect.x        = 0;
-  rect.y        = 0;
-
-  return puglPostRedisplayRect(view, rect);
+  return puglObscureRegion(
+    view, 0, 0, view->lastConfigure.width, view->lastConfigure.height);
 }
 
 PuglStatus
-puglPostRedisplayRect(PuglView* const view, const PuglRect rect)
+puglObscureRegion(PuglView* const view,
+                  const int       x,
+                  const int       y,
+                  const unsigned  width,
+                  const unsigned  height)
 {
-  const PuglExposeEvent event = {
-    PUGL_EXPOSE, 0, rect.x, rect.y, rect.width, rect.height};
-
-  if (view->world->impl->dispatchingEvents) {
-    // Currently dispatching events, add/expand expose for the loop end
-    mergeExposeEvents(&view->impl->pendingExpose.expose, &event);
-  } else if (view->impl->win) {
-    // Not dispatching events, send an X expose so we wake up next time
-    PuglEvent exposeEvent = {{PUGL_EXPOSE, 0}};
-    exposeEvent.expose    = event;
-    return puglSendEvent(view, &exposeEvent);
+  if (!puglIsValidPosition(x, y) || !puglIsValidSize(width, height)) {
+    return PUGL_BAD_PARAMETER;
   }
 
-  return PUGL_SUCCESS;
+  const PuglCoord cx = MAX((PuglCoord)0, (PuglCoord)x);
+  const PuglCoord cy = MAX((PuglCoord)0, (PuglCoord)y);
+  const PuglSpan  cw = MIN(view->lastConfigure.width, (PuglSpan)width);
+  const PuglSpan  ch = MIN(view->lastConfigure.height, (PuglSpan)height);
+
+  const PuglExposeEvent event = {PUGL_EXPOSE, 0U, cx, cy, cw, ch};
+
+  PuglStatus st = PUGL_SUCCESS;
+  if (view->world->state == PUGL_WORLD_UPDATING) {
+    // Currently dispatching events, add/expand expose for the loop end
+    mergeExposeEvents(&view->impl->pendingExpose.expose, &event);
+  } else if (view->world->state == PUGL_WORLD_EXPOSING) {
+    st = PUGL_BAD_CALL;
+  } else if (view->impl->win) {
+    // Not dispatching events, send an X expose so we wake up next time
+    PuglEvent exposeEvent = {{PUGL_EXPOSE, 0U}};
+    exposeEvent.expose    = event;
+    st                    = puglSendEvent(view, &exposeEvent);
+  }
+  return st;
 }
 
 PuglNativeView
-puglGetNativeView(PuglView* const view)
+puglGetNativeView(const PuglView* const view)
 {
   return (PuglNativeView)view->impl->win;
 }
 
 PuglStatus
-puglViewStringChanged(PuglView* const      view,
-                      const PuglStringHint key,
-                      const char* const    value)
+puglApplyViewString(PuglView* const      view,
+                    const PuglStringHint key,
+                    const char* const    value)
 {
   Display* const      display = view->world->impl->display;
   const PuglX11Atoms* atoms   = &view->world->impl->atoms;
@@ -1949,6 +1897,7 @@ puglViewStringChanged(PuglView* const      view,
   }
 
   switch (key) {
+  case PUGL_APPLICATION_NAME:
   case PUGL_CLASS_NAME:
     break;
 
@@ -1977,79 +1926,21 @@ puglGetScaleFactor(const PuglView* const view)
 }
 
 PuglStatus
-puglSetFrame(PuglView* const view, const PuglRect frame)
+puglSetWindowPosition(PuglView* const view, const int x, const int y)
 {
-  if (!view->impl->win) {
-    // Set defaults to be used when realized
-    view->defaultX                            = frame.x;
-    view->defaultY                            = frame.y;
-    view->sizeHints[PUGL_DEFAULT_SIZE].width  = frame.width;
-    view->sizeHints[PUGL_DEFAULT_SIZE].height = frame.height;
-    return PUGL_SUCCESS;
-  }
-
-  return puglX11Status(XMoveResizeWindow(view->world->impl->display,
-                                         view->impl->win,
-                                         frame.x,
-                                         frame.y,
-                                         frame.width,
-                                         frame.height));
-}
-
-PuglStatus
-puglSetPosition(PuglView* const view, const int x, const int y)
-{
-  Display* const display = view->world->impl->display;
-
-  if (x < INT16_MIN || x > INT16_MAX || y < INT16_MIN || y > INT16_MAX) {
-    return PUGL_BAD_PARAMETER;
-  }
-
-  if (!view->impl->win) {
-    // Set defaults to be used when realized
-    view->defaultX = x;
-    view->defaultY = y;
-    return PUGL_SUCCESS;
-  }
-
-  return puglX11Status(XMoveWindow(display,
+  return puglX11Status(XMoveWindow(view->world->impl->display,
                                    view->impl->win,
                                    (int)(x - view->impl->frameExtentLeft),
                                    (int)(y - view->impl->frameExtentTop)));
 }
 
 PuglStatus
-puglSetSize(PuglView* const view, const unsigned width, const unsigned height)
+puglSetWindowSize(PuglView* const view,
+                  const unsigned  width,
+                  const unsigned  height)
 {
-  Display* const display = view->world->impl->display;
-
-  if (width > INT16_MAX || height > INT16_MAX) {
-    return PUGL_BAD_PARAMETER;
-  }
-
-  if (!view->impl->win) {
-    // Set defaults to be used when realized
-    view->sizeHints[PUGL_DEFAULT_SIZE].width  = (PuglSpan)width;
-    view->sizeHints[PUGL_DEFAULT_SIZE].height = (PuglSpan)height;
-    return PUGL_SUCCESS;
-  }
-
-  return puglX11Status(XResizeWindow(display, view->impl->win, width, height));
-}
-
-PuglStatus
-puglSetSizeHint(PuglView* const    view,
-                const PuglSizeHint hint,
-                const PuglSpan     width,
-                const PuglSpan     height)
-{
-  if ((unsigned)hint >= PUGL_NUM_SIZE_HINTS) {
-    return PUGL_BAD_PARAMETER;
-  }
-
-  view->sizeHints[hint].width  = width;
-  view->sizeHints[hint].height = height;
-  return updateSizeHints(view);
+  return puglX11Status(
+    XResizeWindow(view->world->impl->display, view->impl->win, width, height));
 }
 
 PuglStatus

@@ -77,6 +77,11 @@ int main(int argc, char* argv[])
 {
     return DISTRHO_NAMESPACE::dpf_webview_start(argc, argv);
 }
+#elif defined(DISTRHO_OS_LINUX) && defined(DGL_USE_WEB_VIEW) && !DISTRHO_IS_STANDALONE
+int main()
+{
+    return 0;
+}
 #endif
 
 #endif

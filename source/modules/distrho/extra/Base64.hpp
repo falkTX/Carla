@@ -94,9 +94,11 @@ void d_getChunkFromBase64String_impl(std::vector<uint8_t>& vector, const char* c
     uint i=0, j=0;
     uint charArray3[3], charArray4[4];
 
-    vector.reserve(std::strlen(base64string)*3/4 + 4);
+    const size_t len = std::strlen(base64string);
 
-    for (std::size_t l=0, len=std::strlen(base64string); l<len; ++l)
+    vector.reserve(len * 3 / 4 + 4);
+
+    for (std::size_t l = 0; l < len; ++l)
     {
         const char c = base64string[l];
 

@@ -42,11 +42,13 @@ AboutDialog::AboutDialog(QWidget* const parent,
         ui.tabWidget->removeTab(3);
         ui.tabWidget->removeTab(2);
     }
+   #ifndef STATIC_PLUGIN_TARGET
     else if (carla_is_engine_running(hostHandle))
     {
         ui.le_osc_url_tcp->setText(carla_get_host_osc_url_tcp(hostHandle));
         ui.le_osc_url_udp->setText(carla_get_host_osc_url_udp(hostHandle));
     }
+   #endif
     else
     {
         ui.le_osc_url_tcp->setText(tr("(Engine not running)"));

@@ -23,8 +23,8 @@
 # include <xmmintrin.h>
 #endif
 
-#include "distrho/extra/Base64.hpp"
-#include "distrho/extra/Time.hpp"
+#include "extra/Base64.hpp"
+#include "extra/Time.hpp"
 
 #include "water/files/File.h"
 #include "water/misc/Time.h"

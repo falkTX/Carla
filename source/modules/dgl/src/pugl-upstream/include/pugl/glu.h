@@ -4,19 +4,15 @@
 #ifndef PUGL_GLU_H
 #define PUGL_GLU_H
 
-// IWYU pragma: begin_exports
-
 #ifndef PUGL_NO_INCLUDE_GLU_H
 #  ifdef __APPLE__
-#    include <OpenGL/glu.h>
+#    include <OpenGL/glu.h> // IWYU pragma: export
 #  else
 #    ifdef _WIN32
 #      include <windows.h>
 #    endif
-#    include <GL/glu.h>
+#    include <GL/glu.h> // IWYU pragma: export
 #  endif
 #endif
-
-// IWYU pragma: end_exports
 
 #endif // PUGL_GLU_H

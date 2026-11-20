@@ -5,7 +5,7 @@
 #include "mac.h"
 #include "stub.h"
 
-#include "pugl/cairo.h"
+#include <pugl/cairo.h>
 
 #include <cairo-quartz.h>
 

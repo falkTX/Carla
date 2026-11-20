@@ -53,7 +53,7 @@ rm ${CARLA_DIR}/source/modules/dgl/src/pugl-upstream/src/.clang-tidy
 
 rm ${CARLA_DIR}/source/modules/distrho/DistrhoInfo.hpp
 rm ${CARLA_DIR}/source/modules/distrho/DistrhoUI_win32.cpp
-rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoPlugin{AU,CLAP,Export,JACK,LADSPA+DSSI,LV2,LV2export,Stub,VST2,VST3}.cpp
+rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoPlugin{AU,CLAP,Export,JACK,LADSPA+DSSI,LV2,LV2export,MAPI,Stub,VST2,VST3}.cpp
 rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoPluginVST.hpp
 rm ${CARLA_DIR}/source/modules/distrho/src/DistrhoUI{DSSI,LV2,Stub,VST3}.cpp
 

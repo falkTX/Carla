@@ -8,9 +8,9 @@
 #include "stub.h"
 #include "types.h"
 
-#include "pugl/pugl.h"
-#include "pugl/stub.h"
-#include "pugl/vulkan.h"
+#include <pugl/pugl.h>
+#include <pugl/stub.h>
+#include <pugl/vulkan.h>
 
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_macos.h>
@@ -144,13 +144,13 @@ puglFreeVulkanLoader(PuglVulkanLoader* loader)
 PFN_vkGetInstanceProcAddr
 puglGetInstanceProcAddrFunc(const PuglVulkanLoader* loader)
 {
-  return loader->vkGetInstanceProcAddr;
+  return loader ? loader->vkGetInstanceProcAddr : NULL;
 }
 
 PFN_vkGetDeviceProcAddr
 puglGetDeviceProcAddrFunc(const PuglVulkanLoader* loader)
 {
-  return loader->vkGetDeviceProcAddr;
+  return loader ? loader->vkGetDeviceProcAddr : NULL;
 }
 
 const PuglBackend*

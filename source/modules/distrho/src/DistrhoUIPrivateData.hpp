@@ -67,14 +67,14 @@ START_NAMESPACE_DISTRHO
 int dpf_webview_start(int argc, char* argv[]);
 #endif
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Plugin Application, will set class name based on plugin details
 
 class PluginApplication : public DGL_NAMESPACE::Application
 {
 public:
-    explicit PluginApplication(const char* className)
-        : DGL_NAMESPACE::Application(DISTRHO_UI_IS_STANDALONE)
+    explicit PluginApplication(const char* className, const Application::Type type)
+        : DGL_NAMESPACE::Application(DISTRHO_UI_IS_STANDALONE, type)
     {
        #if defined(__MOD_DEVICES__) || !defined(__EMSCRIPTEN__)
         if (className == nullptr)
@@ -108,14 +108,16 @@ public:
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginApplication)
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Plugin Window, will pass some Window events to UI
 
 class PluginWindow : public DGL_NAMESPACE::Window
 {
     UI* const ui;
     bool initializing;
+   #if DGL_ALLOW_DEPRECATED_METHODS
     bool receivedReshapeDuringInit;
+   #endif
 
 public:
     explicit PluginWindow(UI* const uiPtr,
@@ -130,15 +132,20 @@ public:
                  DISTRHO_UI_USES_SIZE_REQUEST,
                  false),
           ui(uiPtr),
-          initializing(true),
-          receivedReshapeDuringInit(false)
+          initializing(true)
+       #if DGL_ALLOW_DEPRECATED_METHODS
+        , receivedReshapeDuringInit(false)
+       #endif
     {
         if (pData->view == nullptr)
             return;
 
         // this is called just before creating UI, ensuring proper context to it
         if (pData->initPost())
+        {
             puglBackendEnter(pData->view);
+            pData->createContextIfNeeded();
+        }
     }
 
     ~PluginWindow() override
@@ -156,12 +163,31 @@ public:
         initializing = false;
         puglBackendLeave(pData->view);
 
+       #if DGL_ALLOW_DEPRECATED_METHODS
         if (receivedReshapeDuringInit)
         {
             puglBackendEnter(pData->view);
+           #if defined(_MSC_VER)
+            #pragma warning(push)
+            #pragma warning(disable:4996)
+           #elif defined(__clang__)
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+           #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+           #endif
             ui->uiReshape(getWidth(), getHeight());
+           #if defined(_MSC_VER)
+            #pragma warning(pop)
+           #elif defined(__clang__)
+            #pragma clang diagnostic pop
+           #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+            #pragma GCC diagnostic pop
+           #endif
             puglBackendLeave(pData->view);
         }
+       #endif
     }
 
     // used for temporary windows (VST/CLAP get size without active/visible view)
@@ -210,6 +236,17 @@ protected:
         ui->uiFocus(focus, mode);
     }
 
+  #if DGL_ALLOW_DEPRECATED_METHODS
+   #if defined(_MSC_VER)
+    #pragma warning(push)
+    #pragma warning(disable:4996)
+   #elif defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+   #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+   #endif
     void onReshape(const uint width, const uint height) override
     {
         DISTRHO_SAFE_ASSERT_RETURN(ui != nullptr,);
@@ -222,6 +259,14 @@ protected:
 
         ui->uiReshape(width, height);
     }
+   #if defined(_MSC_VER)
+    #pragma warning(pop)
+   #elif defined(__clang__)
+    #pragma clang diagnostic pop
+   #elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 460
+    #pragma GCC diagnostic pop
+   #endif
+  #endif
 
     void onScaleFactorChanged(const double scaleFactor) override
     {
@@ -240,7 +285,7 @@ protected:
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginWindow)
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // UI callbacks
 
 typedef void (*editParamFunc)   (void* ptr, uint32_t rindex, bool started);
@@ -250,7 +295,7 @@ typedef void (*sendNoteFunc)    (void* ptr, uint8_t channel, uint8_t note, uint8
 typedef void (*setSizeFunc)     (void* ptr, uint width, uint height);
 typedef bool (*fileRequestFunc) (void* ptr, const char* key);
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // UI private data
 
 struct UI::PrivateData {
@@ -289,8 +334,8 @@ struct UI::PrivateData {
     setSizeFunc     setSizeCallbackFunc;
     fileRequestFunc fileRequestCallbackFunc;
 
-    PrivateData(const char* const appClassName) noexcept
-        : app(appClassName),
+    PrivateData(const char* const appClassName, const DGL_NAMESPACE::Application::Type appType) noexcept
+        : app(appClassName, appType),
           window(nullptr),
          #if DISTRHO_UI_USE_WEB_VIEW
           webview(nullptr),
@@ -389,7 +434,7 @@ struct UI::PrivateData {
    #endif
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // UI private data fileRequestCallback, which requires PluginWindow definitions
 
 inline bool UI::PrivateData::fileRequestCallback(const char* const key)
@@ -416,7 +461,7 @@ inline bool UI::PrivateData::fileRequestCallback(const char* const key)
     return false;
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // PluginWindow onFileSelected that require UI::PrivateData definitions
 
 #if DISTRHO_UI_FILE_BROWSER
@@ -454,7 +499,7 @@ inline void PluginWindow::onFileSelected(const char* const filename)
 }
 #endif
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO
 

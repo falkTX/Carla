@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2025 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -89,6 +89,8 @@ DGL_EXT(PFNGLUNIFORMBLOCKBINDINGPROC,      glUniformBlockBinding)
 //#define STB_IMAGE_STATIC
 #if defined(DGL_USE_GLES2)
 # define NANOVG_GLES2_IMPLEMENTATION
+#elif defined(DGL_USE_GLES3)
+# define NANOVG_GLES3_IMPLEMENTATION
 #elif defined(DGL_USE_OPENGL3)
 # define NANOVG_GL3_IMPLEMENTATION
 #else
@@ -1142,6 +1144,9 @@ inline void NanoBaseWidget<SubWidget>::onDisplay()
         onNanoDisplay();
         displayChildren();
         NanoVG::endFrame();
+       #ifdef DGL_USE_OPENGL3
+        glUseProgram(reinterpret_cast<const OpenGL3GraphicsContext&>(getGraphicsContext()).program);
+       #endif
     }
 }
 

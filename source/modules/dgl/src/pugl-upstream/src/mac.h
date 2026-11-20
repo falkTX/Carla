@@ -5,7 +5,7 @@
 #ifndef PUGL_SRC_MAC_H
 #define PUGL_SRC_MAC_H
 
-#include "pugl/pugl.h"
+#include <pugl/pugl.h>
 
 #import <Cocoa/Cocoa.h>
 

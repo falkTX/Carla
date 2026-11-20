@@ -7,8 +7,8 @@
 #include "attributes.h"
 #include "types.h"
 
-#include "pugl/attributes.h"
-#include "pugl/pugl.h"
+#include <pugl/attributes.h>
+#include <pugl/pugl.h>
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -75,7 +75,6 @@ struct PuglWorldInternalsImpl {
   XID          serverTimeCounter;
   int          syncEventBase;
   bool         syncSupported;
-  bool         dispatchingEvents;
 };
 
 struct PuglInternalsImpl {
@@ -83,7 +82,6 @@ struct PuglInternalsImpl {
   Window           win;
   XIC              xic;
   PuglSurface*     surface;
-  PuglEvent        pendingConfigure;
   PuglEvent        pendingExpose;
   PuglX11Clipboard clipboard;
   long             frameExtentLeft;
@@ -93,9 +91,7 @@ struct PuglInternalsImpl {
   bool             mapped;
 };
 
-PUGL_WARN_UNUSED_RESULT
-PUGL_API
-PuglStatus
+PUGL_WARN_UNUSED_RESULT PUGL_API PuglStatus
 puglX11Configure(PuglView* view);
 
 #endif // PUGL_SRC_X11_H

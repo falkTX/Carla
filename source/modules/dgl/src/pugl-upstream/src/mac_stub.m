@@ -5,7 +5,7 @@
 #include "mac.h"
 #include "stub.h"
 
-#include "pugl/stub.h"
+#include <pugl/stub.h>
 
 #import <Cocoa/Cocoa.h>
 

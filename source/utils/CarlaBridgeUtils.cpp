@@ -4,7 +4,7 @@
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaShmUtils.hpp"
 
-#include "distrho/extra/Sleep.hpp"
+#include "extra/Sleep.hpp"
 
 // must be last
 #include "jackbridge/JackBridge.hpp"

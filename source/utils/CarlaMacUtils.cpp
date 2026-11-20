@@ -7,7 +7,7 @@
 
 #include "CarlaMacUtils.hpp"
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 
 #include <sys/xattr.h>
 

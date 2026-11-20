@@ -14,7 +14,7 @@
 #include "CarlaMutex.hpp"
 #include "RtLinkedList.hpp"
 
-#include "distrho/extra/String.hpp"
+#include "extra/String.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 

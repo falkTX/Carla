@@ -37,7 +37,7 @@
 # include <X11/Xlib.h>
 #endif
 
-#include "distrho/extra/Sleep.hpp"
+#include "extra/Sleep.hpp"
 
 #include "water/files/File.h"
 #include "water/misc/Time.h"

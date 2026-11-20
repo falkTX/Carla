@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2021 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2026 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -107,17 +107,27 @@ public:
     bool addIdleCallback(IdleCallback* callback, uint timerFrequencyInMs = 0);
     bool removeIdleCallback(IdleCallback* callback);
     double getScaleFactor() const noexcept;
+
+    void setGeometryConstraints(uint minimumWidth, uint minimumHeight, bool keepAspectRatio = false);
+
+   #if DGL_ALLOW_DEPRECATED_METHODS
+   /** DEPRECATED DO NOT USE.
+    * The old deprecated function allowed for optional `bool automaticallyScale` and `bool resizeNowIfAutoScaling`.
+    * This turned out to be not be a good idea; now the scaling on constraints is never done automatically.
+    */
+    DISTRHO_DEPRECATED_BY("setGeometryConstraints(uint, uint, bool)")
     void setGeometryConstraints(uint minimumWidth,
                                 uint minimumHeight,
-                                bool keepAspectRatio = false,
-                                bool automaticallyScale = false,
-                                bool resizeNowIfAutoScaling = true);
+                                bool keepAspectRatio,
+                                bool automaticallyScale,
+                                bool resizeNowIfAutoScaling);
 
     DISTRHO_DEPRECATED_BY("getApp()")
     Application& getParentApp() const noexcept { return getApp(); }
 
     DISTRHO_DEPRECATED_BY("getWindow()")
     Window& getParentWindow() const noexcept { return getWindow(); }
+   #endif
 
 protected:
     bool onKeyboard(const KeyboardEvent&) override;

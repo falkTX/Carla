@@ -210,6 +210,11 @@ static constexpr const uint PLUGIN_HAS_CUSTOM_UI_USING_FILE_OPEN = 0x2000;
  */
 static constexpr const uint PLUGIN_NEEDS_MAIN_THREAD_IDLE = 0x4000;
 
+/*!
+ * Plugin has its own custom UI which is user resizable.
+ */
+static constexpr const uint PLUGIN_HAS_CUSTOM_RESIZABLE_UI = 0x8000;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------

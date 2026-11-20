@@ -6,7 +6,7 @@
 
 #include "internal.h"
 
-#include "pugl/pugl.h"
+#include <pugl/pugl.h>
 
 #include <windows.h>
 
@@ -37,28 +37,19 @@ struct PuglInternalsImpl {
   bool            fullscreen;
 };
 
-PUGL_API
-PuglWinPFD
+PUGL_API PuglWinPFD
 puglWinGetPixelFormatDescriptor(const PuglHints hints);
 
-PUGL_WARN_UNUSED_RESULT
-PUGL_API
-PuglStatus
+PUGL_WARN_UNUSED_RESULT PUGL_API PuglStatus
 puglWinCreateWindow(PuglView* view, const char* title, HWND* hwnd, HDC* hdc);
 
-PUGL_WARN_UNUSED_RESULT
-PUGL_API
-PuglStatus
+PUGL_WARN_UNUSED_RESULT PUGL_API PuglStatus
 puglWinConfigure(PuglView* view);
 
-PUGL_WARN_UNUSED_RESULT
-PUGL_API
-PuglStatus
+PUGL_WARN_UNUSED_RESULT PUGL_API PuglStatus
 puglWinEnter(PuglView* view, const PuglExposeEvent* expose);
 
-PUGL_WARN_UNUSED_RESULT
-PUGL_API
-PuglStatus
+PUGL_WARN_UNUSED_RESULT PUGL_API PuglStatus
 puglWinLeave(PuglView* view, const PuglExposeEvent* expose);
 
 #endif // PUGL_SRC_WIN_H
