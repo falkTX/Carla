@@ -13,7 +13,6 @@
 #include "extra/Time.hpp"
 
 #include "water/files/File.h"
-#include "water/files/FileInputStream.h"
 #include "water/threads/ChildProcess.h"
 #include "water/text/StringArray.h"
 
@@ -563,24 +562,22 @@ private:
     {
         CarlaSha1 sha1;
 
-        /* do we want this? it is not exactly needed and makes discovery slow..
-        if (file.existsAsFile() && file.getSize() < 20*1024*1024) // dont bother hashing > 20Mb files
-        {
-            water::FileInputStream stream(file);
-
-            if (stream.openedOk())
-            {
-                uint8_t block[8192];
-                for (int r; r = stream.read(block, sizeof(block)), r > 0;)
-                    sha1.write(block, r);
-            }
-        }
-        */
-
         sha1.write(filename.toRawUTF8(), filename.length());
 
         const int64_t mtime = file.getLastModificationTime();
         sha1.write(&mtime, sizeof(mtime));
+
+       #ifdef CARLA_OS_LINUX
+        if (fPluginType == CB::PLUGIN_VST3 && file.isDirectory())
+        {
+            const water::File binary(CB::getVst3BundleBinary(file, fBinaryType));
+            const int64_t binaryMtime = binary.getLastModificationTime();
+            const int64_t binarySize = binary.getSize();
+            sha1.write(&fBinaryType, sizeof(fBinaryType));
+            sha1.write(&binaryMtime, sizeof(binaryMtime));
+            sha1.write(&binarySize, sizeof(binarySize));
+        }
+       #endif
 
         fNextSha1Sum = sha1.resultAsString();
     }
@@ -693,6 +690,19 @@ static bool findVST3s(std::vector<water::File>& files,
             for (std::vector<File>::const_iterator cit = results.begin(); cit != results.end(); ++cit)
             {
                 const File file(*cit);
+
+               #ifdef CARLA_OS_LINUX
+                if (file.isDirectory())
+                {
+                    if (CB::getVst3BundleBinary(file, btype).existsAsFile())
+                        files.push_back(file);
+                    continue;
+                }
+
+                const File bundle(file.getParentDirectory().getParentDirectory().getParentDirectory());
+                if (bundle.hasFileExtension("vst3") && file == CB::getVst3BundleBinary(bundle, btype))
+                    continue;
+               #endif
 
                 if (CB::getBinaryTypeFromFile(file.getFullPathName().toRawUTF8()) == btype)
                     files.push_back(file);

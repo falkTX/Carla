@@ -462,6 +462,8 @@ const char* FileCallbackOpcode2Str(const FileCallbackOpcode opcode) noexcept
         return "FILE_CALLBACK_OPEN";
     case FILE_CALLBACK_SAVE:
         return "FILE_CALLBACK_SAVE";
+    case FILE_CALLBACK_CONFIRM_PROJECT_JACK_APPS:
+        return "FILE_CALLBACK_CONFIRM_PROJECT_JACK_APPS";
     }
 
     carla_stderr("CarlaBackend::FileCallbackOpcode2Str(%i) - invalid opcode", opcode);

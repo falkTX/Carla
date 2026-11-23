@@ -1656,7 +1656,13 @@ typedef enum {
     /*!
      * Save file or folder.
      */
-    FILE_CALLBACK_SAVE = 2
+    FILE_CALLBACK_SAVE = 2,
+
+    /*!
+     * Confirm launching JACK applications from a project.
+     * The title is the project filename. Return "yes" to approve.
+     */
+    FILE_CALLBACK_CONFIRM_PROJECT_JACK_APPS = 3
 
 } FileCallbackOpcode;
 

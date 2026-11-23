@@ -11,12 +11,14 @@ from qt_compat import qt_config
 
 if qt_config == 5:
     from PyQt5.QtCore import pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
-    from PyQt5.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QPen, QPixmap
+    from PyQt5.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QPalette, QPen, QPixmap
     from PyQt5.QtSvg import QSvgWidget
+    from PyQt5.QtWidgets import QStyle, QStyleOptionSlider, QStylePainter
 elif qt_config == 6:
     from PyQt6.QtCore import pyqtSlot, Qt, QEvent, QPointF, QRectF, QTimer, QSize
-    from PyQt6.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QPen, QPixmap
+    from PyQt6.QtGui import QColor, QConicalGradient, QFontMetrics, QPainterPath, QPalette, QPen, QPixmap
     from PyQt6.QtSvgWidgets import QSvgWidget
+    from PyQt6.QtWidgets import QStyle, QStyleOptionSlider, QStylePainter
 
 from .commondial import CommonDial
 from carla_shared import fontMetricsHorizontalAdvance
@@ -30,6 +32,7 @@ class ScalableDial(CommonDial):
 
         self.fImage = QSvgWidget(":/scalable/dial_03.svg")
         self.fImageNum = "01"
+        self.fUseSystemStyle = False
 
         if self.fImage.sizeHint().width() > self.fImage.sizeHint().height():
             self.fImageOrientation = self.HORIZONTAL
@@ -41,7 +44,20 @@ class ScalableDial(CommonDial):
     def getBaseSize(self):
         return self.fImageBaseSize
 
+    def useSystemStyle(self):
+        self.fUseSystemStyle = True
+        self.setAccessibleName(self.fLabel)
+        self.updateSizes()
+        self.update()
+
     def updateSizes(self):
+        if self.fUseSystemStyle:
+            self.fImageBaseSize = 2 * self.style().pixelMetric(QStyle.PixelMetric.PM_SmallIconSize, None, self)
+            metrics = self.fontMetrics()
+            labelWidth = fontMetricsHorizontalAdvance(metrics, self.fLabel)
+            self.setFixedSize(max(self.fImageBaseSize, labelWidth + 2), self.fImageBaseSize + metrics.height() + 2)
+            return
+
         if isinstance(self.fImage, QPixmap):
             self.fImageWidth  = self.fImage.width()
             self.fImageHeight = self.fImage.height()
@@ -141,8 +157,26 @@ class ScalableDial(CommonDial):
         CommonDial.changeEvent(self, event)
 
         # Force svg update if enabled state changes
-        if event.type() == QEvent.EnabledChange:
+        if self.fUseSystemStyle:
+            if event.type() in (QEvent.Type.FontChange, QEvent.Type.StyleChange):
+                self.updateSizes()
+        elif event.type() == QEvent.EnabledChange:
             self.slot_updateImage()
+
+    def paintEvent(self, event):
+        if not self.fUseSystemStyle:
+            return CommonDial.paintEvent(self, event)
+
+        painter = QStylePainter(self)
+        option = QStyleOptionSlider()
+        self.initStyleOption(option)
+        option.rect.setHeight(self.fImageBaseSize)
+        painter.save()
+        painter.drawComplexControl(QStyle.ComplexControl.CC_Dial, option)
+        painter.restore()
+        label = self.rect().adjusted(0, self.fImageBaseSize + 2, 0, 0)
+        painter.drawItemText(label, Qt.AlignCenter, self.palette(), self.isEnabled(), self.fLabel,
+                             QPalette.ColorRole.WindowText)
 
     def paintDial(self, painter):
         if self.isEnabled():

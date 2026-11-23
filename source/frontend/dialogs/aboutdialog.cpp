@@ -4,6 +4,7 @@
 #include "aboutdialog.hpp"
 
 #include "CarlaHost.h"
+#include <QtGui/QGuiApplication>
 
 // --------------------------------------------------------------------------------------------------------------------
 // About Dialog
@@ -24,7 +25,7 @@ AboutDialog::AboutDialog(QWidget* const parent,
 
     ui.l_about->setText(tr(""
                            "<br>Version %1"
-                           "<br>Carla is a fully-featured audio plugin host%2.<br>"
+                           "<br>Franca is an audio plugin host based on Carla%2.<br>"
                            "<br>Copyright (C) 2011-2025 falkTX<br>"
                            "").arg(CARLA_VERSION_STRING).arg(extraInfo));
 
@@ -36,7 +37,14 @@ AboutDialog::AboutDialog(QWidget* const parent,
         ui.ico_example_gui->setPixmap(QPixmap(":/bitmaps/button_gui-black.png"));
     }
 
-    if (isControl || isPlugin)
+    const bool isFranca = QGuiApplication::applicationDisplayName() == QStringLiteral("Franca");
+    if (isFranca)
+    {
+        ui.l_icons->setPixmap(QPixmap(":/256x256/franca.png").scaled(72, 72, Qt::KeepAspectRatio,
+                                                                   Qt::SmoothTransformation));
+        ui.tabWidget->removeTab(3);
+    }
+    else if (isControl || isPlugin)
     {
         ui.l_extended->hide();
         ui.tabWidget->removeTab(3);

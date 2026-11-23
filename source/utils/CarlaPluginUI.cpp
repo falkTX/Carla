@@ -108,7 +108,7 @@ public:
 
         XGrabKey(fDisplay, X11Key_Escape, AnyModifier, fHostWindow, 1, GrabModeAsync, GrabModeAsync);
 
-        Atom wmDelete = XInternAtom(fDisplay, "WM_DELETE_WINDOW", True);
+        Atom wmDelete = XInternAtom(fDisplay, "WM_DELETE_WINDOW", False);
         XSetWMProtocols(fDisplay, fHostWindow, &wmDelete, 1);
 
         const pid_t pid = getpid();
@@ -428,7 +428,7 @@ public:
         XStoreName(fDisplay, fHostWindow, title);
 
         const Atom _nwn = XInternAtom(fDisplay, "_NET_WM_NAME", False);
-        const Atom utf8 = XInternAtom(fDisplay, "UTF8_STRING", True);
+        const Atom utf8 = XInternAtom(fDisplay, "UTF8_STRING", False);
 
         XChangeProperty(fDisplay, fHostWindow, _nwn, utf8, 8,
                         PropModeReplace,
@@ -1232,28 +1232,27 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     };
 
     const ScopedDisplay sd;
-    CARLA_SAFE_ASSERT_RETURN(sd.display != nullptr, true);
+    if (sd.display == nullptr)
+        return true;
 
     const Window rootWindow(DefaultRootWindow(sd.display));
 
     const Atom _ncl = XInternAtom(sd.display, "_NET_CLIENT_LIST" , False);
     const Atom _nwn = XInternAtom(sd.display, "_NET_WM_NAME", False);
     const Atom _nwp = XInternAtom(sd.display, "_NET_WM_PID", False);
-    const Atom utf8 = XInternAtom(sd.display, "UTF8_STRING", True);
+    const Atom utf8 = XInternAtom(sd.display, "UTF8_STRING", False);
 
     Atom actualType;
     int actualFormat;
     ulong numWindows, bytesAfter;
     uchar* data = nullptr;
 
-    int status = XGetWindowProperty(sd.display, rootWindow, _ncl, 0L, (~0L), False, AnyPropertyType, &actualType, &actualFormat, &numWindows, &bytesAfter, &data);
-
-    CARLA_SAFE_ASSERT_RETURN(data != nullptr, true);
+    int status = XGetWindowProperty(sd.display, rootWindow, _ncl, 0L, (~0L), False, XA_WINDOW, &actualType, &actualFormat, &numWindows, &bytesAfter, &data);
     const ScopedFreeData sfd(data);
 
-    CARLA_SAFE_ASSERT_RETURN(status == Success, true);
-    CARLA_SAFE_ASSERT_RETURN(actualFormat == 32, true);
-    CARLA_SAFE_ASSERT_RETURN(numWindows != 0, true);
+    // A display without an EWMH window manager has no client list to search.
+    if (status != Success || data == nullptr || actualType != XA_WINDOW || actualFormat != 32 || numWindows == 0)
+        return true;
 
     Window* windows = (Window*)data;
     Window  lastGoodWindowPID = 0, lastGoodWindowNameSimple = 0, lastGoodWindowNameUTF8 = 0;

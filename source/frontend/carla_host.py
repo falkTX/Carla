@@ -54,6 +54,8 @@ if qt_config == 5:
         QListWidgetItem,
         QGraphicsView,
         QMainWindow,
+        QProgressDialog,
+        QToolBar,
     )
 
 elif qt_config == 6:
@@ -86,6 +88,8 @@ elif qt_config == 6:
         QListWidgetItem,
         QGraphicsView,
         QMainWindow,
+        QProgressDialog,
+        QToolBar,
     )
 
 # ------------------------------------------------------------------------------------------------------------
@@ -176,7 +180,7 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def __init__(self, host, withCanvas, parent=None):
+    def __init__(self, host, withCanvas, parent=None, *, displayName=None):
         QMainWindow.__init__(self, parent)
         self.host = host
         self.ui = ui_carla_host.Ui_CarlaHostW()
@@ -237,6 +241,7 @@ class HostWindow(QMainWindow):
         self.fSavedSettings = {}
 
         # true if NSM server handles our window management
+        self.fDisplayName = displayName
         self.fWindowCloseHideGui = False
 
         if host.isControl:
@@ -332,8 +337,11 @@ class HostWindow(QMainWindow):
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
 
-        self.ui.dockWidgetTitleBar = QWidget(self)
-        self.ui.dockWidget.setTitleBarWidget(self.ui.dockWidgetTitleBar)
+        if getattr(self.host, "isFranca", False):
+            self.ui.dockWidget.setWindowTitle(self.tr("Tools"))
+        else:
+            self.ui.dockWidgetTitleBar = QWidget(self)
+            self.ui.dockWidget.setTitleBarWidget(self.ui.dockWidgetTitleBar)
 
         if not withCanvas:
             self.ui.act_canvas_show_internal.setVisible(False)
@@ -430,14 +438,23 @@ class HostWindow(QMainWindow):
 
         self.updateStyle()
 
-        self.ui.rack.setStyleSheet("""
-          CarlaRackList#CarlaRackList {
-            background-color: black;
-          }
-        """)
+        if not getattr(self.host, "isFranca", False):
+            self.ui.rack.setStyleSheet("""
+              CarlaRackList#CarlaRackList {
+                background-color: black;
+              }
+            """)
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (patchbay)
+
+        self.patchbayToolbar = QToolBar(self.ui.patchbay)
+        self.patchbayToolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.patchbayToolbar.addAction(self.ui.act_canvas_show_internal)
+        self.patchbayToolbar.addAction(self.ui.act_canvas_show_external)
+        self.patchbayToolbar.addAction(self.ui.act_canvas_refresh)
+        self.patchbayToolbar.setEnabled(False)
+        self.ui.patchbay.layout().addWidget(self.patchbayToolbar, 0, 0, 1, 3)
 
         self.ui.peak_in.setChannelCount(2)
         self.ui.peak_in.setMeterColor(DigitalPeakMeter.COLOR_BLUE)
@@ -451,7 +468,7 @@ class HostWindow(QMainWindow):
 
         self.ui.scrollArea = PixmapKeyboardHArea(self.ui.patchbay)
         self.ui.keyboard   = self.ui.scrollArea.keyboard
-        self.ui.patchbay.layout().addWidget(self.ui.scrollArea, 1, 0, 1, 0)
+        self.ui.patchbay.layout().addWidget(self.ui.scrollArea, 2, 0, 1, 3)
 
         self.ui.scrollArea.setEnabled(False)
 
@@ -767,38 +784,54 @@ class HostWindow(QMainWindow):
 
         self.ui.tabWidget.setCurrentIndex(1)
 
-    def switchPlugins(self, pluginIdA, pluginIdB):
-        if pluginIdA == pluginIdB:
-            return
-        if pluginIdA < 0 or pluginIdB < 0:
-            return
-        if pluginIdA >= self.fPluginCount or pluginIdB >= self.fPluginCount:
-            return
+    def movePlugin(self, source, target):
+        if source == target or self.fIsProjectLoading or self.fCurrentlyRemovingAllPlugins:
+            return source
+        if not (0 <= source < self.fPluginCount and 0 <= target < self.fPluginCount):
+            return source
 
-        self.host.switch_plugins(pluginIdA, pluginIdB)
+        current = source
+        step = 1 if target > source else -1
+        error = None
+        while current != target:
+            nextRow = current + step
+            if not self.host.switch_plugins(current, nextRow):
+                error = self.host.get_last_error()
+                break
+            current = nextRow
 
-        itemA = self.fPluginList[pluginIdA]
-        compactA = itemA.isCompacted()
-        guiShownA = itemA.isGuiShown()
+        if current != source:
+            self.fPluginList.insert(current, self.fPluginList.pop(source))
+            for index in range(min(source, current), max(source, current) + 1):
+                self.fPluginList[index].setPluginId(index)
 
-        itemB = self.fPluginList[pluginIdB]
-        compactB = itemB.isCompacted()
-        guiShownB = itemB.isGuiShown()
+            root = QModelIndex()
+            self.ui.listWidget.model().moveRow(root, source, root, current + int(current > source))
+            if self.fWithCanvas:
+                self.slot_canvasRefresh()
 
-        itemA.setPluginId(pluginIdA)
-        itemA.recreateWidget2(compactB, guiShownB)
+        if error is not None:
+            CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Could not finish moving plugin"),
+                             error, QMessageBox.Ok, QMessageBox.Ok)
+        return current
 
-        itemB.setPluginId(pluginIdB)
-        itemB.recreateWidget2(compactA, guiShownA)
+    def renameRackPlugin(self, pluginId, name):
+        return self.host.rename_plugin(pluginId, name)
 
-        if self.fWithCanvas:
-            self.slot_canvasRefresh()
+    def removeRackPlugin(self, pluginId):
+        return self.host.remove_plugin(pluginId)
+
+    def connectPatchbayPorts(self, outputGroup, outputPort, inputGroup, inputPort):
+        return self.host.patchbay_connect(self.fExternalPatchbay, outputGroup, outputPort, inputGroup, inputPort)
+
+    def disconnectPatchbayPorts(self, connectionId):
+        return self.host.patchbay_disconnect(self.fExternalPatchbay, connectionId)
 
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
 
     def setProperWindowTitle(self):
-        title = self.fClientName
+        title = self.fDisplayName or self.fClientName
 
         if self.fProjectFilename and not self.host.nsmOK:
             title += " - %s" % os.path.basename(self.fProjectFilename)
@@ -829,35 +862,44 @@ class HostWindow(QMainWindow):
 
     def loadProjectNow(self):
         if not self.fProjectFilename:
-            return qCritical("ERROR: loading project without filename set")
+            qCritical("ERROR: loading project without filename set")
+            return False
         if self.host.nsmOK and not os.path.exists(self.fProjectFilename):
-            return
+            return True
 
         self.projectLoadingStarted()
         self.fIsProjectLoading = True
 
         if not self.host.load_project(self.fProjectFilename):
+            error = self.host.get_last_error()
             self.fIsProjectLoading = False
             self.projectLoadingFinished(True)
 
+            if getattr(self.host, "isFranca", False):
+                self.ui.text_logs.appendPlainText("%s: %s" % (self.fProjectFilename, error))
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load project"),
-                             self.host.get_last_error(),
+                             error,
                              QMessageBox.Ok, QMessageBox.Ok)
+            return False
+        return True
 
     def loadProjectLater(self, filename):
         self.fProjectFilename = QFileInfo(filename).absoluteFilePath()
         self.setProperWindowTitle()
         QTimer.singleShot(1, self.slot_loadProjectNow)
 
-    def saveProjectNow(self):
-        if not self.fProjectFilename:
-            return qCritical("ERROR: saving project without filename set")
+    def saveProjectNow(self, filename=None):
+        filename = self.fProjectFilename if filename is None else filename
+        if not filename:
+            qCritical("ERROR: saving project without filename set")
+            return False
 
-        if not self.host.save_project(self.fProjectFilename):
+        if not self.host.save_project(filename):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to save project"),
                              self.host.get_last_error(),
                              QMessageBox.Ok, QMessageBox.Ok)
-            return
+            return False
+        return True
 
     def projectLoadingStarted(self):
         self.ui.rack.setEnabled(False)
@@ -878,15 +920,14 @@ class HostWindow(QMainWindow):
         if not os.path.exists(extrafile):
             return False
 
-        with open(filename, "r") as fh:
-            if "".join(fh.readlines(90)).find("<CARLA-PROJECT VERSION='2.0'>") < 0:
-                return False
-
-        with open(extrafile, "r") as fh:
-            try:
+        try:
+            with open(filename, "r") as fh:
+                if "<CARLA-PROJECT VERSION='2.0'>" not in "".join(fh.readlines(90)):
+                    return False
+            with open(extrafile, "r") as fh:
                 canvasdata = json.load(fh)['canvas']
-            except:
-                return False
+        except (OSError, ValueError, KeyError, TypeError):
+            return False
 
         print("NOTICE: loading old-style canvas group positions via legacy json file")
         patchcanvas.restoreGroupPositions(canvasdata)
@@ -941,20 +982,26 @@ class HostWindow(QMainWindow):
             return self.saveProjectNow()
 
         fileFilter = self.tr("Carla Project File (*.carxp)")
-        filename, ok = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
+        filename, _ = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"),
+                                                  self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER],
+                                                  filter=fileFilter,
+                                                  options=QFileDialog.DontConfirmOverwrite)
 
-        # FIXME use ok value, test if it works as expected
         if not filename:
             return
 
         if not filename.lower().endswith(".carxp"):
             filename += ".carxp"
 
-        if self.fProjectFilename != filename:
+        if os.path.lexists(filename) and QMessageBox.question(
+                self, self.tr("Replace Project"),
+                self.tr("Replace the existing project file?") + "\n\n" + filename,
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
+            return
+
+        if self.saveProjectNow(filename) and self.fProjectFilename != filename:
             self.fProjectFilename = filename
             self.setProperWindowTitle()
-
-        self.saveProjectNow()
 
     @pyqtSlot()
     def slot_fileSaveAs(self):
@@ -1090,8 +1137,8 @@ class HostWindow(QMainWindow):
             self.close()
         elif self.fCustomStopAction == self.CUSTOM_ACTION_PROJECT_LOAD:
             self.slot_engineStart()
-            self.loadProjectNow()
-            self.host.nsm_ready(NSM_CALLBACK_OPEN)
+            opened = self.host.is_engine_running() and self.loadProjectNow()
+            self.host.nsm_report_result(NSM_CALLBACK_OPEN, opened)
 
         self.fCustomStopAction = self.CUSTOM_ACTION_NONE
 
@@ -1102,6 +1149,7 @@ class HostWindow(QMainWindow):
     def slot_handleEngineStartedCallback(self, pluginCount, processMode, transportMode, bufferSize, sampleRate, driverName):
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
+        self.patchbayToolbar.setEnabled(True)
         self.ui.w_transport.setEnabled(True)
 
         self.ui.act_canvas_show_internal.blockSignals(True)
@@ -1148,7 +1196,7 @@ class HostWindow(QMainWindow):
         self.startTimers()
 
         self.ui.text_logs.appendPlainText("======= Engine started ========")
-        self.ui.text_logs.appendPlainText("Carla engine started, details:")
+        self.ui.text_logs.appendPlainText("%s audio engine started" % (self.fDisplayName or "Carla"))
         self.ui.text_logs.appendPlainText("  Driver name:  %s" % driverName)
         self.ui.text_logs.appendPlainText("  Sample rate:  %i" % int(sampleRate))
         self.ui.text_logs.appendPlainText("  Process mode: %s" % processMode2Str(processMode))
@@ -1168,6 +1216,7 @@ class HostWindow(QMainWindow):
 
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
+        self.patchbayToolbar.setEnabled(False)
         self.ui.w_transport.setEnabled(False)
 
         if not (self.host.isControl or self.host.isPlugin):
@@ -1197,9 +1246,18 @@ class HostWindow(QMainWindow):
     @pyqtSlot(int, bool, str)
     def slot_handleCancelableActionCallback(self, pluginId, started, action):
         if self.fCancelableActionBox is not None:
-            self.fCancelableActionBox.close()
+            self.fCancelableActionBox.hide()
+            self.fCancelableActionBox.deleteLater()
+            self.fCancelableActionBox = None
 
-        if started:
+        if started and getattr(self.host, "isFranca", False):
+            dialog = QProgressDialog(action, self.tr("Cancel"), 0, 0, self)
+            dialog.setWindowTitle(self.tr("Franca"))
+            dialog.setAutoClose(False)
+            dialog.canceled.connect(self.slot_canlableActionBoxClicked)
+            self.fCancelableActionBox = dialog
+            QTimer.singleShot(400, lambda: dialog.show() if self.fCancelableActionBox is dialog else None)
+        elif started:
             self.fCancelableActionBox = QMessageBox(self)
             self.fCancelableActionBox.setIcon(QMessageBox.Information)
             self.fCancelableActionBox.setWindowTitle(self.tr("Action in progress"))
@@ -1209,9 +1267,6 @@ class HostWindow(QMainWindow):
             self.fCancelableActionBox.setDefaultButton(QMessageBox.Cancel)
             self.fCancelableActionBox.buttonClicked.connect(self.slot_canlableActionBoxClicked)
             self.fCancelableActionBox.show()
-
-        else:
-            self.fCancelableActionBox = None
 
     @pyqtSlot()
     def slot_canlableActionBoxClicked(self):
@@ -1522,9 +1577,11 @@ class HostWindow(QMainWindow):
     @pyqtSlot(int, int, str)
     def slot_handlePluginAddedCallback(self, pluginId, pluginType, pluginName):
         if pluginId != self.fPluginCount:
-            print("ERROR: pluginAdded mismatch Id:", pluginId, self.fPluginCount)
             pitem = self.getPluginItem(pluginId)
-            pitem.recreateWidget()
+            if pitem is not None:
+                pitem.recreateWidget()
+            else:
+                print("ERROR: pluginAdded mismatch Id:", pluginId, self.fPluginCount)
             return
 
         pitem = self.ui.listWidget.createItem(pluginId, self.fSavedSettings[CARLA_KEY_MAIN_CLASSIC_SKIN])
@@ -1591,14 +1648,17 @@ class HostWindow(QMainWindow):
 
     def setupCanvas(self):
         pOptions = patchcanvas.options_t()
-        pOptions.theme_name        = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
+        isFranca = getattr(self.host, "isFranca", False)
+        pOptions.theme_name        = "System" if isFranca else self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
         pOptions.auto_hide_groups  = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
         pOptions.auto_select_items = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS]
         pOptions.use_bezier_lines  = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
         pOptions.antialiasing      = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
         pOptions.inline_displays   = self.fSavedSettings[CARLA_KEY_CANVAS_INLINE_DISPLAYS]
 
-        if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY]:
+        if isFranca:
+            pOptions.eyecandy = patchcanvas.EYECANDY_NONE
+        elif self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY]:
             pOptions.eyecandy = patchcanvas.EYECANDY_FULL
         elif self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]:
             pOptions.eyecandy = patchcanvas.EYECANDY_SMALL
@@ -1972,10 +2032,13 @@ class HostWindow(QMainWindow):
 
     def saveSettings(self):
         settings = QSafeSettings()
+        isFranca = getattr(self.host, "isFranca", False)
 
         settings.setValue("Geometry", self.saveGeometry())
-        settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
-        settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
+        settings.setValue("Franca/ShowToolbar" if isFranca else "ShowToolbar",
+                          self.ui.act_settings_show_toolbar.isChecked())
+        settings.setValue("Franca/ShowSidePanel" if isFranca else "ShowSidePanel",
+                          self.ui.act_settings_show_side_panel.isChecked())
 
         diskFolders = []
 
@@ -1986,7 +2049,8 @@ class HostWindow(QMainWindow):
         settings.setValue("LastBPM", self.fLastTransportBPM)
 
         settings.setValue("ShowMeters", self.ui.act_settings_show_meters.isChecked())
-        settings.setValue("ShowKeyboard", self.ui.act_settings_show_keyboard.isChecked())
+        settings.setValue("Franca/ShowKeyboard" if isFranca else "ShowKeyboard",
+                          self.ui.act_settings_show_keyboard.isChecked())
         settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
@@ -1997,6 +2061,7 @@ class HostWindow(QMainWindow):
 
     def loadSettings(self, firstTime):
         settings = QSafeSettings()
+        isFranca = getattr(self.host, "isFranca", False)
 
         if self.fPluginListDialog is not None:
             gCarla.felib.destroyPluginListDialog(self.fPluginListDialog)
@@ -2007,7 +2072,7 @@ class HostWindow(QMainWindow):
             if not geometry.isNull():
                 self.restoreGeometry(geometry)
 
-            showToolbar = settings.value("ShowToolbar", True, bool)
+            showToolbar = settings.value("Franca/ShowToolbar" if isFranca else "ShowToolbar", True, bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
             self.ui.toolBar.blockSignals(True)
             self.ui.toolBar.setEnabled(showToolbar)
@@ -2019,7 +2084,8 @@ class HostWindow(QMainWindow):
             #else:
                 #self.ui.splitter.setSizes([210, 99999])
 
-            showSidePanel = settings.value("ShowSidePanel", True, bool)
+            showSidePanel = settings.value("Franca/ShowSidePanel" if isFranca else "ShowSidePanel",
+                                           not isFranca, bool)
             self.ui.act_settings_show_side_panel.setChecked(showSidePanel)
             self.slot_showSidePanel(showSidePanel)
 
@@ -2040,7 +2106,8 @@ class HostWindow(QMainWindow):
             self.ui.peak_in.setVisible(showMeters)
             self.ui.peak_out.setVisible(showMeters)
 
-            showKeyboard = settings.value("ShowKeyboard", True, bool)
+            showKeyboard = settings.value("Franca/ShowKeyboard" if isFranca else "ShowKeyboard",
+                                           not isFranca, bool)
             self.ui.act_settings_show_keyboard.setChecked(showKeyboard)
             self.ui.scrollArea.setVisible(showKeyboard)
 
@@ -2064,7 +2131,7 @@ class HostWindow(QMainWindow):
             CARLA_KEY_MAIN_CONFIRM_EXIT:        settings.value(CARLA_KEY_MAIN_CONFIRM_EXIT,        CARLA_DEFAULT_MAIN_CONFIRM_EXIT,        bool),
             CARLA_KEY_MAIN_CLASSIC_SKIN:        settings.value(CARLA_KEY_MAIN_CLASSIC_SKIN,        CARLA_DEFAULT_MAIN_CLASSIC_SKIN,        bool),
             CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    int),
-            CARLA_KEY_MAIN_SYSTEM_ICONS:        settings.value(CARLA_KEY_MAIN_SYSTEM_ICONS,        CARLA_DEFAULT_MAIN_SYSTEM_ICONS,        bool),
+            CARLA_KEY_MAIN_SYSTEM_ICONS:        isFranca or settings.value(CARLA_KEY_MAIN_SYSTEM_ICONS, CARLA_DEFAULT_MAIN_SYSTEM_ICONS, bool),
             CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        bool),
             CARLA_KEY_CANVAS_THEME:             settings.value(CARLA_KEY_CANVAS_THEME,             CARLA_DEFAULT_CANVAS_THEME,             str),
             CARLA_KEY_CANVAS_SIZE:              settings.value(CARLA_KEY_CANVAS_SIZE,              CARLA_DEFAULT_CANVAS_SIZE,              str),
@@ -2133,7 +2200,7 @@ class HostWindow(QMainWindow):
 
         settings2 = QSafeSettings("falkTX", "Carla2")
 
-        if self.host.experimental:
+        if self.host.experimental and not getattr(self.host, "isFranca", False):
             visible = settings2.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS, CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, bool)
             self.ui.act_plugin_add_jack.setVisible(visible)
         else:
@@ -2677,7 +2744,8 @@ class HostWindow(QMainWindow):
 
         # Save
         elif opcode == NSM_CALLBACK_SAVE:
-            self.saveProjectNow()
+            self.host.nsm_report_result(opcode, self.saveProjectNow())
+            return
 
         # Session is Loaded
         elif opcode == NSM_CALLBACK_SESSION_IS_LOADED:
@@ -2713,6 +2781,8 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(str)
     def slot_handleErrorCallback(self, error):
+        if getattr(self.host, "isFranca", False):
+            self.ui.text_logs.appendPlainText(error)
         QMessageBox.critical(self, "Error", error)
 
     @pyqtSlot()
@@ -2949,6 +3019,24 @@ class HostWindow(QMainWindow):
         QMainWindow.changeEvent(self, event)
 
     def updateStyle(self):
+        isFranca = getattr(self.host, "isFranca", False)
+        rack_pal = QApplication.palette() if isFranca else self.ui.rack.palette()
+        bg_color = rack_pal.window().color()
+        fg_color = rack_pal.text().color()
+
+        if isFranca:
+            self.syncFrontendColors(bg_color, fg_color)
+            canvas = patchcanvas.canvas
+            if canvas.theme is not None and canvas.theme.idx == canvas.theme.THEME_SYSTEM:
+                canvas.theme.updateSystemColors(rack_pal)
+                canvas.scene.updateTheme()
+                for connection in canvas.connection_list:
+                    connection.widget.updateLineGradient()
+                self.ui.miniCanvasPreview.setViewTheme(canvas.theme.canvas_bg, canvas.theme.rubberband_brush,
+                                                       canvas.theme.rubberband_pen.color())
+                canvas.scene.update()
+            return
+
         # Rack padding images setup
         rack_imgL = QImage(":/bitmaps/rack_padding_left.png")
         rack_imgR = QImage(":/bitmaps/rack_padding_right.png")
@@ -2960,9 +3048,6 @@ class HostWindow(QMainWindow):
         else:
             value_fix = 1.5
 
-        rack_pal = self.ui.rack.palette()
-        bg_color = rack_pal.window().color()
-        fg_color = rack_pal.text().color()
         bg_value = 1.0 - bg_color.blackF()
         if bg_value != 0.0 and bg_value < min_value:
             pad_color = bg_color.lighter(int(100*min_value/bg_value*value_fix))
@@ -2994,6 +3079,9 @@ class HostWindow(QMainWindow):
         self.ui.pad_right.setPalette(self.imgR_palette)
         self.ui.pad_right.setAutoFillBackground(True)
 
+        self.syncFrontendColors(bg_color, fg_color)
+
+    def syncFrontendColors(self, bg_color, fg_color):
         # qt's rgba is actually argb, so convert that
         bg_color_value = bg_color.rgba()
         bg_color_value = ((bg_color_value & 0xffffff) << 8) | (bg_color_value >> 24)
@@ -3116,13 +3204,13 @@ def canvasCallback(action, value1, value2, valueStr):
     elif action == patchcanvas.ACTION_PORTS_CONNECT:
         gOut, pOut, gIn, pIn = tuple(int(i) for i in valueStr.split(":"))
 
-        if not host.patchbay_connect(gCarla.gui.fExternalPatchbay, gOut, pOut, gIn, pIn):
+        if not gCarla.gui.connectPatchbayPorts(gOut, pOut, gIn, pIn):
             print("Connection failed:", host.get_last_error())
 
     elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
         connectionId = value1
 
-        if not host.patchbay_disconnect(gCarla.gui.fExternalPatchbay, connectionId):
+        if not gCarla.gui.disconnectPatchbayPorts(connectionId):
             print("Disconnect failed:", host.get_last_error())
 
     elif action == patchcanvas.ACTION_PLUGIN_CLONE:
@@ -3156,7 +3244,7 @@ def canvasCallback(action, value1, value2, valueStr):
     elif action == patchcanvas.ACTION_PLUGIN_REMOVE:
         pluginId = value1
 
-        if not host.remove_plugin(pluginId):
+        if not gCarla.gui.removeRackPlugin(pluginId):
             CustomMessageBox(gCarla.gui, QMessageBox.Warning, gCarla.gui.tr("Error"), gCarla.gui.tr("Operation failed"),
                                          host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
@@ -3309,6 +3397,13 @@ def fileCallback(ptr, action, isDir, title, filter):
         ret, ok = QFileDialog.getOpenFileName(gCarla.gui, title, "", filter) #, QFileDialog.ShowDirsOnly if isDir else 0x0)
     elif action == FILE_CALLBACK_SAVE:
         ret, ok = QFileDialog.getSaveFileName(gCarla.gui, title, "", filter, QFileDialog.ShowDirsOnly if isDir else 0x0)
+    elif action == FILE_CALLBACK_CONFIRM_PROJECT_JACK_APPS:
+        if gCarla.gui is None:
+            return None
+        ret = "yes" if QMessageBox.question(
+            gCarla.gui, gCarla.gui.tr("Launch JACK Applications"),
+            gCarla.gui.tr("This project can launch external programs. Allow it to launch JACK applications?") +
+            "\n\n" + title, QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes else ""
     else:
         ret, ok = ("", "")
 
@@ -3427,7 +3522,8 @@ def loadHostSettings(host):
     settings = QSafeSettings("falkTX", "Carla2")
 
     host.experimental = settings.value(CARLA_KEY_MAIN_EXPERIMENTAL, CARLA_DEFAULT_MAIN_EXPERIMENTAL, bool)
-    host.exportLV2 = settings.value(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2, CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT, bool)
+    host.exportLV2 = not getattr(host, "isFranca", False) and settings.value(
+        CARLA_KEY_EXPERIMENTAL_EXPORT_LV2, CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT, bool)
     host.manageUIs = settings.value(CARLA_KEY_ENGINE_MANAGE_UIS, CARLA_DEFAULT_MANAGE_UIS, bool)
     host.maxParameters = settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, int)
     host.resetXruns = settings.value(CARLA_KEY_ENGINE_RESET_XRUNS, CARLA_DEFAULT_RESET_XRUNS, bool)
@@ -3606,7 +3702,7 @@ def setEngineSettings(host, settings, oscPort = None):
         portNumTCP = portNumUDP = oscPort
 
     else:
-        oscEnabled = settings[CARLA_KEY_OSC_ENABLED]
+        oscEnabled = settings[CARLA_KEY_OSC_ENABLED] and not getattr(host, "isFranca", False)
 
         if not settings[CARLA_KEY_OSC_TCP_PORT_ENABLED]:
             portNumTCP = -1

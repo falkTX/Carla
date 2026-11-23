@@ -156,7 +156,10 @@ class PatchScene(QGraphicsScene):
 
             if not first_value:
                 self.m_view.fitInView(min_x, min_y, abs(max_x - min_x), abs(max_y - min_y), Qt.KeepAspectRatio)
+                if canvas.theme.idx == canvas.theme.THEME_SYSTEM and self.getScaleFactor() > 1.0:
+                    self.m_view.resetTransform()
                 self.fixScaleFactor()
+                self.m_view.centerOn((min_x + max_x) / 2, (min_y + max_y) / 2)
 
     def zoom_in(self):
         view = self.m_view

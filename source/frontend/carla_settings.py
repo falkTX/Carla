@@ -8,11 +8,13 @@
 from qt_compat import qt_config
 
 if qt_config == 5:
-    from PyQt5.QtCore import pyqtSlot, QT_VERSION, Qt
-    from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
+    from PyQt5.QtCore import pyqtSlot, QT_VERSION, QSize, Qt
+    from PyQt5.QtGui import QIcon
+    from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QStyle
 elif qt_config == 6:
-    from PyQt6.QtCore import pyqtSlot, QT_VERSION, Qt
-    from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
+    from PyQt6.QtCore import pyqtSlot, QT_VERSION, QSize, Qt
+    from PyQt6.QtGui import QIcon
+    from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QStyle
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -612,7 +614,7 @@ class CarlaSettingsW(QDialog):
         # -------------------------------------------------------------------------------------------------------------
         # Set-up Icons
 
-        if self.ui.ch_main_system_icons.isChecked():
+        if getattr(self.host, "isFranca", False) or self.ui.ch_main_system_icons.isChecked():
             self.ui.b_main_proj_folder_open.setIcon(getIcon('document-open', 16, 'svgz'))
             self.ui.b_filepaths_add.setIcon(getIcon('list-add', 16, 'svgz'))
             self.ui.b_filepaths_change.setIcon(getIcon('edit-rename', 16, 'svgz'))
@@ -680,6 +682,36 @@ class CarlaSettingsW(QDialog):
 
         self.slot_filePathTabChanged(0)
         self.slot_pluginPathTabChanged(0)
+
+        if getattr(self.host, "isFranca", False):
+            self.setWindowTitle(self.tr("Configure Franca"))
+            pages = self.ui.lw_page
+            iconSize = self.style().pixelMetric(QStyle.PixelMetric.PM_SmallIconSize, None, pages)
+            spacing = max(4, self.style().pixelMetric(QStyle.PixelMetric.PM_LayoutHorizontalSpacing, None, pages))
+            pages.setIconSize(QSize(iconSize, iconSize))
+            pages.setShowGrid(False)
+            pages.verticalHeader().setDefaultSectionSize(max(iconSize, pages.fontMetrics().height()) + 2 * spacing)
+            labels = []
+            for row, icon in enumerate(("preferences-system", "view-list-tree", "audio-card", "network-server",
+                                        "folder", "folder-sound", "application-x-executable", "applications-development")):
+                item = pages.item(row, 0)
+                item.setIcon(QIcon.fromTheme(icon + "-symbolic", QIcon.fromTheme(icon)))
+                labels.append(fontMetricsHorizontalAdvance(pages.fontMetrics(), item.text()))
+            pages.setFixedWidth(max(labels) + iconSize + 5 * spacing)
+            for decoration in (self.ui.label_icon_main, self.ui.label_10, self.ui.label_icon_engine,
+                               self.ui.label_31, self.ui.label_19, self.ui.label_icon_wine, self.ui.label_icon_experimental):
+                decoration.hide()
+            self.ui.lw_page.hideRow(self.TAB_INDEX_OSC)
+            self.ui.group_main_theme.hide()
+            self.ui.cb_main_classic_skin_default.hide()
+            self.ui.ch_main_system_icons.hide()
+            self.ui.cb_canvas_theme.hide()
+            self.ui.label_canvas_theme.hide()
+            self.ui.cb_canvas_eyecandy.hide()
+            self.ui.cb_canvas_fancy_eyecandy.hide()
+            self.ui.group_canvas_theme.setTitle(self.tr("Appearance"))
+            self.ui.ch_exp_jack_apps.hide()
+            self.ui.ch_exp_export_lv2.hide()
 
         self.adjustSize()
 
@@ -1043,7 +1075,7 @@ class CarlaSettingsW(QDialog):
 
             settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.host.nextProcessMode)
 
-        self.host.exportLV2           = self.ui.ch_exp_export_lv2.isChecked()
+        self.host.exportLV2           = not getattr(self.host, "isFranca", False) and self.ui.ch_exp_export_lv2.isChecked()
         self.host.forceStereo         = self.ui.ch_engine_force_stereo.isChecked()
         self.host.resetXruns          = self.ui.cb_engine_reset_xruns.isChecked()
         self.host.maxParameters       = self.ui.sb_engine_max_params.value()
@@ -1195,7 +1227,7 @@ class CarlaSettingsW(QDialog):
                 self.ui.cb_main_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
             self.ui.sb_main_refresh_interval.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
             self.ui.ch_main_confirm_exit.setChecked(CARLA_DEFAULT_MAIN_CONFIRM_EXIT)
-            self.ui.cb_main_classic_skin_default(CARLA_DEFAULT_MAIN_CLASSIC_SKIN)
+            self.ui.cb_main_classic_skin_default.setChecked(CARLA_DEFAULT_MAIN_CLASSIC_SKIN)
             self.ui.ch_main_show_logs.setChecked(CARLA_DEFAULT_MAIN_SHOW_LOGS)
 
         # -------------------------------------------------------------------------------------------------------------

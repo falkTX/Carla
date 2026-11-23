@@ -9,12 +9,12 @@ from qt_compat import qt_config
 
 if qt_config == 5:
     from PyQt5.QtCore import Qt, QRectF, QLineF, QTimer
-    from PyQt5.QtGui import QColor, QFont, QFontDatabase, QPainter, QPainterPath, QPen
-    from PyQt5.QtWidgets import QColorDialog, QFrame, QLineEdit, QPushButton
+    from PyQt5.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen
+    from PyQt5.QtWidgets import QCheckBox, QColorDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QStyle, QToolButton, QVBoxLayout
 elif qt_config == 6:
     from PyQt6.QtCore import Qt, QRectF, QLineF, QTimer
-    from PyQt6.QtGui import QColor, QFont, QFontDatabase, QPainter, QPainterPath, QPen
-    from PyQt6.QtWidgets import QColorDialog, QFrame, QLineEdit, QPushButton
+    from PyQt6.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen
+    from PyQt6.QtWidgets import QCheckBox, QColorDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QStyle, QToolButton, QVBoxLayout
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -353,6 +353,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     def ready(self):
         self.fIsActive = bool(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
 
+        isFranca = self.fSkinStyle == "franca"
         isCalfSkin  = self.fSkinStyle.startswith("calf") and not isinstance(self, PluginSlot_Compact)
         imageSuffix = "white" if self.fDarkStyle else "black"
         whiteLabels = self.fDarkStyle
@@ -371,7 +372,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 self.b_enable.setPixmaps(":/bitmaps/button_calf3.png",
                                          ":/bitmaps/button_calf3_down.png",
                                          ":/bitmaps/button_calf3.png")
-            else:
+            elif not isFranca:
                 self.b_enable.setSvgs(":/scalable/button_off.svg",
                                       ":/scalable/button_on.svg",
                                       ":/scalable/button_off.svg")
@@ -392,7 +393,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 self.b_gui.setPixmaps(":/bitmaps/button_file-{}.png".format(imageSuffix),
                                       ":/bitmaps/button_file_down-{}.png".format(imageSuffix),
                                       ":/bitmaps/button_file_hover-{}.png".format(imageSuffix))
-            else:
+            elif not isFranca:
                 if imageSuffix == "black": # TODO
                     self.b_gui.setPixmaps(":/bitmaps/button_gui-{}.png".format(imageSuffix),
                                           ":/bitmaps/button_gui_down-{}.png".format(imageSuffix),
@@ -409,7 +410,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 self.b_edit.setPixmaps(":/bitmaps/button_calf2.png",
                                        ":/bitmaps/button_calf2_down.png",
                                        ":/bitmaps/button_calf2_hover.png")
-            else:
+            elif not isFranca:
                 self.b_edit.setSvgs(":/scalable/button_edit-{}.svg".format(imageSuffix),
                                     ":/scalable/button_edit_down-{}.svg".format(imageSuffix),
                                     ":/scalable/button_edit_hover-{}.svg".format(imageSuffix))
@@ -439,7 +440,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 nameFont.setPixelSize(15)
                 nameFont.setCapitalization(QFont.AllUppercase)
 
-            else:
+            elif not isFranca:
                 nameFont.setBold(True)
                 nameFont.setPixelSize(11)
 
@@ -502,7 +503,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         # -------------------------------------------------------------
 
-        if self.fSkinStyle == "openav":
+        if isFranca:
+            styleSheet = ""
+        elif self.fSkinStyle == "openav":
             styleSheet = """
                 QFrame#PluginWidget {
                     background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
@@ -555,7 +558,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             QLabel#label_audio_out,
             QLabel#label_midi { font-size: 10px; }
         """
-        self.setStyleSheet(styleSheet)
+        if not isFranca:
+            self.setStyleSheet(styleSheet)
 
         # -------------------------------------------------------------
         # Set-up parameters
@@ -684,7 +688,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.activeChanged(active)
 
         if sendHost:
-            self.host.set_active(self.fPluginId, active)
+            setPluginParameter(self.host, self.fPluginId, PARAMETER_ACTIVE, active, self.host.set_active)
 
         if active:
             self.fEditDialog.clearNotes()
@@ -703,23 +707,23 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         elif parameterId == PARAMETER_DRYWET:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) == 0: return
-            self.host.set_drywet(self.fPluginId, value)
+            setPluginParameter(self.host, self.fPluginId, parameterId, value, self.host.set_drywet)
 
         elif parameterId == PARAMETER_VOLUME:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME) == 0: return
-            self.host.set_volume(self.fPluginId, value)
+            setPluginParameter(self.host, self.fPluginId, parameterId, value, self.host.set_volume)
 
         elif parameterId == PARAMETER_BALANCE_LEFT:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE) == 0: return
-            self.host.set_balance_left(self.fPluginId, value)
+            setPluginParameter(self.host, self.fPluginId, parameterId, value, self.host.set_balance_left)
 
         elif parameterId == PARAMETER_BALANCE_RIGHT:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE) == 0: return
-            self.host.set_balance_right(self.fPluginId, value)
+            setPluginParameter(self.host, self.fPluginId, parameterId, value, self.host.set_balance_right)
 
         elif parameterId == PARAMETER_PANNING:
             if (self.fPluginInfo['hints'] & PLUGIN_CAN_PANNING) == 0: return
-            self.host.set_panning(self.fPluginId, value)
+            setPluginParameter(self.host, self.fPluginId, parameterId, value, self.host.set_panning)
 
         elif parameterId == PARAMETER_CTRL_CHANNEL:
             self.host.set_ctrl_channel(self.fPluginId, value)
@@ -805,7 +809,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         newName = newNameTry[0]
 
-        if not self.host.rename_plugin(self.fPluginId, newName):
+        rename = gCarla.gui.renameRackPlugin if getattr(self.host, "isFranca", False) else self.host.rename_plugin
+        if not rename(self.fPluginId, newName):
             CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                    self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
             return
@@ -1043,9 +1048,13 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # -------------------------------------------------------------
         # Expand/Minimize and Tweaks
 
-        actCompact = menu.addAction(self.tr("Expand") if isinstance(self, PluginSlot_Compact) else self.tr("Minimize"))
+        compact = isinstance(self, PluginSlot_Compact) or getattr(self, "francaCompact", False)
+        actCompact = menu.addAction(self.tr("Expand") if compact else self.tr("Minimize"))
         actColor   = menu.addAction(self.tr("Change Color..."))
         actSkin    = menu.addAction(self.tr("Change Skin..."))
+        if self.fSkinStyle == "franca":
+            actColor.setVisible(False)
+            actSkin.setVisible(False)
         menu.addSeparator()
 
         # -------------------------------------------------------------
@@ -1067,7 +1076,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         if self.fPluginId == 0:
             actMoveUp.setEnabled(False)
-        if self.fPluginId >= self.fParent.getPluginCount():
+        if self.fPluginId >= self.fParent.getPluginCount() - 1:
             actMoveDown.setEnabled(False)
 
         # -------------------------------------------------------------
@@ -1131,7 +1140,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # -------------------------------------------------------------
         # exec
 
-        actSel = menu.exec_(QCursor.pos())
+        button = self.sender()
+        anchor = button.mapToGlobal(button.rect().bottomLeft()) if isinstance(button, QToolButton) else QCursor.pos()
+        actSel = menu.exec_(anchor)
 
         if not actSel:
             return
@@ -1193,17 +1204,17 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Move up and down
 
         elif actSel == actMoveUp:
-            gCarla.gui.switchPlugins(self.fPluginId, self.fPluginId-1)
+            gCarla.gui.movePlugin(self.fPluginId, self.fPluginId-1)
 
         elif actSel == actMoveDown:
-            gCarla.gui.switchPlugins(self.fPluginId, self.fPluginId+1)
+            gCarla.gui.movePlugin(self.fPluginId, self.fPluginId+1)
 
         # -------------------------------------------------------------
         # Bypass and Enable/Disable
 
         elif actSel == actBypass:
             value = 0.0 if actBypass.isChecked() else 1.0
-            self.host.set_drywet(self.fPluginId, value)
+            setPluginParameter(self.host, self.fPluginId, PARAMETER_DRYWET, value, self.host.set_drywet)
             self.setParameterValue(PARAMETER_DRYWET, value, True)
 
         elif actSel == actEnable:
@@ -1213,10 +1224,16 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Reset and Randomize parameters
 
         elif actSel == actReset:
-            self.host.reset_parameters(self.fPluginId)
+            if getattr(self.host, "isFranca", False):
+                gCarla.gui.changePluginParameters(self.fPluginId, self.tr("Reset Parameters"), self.host.reset_parameters)
+            else:
+                self.host.reset_parameters(self.fPluginId)
 
         elif actSel == actRandom:
-            self.host.randomize_parameters(self.fPluginId)
+            if getattr(self.host, "isFranca", False):
+                gCarla.gui.changePluginParameters(self.fPluginId, self.tr("Randomize Parameters"), self.host.randomize_parameters)
+            else:
+                self.host.randomize_parameters(self.fPluginId)
 
         # -------------------------------------------------------------
         # Edit and Show Custom UI
@@ -1251,9 +1268,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Remove
 
         elif actSel == actRemove:
-            if not self.host.remove_plugin(self.fPluginId):
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+            self.slot_removePlugin()
 
         # -------------------------------------------------------------
         # Export LV2
@@ -1391,7 +1406,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     @pyqtSlot()
     def slot_removePlugin(self):
-        if not self.host.remove_plugin(self.fPluginId):
+        remove = gCarla.gui.removeRackPlugin if getattr(self.host, "isFranca", False) else self.host.remove_plugin
+        if not remove(self.fPluginId):
             CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                     self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
@@ -1411,7 +1427,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if index < 0:
             self.setInternalParameter(index, value)
         else:
-            self.host.set_parameter_value(self.fPluginId, index, value)
+            setPluginParameter(self.host, self.fPluginId, index, value, self.host.set_parameter_value)
             self.setParameterValue(index, value, False)
 
     @pyqtSlot(int)
@@ -2059,7 +2075,133 @@ def getColorAndSkinStyle(host, pluginId):
 
     return (colorCategory, "default")
 
+class PluginSlot_Franca(AbstractPluginSlot):
+    def __init__(self, parent, host, pluginId, compact):
+        super().__init__(parent, host, pluginId, (0, 0, 0), "franca")
+        self.francaCompact = compact
+        self.setObjectName("francaPlugin")
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+
+        row = QHBoxLayout(self)
+        margin = max(2, self.style().pixelMetric(QStyle.PixelMetric.PM_LayoutHorizontalSpacing, None, self))
+        row.setContentsMargins(margin, 1 if compact else 4, margin, 1 if compact else 4)
+        row.setSpacing(margin)
+
+        grip = QLabel("⠿", self)
+        grip.setObjectName("francaDragHandle")
+        grip.setCursor(Qt.OpenHandCursor)
+        grip.setToolTip(self.tr("Drag to reorder"))
+        grip.setAccessibleName(self.tr("Drag to reorder"))
+        row.addWidget(grip)
+
+        self.b_enable = QCheckBox(self)
+        self.b_enable.setAccessibleName(self.tr("Enable effect"))
+        row.addWidget(self.b_enable)
+
+        self.label_name = QLabel(self)
+        self.label_name.setObjectName("francaPluginName")
+        self.label_name.setTextFormat(Qt.TextFormat.PlainText)
+        self.label_name.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.label_type = QLabel(self)
+        self.label_type.setObjectName("francaPluginFormat")
+        self.label_type.setMinimumWidth(self.fontMetrics().horizontalAdvance("Unavailable"))
+        row.addWidget(self.label_name, 1)
+        row.addWidget(self.label_type)
+
+        self.peak_in = DigitalPeakMeter(self)
+        self.peak_out = DigitalPeakMeter(self)
+        meters = QVBoxLayout()
+        meters.setSpacing(3)
+        for meter, label in ((self.peak_in, self.tr("Input level")),
+                             (self.peak_out, self.tr("Output level"))):
+            meter.setFixedSize(62, 10 if compact else 12)
+            meter.setUseSystemColors(True, colorLevels=True)
+            meter.setToolTip(label)
+            meter.setAccessibleName(label)
+            meters.addWidget(meter)
+        row.addLayout(meters)
+
+        self.b_gui = QToolButton(self)
+        self.b_edit = QToolButton(self)
+        windowIcon = self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarNormalButton)
+        for button, label, iconName, fallback in (
+            (self.b_gui, self.tr("Plugin Editor"), "window-new", windowIcon),
+            (self.b_edit, self.tr("Parameters"), "view-media-equalizer", getIcon("configure", 16, "svgz")),
+        ):
+            button.setText(label)
+            button.setIcon(QIcon.fromTheme(iconName + "-symbolic", QIcon.fromTheme(iconName, fallback)))
+            button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            button.setToolTip(label)
+            button.setAccessibleName(label)
+            button.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+            button.setAutoRaise(True)
+            button.setCheckable(True)
+            row.addWidget(button)
+        more = QToolButton(self)
+        more.setAutoRaise(True)
+        more.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+        more.setIcon(QIcon.fromTheme("application-menu-symbolic", QIcon.fromTheme("application-menu")))
+        if more.icon().isNull():
+            more.setText("⋯")
+        more.setToolTip(self.tr("Plugin actions"))
+        more.setAccessibleName(self.tr("Plugin actions"))
+        more.clicked.connect(self.slot_showCustomMenu)
+        row.addWidget(more)
+
+        self.ready()
+        self.setName(self.fPluginInfo['name'])
+        self.activeChanged(self.fIsActive)
+        self.b_enable.toggled.connect(self.updateEnableText)
+
+    def getFixedHeight(self):
+        return self.sizeHint().height()
+
+    def paintEvent(self, event):
+        QFrame.paintEvent(self, event)
+
+    def setName(self, name):
+        super().setName(name)
+        self.label_name.setToolTip(name)
+
+    def setSelected(self, selected):
+        if self.fIsSelected != selected:
+            super().setSelected(selected)
+            role = QPalette.ColorRole.HighlightedText if selected else QPalette.ColorRole.Text
+            self.label_name.setForegroundRole(role)
+            self.label_type.setForegroundRole(role)
+            font = self.label_name.font()
+            font.setBold(selected)
+            self.label_name.setFont(font)
+
+    def activeChanged(self, active):
+        super().activeChanged(active)
+        self.updateEnableText(active)
+
+    def updateEnableText(self, active):
+        self.b_enable.setToolTip(self.tr("Disable effect") if active else self.tr("Enable effect"))
+
+    def customUiStateChanged(self, state):
+        super().customUiStateChanged(state)
+        if state == -1:
+            self.b_gui.setToolTip(self.tr("Editor failed. See Logs for details."))
+            gCarla.gui.ui.text_logs.appendPlainText(
+                self.tr("Editor unavailable for %s") % self.fPluginInfo['name'])
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginUnavailableCallback(self, pluginId, errorMsg):
+        if self.fEditDialog is None or self.fPluginId != pluginId:
+            return
+        self.label_type.setText(self.tr("Unavailable"))
+        self.label_type.setToolTip(errorMsg)
+        for button in (self.b_enable, self.b_gui, self.b_edit):
+            button.setEnabled(False)
+        gCarla.gui.ui.text_logs.appendPlainText("%s: %s" % (self.fPluginInfo['name'], errorMsg))
+
+
 def createPluginSlot(parent, host, pluginId, options):
+    if getattr(host, "isFranca", False):
+        return PluginSlot_Franca(parent, host, pluginId, options['compact'])
+
     skinColor, skinStyle = getColorAndSkinStyle(host, pluginId)
 
     if options['color'] is not None:

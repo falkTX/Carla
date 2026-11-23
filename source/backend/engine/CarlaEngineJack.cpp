@@ -783,6 +783,10 @@ public:
           fJackClient(jackClient),
           fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT ||
                      engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
+#ifndef BUILD_BRIDGE
+          fCallbackLock(),
+          fActivating(false),
+#endif
           fAudioPorts(),
           fCVPorts(),
           fEventPorts(),
@@ -2728,14 +2732,17 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
             return CarlaEngine::restorePatchbayConnection(external, connSource, connTarget);
 
-        if (const jack_port_t* const port = jackbridge_port_by_name(fClient, connSource))
+        const jack_port_t* const source = jackbridge_port_by_name(fClient, connSource);
+        const jack_port_t* const target = jackbridge_port_by_name(fClient, connTarget);
+        if (source == nullptr || target == nullptr)
         {
-            if (jackbridge_port_by_name(fClient, connTarget) == nullptr)
-                return;
-
-            if (! jackbridge_port_connected_to(port, connTarget))
-                jackbridge_connect(fClient, connSource, connTarget);
+            carla_stderr("JACK connection skipped: %s -> %s (port unavailable: %s)",
+                         connSource, connTarget, source == nullptr ? connSource : connTarget);
+            return;
         }
+
+        if (! jackbridge_port_connected_to(source, connTarget) && ! jackbridge_connect(fClient, connSource, connTarget))
+            carla_stderr("JACK connection failed: %s -> %s", connSource, connTarget);
     }
 
     bool restorePatchbayGroupPosition(const bool external, PatchbayPosition& ppos) override
@@ -2884,9 +2891,9 @@ protected:
     {
         const PendingRtEventsRunner prt(this, nframes);
 
+#ifdef BUILD_BRIDGE
         CARLA_SAFE_ASSERT_INT2_RETURN(nframes == pData->bufferSize, nframes, pData->bufferSize,);
 
-#ifdef BUILD_BRIDGE
         CarlaPluginPtr plugin = pData->plugins[0].plugin;
 
         if (plugin.get() != nullptr && plugin->isEnabled() && plugin->tryLock(fFreewheel))
@@ -2896,6 +2903,11 @@ protected:
             plugin->unlock();
         }
 #else
+        // An empty rack passes JACK buffers through without using plugin buffers.
+        const bool emptyRack = pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK &&
+                               pData->curPluginCount == 0;
+        CARLA_SAFE_ASSERT_INT2_RETURN(emptyRack || nframes == pData->bufferSize, nframes, pData->bufferSize,);
+
         if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_JACK && !fTimebaseMaster)
         {
             jack_position_t jpos;
@@ -2956,7 +2968,7 @@ protected:
                 if (float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes))
                     carla_zeroFloats(audioOut2, nframes);
             }
-            else if (pData->curPluginCount == 0)
+            else if (emptyRack)
             {
                 float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
                 float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
@@ -3817,11 +3829,10 @@ private:
             // query all jack ports
             {
                 const char** const ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0);
-                CARLA_SAFE_ASSERT_RETURN(ports != nullptr,);
 
                 const CarlaRecursiveMutexLocker crml(fThreadSafeMetadataMutex);
 
-                for (int i=0; ports[i] != nullptr; ++i)
+                for (int i=0; ports != nullptr && ports[i] != nullptr; ++i)
                 {
                     const char* const fullPortName(ports[i]);
                     CARLA_SAFE_ASSERT_CONTINUE(fullPortName != nullptr && fullPortName[0] != '\0');
@@ -3904,7 +3915,8 @@ private:
                     portsCallbackData.append(portData);
                 }
 
-                jackbridge_free(ports);
+                if (ports != nullptr)
+                    jackbridge_free(ports);
             }
 
             if (groupsOnly)
@@ -4473,7 +4485,7 @@ private:
         engineClient->maybeLockPlugin(plugin);
         plugin->bufferSizeChanged(nframes);
         engineClient->maybeUnlockPlugin(plugin);
-        return 1;
+        return 0;
     }
 
     static int JACKBRIDGE_API carla_jack_srate_callback_plugin(jack_nframes_t nframes, void* arg)
@@ -4490,7 +4502,7 @@ private:
         engineClient->maybeLockPlugin(plugin);
         plugin->sampleRateChanged(nframes);
         engineClient->maybeUnlockPlugin(plugin);
-        return 1;
+        return 0;
     }
 
     static void JACKBRIDGE_API carla_jack_latency_callback_plugin(jack_latency_callback_mode_t /*mode*/, void* /*arg*/)
@@ -4575,9 +4587,6 @@ int jack_initialize(jack_client_t* const client, const char* const load_init)
     engine->setOption(ENGINE_OPTION_FORCE_STEREO, 1, nullptr);
     engine->setOption(ENGINE_OPTION_AUDIO_DRIVER, 0, "JACK");
     engine->setOption(ENGINE_OPTION_AUDIO_DEVICE, 0, "Auto-Connect ON");
-    engine->setOption(ENGINE_OPTION_OSC_ENABLED,  1, nullptr);
-    engine->setOption(ENGINE_OPTION_OSC_PORT_TCP, 22752, nullptr);
-    engine->setOption(ENGINE_OPTION_OSC_PORT_UDP, 22752, nullptr);
 
     engine->setOption(ENGINE_OPTION_PROCESS_MODE, mode, nullptr);
     engine->setOption(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_JACK, nullptr);

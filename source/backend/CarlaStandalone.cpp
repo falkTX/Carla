@@ -2366,7 +2366,8 @@ const char* carla_get_host_osc_url_udp(CarlaHostHandle handle)
         return gNullCharPtr;
     }
 
-    const char* const path = handle->engine->getOscServerPathUDP();
+    const char* const path = handle->engine->getOptions().oscEnabled
+                           ? handle->engine->getOscServerPathUDP() : nullptr;
 
     if (path != nullptr && path[0] != '\0')
         return path;

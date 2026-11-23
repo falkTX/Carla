@@ -1152,6 +1152,11 @@ CARLA_API_EXPORT bool carla_nsm_init(CarlaHostHandle handle, uint64_t pid, const
  */
 CARLA_API_EXPORT void carla_nsm_ready(CarlaHostHandle handle, NsmCallbackOpcode opcode);
 
+/*!
+ * Report whether an NSM open or save completed successfully.
+ */
+CARLA_API_EXPORT void carla_nsm_report_result(CarlaHostHandle handle, NsmCallbackOpcode opcode, bool succeeded);
+
 #ifndef CARLA_UTILS_H_INCLUDED
 /*!
  * Get the complete license text of used third-party code and features.

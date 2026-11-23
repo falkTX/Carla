@@ -2451,6 +2451,14 @@ static const char* _fileCallback(void*, const FileCallbackOpcode action, const b
     case FILE_CALLBACK_SAVE:
         ret = QFileDialog::getSaveFileName(gCarla.gui, title, "", filter, nullptr, options);
         break;
+    case FILE_CALLBACK_CONFIRM_PROJECT_JACK_APPS:
+        if (gCarla.gui != nullptr && QMessageBox::question(
+                gCarla.gui, QObject::tr("Launch JACK Applications"),
+                QObject::tr("This project can launch external programs. Allow it to launch JACK applications?")
+                    + "\n\n" + QString::fromUtf8(title),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
+            return "yes";
+        break;
     }
 
     if (ret.isEmpty())

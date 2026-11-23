@@ -221,6 +221,7 @@ public:
 
         const uint32_t apiVersion = fShmNonRtClientControl.readUInt();
         CARLA_SAFE_ASSERT_RETURN(apiVersion >= CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM, false);
+        fBridgeVersion = apiVersion;
 
         const uint32_t shmRtClientDataSize = fShmNonRtClientControl.readUInt();
         CARLA_SAFE_ASSERT_INT2(shmRtClientDataSize == sizeof(BridgeRtClientData), shmRtClientDataSize, sizeof(BridgeRtClientData));
@@ -819,7 +820,7 @@ public:
                 break;
 
             case kPluginBridgeNonRtClientVersion: {
-                fBridgeVersion = fShmNonRtServerControl.readUInt();
+                fBridgeVersion = fShmNonRtClientControl.readUInt();
                 CARLA_SAFE_ASSERT_UINT2(fBridgeVersion >= CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM,
                                         fBridgeVersion, CARLA_PLUGIN_BRIDGE_API_VERSION_MINIMUM);
             }   break;

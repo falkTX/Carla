@@ -13,12 +13,12 @@ import os
 from qt_compat import qt_config
 
 if qt_config == 5:
-    from PyQt5.QtCore import Qt, QSize, QRect, QEvent
-    from PyQt5.QtGui import QColor, QPainter, QPixmap
+    from PyQt5.QtCore import Qt, QSize, QRect, QEvent, QPersistentModelIndex
+    from PyQt5.QtGui import QColor, QDrag, QPainter, QPen, QPixmap
     from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem, QMessageBox
 elif qt_config == 6:
-    from PyQt6.QtCore import Qt, QSize, QRect, QEvent
-    from PyQt6.QtGui import QColor, QPainter, QPixmap
+    from PyQt6.QtCore import Qt, QSize, QRect, QEvent, QPersistentModelIndex
+    from PyQt6.QtGui import QColor, QDrag, QPainter, QPen, QPixmap
     from PyQt6.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
@@ -70,8 +70,10 @@ class RackListItem(QListWidgetItem):
             'compact': compact and skin != "classic",
         }
 
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-        #self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsDragEnabled)
+        flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled
+        if getattr(self.host, "isFranca", False):
+            flags |= Qt.ItemIsDragEnabled
+        self.setFlags(flags)
 
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
@@ -114,11 +116,6 @@ class RackListItem(QListWidgetItem):
 
     def isCompacted(self):
         return self.fOptions['compact']
-
-    def isGuiShown(self):
-        if self.fWidget is None or self.fWidget.b_gui is not None:
-            return None
-        return self.fWidget.b_gui.isChecked()
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -172,31 +169,14 @@ class RackListItem(QListWidgetItem):
         if wasGuiShown and self.fWidget.b_gui is not None:
             self.fWidget.b_gui.setChecked(True)
 
-        self.setSizeHint(QSize(self.kMinimumWidth, self.fWidget.getFixedHeight()))
+        width = self.fWidget.minimumSizeHint().width() if getattr(self.host, "isFranca", False) else self.kMinimumWidth
+        self.setSizeHint(QSize(width, self.fWidget.getFixedHeight()))
 
         self.fParent.setItemWidget(self, self.fWidget)
 
         if not firstInit:
             self.host.set_custom_data(self.fPluginId, CUSTOM_DATA_TYPE_PROPERTY,
                                       "CarlaSkinIsCompacted", "true" if self.fOptions['compact'] else "false")
-
-    def recreateWidget2(self, wasCompacted, wasGuiShown):
-        self.fOptions['compact'] = wasCompacted
-
-        self.close()
-
-        self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fOptions)
-        self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
-
-        if wasGuiShown and self.fWidget.b_gui is not None:
-            self.fWidget.b_gui.setChecked(True)
-
-        self.setSizeHint(QSize(self.kMinimumWidth, self.fWidget.getFixedHeight()))
-
-        self.fParent.setItemWidget(self, self.fWidget)
-
-        self.host.set_custom_data(self.fPluginId, CUSTOM_DATA_TYPE_PROPERTY,
-                                  "CarlaSkinIsCompacted", "true" if wasCompacted else "false")
 
 # ------------------------------------------------------------------------------------------------------------
 # Rack Widget
@@ -212,6 +192,8 @@ class RackListWidget(QListWidget):
         self.fSupportedExtensions = tuple(("." + i) for i in exts)
         self.fLastSelectedItem    = None
         self.fWasLastDragValid    = False
+        self.fDragIndex           = QPersistentModelIndex()
+        self.fDropPosition        = None
 
         self.fPixmapL     = QPixmap(":/bitmaps/rack_interior_left.png")
         self.fPixmapR     = QPixmap(":/bitmaps/rack_interior_right.png")
@@ -239,6 +221,9 @@ class RackListWidget(QListWidget):
     def setHostAndParent(self, host, parent):
         self.host = host
         self.fParent = parent
+        if getattr(host, "isFranca", False):
+            self.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+            self.setDropIndicatorShown(False)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -272,7 +257,37 @@ class RackListWidget(QListWidget):
 
     # --------------------------------------------------------------------------------------------------------
 
+    def startDrag(self, supportedActions):
+        index = self.currentIndex()
+        if not index.isValid():
+            return
+
+        self.fDragIndex = QPersistentModelIndex(index)
+        drag = QDrag(self)
+        drag.setMimeData(self.model().mimeData([index]))
+        try:
+            drag.exec(Qt.DropAction.MoveAction)
+        finally:
+            self.fDragIndex = QPersistentModelIndex()
+            self.fDropPosition = None
+            self.viewport().update()
+            drag.deleteLater()
+
+    @staticmethod
+    def dragPosition(event):
+        return event.pos() if qt_config == 5 else event.position().toPoint()
+
+    def rackDropRow(self, position):
+        for row in range(self.count()):
+            if position.y() <= self.visualItemRect(self.item(row)).center().y():
+                return row
+        return self.count()
+
     def dragEnterEvent(self, event):
+        if event.source() is self and self.fDragIndex.isValid():
+            event.acceptProposedAction()
+            return
+
         urls = event.mimeData().urls()
 
         for url in urls:
@@ -285,13 +300,21 @@ class RackListWidget(QListWidget):
         QListWidget.dragEnterEvent(self, event)
 
     def dragMoveEvent(self, event):
+        if event.source() is self and self.fDragIndex.isValid():
+            # Let Qt handle scrolling near the viewport edges.
+            QListWidget.dragMoveEvent(self, event)
+            event.acceptProposedAction()
+            self.fDropPosition = self.dragPosition(event)
+            self.viewport().update()
+            return
+
         if not self.fWasLastDragValid:
             QListWidget.dragMoveEvent(self, event)
             return
 
         event.acceptProposedAction()
 
-        tryItem = self.itemAt(event.pos())
+        tryItem = self.itemAt(self.dragPosition(event))
 
         if tryItem is not None:
             self.setCurrentRow(tryItem.getPluginId())
@@ -299,6 +322,8 @@ class RackListWidget(QListWidget):
             self.setCurrentRow(-1)
 
     def dragLeaveEvent(self, event):
+        self.fDropPosition = None
+        self.viewport().update()
         if self.fWasLastDragValid:
             self.fWasLastDragValid = False
         QListWidget.dragLeaveEvent(self, event)
@@ -311,6 +336,15 @@ class RackListWidget(QListWidget):
     # if dropping regular files over 1 plugin, keep replacing plugins
 
     def dropEvent(self, event):
+        if event.source() is self:
+            if self.fDragIndex.isValid():
+                source = self.fDragIndex.row()
+                gap = self.rackDropRow(self.dragPosition(event))
+                self.fDropPosition = None
+                self.fParent.movePlugin(source, gap - int(gap > source))
+                event.acceptProposedAction()
+            return
+
         event.acceptProposedAction()
 
         urls = event.mimeData().urls()
@@ -318,7 +352,7 @@ class RackListWidget(QListWidget):
         if not urls:
             return
 
-        tryItem = self.itemAt(event.pos())
+        tryItem = self.itemAt(self.dragPosition(event))
 
         if tryItem is not None:
             pluginId = tryItem.getPluginId()
@@ -326,33 +360,31 @@ class RackListWidget(QListWidget):
             pluginId = -1
 
         for url in urls:
-            if pluginId >= 0:
+            filename = url.toLocalFile()
+            if not self.isDragUrlValid(filename):
+                continue
+
+            filename = filename.rstrip('/')
+            isProject = filename.lower().endswith((".carxp", ".carxs"))
+            replacing = pluginId >= 0 and not isProject
+            if replacing:
                 self.host.replace_plugin(pluginId)
                 pluginId += 1
 
-                if pluginId > self.host.get_current_plugin_count():
+                if pluginId >= self.host.get_current_plugin_count():
                     pluginId = -1
 
-            filename = url.toLocalFile()
-
-            if not filename:
-                continue
-
-            if filename[-1] == '/':
-                filename = filename[:-1]
-
-            if not self.host.load_file(filename):
+            ok = self.host.load_file(filename)
+            if replacing:
+                self.host.replace_plugin(self.host.get_max_plugin_number())
+            if not ok:
                 CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
                                  self.tr("Failed to load file"),
                                  self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
                 continue
 
-            if filename.endswith(".carxp"):
+            if filename.lower().endswith(".carxp"):
                 gCarla.gui.loadExternalCanvasGroupPositionsIfNeeded(filename)
-
-        if tryItem is not None:
-            self.host.replace_plugin(self.host.get_max_plugin_number())
-            #tryItem.widget.setActive(True, True, True)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -370,6 +402,19 @@ class RackListWidget(QListWidget):
         QListWidget.changeEvent(self, event)
 
     def paintEvent(self, event):
+        if getattr(self.host, "isFranca", False):
+            QListWidget.paintEvent(self, event)
+            if self.fDropPosition is not None and self.fDragIndex.isValid():
+                row = self.rackDropRow(self.fDropPosition)
+                if row not in (self.fDragIndex.row(), self.fDragIndex.row() + 1):
+                    last = row == self.count()
+                    rect = self.visualItemRect(self.item(row - 1 if last else row))
+                    y = rect.bottom() - 1 if last else max(1, rect.top())
+                    painter = QPainter(self.viewport())
+                    painter.setPen(QPen(self.palette().highlight().color(), 2))
+                    painter.drawLine(rect.left(), y, rect.right(), y)
+            return
+
         painter = QPainter(self.viewport())
 
         width = self.width()

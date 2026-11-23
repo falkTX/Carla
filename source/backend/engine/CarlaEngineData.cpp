@@ -221,11 +221,7 @@ EngineOptions::EngineOptions() noexcept
       audioDriver(nullptr),
       audioDevice(nullptr),
 #ifndef BUILD_BRIDGE
-# ifdef CARLA_OS_WIN
       oscEnabled(false),
-# else
-      oscEnabled(true),
-# endif
       oscPortTCP(22752),
       oscPortUDP(22752),
 #endif

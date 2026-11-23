@@ -116,8 +116,7 @@ public:
         pData->initTime(nullptr);
 
 #ifndef BUILD_BRIDGE
-        // Forced OSC setup when running as plugin
-        pData->options.oscEnabled = true;
+        // Use a private local endpoint for DSSI UIs.
         pData->options.oscPortTCP = -1;
         pData->options.oscPortUDP = 0;
 #endif
@@ -330,6 +329,7 @@ public:
         switch (action)
         {
         case FILE_CALLBACK_DEBUG:
+        case FILE_CALLBACK_CONFIRM_PROJECT_JACK_APPS:
             return nullptr;
 
         case FILE_CALLBACK_OPEN:

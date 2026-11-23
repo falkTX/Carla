@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Franca</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -29,6 +29,9 @@
     </property>
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="documentMode">
+       <bool>true</bool>
+      </property>
       <property name="tabPosition">
        <enum>QTabWidget::North</enum>
       </property>
@@ -159,17 +162,17 @@
         <property name="spacing">
          <number>1</number>
         </property>
-        <item row="0" column="1">
+        <item row="1" column="1">
          <widget class="DraggableGraphicsView" name="graphicsView">
           <property name="transformationAnchor">
            <enum>QGraphicsView::AnchorUnderMouse</enum>
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
+        <item row="1" column="2">
          <widget class="DigitalPeakMeter" name="peak_out" native="true"/>
         </item>
-        <item row="0" column="0">
+        <item row="1" column="0">
          <widget class="DigitalPeakMeter" name="peak_in" native="true"/>
         </item>
        </layout>
@@ -587,16 +590,12 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="act_file_new"/>
    <addaction name="act_file_open"/>
    <addaction name="act_file_save"/>
-   <addaction name="act_file_save_as"/>
    <addaction name="act_file_connect"/>
    <addaction name="act_file_refresh"/>
    <addaction name="separator"/>
    <addaction name="act_plugin_add"/>
-   <addaction name="act_plugin_add_jack"/>
-   <addaction name="act_plugin_remove_all"/>
    <addaction name="act_engine_panic"/>
    <addaction name="separator"/>
    <addaction name="act_settings_configure"/>
@@ -1441,7 +1440,7 @@
      <normaloff>:/16x16/configure.svgz</normaloff>:/16x16/configure.svgz</iconset>
    </property>
    <property name="text">
-    <string>&amp;Configure Carla</string>
+    <string>&amp;Preferences</string>
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>
@@ -1490,7 +1489,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Internal</string>
+    <string>Plugin Routing</string>
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>
@@ -1501,7 +1500,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show External</string>
+    <string>System Routing</string>
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>

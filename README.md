@@ -1,35 +1,13 @@
-# ![Carla Logo](resources/48x48/carla.png) Carla Plugin Host
-[![build](https://github.com/falkTX/Carla/actions/workflows/build.yml/badge.svg)](https://github.com/falkTX/Carla/actions/workflows/build.yml)
+# Franca
 
-What is Carla?
----------------
+Franca is a focused rewrite of the [Carla](https://github.com/falkTX/Carla) standalone application for Arch Linux. It keeps Carla’s audio engine and plugin bridges and introduces a KDE Plasma–native interface built with Qt Widgets. The build prefers Qt 6.
 
-Carla is a fully-featured audio plugin host, with support for many audio drivers and plugin formats.<br>
-It's open source and licensed under the GNU General Public License, version 2 or later.
+Use the Rack to arrange effects, edit parameters, and monitor per-plugin input and output levels. Use the Patchbay to connect the rack to your existing PipeWire/JACK graph, including a system-wide virtual microphone. Rack edits and patchbay cable changes support undo and redo.
 
-Features
----------
+Franca reads and writes Carla projects (`.carxp`) and can load Carla presets (`.carxs`). It uses the Carla settings namespace and default JACK client name to carry over plugin search paths, devices, and routes. When a project loads with missing plugins, save a recovered copy under a different name to preserve the original.
 
-* LADSPA, DSSI, LV2 and VST2, VST3 and AU plugin formats
-* SF2/3 and SFZ sound banks
-* Internal audio and midi file player
-* Automation of plugin parameters via MIDI CC
-* Remote control over [OSC](https://opensoundcontrol.stanford.edu/)
-* Rack and Patchbay processing modes, plus Single and Multi-Client if using JACK
-* Native audio drivers (ALSA, DirectSound, CoreAudio, etc) and JACK
+Franca hosts native and Wine-bridged plugins. Linux builds retain LV2, VST3, VST2, CLAP, LADSPA, DSSI, JSFX, SF2/SF3, SFZ, and Carla’s internal plugins. Some formats require optional system libraries.
 
-In experimental phase / work in progress:
-* Export any Carla loadable plugin or sound bank as an LV2 plugin
-* Plugin bridge support (such as running 32bit plugins on a 64bit Carla, or Windows plugins on Linux)
-* Run JACK applications as audio plugins
-* Transport controls, sync with JACK Transport or Ableton Link
+See [INSTALL.md](INSTALL.md) for the Arch build, Wine helpers, and a smoke-test command.
 
-Carla is also available as an LV2 plugin and VST2 plugin.
-
-Screenshot
-----------
-
-![Screenshot](https://kx.studio/screenshots/carla.png)
-
-
-See the [official webpage](https://kx.studio/Applications:Carla) also.
+Licensed under the [GNU General Public License, version 2 or later](doc/GPL.txt).

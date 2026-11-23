@@ -1,5 +1,6 @@
 <RCC version="1.0">
     <qresource prefix="/">
+        <file>256x256/franca.png</file>
         <file>16x16/carla.png</file>
         <file>16x16/carla-control.png</file>
 

@@ -53,6 +53,8 @@ class DigitalPeakMeter(QWidget):
         self.fMeterColorBaseAlt = QColor(15, 110, 15, 100)
 
         self.fMeterLinesEnabled = True
+        self.fUseSystemColors   = False
+        self.fColorLevels       = False
         self.fMeterOrientation  = self.VERTICAL
         self.fMeterStyle        = self.STYLE_DEFAULT
 
@@ -68,6 +70,11 @@ class DigitalPeakMeter(QWidget):
 
     def channelCount(self):
         return self.fChannelCount
+
+    def setUseSystemColors(self, enabled, *, colorLevels=False):
+        self.fUseSystemColors = enabled
+        self.fColorLevels = colorLevels
+        self.update()
 
     def setChannelCount(self, count):
         if self.fChannelCount == count:
@@ -339,9 +346,19 @@ class DigitalPeakMeter(QWidget):
         height = self.height()
 
         # draw background
-        painter.setPen(QPen(self.fMeterBackground, 2))
-        painter.setBrush(self.fMeterBackground)
-        painter.drawRect(0, 0, width, height)
+        if self.fUseSystemColors:
+            track = self.palette().midlight().color()
+            levelColor = self.palette().highlight().color()
+            painter.fillRect(self.rect(), track)
+            if self.fColorLevels:
+                levelColor = self.fMeterColorBase.darker(170) if track.lightness() > 127 else self.fMeterColorBase
+                tint = QColor(levelColor)
+                tint.setAlphaF(0.24)
+                painter.fillRect(self.rect(), tint)
+        else:
+            painter.setPen(QPen(self.fMeterBackground, 2))
+            painter.setBrush(self.fMeterBackground)
+            painter.drawRect(0, 0, width, height)
 
         if self.fChannelCount == 0:
             return
@@ -351,7 +368,10 @@ class DigitalPeakMeter(QWidget):
         meterSize = (height if self.fMeterOrientation == self.HORIZONTAL else width)/self.fChannelCount
 
         # set pen/brush for levels
-        if self.fMeterStyle == self.STYLE_OPENAV:
+        if self.fUseSystemColors:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(levelColor)
+        elif self.fMeterStyle == self.STYLE_OPENAV:
             colorTrans = QColor(self.fMeterColorBase)
             colorTrans.setAlphaF(0.5)
             painter.setBrush(colorTrans)
@@ -375,7 +395,7 @@ class DigitalPeakMeter(QWidget):
 
             meterPos += meterSize+meterPad
 
-        if not self.fMeterLinesEnabled:
+        if not self.fMeterLinesEnabled or self.fUseSystemColors:
             return
 
         # draw lines

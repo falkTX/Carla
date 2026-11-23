@@ -5950,8 +5950,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(key != kUridNull, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr, LV2_STATE_ERR_NO_PROPERTY);
-        CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(type != kUridNull, LV2_STATE_ERR_BAD_TYPE);
+        if (size == 0)
+            return LV2_STATE_ERR_NO_PROPERTY;
 
         // FIXME linuxsampler does not set POD flag
         // CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
@@ -6032,7 +6033,7 @@ public:
 
         if (stype == nullptr || stringData == nullptr)
         {
-            carla_stderr("Plugin requested value for '%s' which is not available", skey);
+            carla_debug("Plugin requested value for '%s' which is not available", skey);
             *size = *type = *flags = 0;
             return nullptr;
         }
@@ -7145,7 +7146,7 @@ public:
                     break;
                 }
 
-                carla_stderr("Plugin UI wants a feature that is not supported (ignored):\n%s", uri);
+                carla_debug("Plugin UI wants a feature that is not supported (ignored):\n%s", uri);
             }
 
             if (std::strcmp(uri, LV2_UI__makeResident) == 0 || std::strcmp(uri, LV2_UI__makeSONameResident) == 0)

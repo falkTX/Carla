@@ -150,7 +150,7 @@ uint32_t v3_cconst(const uint8_t a, const uint8_t b, const uint8_t c, const uint
 static inline
 const char* tuid2str(const v3_tuid iid) noexcept
 {
-    static char buf[44];
+    static thread_local char buf[44];
     std::snprintf(buf, sizeof(buf), "0x%08X,0x%08X,0x%08X,0x%08X",
                   v3_cconst(iid[ 0], iid[ 1], iid[ 2], iid[ 3]),
                   v3_cconst(iid[ 4], iid[ 5], iid[ 6], iid[ 7]),

@@ -51,7 +51,7 @@ public:
     CarlaEngineOsc(CarlaEngine* engine) noexcept;
     ~CarlaEngineOsc() noexcept;
 
-    void init(const char* name, int tcpPort, int udpPort) noexcept;
+    void init(const char* name, bool enableControl, int tcpPort, int udpPort) noexcept;
     void idle() const noexcept;
     void close() noexcept;
 
@@ -113,6 +113,7 @@ private:
     // for carla-control
     CarlaOscData fControlDataTCP;
     CarlaOscData fControlDataUDP;
+    bool fControlEnabled;
 
     String    fName;
     String    fServerPathTCP;

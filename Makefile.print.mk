@@ -28,16 +28,8 @@ features_print_main:
 	@printf -- "$(tS)---> Main features $(tE)\n"
 ifeq ($(HAVE_FRONTEND),true)
 	@printf -- "Front-End:     $(ANS_YES) (Qt$(FRONTEND_TYPE))\n"
-	@printf -- "LV2 plugin:    $(ANS_YES)\n"
-ifneq ($(HAIKU),true)
-	@printf -- "VST2 plugin:   $(ANS_YES)\n"
-else
-	@printf -- "VST2 plugin:   $(ANS_NO)  $(mZ)Not available for Haiku$(mE)\n"
-endif
 else
 	@printf -- "Front-End:     $(ANS_NO)  $(mS)Missing Qt and/or PyQt$(mE)\n"
-	@printf -- "LV2 plugin:    $(ANS_NO)  $(mS)No front-end$(mE)\n"
-	@printf -- "VST2 plugin:   $(ANS_NO)  $(mS)No front-end$(mE)\n"
 endif
 ifeq ($(HAVE_HYLIA),true)
 	@printf -- "Link support:  $(ANS_YES)\n"

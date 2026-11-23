@@ -1,0 +1,10 @@
+#!/bin/sh
+
+export PATH="X-LIBDIR-X/franca:$PATH"
+
+if [ "${1:-}" = "--gdb" ]; then
+    shift
+    exec gdb --args python3 "X-DATADIR-X/franca/franca" --with-appname="$0" "$@"
+fi
+
+exec python3 "X-DATADIR-X/franca/franca" --with-appname="$0" "$@"

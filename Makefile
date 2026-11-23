@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-# Makefile for Carla #
+# Makefile for Franca #
 # ------------------ #
 # Created by falkTX
 #
@@ -32,7 +32,7 @@ VERSION   := 2.6.0-alpha1
 TARGETS = backend frontend theme
 
 ifneq ($(WASM),true)
-TARGETS += bridges-plugin bridges-ui discovery interposer libjack plugin
+TARGETS += bridges-plugin bridges-ui discovery interposer libjack
 endif
 
 all: $(TARGETS)
@@ -42,8 +42,9 @@ all: $(TARGETS)
 
 ifneq ($(STATIC_PLUGIN_TARGET),true)
 ALL_LIBS += $(MODULEDIR)/carla_engine.a
-endif
+else
 ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
+endif
 ALL_LIBS += $(MODULEDIR)/carla_plugin.a
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
 ifeq ($(STATIC_PLUGIN_TARGET),true)
@@ -102,10 +103,10 @@ endif
 libs: $(ALL_LIBS)
 
 $(MODULEDIR)/carla_engine.a: .FORCE
-	@$(MAKE) -C source/backend/engine
+	@$(MAKE) -C source/backend/engine standalone
 
 $(MODULEDIR)/carla_engine_plugin.a: $(MODULEDIR)/carla_engine.a
-	@$(MAKE) -C source/backend/engine
+	@$(MAKE) -C source/backend/engine plugin
 
 $(MODULEDIR)/carla_plugin.a: .FORCE
 	@$(MAKE) -C source/backend/plugin
@@ -205,7 +206,7 @@ lv2-bundles-dep: $(MODULEDIR)/audio_decoder.a $(MODULEDIR)/water.a $(MODULEDIR)/
 lv2-bundles: lv2-bundles-dep
 	@$(MAKE) -C source/plugin bundles
 
-plugin: backend bridges-plugin bridges-ui discovery
+plugin: backend bridges-plugin bridges-ui discovery $(MODULEDIR)/carla_engine_plugin.a
 	@$(MAKE) -C source/plugin
 
 ifeq ($(WINDOWS),true)
@@ -233,7 +234,7 @@ theme: libs
 static-backend: libs
 	@$(MAKE) -C source/backend static
 
-static-plugin: static-backend
+static-plugin: static-backend $(MODULEDIR)/carla_engine_plugin.a
 	@$(MAKE) -C source/plugin static
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -388,6 +389,10 @@ doxygen:
 tests:
 	$(MAKE) -C source/tests
 
+.PHONY: check-franca
+check-franca: backend discovery
+	PYTHONPATH=source/frontend python3 source/tests/franca-smoke.py
+
 stoat:
 	stoat --recursive ./build/ --suppression ./data/stoat-supression.txt --whitelist ./data/stoat-whitelist.txt --graph-view ./data/stoat-callgraph.png
 
@@ -398,405 +403,63 @@ stoat:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
+FRANCA_LIBDIR = $(LIBDIR)/franca
+FRANCA_DATADIR = $(DATADIR)/franca
+FRANCA_PYTHON = source/frontend
+FRANCA_HELPERS = $(wildcard bin/carla-bridge-* bin/carla-discovery-* bin/jackbridge-wine*.dll bin/libcarla_interposer*)
+FRANCA_UI_HELPERS = $(wildcard bin/resources/*-ui bin/resources/zynaddsubfx) \
+	bin/resources/carla-plugin bin/resources/carla-plugin-patchbay
+
 install_main:
-	# Create directories
-	install -d $(DESTDIR)$(BINDIR)
-	install -d $(DESTDIR)$(DATADIR)/carla/resources
-ifeq ($(LINUX),true)
-	install -d $(DESTDIR)$(LIBDIR)/carla/jack
-else
-	install -d $(DESTDIR)$(LIBDIR)/carla
-endif
-	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
-	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
-	install -d $(DESTDIR)$(INCLUDEDIR)/carla/utils
-ifeq ($(LINUX),true)
-ifeq ($(HAVE_JACK),true)
-ifeq ($(JACKBRIDGE_DIRECT),true)
-	install -d $(DESTDIR)$(JACK_LIBDIR)
-endif
-endif
-endif
-
 ifeq ($(HAVE_FRONTEND),true)
-	# Create directories (frontend)
-	install -d $(DESTDIR)$(LIBDIR)/carla/styles
-	install -d $(DESTDIR)$(PREFIX)/share/appdata
-	install -d $(DESTDIR)$(DATADIR)/applications
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/32x32/apps
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
-	install -d $(DESTDIR)$(DATADIR)/mime/packages
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/translations
-	install -d $(DESTDIR)$(DATADIR)/carla/common
-	install -d $(DESTDIR)$(DATADIR)/carla/patchcanvas
-	install -d $(DESTDIR)$(DATADIR)/carla/utils
-	install -d $(DESTDIR)$(DATADIR)/carla/widgets
+	install -d "$(DESTDIR)$(BINDIR)" "$(DESTDIR)$(FRANCA_LIBDIR)" "$(DESTDIR)$(FRANCA_DATADIR)/resources/translations"
+	install -d "$(DESTDIR)$(DATADIR)/applications" "$(DESTDIR)$(DATADIR)/mime/packages" \
+		"$(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps"
+	install -m 755 data/franca "$(DESTDIR)$(BINDIR)/franca"
+	sed $(SED_ARGS) 's?X-LIBDIR-X?$(LIBDIR)?' -e 's?X-DATADIR-X?$(DATADIR)?' "$(DESTDIR)$(BINDIR)/franca"
+	install -m 644 data/desktop/franca.desktop "$(DESTDIR)$(DATADIR)/applications/"
+	install -m 644 data/carla.xml "$(DESTDIR)$(DATADIR)/mime/packages/franca.xml"
+	install -m 644 resources/256x256/franca.png "$(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps/franca.png"
+
+	install -m 644 bin/libcarla_standalone2$(LIB_EXT) bin/libcarla_utils$(LIB_EXT) \
+		bin/libcarla_frontend$(LIB_EXT) "$(DESTDIR)$(FRANCA_LIBDIR)/"
+	install -m 755 $(FRANCA_HELPERS) "$(DESTDIR)$(FRANCA_LIBDIR)/"
+ifneq ($(wildcard bin/jack/libjack.so.0),)
+	install -Dm755 bin/jack/libjack.so.0 "$(DESTDIR)$(FRANCA_LIBDIR)/jack/libjack.so.0"
+endif
+ifneq ($(wildcard bin/styles/*),)
+	install -d "$(DESTDIR)$(FRANCA_LIBDIR)/styles"
+	install -m 644 bin/styles/* "$(DESTDIR)$(FRANCA_LIBDIR)/styles/"
 endif
 
-	# -------------------------------------------------------------------------------------------------------------
-
-	# Install script files (non-gui)
-	install -m 755 \
-		data/carla-single \
-		$(DESTDIR)$(BINDIR)
-
-	# Adjust PREFIX value in script files (non-gui)
-	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
-		$(DESTDIR)$(BINDIR)/carla-single
-
-	# Install backend libs
-	install -m 644 \
-		bin/libcarla_*.* \
-		$(DESTDIR)$(LIBDIR)/carla
-
-	# Install other binaries
-	install -m 755 \
-		bin/*bridge-* \
-		bin/carla-discovery-* \
-		$(DESTDIR)$(LIBDIR)/carla
-
-ifeq ($(LINUX),true)
-ifeq ($(HAVE_JACK),true)
-ifeq ($(JACKBRIDGE_DIRECT),true)
-	# Install internal jack client
-	ln -sf \
-		$(LIBDIR)/carla/libcarla_standalone2.so \
-		$(DESTDIR)$(JACK_LIBDIR)/carla.so
-endif
-endif
-
-ifneq ($(JACKBRIDGE_DIRECT),true)
-	# Install custom libjack
-	install -m 755 \
-		bin/jack/libjack.so.0 \
-		$(DESTDIR)$(LIBDIR)/carla/jack
-endif
-endif
-
-	# Install pkg-config files
-	install -m 644 \
-		data/pkgconfig/*.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig
-
-	# Adjust PREFIX, LIBDIR, INCLUDEDIR and VERSION in pkg-config files
-	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
-
-	sed $(SED_ARGS) 's?X-LIBDIR-X?$(LIBDIR)?' \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
-
-	sed $(SED_ARGS) 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
-
-	sed $(SED_ARGS) 's?X-VERSION-X?$(VERSION)?' \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
-
-	# Install headers
-	install -m 644 \
-		source/backend/CarlaBackend.h \
-		source/backend/CarlaHost.h \
-		source/backend/CarlaUtils.h \
-		source/backend/CarlaEngine.hpp \
-		source/backend/CarlaPlugin.hpp \
-		$(DESTDIR)$(INCLUDEDIR)/carla
-
-	install -m 644 \
-		source/includes/CarlaDefines.h \
-		source/includes/CarlaMIDI.h \
-		source/includes/CarlaNative.h \
-		source/includes/CarlaNativePlugin.h \
-		$(DESTDIR)$(INCLUDEDIR)/carla/includes
-
-	install -m 644 \
-		source/utils/CarlaUtils.hpp \
-		$(DESTDIR)$(INCLUDEDIR)/carla/utils
-
-	# -------------------------------------------------------------------------------------------------------------
-
-ifeq ($(HAVE_FRONTEND),true)
-ifneq ($(CPPMODE),true)
-	# Install script files (gui)
-	install -m 755 \
-		data/carla \
-		data/carla-database \
-		data/carla-jack-multi \
-		data/carla-jack-single \
-		data/carla-jack-patchbayplugin \
-		data/carla-osc-gui \
-		data/carla-patchbay \
-		data/carla-rack \
-		data/carla-settings \
-		$(DESTDIR)$(BINDIR)
-
-	# Adjust PREFIX value in script files (gui)
-	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
-		$(DESTDIR)$(BINDIR)/carla \
-		$(DESTDIR)$(BINDIR)/carla-database \
-		$(DESTDIR)$(BINDIR)/carla-jack-multi \
-		$(DESTDIR)$(BINDIR)/carla-jack-single \
-		$(DESTDIR)$(BINDIR)/carla-jack-patchbayplugin \
-		$(DESTDIR)$(BINDIR)/carla-osc-gui \
-		$(DESTDIR)$(BINDIR)/carla-patchbay \
-		$(DESTDIR)$(BINDIR)/carla-rack \
-		$(DESTDIR)$(BINDIR)/carla-settings
-
-ifeq ($(HAVE_LIBLO),true)
-	install -m 755 \
-		data/carla-control \
-		$(DESTDIR)$(BINDIR)
-
-	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
-		$(DESTDIR)$(BINDIR)/carla-control
-endif
-
-	# Install frontend
-	install -m 644 \
-		source/frontend/carla \
-		source/frontend/carla-control \
-		source/frontend/carla-jack-multi \
-		source/frontend/carla-jack-single \
-		source/frontend/carla-patchbay \
-		source/frontend/carla-rack \
-		source/frontend/*.py \
-		$(DESTDIR)$(DATADIR)/carla/
-
-	install -m 644 \
-		source/frontend/common/*.py \
-		$(DESTDIR)$(DATADIR)/carla/common/
-
-	install -m 644 \
-		source/frontend/patchcanvas/*.py \
-		$(DESTDIR)$(DATADIR)/carla/patchcanvas/
-
-	install -m 644 \
-		source/frontend/utils/*.py \
-		$(DESTDIR)$(DATADIR)/carla/utils/
-
-	install -m 644 \
-		source/frontend/widgets/*.py \
-		$(DESTDIR)$(DATADIR)/carla/widgets/
-
-	# Adjust LIBDIR and DATADIR value in python code
+	install -m 644 $(FRANCA_PYTHON)/franca $(FRANCA_PYTHON)/*.py "$(DESTDIR)$(FRANCA_DATADIR)/"
+	@for module in common patchcanvas utils widgets; do \
+		install -d "$(DESTDIR)$(FRANCA_DATADIR)/$$module" && \
+		install -m 644 "$(FRANCA_PYTHON)/$$module/"*.py "$(DESTDIR)$(FRANCA_DATADIR)/$$module/" || exit 1; \
+	done
 	sed $(SED_ARGS) 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' \
-		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
-
-	sed $(SED_ARGS) 's?X_DATADIR_X = None?X_DATADIR_X = "$(DATADIR)"?' \
-		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
-
-	# Install resources (gui)
-	install -m 755 \
-		bin/resources/carla-plugin \
-		bin/resources/carla-plugin-patchbay \
-		bin/resources/*-ui \
-		$(DESTDIR)$(DATADIR)/carla/resources
-endif # CPPMODE
-
-ifeq ($(HAVE_THEME),true)
-	# Install theme
-	install -m 644 \
-		bin/styles/* \
-		$(DESTDIR)$(LIBDIR)/carla/styles
-endif
-
-	# Install desktop files
-	install -m 644 data/desktop/carla.desktop             $(DESTDIR)$(DATADIR)/applications
-	install -m 644 data/desktop/carla-rack.desktop        $(DESTDIR)$(DATADIR)/applications
-	install -m 644 data/desktop/carla-patchbay.desktop    $(DESTDIR)$(DATADIR)/applications
-	install -m 644 data/desktop/carla-jack-single.desktop $(DESTDIR)$(DATADIR)/applications
-	install -m 644 data/desktop/carla-jack-multi.desktop  $(DESTDIR)$(DATADIR)/applications
-ifeq ($(HAVE_LIBLO),true)
-	install -m 644 data/desktop/carla-control.desktop     $(DESTDIR)$(DATADIR)/applications
-endif
-
-	# Install app data
-	sed -e 's?X-VERSION-X?$(VERSION)?' \
-		data/appdata.xml.in > $(DESTDIR)$(PREFIX)/share/appdata/studio.kx.carla.appdata.xml
-
-	# Install mime package
-	install -m 644 data/carla.xml $(DESTDIR)$(DATADIR)/mime/packages
-
-	# Install icons, 16x16
-	install -m 644 resources/16x16/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
-	install -m 644 resources/16x16/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
-
-	# Install icons, 32x32
-	install -m 644 resources/32x32/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/32x32/apps
-	install -m 644 resources/32x32/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/32x32/apps
-
-	# Install icons, 48x48
-	install -m 644 resources/48x48/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
-	install -m 644 resources/48x48/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
-
-	# Install icons, 128x128
-	install -m 644 resources/128x128/carla.png          $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
-	install -m 644 resources/128x128/carla-control.png  $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
-
-	# Install icons, 256x256
-	install -m 644 resources/256x256/carla.png          $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
-	install -m 644 resources/256x256/carla-control.png  $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
-
-	# Install icons, scalable
-	install -m 644 resources/scalable/carla.svg         $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
-	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
-
-	# Install resources (re-use python files)
-	$(LINK) ../common                      $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../patchcanvas                 $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../utils                       $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../widgets                     $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_backend_qt.py         $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_frontend.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_host_control.py       $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_settings.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_skin.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_shared.py             $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_utils.py              $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../qt_compat.py                $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../qt_config.py                $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_host.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_parameter.py       $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_plugin_calf.py     $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_plugin_classic.py  $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_plugin_compact.py  $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_plugin_default.py  $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_plugin_presets.py  $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_settings.py        $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_carla_settings_driver.py $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_inputdialog_value.py     $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_midipattern.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) ../ui_xycontroller.py          $(DESTDIR)$(DATADIR)/carla/resources
-
-	# Install translations
-	$(foreach l,$(I18N_LANGUAGES),install -m 644 \
-		source/frontend/translations/carla_$(l).qm \
-		$(DESTDIR)$(DATADIR)/carla/resources/translations/;)
-
-	# Link resources for internal plugin
-	rm -rf $(DESTDIR)$(LIBDIR)/carla/resources
-	$(LINK) ../../share/carla/resources $(DESTDIR)$(LIBDIR)/carla/resources
-endif # HAVE_FRONTEND
-
-	# -------------------------------------------------------------------------------------------------------------
-
-ifeq ($(CAN_GENERATE_LV2_TTL),true)
-	# Install lv2 plugin
-	install -d $(DESTDIR)$(LIBDIR)/lv2/carla.lv2
-
-	install -m 644 \
-		bin/carla.lv2/carla.* \
-		bin/carla.lv2/*.ttl \
-		$(DESTDIR)$(LIBDIR)/lv2/carla.lv2
-
-	# Link binaries for lv2 plugin
-	@for i in `find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'`; do \
-		$(LINK) ../../carla/$$i $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/$$i; \
+		-e 's?X_DATADIR_X = None?X_DATADIR_X = "$(DATADIR)"?' "$(DESTDIR)$(FRANCA_DATADIR)/carla_shared.py"
+	install -m 755 $(FRANCA_UI_HELPERS) "$(DESTDIR)$(FRANCA_DATADIR)/resources/"
+	@for resource in "$(DESTDIR)$(FRANCA_DATADIR)/"*.py common patchcanvas utils widgets; do \
+		ln -sfn "../$$(basename "$$resource")" "$(DESTDIR)$(FRANCA_DATADIR)/resources/" || exit 1; \
 	done
-	rm -f $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/libcarla_standalone2.*
-
-ifeq ($(LINUX),true)
-	# Link jack app bridge
-	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/jack
-	$(LINK) ../../carla/jack $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/jack
-endif
-endif # CAN_GENERATE_LV2_TTL
-
-ifeq ($(HAVE_FRONTEND),true)
-	# Link resources for lv2 plugin
-	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
-	$(LINK) ../../../share/carla/resources $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
-
-	# Link styles for lv2 plugin
-	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
-	$(LINK) ../../carla/styles $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
+	$(foreach l,$(I18N_LANGUAGES),install -m 644 $(FRANCA_PYTHON)/translations/carla_$(l).qm \
+		"$(DESTDIR)$(FRANCA_DATADIR)/resources/translations/";)
+	ln -sfn "$$(realpath -m --relative-to="$(FRANCA_LIBDIR)" "$(FRANCA_DATADIR)/resources")" \
+		"$(DESTDIR)$(FRANCA_LIBDIR)/resources"
+else
+	@echo "Installing Franca requires Qt and PyQt."
+	@false
 endif
 
-	# -------------------------------------------------------------------------------------------------------------
-
-ifneq ($(HAIKU),true)
-ifeq ($(HAVE_FRONTEND),true)
-	# Install vst plugin
-	install -d $(DESTDIR)$(LIBDIR)/vst/carla.vst
-
-	install -m 644 \
-		bin/CarlaRack*.* \
-		bin/CarlaPatchbay*.* \
-		$(DESTDIR)$(LIBDIR)/vst/carla.vst
-
-	# Link binaries for vst plugin
-	@for i in `find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'`; do \
-		$(LINK) ../../carla/$$i $(DESTDIR)$(LIBDIR)/vst/carla.vst/$$i; \
-	done
-	rm -f $(DESTDIR)$(LIBDIR)/vst/carla.vst/libcarla_standalone2.*
-
-	# Link jack app bridge
-	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/jack
-	$(LINK) ../../carla/jack $(DESTDIR)$(LIBDIR)/vst/carla.vst/jack
-
-	# Link resources for vst plugin
-	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/resources
-	$(LINK) ../../../share/carla/resources $(DESTDIR)$(LIBDIR)/vst/carla.vst/resources
-
-	# Link styles for vst plugin
-	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
-	$(LINK) ../../carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
-endif
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-
-ifneq ($(EXTERNAL_PLUGINS),true)
-install_external_plugins:
-endif
-
-install: install_main install_external_plugins
-
-# ---------------------------------------------------------------------------------------------------------------------
+install: install_main
 
 uninstall:
-	rm -f $(DESTDIR)$(BINDIR)/carla*
-	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/carla-host-plugin.pc
-	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/carla-native-plugin.pc
-	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc
-	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
-	rm -f $(DESTDIR)$(DATADIR)/applications/carla.desktop
-	rm -f $(DESTDIR)$(DATADIR)/applications/carla-control.desktop
-	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/*/apps/carla.png
-	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/*/apps/carla-control.png
-	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/carla.svg
-	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/carla-control.svg
-	rm -f $(DESTDIR)$(DATADIR)/mime/packages/carla.xml
-	rm -rf $(DESTDIR)$(LIBDIR)/carla
-	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2
-	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla-native.lv2
-	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst
-	rm -rf $(DESTDIR)$(DATADIR)/carla
-	rm -rf $(DESTDIR)$(INCLUDEDIR)/carla
+	rm -f "$(DESTDIR)$(BINDIR)/franca" "$(DESTDIR)$(DATADIR)/applications/franca.desktop" \
+		"$(DESTDIR)$(DATADIR)/mime/packages/franca.xml" "$(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps/franca.png"
+	rm -rf "$(DESTDIR)$(FRANCA_LIBDIR)" "$(DESTDIR)$(FRANCA_DATADIR)"
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)
 ifneq ($(MACOS_OLD),true)

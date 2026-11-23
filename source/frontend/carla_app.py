@@ -58,7 +58,7 @@ from utils import QSafeSettings
 # ------------------------------------------------------------------------------------------------------------
 
 class CarlaApplication():
-    def __init__(self, appName = "Carla2", libPrefix = None):
+    def __init__(self, appName = "Carla2", libPrefix = None, useProTheme = None):
         pathBinaries, pathResources = getPaths(libPrefix)
 
         # Needed for macOS and Windows
@@ -105,7 +105,8 @@ class CarlaApplication():
 
         # base settings
         settings    = QSafeSettings("falkTX", appName)
-        useProTheme = CARLA_OS_MAC or settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, bool)
+        if useProTheme is None:
+            useProTheme = CARLA_OS_MAC or settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, bool)
 
         if not useProTheme:
             self.createApp(appName)

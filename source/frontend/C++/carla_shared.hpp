@@ -256,11 +256,7 @@ static const char* const* const MIDI_CC_LIST = {
 // #endif
 
 // OSC
-#ifdef CARLA_OS_WIN
-# define CARLA_DEFAULT_OSC_ENABLED false
-#else
-# define CARLA_DEFAULT_OSC_ENABLED true
-#endif
+#define CARLA_DEFAULT_OSC_ENABLED false
 #define CARLA_DEFAULT_OSC_TCP_PORT_ENABLED true
 #define CARLA_DEFAULT_OSC_TCP_PORT_NUMBER  22752
 #define CARLA_DEFAULT_OSC_TCP_PORT_RANDOM  false

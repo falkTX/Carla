@@ -2975,7 +2975,8 @@ public:
         // ---------------------------------------------------------------
         // check for gui
 
-        if (opts.oscEnabled && opts.oscPortUDP >= 0)
+        const char* const oscUrl = pData->engine->getOscServerPathUDP();
+        if (oscUrl != nullptr && oscUrl[0] != '\0')
         {
             if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
             {

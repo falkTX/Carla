@@ -701,26 +701,31 @@ def restoreGroupPositions(dataList):
     if canvas.debug:
         print("PatchCanvas::restoreGroupPositions(...)")
 
+    if not isinstance(dataList, list):
+        return
+
     mapping = {}
 
     for group in canvas.group_list:
         mapping[group.group_name] = group
 
     for data in dataList:
-        name = data['name']
-        group = mapping.get(name, None)
+        if not isinstance(data, dict) or not isinstance(data.get('name'), str):
+            continue
+        group = mapping.get(data['name'])
 
         if group is None:
             continue
 
-        group.widgets[0].blockSignals(True)
-        group.widgets[0].setPos(data['pos1x'], data['pos1y'])
-        group.widgets[0].blockSignals(False)
-
-        if group.split and group.widgets[1]:
-            group.widgets[1].blockSignals(True)
-            group.widgets[1].setPos(data['pos2x'], data['pos2y'])
-            group.widgets[1].blockSignals(False)
+        for index in range(2 if group.split and group.widgets[1] else 1):
+            x = data.get('pos%dx' % (index + 1))
+            y = data.get('pos%dy' % (index + 1))
+            if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+                continue
+            widget = group.widgets[index]
+            wasBlocked = widget.blockSignals(True)
+            widget.setPos(x, y)
+            widget.blockSignals(wasBlocked)
 
 def setGroupPos(group_id, group_pos_x, group_pos_y):
     setGroupPosFull(group_id, group_pos_x, group_pos_y, group_pos_x, group_pos_y)

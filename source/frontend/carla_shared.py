@@ -323,7 +323,7 @@ else:
     CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
 
 # OSC
-CARLA_DEFAULT_OSC_ENABLED = not (CARLA_OS_MAC or CARLA_OS_WIN)
+CARLA_DEFAULT_OSC_ENABLED = False
 CARLA_DEFAULT_OSC_TCP_PORT_ENABLED = True
 CARLA_DEFAULT_OSC_TCP_PORT_NUMBER  = 22752
 CARLA_DEFAULT_OSC_TCP_PORT_RANDOM  = False
@@ -689,7 +689,7 @@ def getIcon(icon, size, qrcformat):
 # ------------------------------------------------------------------------------------------------------------
 # Handle some basic command-line arguments shared between all carla variants
 
-def handleInitialCommandLineArguments(file):
+def handleInitialCommandLineArguments(file, *, appName="Carla"):
     initName  = os.path.basename(file) if (file is not None and os.path.dirname(file) in PATH) else sys.argv[0]
     libPrefix = None
     readPrefixNext = False
@@ -729,8 +729,8 @@ def handleInitialCommandLineArguments(file):
             print("    --cnprefix\t Set a prefix for client names in multi-client mode.")
             if isinstance(gCarla.nogui, bool):
                 if X_LIBDIR_X is not None:
-                    print("    --gdb     \t Run Carla inside gdb.")
-                print(" -n,--no-gui  \t Run Carla headless, don't show UI.")
+                    print("    --gdb     \t Run %s inside gdb." % appName)
+                print(" -n,--no-gui  \t Run %s headless." % appName)
                 print("")
             print(" -h,--help    \t Print this help text and exit.")
             print(" -v,--version \t Print version information and exit.")
@@ -745,7 +745,7 @@ def handleInitialCommandLineArguments(file):
         elif arg in ("-v", "--v", "-version", "--version"):
             pathBinaries, pathResources = getPaths(libPrefix)
 
-            print("Using Carla version %s" % CARLA_VERSION_STRING)
+            print("%s %s" % (appName, CARLA_VERSION_STRING))
             print("  Python version: %s" % sys.version.split(" ",1)[0])
             print("  Qt version:     %s" % QT_VERSION_STR)
             print("  PyQt version:   %s" % PYQT_VERSION_STR)
@@ -807,14 +807,14 @@ def getInitialProjectFile(skipExistCheck = False):
 def getPaths(libPrefix = None):
     CWDl = CWD.lower()
 
-    # adjust for special distros
-    libdir  = os.path.basename(os.path.normpath(X_LIBDIR_X))  if X_LIBDIR_X  else "lib"
-    datadir = os.path.basename(os.path.normpath(X_DATADIR_X)) if X_DATADIR_X else "share"
+    if X_LIBDIR_X and X_DATADIR_X:
+        return (os.path.join(X_LIBDIR_X, "franca"),
+                os.path.join(X_DATADIR_X, "franca", "resources"))
 
     # standalone, installed system-wide linux
     if libPrefix is not None:
-        pathBinaries  = os.path.join(libPrefix, libdir, "carla")
-        pathResources = os.path.join(libPrefix, datadir, "carla", "resources")
+        pathBinaries  = os.path.join(libPrefix, "lib", "carla")
+        pathResources = os.path.join(libPrefix, "share", "carla", "resources")
 
     # standalone, local source
     elif CWDl.endswith("frontend"):
@@ -825,7 +825,7 @@ def getPaths(libPrefix = None):
     elif CWDl.endswith("resources"):
         # installed system-wide linux
         if CWDl.endswith("/share/carla/resources"):
-            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", libdir, "carla"))
+            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
             pathResources = CWD
 
         # local source

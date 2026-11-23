@@ -378,6 +378,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine)
       fileCallback(nullptr),
       fileCallbackPtr(nullptr),
       actionCanceled(false),
+      projectsWithLoadErrors(),
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
       loadingProject(false),
       ignoreClientPrefix(false),
@@ -495,8 +496,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
     timeInfo.clear();
 
 #if defined(HAVE_LIBLO) && !defined(BUILD_BRIDGE)
-    if (options.oscEnabled)
-        osc.init(clientName, options.oscPortTCP, options.oscPortUDP);
+    osc.init(clientName, options.oscEnabled, options.oscPortTCP, options.oscPortUDP);
 #endif
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH

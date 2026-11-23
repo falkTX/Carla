@@ -8,6 +8,7 @@
 #include "CarlaEngineUtils.hpp"
 #include "CarlaPlugin.hpp"
 #include "LinkedList.hpp"
+#include "water/files/File.h"
 
 #ifndef BUILD_BRIDGE
 # include "CarlaEngineOsc.hpp"
@@ -20,6 +21,7 @@
 # include "water/memory/Atomic.h"
 #endif
 
+#include <set>
 #include <vector>
 
 // FIXME only use CARLA_PREVENT_HEAP_ALLOCATION for structs
@@ -266,6 +268,7 @@ struct CarlaEngine::ProtectedData {
     void*            fileCallbackPtr;
 
     bool actionCanceled;
+    std::set<water::File> projectsWithLoadErrors;
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     bool loadingProject;

@@ -20,6 +20,8 @@
 
 #include "CarlaUtils.hpp"
 
+#include <random>
+
 #ifdef CARLA_OS_WIN
 struct carla_shm_t { HANDLE map; bool isServer; const char* filename; };
 # define carla_shm_t_INIT { INVALID_HANDLE_VALUE, true, nullptr }
@@ -310,8 +312,12 @@ carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
     for (;;)
     {
         // fill the XXXXXX characters randomly
-        for (std::size_t c = fileBaseLen - 6; c < fileBaseLen; ++c)
-            fileBase[c] = charSet[std::rand() % charSetLen];
+        try {
+            static thread_local std::mt19937 generator(std::random_device{}());
+            std::uniform_int_distribution<int> character(0, charSetLen - 1);
+            for (std::size_t c = fileBaseLen - 6; c < fileBaseLen; ++c)
+                fileBase[c] = charSet[character(generator)];
+        } CARLA_SAFE_EXCEPTION_RETURN("generate shared memory name", gNullCarlaShm);
 
        #ifdef CARLA_OS_WIN
         // Windows: check if file already exists

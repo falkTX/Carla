@@ -10,6 +10,9 @@
 
 #if defined(BUILDING_CARLA)
 # include "water/files/FileInputStream.h"
+# ifdef CARLA_OS_LINUX
+#  include "CarlaVst3Utils.hpp"
+# endif
 #elif defined(CARLA_UTILS_USE_QT)
 # include <QtCore/QFile>
 # include <QtCore/QString>
@@ -64,6 +67,28 @@ private:
 
 // --------------------------------------------------------------------------------------------------------------------
 
+#if defined(BUILDING_CARLA) && defined(CARLA_OS_LINUX)
+static inline water::File getVst3BundleBinary(const water::File& bundle, const BinaryType type)
+{
+    const char* platform;
+    const char* extension;
+
+    if (type == BINARY_WIN64 || type == BINARY_WIN32)
+    {
+        platform = type == BINARY_WIN64 ? "x86_64-win" : "x86-win";
+        extension = ".vst3";
+    }
+    else
+    {
+        platform = type == BINARY_NATIVE ? V3_CONTENT_DIR : type == BINARY_POSIX32 ? "i386-linux" : "x86_64-linux";
+        extension = ".so";
+    }
+
+    const water::String filename(bundle.getFileNameWithoutExtension() + extension);
+    return bundle.getChildFile("Contents").getChildFile(platform).getChildFile(filename.toRawUTF8());
+}
+#endif
+
 static inline
 BinaryType getBinaryTypeFromFile(const char* const filename)
 {
@@ -71,6 +96,23 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
 
     if (filename == nullptr || filename[0] == '\0')
         return BINARY_NATIVE;
+
+   #if defined(BUILDING_CARLA) && defined(CARLA_OS_LINUX)
+    if (water::String(filename).endsWithIgnoreCase(".vst3"))
+    {
+        const water::File bundle(filename);
+        if (bundle.isDirectory())
+        {
+            const BinaryType types[] = { BINARY_NATIVE, BINARY_WIN64, BINARY_WIN32 };
+            for (const BinaryType type : types)
+            {
+                if (getVst3BundleBinary(bundle, type).existsAsFile())
+                    return type;
+            }
+            return BINARY_NATIVE;
+        }
+    }
+   #endif
 
    #if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE_ALTERNATIVE_ARCH)
     static const CarlaMagic magic;

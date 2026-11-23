@@ -9,10 +9,12 @@ from qt_compat import qt_config
 
 if qt_config == 5:
     from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QColor, QFont, QPen, QPixmap
+    from PyQt5.QtGui import QColor, QFont, QFontInfo, QFontMetrics, QPen, QPixmap
+    from PyQt5.QtWidgets import QApplication
 elif qt_config == 6:
     from PyQt6.QtCore import Qt
-    from PyQt6.QtGui import QColor, QFont, QPen, QPixmap
+    from PyQt6.QtGui import QColor, QFont, QFontInfo, QFontMetrics, QPen, QPixmap
+    from PyQt6.QtWidgets import QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -27,7 +29,8 @@ class Theme(object):
     THEME_MODERN_LIGHT = 2
     THEME_CLASSIC_DARK = 3
     THEME_OOSTUDIO = 4
-    THEME_MAX = 5
+    THEME_SYSTEM = 5
+    THEME_MAX = 6
 
     # enum BackgroundType
     THEME_BG_SOLID = 0
@@ -38,7 +41,7 @@ class Theme(object):
 
         self.idx = idx
 
-        if idx == self.THEME_MODERN_DARK:
+        if idx in (self.THEME_MODERN_DARK, self.THEME_SYSTEM):
             # Canvas
             self.canvas_bg = QColor(0, 0, 0)
 
@@ -119,6 +122,20 @@ class Theme(object):
 
             self.rubberband_pen = QPen(QColor(206, 207, 208), 1, Qt.SolidLine)
             self.rubberband_brush = QColor(76, 77, 78, 100)
+
+            if idx == self.THEME_SYSTEM:
+                font = QFontInfo(QApplication.font())
+                metrics = QFontMetrics(QApplication.font())
+                self.box_font_name = self.port_font_name = font.family()
+                self.box_font_size = self.port_font_size = font.pixelSize()
+                self.box_header_height = metrics.height() + 10
+                self.box_text_ypos = metrics.ascent() + 5
+                self.port_height = metrics.height() + 4
+                self.port_text_ypos = metrics.ascent() + 2
+                self.box_bg_type = self.THEME_BG_SOLID
+                self.box_use_icon = False
+                self.box_shadow = QColor(Qt.transparent)
+                self.updateSystemColors(QApplication.palette())
 
         elif idx == self.THEME_MODERN_DARK_TINY:
             # Canvas
@@ -454,6 +471,38 @@ class Theme(object):
 
 # ------------------------------------------------------------------------------------------------------------
 
+    def updateSystemColors(self, palette):
+        self.canvas_bg = palette.base().color()
+        self.box_bg_1 = palette.window().color()
+        accent = palette.highlight().color()
+        border = palette.mid().color()
+        self.box_pen = QPen(border, 1)
+        self.box_pen_sel = QPen(accent, 1)
+        self.box_text = self.box_text_sel = QPen(palette.windowText().color(), 0)
+
+        background = palette.button().color()
+        text = QPen(palette.buttonText().color(), 0)
+        selectedText = QPen(palette.highlightedText().color(), 0)
+        for kind, color in (("audio_jack", accent), ("midi_jack", palette.link().color()),
+                            ("midi_alsa", palette.linkVisited().color()), ("parameter", palette.text().color())):
+            # Give each port type a tint while retaining contrast with the system's text color.
+            tinted = QColor.fromRgbF(background.redF() * 0.9 + color.redF() * 0.1,
+                                     background.greenF() * 0.9 + color.greenF() * 0.1,
+                                     background.blueF() * 0.9 + color.blueF() * 0.1)
+            setattr(self, "port_" + kind + "_bg", tinted)
+            setattr(self, "port_" + kind + "_bg_sel", accent)
+            setattr(self, "port_" + kind + "_pen", QPen(border, 1))
+            setattr(self, "port_" + kind + "_pen_sel", QPen(accent, 1))
+            setattr(self, "port_" + kind + "_text", text)
+            setattr(self, "port_" + kind + "_text_sel", selectedText)
+            setattr(self, "line_" + kind, color)
+            setattr(self, "line_" + kind + "_sel", accent)
+
+        self.rubberband_pen = QPen(accent, 1)
+        self.rubberband_brush = QColor(accent)
+        self.rubberband_brush.setAlphaF(0.15)
+
+
 def getDefaultTheme():
     return Theme.THEME_MODERN_DARK
 
@@ -468,6 +517,8 @@ def getThemeName(idx):
         return "Classic Dark"
     if idx == Theme.THEME_OOSTUDIO:
         return "OpenOctave Studio"
+    if idx == Theme.THEME_SYSTEM:
+        return "System"
     return ""
 
 def getDefaultThemeName():

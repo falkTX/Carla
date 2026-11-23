@@ -357,11 +357,13 @@ FRONTEND_TYPE = 6
 endif
 endif
 
+ifneq ($(FRONTEND_TYPE),6)
 ifneq (,$(findstring true,$(HAVE_QT5)$(HAVE_QT5PKG)$(HAVE_QT5BREW)))
-ifneq ($(PYUIC5)$(PYRCC5),)
+ifneq ($(and $(PYUIC5),$(PYRCC5)),)
 HAVE_FRONTEND = true
 HAVE_PYQT = true
 FRONTEND_TYPE = 5
+endif
 endif
 endif
 

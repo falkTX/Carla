@@ -2707,8 +2707,6 @@ public:
         fUniqueId     = uniqueId;
         fBridgeBinary = bridgeBinary;
 
-        std::srand(static_cast<uint>(std::time(nullptr)));
-
         // ---------------------------------------------------------------
         // init sem/shm
 

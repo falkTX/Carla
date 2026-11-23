@@ -17,6 +17,8 @@
 
 #include "water/files/File.h"
 
+#include <atomic>
+
 // -------------------------------------------------------------------------------------------------------------------
 
 class CarlaNSM
@@ -34,13 +36,13 @@ public:
           fHasOptionalGui(false),
           fHasServerControl(false),
           fStarted(),
-          fReadyActionOpen(true),
-          fReadyActionSave(true) {}
+          fOpenResult(1),
+          fSaveResult(1) {}
 
     ~CarlaNSM()
     {
-        CARLA_SAFE_ASSERT(fReadyActionOpen);
-        CARLA_SAFE_ASSERT(fReadyActionSave);
+        CARLA_SAFE_ASSERT(fOpenResult.load() != 0);
+        CARLA_SAFE_ASSERT(fSaveResult.load() != 0);
 
         if (fServerThread != nullptr)
         {
@@ -120,7 +122,7 @@ public:
         return true;
     }
 
-    void ready(const NsmCallbackOpcode action)
+    void ready(const NsmCallbackOpcode action, const bool succeeded = true)
     {
         CARLA_SAFE_ASSERT_RETURN(fServerThread != nullptr,);
 
@@ -139,11 +141,11 @@ public:
             break;
 
         case CB::NSM_CALLBACK_OPEN:
-            fReadyActionOpen = true;
+            fOpenResult.store(succeeded ? 1 : -1);
             break;
 
         case CB::NSM_CALLBACK_SAVE:
-            fReadyActionSave = true;
+            fSaveResult.store(succeeded ? 1 : -1);
             break;
 
         case CB::NSM_CALLBACK_SESSION_IS_LOADED:
@@ -271,9 +273,10 @@ protected:
 
         carla_set_engine_option(handle, CB::ENGINE_OPTION_CLIENT_NAME_PREFIX, 0, clientNameId);
 
+        bool opened;
         if (gStandalone.engineCallback != nullptr)
         {
-            fReadyActionOpen = false;
+            fOpenResult.store(0);
             gStandalone.engineCallback(gStandalone.engineCallbackPtr,
                                        CB::ENGINE_CALLBACK_NSM,
                                        0,
@@ -287,8 +290,9 @@ protected:
                                        0, 0, 0.0f,
                                        projectPath);
 
-            for (; ! fReadyActionOpen;)
+            for (; fOpenResult.load() == 0;)
                 d_msleep(10);
+            opened = fOpenResult.load() > 0;
         }
         else
         {
@@ -297,14 +301,18 @@ protected:
             if (carla_is_engine_running(handle))
                 carla_engine_close(handle);
 
-            // TODO send error if engine failed to initialize
-            carla_engine_init(handle, "JACK", clientNameId);
-
             fProjectPath  = projectPath;
             fProjectPath += ".carxp";
 
-            if (File(fProjectPath).existsAsFile())
-                carla_load_project(handle, fProjectPath);
+            opened = carla_engine_init(handle, "JACK", clientNameId)
+                  && (!File(fProjectPath).existsAsFile() || carla_load_project(handle, fProjectPath));
+        }
+
+        if (!opened)
+        {
+            lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/error", "sis",
+                         "/nsm/client/open", -1, "Carla could not open the project.");
+            return 0;
         }
 
         fClientNameId = clientNameId;
@@ -332,28 +340,36 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleSave()");
 
+        bool saved;
         if (gStandalone.engineCallback != nullptr)
         {
-            fReadyActionSave = false;
+            fSaveResult.store(0);
             gStandalone.engineCallback(gStandalone.engineCallbackPtr,
                                        CB::ENGINE_CALLBACK_NSM,
                                        0,
                                        CB::NSM_CALLBACK_SAVE,
                                        0, 0, 0.0f, nullptr);
 
-            for (; ! fReadyActionSave;)
+            for (; fSaveResult.load() == 0;)
                 d_msleep(10);
+            saved = fSaveResult.load() > 0;
         }
         else
         {
-            CARLA_SAFE_ASSERT_RETURN(fProjectPath.isNotEmpty(), 0);
-
             const CarlaHostHandle handle = (CarlaHostHandle)&gStandalone;
 
-            carla_save_project(handle, fProjectPath);
+            saved = fProjectPath.isNotEmpty() && carla_save_project(handle, fProjectPath);
         }
 
-        lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
+        if (saved)
+        {
+            lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
+        }
+        else
+        {
+            lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/error", "sis",
+                         "/nsm/client/save", -1, "Carla could not save the project.");
+        }
 
         return 0;
     }
@@ -537,8 +553,8 @@ private:
     bool fHasServerControl;
     bool fStarted;
 
-    volatile bool fReadyActionOpen;
-    volatile bool fReadyActionSave;
+    std::atomic<int> fOpenResult;
+    std::atomic<int> fSaveResult;
 
     #define handlePtr ((CarlaNSM*)data)
 
@@ -650,6 +666,19 @@ void carla_nsm_ready(CarlaHostHandle handle, NsmCallbackOpcode action)
    #else
     // unused
     return; (void)action;
+   #endif
+}
+
+void carla_nsm_report_result(CarlaHostHandle handle, NsmCallbackOpcode action, bool succeeded)
+{
+    CARLA_SAFE_ASSERT_RETURN(handle->isStandalone,);
+    CARLA_SAFE_ASSERT_RETURN(action == CB::NSM_CALLBACK_OPEN || action == CB::NSM_CALLBACK_SAVE,);
+
+   #ifdef CARLA_ENABLE_STANDALONE_NSM
+    CarlaNSM::getInstance(*(CarlaHostStandalone*)handle).ready(action, succeeded);
+   #else
+    (void)action;
+    (void)succeeded;
    #endif
 }
 

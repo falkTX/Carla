@@ -169,16 +169,17 @@ pluginlist/ui_%.h: pluginlist/%.ui qt_config.py
 ui_%.py: $(RESDIR)/ui/%.ui qt_config.py
 	$(PYUIC) $< -o $@
 
-qt_config.py:
+.PHONY: check-qt-config
+qt_config.py: check-qt-config
 ifneq (,$(FRONTEND_TYPE))
-	echo "#!/usr/bin/env python3" > $@
-	echo "qt = $(FRONTEND_TYPE)" >> $@
+	@printf '%s\n' '#!/usr/bin/env python3' 'qt = $(FRONTEND_TYPE)' > $@.expected
+	@if cmp -s $@ $@.expected; then rm $@.expected; else mv $@.expected $@; fi
 else
 	@echo Error: Trying to build frontend without Qt and/or PyQt, cannot continue
 	@false
 endif
 
-resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz
+resources_rc.py: $(RESDIR)/resources.qrc $(RESDIR)/*/*.png $(RESDIR)/*/*.svg $(RESDIR)/*/*.svgz qt_config.py
 ifeq ($(FRONTEND_TYPE),6)
 	$(PYRCC) $< | sed -e 's/PySide6/PyQt6/' > $@
 else

@@ -21,6 +21,10 @@
 
 #include "CarlaEngine.hpp"
 
+#ifdef CARLA_OS_LINUX
+# include <sys/socket.h>
+#endif
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -29,6 +33,7 @@ CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine) noexcept
     : fEngine(engine),
       fControlDataTCP(),
       fControlDataUDP(),
+      fControlEnabled(false),
       fName(),
       fServerPathTCP(),
       fServerPathUDP(),
@@ -51,7 +56,30 @@ CarlaEngineOsc::~CarlaEngineOsc() noexcept
 
 // -----------------------------------------------------------------------
 
-void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noexcept
+static lo_server createLocalOscServer(int port, const int protocol, lo_err_handler errorHandler) noexcept
+{
+    for (int attempt = 0; attempt < 5; ++attempt)
+    {
+        if (port != 0 && (port < 1024 || port > 32767))
+            break;
+
+        char portString[6];
+        std::snprintf(portString, sizeof(portString), "%d", port);
+        if (lo_server server = lo_server_new_with_proto(port == 0 ? nullptr : portString, protocol, errorHandler))
+        {
+#ifdef SO_BINDTODEVICE
+            // Older kernels may require privileges. Dispatch also checks the peer address.
+            setsockopt(lo_server_get_socket_fd(server), SOL_SOCKET, SO_BINDTODEVICE, "lo", sizeof("lo"));
+#endif
+            return server;
+        }
+        if (port != 0)
+            ++port;
+    }
+    return nullptr;
+}
+
+void CarlaEngineOsc::init(const char* const name, const bool enableControl, int tcpPort, int udpPort) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fName.isEmpty(),);
     CARLA_SAFE_ASSERT_RETURN(fServerPathTCP.isEmpty(),);
@@ -63,8 +91,9 @@ void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noex
 
     fName = name;
     fName.toBasic();
+    fControlEnabled = enableControl;
 
-    if (fEngine->getType() != kEngineTypePlugin)
+    if (enableControl && fEngine->getType() != kEngineTypePlugin)
     {
         const char* const tcpPortEnv = std::getenv("CARLA_OSC_TCP_PORT");
         const char* const udpPortEnv = std::getenv("CARLA_OSC_UDP_PORT");
@@ -75,72 +104,25 @@ void CarlaEngineOsc::init(const char* const name, int tcpPort, int udpPort) noex
             udpPort = std::atoi(udpPortEnv);
     }
 
-    // port == 0 means to pick a random one
-    // port < 0 will get osc disabled
-
-    static const int kRetryAttempts = 5;
-
-    // ----------------------------------------------------------------------------------------------------------------
-
-    if (tcpPort == 0)
+    if (enableControl && (fServerTCP = createLocalOscServer(tcpPort, LO_TCP, osc_error_handler_TCP)) != nullptr)
     {
-        for (int i=0; i < kRetryAttempts && fServerTCP == nullptr; ++i)
-            fServerTCP = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler_TCP);
-    }
-    else if (tcpPort >= 1024)
-    {
-        char strBuf[0xff];
-
-        for (int i=0; i < kRetryAttempts && tcpPort < 32767 && fServerTCP == nullptr; ++i, ++tcpPort)
-        {
-            std::snprintf(strBuf, 0xff-1, "%d", tcpPort);
-            strBuf[0xff-1] = '\0';
-
-            fServerTCP = lo_server_new_with_proto(strBuf, LO_TCP, osc_error_handler_TCP);
-        }
-    }
-
-    if (fServerTCP != nullptr)
-    {
-        if (char* const tmpServerPathTCP = lo_server_get_url(fServerTCP))
-        {
-            fServerPathTCP  = tmpServerPathTCP;
-            fServerPathTCP += fName;
-            std::free(tmpServerPathTCP);
-        }
+        char url[32];
+        std::snprintf(url, sizeof(url), "osc.tcp://127.0.0.1:%u/", static_cast<uint16_t>(lo_server_get_port(fServerTCP)));
+        fServerPathTCP = url;
+        fServerPathTCP += fName;
 
         lo_server_add_method(fServerTCP, nullptr, nullptr, osc_message_handler_TCP, this);
         carla_debug("OSC TCP server running and listening at %s", fServerPathTCP.buffer());
     }
 
-    // ----------------------------------------------------------------------------------------------------------------
-
-    if (udpPort == 0)
+    // DSSI UIs still need a local UDP endpoint when OSC control is disabled.
+    if ((fServerUDP = createLocalOscServer(!enableControl && udpPort >= 0 ? 0 : udpPort,
+                                          LO_UDP, osc_error_handler_UDP)) != nullptr)
     {
-        for (int i=0; i < kRetryAttempts && fServerUDP == nullptr; ++i)
-            fServerUDP = lo_server_new_with_proto(nullptr, LO_UDP, osc_error_handler_UDP);
-    }
-    else if (udpPort >= 1024)
-    {
-        char strBuf[0xff];
-
-        for (int i=0; i < kRetryAttempts && udpPort < 32768 && fServerUDP == nullptr; ++i, ++udpPort)
-        {
-            std::snprintf(strBuf, 0xff-1, "%d", udpPort);
-            strBuf[0xff-1] = '\0';
-
-            fServerUDP = lo_server_new_with_proto(strBuf, LO_UDP, osc_error_handler_UDP);
-        }
-    }
-
-    if (fServerUDP != nullptr)
-    {
-        if (char* const tmpServerPathUDP = lo_server_get_url(fServerUDP))
-        {
-            fServerPathUDP  = tmpServerPathUDP;
-            fServerPathUDP += fName;
-            std::free(tmpServerPathUDP);
-        }
+        char url[32];
+        std::snprintf(url, sizeof(url), "osc.udp://127.0.0.1:%u/", static_cast<uint16_t>(lo_server_get_port(fServerUDP)));
+        fServerPathUDP = url;
+        fServerPathUDP += fName;
 
         lo_server_add_method(fServerUDP, nullptr, nullptr, osc_message_handler_UDP, this);
         carla_debug("OSC UDP server running and listening at %s", fServerPathUDP.buffer());

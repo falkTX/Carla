@@ -1271,10 +1271,10 @@ bool jackbridge_set_buffer_size(jack_client_t* client, jack_nframes_t nframes)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
-    return jack_set_buffer_size(client, nframes);
+    return jack_set_buffer_size(client, nframes) == 0;
 #else
     if (getBridgeInstance().set_buffer_size_ptr != nullptr)
-        return getBridgeInstance().set_buffer_size_ptr(client, nframes);
+        return getBridgeInstance().set_buffer_size_ptr(client, nframes) == 0;
 #endif
     return false;
 }

@@ -36,6 +36,8 @@ jobs:
         run: make features
       - name: make
         run: make -j $(nproc)
+      - name: Franca smoke tests
+        run: make check-franca
       - name: make posix32
         run: make posix32 -j $(nproc)
 

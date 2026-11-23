@@ -1100,6 +1100,9 @@ FILE_CALLBACK_OPEN = 1
 # Save file or folder.
 FILE_CALLBACK_SAVE = 2
 
+# Confirm launching JACK applications named by a project file.
+FILE_CALLBACK_CONFIRM_PROJECT_JACK_APPS = 3
+
 # ---------------------------------------------------------------------------------------------------------------------
 # Patchbay Icon
 # The icon of a patchbay client/group.
@@ -2923,6 +2926,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_nsm_ready.argtypes = (c_void_p, c_int)
         self.lib.carla_nsm_ready.restype = None
 
+        self.lib.carla_nsm_report_result.argtypes = (c_void_p, c_int, c_bool)
+        self.lib.carla_nsm_report_result.restype = None
+
         self.handle = self.lib.carla_standalone_host_init()
 
         self._engineCallback = None
@@ -3267,6 +3273,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def nsm_ready(self, opcode):
         self.lib.carla_nsm_ready(self.handle, opcode)
+
+    def nsm_report_result(self, opcode, succeeded):
+        self.lib.carla_nsm_report_result(self.handle, opcode, succeeded)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Helper object for CarlaHostPlugin

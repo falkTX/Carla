@@ -534,7 +534,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype,
     };
 
     CarlaPluginPtr plugin;
-    String bridgeBinary(pData->options.binaryDir);
+    String bridgeBinary;
+    if (getType() != kEngineTypeBridge || btype != BINARY_NATIVE)
+        bridgeBinary = pData->options.binaryDir;
 
     if (bridgeBinary.isNotEmpty())
     {
@@ -1416,14 +1418,27 @@ bool CarlaEngine::loadProject(const char* const filename, const bool setAsCurren
 #endif
     }
 
+    // An idle callback can process a save request before the load returns.
+    pData->projectsWithLoadErrors.insert(file);
     XmlDocument xml(file);
-    return loadProjectInternal(xml, !setAsCurrentProject);
+    if (!loadProjectInternal(xml, !setAsCurrentProject, filename))
+        return false;
+
+    pData->projectsWithLoadErrors.erase(file);
+    return true;
 }
 
 bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurrentProject)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
+
+    const File file(filename);
+    if (pData->projectsWithLoadErrors.count(file) != 0)
+    {
+        setLastError("This project did not load completely. Save to a different file.");
+        return false;
+    }
 
     if (setAsCurrentProject)
     {
@@ -1450,8 +1465,6 @@ bool CarlaEngine::saveProject(const char* const filename, const bool setAsCurren
 
     MemoryOutputStream out;
     saveProjectInternal(out);
-
-    File file(filename);
 
     if (file.replaceWithData(out.getData(), out.getDataSize()))
         return true;
@@ -2661,7 +2674,8 @@ static water::String findBinaryInCustomPath(const char* const searchPath, const 
     return {};
 }
 
-bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alwaysLoadConnections)
+bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alwaysLoadConnections,
+                                      const char* const projectFilename)
 {
     carla_debug("CarlaEngine::loadProjectInternal(%p, %s) - START", &xmlDoc, bool2str(alwaysLoadConnections));
 
@@ -2874,15 +2888,21 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
         }
     }
 
+    bool loadedAllPlugins = true;
+    bool askedToLaunchJackApps = false;
+    const char* const allowJackApps = std::getenv("CARLA_ALLOW_PROJECT_JACK_APPS");
+    bool launchJackApps = allowJackApps != nullptr && std::strcmp(allowJackApps, "1") == 0;
+
     // and we handle plugins
-    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+    for (XmlElement* elem = isPreset ? xmlElement.get() : xmlElement->getFirstChildElement();
+         elem != nullptr; elem = isPreset ? nullptr : elem->getNextElement())
     {
         const water::String& tagName(elem->getTagName());
 
         if (isPreset || tagName == "Plugin")
         {
             CarlaStateSave stateSave;
-            stateSave.fillFromXmlElement(isPreset ? xmlElement.get() : elem);
+            stateSave.fillFromXmlElement(elem);
 
             if (pData->aboutToClose)
                 return true;
@@ -2893,7 +2913,11 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 return false;
             }
 
-            CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
+            if (stateSave.type == nullptr)
+            {
+                loadedAllPlugins = false;
+                continue;
+            }
 
           #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
             // compatibility code to load projects with GIG files
@@ -2945,11 +2969,13 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     }
                     else
                     {
+                        loadedAllPlugins = false;
                         carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
                     }
                 }
                 else
                 {
+                    loadedAllPlugins = false;
                     carla_stderr2("Failed to load a linuxsampler LV2 plugin, GIG file won't be loaded");
                 }
 
@@ -3000,11 +3026,13 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                     }
                     else
                     {
+                        loadedAllPlugins = false;
                         carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
                     }
                 }
                 else
                 {
+                    loadedAllPlugins = false;
                     carla_stderr2("Failed to load a sfizz LV2 plugin, SFZ file won't be loaded");
                 }
 
@@ -3018,6 +3046,24 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             static const char kTrue[] = "true";
 
             const PluginType ptype = getPluginTypeFromString(stateSave.type);
+
+            if (ptype == PLUGIN_JACK && !launchJackApps)
+            {
+                if (!askedToLaunchJackApps && projectFilename != nullptr)
+                {
+                    askedToLaunchJackApps = true;
+                    const char* const answer = runFileCallback(FILE_CALLBACK_CONFIRM_PROJECT_JACK_APPS,
+                                                               false, projectFilename, "");
+                    launchJackApps = answer != nullptr && std::strcmp(answer, "yes") == 0;
+                }
+
+                if (!launchJackApps)
+                {
+                    loadedAllPlugins = false;
+                    carla_stderr2("Skipped unapproved JACK application in project: %s", stateSave.name);
+                    continue;
+                }
+            }
 
             switch (ptype)
             {
@@ -3157,11 +3203,13 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 }
                 else
                 {
+                    loadedAllPlugins = false;
                     carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
                 }
             }
             else
             {
+                loadedAllPlugins = false;
                 carla_stderr2("Failed to load a plugin '%s', error was:\n%s", stateSave.name, getLastError());
             }
 
@@ -3169,15 +3217,11 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
         }
 
-        if (isPreset)
-        {
-            callback(true, true, ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
-            callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0, 0.0f, "Loading project");
-            return true;
-        }
     }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    if (!isPreset)
+    {
     // tell bridges we're done loading
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
@@ -3555,16 +3599,20 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
             break;
         }
     }
+    }
 #endif
 
     if (pData->options.resetXruns)
         clearXruns();
 
+    if (!loadedAllPlugins)
+        setLastError("Some plugins could not be loaded. See the logs for details. Save to a different file to keep the original.");
+
     callback(true, true, ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0, 0.0f, nullptr);
     callback(true, true, ENGINE_CALLBACK_CANCELABLE_ACTION, 0, 0, 0, 0, 0.0f, "Loading project");
 
     carla_debug("CarlaEngine::loadProjectInternal(%p, %s) - END", &xmlDoc, bool2str(alwaysLoadConnections));
-    return true;
+    return loadedAllPlugins;
 
 #ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
     // unused

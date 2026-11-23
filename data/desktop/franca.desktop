@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Franca
+GenericName=Audio Plugin Host
+Comment=Process audio and route plugins
+Exec=franca %f
+Icon=franca
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;X-AudioEditing;Qt;
+MimeType=application/x-carla-project;application/x-carla-plugin-preset;

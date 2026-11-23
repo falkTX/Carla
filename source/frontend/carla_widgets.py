@@ -104,6 +104,17 @@ from carla_utils import getPluginTypeAsString
 from widgets.collapsablewidget import CollapsibleBox
 from widgets.pixmapkeyboard import PixmapKeyboardHArea
 
+
+def setPluginParameter(host, pluginId, parameterId, value, setter):
+    history = getattr(gCarla.gui, "editHistory", None)
+    if history is not None and gCarla.gui.host is host:
+        gCarla.gui.changePluginValue(pluginId, parameterId, value, setter)
+    elif parameterId < 0:
+        setter(pluginId, value)
+    else:
+        setter(pluginId, parameterId, value)
+
+
 # ------------------------------------------------------------------------------------------------------------
 # Carla GUI defines
 
@@ -446,6 +457,9 @@ class PluginParameter(QWidget):
     @pyqtSlot(bool)
     def slot_parameterDragStateChanged(self, touch):
         self.host.set_parameter_touch(self.fPluginId, self.fParameterId, touch)
+        history = getattr(gCarla.gui, "editHistory", None)
+        if history is not None:
+            history.separate()
 
     def _textCallBack(self):
         return self.host.get_parameter_text(self.fPluginId, self.fParameterId)
@@ -501,6 +515,9 @@ class PluginEdit(QDialog):
     def __init__(self, parent, host, pluginId):
         QDialog.__init__(self, parent.window() if parent is not None else None)
         self.host = host
+        history = getattr(self.parent(), "editHistory", None)
+        if history is not None:
+            self.addActions(history.actions)
         self.ui = ui_carla_edit.Ui_PluginEdit()
         self.ui.setupUi(self)
 
@@ -531,10 +548,14 @@ class PluginEdit(QDialog):
         # -------------------------------------------------------------
         # Set-up GUI
 
-        labelPluginFont = self.ui.label_plugin.font()
-        labelPluginFont.setPixelSize(15)
-        labelPluginFont.setWeight(75)
-        self.ui.label_plugin.setFont(labelPluginFont)
+        if getattr(host, "isFranca", False):
+            self.ui.label_plugin.hide()
+            self.ui.tabWidget.setTabText(0, self.tr("Plugin"))
+        else:
+            labelPluginFont = self.ui.label_plugin.font()
+            labelPluginFont.setPixelSize(15)
+            labelPluginFont.setWeight(75)
+            self.ui.label_plugin.setFont(labelPluginFont)
 
         self.ui.dial_drywet.setCustomPaintMode(self.ui.dial_drywet.CUSTOM_PAINT_MODE_CARLA_WET)
         self.ui.dial_drywet.setImage(3)
@@ -571,6 +592,11 @@ class PluginEdit(QDialog):
         self.ui.dial_pan.setMaximum(1.0)
         self.ui.dial_pan.setValue(host.get_internal_parameter_value(pluginId, PARAMETER_PANNING))
 
+        if getattr(host, "isFranca", False):
+            for dial in (self.ui.dial_drywet, self.ui.dial_vol, self.ui.dial_b_left,
+                         self.ui.dial_b_right, self.ui.dial_pan):
+                dial.useSystemStyle()
+
         self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
 
         self.ui.scrollArea = PixmapKeyboardHArea(self)
@@ -592,6 +618,8 @@ class PluginEdit(QDialog):
         self.setWindowFlags(flags)
 
         self.reloadAll()
+        if getattr(host, "isFranca", False) and self.ui.tabWidget.count() > 1:
+            self.ui.tabWidget.setCurrentIndex(1)
 
         self.fFirstInit = False
 
@@ -617,6 +645,10 @@ class PluginEdit(QDialog):
         self.ui.dial_b_left.realValueChanged.connect(self.slot_balanceLeftChanged)
         self.ui.dial_b_right.realValueChanged.connect(self.slot_balanceRightChanged)
         self.ui.dial_pan.realValueChanged.connect(self.slot_panChanged)
+        if history is not None:
+            for dial in (self.ui.dial_drywet, self.ui.dial_vol, self.ui.dial_b_left,
+                         self.ui.dial_b_right, self.ui.dial_pan):
+                dial.dragStateChanged.connect(history.separate)
         self.ui.sb_ctrl_channel.valueChanged.connect(self.slot_ctrlChannelChanged)
 
         self.ui.dial_drywet.customContextMenuRequested.connect(self.slot_knobCustomMenu)
@@ -854,6 +886,8 @@ class PluginEdit(QDialog):
 
         # Show/hide keyboard
         showKeyboard = (self.fPluginInfo['category'] == PLUGIN_CATEGORY_SYNTH or midiCountInfo['ins'] > 0)
+        if getattr(self.host, "isFranca", False) and self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
+            showKeyboard = showKeyboard and gCarla.gui.ui.act_settings_show_keyboard.isChecked()
         self.ui.scrollArea.setEnabled(showKeyboard)
         self.ui.scrollArea.setVisible(showKeyboard)
 
@@ -1363,35 +1397,35 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(float)
     def slot_dryWetChanged(self, value):
-        self.host.set_drywet(self.fPluginId, value)
+        setPluginParameter(self.host, self.fPluginId, PARAMETER_DRYWET, value, self.host.set_drywet)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_DRYWET, value)
 
     @pyqtSlot(float)
     def slot_volumeChanged(self, value):
-        self.host.set_volume(self.fPluginId, value)
+        setPluginParameter(self.host, self.fPluginId, PARAMETER_VOLUME, value, self.host.set_volume)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_VOLUME, value)
 
     @pyqtSlot(float)
     def slot_balanceLeftChanged(self, value):
-        self.host.set_balance_left(self.fPluginId, value)
+        setPluginParameter(self.host, self.fPluginId, PARAMETER_BALANCE_LEFT, value, self.host.set_balance_left)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_BALANCE_LEFT, value)
 
     @pyqtSlot(float)
     def slot_balanceRightChanged(self, value):
-        self.host.set_balance_right(self.fPluginId, value)
+        setPluginParameter(self.host, self.fPluginId, PARAMETER_BALANCE_RIGHT, value, self.host.set_balance_right)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_BALANCE_RIGHT, value)
 
     @pyqtSlot(float)
     def slot_panChanged(self, value):
-        self.host.set_panning(self.fPluginId, value)
+        setPluginParameter(self.host, self.fPluginId, PARAMETER_PANNING, value, self.host.set_panning)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_PANNING, value)
@@ -1408,7 +1442,7 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int, float)
     def slot_parameterValueChanged(self, parameterId, value):
-        self.host.set_parameter_value(self.fPluginId, parameterId, value)
+        setPluginParameter(self.host, self.fPluginId, parameterId, value, self.host.set_parameter_value)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, parameterId, value)

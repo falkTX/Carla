@@ -67,6 +67,10 @@ TARGETS = \
 
 all: $(TARGETS)
 
+.PHONY: standalone plugin
+standalone: $(MODULEDIR)/carla_engine.a
+plugin: $(MODULEDIR)/carla_engine_plugin.a
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 clean:

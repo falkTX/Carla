@@ -17,6 +17,8 @@
 #ifdef CARLA_OS_MAC
 # include "CarlaMacUtils.hpp"
 # import <Foundation/Foundation.h>
+#elif defined(CARLA_OS_LINUX) && defined(HAVE_X11)
+# include <X11/Xlib.h>
 #endif
 
 #include "water/files/File.h"
@@ -33,6 +35,7 @@
 #endif
 
 #include <atomic>
+#include <memory>
 #include <unordered_map>
 
 CARLA_BACKEND_START_NAMESPACE
@@ -363,14 +366,14 @@ struct carla_v3_bstream : v3_bstream_cpp {
     bool canRead, canWrite;
 
     // used by class consumer
-    int64_t readPos;
+    int64_t cursor;
 
     carla_v3_bstream()
         : buffer(nullptr),
           size(0),
           canRead(false),
           canWrite(false),
-          readPos(0)
+          cursor(0)
     {
         query_interface = v3_query_interface_static<v3_bstream_iid>;
         ref = v3_ref_static;
@@ -389,11 +392,13 @@ private:
         CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(stream->canRead, V3_INVALID_ARG);
 
-        if (stream->readPos + num_bytes > stream->size)
-            num_bytes = stream->size - stream->readPos;
-
-        std::memcpy(buffer, static_cast<uint8_t*>(stream->buffer) + stream->readPos, num_bytes);
-        stream->readPos += num_bytes;
+        if (num_bytes > stream->size - stream->cursor)
+            num_bytes = stream->size - stream->cursor;
+        if (num_bytes > 0)
+        {
+            std::memcpy(buffer, static_cast<uint8_t*>(stream->buffer) + stream->cursor, num_bytes);
+            stream->cursor += num_bytes;
+        }
 
         // this is nasty, some plugins do not care about incomplete reads!
         if (bytes_read != nullptr)
@@ -410,12 +415,25 @@ private:
         CARLA_SAFE_ASSERT_RETURN(num_bytes > 0, V3_INVALID_ARG);
         CARLA_SAFE_ASSERT_RETURN(stream->canWrite, V3_INVALID_ARG);
 
-        void* const newbuffer = std::realloc(stream->buffer, stream->size + num_bytes);
-        CARLA_SAFE_ASSERT_RETURN(newbuffer != nullptr, V3_NOMEM);
+        if (stream->cursor > INT64_MAX - num_bytes)
+            return V3_NOMEM;
 
-        std::memcpy(static_cast<uint8_t*>(newbuffer) + stream->size, buffer, num_bytes);
-        stream->buffer = newbuffer;
-        stream->size += num_bytes;
+        const int64_t end = stream->cursor + num_bytes;
+        if (end > stream->size)
+        {
+            if (static_cast<uint64_t>(end) > SIZE_MAX)
+                return V3_NOMEM;
+            void* const newbuffer = std::realloc(stream->buffer, static_cast<std::size_t>(end));
+            if (newbuffer == nullptr)
+                return V3_NOMEM;
+            stream->buffer = newbuffer;
+            if (stream->cursor > stream->size)
+                std::memset(static_cast<uint8_t*>(newbuffer) + stream->size, 0, stream->cursor - stream->size);
+            stream->size = end;
+        }
+
+        std::memcpy(static_cast<uint8_t*>(stream->buffer) + stream->cursor, buffer, num_bytes);
+        stream->cursor = end;
 
         // this is nasty, some plugins do not care about incomplete writes!
         if (bytes_read != nullptr)
@@ -427,28 +445,29 @@ private:
     static v3_result V3_API seek(void* const self, const int64_t pos, const int32_t seek_mode, int64_t* const result)
     {
         carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
-        CARLA_SAFE_ASSERT_RETURN(stream->canRead, V3_INVALID_ARG);
-
+        int64_t base;
         switch (seek_mode)
         {
         case V3_SEEK_SET:
-            CARLA_SAFE_ASSERT_INT2_RETURN(pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
-            stream->readPos = pos;
+            base = 0;
             break;
         case V3_SEEK_CUR:
-            CARLA_SAFE_ASSERT_INT2_RETURN(stream->readPos + pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
-            stream->readPos = stream->readPos + pos;
+            base = stream->cursor;
             break;
         case V3_SEEK_END:
-            CARLA_SAFE_ASSERT_INT2_RETURN(pos <= stream->size, pos, stream->size, V3_INVALID_ARG);
-            stream->readPos = stream->size - pos;
+            base = stream->size;
             break;
         default:
             return V3_INVALID_ARG;
         }
 
+        const int64_t limit = stream->canWrite ? INT64_MAX : stream->size;
+        if (pos < -base || pos > limit - base)
+            return V3_INVALID_ARG;
+        stream->cursor = base + pos;
+
         if (result != nullptr)
-            *result = stream->readPos;
+            *result = stream->cursor;
 
         return V3_OK;
     }
@@ -457,9 +476,8 @@ private:
     {
         carla_v3_bstream* const stream = *static_cast<carla_v3_bstream**>(self);
         CARLA_SAFE_ASSERT_RETURN(pos != nullptr, V3_INVALID_ARG);
-        CARLA_SAFE_ASSERT_RETURN(stream->canRead, V3_INVALID_ARG);
 
-        *pos = stream->readPos;
+        *pos = stream->cursor;
         return V3_OK;
     }
 
@@ -1372,6 +1390,7 @@ public:
             return stream.size;
         }
 
+        std::free(stream.buffer);
         *dataPtr = fLastChunk = nullptr;
         runIdleCallbacksAsNeeded(false);
         return 0;
@@ -1430,7 +1449,7 @@ public:
 
     bool getLabel(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fV3ClassInfo.v1.name, STR_MAX);
+        std::strncpy(strBuf, tuid2str(fV3ClassInfo.v1.class_id), STR_MAX);
         return true;
     }
 
@@ -3462,7 +3481,7 @@ public:
     bool init(const CarlaPluginPtr plugin,
               const char* const filename,
               const char* name,
-              const char* /*const label*/,
+              const char* const label,
               const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
@@ -3481,6 +3500,16 @@ public:
             pData->engine->setLastError("null filename");
             return false;
         }
+
+       #if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
+        // Some JUCE editors cache these atoms when the plugin initializes.
+        const std::unique_ptr<Display, decltype(&XCloseDisplay)> display(XOpenDisplay(nullptr), XCloseDisplay);
+        if (display)
+        {
+            XInternAtom(display.get(), "WM_PROTOCOLS", False);
+            XInternAtom(display.get(), "_NET_WM_STATE", False);
+        }
+       #endif
 
         V3_ENTRYFN v3_entry;
         V3_EXITFN v3_exit;
@@ -3589,7 +3618,7 @@ public:
             return false;
         }
 
-        if (! fV3.findPlugin(fV3ClassInfo))
+        if (! fV3.findPlugin(fV3ClassInfo, label))
         {
             pData->engine->setLastError("Failed to find the requested plugin in the VST3 bundle");
             return false;
@@ -3947,7 +3976,7 @@ private:
         }
 
         // must have all possible factories and exitfn set
-        bool findPlugin(ClassInfo& classInfo)
+        bool findPlugin(ClassInfo& classInfo, const char* const label)
         {
             // get factory info
             v3_factory_info factoryInfo = {};
@@ -3974,11 +4003,14 @@ private:
                 if (std::strcmp(classInfo.v1.category, "Audio Module Class") != 0)
                     continue;
 
-                // FIXME multi-plugin bundle
-                break;
+                // Older Carla projects stored the class name instead of its ID.
+                if (label == nullptr || label[0] == '\0' ||
+                    std::strcmp(label, classInfo.v1.name) == 0 ||
+                    std::strcmp(label, tuid2str(classInfo.v1.class_id)) == 0)
+                    return true;
             }
 
-            return true;
+            return false;
         }
 
         bool initializePlugin(const v3_tuid uid,

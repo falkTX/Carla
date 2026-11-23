@@ -1344,7 +1344,8 @@ public:
     /*!
      * Common load project function for main engine and plugin.
      */
-    bool loadProjectInternal(water::XmlDocument& xmlDoc, bool alwaysLoadConnections);
+    bool loadProjectInternal(water::XmlDocument& xmlDoc, bool alwaysLoadConnections,
+                             const char* projectFilename = nullptr);
 
 protected:
     // -------------------------------------------------------------------
