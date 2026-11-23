@@ -461,7 +461,7 @@
             <item row="0" column="0" colspan="3">
              <widget class="QCheckBox" name="ch_main_theme_pro">
               <property name="text">
-               <string>Use Carla &quot;PRO&quot; theme (needs restart)</string>
+               <string>Use Franca &quot;PRO&quot; theme (needs restart)</string>
               </property>
              </widget>
             </item>
@@ -1129,14 +1129,14 @@
             <item row="0" column="0" colspan="3">
              <widget class="QCheckBox" name="ch_engine_manage_uis">
               <property name="text">
-               <string>Make plugin UIs appear on top of Carla (needs restart)</string>
+               <string>Make plugin UIs appear on top of Franca (needs restart)</string>
               </property>
              </widget>
             </item>
             <item row="6" column="0" colspan="3">
              <widget class="QLabel" name="label_engine_ui_bridges_mac_note">
               <property name="text">
-               <string>NOTE: Plugin-bridge UIs cannot be managed by Carla on macOS</string>
+               <string>NOTE: Plugin-bridge UIs cannot be managed by Franca on macOS</string>
               </property>
              </widget>
             </item>
@@ -2268,7 +2268,7 @@
                <item row="1" column="1">
                 <widget class="QLabel" name="label_5">
                  <property name="text">
-                  <string>Restart Carla to find new plugins</string>
+                  <string>Restart Franca to find new plugins</string>
                  </property>
                 </widget>
                </item>
@@ -2746,7 +2746,7 @@
            <item>
             <widget class="QLabel" name="label_27">
              <property name="text">
-              <string>These options are not available for Carla as plugin</string>
+              <string>These options are not available for Franca as plugin</string>
              </property>
             </widget>
            </item>
@@ -2965,7 +2965,7 @@
             <item>
              <widget class="QCheckBox" name="ch_exp_load_lib_global">
               <property name="text">
-               <string>Load Carla backend in global namespace (NOT RECOMMENDED)</string>
+               <string>Load Franca backend in global namespace (NOT RECOMMENDED)</string>
               </property>
              </widget>
             </item>
@@ -3032,7 +3032,7 @@ This mode is not available for VST plugins.</string>
             <item>
              <widget class="QCheckBox" name="ch_exp_prevent_bad_behaviour">
               <property name="toolTip">
-               <string>When enabled, Carla will try to prevent plugins from doing things that might mess up the audio or cause xruns, such as fork(), gtk_init() and similar.</string>
+               <string>When enabled, Franca will try to prevent plugins from doing things that might mess up the audio or cause xruns, such as fork(), gtk_init() and similar.</string>
               </property>
               <property name="text">
                <string>Prevent unsafe calls from plugins (needs restart)</string>
@@ -3045,7 +3045,7 @@ This mode is not available for VST plugins.</string>
                <bool>false</bool>
               </property>
               <property name="toolTip">
-               <string>Run plugins in a separate process, so if they crash it does not affect Carla.
+               <string>Run plugins in a separate process, so if they crash it does not affect Franca.
 Plugins get automatically deactivated in such cases.
 Reactvate them to start the process again, with the last saved state applied to it.</string>
               </property>

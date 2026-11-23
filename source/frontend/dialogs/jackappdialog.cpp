@@ -142,7 +142,7 @@ void JackAppDialog::checkIfButtonBoxShouldBeEnabled(const int index, const QCarl
         else if (command.contains(' ') or command.contains(';') or command.contains('&'))
             showErr = tr("NSM applications cannot use CLI arguments");
         else if (p->fProjectFilename.isEmpty())
-            showErr = tr("You need to save the current Carla project before NSM can be used");
+            showErr = tr("You need to save the current Franca project before NSM can be used");
     }
 
     if (showErr.isNotEmpty())

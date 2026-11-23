@@ -1292,7 +1292,7 @@ class PluginEdit(QDialog):
 
             self.fCurrentStateFilename = None
 
-        fileFilter = self.tr("Carla State File (*.carxs)")
+        fileFilter = self.tr("Franca State File (*.carxs)")
         filename, _ = QFileDialog.getSaveFileName(self, self.tr("Save Plugin State File"), filter=fileFilter)
 
         # FIXME use ok value, test if it works as expected
@@ -1325,7 +1325,7 @@ class PluginEdit(QDialog):
 
             return
 
-        fileFilter = self.tr("Carla State File (*.carxs)")
+        fileFilter = self.tr("Franca State File (*.carxs)")
         filename, _ = QFileDialog.getOpenFileName(self, self.tr("Open Plugin State File"), filter=fileFilter)
 
         # FIXME use ok value, test if it works as expected

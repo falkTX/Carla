@@ -571,13 +571,13 @@ class HostWindowOSC(HostWindow):
             err = Exception()
 
         if err is not None:
-            fullError = self.tr("Failed to connect to the Carla instance.")
+            fullError = self.tr("Failed to connect to the Franca instance.")
 
             if len(err.args) > 0:
                 fullError += " %s\n%s\n" % (self.tr("Error was:"), err.args[0])
 
             fullError += "\n"
-            fullError += self.tr("Make sure the remote Carla is running and the URL and Port are correct.") + "\n"
+            fullError += self.tr("Make sure the remote Franca is running and the URL and Port are correct.") + "\n"
             fullError += self.tr("If it still does not work, check your current device and the remote's firewall.")
 
             CustomMessageBox(self,

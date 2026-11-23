@@ -951,8 +951,9 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_fileOpen(self):
-        fileFilter = self.tr("Carla Project File (*.carxp);;Carla Preset File (*.carxs)")
-        filename, ok = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
+        displayName = self.fDisplayName or "Franca"
+        fileFilter = self.tr("%s Project File (*.carxp);;%s Preset File (*.carxs)") % (displayName, displayName)
+        filename, ok = QFileDialog.getOpenFileName(self, self.tr("Open %s Project File") % displayName, self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
         # FIXME use ok value, test if it works as expected
         if not filename:
@@ -981,8 +982,9 @@ class HostWindow(QMainWindow):
         if self.fProjectFilename and not saveAs:
             return self.saveProjectNow()
 
-        fileFilter = self.tr("Carla Project File (*.carxp)")
-        filename, _ = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"),
+        displayName = self.fDisplayName or "Franca"
+        fileFilter = self.tr("%s Project File (*.carxp)") % displayName
+        filename, _ = QFileDialog.getSaveFileName(self, self.tr("Save %s Project File") % displayName,
                                                   self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER],
                                                   filter=fileFilter,
                                                   options=QFileDialog.DontConfirmOverwrite)
@@ -3118,7 +3120,7 @@ class HostWindow(QMainWindow):
             return False
         if self.fSavedSettings[CARLA_KEY_MAIN_CONFIRM_EXIT]:
             return QMessageBox.question(self, self.tr("Quit"),
-                                              self.tr("Are you sure you want to quit Carla?"),
+                                              self.tr("Are you sure you want to quit %s?") % (self.fDisplayName or "Franca"),
                                               QMessageBox.Yes|QMessageBox.No) == QMessageBox.No
         return False
 

@@ -1333,7 +1333,7 @@ struct CarlaHostWindow::PrivateData {
         if (fSavedSettings._CARLA_KEY_MAIN_CONFIRM_EXIT)
             return QMessageBox::question(hostWindow,
                                          tr("Quit"),
-                                         tr("Are you sure you want to quit Carla?"),
+                                         tr("Are you sure you want to quit Franca?"),
                                          QMessageBox::Yes|QMessageBox::No) == QMessageBox::No;
         return false;
     }
@@ -1846,7 +1846,7 @@ void CarlaHostWindow::slot_handleEngineStartedCallback(uint pluginCount, int pro
     self->startTimers();
 
     self->ui.text_logs->appendPlainText("======= Engine started ========");
-    self->ui.text_logs->appendPlainText("Carla engine started, details:");
+    self->ui.text_logs->appendPlainText("Franca engine started, details:");
     self->ui.text_logs->appendPlainText(QString("  Driver name:  %1").arg(driverName));
     self->ui.text_logs->appendPlainText(QString("  Sample rate:  %1").arg(int(sampleRate)));
     self->ui.text_logs->appendPlainText(QString("  Process mode: %1").arg(EngineProcessMode2Str((EngineProcessMode)processMode)));
