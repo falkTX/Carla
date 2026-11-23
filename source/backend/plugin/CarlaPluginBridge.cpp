@@ -436,6 +436,7 @@ public:
           fBridgeVersion(6), // before kPluginBridgeNonRtServerVersion was a thing, API was at 6
           fInitiated(false),
           fInitError(false),
+          fAsyncLaunch(false),
           fSaved(true),
           fTimedOut(false),
           fTimedError(false),
@@ -443,6 +444,7 @@ public:
           fProcWaitTime(0),
           fPendingEmbedCustomUI(0),
           fBridgeBinary(),
+          fInitErrorMessage(),
           fBridgeThread(engine, this),
           fShmAudioPool(),
           fShmRtClientControl(),
@@ -492,7 +494,7 @@ public:
             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientQuit);
             fShmRtClientControl.commitWrite();
 
-            if (! fTimedOut)
+            if (! fTimedOut && fInitiated)
                 waitForClient("stopping", 3000);
         }
 
@@ -687,7 +689,7 @@ public:
             if (needsEngineIdle)
                 pData->engine->idle();
 
-            d_msleep(5);
+            d_msleep(1);
         }
 
         if (! fBridgeThread.isThreadRunning())
@@ -2221,7 +2223,7 @@ public:
                 fInfo.copyright = copyright.text;
                 realName.text = label.text = maker.text = copyright.text = nullptr;
 
-                if (pData->name == nullptr)
+                if (pData->name == nullptr && ! fAsyncLaunch)
                     pData->name = pData->engine->getUniquePluginName(fInfo.name);
             }   break;
 
@@ -2644,7 +2646,10 @@ public:
                 }
                 else
                 {
-                    pData->engine->setLastError(error.text);
+                    if (fAsyncLaunch)
+                        fInitErrorMessage = error.text;
+                    else
+                        pData->engine->setLastError(error.text);
                     fInitError = true;
                     fInitiated = true;
                 }
@@ -2667,14 +2672,12 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(CarlaPluginPtr plugin,
-              const char* const filename,
-              const char* const name,
-              const char* const label,
-              const int64_t uniqueId,
-              const uint options,
-              const char* const binaryArchName,
-              const char* const bridgeBinary)
+    bool prepareAndLaunchBridge(const char* const filename,
+                                const char* const label,
+                                const int64_t uniqueId,
+                                const char* const binaryArchName,
+                                const char* const bridgeBinary,
+                                const bool asyncLaunch)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2696,9 +2699,6 @@ public:
         // ---------------------------------------------------------------
         // set info
 
-        if (name != nullptr && name[0] != '\0')
-            pData->name = pData->engine->getUniquePluginName(name);
-
         if (filename != nullptr && filename[0] != '\0')
             pData->filename = carla_strdup(filename);
         else
@@ -2706,6 +2706,8 @@ public:
 
         fUniqueId     = uniqueId;
         fBridgeBinary = bridgeBinary;
+        fAsyncLaunch  = asyncLaunch;
+        fInitErrorMessage.clear();
 
         // ---------------------------------------------------------------
         // init sem/shm
@@ -2788,7 +2790,21 @@ public:
                                   binaryArchName, bridgeBinary, label, shmIdsStr);
         }
 
-        if (! restartBridgeThread())
+        launchBridgeThread();
+        return true;
+    }
+
+    bool completeInit(CarlaPluginPtr plugin,
+                      const char* const name,
+                      const char* const label,
+                      const uint options,
+                      const BridgePollCallback pollCb,
+                      void* const pollPtr)
+    {
+        if (name != nullptr && name[0] != '\0' && pData->name == nullptr)
+            pData->name = pData->engine->getUniquePluginName(name);
+
+        if (! waitForBridgeThread(pollCb, pollPtr))
             return false;
 
         // ---------------------------------------------------------------
@@ -2796,7 +2812,9 @@ public:
 
         if (pData->name == nullptr)
         {
-            if (label != nullptr && label[0] != '\0')
+            if (fInfo.name != nullptr && fInfo.name[0] != '\0')
+                pData->name = pData->engine->getUniquePluginName(fInfo.name);
+            else if (label != nullptr && label[0] != '\0')
                 pData->name = pData->engine->getUniquePluginName(label);
             else
                 pData->name = pData->engine->getUniquePluginName("unknown");
@@ -2882,6 +2900,41 @@ public:
         return true;
     }
 
+    bool init(CarlaPluginPtr plugin,
+              const char* const filename,
+              const char* const name,
+              const char* const label,
+              const int64_t uniqueId,
+              const uint options,
+              const char* const binaryArchName,
+              const char* const bridgeBinary)
+    {
+        if (! prepareAndLaunchBridge(filename, label, uniqueId, binaryArchName, bridgeBinary, false))
+            return false;
+
+        return completeInit(plugin, name, label, options, nullptr, nullptr);
+    }
+
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    void pollBridgeInit() noexcept override
+    {
+        if (fInitiated || fInitError || ! fBridgeThread.isThreadRunning())
+            return;
+
+        try {
+            handleNonRtData();
+        } CARLA_SAFE_EXCEPTION("handleNonRtData");
+    }
+
+    bool finishBridgeInit(CarlaPluginPtr plugin, const Initializer& init,
+                          const BridgePollCallback pollCb, void* const pollPtr) override
+    {
+        fAsyncLaunch = false;
+        pData->id = init.id;
+        return completeInit(plugin, init.name, init.label, init.options, pollCb, pollPtr);
+    }
+   #endif
+
 private:
     const BinaryType fBinaryType;
     const PluginType fPluginType;
@@ -2889,6 +2942,7 @@ private:
 
     bool fInitiated;
     bool fInitError;
+    bool fAsyncLaunch;
     bool fSaved;
     bool fTimedOut;
     bool fTimedError;
@@ -2897,6 +2951,7 @@ private:
     uint64_t fPendingEmbedCustomUI;
 
     String fBridgeBinary;
+    String fInitErrorMessage;
     CarlaPluginBridgeThread fBridgeThread;
 
     BridgeAudioPool          fShmAudioPool;
@@ -3115,7 +3170,7 @@ private:
         carla_stderr2("waitForClient(%s) timed out", action);
     }
 
-    bool restartBridgeThread()
+    void launchBridgeThread()
     {
         fInitiated  = false;
         fInitError  = false;
@@ -3157,7 +3212,10 @@ private:
         }
 
         fBridgeThread.startThread();
+    }
 
+    bool waitForBridgeThread(const BridgePollCallback pollCb = nullptr, void* const pollPtr = nullptr)
+    {
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
         const bool needsCancelableAction = ! pData->engine->isLoadingProject();
@@ -3174,12 +3232,15 @@ private:
         }
 #endif
 
-        for (;fBridgeThread.isThreadRunning();)
+        for (;! fInitiated && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
 
             if (needsEngineIdle)
                 pData->engine->idle();
+
+            if (pollCb != nullptr)
+                pollCb(pollPtr);
 
             idle();
 
@@ -3188,7 +3249,7 @@ private:
             if (pData->engine->isAboutToClose() || pData->engine->wasActionCanceled())
                 break;
 
-            d_msleep(5);
+            d_msleep(1);
         }
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
@@ -3207,7 +3268,9 @@ private:
         {
             fBridgeThread.stopThread(6000);
 
-            if (! fInitError)
+            if (fInitErrorMessage.isNotEmpty())
+                pData->engine->setLastError(fInitErrorMessage);
+            else if (! fInitError)
                 pData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n"
                                             "(or the plugin crashed on initialization?)");
 
@@ -3243,6 +3306,12 @@ private:
         }
 
         return true;
+    }
+
+    bool restartBridgeThread()
+    {
+        launchBridgeThread();
+        return waitForBridgeThread();
     }
 
     void _setUiTitleFromName()
@@ -3298,6 +3367,37 @@ CarlaPluginPtr CarlaPlugin::newBridge(const Initializer& init,
 
     return plugin;
 }
+
+#ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+CarlaPluginPtr CarlaPlugin::newBridgeAsync(const Initializer& init,
+                                           const BinaryType btype,
+                                           const PluginType ptype,
+                                           const char* const binaryArchName,
+                                           const char* bridgeBinary)
+{
+    carla_debug("CarlaPlugin::newBridgeAsync({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\", \"%s\")",
+                init.engine, init.filename, init.name, init.label,
+                BinaryType2Str(btype), PluginType2Str(ptype), binaryArchName, bridgeBinary);
+
+    if (bridgeBinary == nullptr || bridgeBinary[0] == '\0')
+    {
+        init.engine->setLastError("Bridge not possible, bridge-binary not found");
+        return nullptr;
+    }
+
+#ifndef CARLA_OS_WIN
+    if (std::strncmp(bridgeBinary, "//", 2) == 0)
+        ++bridgeBinary;
+#endif
+
+    std::shared_ptr<CarlaPluginBridge> plugin(new CarlaPluginBridge(init.engine, init.id, btype, ptype));
+
+    if (! plugin->prepareAndLaunchBridge(init.filename, init.label, init.uniqueId, binaryArchName, bridgeBinary, true))
+        return nullptr;
+
+    return plugin;
+}
+#endif
 
 CARLA_BACKEND_END_NAMESPACE
 

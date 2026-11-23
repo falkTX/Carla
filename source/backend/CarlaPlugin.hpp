@@ -960,9 +960,25 @@ public:
         const uint options; // see PluginOptions
     };
 
+    typedef void (*BridgePollCallback)(void* ptr);
+
     static CarlaPluginPtr newBridge(const Initializer& init,
                                     BinaryType btype, PluginType ptype,
                                     const char* binaryArchName, const char* bridgeBinary);
+
+   #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
+    static CarlaPluginPtr newBridgeAsync(const Initializer& init,
+                                         BinaryType btype, PluginType ptype,
+                                         const char* binaryArchName, const char* bridgeBinary);
+
+    virtual void pollBridgeInit() noexcept {}
+    virtual bool finishBridgeInit(CarlaPluginPtr plugin, const Initializer& init,
+                                  BridgePollCallback pollCb, void* pollPtr)
+    {
+        return false;
+        (void)plugin; (void)init; (void)pollCb; (void)pollPtr;
+    }
+   #endif
 
    #ifndef CARLA_PLUGIN_ONLY_BRIDGE
     static CarlaPluginPtr newNative(const Initializer& init);

@@ -648,6 +648,7 @@ struct PluginListDialog::PrivateData {
         CarlaPluginDiscoveryHandle handle = nullptr;
         QCarlaString tool;
         ScopedPointer<PluginRefreshDialog> dialog;
+        ScopedPointer<QSafeSettings> cacheSettings;
         Discovery()
         {
             restart();
@@ -988,8 +989,9 @@ void PluginListDialog::addPluginInfo(const CarlaPluginDiscoveryInfo* const info,
     {
         if (sha1sum != nullptr)
         {
-            QSafeSettings settings("falkTX", "CarlaDatabase3");
-            settings.setValue(QString("PluginCache/%1").arg(sha1sum), QByteArray());
+            if (p->discovery.cacheSettings == nullptr)
+                p->discovery.cacheSettings = new QSafeSettings("falkTX", "CarlaDatabase3");
+            p->discovery.cacheSettings->setValue(QString("PluginCache/%1").arg(sha1sum), QByteArray());
 
             const QString qsha1sum(sha1sum);
             p->plugins.cache[qsha1sum] = {};
@@ -1018,17 +1020,18 @@ void PluginListDialog::addPluginInfo(const CarlaPluginDiscoveryInfo* const info,
 
     if (sha1sum != nullptr)
     {
-        QSafeSettings settings("falkTX", "CarlaDatabase3");
+        if (p->discovery.cacheSettings == nullptr)
+            p->discovery.cacheSettings = new QSafeSettings("falkTX", "CarlaDatabase3");
         const QString qsha1sum(sha1sum);
         const QString key = QString("PluginCache/%1").arg(sha1sum);
 
         // single sha1sum can contain >1 plugin
         QByteArray qdata;
         if (p->plugins.cache.contains(qsha1sum))
-            qdata = settings.valueByteArray(key);
+            qdata = p->discovery.cacheSettings->valueByteArray(key);
         qdata += asVariant(pinfo).toByteArray();
 
-        settings.setValue(key, qdata);
+        p->discovery.cacheSettings->setValue(key, qdata);
 
         p->plugins.cache[qsha1sum].append(pinfo);
     }
@@ -1977,6 +1980,8 @@ void PluginListDialog::refreshPluginsStop()
         carla_plugin_discovery_stop(p->discovery.handle);
         p->discovery.handle = nullptr;
     }
+
+    p->discovery.cacheSettings = nullptr;
 
     if (p->discovery.dialog)
     {

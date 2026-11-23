@@ -293,6 +293,7 @@ public:
     Lilv::Node rdfs_range;
 
     bool needsInit;
+    bool loadedAll;
 
     const LilvPlugins* allPlugins;
     const LilvPlugin** cachedPlugins;
@@ -430,6 +431,7 @@ public:
           rdfs_range         (new_uri(NS_rdfs "range")),
 
           needsInit(true),
+          loadedAll(false),
           allPlugins(nullptr),
           cachedPlugins(nullptr),
           pluginCount(0) {}
@@ -453,20 +455,14 @@ public:
         return lv2World;
     }
 
-    void initIfNeeded(const char* LV2_PATH)
+    void rebuildPluginCache()
     {
-        if (LV2_PATH == nullptr || LV2_PATH[0] == '\0')
+        if (cachedPlugins != nullptr)
         {
-            static const char* const DEFAULT_LV2_PATH = LILV_DEFAULT_LV2_PATH;
-            LV2_PATH = DEFAULT_LV2_PATH;
+            delete[] cachedPlugins;
+            cachedPlugins = nullptr;
         }
-
-        if (! needsInit)
-            return;
-
-        needsInit = false;
-
-        Lilv::World::load_all(LV2_PATH);
+        pluginCount = 0;
 
         allPlugins = lilv_world_get_all_plugins(this->me);
         CARLA_SAFE_ASSERT_RETURN(allPlugins != nullptr,);
@@ -482,6 +478,24 @@ public:
         }
     }
 
+    void initIfNeeded(const char* LV2_PATH)
+    {
+        if (LV2_PATH == nullptr || LV2_PATH[0] == '\0')
+        {
+            static const char* const DEFAULT_LV2_PATH = LILV_DEFAULT_LV2_PATH;
+            LV2_PATH = DEFAULT_LV2_PATH;
+        }
+
+        if (loadedAll)
+            return;
+
+        needsInit = false;
+        loadedAll = true;
+
+        Lilv::World::load_all(LV2_PATH);
+        rebuildPluginCache();
+    }
+
     void load_bundle(const char* const bundle)
     {
         CARLA_SAFE_ASSERT_RETURN(bundle != nullptr && bundle[0] != '\0',);
@@ -489,19 +503,26 @@ public:
 
         needsInit = false;
         Lilv::World::load_bundle(Lilv::Node(new_uri(bundle)));
+        rebuildPluginCache();
+    }
 
-        allPlugins = lilv_world_get_all_plugins(this->me);
-        CARLA_SAFE_ASSERT_RETURN(allPlugins != nullptr,);
+    bool loadBundleFromPath(const char* const bundlePath)
+    {
+        CARLA_SAFE_ASSERT_RETURN(bundlePath != nullptr && bundlePath[0] != '\0', false);
 
-        if ((pluginCount = lilv_plugins_size(allPlugins)))
-        {
-            cachedPlugins = new const LilvPlugin*[pluginCount+1];
-            carla_zeroPointers(cachedPlugins, pluginCount+1);
+        String path(bundlePath);
+        if (! path.endsWith(CARLA_OS_SEP))
+            path += CARLA_OS_SEP_STR;
 
-            int i = 0;
-            for (LilvIter* it = lilv_plugins_begin(allPlugins); ! lilv_plugins_is_end(allPlugins, it); it = lilv_plugins_next(allPlugins, it))
-                cachedPlugins[i++] = lilv_plugins_get(allPlugins, it);
-        }
+        LilvNode* const bundleNode = lilv_new_file_uri(this->me, nullptr, path.buffer());
+        CARLA_SAFE_ASSERT_RETURN(bundleNode != nullptr, false);
+
+        needsInit = false;
+        lilv_world_load_bundle(this->me, bundleNode);
+        lilv_node_free(bundleNode);
+
+        rebuildPluginCache();
+        return pluginCount > 0;
     }
 
     uint getPluginCount() const

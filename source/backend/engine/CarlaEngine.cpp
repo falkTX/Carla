@@ -37,7 +37,11 @@
 # endif
 #endif
 
+#include <algorithm>
 #include <map>
+#include <memory>
+#include <thread>
+#include <vector>
 
 // FIXME Remove on 2.1 release
 #include "lv2/atom.h"
@@ -2893,6 +2897,600 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
     const char* const allowJackApps = std::getenv("CARLA_ALLOW_PROJECT_JACK_APPS");
     bool launchJackApps = allowJackApps != nullptr && std::strcmp(allowJackApps, "1") == 0;
 
+   #if !defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) && !defined(CARLA_OS_WASM)
+    struct PendingProjectPlugin {
+        CarlaStateSave stateSave;
+        PluginType ptype = PLUGIN_NONE;
+        BinaryType btype = BINARY_NATIVE;
+        const void* extraStuff = nullptr;
+        String bridgeBinary;
+        bool isLegacyGIG = false;
+        bool isLegacySFZ = false;
+        bool canPrelaunchBridge = false;
+        CarlaPluginPtr prelaunched;
+    };
+
+    auto resolveBridgeBinaryForType = [this](const BinaryType btype) -> String {
+        String bridgeBinary;
+        if (getType() != kEngineTypeBridge || btype != BINARY_NATIVE)
+            bridgeBinary = pData->options.binaryDir;
+
+        if (bridgeBinary.isEmpty())
+            return bridgeBinary;
+
+       #ifndef CARLA_OS_WIN
+        if (btype == BINARY_NATIVE)
+        {
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native";
+        }
+        else
+       #endif
+        {
+            switch (btype)
+            {
+            case BINARY_POSIX32:
+                bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-posix32";
+                break;
+            case BINARY_POSIX64:
+                bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-posix64";
+                break;
+            case BINARY_WIN32:
+               #if defined(CARLA_OS_WIN) && !defined(CARLA_OS_64BIT)
+                bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native.exe";
+               #else
+                bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-win32.exe";
+               #endif
+                break;
+            case BINARY_WIN64:
+               #if defined(CARLA_OS_WIN) && defined(CARLA_OS_64BIT)
+                bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native.exe";
+               #else
+                bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-win64.exe";
+               #endif
+                break;
+            default:
+                bridgeBinary.clear();
+                break;
+            }
+        }
+
+        if (! File(bridgeBinary.buffer()).existsAsFile())
+            bridgeBinary.clear();
+
+        return bridgeBinary;
+    };
+
+    std::vector<std::unique_ptr<PendingProjectPlugin>> pendingPlugins;
+
+    for (XmlElement* elem = isPreset ? xmlElement.get() : xmlElement->getFirstChildElement();
+         elem != nullptr; elem = isPreset ? nullptr : elem->getNextElement())
+    {
+        const water::String& tagName(elem->getTagName());
+
+        if (isPreset || tagName == "Plugin")
+        {
+            std::unique_ptr<PendingProjectPlugin> entry(new PendingProjectPlugin());
+            entry->stateSave.fillFromXmlElement(elem);
+
+            if (pData->aboutToClose)
+                return true;
+
+            if (pData->actionCanceled)
+            {
+                setLastError("Project load canceled");
+                return false;
+            }
+
+            if (entry->stateSave.type == nullptr)
+            {
+                loadedAllPlugins = false;
+                continue;
+            }
+
+            if (std::strcmp(entry->stateSave.type, "GIG") == 0)
+            {
+                entry->isLegacyGIG = true;
+                pendingPlugins.push_back(std::move(entry));
+                continue;
+            }
+           #ifdef SFZ_FILES_USING_SFIZZ
+            if (std::strcmp(entry->stateSave.type, "SFZ") == 0)
+            {
+                entry->isLegacySFZ = true;
+                pendingPlugins.push_back(std::move(entry));
+                continue;
+            }
+           #endif
+
+            static const char kTrue[] = "true";
+            entry->ptype = getPluginTypeFromString(entry->stateSave.type);
+
+            switch (entry->ptype)
+            {
+            case PLUGIN_SF2:
+                if (String(entry->stateSave.label).endsWith(" (16 outs)"))
+                    entry->extraStuff = kTrue;
+                // fall through
+            case PLUGIN_LADSPA:
+            case PLUGIN_DSSI:
+            case PLUGIN_VST2:
+            case PLUGIN_VST3:
+            case PLUGIN_SFZ:
+            case PLUGIN_JSFX:
+            case PLUGIN_CLAP:
+                if (entry->stateSave.binary != nullptr && entry->stateSave.binary[0] != '\0' &&
+                    ! (File::isAbsolutePath(entry->stateSave.binary) && File(entry->stateSave.binary).exists()))
+                {
+                    const char* searchPath;
+
+                    switch (entry->ptype)
+                    {
+                    case PLUGIN_LADSPA: searchPath = pData->options.pathLADSPA; break;
+                    case PLUGIN_DSSI:   searchPath = pData->options.pathDSSI;   break;
+                    case PLUGIN_VST2:   searchPath = pData->options.pathVST2;   break;
+                    case PLUGIN_VST3:   searchPath = pData->options.pathVST3;   break;
+                    case PLUGIN_SF2:    searchPath = pData->options.pathSF2;    break;
+                    case PLUGIN_SFZ:    searchPath = pData->options.pathSFZ;    break;
+                    case PLUGIN_JSFX:   searchPath = pData->options.pathJSFX;   break;
+                    case PLUGIN_CLAP:   searchPath = pData->options.pathCLAP;   break;
+                    default:            searchPath = nullptr;                   break;
+                    }
+
+                    if (searchPath != nullptr && searchPath[0] != '\0')
+                    {
+                        carla_stderr("Plugin binary '%s' doesn't exist on this filesystem, let's look for it...",
+                                     entry->stateSave.binary);
+
+                        water::String result = findBinaryInCustomPath(searchPath, entry->stateSave.binary);
+
+                        if (result.isEmpty())
+                        {
+                            switch (entry->ptype)
+                            {
+                            case PLUGIN_LADSPA: searchPath = std::getenv("LADSPA_PATH"); break;
+                            case PLUGIN_DSSI:   searchPath = std::getenv("DSSI_PATH");   break;
+                            case PLUGIN_VST2:   searchPath = std::getenv("VST_PATH");    break;
+                            case PLUGIN_VST3:   searchPath = std::getenv("VST3_PATH");   break;
+                            case PLUGIN_SF2:    searchPath = std::getenv("SF2_PATH");    break;
+                            case PLUGIN_SFZ:    searchPath = std::getenv("SFZ_PATH");    break;
+                            case PLUGIN_JSFX:   searchPath = std::getenv("JSFX_PATH");   break;
+                            case PLUGIN_CLAP:   searchPath = std::getenv("CLAP_PATH");   break;
+                            default:            searchPath = nullptr;                    break;
+                            }
+
+                            if (searchPath != nullptr && searchPath[0] != '\0')
+                                result = findBinaryInCustomPath(searchPath, entry->stateSave.binary);
+                        }
+
+                        if (result.isNotEmpty())
+                        {
+                            delete[] entry->stateSave.binary;
+                            entry->stateSave.binary = carla_strdup(result.toRawUTF8());
+                            carla_stderr("Found it! :)");
+                        }
+                        else
+                        {
+                            carla_stderr("Damn, we failed... :(");
+                        }
+
+                        callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+
+            switch (entry->ptype)
+            {
+            case PLUGIN_LADSPA:
+            case PLUGIN_DSSI:
+            case PLUGIN_LV2:
+            case PLUGIN_VST2:
+            case PLUGIN_VST3:
+            case PLUGIN_CLAP:
+            case PLUGIN_AU:
+                entry->btype = getBinaryTypeFromFile(entry->stateSave.binary);
+                break;
+            default:
+                entry->btype = BINARY_NATIVE;
+                break;
+            }
+
+            const bool canBeBridged = entry->ptype != PLUGIN_NONE
+                                   && entry->ptype != PLUGIN_TYPE_COUNT
+                                   && entry->ptype != PLUGIN_INTERNAL
+                                   && entry->ptype != PLUGIN_DLS
+                                   && entry->ptype != PLUGIN_GIG
+                                   && entry->ptype != PLUGIN_SF2
+                                   && entry->ptype != PLUGIN_SFZ
+                                   && entry->ptype != PLUGIN_JSFX
+                                   && entry->ptype != PLUGIN_JACK;
+
+            const bool hasFilenameOrLabel = (entry->stateSave.binary != nullptr && entry->stateSave.binary[0] != '\0')
+                                         || (entry->stateSave.label != nullptr && entry->stateSave.label[0] != '\0');
+            bool validFilename = true;
+           #ifndef CARLA_OS_WIN
+            if (entry->ptype != PLUGIN_JACK && entry->ptype != PLUGIN_LV2 &&
+                entry->stateSave.binary != nullptr && entry->stateSave.binary[0] != '\0')
+            {
+                const char c = entry->stateSave.binary[0];
+                validFilename = (c == CARLA_OS_SEP || c == '.' || c == '~');
+            }
+           #endif
+
+            if (!isPreset && canBeBridged && hasFilenameOrLabel && validFilename && entry->btype != BINARY_NONE &&
+                (entry->btype != BINARY_NATIVE || pData->options.preferPluginBridges))
+            {
+                entry->bridgeBinary = resolveBridgeBinaryForType(entry->btype);
+                if (entry->bridgeBinary.isNotEmpty())
+                    entry->canPrelaunchBridge = true;
+            }
+
+            pendingPlugins.push_back(std::move(entry));
+        }
+    }
+
+    const size_t hwThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+    const size_t maxConcurrentBridges = std::max<size_t>(2, std::min<size_t>(8, hwThreads));
+    const size_t maxConcurrentWineBridges = std::max<size_t>(2, std::min<size_t>(4, hwThreads / 2));
+    size_t prelaunchCursor = 0;
+    size_t inFlightBridges = 0;
+    size_t inFlightWineBridges = 0;
+
+    auto cleanupPrelaunched = [&pendingPlugins]() {
+        for (auto& entry : pendingPlugins)
+            entry->prelaunched.reset();
+    };
+
+    auto topUpPrelaunched = [&](const size_t currentIndex) {
+        if (pendingPlugins.size() <= 1)
+            return;
+
+        if (prelaunchCursor < currentIndex)
+            prelaunchCursor = currentIndex;
+
+        while (prelaunchCursor < pendingPlugins.size() && inFlightBridges < maxConcurrentBridges)
+        {
+            PendingProjectPlugin& candidate(*pendingPlugins[prelaunchCursor]);
+            if (candidate.canPrelaunchBridge && candidate.prelaunched == nullptr)
+            {
+                const bool isWine = candidate.btype == BINARY_WIN32 || candidate.btype == BINARY_WIN64;
+                if (isWine && inFlightWineBridges >= maxConcurrentWineBridges)
+                    break;
+
+               #ifdef CARLA_OS_MAC
+                if (candidate.ptype != PLUGIN_LV2 && candidate.ptype != PLUGIN_AU)
+                    removeFileFromQuarantine(candidate.stateSave.binary);
+               #endif
+
+                CarlaPlugin::Initializer asyncInit = {
+                    this,
+                    0,
+                    candidate.stateSave.binary,
+                    candidate.stateSave.name,
+                    candidate.stateSave.label,
+                    candidate.stateSave.uniqueId,
+                    candidate.stateSave.options
+                };
+
+                candidate.prelaunched = CarlaPlugin::newBridgeAsync(asyncInit,
+                                                                    candidate.btype,
+                                                                    candidate.ptype,
+                                                                    nullptr,
+                                                                    candidate.bridgeBinary);
+                if (candidate.prelaunched != nullptr)
+                {
+                    ++inFlightBridges;
+                    if (isWine)
+                        ++inFlightWineBridges;
+                }
+            }
+            ++prelaunchCursor;
+        }
+    };
+
+    struct BridgePollContext {
+        std::vector<std::unique_ptr<PendingProjectPlugin>>* pending;
+        size_t startIndex;
+        size_t endIndex;
+    };
+
+    auto pollOtherBridges = [](void* const ptr) {
+        const BridgePollContext* const ctx = static_cast<const BridgePollContext*>(ptr);
+        for (size_t j = ctx->startIndex; j < ctx->endIndex; ++j)
+        {
+            if (const CarlaPluginPtr& p = (*ctx->pending)[j]->prelaunched)
+                p->pollBridgeInit();
+        }
+    };
+
+    // and we handle plugins
+    for (size_t idx = 0; idx < pendingPlugins.size(); ++idx)
+    {
+        topUpPrelaunched(idx);
+
+        PendingProjectPlugin& entry(*pendingPlugins[idx]);
+        CarlaStateSave& stateSave(entry.stateSave);
+
+        if (pData->aboutToClose)
+        {
+            cleanupPrelaunched();
+            return true;
+        }
+
+        if (pData->actionCanceled)
+        {
+            cleanupPrelaunched();
+            setLastError("Project load canceled");
+            return false;
+        }
+
+        // compatibility code to load projects with GIG files
+        // FIXME Remove on 2.1 release
+        if (entry.isLegacyGIG)
+        {
+            if (addPlugin(PLUGIN_LV2, "", stateSave.name, "http://linuxsampler.org/plugins/linuxsampler", 0, nullptr))
+            {
+                const uint pluginId = pData->curPluginCount;
+
+                if (const CarlaPluginPtr plugin = pData->plugins[pluginId].plugin)
+                {
+                    if (pData->aboutToClose)
+                    {
+                        cleanupPrelaunched();
+                        return true;
+                    }
+
+                    if (pData->actionCanceled)
+                    {
+                        cleanupPrelaunched();
+                        setLastError("Project load canceled");
+                        return false;
+                    }
+
+                    water::String lsState;
+                    lsState << "0.35\n";
+                    lsState << "18 0 Chromatic\n";
+                    lsState << "18 1 Drum Kits\n";
+                    lsState << "20 0\n";
+                    lsState << "0 1 " << stateSave.binary << "\n";
+                    lsState << "0 0 0 0 1 0 GIG\n";
+
+                    plugin->setCustomData(LV2_ATOM__String, "http://linuxsampler.org/schema#state-string", lsState.toRawUTF8(), true);
+                    plugin->restoreLV2State(true);
+
+                    plugin->setDryWet(stateSave.dryWet, true, true);
+                    plugin->setVolume(stateSave.volume, true, true);
+                    plugin->setBalanceLeft(stateSave.balanceLeft, true, true);
+                    plugin->setBalanceRight(stateSave.balanceRight, true, true);
+                    plugin->setPanning(stateSave.panning, true, true);
+                    plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
+                    plugin->setActive(stateSave.active, true, true);
+                    plugin->setEnabled(true);
+
+                    ++pData->curPluginCount;
+                    callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, plugin->getType(),
+                             0, 0, 0.0f,
+                             plugin->getName());
+
+                    if (isPatchbay)
+                        pData->graph.addPlugin(plugin);
+                }
+                else
+                {
+                    loadedAllPlugins = false;
+                    carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
+                }
+            }
+            else
+            {
+                loadedAllPlugins = false;
+                carla_stderr2("Failed to load a linuxsampler LV2 plugin, GIG file won't be loaded");
+            }
+
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+            continue;
+        }
+       #ifdef SFZ_FILES_USING_SFIZZ
+        if (entry.isLegacySFZ)
+        {
+            if (addPlugin(PLUGIN_LV2, "", stateSave.name, "http://sfztools.github.io/sfizz", 0, nullptr))
+            {
+                const uint pluginId = pData->curPluginCount;
+
+                if (const CarlaPluginPtr plugin = pData->plugins[pluginId].plugin)
+                {
+                    if (pData->aboutToClose)
+                    {
+                        cleanupPrelaunched();
+                        return true;
+                    }
+
+                    if (pData->actionCanceled)
+                    {
+                        cleanupPrelaunched();
+                        setLastError("Project load canceled");
+                        return false;
+                    }
+
+                    plugin->setCustomData(LV2_ATOM__Path,
+                                          "http://sfztools.github.io/sfizz:sfzfile",
+                                          stateSave.binary,
+                                          false);
+
+                    plugin->restoreLV2State(true);
+
+                    plugin->setDryWet(stateSave.dryWet, true, true);
+                    plugin->setVolume(stateSave.volume, true, true);
+                    plugin->setBalanceLeft(stateSave.balanceLeft, true, true);
+                    plugin->setBalanceRight(stateSave.balanceRight, true, true);
+                    plugin->setPanning(stateSave.panning, true, true);
+                    plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
+                    plugin->setActive(stateSave.active, true, true);
+                    plugin->setEnabled(true);
+
+                    ++pData->curPluginCount;
+                    callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, plugin->getType(),
+                             0, 0, 0.0f,
+                             plugin->getName());
+
+                    if (isPatchbay)
+                        pData->graph.addPlugin(plugin);
+                }
+                else
+                {
+                    loadedAllPlugins = false;
+                    carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
+                }
+            }
+            else
+            {
+                loadedAllPlugins = false;
+                carla_stderr2("Failed to load a sfizz LV2 plugin, SFZ file won't be loaded");
+            }
+
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+            continue;
+        }
+       #endif
+
+        const PluginType ptype = entry.ptype;
+        const BinaryType btype = entry.btype;
+        const void* const extraStuff = entry.extraStuff;
+
+        if (ptype == PLUGIN_JACK && !launchJackApps)
+        {
+            if (!askedToLaunchJackApps && projectFilename != nullptr)
+            {
+                askedToLaunchJackApps = true;
+                const char* const answer = runFileCallback(FILE_CALLBACK_CONFIRM_PROJECT_JACK_APPS,
+                                                           false, projectFilename, "");
+                launchJackApps = answer != nullptr && std::strcmp(answer, "yes") == 0;
+            }
+
+            if (!launchJackApps)
+            {
+                loadedAllPlugins = false;
+                carla_stderr2("Skipped unapproved JACK application in project: %s", stateSave.name);
+                continue;
+            }
+        }
+
+        bool pluginAdded = false;
+
+        if (entry.prelaunched != nullptr)
+        {
+            CarlaPluginPtr prelaunched = entry.prelaunched;
+            entry.prelaunched.reset();
+            --inFlightBridges;
+            if (btype == BINARY_WIN32 || btype == BINARY_WIN64)
+                --inFlightWineBridges;
+
+            const uint id = pData->curPluginCount;
+            if (id == pData->maxPluginNumber)
+            {
+                setLastError("Maximum number of plugins reached");
+            }
+            else
+            {
+                CarlaPlugin::Initializer finishInit = {
+                    this,
+                    id,
+                    stateSave.binary,
+                    stateSave.name,
+                    stateSave.label,
+                    stateSave.uniqueId,
+                    stateSave.options
+                };
+
+                BridgePollContext pollCtx = { &pendingPlugins, idx + 1, prelaunchCursor };
+
+                if (prelaunched->finishBridgeInit(prelaunched, finishInit, pollOtherBridges, &pollCtx))
+                {
+                    prelaunched->reload();
+
+                    bool canRun = true;
+                    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+                    {
+                        if (prelaunched->getMidiInCount() > 1 || prelaunched->getMidiOutCount() > 1)
+                        {
+                            setLastError("Carla's patchbay mode cannot work with plugins that have multiple MIDI ports, sorry!");
+                            canRun = false;
+                        }
+                    }
+
+                    if (canRun)
+                    {
+                        EnginePluginData& pluginData(pData->plugins[id]);
+                        pluginData.plugin = prelaunched;
+                        carla_zeroFloats(pluginData.peaks, 4);
+                        pluginAdded = true;
+                    }
+                }
+            }
+        }
+        else
+        {
+            pluginAdded = addPlugin(btype, ptype, stateSave.binary,
+                                    stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff, stateSave.options);
+        }
+
+        if (pluginAdded)
+        {
+            const uint pluginId = pData->curPluginCount;
+
+            if (const CarlaPluginPtr plugin = pData->plugins[pluginId].plugin)
+            {
+                if (pData->aboutToClose)
+                {
+                    cleanupPrelaunched();
+                    return true;
+                }
+
+                if (pData->actionCanceled)
+                {
+                    cleanupPrelaunched();
+                    setLastError("Project load canceled");
+                    return false;
+                }
+
+                // deactivate bridge client-side ping check, since some plugins block during load
+                if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && ! isPreset)
+                    plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
+
+                plugin->loadStateSave(stateSave);
+
+                /* NOTE: The following code is the same as the end of addPlugin().
+                 *       When project is loading we do not enable the plugin right away,
+                 *        as we want to load state first.
+                 */
+                plugin->setEnabled(true);
+
+                ++pData->curPluginCount;
+                callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, plugin->getType(),
+                         0, 0, 0.0f,
+                         plugin->getName());
+
+                if (isPatchbay)
+                    pData->graph.addPlugin(plugin);
+            }
+            else
+            {
+                loadedAllPlugins = false;
+                carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
+            }
+        }
+        else
+        {
+            loadedAllPlugins = false;
+            carla_stderr2("Failed to load a plugin '%s', error was:\n%s", stateSave.name, getLastError());
+        }
+
+        if (! isPreset)
+            callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
+    }
+   #else
     // and we handle plugins
     for (XmlElement* elem = isPreset ? xmlElement.get() : xmlElement->getFirstChildElement();
          elem != nullptr; elem = isPreset ? nullptr : elem->getNextElement())
@@ -2918,129 +3516,6 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
                 loadedAllPlugins = false;
                 continue;
             }
-
-          #if !(defined(BUILD_BRIDGE_ALTERNATIVE_ARCH) || defined(CARLA_PLUGIN_ONLY_BRIDGE))
-            // compatibility code to load projects with GIG files
-            // FIXME Remove on 2.1 release
-            if (std::strcmp(stateSave.type, "GIG") == 0)
-            {
-                if (addPlugin(PLUGIN_LV2, "", stateSave.name, "http://linuxsampler.org/plugins/linuxsampler", 0, nullptr))
-                {
-                    const uint pluginId = pData->curPluginCount;
-
-                    if (const CarlaPluginPtr plugin = pData->plugins[pluginId].plugin)
-                    {
-                        if (pData->aboutToClose)
-                            return true;
-
-                        if (pData->actionCanceled)
-                        {
-                            setLastError("Project load canceled");
-                            return false;
-                        }
-
-                        water::String lsState;
-                        lsState << "0.35\n";
-                        lsState << "18 0 Chromatic\n";
-                        lsState << "18 1 Drum Kits\n";
-                        lsState << "20 0\n";
-                        lsState << "0 1 " << stateSave.binary << "\n";
-                        lsState << "0 0 0 0 1 0 GIG\n";
-
-                        plugin->setCustomData(LV2_ATOM__String, "http://linuxsampler.org/schema#state-string", lsState.toRawUTF8(), true);
-                        plugin->restoreLV2State(true);
-
-                        plugin->setDryWet(stateSave.dryWet, true, true);
-                        plugin->setVolume(stateSave.volume, true, true);
-                        plugin->setBalanceLeft(stateSave.balanceLeft, true, true);
-                        plugin->setBalanceRight(stateSave.balanceRight, true, true);
-                        plugin->setPanning(stateSave.panning, true, true);
-                        plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
-                        plugin->setActive(stateSave.active, true, true);
-                        plugin->setEnabled(true);
-
-                        ++pData->curPluginCount;
-                        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, plugin->getType(),
-                                 0, 0, 0.0f,
-                                 plugin->getName());
-
-                        if (isPatchbay)
-                            pData->graph.addPlugin(plugin);
-                    }
-                    else
-                    {
-                        loadedAllPlugins = false;
-                        carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
-                    }
-                }
-                else
-                {
-                    loadedAllPlugins = false;
-                    carla_stderr2("Failed to load a linuxsampler LV2 plugin, GIG file won't be loaded");
-                }
-
-                callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-                continue;
-            }
-           #ifdef SFZ_FILES_USING_SFIZZ
-            if (std::strcmp(stateSave.type, "SFZ") == 0)
-            {
-                if (addPlugin(PLUGIN_LV2, "", stateSave.name, "http://sfztools.github.io/sfizz", 0, nullptr))
-                {
-                    const uint pluginId = pData->curPluginCount;
-
-                    if (const CarlaPluginPtr plugin = pData->plugins[pluginId].plugin)
-                    {
-                        if (pData->aboutToClose)
-                            return true;
-
-                        if (pData->actionCanceled)
-                        {
-                            setLastError("Project load canceled");
-                            return false;
-                        }
-
-                        plugin->setCustomData(LV2_ATOM__Path,
-                                              "http://sfztools.github.io/sfizz:sfzfile",
-                                              stateSave.binary,
-                                              false);
-
-                        plugin->restoreLV2State(true);
-
-                        plugin->setDryWet(stateSave.dryWet, true, true);
-                        plugin->setVolume(stateSave.volume, true, true);
-                        plugin->setBalanceLeft(stateSave.balanceLeft, true, true);
-                        plugin->setBalanceRight(stateSave.balanceRight, true, true);
-                        plugin->setPanning(stateSave.panning, true, true);
-                        plugin->setCtrlChannel(stateSave.ctrlChannel, true, true);
-                        plugin->setActive(stateSave.active, true, true);
-                        plugin->setEnabled(true);
-
-                        ++pData->curPluginCount;
-                        callback(true, true, ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, plugin->getType(),
-                                 0, 0, 0.0f,
-                                 plugin->getName());
-
-                        if (isPatchbay)
-                            pData->graph.addPlugin(plugin);
-                    }
-                    else
-                    {
-                        loadedAllPlugins = false;
-                        carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
-                    }
-                }
-                else
-                {
-                    loadedAllPlugins = false;
-                    carla_stderr2("Failed to load a sfizz LV2 plugin, SFZ file won't be loaded");
-                }
-
-                callback(true, true, ENGINE_CALLBACK_IDLE, 0, 0, 0, 0, 0.0f, nullptr);
-                continue;
-            }
-           #endif
-          #endif
 
             const void* extraStuff    = nullptr;
             static const char kTrue[] = "true";
@@ -3218,6 +3693,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc, const bool alw
         }
 
     }
+   #endif
 
 #ifndef BUILD_BRIDGE_ALTERNATIVE_ARCH
     if (!isPreset)

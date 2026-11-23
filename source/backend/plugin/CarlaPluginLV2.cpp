@@ -6484,6 +6484,7 @@ public:
 
 public:
     bool init(const CarlaPluginPtr plugin,
+              const char* const filename,
               const char* const name, const char* const uri, const uint options,
               const char*& needsArchBridge)
     {
@@ -6511,17 +6512,56 @@ public:
 
         Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
+        const char* lv2Path = nullptr;
         if (opts.pathLV2 != nullptr && opts.pathLV2[0] != '\0')
-            lv2World.initIfNeeded(opts.pathLV2);
-        else if (const char* const LV2_PATH = std::getenv("LV2_PATH"))
-            lv2World.initIfNeeded(LV2_PATH);
+            lv2Path = opts.pathLV2;
+        else if (const char* const envLV2 = std::getenv("LV2_PATH"))
+            lv2Path = envLV2;
         else
-            lv2World.initIfNeeded(LILV_DEFAULT_LV2_PATH);
+            lv2Path = LILV_DEFAULT_LV2_PATH;
 
-        // ---------------------------------------------------------------
-        // get plugin from lv2_rdf (lilv)
+       #ifdef BUILD_BRIDGE
+        // In a single-plugin bridge process, try loading only the requested bundle first
+        // instead of parsing every LV2 bundle on the system.
+        if (lv2World.needsInit && filename != nullptr && filename[0] != '\0')
+        {
+            water::String bundleDir;
+            const water::File directFile(filename);
+            if (directFile.isDirectory())
+            {
+                bundleDir = directFile.getFullPathName();
+            }
+            else if (lv2Path != nullptr && lv2Path[0] != '\0')
+            {
+                const water::String bundleName(directFile.getFileName());
+                const water::StringArray splitPaths(water::StringArray::fromTokens(lv2Path, CARLA_OS_SPLIT_STR, ""));
+                for (int i=0; i < splitPaths.size(); ++i)
+                {
+                    const water::File candidate(water::File(splitPaths[i].toRawUTF8()).getChildFile(bundleName.toRawUTF8()));
+                    if (candidate.isDirectory())
+                    {
+                        bundleDir = candidate.getFullPathName();
+                        break;
+                    }
+                }
+            }
 
-        fRdfDescriptor = lv2_rdf_new(uri, true);
+            if (bundleDir.isNotEmpty() && lv2World.loadBundleFromPath(bundleDir.toRawUTF8()))
+                fRdfDescriptor = lv2_rdf_new(uri, true);
+        }
+       #else
+        (void)filename;
+       #endif
+
+        if (fRdfDescriptor == nullptr)
+        {
+            lv2World.initIfNeeded(lv2Path);
+
+            // ---------------------------------------------------------------
+            // get plugin from lv2_rdf (lilv)
+
+            fRdfDescriptor = lv2_rdf_new(uri, true);
+        }
 
         if (fRdfDescriptor == nullptr)
         {
@@ -8434,7 +8474,7 @@ CarlaPluginPtr CarlaPlugin::newLV2(const Initializer& init)
     std::shared_ptr<CarlaPluginLV2> plugin(new CarlaPluginLV2(init.engine, init.id));
 
     const char* needsArchBridge = nullptr;
-    if (plugin->init(plugin, init.name, init.label, init.options, needsArchBridge))
+    if (plugin->init(plugin, init.filename, init.name, init.label, init.options, needsArchBridge))
         return plugin;
 
    #ifndef CARLA_OS_WASM

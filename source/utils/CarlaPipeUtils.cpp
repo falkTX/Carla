@@ -294,7 +294,7 @@ bool waitForClientConnect(const HANDLE pipe, const HANDLE event, const HANDLE pr
         case ERROR_PIPE_LISTENING:
             if (d_gettime_ms() < timeoutEnd)
             {
-                d_msleep(5);
+                d_msleep(1);
                 continue;
             }
             carla_stderr2("ConnectNamedPipe listening timed out");
@@ -392,7 +392,7 @@ bool waitForClientFirstMessage(const P& pipe, void* const ovRecv, void* const pr
             {
                 if (d_gettime_ms() < timeoutEnd)
                 {
-                    d_msleep(5);
+                    d_msleep(1);
                     continue;
                 }
                 carla_stderr("waitForClientFirstMessage() - read timed out");
@@ -448,7 +448,7 @@ bool waitForProcessToStop(const HANDLE process, const uint32_t timeOutMillisecon
         if (d_gettime_ms() >= timeoutEnd)
             break;
 
-        d_msleep(5);
+        d_msleep(1);
     }
 
     return false;
@@ -511,7 +511,7 @@ bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds, boo
             }
             if (d_gettime_ms() < timeoutEnd)
             {
-                d_msleep(5);
+                d_msleep(1);
                 continue;
             }
             carla_stderr("waitForChildToStop() - timed out");
@@ -1380,7 +1380,7 @@ const char* CarlaPipeCommon::_readlineblock(const bool allocReturn,
         if (d_gettime_ms() >= timeoutEnd)
             break;
 
-        d_msleep(5);
+        d_msleep(1);
     }
 
     static const bool testingForValgrind = std::getenv("CARLA_VALGRIND_TEST") != nullptr;

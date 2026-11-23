@@ -415,7 +415,7 @@ void BridgeNonRtClientControl::waitIfDataIsReachingLimit() noexcept
     if (getWritableDataSize() < BigStackBuffer::size/4)
         return;
 
-    for (int i=50; --i >= 0;)
+    for (int i=1000; --i >= 0;)
     {
         if (getWritableDataSize() >= BigStackBuffer::size*3/4)
         {
@@ -423,7 +423,7 @@ void BridgeNonRtClientControl::waitIfDataIsReachingLimit() noexcept
             commitWrite();
             return;
         }
-        d_msleep(20);
+        d_msleep(1);
     }
 
     carla_stderr("Server waitIfDataIsReachingLimit() reached and failed");
@@ -560,7 +560,7 @@ void BridgeNonRtServerControl::waitIfDataIsReachingLimit() noexcept
     if (getWritableDataSize() < HugeStackBuffer::size/4)
         return;
 
-    for (int i=50; --i >= 0;)
+    for (int i=1000; --i >= 0;)
     {
         if (getWritableDataSize() >= HugeStackBuffer::size*3/4)
         {
@@ -568,7 +568,7 @@ void BridgeNonRtServerControl::waitIfDataIsReachingLimit() noexcept
             commitWrite();
             return;
         }
-        d_msleep(20);
+        d_msleep(1);
     }
 
     carla_stderr("Client waitIfDataIsReachingLimit() reached and failed");

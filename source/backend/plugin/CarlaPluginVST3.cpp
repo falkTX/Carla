@@ -36,6 +36,7 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 
 CARLA_BACKEND_START_NAMESPACE
@@ -3503,12 +3504,15 @@ public:
 
        #if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
         // Some JUCE editors cache these atoms when the plugin initializes.
-        const std::unique_ptr<Display, decltype(&XCloseDisplay)> display(XOpenDisplay(nullptr), XCloseDisplay);
-        if (display)
-        {
-            XInternAtom(display.get(), "WM_PROTOCOLS", False);
-            XInternAtom(display.get(), "_NET_WM_STATE", False);
-        }
+        static std::once_flag x11AtomsFlag;
+        std::call_once(x11AtomsFlag, []() {
+            const std::unique_ptr<Display, decltype(&XCloseDisplay)> display(XOpenDisplay(nullptr), XCloseDisplay);
+            if (display)
+            {
+                XInternAtom(display.get(), "WM_PROTOCOLS", False);
+                XInternAtom(display.get(), "_NET_WM_STATE", False);
+            }
+        });
        #endif
 
         V3_ENTRYFN v3_entry;
