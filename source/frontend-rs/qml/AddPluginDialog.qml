@@ -30,7 +30,7 @@ Controls.ApplicationWindow {
     readonly property int colCatW: 118
     readonly property int colMakerW: 175
     readonly property int colIoW: 112
-    readonly property int colScrollPad: 14
+    readonly property int colScrollPad: 18
 
     title: replacePluginId >= 0 ? qsTr("Replace Plugin") : qsTr("Add Plugin")
     width: 920
@@ -269,6 +269,8 @@ Controls.ApplicationWindow {
                 anchors.fill: parent
                 anchors.margins: 1
                 spacing: 0
+                enabled: !win.queryResult.scanning
+                opacity: win.queryResult.scanning ? 0.38 : 1.0
 
                 // Integrated Sortable Table Header Bar
                 Rectangle {
@@ -629,6 +631,34 @@ Controls.ApplicationWindow {
                     }
                 }
             }
+
+            // Greyed-out overlay while scanning plugins
+            Rectangle {
+                anchors.fill: parent
+                z: 50
+                visible: !!win.queryResult.scanning
+                color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.45)
+
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.AllButtons
+                }
+
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 8
+                    Controls.BusyIndicator {
+                        Layout.alignment: Qt.AlignHCenter
+                        running: !!win.queryResult.scanning
+                    }
+                    Controls.Label {
+                        Layout.alignment: Qt.AlignHCenter
+                        font.bold: true
+                        text: qsTr("Scanning plugins…")
+                    }
+                }
+            }
         }
 
         // Selected Plugin Details
@@ -680,7 +710,7 @@ Controls.ApplicationWindow {
             Controls.Button {
                 text: win.replacePluginId >= 0 ? qsTr("Replace Plugin") : qsTr("Add Plugin")
                 icon.name: "list-add"
-                enabled: !!win.selectedPlugin
+                enabled: !!win.selectedPlugin && !win.queryResult.scanning
                 highlighted: true
                 onClicked: win.commitSelection(win.selectedPlugin)
             }
