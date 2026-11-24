@@ -22,12 +22,21 @@ Controls.ApplicationWindow {
     property string selectedKey: ""
     property var selectedPlugin: null
     property var categories: []
+    property var categoryColorMap: ({})
+
+    // Shared table column widths (exact match between header and rows)
+    readonly property int colFavW: 32
+    readonly property int colFormatW: 78
+    readonly property int colCatW: 118
+    readonly property int colMakerW: 175
+    readonly property int colIoW: 112
+    readonly property int colScrollPad: 14
 
     title: replacePluginId >= 0 ? qsTr("Replace Plugin") : qsTr("Add Plugin")
-    width: 900
-    height: 600
-    minimumWidth: 680
-    minimumHeight: 440
+    width: 920
+    height: 620
+    minimumWidth: 700
+    minimumHeight: 460
 
     function openForAdd() {
         replacePluginId = -1;
@@ -47,6 +56,25 @@ Controls.ApplicationWindow {
         searchField.forceActiveFocus();
     }
 
+    function toggleSort(col) {
+        if (sortCol === col) {
+            sortAsc = !sortAsc;
+        } else {
+            sortCol = col;
+            sortAsc = true;
+        }
+        runQuery();
+    }
+
+    function selectByIndex(idx) {
+        var items = queryResult.items || [];
+        if (idx < 0 || idx >= items.length) return;
+        selectedKey = items[idx].key;
+        selectedPlugin = items[idx];
+        pluginList.currentIndex = idx;
+        pluginList.positionViewAtIndex(idx, ListView.Contain);
+    }
+
     function runQuery() {
         try {
             var raw = controller.query_plugins_json(
@@ -55,12 +83,15 @@ Controls.ApplicationWindow {
             queryResult = JSON.parse(raw);
             selectedPlugin = null;
             var items = queryResult.items || [];
+            var foundIdx = -1;
             for (var i = 0; i < items.length; i++) {
                 if (items[i].key === selectedKey) {
                     selectedPlugin = items[i];
+                    foundIdx = i;
                     break;
                 }
             }
+            pluginList.currentIndex = foundIdx;
         } catch (e) {}
     }
 
@@ -80,7 +111,16 @@ Controls.ApplicationWindow {
     }
 
     Component.onCompleted: {
-        try { categories = JSON.parse(controller.categories_json); } catch (e) {}
+        try {
+            categories = JSON.parse(controller.categories_json);
+            var cmap = {};
+            for (var i = 0; i < categories.length; i++) {
+                if (categories[i].color) {
+                    cmap[categories[i].label] = categories[i].color;
+                }
+            }
+            categoryColorMap = cmap;
+        } catch (e) {}
     }
 
     Connections {
@@ -92,7 +132,7 @@ Controls.ApplicationWindow {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 10
+        anchors.margins: 12
         spacing: 8
 
         // Search & top filters
@@ -105,15 +145,31 @@ Controls.ApplicationWindow {
                 placeholderText: qsTr("Search by name, maker, format…")
                 text: win.searchText
                 onTextChanged: { win.searchText = text; win.runQuery(); }
+                Keys.onDownPressed: {
+                    var items = win.queryResult.items || [];
+                    if (items.length > 0) {
+                        var next = pluginList.currentIndex >= 0 ? Math.min(items.length - 1, pluginList.currentIndex + 1) : 0;
+                        win.selectByIndex(next);
+                        pluginList.forceActiveFocus();
+                    }
+                }
+                Keys.onReturnPressed: {
+                    if (win.selectedPlugin) {
+                        win.commitSelection(win.selectedPlugin);
+                    } else if ((win.queryResult.items || []).length > 0) {
+                        win.commitSelection(win.queryResult.items[0]);
+                    }
+                }
             }
             Controls.CheckBox {
                 text: qsTr("★ Favorites")
                 checked: win.favoritesOnly
                 onToggled: { win.favoritesOnly = checked; win.runQuery(); }
             }
-            Controls.Label { text: qsTr("Category:") }
+            Controls.Label { text: qsTr("Category:"); opacity: 0.8 }
             Controls.ComboBox {
                 id: catCombo
+                Layout.preferredWidth: 130
                 model: [{ id: -1, label: qsTr("All") }].concat(win.categories)
                 textRole: "label"
                 onActivated: function(idx) {
@@ -129,39 +185,53 @@ Controls.ApplicationWindow {
             }
         }
 
-        // Format filter checkboxes
-        Flow {
+        // Aligned Format + Type filter grid
+        GridLayout {
             Layout.fillWidth: true
-            spacing: 8
-            Controls.Label { text: qsTr("Format:"); opacity: 0.7; topPadding: 5 }
-            Repeater {
-                model: ["Internal", "LADSPA", "DSSI", "LV2", "VST2", "VST3", "CLAP", "SF2", "SFZ", "JSFX"]
-                delegate: Controls.CheckBox {
-                    required property string modelData
-                    required property int index
-                    text: modelData
-                    checked: (win.formatsMask & (1 << index)) !== 0
-                    onToggled: win.toggleFormatBit(index, checked)
-                }
-            }
-        }
+            columns: 2
+            columnSpacing: 10
+            rowSpacing: 4
 
-        // Type filter checkboxes
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 8
-            Controls.Label { text: qsTr("Type:"); opacity: 0.7 }
-            Repeater {
-                model: [qsTr("Effect"), qsTr("Instrument"), qsTr("MIDI"), qsTr("Other")]
-                delegate: Controls.CheckBox {
-                    required property string modelData
-                    required property int index
-                    text: modelData
-                    checked: (win.typesMask & (1 << index)) !== 0
-                    onToggled: win.toggleTypeBit(index, checked)
+            Controls.Label {
+                text: qsTr("Format:")
+                opacity: 0.72
+                Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+            }
+            Flow {
+                Layout.fillWidth: true
+                spacing: 8
+                Repeater {
+                    model: ["Internal", "LADSPA", "DSSI", "LV2", "VST2", "VST3", "CLAP", "SF2", "SFZ", "JSFX"]
+                    delegate: Controls.CheckBox {
+                        required property string modelData
+                        required property int index
+                        text: modelData
+                        checked: (win.formatsMask & (1 << index)) !== 0
+                        onToggled: win.toggleFormatBit(index, checked)
+                    }
                 }
             }
-            Item { Layout.fillWidth: true }
+
+            Controls.Label {
+                text: qsTr("Type:")
+                opacity: 0.72
+                Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                Repeater {
+                    model: [qsTr("Effect"), qsTr("Instrument"), qsTr("MIDI"), qsTr("Other")]
+                    delegate: Controls.CheckBox {
+                        required property string modelData
+                        required property int index
+                        text: modelData
+                        checked: (win.typesMask & (1 << index)) !== 0
+                        onToggled: win.toggleTypeBit(index, checked)
+                    }
+                }
+                Item { Layout.fillWidth: true }
+            }
         }
 
         // Live discovery progress banner
@@ -185,95 +255,375 @@ Controls.ApplicationWindow {
             }
         }
 
-        // Sortable Header Row
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 4
-            Item { Layout.preferredWidth: 32 }
-            Controls.ToolButton {
-                Layout.fillWidth: true
-                Layout.preferredWidth: 240
-                text: qsTr("Name") + (win.sortCol === 0 ? (win.sortAsc ? " ▲" : " ▼") : "")
-                onClicked: { if (win.sortCol === 0) win.sortAsc = !win.sortAsc; else { win.sortCol = 0; win.sortAsc = true; } win.runQuery(); }
-            }
-            Controls.ToolButton {
-                Layout.preferredWidth: 76
-                text: qsTr("Format") + (win.sortCol === 1 ? (win.sortAsc ? " ▲" : " ▼") : "")
-                onClicked: { if (win.sortCol === 1) win.sortAsc = !win.sortAsc; else { win.sortCol = 1; win.sortAsc = true; } win.runQuery(); }
-            }
-            Controls.ToolButton {
-                Layout.preferredWidth: 96
-                text: qsTr("Category") + (win.sortCol === 2 ? (win.sortAsc ? " ▲" : " ▼") : "")
-                onClicked: { if (win.sortCol === 2) win.sortAsc = !win.sortAsc; else { win.sortCol = 2; win.sortAsc = true; } win.runQuery(); }
-            }
-            Controls.ToolButton {
-                Layout.preferredWidth: 160
-                text: qsTr("Maker") + (win.sortCol === 3 ? (win.sortAsc ? " ▲" : " ▼") : "")
-                onClicked: { if (win.sortCol === 3) win.sortAsc = !win.sortAsc; else { win.sortCol = 3; win.sortAsc = true; } win.runQuery(); }
-            }
-            Controls.Label { Layout.preferredWidth: 92; text: qsTr("I/O"); opacity: 0.7 }
-        }
-
-        // Plugin List
-        Controls.Frame {
+        // Unified Table Frame (Header + Scrollable Plugin List)
+        Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            padding: 0
+            color: Kirigami.Theme.backgroundColor
+            border.width: 1
+            border.color: Qt.alpha(Kirigami.Theme.textColor, 0.18)
+            radius: 4
+            clip: true
 
-            Controls.ScrollView {
+            ColumnLayout {
                 anchors.fill: parent
-                clip: true
+                anchors.margins: 1
+                spacing: 0
 
+                // Integrated Sortable Table Header Bar
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 30
+                    color: Kirigami.Theme.alternateBackgroundColor
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 6
+                        anchors.rightMargin: win.colScrollPad
+                        spacing: 8
+
+                        // Favorite header spacer
+                        Controls.Label {
+                            Layout.preferredWidth: win.colFavW
+                            Layout.minimumWidth: win.colFavW
+                            Layout.maximumWidth: win.colFavW
+                            horizontalAlignment: Text.AlignHCenter
+                            text: "★"
+                            opacity: 0.45
+                            font.pointSize: Kirigami.Theme.smallFont.pointSize
+                        }
+
+                        // Name header
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            Rectangle {
+                                anchors.fill: parent
+                                color: hdrNameMouse.containsMouse ? Qt.alpha(Kirigami.Theme.textColor, 0.06) : "transparent"
+                            }
+                            Controls.Label {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                font.bold: true
+                                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                opacity: win.sortCol === 0 ? 1.0 : 0.78
+                                text: qsTr("Name") + (win.sortCol === 0 ? (win.sortAsc ? "  ▲" : "  ▼") : "")
+                            }
+                            MouseArea {
+                                id: hdrNameMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: win.toggleSort(0)
+                            }
+                        }
+
+                        // Format header
+                        Item {
+                            Layout.preferredWidth: win.colFormatW
+                            Layout.minimumWidth: win.colFormatW
+                            Layout.maximumWidth: win.colFormatW
+                            Layout.fillHeight: true
+                            Rectangle {
+                                anchors.fill: parent
+                                color: hdrFmtMouse.containsMouse ? Qt.alpha(Kirigami.Theme.textColor, 0.06) : "transparent"
+                            }
+                            Controls.Label {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                font.bold: true
+                                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                opacity: win.sortCol === 1 ? 1.0 : 0.78
+                                text: qsTr("Format") + (win.sortCol === 1 ? (win.sortAsc ? " ▲" : " ▼") : "")
+                            }
+                            MouseArea {
+                                id: hdrFmtMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: win.toggleSort(1)
+                            }
+                        }
+
+                        // Category header
+                        Item {
+                            Layout.preferredWidth: win.colCatW
+                            Layout.minimumWidth: win.colCatW
+                            Layout.maximumWidth: win.colCatW
+                            Layout.fillHeight: true
+                            Rectangle {
+                                anchors.fill: parent
+                                color: hdrCatMouse.containsMouse ? Qt.alpha(Kirigami.Theme.textColor, 0.06) : "transparent"
+                            }
+                            Controls.Label {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                font.bold: true
+                                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                opacity: win.sortCol === 2 ? 1.0 : 0.78
+                                text: qsTr("Category") + (win.sortCol === 2 ? (win.sortAsc ? " ▲" : " ▼") : "")
+                            }
+                            MouseArea {
+                                id: hdrCatMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: win.toggleSort(2)
+                            }
+                        }
+
+                        // Maker header
+                        Item {
+                            Layout.preferredWidth: win.colMakerW
+                            Layout.minimumWidth: win.colMakerW
+                            Layout.maximumWidth: win.colMakerW
+                            Layout.fillHeight: true
+                            Rectangle {
+                                anchors.fill: parent
+                                color: hdrMakerMouse.containsMouse ? Qt.alpha(Kirigami.Theme.textColor, 0.06) : "transparent"
+                            }
+                            Controls.Label {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                font.bold: true
+                                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                opacity: win.sortCol === 3 ? 1.0 : 0.78
+                                text: qsTr("Maker") + (win.sortCol === 3 ? (win.sortAsc ? " ▲" : " ▼") : "")
+                            }
+                            MouseArea {
+                                id: hdrMakerMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: win.toggleSort(3)
+                            }
+                        }
+
+                        // I/O header
+                        Controls.Label {
+                            Layout.preferredWidth: win.colIoW
+                            Layout.minimumWidth: win.colIoW
+                            Layout.maximumWidth: win.colIoW
+                            Layout.fillHeight: true
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignRight
+                            font.bold: true
+                            font.pointSize: Kirigami.Theme.smallFont.pointSize
+                            opacity: 0.72
+                            text: qsTr("Audio / MIDI")
+                        }
+                    }
+
+                    // Bottom divider line
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        height: 1
+                        color: Qt.alpha(Kirigami.Theme.textColor, 0.16)
+                    }
+                }
+
+                // Scrollable Plugin Rows
                 ListView {
+                    id: pluginList
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
                     model: win.queryResult.items || []
                     clip: true
-                    delegate: Controls.ItemDelegate {
+                    boundsBehavior: Flickable.StopAtBounds
+                    focus: true
+
+                    Controls.ScrollBar.vertical: Controls.ScrollBar {
+                        policy: Controls.ScrollBar.AsNeeded
+                    }
+
+                    Keys.onUpPressed: {
+                        if (currentIndex > 0) win.selectByIndex(currentIndex - 1);
+                    }
+                    Keys.onDownPressed: {
+                        var items = win.queryResult.items || [];
+                        if (currentIndex + 1 < items.length) win.selectByIndex(currentIndex + 1);
+                    }
+                    Keys.onReturnPressed: {
+                        if (win.selectedPlugin) win.commitSelection(win.selectedPlugin);
+                    }
+                    Keys.onEnterPressed: {
+                        if (win.selectedPlugin) win.commitSelection(win.selectedPlugin);
+                    }
+
+                    delegate: Item {
+                        id: pluginRow
                         required property var modelData
                         required property int index
-                        width: ListView.view.width
-                        height: 28
-                        highlighted: win.selectedKey === modelData.key
-                        onClicked: {
-                            win.selectedKey = modelData.key;
-                            win.selectedPlugin = modelData;
-                        }
-                        onDoubleClicked: win.commitSelection(modelData)
 
-                        contentItem: RowLayout {
-                            spacing: 4
-                            Controls.ToolButton {
-                                Layout.preferredWidth: 28
-                                Layout.preferredHeight: 24
-                                text: modelData.favorite ? "★" : "☆"
-                                onClicked: win.controller.toggle_favorite(modelData.key)
+                        readonly property bool isSelected: win.selectedKey === modelData.key
+                        readonly property string catHex: win.categoryColorMap[modelData.category] || ""
+
+                        width: pluginList.width
+                        height: 30
+
+                        // Zebra stripe + hover + selection backdrop
+                        Rectangle {
+                            anchors.fill: parent
+                            color: pluginRow.isSelected
+                                ? Qt.alpha(Kirigami.Theme.highlightColor, 0.34)
+                                : (rowMouse.containsMouse
+                                    ? Qt.alpha(Kirigami.Theme.highlightColor, 0.13)
+                                    : (pluginRow.index % 2 === 1
+                                        ? Qt.alpha(Kirigami.Theme.alternateBackgroundColor, 0.75)
+                                        : "transparent"))
+                        }
+                        // Crisp left accent bar + subtle border on selected row
+                        Rectangle {
+                            visible: pluginRow.isSelected
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            width: 3
+                            color: Kirigami.Theme.highlightColor
+                        }
+                        // Subtle bottom row hairline
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            height: 1
+                            color: Qt.alpha(Kirigami.Theme.textColor, 0.05)
+                        }
+
+                        MouseArea {
+                            id: rowMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: {
+                                win.selectedKey = pluginRow.modelData.key;
+                                win.selectedPlugin = pluginRow.modelData;
+                                pluginList.currentIndex = pluginRow.index;
+                                pluginList.forceActiveFocus();
                             }
+                            onDoubleClicked: win.commitSelection(pluginRow.modelData)
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 6
+                            anchors.rightMargin: win.colScrollPad
+                            spacing: 8
+
+                            // 1. Favorite star
+                            Item {
+                                Layout.preferredWidth: win.colFavW
+                                Layout.minimumWidth: win.colFavW
+                                Layout.maximumWidth: win.colFavW
+                                Layout.fillHeight: true
+                                Controls.Label {
+                                    anchors.centerIn: parent
+                                    text: pluginRow.modelData.favorite ? "★" : "☆"
+                                    font.pixelSize: 14
+                                    color: pluginRow.modelData.favorite
+                                        ? "#FBBF24"
+                                        : (favMouse.containsMouse ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor)
+                                    opacity: pluginRow.modelData.favorite ? 1.0 : (favMouse.containsMouse ? 0.9 : 0.45)
+                                }
+                                MouseArea {
+                                    id: favMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        win.controller.toggle_favorite(pluginRow.modelData.key);
+                                        win.runQuery();
+                                    }
+                                }
+                            }
+
+                            // 2. Plugin Name
                             Controls.Label {
                                 Layout.fillWidth: true
-                                Layout.preferredWidth: 240
-                                text: modelData.name
+                                Layout.fillHeight: true
+                                verticalAlignment: Text.AlignVCenter
+                                text: pluginRow.modelData.name
                                 elide: Text.ElideRight
+                                font.bold: pluginRow.isSelected
+                                color: Kirigami.Theme.textColor
                             }
-                            Controls.Label {
-                                Layout.preferredWidth: 76
-                                text: modelData.format
-                                opacity: 0.85
+
+                            // 3. Format badge
+                            Item {
+                                Layout.preferredWidth: win.colFormatW
+                                Layout.minimumWidth: win.colFormatW
+                                Layout.maximumWidth: win.colFormatW
+                                Layout.fillHeight: true
+                                Rectangle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.left: parent.left
+                                    height: 20
+                                    width: Math.min(parent.width, fmtLabel.implicitWidth + 12)
+                                    radius: 3
+                                    color: Qt.alpha(Kirigami.Theme.textColor, 0.08)
+                                    border.width: 1
+                                    border.color: Qt.alpha(Kirigami.Theme.textColor, 0.12)
+                                    Controls.Label {
+                                        id: fmtLabel
+                                        anchors.centerIn: parent
+                                        text: pluginRow.modelData.format
+                                        font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                        opacity: 0.9
+                                    }
+                                }
                             }
-                            Controls.Label {
-                                Layout.preferredWidth: 96
-                                text: modelData.category
-                                opacity: 0.85
+
+                            // 4. Category with color dot
+                            RowLayout {
+                                Layout.preferredWidth: win.colCatW
+                                Layout.minimumWidth: win.colCatW
+                                Layout.maximumWidth: win.colCatW
+                                Layout.fillHeight: true
+                                spacing: 6
+                                Rectangle {
+                                    width: 8
+                                    height: 8
+                                    radius: 4
+                                    Layout.alignment: Qt.AlignVCenter
+                                    visible: pluginRow.catHex.length > 0
+                                    color: pluginRow.catHex.length > 0 ? pluginRow.catHex : "transparent"
+                                }
+                                Controls.Label {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    verticalAlignment: Text.AlignVCenter
+                                    text: pluginRow.modelData.category
+                                    elide: Text.ElideRight
+                                    opacity: 0.85
+                                }
                             }
+
+                            // 5. Maker
                             Controls.Label {
-                                Layout.preferredWidth: 160
-                                text: modelData.maker
+                                Layout.preferredWidth: win.colMakerW
+                                Layout.minimumWidth: win.colMakerW
+                                Layout.maximumWidth: win.colMakerW
+                                Layout.fillHeight: true
+                                verticalAlignment: Text.AlignVCenter
+                                text: pluginRow.modelData.maker || "—"
                                 elide: Text.ElideRight
-                                opacity: 0.85
+                                opacity: 0.78
                             }
+
+                            // 6. Audio / MIDI I/O
                             Controls.Label {
-                                Layout.preferredWidth: 92
+                                Layout.preferredWidth: win.colIoW
+                                Layout.minimumWidth: win.colIoW
+                                Layout.maximumWidth: win.colIoW
+                                Layout.fillHeight: true
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignRight
                                 font.family: "monospace"
                                 font.pointSize: Kirigami.Theme.smallFont.pointSize
-                                text: "A:" + modelData.audio_ins + "/" + modelData.audio_outs + " M:" + modelData.midi_ins + "/" + modelData.midi_outs
+                                opacity: 0.78
+                                text: "A " + pluginRow.modelData.audio_ins + "/" + pluginRow.modelData.audio_outs
+                                    + "  M " + pluginRow.modelData.midi_ins + "/" + pluginRow.modelData.midi_outs
                             }
                         }
                     }
