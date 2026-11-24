@@ -64,6 +64,8 @@ class FrancaWindow(HostWindow):
 
         self.patchbayToolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonFollowStyle)
         self.patchbayToolbar.addSeparator()
+        self.patchbayToolbar.addActions(self.editHistory.actions)
+        self.patchbayToolbar.addSeparator()
         self.patchbayToolbar.addActions([self.ui.act_canvas_zoom_fit, self.ui.act_canvas_zoom_out,
                                        self.ui.act_canvas_zoom_in])
         for action, iconName in ((self.ui.act_file_new, "document-new"), (self.ui.act_file_open, "document-open"),
@@ -294,16 +296,22 @@ class FrancaWindow(HostWindow):
             return
         external = self.fExternalPatchbay
 
+        def lookup_ids():
+            names = {group.group_id: group.group_name for group in patchcanvas.canvas.group_list}
+            return {(names.get(port.group_id), port.port_name, port.port_mode): (port.group_id, port.port_id)
+                    for port in patchcanvas.canvas.port_list}
+
         def apply(connect):
             previous = self.fExternalPatchbay
             if external != previous:
                 (self.slot_canvasShowExternal if external else self.slot_canvasShowInternal)()
-            else:
-                self.slot_canvasRefresh()
+                QApplication.processEvents()
             try:
-                names = {group.group_id: group.group_name for group in patchcanvas.canvas.group_list}
-                ids = {(names.get(port.group_id), port.port_name, port.port_mode): (port.group_id, port.port_id)
-                       for port in patchcanvas.canvas.port_list}
+                ids = lookup_ids()
+                if any(endpoint not in ids for endpoint in endpoints):
+                    self.slot_canvasRefresh()
+                    QApplication.processEvents()
+                    ids = lookup_ids()
                 if any(endpoint not in ids for endpoint in endpoints):
                     return self.tr("One of the patchbay ports is unavailable.")
                 output, input_ = (ids[endpoint] for endpoint in endpoints)
@@ -319,6 +327,7 @@ class FrancaWindow(HostWindow):
             finally:
                 if external != previous:
                     (self.slot_canvasShowExternal if previous else self.slot_canvasShowInternal)()
+                    QApplication.processEvents()
 
         label = self.tr("Connect Ports") if connected else self.tr("Disconnect Ports")
         self.editHistory.record(label, lambda: apply(not connected), lambda: apply(connected))
