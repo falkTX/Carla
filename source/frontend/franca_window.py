@@ -8,17 +8,18 @@ from xml.etree import ElementTree
 from qt_compat import qt_config
 
 if qt_config == 5:
-    from PyQt5.QtCore import Qt, pyqtSlot
-    from PyQt5.QtGui import QFontDatabase, QIcon
-    from PyQt5.QtWidgets import QAbstractItemView, QApplication, QFrame, QLabel
+    from PyQt5.QtCore import Qt, QUrl, pyqtSlot
+    from PyQt5.QtGui import QDesktopServices, QFontDatabase, QIcon
+    from PyQt5.QtWidgets import QAbstractItemView, QApplication, QFrame, QLabel, QPushButton
 else:
-    from PyQt6.QtCore import Qt, pyqtSlot
-    from PyQt6.QtGui import QFontDatabase, QIcon
-    from PyQt6.QtWidgets import QAbstractItemView, QApplication, QFrame, QLabel
+    from PyQt6.QtCore import Qt, QUrl, pyqtSlot
+    from PyQt6.QtGui import QDesktopServices, QFontDatabase, QIcon
+    from PyQt6.QtWidgets import QAbstractItemView, QApplication, QFrame, QLabel, QPushButton
 
 from carla_host import HostWindow
 from carla_backend import ENGINE_PROCESS_MODE_CONTINUOUS_RACK, PARAMETER_ACTIVE, PARAMETER_INPUT, PLUGIN_JACK
 from franca_history import EditHistory
+import franca_logging
 from patchcanvas import patchcanvas
 
 
@@ -77,6 +78,19 @@ class FrancaWindow(HostWindow):
                                  (self.ui.act_canvas_zoom_fit, "zoom-fit-best"),
                                  (self.ui.act_canvas_zoom_in, "zoom-in"), (self.ui.act_canvas_zoom_out, "zoom-out")):
             action.setIcon(QIcon.fromTheme(iconName + "-symbolic", action.icon()))
+
+        self.logs_open_folder = QPushButton(self.tr("Open Folder"), self.ui.log_options)
+        self.logs_open_folder.setObjectName("logs_open_folder")
+        self.logs_open_folder.setIcon(QIcon.fromTheme("folder-open-symbolic", QIcon.fromTheme("folder-open")))
+        self.logs_open_folder.setToolTip(str(franca_logging.get_log_dir()))
+        self.logs_open_folder.clicked.connect(self.slot_openLogFolder)
+        self.ui.log_options.layout().insertWidget(0, self.logs_open_folder)
+
+        self._lastLoggedBlockIndex = -1
+        self._lastLoggedBlockText = ""
+        self.ui.text_logs.textChanged.connect(self.slot_mirrorLogsToFile)
+        logFile = franca_logging.get_log_file()
+        self.ui.text_logs.appendPlainText(self.tr("Session log file: %s") % logFile)
 
         self.ui.graphicsView.setFrameShape(QFrame.Shape.NoFrame)
         for meter in (self.ui.peak_in, self.ui.peak_out):
@@ -292,6 +306,37 @@ class FrancaWindow(HostWindow):
         names = {(port.group_id, port.port_id): (groups.get(port.group_id), port.port_name, port.port_mode)
                  for port in patchcanvas.canvas.port_list}
         return names.get(ports[:2]), names.get(ports[2:])
+
+    @pyqtSlot()
+    def slot_openLogFolder(self):
+        logDir = franca_logging.get_log_dir()
+        logDir.mkdir(parents=True, exist_ok=True)
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(logDir)))
+
+    @pyqtSlot()
+    def slot_mirrorLogsToFile(self):
+        doc = self.ui.text_logs.document()
+        count = doc.blockCount()
+        if count == 0:
+            self._lastLoggedBlockIndex = -1
+            self._lastLoggedBlockText = ""
+            return
+        if self._lastLoggedBlockIndex >= count:
+            self._lastLoggedBlockIndex = -1
+            self._lastLoggedBlockText = ""
+        start = max(0, self._lastLoggedBlockIndex)
+        for idx in range(start, count):
+            block = doc.findBlockByNumber(idx)
+            if not block.isValid():
+                continue
+            text = block.text().strip()
+            if not text:
+                continue
+            if idx == self._lastLoggedBlockIndex and text == self._lastLoggedBlockText:
+                continue
+            franca_logging.log_message("[UI] " + text)
+            self._lastLoggedBlockIndex = idx
+            self._lastLoggedBlockText = text
 
     def changePluginCategory(self, pluginId, categoryId):
         slot = self.getPluginSlotWidget(pluginId)

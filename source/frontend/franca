@@ -20,6 +20,8 @@ from carla_shared import (
     setUpSignals,
 )
 
+import franca_logging
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Main
 
@@ -30,6 +32,7 @@ if __name__ == '__main__':
     # Read CLI args
 
     initName, libPrefix = handleInitialCommandLineArguments(__file__, appName="Franca")
+    franca_logging.setup_logging()
 
     # ------------------------------------------------------------------------------------------------------------------
     # App initialization
