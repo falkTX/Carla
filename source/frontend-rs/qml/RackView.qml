@@ -80,6 +80,7 @@ Item {
                 required property int index
 
                 readonly property int pid: modelData.plugin_id
+                readonly property bool isActive: !!modelData.active
                 readonly property bool isSelected: root.selectedPluginId === pid
                 readonly property bool isUnavailable: !!modelData.unavailable_error
                 readonly property var meter: (index < root.meterItems.length) ? root.meterItems[index] : null
@@ -88,17 +89,23 @@ Item {
                 width: ListView.view.width
                 height: 40
 
-                // Alternating base + selection + category tint + 5px left category accent bar
+                // Alternating base + selection + bypassed dim + category tint + 5px left category accent bar
                 Rectangle {
                     anchors.fill: parent
                     color: rowItem.isSelected
                         ? Kirigami.Theme.highlightColor
                         : (rowItem.index % 2 === 1 ? Kirigami.Theme.alternateBackgroundColor : Kirigami.Theme.backgroundColor)
-                    opacity: rowItem.isSelected ? 0.30 : 1.0
+                    opacity: rowItem.isSelected ? (rowItem.isActive ? 0.30 : 0.16) : 1.0
                 }
                 Rectangle {
                     anchors.fill: parent
-                    visible: rowItem.catColor.length > 0 && !rowItem.isSelected
+                    visible: !rowItem.isActive && !rowItem.isSelected
+                    color: Kirigami.Theme.disabledTextColor
+                    opacity: 0.10
+                }
+                Rectangle {
+                    anchors.fill: parent
+                    visible: rowItem.catColor.length > 0 && !rowItem.isSelected && rowItem.isActive
                     color: rowItem.catColor.length > 0 ? rowItem.catColor : "transparent"
                     opacity: 0.10
                 }
@@ -108,7 +115,10 @@ Item {
                     anchors.bottom: parent.bottom
                     width: 5
                     visible: rowItem.catColor.length > 0
-                    color: rowItem.catColor.length > 0 ? rowItem.catColor : "transparent"
+                    color: rowItem.isActive
+                        ? (rowItem.catColor.length > 0 ? rowItem.catColor : "transparent")
+                        : Kirigami.Theme.disabledTextColor
+                    opacity: rowItem.isActive ? 1.0 : 0.45
                 }
                 Rectangle {
                     anchors.fill: parent
@@ -155,7 +165,8 @@ Item {
                     Controls.Label {
                         id: gripLabel
                         text: "⠿"
-                        opacity: 0.6
+                        color: rowItem.isActive ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
+                        opacity: rowItem.isActive ? 0.6 : 0.35
                         font.pixelSize: 16
                         Layout.alignment: Qt.AlignVCenter
 
@@ -214,7 +225,8 @@ Item {
                         text: rowItem.modelData.name
                         elide: Text.ElideRight
                         font.bold: rowItem.isSelected
-                        opacity: rowItem.modelData.active ? 1.0 : 0.6
+                        color: rowItem.isActive ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
+                        opacity: rowItem.isActive ? 1.0 : 0.72
                         Controls.ToolTip.visible: nameHover.containsMouse
                         Controls.ToolTip.text: rowItem.modelData.name
                         MouseArea {
@@ -231,6 +243,7 @@ Item {
                         enabled: !!rowItem.modelData.has_custom_ui && !rowItem.isUnavailable
                         checkable: true
                         checked: !!rowItem.modelData.custom_ui_visible
+                        opacity: rowItem.isActive ? 1.0 : 0.45
                         onClicked: root.controller.toggle_custom_ui(rowItem.pid)
                         Controls.ToolTip.visible: hovered
                         Controls.ToolTip.text: rowItem.modelData.custom_ui_failed
@@ -241,6 +254,7 @@ Item {
                     Controls.ToolButton {
                         icon.name: "view-media-equalizer"
                         enabled: !rowItem.isUnavailable
+                        opacity: rowItem.isActive ? 1.0 : 0.45
                         onClicked: root.openPluginEdit(rowItem.pid)
                         Controls.ToolTip.visible: hovered
                         Controls.ToolTip.text: qsTr("Parameters")
@@ -248,6 +262,7 @@ Item {
 
                     Controls.ToolButton {
                         icon.name: "application-menu"
+                        opacity: rowItem.isActive ? 1.0 : 0.45
                         onClicked: ctxMenu.openFor(rowItem.modelData, rowItem.index)
                         Controls.ToolTip.visible: hovered
                         Controls.ToolTip.text: qsTr("Plugin actions")
@@ -262,6 +277,7 @@ Item {
                         horizontalAlignment: Text.AlignRight
                         text: rowItem.isUnavailable ? qsTr("Unavailable") : rowItem.modelData.format
                         color: rowItem.isUnavailable ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.disabledTextColor
+                        opacity: (rowItem.isActive || rowItem.isUnavailable) ? 1.0 : 0.55
                         font.bold: rowItem.isUnavailable
                         font.pointSize: Kirigami.Theme.smallFont.pointSize
                         Controls.ToolTip.visible: rowItem.isUnavailable && fmtHover.containsMouse
@@ -283,6 +299,7 @@ Item {
                     // 7. Stacked Input (green) & Output (blue) peak meters
                     ColumnLayout {
                         spacing: 3
+                        opacity: rowItem.isActive ? 1.0 : 0.35
                         PeakMeter {
                             Layout.preferredWidth: 62
                             Layout.preferredHeight: 12
