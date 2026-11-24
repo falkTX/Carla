@@ -417,16 +417,21 @@ Controls.ApplicationWindow {
             Controls.ToolSeparator {}
 
             // DSP % Load Bar
+            Controls.Label {
+                text: qsTr("DSP")
+                opacity: 0.75
+            }
             Controls.ProgressBar {
-                Layout.preferredWidth: 100
-                Layout.rightMargin: 6
+                Layout.preferredWidth: 84
+                Layout.alignment: Qt.AlignVCenter
                 from: 0; to: 100
                 value: ctrl.dsp_load
-                Controls.Label {
-                    anchors.centerIn: parent
-                    text: qsTr("DSP %1%").arg(Math.round(ctrl.dsp_load))
-                    font.pointSize: Kirigami.Theme.smallFont.pointSize
-                }
+            }
+            Controls.Label {
+                Layout.preferredWidth: 34
+                Layout.rightMargin: 6
+                horizontalAlignment: Text.AlignRight
+                text: Math.round(ctrl.dsp_load) + "%"
             }
         }
     }
