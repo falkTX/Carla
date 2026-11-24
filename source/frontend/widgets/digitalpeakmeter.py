@@ -6,6 +6,7 @@
 # Imports (Global)
 
 from math import sqrt
+from time import monotonic
 
 from qt_compat import qt_config
 
@@ -47,6 +48,11 @@ class DigitalPeakMeter(QWidget):
         self.fChannelCount    = 0
         self.fChannelData     = []
         self.fLastChannelData = []
+        self.fRawChannelData  = []
+        self.fClipUntil       = []
+        self.fWasClipping     = []
+        self.fClipHoldSeconds = 0.6
+        self.fClipColor       = QColor(220, 38, 38)
 
         self.fMeterColor        = self.COLOR_GREEN
         self.fMeterColorBase    = QColor(93, 231, 61)
@@ -87,10 +93,16 @@ class DigitalPeakMeter(QWidget):
         self.fChannelCount    = count
         self.fChannelData     = []
         self.fLastChannelData = []
+        self.fRawChannelData  = []
+        self.fClipUntil       = []
+        self.fWasClipping     = []
 
         for _ in range(count):
             self.fChannelData.append(0.0)
             self.fLastChannelData.append(0.0)
+            self.fRawChannelData.append(0.0)
+            self.fClipUntil.append(0.0)
+            self.fWasClipping.append(False)
 
         if self.fMeterStyle == self.STYLE_CALF:
             if self.fChannelCount > 0:
@@ -209,6 +221,13 @@ class DigitalPeakMeter(QWidget):
 
     # -----------------------------------------------------------------------------------------------------------------
 
+    def isClipping(self):
+        now = monotonic()
+        return any(level >= 0.999 or now < until for level, until in zip(self.fChannelData, self.fClipUntil))
+
+    def maxRawLevel(self):
+        return max(self.fRawChannelData) if self.fRawChannelData else 0.0
+
     def displayMeter(self, meter, level, forced = False):
         if not isinstance(meter, int):
             qCritical("DigitalPeakMeter::displayMeter(,) - meter value must be an integer")
@@ -221,8 +240,16 @@ class DigitalPeakMeter(QWidget):
             return
 
         i = meter - 1
+        now = monotonic()
+        self.fRawChannelData[i] = level
+        hitClip = level >= 0.999
 
-        if self.fSmoothMultiplier > 0 and not forced:
+        if hitClip:
+            self.fClipUntil[i] = now + self.fClipHoldSeconds
+        elif forced and level == 0.0:
+            self.fClipUntil[i] = 0.0
+
+        if self.fSmoothMultiplier > 0 and not forced and not hitClip:
             level = (
                 (self.fLastChannelData[i] * float(self.fSmoothMultiplier) + level)
                 / float(self.fSmoothMultiplier + 1)
@@ -233,8 +260,12 @@ class DigitalPeakMeter(QWidget):
         elif level > 0.999:
             level = 1.0
 
-        if self.fChannelData[i] != level:
-            self.fChannelData[i] = level
+        clippingNow = hitClip or (now < self.fClipUntil[i])
+        needsUpdate = (self.fChannelData[i] != level) or (self.fWasClipping[i] != clippingNow)
+        self.fChannelData[i] = level
+        self.fWasClipping[i] = clippingNow
+
+        if needsUpdate:
             self.update()
 
         self.fLastChannelData[i] = level
@@ -385,13 +416,24 @@ class DigitalPeakMeter(QWidget):
             painter.setBrush(self.fMeterGradient)
 
         # draw levels
-        for level in self.fChannelData:
-            if level == 0.0:
-                pass
-            elif self.fMeterOrientation == self.HORIZONTAL:
-                painter.drawRect(QRectF(0, meterPos, sqrt(level) * float(width), meterSize))
-            elif self.fMeterOrientation == self.VERTICAL:
-                painter.drawRect(QRectF(meterPos, height - sqrt(level) * float(height), meterSize, height))
+        now = monotonic()
+        for idx, level in enumerate(self.fChannelData):
+            clipping = (level >= 0.999) or (idx < len(self.fClipUntil) and now < self.fClipUntil[idx])
+            if self.fUseSystemColors:
+                painter.setBrush(self.fClipColor if clipping else levelColor)
+
+            if level != 0.0:
+                if self.fMeterOrientation == self.HORIZONTAL:
+                    painter.drawRect(QRectF(0, meterPos, sqrt(level) * float(width), meterSize))
+                elif self.fMeterOrientation == self.VERTICAL:
+                    painter.drawRect(QRectF(meterPos, height - sqrt(level) * float(height), meterSize, height))
+
+            if self.fUseSystemColors and clipping:
+                painter.setBrush(self.fClipColor)
+                if self.fMeterOrientation == self.HORIZONTAL:
+                    painter.drawRect(QRectF(max(0.0, float(width) - 3.0), meterPos, min(3.0, float(width)), meterSize))
+                elif self.fMeterOrientation == self.VERTICAL:
+                    painter.drawRect(QRectF(meterPos, 0.0, meterSize, min(3.0, float(height))))
 
             meterPos += meterSize+meterPad
 

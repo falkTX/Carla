@@ -5,16 +5,19 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+from collections import deque
+from time import monotonic
+
 from qt_compat import qt_config
 
 if qt_config == 5:
-    from PyQt5.QtCore import Qt, QRectF, QLineF, QTimer
-    from PyQt5.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen, QPixmap
-    from PyQt5.QtWidgets import QCheckBox, QColorDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QStyle, QToolButton, QVBoxLayout
+    from PyQt5.QtCore import Qt, QPointF, QRectF, QLineF, QTimer
+    from PyQt5.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen, QPixmap, QPolygonF
+    from PyQt5.QtWidgets import QCheckBox, QColorDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QStyle, QToolButton, QVBoxLayout, QWidget
 elif qt_config == 6:
-    from PyQt6.QtCore import Qt, QRectF, QLineF, QTimer
-    from PyQt6.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen, QPixmap
-    from PyQt6.QtWidgets import QCheckBox, QColorDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QStyle, QToolButton, QVBoxLayout
+    from PyQt6.QtCore import Qt, QPointF, QRectF, QLineF, QTimer
+    from PyQt6.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen, QPixmap, QPolygonF
+    from PyQt6.QtWidgets import QCheckBox, QColorDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QStyle, QToolButton, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -2154,6 +2157,84 @@ def createCategoryColorIcon(color, size=14):
     return QIcon(pixmap)
 
 
+class ClipWarningIndicator(QWidget):
+    """Small yellow warning triangle with exclamation mark for repeated 0 dB clipping."""
+
+    CLIP_WINDOW_SECONDS = 2.5
+    CLIP_HITS_THRESHOLD = 4
+    CLEAR_AFTER_SECONDS = 5.0
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(18, 18)
+        self._hits = deque()
+        self._active = False
+        self._lastHit = 0.0
+        self.setCursor(Qt.ArrowCursor)
+        self.setToolTip("")
+
+    def isWarningActive(self):
+        return self._active
+
+    def clearWarning(self):
+        self._hits.clear()
+        self._lastHit = 0.0
+        if self._active:
+            self._active = False
+            self.setCursor(Qt.ArrowCursor)
+            self.setToolTip("")
+            self.update()
+
+    def recordPeak(self, peak, now=None):
+        if now is None:
+            now = monotonic()
+        if peak >= 0.999:
+            self._lastHit = now
+            self._hits.append(now)
+            cutoff = now - self.CLIP_WINDOW_SECONDS
+            while self._hits and self._hits[0] < cutoff:
+                self._hits.popleft()
+            if not self._active and len(self._hits) >= self.CLIP_HITS_THRESHOLD:
+                self._active = True
+                self.setCursor(Qt.PointingHandCursor)
+                self.setToolTip(self.tr("Audio is repeatedly hitting 0 dB (clipping). Click to dismiss."))
+                self.update()
+        elif self._active and (now - self._lastHit) >= self.CLEAR_AFTER_SECONDS:
+            self.clearWarning()
+
+    def mousePressEvent(self, event):
+        if self._active and event.button() == Qt.LeftButton:
+            self.clearWarning()
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def paintEvent(self, event):
+        event.accept()
+        if not self._active:
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        w = float(self.width())
+        h = float(self.height())
+
+        triangle = QPolygonF([
+            QPointF(w * 0.5, 2.0),
+            QPointF(w - 1.5, h - 2.0),
+            QPointF(1.5, h - 2.0),
+        ])
+        painter.setPen(QPen(QColor("#92400E"), 1.3, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.setBrush(QColor("#FACC15"))
+        painter.drawPolygon(triangle)
+
+        # Exclamation mark
+        painter.setPen(QPen(QColor("#1F2937"), 1.8, Qt.SolidLine, Qt.RoundCap))
+        painter.drawLine(QLineF(w * 0.5, 6.2, w * 0.5, h - 6.6))
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor("#1F2937"))
+        painter.drawEllipse(QPointF(w * 0.5, h - 4.2), 1.1, 1.1)
+
+
 class PluginSlot_Franca(AbstractPluginSlot):
     NAME_COLUMN_WIDTH = 220
     ACCENT_WIDTH = 5
@@ -2229,6 +2310,10 @@ class PluginSlot_Franca(AbstractPluginSlot):
         self.label_type.setMinimumWidth(self.fontMetrics().horizontalAdvance("Unavailable"))
         row.addWidget(self.label_type)
 
+        self.clip_warning = ClipWarningIndicator(self)
+        self.clip_warning.setObjectName("francaClipWarning")
+        row.addWidget(self.clip_warning)
+
         self.peak_in = DigitalPeakMeter(self)
         self.peak_out = DigitalPeakMeter(self)
         meters = QVBoxLayout()
@@ -2277,6 +2362,17 @@ class PluginSlot_Franca(AbstractPluginSlot):
                 painter.fillRect(self.rect(), tint)
             painter.fillRect(0, 0, self.ACCENT_WIDTH, self.height(), self.fCategoryColor)
 
+    def idleFast(self):
+        super().idleFast()
+        if not self.fIsActive:
+            self.clip_warning.clearWarning()
+            return
+        maxPeak = max(
+            self.peak_in.maxRawLevel() if self.fPeaksInputCount > 0 else 0.0,
+            self.peak_out.maxRawLevel() if self.fPeaksOutputCount > 0 else 0.0,
+        )
+        self.clip_warning.recordPeak(maxPeak)
+
     def setName(self, name):
         super().setName(name)
         elided = self.label_name.fontMetrics().elidedText(name, Qt.TextElideMode.ElideRight, self.NAME_COLUMN_WIDTH)
@@ -2297,6 +2393,8 @@ class PluginSlot_Franca(AbstractPluginSlot):
     def activeChanged(self, active):
         super().activeChanged(active)
         self.updateEnableText(active)
+        if not active:
+            self.clip_warning.clearWarning()
 
     def updateEnableText(self, active):
         self.b_enable.setToolTip(self.tr("Bypass effect") if active else self.tr("Enable effect"))
