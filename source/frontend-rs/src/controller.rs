@@ -362,13 +362,21 @@ impl FrancaCore {
     }
 
     pub fn shutdown_clean(&mut self) {
+        self.engine_running = false;
+        self.nsm_active = false;
+        if let (Some(mut runner), Some(utils)) = (self.discovery_runner.take(), self.utils.as_ref()) {
+            runner.cancel(utils);
+        }
         let _ = self.settings.save();
         if let Some(ref host) = self.host {
+            host.finish_cancelable_ui();
             if host.is_engine_running() {
                 let _ = host.set_engine_about_to_close();
                 let _ = host.engine_close();
             }
         }
+        self.slots.clear();
+        self.patchbay.clear();
         logging::log_shutdown();
     }
 
@@ -399,7 +407,9 @@ impl FrancaCore {
 
         if self.engine_running || self.nsm_active {
             if let Some(ref host) = self.host {
-                host.engine_idle();
+                if host.is_engine_running() {
+                    host.engine_idle();
+                }
             }
         }
         self.drain_engine_events();

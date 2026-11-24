@@ -821,6 +821,9 @@ impl qobject::FrancaController {
 
     pub fn shutdown_clean(mut self: Pin<&mut Self>) {
         self.as_mut().rust_mut().core.shutdown_clean();
+        if *self.engine_running() {
+            self.as_mut().set_engine_running(false);
+        }
     }
 
     pub fn file_new(mut self: Pin<&mut Self>) {

@@ -33,6 +33,7 @@ Controls.ApplicationWindow {
 
     // Periodic engine idle, meter, transport & discovery poll
     Timer {
+        id: pollTimer
         interval: Math.max(10, Math.min(100, ctrl.refresh_interval_ms))
         running: !francaUiBusy
         repeat: true
@@ -45,6 +46,7 @@ Controls.ApplicationWindow {
             dialogs.openConfirmQuit();
             return;
         }
+        pollTimer.stop();
         ctrl.shutdown_clean();
     }
 
