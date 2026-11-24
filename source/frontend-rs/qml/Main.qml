@@ -248,15 +248,8 @@ Controls.ApplicationWindow {
     }
 
     // Main Content Area with Drag-and-Drop Support
-    DropArea {
+    Item {
         anchors.fill: parent
-        onDropped: function(drop) {
-            if (drop.hasUrls) {
-                for (var i = 0; i < drop.urls.length; i++) {
-                    ctrl.load_file_url(drop.urls[i].toString());
-                }
-            }
-        }
 
         Controls.SplitView {
             anchors.fill: parent
@@ -316,6 +309,36 @@ Controls.ApplicationWindow {
                     }
                 }
             }
+        }
+
+        DropArea {
+            id: fileDropArea
+            anchors.fill: parent
+            z: 100
+            onEntered: function(drag) {
+                if (drag.hasUrls) {
+                    drag.acceptProposedAction();
+                } else {
+                    drag.accepted = false;
+                }
+            }
+            onDropped: function(drop) {
+                if (drop.hasUrls) {
+                    drop.acceptProposedAction();
+                    for (var i = 0; i < drop.urls.length; i++) {
+                        ctrl.load_file_url(drop.urls[i].toString());
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            z: 101
+            visible: fileDropArea.containsDrag
+            color: Qt.alpha(Kirigami.Theme.highlightColor, 0.10)
+            border.width: 2
+            border.color: Kirigami.Theme.highlightColor
         }
     }
 

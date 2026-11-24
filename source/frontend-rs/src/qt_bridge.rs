@@ -327,6 +327,27 @@ use crate::ffi::types::*;
 use crate::logging;
 use crate::settings::FrancaSettings;
 
+fn percent_decode_path(input: &str) -> String {
+    let bytes = input.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            if let (Some(hi), Some(lo)) = (
+                (bytes[i + 1] as char).to_digit(16),
+                (bytes[i + 2] as char).to_digit(16),
+            ) {
+                out.push(((hi << 4) | lo) as u8);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8(out).unwrap_or_else(|_| input.to_string())
+}
+
 pub struct FrancaControllerRust {
     core: FrancaCore,
     window_title: QString,
@@ -824,14 +845,12 @@ impl qobject::FrancaController {
 
     pub fn load_file_url(mut self: Pin<&mut Self>, path_or_url: QString) {
         let raw = path_or_url.to_string();
-        let cleaned = raw
-            .strip_prefix("file://")
-            .unwrap_or(&raw)
-            .replace("%20", " ");
+        let stripped = raw.strip_prefix("file://").unwrap_or(&raw);
+        let decoded = percent_decode_path(stripped);
         self.as_mut()
             .rust_mut()
             .core
-            .load_project_or_file(&PathBuf::from(cleaned));
+            .load_project_or_file(&PathBuf::from(decoded));
         self.sync_properties();
     }
 

@@ -16,6 +16,34 @@ Item {
     // Drag-to-reorder state
     property int dragSourceIdx: -1
     property int dragTargetIdx: -1
+    property bool dragActive: false
+
+    function computeDropIndex(item, mx, my) {
+        var pt = item.mapToItem(rackList, mx, my);
+        var count = root.rackItems.length;
+        if (count <= 0) return -1;
+        var idx = Math.floor((pt.y + rackList.contentY) / 41);
+        return Math.max(0, Math.min(count - 1, idx));
+    }
+
+    function finishDrag() {
+        var src = root.dragSourceIdx;
+        var dst = root.dragTargetIdx;
+        var wasDragging = root.dragActive;
+        root.dragSourceIdx = -1;
+        root.dragTargetIdx = -1;
+        root.dragActive = false;
+        if (wasDragging && src >= 0 && dst >= 0 && src !== dst) {
+            root.controller.move_plugin(src, dst);
+            root.selectedPluginId = dst;
+        }
+    }
+
+    function cancelDrag() {
+        root.dragSourceIdx = -1;
+        root.dragTargetIdx = -1;
+        root.dragActive = false;
+    }
 
     signal openAddPlugin()
     signal openPluginEdit(int pluginId)
@@ -73,6 +101,8 @@ Item {
             model: root.rackItems
             spacing: 1
             clip: true
+            interactive: root.dragSourceIdx < 0
+            boundsBehavior: Flickable.StopAtBounds
 
             delegate: Item {
                 id: rowItem
@@ -83,11 +113,13 @@ Item {
                 readonly property bool isActive: !!modelData.active
                 readonly property bool isSelected: root.selectedPluginId === pid
                 readonly property bool isUnavailable: !!modelData.unavailable_error
+                readonly property bool isDraggingThis: root.dragActive && root.dragSourceIdx === rowItem.index
                 readonly property var meter: (index < root.meterItems.length) ? root.meterItems[index] : null
                 readonly property string catColor: modelData.category_color || ""
 
                 width: ListView.view.width
                 height: 40
+                opacity: isDraggingThis ? 0.55 : 1.0
 
                 // Alternating base + selection + bypassed dim + category tint + 5px left category accent bar
                 Rectangle {
@@ -134,14 +166,47 @@ Item {
                     height: 3
                     color: Kirigami.Theme.highlightColor
                     z: 20
-                    visible: root.dragSourceIdx >= 0 && root.dragTargetIdx === rowItem.index && root.dragSourceIdx !== rowItem.index
+                    visible: root.dragActive && root.dragSourceIdx >= 0 && root.dragTargetIdx === rowItem.index && root.dragSourceIdx !== rowItem.index
                     y: root.dragTargetIdx > root.dragSourceIdx ? parent.height - 2 : 0
                 }
 
-                // Click / Right-click handler for row
+                // Click, Double-click, Right-click & Row Drag-to-reorder handler
                 MouseArea {
+                    id: rowMouse
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    preventStealing: true
+                    property real pressY: 0
+                    cursorShape: (root.dragActive && root.dragSourceIdx === rowItem.index) ? Qt.ClosedHandCursor : Qt.ArrowCursor
+
+                    onPressed: function(mouse) {
+                        root.selectedPluginId = rowItem.pid;
+                        if (mouse.button === Qt.LeftButton && root.rackItems.length > 1) {
+                            pressY = mouse.y;
+                            root.dragSourceIdx = rowItem.index;
+                            root.dragTargetIdx = rowItem.index;
+                            root.dragActive = false;
+                        }
+                    }
+                    onPositionChanged: function(mouse) {
+                        if (!(mouse.buttons & Qt.LeftButton) || root.dragSourceIdx !== rowItem.index) return;
+                        if (!root.dragActive && Math.abs(mouse.y - pressY) >= 6) {
+                            root.dragActive = true;
+                        }
+                        if (root.dragActive) {
+                            root.dragTargetIdx = root.computeDropIndex(rowMouse, mouse.x, mouse.y);
+                        }
+                    }
+                    onReleased: function(mouse) {
+                        if (mouse.button === Qt.LeftButton && root.dragSourceIdx === rowItem.index) {
+                            root.finishDrag();
+                        }
+                    }
+                    onCanceled: {
+                        if (root.dragSourceIdx === rowItem.index) {
+                            root.cancelDrag();
+                        }
+                    }
                     onClicked: function(mouse) {
                         root.selectedPluginId = rowItem.pid;
                         if (mouse.button === Qt.RightButton) {
@@ -161,49 +226,50 @@ Item {
                     anchors.rightMargin: 8
                     spacing: 6
 
-                    // 1. Drag handle
-                    Controls.Label {
-                        id: gripLabel
-                        text: "⠿"
-                        color: rowItem.isActive ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
-                        opacity: rowItem.isActive ? 0.6 : 0.35
-                        font.pixelSize: 16
-                        Layout.alignment: Qt.AlignVCenter
+                    // 1. Drag handle (immediate drag on press)
+                    Item {
+                        Layout.preferredWidth: 20
+                        Layout.fillHeight: true
 
-                        Controls.ToolTip.visible: gripMouse.containsMouse
+                        Controls.Label {
+                            id: gripLabel
+                            anchors.centerIn: parent
+                            text: "⠿"
+                            color: rowItem.isActive ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
+                            opacity: gripMouse.containsMouse ? 0.95 : (rowItem.isActive ? 0.6 : 0.35)
+                            font.pixelSize: 16
+                        }
+
+                        Controls.ToolTip.visible: gripMouse.containsMouse && !root.dragActive
                         Controls.ToolTip.text: qsTr("Drag to reorder")
 
                         MouseArea {
                             id: gripMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            preventStealing: true
                             cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
                             onPressed: {
-                                root.dragSourceIdx = rowItem.index;
-                                root.dragTargetIdx = rowItem.index;
+                                root.selectedPluginId = rowItem.pid;
+                                if (root.rackItems.length > 1) {
+                                    root.dragSourceIdx = rowItem.index;
+                                    root.dragTargetIdx = rowItem.index;
+                                    root.dragActive = true;
+                                }
                             }
                             onPositionChanged: function(mouse) {
-                                if (!pressed || root.dragSourceIdx < 0) return;
-                                var pt = gripMouse.mapToItem(rackList, mouse.x, mouse.y);
-                                var target = rackList.indexAt(10, pt.y + rackList.contentY);
-                                if (target >= 0) {
-                                    root.dragTargetIdx = target;
-                                } else if (pt.y < 0) {
-                                    root.dragTargetIdx = 0;
-                                } else {
-                                    root.dragTargetIdx = root.rackItems.length - 1;
-                                }
+                                if (!pressed || root.dragSourceIdx !== rowItem.index) return;
+                                root.dragTargetIdx = root.computeDropIndex(gripMouse, mouse.x, mouse.y);
                             }
                             onReleased: {
-                                if (root.dragSourceIdx >= 0 && root.dragTargetIdx >= 0 && root.dragSourceIdx !== root.dragTargetIdx) {
-                                    root.controller.move_plugin(root.dragSourceIdx, root.dragTargetIdx);
+                                if (root.dragSourceIdx === rowItem.index) {
+                                    root.finishDrag();
                                 }
-                                root.dragSourceIdx = -1;
-                                root.dragTargetIdx = -1;
                             }
                             onCanceled: {
-                                root.dragSourceIdx = -1;
-                                root.dragTargetIdx = -1;
+                                if (root.dragSourceIdx === rowItem.index) {
+                                    root.cancelDrag();
+                                }
                             }
                         }
                     }
