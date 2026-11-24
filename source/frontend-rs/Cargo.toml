@@ -3,14 +3,16 @@ name = "franca-ui"
 version = "2.6.0-alpha1"
 edition = "2024"
 license = "GPL-2.0-or-later"
-description = "Native Rust desktop GUI for Franca audio plugin host"
+description = "Native Rust + KDE Kirigami/Qt6 desktop GUI for Franca audio plugin host"
 
 [[bin]]
 name = "franca-ui"
 path = "src/main.rs"
 
 [dependencies]
-eframe = { version = "0.37", default-features = false, features = ["accesskit", "default_fonts", "glow", "system_fonts", "wayland", "x11"] }
+cxx = "1.0"
+cxx-qt = "0.10"
+cxx-qt-lib = { version = "0.10", features = ["qt_full"] }
 rfd = "0.18"
 libloading = "0.8"
 serde = { version = "1.0", features = ["derive"] }
@@ -21,6 +23,9 @@ arboard = "3.6"
 open = "5.4"
 libc = "0.2"
 tempfile = "3"
+
+[build-dependencies]
+cxx-qt-build = "0.10"
 
 [profile.release]
 opt-level = 3
