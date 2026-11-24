@@ -8,18 +8,18 @@ from xml.etree import ElementTree
 from qt_compat import qt_config
 
 if qt_config == 5:
-    from PyQt5.QtCore import Qt
+    from PyQt5.QtCore import Qt, pyqtSlot
     from PyQt5.QtGui import QFontDatabase, QIcon
     from PyQt5.QtWidgets import QAbstractItemView, QApplication, QFrame, QLabel
 else:
-    from PyQt6.QtCore import Qt
+    from PyQt6.QtCore import Qt, pyqtSlot
     from PyQt6.QtGui import QFontDatabase, QIcon
     from PyQt6.QtWidgets import QAbstractItemView, QApplication, QFrame, QLabel
 
 from carla_host import HostWindow
 from carla_backend import ENGINE_PROCESS_MODE_CONTINUOUS_RACK, PARAMETER_ACTIVE, PARAMETER_INPUT, PLUGIN_JACK
 from franca_history import EditHistory
-import patchcanvas
+from patchcanvas import patchcanvas
 
 
 class FrancaWindow(HostWindow):
@@ -68,7 +68,9 @@ class FrancaWindow(HostWindow):
                                        self.ui.act_canvas_zoom_in])
         for action, iconName in ((self.ui.act_file_new, "document-new"), (self.ui.act_file_open, "document-open"),
                                  (self.ui.act_file_save, "document-save"), (self.ui.act_plugin_add, "list-add"),
-                                 (self.ui.act_canvas_refresh, "view-refresh"), (self.ui.act_canvas_zoom_fit, "zoom-fit-best"),
+                                 (self.ui.act_canvas_refresh, "view-refresh"),
+                                 (self.ui.act_canvas_arrange, "view-sort-ascending"),
+                                 (self.ui.act_canvas_zoom_fit, "zoom-fit-best"),
                                  (self.ui.act_canvas_zoom_in, "zoom-in"), (self.ui.act_canvas_zoom_out, "zoom-out")):
             action.setIcon(QIcon.fromTheme(iconName + "-symbolic", action.icon()))
 
@@ -337,3 +339,58 @@ class FrancaWindow(HostWindow):
             return False
         self.recordPatchbayEdit(endpoints, False)
         return True
+
+    def capturePatchbayPositions(self):
+        return [
+            (
+                group.group_name,
+                group.split,
+                (int(round(group.widgets[0].x())), int(round(group.widgets[0].y()))),
+                (int(round(group.widgets[1].x())), int(round(group.widgets[1].y())))
+                if group.split and group.widgets[1] else (0, 0),
+            )
+            for group in patchcanvas.canvas.group_list
+        ]
+
+    def applyPatchbayPositions(self, positions):
+        byName = {group.group_name: group for group in patchcanvas.canvas.group_list}
+        for name, _split, (x1, y1), (x2, y2) in positions:
+            group = byName.get(name)
+            if group is None:
+                continue
+            patchcanvas.setGroupPosFull(group.group_id, x1, y1, x2, y2)
+            bx1 = int(round(group.widgets[0].x()))
+            by1 = int(round(group.widgets[0].y()))
+            if group.split and group.widgets[1]:
+                bx2 = int(round(group.widgets[1].x()))
+                by2 = int(round(group.widgets[1].y()))
+            else:
+                bx2 = by2 = 0
+            patchcanvas.CanvasCallback(
+                patchcanvas.ACTION_GROUP_POSITION, group.group_id, 0,
+                "%i:%i:%i:%i" % (bx1, by1, bx2, by2),
+            )
+        for group in patchcanvas.canvas.group_list:
+            group.widgets[0].repaintLines(True)
+            if group.split and group.widgets[1]:
+                group.widgets[1].repaintLines(True)
+        patchcanvas.canvas.scene.update()
+        self.scene.zoom_fit()
+        self.updateMiniCanvasLater()
+
+    @pyqtSlot()
+    def slot_canvasArrange(self):
+        before = self.capturePatchbayPositions()
+        super().slot_canvasArrange()
+        after = self.capturePatchbayPositions()
+        if before != after:
+            external = self.fExternalPatchbay
+
+            def apply(positions):
+                previous = self.fExternalPatchbay
+                if external != previous:
+                    (self.slot_canvasShowExternal if external else self.slot_canvasShowInternal)()
+                self.applyPatchbayPositions(positions)
+
+            self.editHistory.record(self.tr("Arrange Patchbay"),
+                                    lambda: apply(before), lambda: apply(after))

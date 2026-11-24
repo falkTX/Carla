@@ -46,6 +46,7 @@ from . import (
     MAX_PLUGIN_ID_ALLOWED,
 )
 
+from .arrange import LayoutEdge, LayoutNode, compute_layout
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
 from .canvasline import CanvasLine
@@ -1038,6 +1039,129 @@ def disconnectPorts(connection_id):
 def arrange():
     if canvas.debug:
         print("PatchCanvas::arrange()")
+
+    if not canvas.initiated or not canvas.group_list:
+        return False
+
+    port_half_h = float(canvas.theme.port_height) * 0.5 if canvas.theme else 8.0
+
+    # Index ports by (group_id, port_id) for quick lookup
+    ports_by_key = {(port.group_id, port.port_id): port for port in canvas.port_list}
+
+    nodes = []
+    widget_by_key = {}
+    port_owner = {}
+
+    for group in canvas.group_list:
+        widget_count = 2 if (group.split and group.widgets[1]) else 1
+        for idx in range(widget_count):
+            widget = group.widgets[idx]
+            if widget is None or not widget.isVisible():
+                continue
+
+            key = (group.group_id, idx)
+            rect = widget.boundingRect()
+            in_port_y = {}
+            out_port_y = {}
+            has_inputs = False
+            has_outputs = False
+
+            for port_id in widget.getPortList():
+                port_owner[(group.group_id, port_id)] = key
+                port = ports_by_key.get((group.group_id, port_id))
+                if port is None:
+                    continue
+                py = port.widget.y() + port_half_h
+                if port.port_mode == PORT_MODE_INPUT:
+                    has_inputs = True
+                    in_port_y[port_id] = py
+                elif port.port_mode == PORT_MODE_OUTPUT:
+                    has_outputs = True
+                    out_port_y[port_id] = py
+
+            if not has_inputs and not has_outputs and widget.isSplit():
+                if widget.getSplitMode() == PORT_MODE_OUTPUT:
+                    has_outputs = True
+                elif widget.getSplitMode() == PORT_MODE_INPUT:
+                    has_inputs = True
+
+            nodes.append(LayoutNode(
+                key=key,
+                name=group.group_name,
+                width=rect.width(),
+                height=rect.height(),
+                has_inputs=has_inputs,
+                has_outputs=has_outputs,
+                in_port_y=in_port_y,
+                out_port_y=out_port_y,
+            ))
+            widget_by_key[key] = widget
+
+    if not nodes:
+        return False
+
+    edges = []
+    for conn in canvas.connection_list:
+        src_key = port_owner.get((conn.group_out_id, conn.port_out_id))
+        dst_key = port_owner.get((conn.group_in_id, conn.port_in_id))
+        if src_key is not None and dst_key is not None:
+            edges.append(LayoutEdge(src_key, conn.port_out_id, dst_key, conn.port_in_id))
+
+    canvas_rect = None
+    if not canvas.size_rect.isNull() and canvas.size_rect.width() > 0 and canvas.size_rect.height() > 0:
+        canvas_rect = (
+            canvas.size_rect.x(),
+            canvas.size_rect.y(),
+            canvas.size_rect.width(),
+            canvas.size_rect.height(),
+        )
+
+    positions = compute_layout(
+        nodes,
+        edges,
+        canvas_rect=canvas_rect,
+        use_bezier=bool(options.use_bezier_lines),
+    )
+
+    changed_groups = []
+    for group in canvas.group_list:
+        group_changed = False
+        widget_count = 2 if (group.split and group.widgets[1]) else 1
+        for idx in range(widget_count):
+            key = (group.group_id, idx)
+            if key not in positions:
+                continue
+            widget = widget_by_key[key]
+            nx, ny = positions[key]
+            old_x, old_y = int(round(widget.x())), int(round(widget.y()))
+            was_blocked = widget.blockSignals(True)
+            widget.setPos(nx, ny)
+            widget.checkItemPos()
+            widget.blockSignals(was_blocked)
+            if int(round(widget.x())) != old_x or int(round(widget.y())) != old_y:
+                group_changed = True
+        if group_changed:
+            changed_groups.append(group)
+
+    # Repaint all connection lines once every box has moved to its final position
+    for widget in widget_by_key.values():
+        widget.repaintLines(True)
+
+    for group in changed_groups:
+        x1 = int(round(group.widgets[0].x()))
+        y1 = int(round(group.widgets[0].y()))
+        if group.split and group.widgets[1]:
+            x2 = int(round(group.widgets[1].x()))
+            y2 = int(round(group.widgets[1].y()))
+        else:
+            x2 = y2 = 0
+        CanvasCallback(ACTION_GROUP_POSITION, group.group_id, 0, "%i:%i:%i:%i" % (x1, y1, x2, y2))
+
+    if canvas.scene is not None:
+        canvas.scene.update()
+        QTimer.singleShot(0, canvas.scene.update)
+
+    return bool(changed_groups)
 
 # ------------------------------------------------------------------------------------------------------------
 

@@ -453,6 +453,7 @@ class HostWindow(QMainWindow):
         self.patchbayToolbar.addAction(self.ui.act_canvas_show_internal)
         self.patchbayToolbar.addAction(self.ui.act_canvas_show_external)
         self.patchbayToolbar.addAction(self.ui.act_canvas_refresh)
+        self.patchbayToolbar.addAction(self.ui.act_canvas_arrange)
         self.patchbayToolbar.setEnabled(False)
         self.ui.patchbay.layout().addWidget(self.patchbayToolbar, 0, 0, 1, 3)
 
@@ -618,7 +619,6 @@ class HostWindow(QMainWindow):
             self.ui.act_canvas_save_image_2x.triggered.connect(self.slot_canvasSaveImage)
             self.ui.act_canvas_save_image_4x.triggered.connect(self.slot_canvasSaveImage)
             self.ui.act_canvas_copy_clipboard.triggered.connect(self.slot_canvasCopyToClipboard)
-            self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
             self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
             self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
             self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
@@ -1748,6 +1748,8 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_canvasArrange(self):
         patchcanvas.arrange()
+        self.scene.zoom_fit()
+        self.updateMiniCanvasLater()
 
     @pyqtSlot()
     def slot_canvasRefresh(self):
