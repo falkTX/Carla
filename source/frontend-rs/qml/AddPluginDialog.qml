@@ -695,15 +695,16 @@ Controls.ApplicationWindow {
         modal: true
         anchors.centerIn: Controls.Overlay.overlay
         standardButtons: Controls.Dialog.Ok | Controls.Dialog.Cancel
-        width: 440
+        width: 460
 
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 8
+        contentItem: ColumnLayout {
+            spacing: 10
             Controls.Label { text: qsTr("Select plugin formats to scan:") }
-            Flow {
+            GridLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                columns: 5
+                columnSpacing: 10
+                rowSpacing: 6
                 Repeater {
                     model: ["Internal", "LADSPA", "DSSI", "LV2", "VST2", "VST3", "CLAP", "SF2", "SFZ", "JSFX"]
                     delegate: Controls.CheckBox {
@@ -718,8 +719,14 @@ Controls.ApplicationWindow {
                     }
                 }
             }
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: Qt.alpha(Kirigami.Theme.textColor, 0.14)
+            }
             Controls.CheckBox {
                 id: rescanAllCb
+                Layout.fillWidth: true
                 text: qsTr("Ignore cache and rescan all files")
             }
         }
