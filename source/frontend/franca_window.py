@@ -61,6 +61,8 @@ class FrancaWindow(HostWindow):
 
         self.ui.act_settings_show_side_panel.setText(self.tr("Show Files, Transport and Minimap"))
         self.ui.act_settings_configure.setText(self.tr("Configure Franca…"))
+        self.ui.act_plugins_compact.setVisible(False)
+        self.ui.act_plugins_expand.setVisible(False)
 
         self.patchbayToolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonFollowStyle)
         self.patchbayToolbar.addSeparator()

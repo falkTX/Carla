@@ -1048,14 +1048,16 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # -------------------------------------------------------------
         # Expand/Minimize and Tweaks
 
-        compact = isinstance(self, PluginSlot_Compact) or getattr(self, "francaCompact", False)
-        actCompact = menu.addAction(self.tr("Expand") if compact else self.tr("Minimize"))
-        actColor   = menu.addAction(self.tr("Change Color..."))
-        actSkin    = menu.addAction(self.tr("Change Skin..."))
-        if self.fSkinStyle == "franca":
-            actColor.setVisible(False)
-            actSkin.setVisible(False)
-        menu.addSeparator()
+        actCompact = None
+        actColor = None
+        actSkin = None
+
+        if self.fSkinStyle != "franca":
+            compact = isinstance(self, PluginSlot_Compact)
+            actCompact = menu.addAction(self.tr("Expand") if compact else self.tr("Minimize"))
+            actColor   = menu.addAction(self.tr("Change Color..."))
+            actSkin    = menu.addAction(self.tr("Change Skin..."))
+            menu.addSeparator()
 
         # -------------------------------------------------------------
         # Find in patchbay, if possible
@@ -1150,14 +1152,14 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # -------------------------------------------------------------
         # Expand/Minimize
 
-        elif actSel == actCompact:
+        elif actCompact is not None and actSel == actCompact:
             # FIXME
             gCarla.gui.compactPlugin(self.fPluginId)
 
         # -------------------------------------------------------------
         # Tweaks
 
-        elif actSel == actColor:
+        elif actColor is not None and actSel == actColor:
             initial = QColor(self.fSkinColor[0], self.fSkinColor[1], self.fSkinColor[2])
             color   = QColorDialog.getColor(initial, self, self.tr("Change Color"), QColorDialog.DontUseNativeDialog)
 
@@ -1168,7 +1170,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             colorStr = "%i;%i;%i" % color
             gCarla.gui.changePluginColor(self.fPluginId, color, colorStr)
 
-        elif actSel == actSkin:
+        elif actSkin is not None and actSel == actSkin:
             skinList = [
                 "default",
                 "3bandeq",
@@ -2076,15 +2078,16 @@ def getColorAndSkinStyle(host, pluginId):
     return (colorCategory, "default")
 
 class PluginSlot_Franca(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId, compact):
+    NAME_COLUMN_WIDTH = 220
+
+    def __init__(self, parent, host, pluginId):
         super().__init__(parent, host, pluginId, (0, 0, 0), "franca")
-        self.francaCompact = compact
         self.setObjectName("francaPlugin")
         self.setContextMenuPolicy(Qt.CustomContextMenu)
 
         row = QHBoxLayout(self)
         margin = max(2, self.style().pixelMetric(QStyle.PixelMetric.PM_LayoutHorizontalSpacing, None, self))
-        row.setContentsMargins(margin, 1 if compact else 4, margin, 1 if compact else 4)
+        row.setContentsMargins(margin, 4, margin, 4)
         row.setSpacing(margin)
 
         grip = QLabel("⠿", self)
@@ -2101,25 +2104,9 @@ class PluginSlot_Franca(AbstractPluginSlot):
         self.label_name = QLabel(self)
         self.label_name.setObjectName("francaPluginName")
         self.label_name.setTextFormat(Qt.TextFormat.PlainText)
-        self.label_name.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        self.label_type = QLabel(self)
-        self.label_type.setObjectName("francaPluginFormat")
-        self.label_type.setMinimumWidth(self.fontMetrics().horizontalAdvance("Unavailable"))
-        row.addWidget(self.label_name, 1)
-        row.addWidget(self.label_type)
-
-        self.peak_in = DigitalPeakMeter(self)
-        self.peak_out = DigitalPeakMeter(self)
-        meters = QVBoxLayout()
-        meters.setSpacing(3)
-        for meter, label in ((self.peak_in, self.tr("Input level")),
-                             (self.peak_out, self.tr("Output level"))):
-            meter.setFixedSize(62, 10 if compact else 12)
-            meter.setUseSystemColors(True, colorLevels=True)
-            meter.setToolTip(label)
-            meter.setAccessibleName(label)
-            meters.addWidget(meter)
-        row.addLayout(meters)
+        self.label_name.setFixedWidth(self.NAME_COLUMN_WIDTH)
+        self.label_name.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        row.addWidget(self.label_name)
 
         self.b_gui = QToolButton(self)
         self.b_edit = QToolButton(self)
@@ -2137,16 +2124,37 @@ class PluginSlot_Franca(AbstractPluginSlot):
             button.setAutoRaise(True)
             button.setCheckable(True)
             row.addWidget(button)
-        more = QToolButton(self)
-        more.setAutoRaise(True)
-        more.setFocusPolicy(Qt.FocusPolicy.TabFocus)
-        more.setIcon(QIcon.fromTheme("application-menu-symbolic", QIcon.fromTheme("application-menu")))
-        if more.icon().isNull():
-            more.setText("⋯")
-        more.setToolTip(self.tr("Plugin actions"))
-        more.setAccessibleName(self.tr("Plugin actions"))
-        more.clicked.connect(self.slot_showCustomMenu)
-        row.addWidget(more)
+
+        self.b_more = QToolButton(self)
+        self.b_more.setAutoRaise(True)
+        self.b_more.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+        self.b_more.setIcon(QIcon.fromTheme("application-menu-symbolic", QIcon.fromTheme("application-menu")))
+        if self.b_more.icon().isNull():
+            self.b_more.setText("⋯")
+        self.b_more.setToolTip(self.tr("Plugin actions"))
+        self.b_more.setAccessibleName(self.tr("Plugin actions"))
+        self.b_more.clicked.connect(self.slot_showCustomMenu)
+        row.addWidget(self.b_more)
+
+        row.addStretch(1)
+
+        self.label_type = QLabel(self)
+        self.label_type.setObjectName("francaPluginFormat")
+        self.label_type.setMinimumWidth(self.fontMetrics().horizontalAdvance("Unavailable"))
+        row.addWidget(self.label_type)
+
+        self.peak_in = DigitalPeakMeter(self)
+        self.peak_out = DigitalPeakMeter(self)
+        meters = QVBoxLayout()
+        meters.setSpacing(3)
+        for meter, label in ((self.peak_in, self.tr("Input level")),
+                             (self.peak_out, self.tr("Output level"))):
+            meter.setFixedSize(62, 12)
+            meter.setUseSystemColors(True, colorLevels=True)
+            meter.setToolTip(label)
+            meter.setAccessibleName(label)
+            meters.addWidget(meter)
+        row.addLayout(meters)
 
         self.ready()
         self.setName(self.fPluginInfo['name'])
@@ -2161,6 +2169,8 @@ class PluginSlot_Franca(AbstractPluginSlot):
 
     def setName(self, name):
         super().setName(name)
+        elided = self.label_name.fontMetrics().elidedText(name, Qt.TextElideMode.ElideRight, self.NAME_COLUMN_WIDTH)
+        self.label_name.setText(elided)
         self.label_name.setToolTip(name)
 
     def setSelected(self, selected):
@@ -2178,7 +2188,7 @@ class PluginSlot_Franca(AbstractPluginSlot):
         self.updateEnableText(active)
 
     def updateEnableText(self, active):
-        self.b_enable.setToolTip(self.tr("Disable effect") if active else self.tr("Enable effect"))
+        self.b_enable.setToolTip(self.tr("Bypass effect") if active else self.tr("Enable effect"))
 
     def customUiStateChanged(self, state):
         super().customUiStateChanged(state)
@@ -2200,7 +2210,7 @@ class PluginSlot_Franca(AbstractPluginSlot):
 
 def createPluginSlot(parent, host, pluginId, options):
     if getattr(host, "isFranca", False):
-        return PluginSlot_Franca(parent, host, pluginId, options['compact'])
+        return PluginSlot_Franca(parent, host, pluginId)
 
     skinColor, skinStyle = getColorAndSkinStyle(host, pluginId)
 

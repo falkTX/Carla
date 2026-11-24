@@ -1415,9 +1415,12 @@ class HostWindow(QMainWindow):
         menu.addAction(self.ui.act_plugins_bypass)
         menu.addSeparator()
         menu.addAction(self.ui.act_plugins_center)
-        menu.addSeparator()
-        menu.addAction(self.ui.act_plugins_compact)
-        menu.addAction(self.ui.act_plugins_expand)
+        if self.ui.act_plugins_compact.isVisible() or self.ui.act_plugins_expand.isVisible():
+            menu.addSeparator()
+            if self.ui.act_plugins_compact.isVisible():
+                menu.addAction(self.ui.act_plugins_compact)
+            if self.ui.act_plugins_expand.isVisible():
+                menu.addAction(self.ui.act_plugins_expand)
 
         menu.exec_(QCursor.pos())
 
