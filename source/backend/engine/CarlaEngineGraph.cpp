@@ -991,7 +991,20 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     {
         const CarlaPluginPtr plugin = data->plugins[i].plugin;
 
-        if (plugin.get() == nullptr || ! plugin->isEnabled() || ! plugin->tryLock(isOffline))
+        if (plugin.get() == nullptr || ! plugin->isEnabled())
+            continue;
+
+        if (! plugin->isActive())
+        {
+            EnginePluginData& pluginData(data->plugins[i]);
+            pluginData.peaks[0] = 0.0f;
+            pluginData.peaks[1] = 0.0f;
+            pluginData.peaks[2] = 0.0f;
+            pluginData.peaks[3] = 0.0f;
+            continue;
+        }
+
+        if (! plugin->tryLock(isOffline))
             continue;
 
         if (processed)
@@ -1102,6 +1115,13 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         }
 
         processed = true;
+    }
+
+    if (! processed)
+    {
+        carla_copyFloats(outBufReal[0], inBuf0, frames);
+        carla_copyFloats(outBufReal[1], inBuf1, frames);
+        carla_copyStructs(data->events.out, data->events.in, kMaxEngineEventInternalCount);
     }
 }
 

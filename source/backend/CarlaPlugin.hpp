@@ -117,6 +117,13 @@ public:
     bool isEnabled() const noexcept;
 
     /*!
+     * Check if the plugin is active (not bypassed/deactivated).
+     *
+     * @see setActive()
+     */
+    bool isActive() const noexcept;
+
+    /*!
      * Get the plugin's internal name.
      * This name is unique within all plugins in an engine.
      *

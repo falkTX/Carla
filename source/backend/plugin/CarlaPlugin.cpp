@@ -127,6 +127,11 @@ bool CarlaPlugin::isEnabled() const noexcept
     return pData->enabled;
 }
 
+bool CarlaPlugin::isActive() const noexcept
+{
+    return pData->active;
+}
+
 const char* CarlaPlugin::getName() const noexcept
 {
     return pData->name;
