@@ -1244,15 +1244,22 @@ impl FrancaCore {
             } else {
                 Some(p.name.as_str())
             };
-            if !host.add_plugin(
+            let (filename, label) = if p.ptype == PLUGIN_LV2 {
+                crate::ffi::utils::normalize_lv2_bundle_and_uri(&p.filename, &p.label)
+            } else {
+                (p.filename.clone(), p.label.clone())
+            };
+            let ok = host.add_plugin(
                 p.build,
                 p.ptype,
-                &p.filename,
+                &filename,
                 name_opt,
-                &p.label,
+                &label,
                 p.unique_id as i64,
                 PLUGIN_OPTIONS_NULL,
-            ) {
+            );
+            host.finish_cancelable_ui();
+            if !ok {
                 let err = host.get_last_error();
                 logging::log_error(&format!("Failed to load plugin {}: {err}", p.name));
                 self.pending.alerts.push((

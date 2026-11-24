@@ -53,6 +53,33 @@ impl DiscoveredPlugin {
     }
 }
 
+/// Unpack Carla's `carla_get_cached_plugin_info(PLUGIN_LV2)` label format
+/// (`"<bundle_dir>/<lv2_uri>"` or `"/<lv2_uri>"`) into `(bundle_filename, uri)`.
+/// If `label` is already a valid URI (has `scheme:` before any path separator),
+/// it is returned unchanged.
+pub fn normalize_lv2_bundle_and_uri(filename: &str, label: &str) -> (String, String) {
+    let sep_pos = label.find(['/', '\\']);
+    let colon_pos = label.find(':');
+    let has_bundle_prefix = match (sep_pos, colon_pos) {
+        (Some(s), Some(c)) => s < c,
+        (Some(0), None) => true,
+        _ => false,
+    };
+    if has_bundle_prefix {
+        if let Some(s) = sep_pos {
+            let bundle = &label[..s];
+            let uri = &label[s + 1..];
+            let resolved_file = if filename.is_empty() {
+                bundle.to_string()
+            } else {
+                filename.to_string()
+            };
+            return (resolved_file, uri.to_string());
+        }
+    }
+    (filename.to_string(), label.to_string())
+}
+
 pub struct CarlaUtils {
     lib: Library,
 }
@@ -112,14 +139,21 @@ impl CarlaUtils {
                 if !r.valid {
                     continue;
                 }
+                let name = cstr_to_string(r.name);
+                let raw_label = cstr_to_string(r.label);
+                let (filename, label) = match ptype {
+                    PLUGIN_LV2 => normalize_lv2_bundle_and_uri("", &raw_label),
+                    PLUGIN_SFZ => (raw_label, name.clone()),
+                    _ => (String::new(), raw_label),
+                };
                 out.push(DiscoveredPlugin {
                     build: BINARY_NATIVE,
                     ptype,
                     hints: r.hints,
                     category: r.category,
-                    filename: String::new(),
-                    name: cstr_to_string(r.name),
-                    label: cstr_to_string(r.label),
+                    filename,
+                    name,
+                    label,
                     maker: cstr_to_string(r.maker),
                     unique_id: 0,
                     audio_ins: r.audio_ins,
@@ -218,5 +252,42 @@ impl CarlaUtils {
                 self.lib.get(b"carla_plugin_discovery_stop\0").unwrap();
             f(handle);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lv2_bundle_uri_normalization() {
+        assert_eq!(
+            normalize_lv2_bundle_and_uri("", "ZL Equalizer 2.lv2/https://github.com/ZL-Audio/ZLEqualizer2"),
+            (
+                "ZL Equalizer 2.lv2".to_string(),
+                "https://github.com/ZL-Audio/ZLEqualizer2".to_string()
+            )
+        );
+        assert_eq!(
+            normalize_lv2_bundle_and_uri("", "/http://calf.sourceforge.net/plugins/Reverb"),
+            (
+                "".to_string(),
+                "http://calf.sourceforge.net/plugins/Reverb".to_string()
+            )
+        );
+        assert_eq!(
+            normalize_lv2_bundle_and_uri("", "foo.lv2/urn:ardour:a-eq"),
+            ("foo.lv2".to_string(), "urn:ardour:a-eq".to_string())
+        );
+        assert_eq!(
+            normalize_lv2_bundle_and_uri(
+                "/usr/lib/lv2/foo.lv2",
+                "https://github.com/ZL-Audio/ZLEqualizer2"
+            ),
+            (
+                "/usr/lib/lv2/foo.lv2".to_string(),
+                "https://github.com/ZL-Audio/ZLEqualizer2".to_string()
+            )
+        );
     }
 }

@@ -34,7 +34,26 @@ impl PluginDatabase {
     pub fn load() -> Self {
         let path = Self::cache_path();
         if let Ok(raw) = fs::read_to_string(&path) {
-            if let Ok(db) = serde_json::from_str::<PluginDatabase>(&raw) {
+            if let Ok(mut db) = serde_json::from_str::<PluginDatabase>(&raw) {
+                let mut migrated = false;
+                for p in &mut db.plugins {
+                    if p.ptype == PLUGIN_LV2 {
+                        let (norm_file, norm_uri) =
+                            crate::ffi::utils::normalize_lv2_bundle_and_uri(&p.filename, &p.label);
+                        if norm_file != p.filename || norm_uri != p.label {
+                            p.filename = norm_file;
+                            p.label = norm_uri;
+                            migrated = true;
+                        }
+                    } else if p.ptype == PLUGIN_SFZ && p.filename.is_empty() && !p.label.is_empty() {
+                        p.filename = std::mem::replace(&mut p.label, p.name.clone());
+                        migrated = true;
+                    }
+                }
+                if migrated {
+                    db.sort_and_dedup();
+                    let _ = db.save();
+                }
                 return db;
             }
         }
