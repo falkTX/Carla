@@ -28,6 +28,7 @@ Item {
         } catch (e) {
             aboutDialog.aboutData = { version: "2.6.0-alpha1", features: [], license: "" };
         }
+        aboutTabs.currentIndex = 0;
         aboutDialog.open();
     }
 
@@ -172,7 +173,7 @@ Item {
                 id: aboutTabs
                 Layout.fillWidth: true
                 Controls.TabButton { text: qsTr("Info & Features") }
-                Controls.TabButton { text: qsTr("License") }
+                Controls.TabButton { text: qsTr("Credits & License") }
             }
 
             StackLayout {
@@ -180,29 +181,72 @@ Item {
                 Layout.fillHeight: true
                 currentIndex: aboutTabs.currentIndex
 
-                Controls.ScrollView {
+                Rectangle {
+                    color: Kirigami.Theme.alternateBackgroundColor
+                    border.width: 1
+                    border.color: Qt.alpha(Kirigami.Theme.textColor, 0.14)
+                    radius: 4
                     clip: true
-                    ColumnLayout {
-                        width: parent.width
-                        Controls.Label {
-                            text: qsTr("Supported Backend Features:")
-                            font.bold: true
-                        }
-                        Controls.Label {
-                            Layout.fillWidth: true
-                            wrapMode: Text.WordWrap
-                            text: (aboutDialog.aboutData.features || []).join(", ")
+
+                    Controls.ScrollView {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        clip: true
+                        ColumnLayout {
+                            width: parent.width - 12
+                            spacing: 8
+                            Controls.Label {
+                                text: qsTr("Supported Backend Features")
+                                font.bold: true
+                            }
+                            Flow {
+                                Layout.fillWidth: true
+                                spacing: 6
+                                Repeater {
+                                    model: aboutDialog.aboutData.features || []
+                                    delegate: Rectangle {
+                                        required property string modelData
+                                        height: 22
+                                        width: featLabel.implicitWidth + 14
+                                        radius: 3
+                                        color: Qt.alpha(Kirigami.Theme.textColor, 0.08)
+                                        border.width: 1
+                                        border.color: Qt.alpha(Kirigami.Theme.textColor, 0.12)
+                                        Controls.Label {
+                                            id: featLabel
+                                            anchors.centerIn: parent
+                                            text: modelData
+                                            font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                Controls.ScrollView {
+                Rectangle {
+                    color: Kirigami.Theme.alternateBackgroundColor
+                    border.width: 1
+                    border.color: Qt.alpha(Kirigami.Theme.textColor, 0.14)
+                    radius: 4
                     clip: true
-                    Controls.TextArea {
-                        readOnly: true
-                        wrapMode: TextEdit.WordWrap
-                        font.family: "monospace"
-                        text: aboutDialog.aboutData.license || ""
+
+                    Controls.ScrollView {
+                        anchors.fill: parent
+                        clip: true
+                        Controls.TextArea {
+                            readOnly: true
+                            selectByMouse: true
+                            activeFocusOnTab: false
+                            textFormat: TextEdit.RichText
+                            wrapMode: TextEdit.WordWrap
+                            padding: 10
+                            color: Kirigami.Theme.textColor
+                            background: null
+                            text: aboutDialog.aboutData.license || ""
+                            onLinkActivated: function(link) { Qt.openUrlExternally(link); }
+                        }
                     }
                 }
             }
