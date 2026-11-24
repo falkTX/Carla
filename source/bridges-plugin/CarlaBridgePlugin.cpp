@@ -20,7 +20,9 @@
 #endif
 
 #ifdef CARLA_OS_UNIX
+# include <cstdio>
 # include <signal.h>
+# include <unistd.h>
 #endif
 
 #ifdef CARLA_OS_LINUX
@@ -659,6 +661,17 @@ int main(int argc, char* argv[])
 #endif
     CoUninitialize();
     OleUninitialize();
+#endif
+
+#ifdef CARLA_OS_UNIX
+    // In bridge mode the plugin and engine have already been closed above.
+    // Bypass libc exit handlers so static destructors left behind in unloaded/STB_GNU_UNIQUE
+    // third-party plugin libraries cannot segfault on process exit.
+    if (useBridge)
+    {
+        std::fflush(nullptr);
+        ::_exit(ret);
+    }
 #endif
 
     return ret;
