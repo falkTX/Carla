@@ -1,6 +1,18 @@
 #!/bin/sh
 
 export PATH="X-LIBDIR-X/franca:$PATH"
+export FRANCA_LIBDIR="X-LIBDIR-X/franca"
+export FRANCA_DATADIR="X-DATADIR-X/franca"
+
+RUST_BIN="X-LIBDIR-X/franca/franca-ui"
+
+if [ "${FRANCA_LEGACY_UI:-0}" != "1" ] && [ -x "$RUST_BIN" ]; then
+    if [ "${1:-}" = "--gdb" ]; then
+        shift
+        exec gdb --args "$RUST_BIN" "$@"
+    fi
+    exec "$RUST_BIN" "$@"
+fi
 
 if [ "${1:-}" = "--gdb" ]; then
     shift

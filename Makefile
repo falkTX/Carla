@@ -389,9 +389,16 @@ doxygen:
 tests:
 	$(MAKE) -C source/tests
 
-.PHONY: check-franca
+.PHONY: check-franca rust-ui check-rust-ui
 check-franca: backend discovery
 	PYTHONPATH=source/frontend python3 source/tests/franca-smoke.py
+
+rust-ui:
+	cargo build --release --manifest-path source/frontend-rs/Cargo.toml
+	install -m 755 source/frontend-rs/target/release/franca-ui bin/franca-ui
+
+check-rust-ui: backend discovery
+	cargo test --manifest-path source/frontend-rs/Cargo.toml
 
 stoat:
 	stoat --recursive ./build/ --suppression ./data/stoat-supression.txt --whitelist ./data/stoat-whitelist.txt --graph-view ./data/stoat-callgraph.png
@@ -424,6 +431,9 @@ ifeq ($(HAVE_FRONTEND),true)
 	install -m 644 bin/libcarla_standalone2$(LIB_EXT) bin/libcarla_utils$(LIB_EXT) \
 		bin/libcarla_frontend$(LIB_EXT) "$(DESTDIR)$(FRANCA_LIBDIR)/"
 	install -m 755 $(FRANCA_HELPERS) "$(DESTDIR)$(FRANCA_LIBDIR)/"
+ifneq ($(wildcard bin/franca-ui),)
+	install -m 755 bin/franca-ui "$(DESTDIR)$(FRANCA_LIBDIR)/franca-ui"
+endif
 ifneq ($(wildcard bin/jack/libjack.so.0),)
 	install -Dm755 bin/jack/libjack.so.0 "$(DESTDIR)$(FRANCA_LIBDIR)/jack/libjack.so.0"
 endif
