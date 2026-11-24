@@ -347,6 +347,23 @@ ColumnLayout {
                 ctx.stroke();
             }
 
+            function drawFittedText(ctx, text, x, y, maxW, align) {
+                if (maxW <= 4) return;
+                ctx.textAlign = align;
+                ctx.textBaseline = "middle";
+                var tw = ctx.measureText(text).width;
+                if (tw <= maxW || tw <= 0.01) {
+                    ctx.fillText(text, x, y);
+                } else {
+                    var sx = maxW / tw;
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(sx, 1.0);
+                    ctx.fillText(text, 0, 0);
+                    ctx.restore();
+                }
+            }
+
             onPaint: {
                 var ctx = getContext("2d");
                 var w = width;
@@ -392,59 +409,68 @@ ColumnLayout {
                 ctx.lineWidth = 1;
                 ctx.strokeRect(c0.x, c0.y, c1.x - c0.x, c1.y - c0.y);
 
-                // Draw boxes
+                // Draw boxes & ports in scene coordinate space so text scales identically with boxes at every zoom level
                 var boxes = data.boxes || [];
                 var z = root.zoom;
-                var tip = Math.max(2, Math.min(9, 6 * z));
-                var hdrH = 26 * z;
+                var visTL = root.screenToScene(0, 0);
+                var visBR = root.screenToScene(w, h);
+                var tip = 6.0;
+                var hdrH = 26.0;
+                var hdrFont = "bold 11px sans-serif";
+                var portFont = "10px sans-serif";
+                var invZ = 1.0 / Math.max(0.05, z);
+
+                ctx.save();
+                ctx.translate(w * 0.5, h * 0.5);
+                ctx.scale(z, z);
+                ctx.translate(-root.panX, -root.panY);
 
                 for (var i = 0; i < boxes.length; i++) {
                     var b = boxes[i];
-                    var tlB = root.sceneToScreen(b.rect.x, b.rect.y);
-                    var bw = b.rect.w * z;
-                    var bh = b.rect.h * z;
-                    if (tlB.x + bw < 0 || tlB.y + bh < 0 || tlB.x > w || tlB.y > h) continue;
+                    var bx = b.rect.x;
+                    var by = b.rect.y;
+                    var bw = b.rect.w;
+                    var bh = b.rect.h;
+                    if (bx + bw < visTL.x || by + bh < visTL.y || bx > visBR.x || by > visBR.y) continue;
 
                     // Box body
                     ctx.fillStyle = Kirigami.Theme.backgroundColor;
-                    ctx.fillRect(tlB.x, tlB.y, bw, bh);
+                    ctx.fillRect(bx, by, bw, bh);
 
                     // Box header
                     ctx.fillStyle = Kirigami.Theme.alternateBackgroundColor;
-                    ctx.fillRect(tlB.x, tlB.y, bw, hdrH);
+                    ctx.fillRect(bx, by, bw, hdrH);
 
                     // Border
                     ctx.strokeStyle = b.selected ? Kirigami.Theme.highlightColor : Qt.alpha(Kirigami.Theme.textColor, 0.35);
-                    ctx.lineWidth = b.selected ? 2 : 1;
-                    ctx.strokeRect(tlB.x, tlB.y, bw, bh);
+                    ctx.lineWidth = (b.selected ? 2.0 : 1.0) * invZ;
+                    ctx.strokeRect(bx, by, bw, bh);
 
                     // Header title
-                    if (z >= 0.35) {
+                    if (z >= 0.25) {
                         var prefix = b.icon === 2 ? "◈ " : (b.icon === 3 ? "◆ " : (b.icon === 1 ? "▪ " : ""));
                         ctx.fillStyle = Kirigami.Theme.textColor;
-                        ctx.font = "bold " + Math.max(8, Math.min(16, Math.round(11.5 * z))) + "px sans-serif";
-                        ctx.textAlign = "center";
-                        ctx.textBaseline = "middle";
-                        ctx.fillText(prefix + b.title, tlB.x + bw * 0.5, tlB.y + hdrH * 0.5);
+                        ctx.font = hdrFont;
+                        drawFittedText(ctx, prefix + b.title, bx + bw * 0.5, by + hdrH * 0.5, bw - 12.0, "center");
                     }
 
                     // Input ports
-                    var pFont = Math.max(7, Math.min(14, Math.round(10.5 * z))) + "px sans-serif";
                     var ins = b.in_ports || [];
                     for (var j = 0; j < ins.length; j++) {
                         var pi = ins[j];
-                        var r0 = root.sceneToScreen(pi.rect.x, pi.rect.y);
-                        var pw = pi.rect.w * z;
-                        var ph = pi.rect.h * z;
+                        var px = pi.rect.x;
+                        var py = pi.rect.y;
+                        var pw = pi.rect.w;
+                        var ph = pi.rect.h;
                         var isInActive = root.dragMode === "port"
                             && (root.samePort(pi, root.dragSourcePort) || root.samePort(pi, root.hoverPort));
                         var isInHover = root.dragMode === "" && root.samePort(pi, root.hoverPort);
                         ctx.beginPath();
-                        ctx.moveTo(r0.x, r0.y);
-                        ctx.lineTo(r0.x + pw - tip, r0.y);
-                        ctx.lineTo(r0.x + pw, r0.y + ph * 0.5);
-                        ctx.lineTo(r0.x + pw - tip, r0.y + ph);
-                        ctx.lineTo(r0.x, r0.y + ph);
+                        ctx.moveTo(px, py);
+                        ctx.lineTo(px + pw - tip, py);
+                        ctx.lineTo(px + pw, py + ph * 0.5);
+                        ctx.lineTo(px + pw - tip, py + ph);
+                        ctx.lineTo(px, py + ph);
                         ctx.closePath();
                         ctx.fillStyle = isInActive
                             ? Qt.lighter(pi.color || "#4E7AA8", 1.18)
@@ -452,22 +478,20 @@ ColumnLayout {
                         ctx.fill();
                         if (isInActive) {
                             ctx.strokeStyle = "#FFFFFF";
-                            ctx.lineWidth = Math.max(1.8, 2.0 * z);
+                            ctx.lineWidth = Math.max(1.8 * invZ, 2.0);
                         } else if (isInHover) {
                             ctx.strokeStyle = "rgba(255,255,255,0.7)";
-                            ctx.lineWidth = Math.max(1.2, 1.4 * z);
+                            ctx.lineWidth = Math.max(1.2 * invZ, 1.4);
                         } else {
                             ctx.strokeStyle = "rgba(0,0,0,0.35)";
-                            ctx.lineWidth = 0.8;
+                            ctx.lineWidth = 0.8 * invZ;
                         }
                         ctx.stroke();
 
-                        if (z >= 0.4) {
+                        if (z >= 0.28) {
                             ctx.fillStyle = "#F8FAFC";
-                            ctx.font = pFont;
-                            ctx.textAlign = "left";
-                            ctx.textBaseline = "middle";
-                            ctx.fillText(pi.name, r0.x + 5 * z, r0.y + ph * 0.5);
+                            ctx.font = portFont;
+                            drawFittedText(ctx, pi.name, px + 5.0, py + ph * 0.5, pw - tip - 8.0, "left");
                         }
                     }
 
@@ -475,18 +499,19 @@ ColumnLayout {
                     var outs = b.out_ports || [];
                     for (var k = 0; k < outs.length; k++) {
                         var po = outs[k];
-                        var ro0 = root.sceneToScreen(po.rect.x, po.rect.y);
-                        var pow = po.rect.w * z;
-                        var poh = po.rect.h * z;
+                        var pox = po.rect.x;
+                        var poy = po.rect.y;
+                        var pow = po.rect.w;
+                        var poh = po.rect.h;
                         var isOutActive = root.dragMode === "port"
                             && (root.samePort(po, root.dragSourcePort) || root.samePort(po, root.hoverPort));
                         var isOutHover = root.dragMode === "" && root.samePort(po, root.hoverPort);
                         ctx.beginPath();
-                        ctx.moveTo(ro0.x + tip, ro0.y);
-                        ctx.lineTo(ro0.x + pow, ro0.y);
-                        ctx.lineTo(ro0.x + pow, ro0.y + poh);
-                        ctx.lineTo(ro0.x + tip, ro0.y + poh);
-                        ctx.lineTo(ro0.x, ro0.y + poh * 0.5);
+                        ctx.moveTo(pox + tip, poy);
+                        ctx.lineTo(pox + pow, poy);
+                        ctx.lineTo(pox + pow, poy + poh);
+                        ctx.lineTo(pox + tip, poy + poh);
+                        ctx.lineTo(pox, poy + poh * 0.5);
                         ctx.closePath();
                         ctx.fillStyle = isOutActive
                             ? Qt.lighter(po.color || "#4E7AA8", 1.18)
@@ -494,25 +519,25 @@ ColumnLayout {
                         ctx.fill();
                         if (isOutActive) {
                             ctx.strokeStyle = "#FFFFFF";
-                            ctx.lineWidth = Math.max(1.8, 2.0 * z);
+                            ctx.lineWidth = Math.max(1.8 * invZ, 2.0);
                         } else if (isOutHover) {
                             ctx.strokeStyle = "rgba(255,255,255,0.7)";
-                            ctx.lineWidth = Math.max(1.2, 1.4 * z);
+                            ctx.lineWidth = Math.max(1.2 * invZ, 1.4);
                         } else {
                             ctx.strokeStyle = "rgba(0,0,0,0.35)";
-                            ctx.lineWidth = 0.8;
+                            ctx.lineWidth = 0.8 * invZ;
                         }
                         ctx.stroke();
 
-                        if (z >= 0.4) {
+                        if (z >= 0.28) {
                             ctx.fillStyle = "#F8FAFC";
-                            ctx.font = pFont;
-                            ctx.textAlign = "right";
-                            ctx.textBaseline = "middle";
-                            ctx.fillText(po.name, ro0.x + pow - 5 * z, ro0.y + poh * 0.5);
+                            ctx.font = portFont;
+                            drawFittedText(ctx, po.name, pox + pow - 5.0, poy + poh * 0.5, pow - tip - 8.0, "right");
                         }
                     }
                 }
+
+                ctx.restore();
 
                 // Draw cables
                 var conns = data.connections || [];

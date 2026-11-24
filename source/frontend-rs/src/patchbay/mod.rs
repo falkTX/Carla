@@ -460,18 +460,33 @@ impl PatchbayState {
         }
     }
 
-    fn estimate_text_width(s: &str, char_w: f32) -> f32 {
-        (s.chars().count() as f32) * char_w
+    fn estimate_title_width(s: &str, icon: i32) -> f32 {
+        let text_w: f32 = s
+            .chars()
+            .map(|c| match c {
+                'i' | 'l' | 'I' | '1' | '|' | '!' | '.' | ',' | ':' | ';' | '\'' | ' ' => 4.6,
+                'f' | 'j' | 'r' | 't' | '-' | '/' | '(' | ')' => 5.4,
+                'm' | 'w' | 'M' | 'W' | '@' | '%' => 9.6,
+                c if c.is_ascii_uppercase() => 8.0,
+                _ => 6.9,
+            })
+            .sum();
+        let icon_w = if icon == 1 || icon == 2 || icon == 3 {
+            16.0
+        } else {
+            0.0
+        };
+        text_w + icon_w + 24.0
     }
 
     fn estimate_port_text_width(s: &str) -> f32 {
         s.chars()
             .map(|c| match c {
-                'i' | 'l' | 'I' | '1' | '|' | '!' | '.' | ',' | ':' | ';' | '\'' => 4.2,
-                'f' | 'j' | 'r' | 't' | '-' | '/' | '(' | ')' => 4.8,
-                'm' | 'w' | 'M' | 'W' | '@' | '%' => 8.4,
-                c if c.is_ascii_uppercase() => 7.0,
-                _ => 6.1,
+                'i' | 'l' | 'I' | '1' | '|' | '!' | '.' | ',' | ':' | ';' | '\'' | ' ' => 4.2,
+                'f' | 'j' | 'r' | 't' | '-' | '/' | '(' | ')' => 4.9,
+                'm' | 'w' | 'M' | 'W' | '@' | '%' => 8.6,
+                c if c.is_ascii_uppercase() => 7.2,
+                _ => 6.2,
             })
             .sum()
     }
@@ -493,7 +508,7 @@ impl PatchbayState {
             .iter()
             .map(|p| Self::estimate_port_text_width(&p.name) + PORT_TEXT_PAD)
             .fold(0.0_f32, f32::max);
-        let title_w = Self::estimate_text_width(&g.name, 7.6) + 32.0;
+        let title_w = Self::estimate_title_width(&g.name, g.icon);
 
         let ports_w = if !ins.is_empty() && !outs.is_empty() {
             max_in_w + max_out_w + 18.0
