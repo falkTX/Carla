@@ -9,11 +9,11 @@ from qt_compat import qt_config
 
 if qt_config == 5:
     from PyQt5.QtCore import Qt, QRectF, QLineF, QTimer
-    from PyQt5.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen
+    from PyQt5.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen, QPixmap
     from PyQt5.QtWidgets import QCheckBox, QColorDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QStyle, QToolButton, QVBoxLayout
 elif qt_config == 6:
     from PyQt6.QtCore import Qt, QRectF, QLineF, QTimer
-    from PyQt6.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen
+    from PyQt6.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPainterPath, QPalette, QPen, QPixmap
     from PyQt6.QtWidgets import QCheckBox, QColorDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QStyle, QToolButton, QVBoxLayout
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1051,8 +1051,18 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         actCompact = None
         actColor = None
         actSkin = None
+        categoryActions = {}
 
-        if self.fSkinStyle != "franca":
+        if self.fSkinStyle == "franca":
+            catMenu = menu.addMenu(self.tr("Set Category"))
+            currentCategory = self.getPluginCategory()
+            for catId, catLabel, _catKey, catColor in FRANCA_PLUGIN_CATEGORIES:
+                actCat = catMenu.addAction(createCategoryColorIcon(catColor), self.tr(catLabel))
+                actCat.setCheckable(True)
+                actCat.setChecked(catId == currentCategory)
+                categoryActions[actCat] = catId
+            menu.addSeparator()
+        else:
             compact = isinstance(self, PluginSlot_Compact)
             actCompact = menu.addAction(self.tr("Expand") if compact else self.tr("Minimize"))
             actColor   = menu.addAction(self.tr("Change Color..."))
@@ -1148,6 +1158,16 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         if not actSel:
             return
+
+        # -------------------------------------------------------------
+        # Category (Franca)
+
+        elif actSel in categoryActions:
+            newCategory = categoryActions[actSel]
+            if hasattr(gCarla.gui, "changePluginCategory"):
+                gCarla.gui.changePluginCategory(self.fPluginId, newCategory)
+            else:
+                self.setPluginCategory(newCategory)
 
         # -------------------------------------------------------------
         # Expand/Minimize
@@ -2077,17 +2097,83 @@ def getColorAndSkinStyle(host, pluginId):
 
     return (colorCategory, "default")
 
+FRANCA_CATEGORY_PROPERTY = "FrancaCategory"
+
+FRANCA_PLUGIN_CATEGORIES = (
+    (PLUGIN_CATEGORY_SYNTH,      "Synth",      "synth",      QColor("#8B5CF6")),
+    (PLUGIN_CATEGORY_DELAY,      "Delay",      "delay",      QColor("#06B6D4")),
+    (PLUGIN_CATEGORY_EQ,         "EQ",         "eq",         QColor("#10B981")),
+    (PLUGIN_CATEGORY_FILTER,     "Filter",     "filter",     QColor("#3B82F6")),
+    (PLUGIN_CATEGORY_DISTORTION, "Distortion", "distortion", QColor("#F97316")),
+    (PLUGIN_CATEGORY_DYNAMICS,   "Dynamics",   "dynamics",   QColor("#EAB308")),
+    (PLUGIN_CATEGORY_MODULATOR,  "Modulator",  "modulator",  QColor("#EC4899")),
+    (PLUGIN_CATEGORY_UTILITY,    "Utility",    "utility",    QColor("#64748B")),
+    (PLUGIN_CATEGORY_OTHER,      "Other",      "other",      QColor("#14B8A6")),
+    (PLUGIN_CATEGORY_NONE,       "None",       "none",       None),
+)
+
+_FRANCA_CATEGORY_BY_ID = {cid: (label, key, color) for cid, label, key, color in FRANCA_PLUGIN_CATEGORIES}
+_FRANCA_CATEGORY_BY_KEY = {key: cid for cid, _label, key, _color in FRANCA_PLUGIN_CATEGORIES}
+
+
+def getCategoryColor(categoryId):
+    entry = _FRANCA_CATEGORY_BY_ID.get(categoryId)
+    return entry[2] if entry is not None else None
+
+
+def getCategoryKey(categoryId):
+    entry = _FRANCA_CATEGORY_BY_ID.get(categoryId)
+    return entry[1] if entry is not None else "none"
+
+
+def getCategoryLabel(categoryId):
+    entry = _FRANCA_CATEGORY_BY_ID.get(categoryId)
+    return entry[0] if entry is not None else "None"
+
+
+def parseCategoryKey(key):
+    if not key:
+        return None
+    return _FRANCA_CATEGORY_BY_KEY.get(str(key).strip().lower())
+
+
+def createCategoryColorIcon(color, size=14):
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.Antialiasing, True)
+    rect = QRectF(1.5, 1.5, size - 3.0, size - 3.0)
+    if color is not None:
+        painter.setPen(QPen(color.darker(135), 1.0))
+        painter.setBrush(color)
+    else:
+        painter.setPen(QPen(QColor("#94A3B8"), 1.0, Qt.DashLine))
+        painter.setBrush(Qt.NoBrush)
+    painter.drawRoundedRect(rect, 3.0, 3.0)
+    painter.end()
+    return QIcon(pixmap)
+
+
 class PluginSlot_Franca(AbstractPluginSlot):
     NAME_COLUMN_WIDTH = 220
+    ACCENT_WIDTH = 5
 
     def __init__(self, parent, host, pluginId):
         super().__init__(parent, host, pluginId, (0, 0, 0), "franca")
         self.setObjectName("francaPlugin")
         self.setContextMenuPolicy(Qt.CustomContextMenu)
 
+        savedCat = parseCategoryKey(
+            self.host.get_custom_data_value(self.fPluginId, CUSTOM_DATA_TYPE_PROPERTY, FRANCA_CATEGORY_PROPERTY)
+        )
+        self.fCategory = savedCat if savedCat is not None else self.fPluginInfo.get('category', PLUGIN_CATEGORY_NONE)
+        if self.fCategory not in _FRANCA_CATEGORY_BY_ID:
+            self.fCategory = PLUGIN_CATEGORY_NONE
+        self.fCategoryColor = getCategoryColor(self.fCategory)
+
         row = QHBoxLayout(self)
         margin = max(2, self.style().pixelMetric(QStyle.PixelMetric.PM_LayoutHorizontalSpacing, None, self))
-        row.setContentsMargins(margin, 4, margin, 4)
+        row.setContentsMargins(margin + self.ACCENT_WIDTH + 2, 4, margin, 4)
         row.setSpacing(margin)
 
         grip = QLabel("⠿", self)
@@ -2161,11 +2247,35 @@ class PluginSlot_Franca(AbstractPluginSlot):
         self.activeChanged(self.fIsActive)
         self.b_enable.toggled.connect(self.updateEnableText)
 
+    def getPluginCategory(self):
+        return self.fCategory
+
+    def setPluginCategory(self, categoryId, persist=True):
+        if categoryId not in _FRANCA_CATEGORY_BY_ID:
+            categoryId = PLUGIN_CATEGORY_NONE
+        self.fCategory = categoryId
+        self.fCategoryColor = getCategoryColor(categoryId)
+        if persist:
+            self.host.set_custom_data(
+                self.fPluginId,
+                CUSTOM_DATA_TYPE_PROPERTY,
+                FRANCA_CATEGORY_PROPERTY,
+                getCategoryKey(categoryId),
+            )
+        self.update()
+
     def getFixedHeight(self):
         return self.sizeHint().height()
 
     def paintEvent(self, event):
         QFrame.paintEvent(self, event)
+        if self.fCategoryColor is not None:
+            painter = QPainter(self)
+            if not self.fIsSelected:
+                tint = QColor(self.fCategoryColor)
+                tint.setAlpha(24)
+                painter.fillRect(self.rect(), tint)
+            painter.fillRect(0, 0, self.ACCENT_WIDTH, self.height(), self.fCategoryColor)
 
     def setName(self, name):
         super().setName(name)
@@ -2182,6 +2292,7 @@ class PluginSlot_Franca(AbstractPluginSlot):
             font = self.label_name.font()
             font.setBold(selected)
             self.label_name.setFont(font)
+            self.update()
 
     def activeChanged(self, active):
         super().activeChanged(active)

@@ -293,6 +293,23 @@ class FrancaWindow(HostWindow):
                  for port in patchcanvas.canvas.port_list}
         return names.get(ports[:2]), names.get(ports[2:])
 
+    def changePluginCategory(self, pluginId, categoryId):
+        slot = self.getPluginSlotWidget(pluginId)
+        if slot is None or not hasattr(slot, "setPluginCategory"):
+            return
+        before = slot.getPluginCategory()
+        if before == categoryId:
+            return
+        slot.setPluginCategory(categoryId)
+
+        def apply(value):
+            target = self.getPluginSlotWidget(pluginId)
+            if target is None or not hasattr(target, "setPluginCategory"):
+                return self.tr("The effect is no longer in the rack.")
+            target.setPluginCategory(value)
+
+        self.editHistory.record(self.tr("Set Category"), lambda: apply(before), lambda: apply(categoryId))
+
     def recordPatchbayEdit(self, endpoints, connected):
         if None in endpoints:
             return
