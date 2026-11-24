@@ -31,6 +31,7 @@ ColumnLayout {
     property real panOriginY: 0
     property var boxOrigins: ({})
     property var dragSourcePort: null
+    property var hoverPort: null
 
     signal openPluginEdit(int pluginId)
     signal openRenamePlugin(int pluginId, string currentName)
@@ -174,6 +175,13 @@ ColumnLayout {
         if (t1 === t2) return true;
         var audioCv = ((p1.hints & 0x02) && (p2.hints & 0x04)) || ((p1.hints & 0x04) && (p2.hints & 0x02));
         return !!audioCv;
+    }
+
+    function samePort(a, b) {
+        return !!a && !!b
+            && a.group_id === b.group_id
+            && a.port_id === b.port_id
+            && a.is_input === b.is_input;
     }
 
     function findConnection(gOut, pOut, gIn, pIn) {
@@ -428,6 +436,9 @@ ColumnLayout {
                         var r0 = root.sceneToScreen(pi.rect.x, pi.rect.y);
                         var pw = pi.rect.w * z;
                         var ph = pi.rect.h * z;
+                        var isInActive = root.dragMode === "port"
+                            && (root.samePort(pi, root.dragSourcePort) || root.samePort(pi, root.hoverPort));
+                        var isInHover = root.dragMode === "" && root.samePort(pi, root.hoverPort);
                         ctx.beginPath();
                         ctx.moveTo(r0.x, r0.y);
                         ctx.lineTo(r0.x + pw - tip, r0.y);
@@ -435,10 +446,20 @@ ColumnLayout {
                         ctx.lineTo(r0.x + pw - tip, r0.y + ph);
                         ctx.lineTo(r0.x, r0.y + ph);
                         ctx.closePath();
-                        ctx.fillStyle = pi.color || "#4E7AA8";
+                        ctx.fillStyle = isInActive
+                            ? Qt.lighter(pi.color || "#4E7AA8", 1.18)
+                            : (pi.color || "#4E7AA8");
                         ctx.fill();
-                        ctx.strokeStyle = "rgba(0,0,0,0.35)";
-                        ctx.lineWidth = 0.8;
+                        if (isInActive) {
+                            ctx.strokeStyle = "#FFFFFF";
+                            ctx.lineWidth = Math.max(1.8, 2.0 * z);
+                        } else if (isInHover) {
+                            ctx.strokeStyle = "rgba(255,255,255,0.7)";
+                            ctx.lineWidth = Math.max(1.2, 1.4 * z);
+                        } else {
+                            ctx.strokeStyle = "rgba(0,0,0,0.35)";
+                            ctx.lineWidth = 0.8;
+                        }
                         ctx.stroke();
 
                         if (z >= 0.4) {
@@ -457,6 +478,9 @@ ColumnLayout {
                         var ro0 = root.sceneToScreen(po.rect.x, po.rect.y);
                         var pow = po.rect.w * z;
                         var poh = po.rect.h * z;
+                        var isOutActive = root.dragMode === "port"
+                            && (root.samePort(po, root.dragSourcePort) || root.samePort(po, root.hoverPort));
+                        var isOutHover = root.dragMode === "" && root.samePort(po, root.hoverPort);
                         ctx.beginPath();
                         ctx.moveTo(ro0.x + tip, ro0.y);
                         ctx.lineTo(ro0.x + pow, ro0.y);
@@ -464,10 +488,20 @@ ColumnLayout {
                         ctx.lineTo(ro0.x + tip, ro0.y + poh);
                         ctx.lineTo(ro0.x, ro0.y + poh * 0.5);
                         ctx.closePath();
-                        ctx.fillStyle = po.color || "#4E7AA8";
+                        ctx.fillStyle = isOutActive
+                            ? Qt.lighter(po.color || "#4E7AA8", 1.18)
+                            : (po.color || "#4E7AA8");
                         ctx.fill();
-                        ctx.strokeStyle = "rgba(0,0,0,0.35)";
-                        ctx.lineWidth = 0.8;
+                        if (isOutActive) {
+                            ctx.strokeStyle = "#FFFFFF";
+                            ctx.lineWidth = Math.max(1.8, 2.0 * z);
+                        } else if (isOutHover) {
+                            ctx.strokeStyle = "rgba(255,255,255,0.7)";
+                            ctx.lineWidth = Math.max(1.2, 1.4 * z);
+                        } else {
+                            ctx.strokeStyle = "rgba(0,0,0,0.35)";
+                            ctx.lineWidth = 0.8;
+                        }
                         ctx.stroke();
 
                         if (z >= 0.4) {
@@ -494,7 +528,9 @@ ColumnLayout {
                 if (root.dragMode === "port" && root.dragSourcePort) {
                     var sp = root.dragSourcePort;
                     var aPt = { x: sp.anchor_x, y: sp.anchor_y };
-                    var curPt = { x: root.dragCurSceneX, y: root.dragCurSceneY };
+                    var curPt = root.hoverPort
+                        ? { x: root.hoverPort.anchor_x, y: root.hoverPort.anchor_y }
+                        : { x: root.dragCurSceneX, y: root.dragCurSceneY };
                     if (sp.is_input) {
                         drawCable(ctx, curPt, aPt, useBez, "#FACC15", 2.2);
                     } else {
@@ -601,6 +637,7 @@ ColumnLayout {
                     if (port) {
                         root.dragMode = "port";
                         root.dragSourcePort = port;
+                        root.hoverPort = null;
                         pbCanvas.requestPaint();
                         return;
                     }
@@ -642,9 +679,23 @@ ColumnLayout {
                     pbCanvas.requestPaint();
                 }
 
+                onExited: {
+                    if (root.dragMode === "" && root.hoverPort !== null) {
+                        root.hoverPort = null;
+                        pbCanvas.requestPaint();
+                    }
+                }
+
                 onPositionChanged: function(mouse) {
-                    if (root.dragMode === "") return;
                     var sp = root.screenToScene(mouse.x, mouse.y);
+                    if (root.dragMode === "") {
+                        var hp = root.hitPort(sp.x, sp.y);
+                        if (!root.samePort(hp, root.hoverPort) && (hp !== null || root.hoverPort !== null)) {
+                            root.hoverPort = hp;
+                            pbCanvas.requestPaint();
+                        }
+                        return;
+                    }
                     root.dragCurSceneX = sp.x;
                     root.dragCurSceneY = sp.y;
 
@@ -659,6 +710,10 @@ ColumnLayout {
                             var o = root.boxOrigins[k];
                             root.controller.patchbay_move_box(o.group_id, o.split_part, o.x + dx, o.y + dy);
                         }
+                    } else if (root.dragMode === "port") {
+                        var cand = root.hitPort(sp.x, sp.y);
+                        root.hoverPort = (cand && root.portsCompatible(root.dragSourcePort, cand)) ? cand : null;
+                        pbCanvas.requestPaint();
                     } else {
                         pbCanvas.requestPaint();
                     }
@@ -693,6 +748,7 @@ ColumnLayout {
                             }
                         }
                         root.dragSourcePort = null;
+                        root.hoverPort = null;
                     } else if (mode === "rubberband") {
                         var x0 = Math.min(root.dragStartSceneX, sp.x);
                         var y0 = Math.min(root.dragStartSceneY, sp.y);

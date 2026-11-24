@@ -867,7 +867,11 @@ impl FrancaCore {
         self.history.clear();
         self.is_project_loading = true;
         let path_str = path.to_string_lossy().into_owned();
-        let res = self.host.as_ref().map(|h| (h.load_project(&path_str), h.get_last_error()));
+        let res = self.host.as_ref().map(|h| {
+            let ok = h.load_project(&path_str);
+            h.finish_cancelable_ui();
+            (ok, h.get_last_error())
+        });
         if let Some((ok, err)) = res {
             if !ok {
                 self.is_project_loading = false;
@@ -896,7 +900,9 @@ impl FrancaCore {
         } else {
             let s = path.to_string_lossy().into_owned();
             if let Some(ref host) = self.host {
-                if !host.load_file(&s) {
+                let ok = host.load_file(&s);
+                host.finish_cancelable_ui();
+                if !ok {
                     let err = host.get_last_error();
                     self.pending
                         .alerts

@@ -34,7 +34,7 @@ Controls.ApplicationWindow {
     // Periodic engine idle, meter, transport & discovery poll
     Timer {
         interval: Math.max(10, Math.min(100, ctrl.refresh_interval_ms))
-        running: true
+        running: !francaUiBusy
         repeat: true
         onTriggered: ctrl.poll_tick()
     }

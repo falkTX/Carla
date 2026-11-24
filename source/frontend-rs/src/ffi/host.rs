@@ -4,11 +4,23 @@
 
 use std::ffi::{CStr, CString, c_char, c_double, c_float, c_int, c_uint, c_void};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 
 use libloading::Library;
 
 use super::types::*;
+
+unsafe extern "C" {
+    fn franca_qt_set_cancelable_action(
+        started: bool,
+        message: *const c_char,
+        cancel_fn: Option<unsafe extern "C" fn(*mut c_void)>,
+        cancel_ctx: *mut c_void,
+    );
+    fn franca_qt_update_cancelable_progress(plugins_loaded: c_int);
+    fn franca_qt_process_events();
+}
 
 #[derive(Clone, Debug)]
 pub struct EngineEvent {
@@ -80,6 +92,20 @@ pub struct RuntimeDriverDeviceInfo {
 struct CallbackState {
     tx: Sender<EngineEvent>,
     file_result: std::sync::Mutex<Option<CString>>,
+    handle: CarlaHostHandle,
+    cancel_engine_fn: Option<unsafe extern "C" fn(CarlaHostHandle)>,
+    cancelable_active: AtomicBool,
+    cancelable_plugins_loaded: AtomicI32,
+}
+
+unsafe extern "C" fn cancel_dialog_trampoline(ctx: *mut c_void) {
+    if ctx.is_null() {
+        return;
+    }
+    let state = unsafe { &*(ctx as *const CallbackState) };
+    if let Some(cancel_fn) = state.cancel_engine_fn {
+        unsafe { cancel_fn(state.handle) };
+    }
 }
 
 unsafe extern "C" fn engine_callback_trampoline(
@@ -96,6 +122,41 @@ unsafe extern "C" fn engine_callback_trampoline(
         return;
     }
     let state = unsafe { &*(ptr as *const CallbackState) };
+
+    // Handle live progress dialog updates & Qt event pumping during synchronous
+    // backend operations (such as carla_load_project / carla_add_plugin).
+    match action {
+        ENGINE_CALLBACK_CANCELABLE_ACTION => {
+            let started = value1 != 0;
+            state.cancelable_active.store(started, Ordering::SeqCst);
+            state.cancelable_plugins_loaded.store(0, Ordering::SeqCst);
+            unsafe {
+                franca_qt_set_cancelable_action(
+                    started,
+                    value_str,
+                    Some(cancel_dialog_trampoline),
+                    ptr,
+                );
+            }
+        }
+        ENGINE_CALLBACK_PLUGIN_ADDED => {
+            if state.cancelable_active.load(Ordering::SeqCst) {
+                let count = state
+                    .cancelable_plugins_loaded
+                    .fetch_add(1, Ordering::SeqCst)
+                    + 1;
+                unsafe { franca_qt_update_cancelable_progress(count) };
+            }
+        }
+        ENGINE_CALLBACK_IDLE => {
+            if state.cancelable_active.load(Ordering::SeqCst) {
+                unsafe { franca_qt_process_events() };
+            }
+            return;
+        }
+        _ => {}
+    }
+
     let text = unsafe { cstr_to_string(value_str) };
     let _ = state.tx.send(EngineEvent {
         action,
@@ -212,10 +273,20 @@ impl CarlaHost {
             return Err("carla_standalone_host_init returned NULL".into());
         }
 
+        let cancel_engine_fn: Option<unsafe extern "C" fn(CarlaHostHandle)> = unsafe {
+            lib.get::<unsafe extern "C" fn(CarlaHostHandle)>(b"carla_cancel_engine_action\0")
+                .ok()
+                .map(|sym| *sym)
+        };
+
         let (tx, rx) = mpsc::channel();
         let cb_state = Box::new(CallbackState {
             tx,
             file_result: std::sync::Mutex::new(None),
+            handle,
+            cancel_engine_fn,
+            cancelable_active: AtomicBool::new(false),
+            cancelable_plugins_loaded: AtomicI32::new(0),
         });
         let cb_ptr = (&*cb_state) as *const CallbackState as *mut c_void;
 
@@ -481,6 +552,17 @@ impl CarlaHost {
             let f: libloading::Symbol<unsafe extern "C" fn(CarlaHostHandle)> =
                 self.lib.get(b"carla_cancel_engine_action\0").unwrap();
             f(self.handle);
+        }
+    }
+
+    pub fn finish_cancelable_ui(&self) {
+        if self._cb_state.cancelable_active.swap(false, Ordering::SeqCst) {
+            self._cb_state
+                .cancelable_plugins_loaded
+                .store(0, Ordering::SeqCst);
+            unsafe {
+                franca_qt_set_cancelable_action(false, std::ptr::null(), None, std::ptr::null_mut());
+            }
         }
     }
 

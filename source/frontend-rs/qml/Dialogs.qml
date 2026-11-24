@@ -254,28 +254,4 @@ Item {
         }
         onAccepted: root.quitConfirmed()
     }
-
-    // 7. Cancelable Action Progress Modal
-    Controls.Dialog {
-        id: cancelableDialog
-        title: qsTr("Working…")
-        modal: true
-        closePolicy: Controls.Popup.NoAutoClose
-        anchors.centerIn: Controls.Overlay.overlay
-        visible: root.controller.cancelable_action_text.length > 0
-        width: 340
-        standardButtons: Controls.Dialog.Cancel
-        onRejected: root.controller.cancel_engine_action()
-
-        RowLayout {
-            anchors.fill: parent
-            spacing: 10
-            Controls.BusyIndicator { running: cancelableDialog.visible }
-            Controls.Label {
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-                text: root.controller.cancelable_action_text
-            }
-        }
-    }
 }

@@ -464,6 +464,18 @@ impl PatchbayState {
         (s.chars().count() as f32) * char_w
     }
 
+    fn estimate_port_text_width(s: &str) -> f32 {
+        s.chars()
+            .map(|c| match c {
+                'i' | 'l' | 'I' | '1' | '|' | '!' | '.' | ',' | ':' | ';' | '\'' => 4.2,
+                'f' | 'j' | 'r' | 't' | '-' | '/' | '(' | ')' => 4.8,
+                'm' | 'w' | 'M' | 'W' | '@' | '%' => 8.4,
+                c if c.is_ascii_uppercase() => 7.0,
+                _ => 6.1,
+            })
+            .sum()
+    }
+
     fn build_box_dto(
         &self,
         g: &PatchbayGroup,
@@ -475,13 +487,13 @@ impl PatchbayState {
     ) -> BoxGeomDto {
         let max_in_w = ins
             .iter()
-            .map(|p| Self::estimate_text_width(&p.name, 7.0) + PORT_TEXT_PAD)
+            .map(|p| Self::estimate_port_text_width(&p.name) + PORT_TEXT_PAD)
             .fold(0.0_f32, f32::max);
         let max_out_w = outs
             .iter()
-            .map(|p| Self::estimate_text_width(&p.name, 7.0) + PORT_TEXT_PAD)
+            .map(|p| Self::estimate_port_text_width(&p.name) + PORT_TEXT_PAD)
             .fold(0.0_f32, f32::max);
-        let title_w = Self::estimate_text_width(&g.name, 7.8) + 32.0;
+        let title_w = Self::estimate_text_width(&g.name, 7.6) + 32.0;
 
         let ports_w = if !ins.is_empty() && !outs.is_empty() {
             max_in_w + max_out_w + 18.0
@@ -498,15 +510,11 @@ impl PatchbayState {
             };
 
         let rect = RectF::new(pos.x, pos.y, width, height);
+        let in_col_w = max_in_w.max(46.0).min((width - 6.0).max(46.0));
         let mut in_ports = Vec::with_capacity(ins.len());
         for (i, p) in ins.iter().enumerate() {
             let y = pos.y + HEADER_HEIGHT + 2.0 + i as f32 * (PORT_HEIGHT + PORT_GAP);
-            let pw = if outs.is_empty() {
-                (width - 6.0).max(52.0)
-            } else {
-                max_in_w.max(52.0)
-            };
-            let pr = RectF::new(pos.x, y, pw, PORT_HEIGHT);
+            let pr = RectF::new(pos.x, y, in_col_w, PORT_HEIGHT);
             in_ports.push(PortGeomDto {
                 group_id: p.group_id,
                 port_id: p.port_id,
@@ -520,15 +528,11 @@ impl PatchbayState {
             });
         }
 
+        let out_col_w = max_out_w.max(46.0).min((width - 6.0).max(46.0));
         let mut out_ports = Vec::with_capacity(outs.len());
         for (i, p) in outs.iter().enumerate() {
             let y = pos.y + HEADER_HEIGHT + 2.0 + i as f32 * (PORT_HEIGHT + PORT_GAP);
-            let pw = if ins.is_empty() {
-                (width - 6.0).max(52.0)
-            } else {
-                max_out_w.max(52.0)
-            };
-            let pr = RectF::new(pos.x + width - pw, y, pw, PORT_HEIGHT);
+            let pr = RectF::new(pos.x + width - out_col_w, y, out_col_w, PORT_HEIGHT);
             out_ports.push(PortGeomDto {
                 group_id: p.group_id,
                 port_id: p.port_id,
@@ -1045,5 +1049,20 @@ mod tests {
         assert_eq!(g.pos1.x, 420.0);
         assert_eq!(g.pos1.y, 310.0);
         assert!(g.has_custom_pos);
+    }
+
+    #[test]
+    fn wide_title_does_not_stretch_port_tags() {
+        let mut pb = PatchbayState::default();
+        pb.add_group(1, -1, 0, "Split SSL 2+ Line Outputs 1/L + 2/R".into());
+        pb.add_port(1, 1, PATCHBAY_PORT_TYPE_AUDIO, "output_AUX0".into());
+        pb.add_port(1, 2, PATCHBAY_PORT_TYPE_AUDIO, "output_AUX1".into());
+        let scene = pb.build_scene_dto();
+        let b = &scene.boxes[0];
+        assert!(b.rect.w > 240.0);
+        for p in &b.out_ports {
+            assert!(p.rect.w < 110.0, "port tag too wide: {}", p.rect.w);
+            assert!((p.rect.right() - b.rect.right()).abs() < 0.01);
+        }
     }
 }
