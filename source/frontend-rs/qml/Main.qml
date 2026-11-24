@@ -345,17 +345,18 @@ Controls.ApplicationWindow {
             // Buffer size
             Controls.Label { text: qsTr("Buffer"); opacity: 0.75 }
             Controls.ComboBox {
-                visible: ctrl.engine_running && ctrl.variable_buffer_size
-                implicitWidth: 78
+                id: bufCombo
                 property var sizesList: {
                     try { return JSON.parse(ctrl.buffer_sizes_json); } catch (e) { return []; }
                 }
+                visible: ctrl.engine_running && ctrl.variable_buffer_size && sizesList.length > 0
+                implicitWidth: 82
                 model: sizesList
                 currentIndex: Math.max(0, sizesList.indexOf(ctrl.buffer_size))
                 onActivated: function(i) { ctrl.apply_buffer_size(sizesList[i]); }
             }
             Controls.Label {
-                visible: !ctrl.engine_running || !ctrl.variable_buffer_size
+                visible: !bufCombo.visible
                 text: ctrl.engine_running ? String(ctrl.buffer_size) : "—"
             }
 
@@ -364,17 +365,18 @@ Controls.ApplicationWindow {
             // Sample rate
             Controls.Label { text: qsTr("Sample rate"); opacity: 0.75 }
             Controls.ComboBox {
-                visible: ctrl.engine_running && ctrl.variable_sample_rate
-                implicitWidth: 96
+                id: srCombo
                 property var ratesList: {
                     try { return JSON.parse(ctrl.sample_rates_json); } catch (e) { return []; }
                 }
+                visible: ctrl.engine_running && ctrl.variable_sample_rate && ratesList.length > 0
+                implicitWidth: 100
                 model: ratesList.map(function(r) { return r + " Hz"; })
                 currentIndex: Math.max(0, ratesList.indexOf(ctrl.sample_rate))
                 onActivated: function(i) { ctrl.apply_sample_rate(ratesList[i]); }
             }
             Controls.Label {
-                visible: !ctrl.engine_running || !ctrl.variable_sample_rate
+                visible: !srCombo.visible
                 text: ctrl.engine_running ? (ctrl.sample_rate + " Hz") : "— Hz"
             }
 

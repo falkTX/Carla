@@ -394,15 +394,11 @@ impl Default for FrancaControllerRust {
         let title = QString::from(&core.window_title());
         let driver = QString::from(&core.running_driver_name);
         let buf_sizes = QString::from(
-            &serde_json::to_string(&core.runtime_dev_info.buffer_sizes).unwrap_or_else(|_| "[]".into()),
+            &serde_json::to_string(&core.effective_buffer_sizes()).unwrap_or_else(|_| "[]".into()),
         );
-        let sr_list: Vec<u32> = core
-            .runtime_dev_info
-            .sample_rates
-            .iter()
-            .map(|&r| r as u32)
-            .collect();
-        let sample_rates = QString::from(&serde_json::to_string(&sr_list).unwrap_or_else(|_| "[]".into()));
+        let sample_rates = QString::from(
+            &serde_json::to_string(&core.effective_sample_rates()).unwrap_or_else(|_| "[]".into()),
+        );
 
         Self {
             window_title: title,
@@ -531,21 +527,16 @@ impl qobject::FrancaController {
             self.as_mut().set_variable_sample_rate(var_sr);
         }
         let bufs_j = QString::from(
-            &serde_json::to_string(&self.rust().core.runtime_dev_info.buffer_sizes)
+            &serde_json::to_string(&self.rust().core.effective_buffer_sizes())
                 .unwrap_or_else(|_| "[]".into()),
         );
         if *self.buffer_sizes_json() != bufs_j {
             self.as_mut().set_buffer_sizes_json(bufs_j);
         }
-        let srs: Vec<u32> = self
-            .rust()
-            .core
-            .runtime_dev_info
-            .sample_rates
-            .iter()
-            .map(|&r| r as u32)
-            .collect();
-        let srs_j = QString::from(&serde_json::to_string(&srs).unwrap_or_else(|_| "[]".into()));
+        let srs_j = QString::from(
+            &serde_json::to_string(&self.rust().core.effective_sample_rates())
+                .unwrap_or_else(|_| "[]".into()),
+        );
         if *self.sample_rates_json() != srs_j {
             self.as_mut().set_sample_rates_json(srs_j);
         }

@@ -2408,6 +2408,42 @@ impl FrancaCore {
         }
     }
 
+    pub fn effective_buffer_sizes(&self) -> Vec<u32> {
+        let mut sizes = self.runtime_dev_info.buffer_sizes.clone();
+        if sizes.is_empty()
+            && (self.runtime_dev_info.hints & ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE) != 0
+        {
+            sizes.extend_from_slice(&[16, 32, 64, 128, 256, 512, 1024, 2048, 4096]);
+        }
+        if self.buffer_size > 0 && !sizes.contains(&self.buffer_size) {
+            sizes.push(self.buffer_size);
+        }
+        sizes.sort_unstable();
+        sizes.dedup();
+        sizes
+    }
+
+    pub fn effective_sample_rates(&self) -> Vec<u32> {
+        let mut rates: Vec<u32> = self
+            .runtime_dev_info
+            .sample_rates
+            .iter()
+            .map(|&r| r as u32)
+            .collect();
+        if rates.is_empty()
+            && (self.runtime_dev_info.hints & ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE) != 0
+        {
+            rates.extend_from_slice(&[22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000]);
+        }
+        let cur = self.sample_rate as u32;
+        if cur > 0 && !rates.contains(&cur) {
+            rates.push(cur);
+        }
+        rates.sort_unstable();
+        rates.dedup();
+        rates
+    }
+
     pub fn runtime_driver_json(&self) -> String {
         #[derive(Serialize)]
         struct RtDto {
@@ -2424,9 +2460,9 @@ impl FrancaCore {
         let dto = RtDto {
             name: info.name.clone(),
             buffer_size: self.buffer_size,
-            buffer_sizes: info.buffer_sizes.clone(),
+            buffer_sizes: self.effective_buffer_sizes(),
             sample_rate: self.sample_rate as u32,
-            sample_rates: info.sample_rates.iter().map(|&r| r as u32).collect(),
+            sample_rates: self.effective_sample_rates(),
             variable_buffer: (info.hints & ENGINE_DRIVER_DEVICE_VARIABLE_BUFFER_SIZE) != 0,
             variable_rate: (info.hints & ENGINE_DRIVER_DEVICE_VARIABLE_SAMPLE_RATE) != 0,
             has_control_panel: (info.hints & ENGINE_DRIVER_DEVICE_HAS_CONTROL_PANEL) != 0,
