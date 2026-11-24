@@ -171,6 +171,7 @@ pub struct FrancaCore {
     pub is_project_loading: bool,
     pub removing_all_plugins: bool,
     pub external_patchbay: bool,
+    pub needs_patchbay_refresh: bool,
     pub nsm_active: bool,
     pub cancelable_action_msg: String,
 
@@ -234,6 +235,7 @@ impl FrancaCore {
         };
 
         let transport_link = settings.transport_extra.contains(":link:");
+        let initial_external_patchbay = settings.process_mode != ENGINE_PROCESS_MODE_PATCHBAY;
 
         let mut core = Self {
             host,
@@ -259,7 +261,8 @@ impl FrancaCore {
             project_filename: None,
             is_project_loading: false,
             removing_all_plugins: false,
-            external_patchbay: false,
+            external_patchbay: initial_external_patchbay,
+            needs_patchbay_refresh: false,
             nsm_active,
             cancelable_action_msg: String::new(),
             slots: Vec::new(),
@@ -335,12 +338,8 @@ impl FrancaCore {
         }
         self.drain_engine_events();
         self.refresh_runtime_state();
-        if let Some(ref host) = self.host {
-            let _ = host.patchbay_refresh(self.external_patchbay);
-        }
-        self.drain_engine_events();
+        self.refresh_patchbay();
         self.pending.rack_dirty = true;
-        self.pending.patchbay_dirty = true;
     }
 
     pub fn stop_engine(&mut self) {
@@ -469,6 +468,10 @@ impl FrancaCore {
         for ev in events {
             self.handle_engine_event(ev);
         }
+        if self.needs_patchbay_refresh {
+            self.needs_patchbay_refresh = false;
+            self.refresh_patchbay();
+        }
     }
 
     fn handle_engine_event(&mut self, ev: EngineEvent) {
@@ -496,6 +499,9 @@ impl FrancaCore {
                 self.transport_mode = ev.value2;
                 self.buffer_size = ev.value3.max(0) as u32;
                 self.sample_rate = ev.valuef as f64;
+                // Only Patchbay process mode has an internal plugin routing graph;
+                // Continuous Rack / Single / Multiple Client modes always use the external patchbay.
+                self.external_patchbay = self.process_mode != ENGINE_PROCESS_MODE_PATCHBAY;
                 self.running_driver_name = if !ev.value_str.is_empty() {
                     ev.value_str
                 } else {
@@ -558,9 +564,7 @@ impl FrancaCore {
                 self.history.clear();
                 self.history.set_blocked(false);
                 self.history_plugin_count = self.slots.len();
-                if let Some(ref host) = self.host {
-                    let _ = host.patchbay_refresh(self.external_patchbay);
-                }
+                self.needs_patchbay_refresh = true;
                 self.pending.rack_dirty = true;
                 self.pending.patchbay_dirty = true;
                 logging::log_ui("Project load finished");
@@ -977,9 +981,8 @@ impl FrancaCore {
             for (i, slot) in self.slots.iter_mut().enumerate() {
                 slot.plugin_id = i as u32;
             }
-            let _ = host.patchbay_refresh(self.external_patchbay);
+            self.refresh_patchbay();
             self.pending.rack_dirty = true;
-            self.pending.patchbay_dirty = true;
         }
         cur
     }

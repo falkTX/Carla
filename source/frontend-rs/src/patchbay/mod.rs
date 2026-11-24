@@ -277,6 +277,12 @@ impl PatchbayState {
     }
 
     pub fn add_group(&mut self, group_id: u32, plugin_id: i32, icon: i32, name: String) {
+        if let Some(existing) = self.groups.get_mut(&group_id) {
+            existing.plugin_id = plugin_id;
+            existing.icon = icon;
+            existing.name = name;
+            return;
+        }
         let should_split = icon == PATCHBAY_ICON_HARDWARE;
         let idx = self.next_auto_pos_index;
         self.next_auto_pos_index += 1;
@@ -992,4 +998,52 @@ pub fn segments_intersect(a: PointF, b: PointF, c: PointF, d: PointF) -> bool {
     let o3 = orient(c, d, a);
     let o4 = orient(c, d, b);
     (o1 * o2 < 0.0) && (o3 * o4 < 0.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clear_before_refresh_prevents_duplicate_shifted_ports() {
+        let mut pb = PatchbayState::default();
+        // Initial population (e.g. during engine_init)
+        pb.add_group(14, -1, 0, "Virtual Mic".into());
+        pb.add_port(14, 45, PATCHBAY_PORT_IS_INPUT | PATCHBAY_PORT_TYPE_AUDIO, "input_FL".into());
+        pb.add_port(14, 46, PATCHBAY_PORT_IS_INPUT | PATCHBAY_PORT_TYPE_AUDIO, "input_FR".into());
+        pb.add_port(14, 47, PATCHBAY_PORT_TYPE_AUDIO, "capture_FL".into());
+        pb.add_port(14, 48, PATCHBAY_PORT_TYPE_AUDIO, "capture_FR".into());
+
+        // Refresh clears state before backend re-emits with shifted port IDs
+        pb.clear();
+        pb.add_group(14, -1, 0, "Virtual Mic".into());
+        pb.add_port(14, 47, PATCHBAY_PORT_IS_INPUT | PATCHBAY_PORT_TYPE_AUDIO, "input_FL".into());
+        pb.add_port(14, 48, PATCHBAY_PORT_IS_INPUT | PATCHBAY_PORT_TYPE_AUDIO, "input_FR".into());
+        pb.add_port(14, 49, PATCHBAY_PORT_TYPE_AUDIO, "capture_FL".into());
+        pb.add_port(14, 50, PATCHBAY_PORT_TYPE_AUDIO, "capture_FR".into());
+
+        let scene = pb.build_scene_dto();
+        assert_eq!(scene.boxes.len(), 1);
+        let vm = &scene.boxes[0];
+        assert_eq!(vm.in_ports.len(), 2);
+        assert_eq!(vm.out_ports.len(), 2);
+        assert_eq!(vm.in_ports[0].port_id, 47);
+        assert_eq!(vm.in_ports[1].port_id, 48);
+        assert_eq!(vm.out_ports[0].port_id, 49);
+        assert_eq!(vm.out_ports[1].port_id, 50);
+    }
+
+    #[test]
+    fn re_adding_existing_group_preserves_custom_position() {
+        let mut pb = PatchbayState::default();
+        pb.add_group(5, -1, 0, "Synth".into());
+        pb.set_group_position(5, 420, 310, 0, 0);
+        pb.add_group(5, 2, 1, "Synth Renamed".into());
+        let g = pb.groups.get(&5).unwrap();
+        assert_eq!(g.name, "Synth Renamed");
+        assert_eq!(g.plugin_id, 2);
+        assert_eq!(g.pos1.x, 420.0);
+        assert_eq!(g.pos1.y, 310.0);
+        assert!(g.has_custom_pos);
+    }
 }

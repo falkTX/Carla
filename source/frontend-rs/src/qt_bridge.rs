@@ -433,8 +433,7 @@ impl Default for FrancaControllerRust {
             jack_apps_enabled: core.settings.experimental && core.settings.exp_jack_apps,
             refresh_interval_ms: core.settings.refresh_interval_ms.clamp(10, 100) as i32,
             external_patchbay: core.external_patchbay,
-            show_routing_mode_toggle: core.process_mode != ENGINE_PROCESS_MODE_SINGLE_CLIENT
-                && core.process_mode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,
+            show_routing_mode_toggle: core.process_mode == ENGINE_PROCESS_MODE_PATCHBAY,
             patchbay_use_bezier: core.patchbay.use_bezier,
             canvas_width: core.patchbay.canvas_width,
             canvas_height: core.patchbay.canvas_height,
@@ -610,8 +609,7 @@ impl qobject::FrancaController {
         if *self.external_patchbay() != ext_pb {
             self.as_mut().set_external_patchbay(ext_pb);
         }
-        let show_rt = self.rust().core.process_mode != ENGINE_PROCESS_MODE_SINGLE_CLIENT
-            && self.rust().core.process_mode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
+        let show_rt = self.rust().core.process_mode == ENGINE_PROCESS_MODE_PATCHBAY;
         if *self.show_routing_mode_toggle() != show_rt {
             self.as_mut().set_show_routing_mode_toggle(show_rt);
         }
@@ -1865,17 +1863,18 @@ impl qobject::FrancaController {
                 let core = &mut self.as_mut().rust_mut().core;
                 core.settings = new_settings;
                 let _ = core.settings.save();
-                if let Some(ref host) = core.host {
-                    core.settings.apply_to_host(host, &core.bin_dir, &core.res_dir);
-                    if core.engine_running {
-                        let _ = host.patchbay_refresh(core.external_patchbay);
-                    }
-                }
                 core.patchbay.canvas_width = core.settings.canvas_width as f32;
                 core.patchbay.canvas_height = core.settings.canvas_height as f32;
                 core.patchbay.use_bezier = core.settings.canvas_use_bezier;
                 core.patchbay.auto_hide_groups = core.settings.canvas_auto_hide_groups;
-                core.pending.patchbay_dirty = true;
+                if let Some(ref host) = core.host {
+                    core.settings.apply_to_host(host, &core.bin_dir, &core.res_dir);
+                }
+                if core.engine_running {
+                    core.refresh_patchbay();
+                } else {
+                    core.pending.patchbay_dirty = true;
+                }
                 logging::log_ui("Settings updated");
             }
             Err(e) => {
